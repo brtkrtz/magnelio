@@ -366,7 +366,10 @@ def conformal_flux_patch_scale(
     def _chi(me_port, lens, d_t, idx):
         cat = em.category[idx]
         chi = np.ones(idx.size, dtype=float)
-        m2 = cat == 2
+        # f_A == 0 edges would divide 0/0 below; their chi stays 1
+        # either way (the isfinite guard rejects the quotient), so
+        # exclude them up front instead of warning.
+        m2 = (cat == 2) & (em.f_A[idx] > 0.0)
         if np.any(m2):
             eps_pair = em.eps_avg[idx[m2]] / em.f_A[idx[m2]]
             a_geo = d_t[m2] * dn

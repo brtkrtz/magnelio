@@ -4,19 +4,24 @@
 are complete — boundary declaration + mesh-time domain clip (DD-154)
 and full-model power semantics on ports, recorders and flux monitors
 (DD-155), certified against the natively built half model.  The last
-pre-v0.1.0 API break was the vocabulary unification DD-153
-(`corners=`, `normal=`/`position=`, `name`, written-out radii).  The
+pre-v0.1.0 API break is the string/tuple symmetry vocabulary DD-159
+(after the DD-153 unification: `corners=`, `normal=`/`position=`,
+`name`, written-out radii).  The
 time step comes from the measured spectral radius (DD-150, 17–34× on
 conformal meshes), degenerate conformal edges are frozen instead of
 pinning `dt` (DD-147/DD-149), and OCCT Booleans no longer edit their
 operand shapes (DD-146).  Post-release-prep hardening (2026-08-14):
 section contours are closed by contract (DD-157) and conductor
 grouping fuses labels through PEC cell bodies (DD-156) — both found
-on the stripline-coupler worksheet.  **No open entries in
-known-bugs.md.**
+on the stripline-coupler worksheet.  **One open entry in
+known-bugs.md:** KB-017 — a conformal-classification jitter inside
+the pairing's 1e-6 agreement band can silently push a port channel
+to Mur (found on the mirrored coax stub of the same worksheet;
+KB-016, the NaN complement-absorber coefficients it uncovered, is
+fixed).
 
-**Suite: 2081 passed / 6 skipped / 0 failed** (2026-08-13, GPU box —
-unit 1751 (+2 scikit-rf skips), integration 330 (+4 skips); GPU tests
+**Suite: 2126 passed / 6 skipped / 0 failed** (2026-08-14, GPU box —
+unit 1796 (+2 scikit-rf skips), integration 330 (+4 skips); GPU tests
 need `CUPY_ACCELERATORS=""` when the interpreter binary is called
 directly).  The DD-150 step change re-measured three fixture windows
 (interval stride, lumped-port guard, SIBC band edge) — the reasoning

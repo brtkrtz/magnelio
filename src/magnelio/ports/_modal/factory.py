@@ -705,15 +705,27 @@ def _complement_absorber_arrays(
     (where the complement vanishes identically anyway — their interior
     companions are wall edges too) and sub-face window frames (whose
     interior companions are real field edges, so an unmasked absorber
-    would write onto the virtual PEC frame).
+    would write onto the virtual PEC frame).  Frozen conformal edges
+    (``M_eps == 0``) join the dead set as well, mirroring the volume
+    update's ``live_E = M_eps > 0`` convention: they carry no E update,
+    and dividing through them would seed NaN coefficients.
     """
     m_vac = flatten_port_plane_mass(build_M_eps_vacuum(mesh), mesh, face)
     rs = []
+    frozen = []
     for idx in (plane.e_u_indices, plane.e_v_indices):
-        eps_eff = np.asarray(m_eps[idx], dtype=float) / np.asarray(m_vac[idx], dtype=float)
-        c_loc = C0 / np.sqrt(eps_eff)
-        rs.append((c_loc * dt - plane.normal_dx) / (c_loc * dt + plane.normal_dx))
+        m_e = np.asarray(m_eps[idx], dtype=float)
+        # DD-147/149 clamp degenerate conformal edges to exactly 0
+        # without entering pec_mask_edges.
+        dead = m_e <= 0.0
+        with np.errstate(divide="ignore", invalid="ignore"):
+            eps_eff = m_e / np.asarray(m_vac[idx], dtype=float)
+            c_loc = C0 / np.sqrt(eps_eff)
+            r = (c_loc * dt - plane.normal_dx) / (c_loc * dt + plane.normal_dx)
+        rs.append(np.where(dead, 0.0, r))
+        frozen.append(dead)
     pec = _flat_pec_on(mesh, np.concatenate([plane.e_u_indices, plane.e_v_indices]))
+    pec = pec | np.concatenate(frozen)
     if subface_edge_mask is not None:
         pec = pec | subface_edge_mask
     n_u = plane.e_u_indices.size

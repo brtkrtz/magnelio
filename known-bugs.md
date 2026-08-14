@@ -4,6 +4,60 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
+## KB-017: Pair-coupling tolerance band lets a 7.5e-7 conformal jitter silently push a port channel to Mur — OPEN (2026-08-14)
+
+On the stripline coupler with its mirrored coax stub
+(`.mirrored(normal=(0,0,1))`), port2's only TEM channel falls back to
+modal Mur-1st with **no warning**: the DTBC pair-spread gate measures
+1.7e-8 against its 1e-8 tolerance while the feed chain itself is
+perfectly slab-invariant (chain-slab defect 6.6e-11).  Full causal
+chain (measured, probes in the internal dossier
+`investigations/section-open-chains/`):
+
+1. The sub-cell classifier marks one Ey edge next to the mirrored
+   coax bore as category 1 with ``f_A = 1 - 7.5e-7`` while its
+   ``eps_avg`` is exactly 1.0 — the two integrals over the same dual
+   face disagree by the tessellation jitter of the mirrored surface,
+   so ``eps_pair = eps_avg/f_A = 1 + 7.5e-7`` in vacuum.
+2. In ``couple_face_material_pairs`` the transverse (z) ladder of the
+   adjacent Hx face inherits that target; the ladder is internally
+   inconsistent by the same 7.5e-7 but passes the ``rtol = 1e-6``
+   agreement test using its jittered ``t1``.
+3. The fixed ladder priority (``use_a = v_a & (~v_b | agree_ab)``)
+   lets the transverse target overwrite the feed-direction target,
+   which is translation-invariant to 1.6e-16.
+4. The feed pair identity is violated by 7.5e-7 on that one edge →
+   weighted pair spread 1.7e-8 → the 1e-8 DTBC gate withholds the
+   exact termination, silently (only the chain-slab branch warns).
+
+Structural issue: the pairing declares targets "equal" at 1e-6 while
+the DTBC gate demands 1e-8 — any jitter inside that band produces
+certified-looking masses that still fail the port.  Fix candidates,
+in root-cause order: (a) make the classifier's ``eps_avg`` and
+``f_A`` come from the same free-area integral so ``eps_pair`` is
+exactly 1 in homogeneous material; (b) when both ladders are valid,
+prefer the one with the smaller internal partner disagreement instead
+of the fixed a-before-b priority.  Until then the fallback is the
+DD-064 accepted default (−30 dB-class |S11| on that channel);
+``port_model="band"`` provides the reflection-free path.
+
+## KB-016: ~~Frozen zero-M_eps edges seed NaN Mur coefficients on live complement-absorber edges~~ — Resolved (2026-08-14)
+
+Degenerate conformal edges are clamped to ``M_eps == 0`` without
+entering ``pec_mask_edges``; the volume update freezes them
+(``live_E = M_eps > 0``), but the port complement absorber's live
+mask only consulted the PEC mask.  Such an edge in a port window got
+``eps_eff = 0`` → an infinite phase velocity → a NaN Mur coefficient
+on a *live* edge (observed: four Ey edges of the stripline-coupler ZL
+port sitting on the Boolean cut plane inside the curved electrode
+shell).  Latent only because the absorber runs solely when a mode is
+on Mur, and the affected port certified for the exact DTBC.  Fixed by
+adding ``M_eps <= 0`` edges to the absorber's dead set with a finite
+coefficient, mirroring the volume convention; the 0/0 chi-patch
+census warning on ``f_A == 0`` edges was silenced the same way (the
+isfinite guard already discarded those quotients).  Gate:
+`tests/unit/test_port_edge_bc.py::TestComplementAbsorberFrozenEdges`.
+
 ## KB-015: ~~Open section chains book fantasy coverage — coax ports fall back to Mur under declared symmetry~~ — Resolved (DD-157, 2026-08-14)
 
 On a plane in the near-tangent band of a curved face of a

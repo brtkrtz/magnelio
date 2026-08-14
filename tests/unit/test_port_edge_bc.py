@@ -289,3 +289,58 @@ class TestSubFaceOperators:
         f_te10_face = C0 / (2.0 * 2.0 * WR90_A)
         assert f_c == pytest.approx(f_te10_window, rel=1e-2)
         assert abs(f_c - f_te10_face) > 0.4 * f_te10_face
+
+
+# ---------------------------------------------------------------------
+# _complement_absorber_arrays — frozen zero-M_eps edges
+# ---------------------------------------------------------------------
+
+
+class TestComplementAbsorberFrozenEdges:
+    """A conformal edge clamped to ``M_eps == 0`` without a PEC-mask
+    entry must join the absorber's dead set with a finite coefficient —
+    mirroring the volume update's ``live_E = M_eps > 0`` convention.
+    Previously such an edge produced a NaN Mur coefficient on a *live*
+    edge, which an active complement absorber would have injected into
+    the fields."""
+
+    def test_zero_eps_edge_is_dead_and_all_coefficients_finite(self):
+        import warnings
+
+        from magnelio.ports._modal.factory import _complement_absorber_arrays
+
+        grid = GridLines(
+            x=np.linspace(0.0, 1.0, 3),
+            y=np.linspace(0.0, 1.0, 7),
+            z=np.linspace(0.0, 1.0, 5),
+        )
+        # PMC on the port face: a PEC face would put every plane edge
+        # into the wall mask and the dead-set assertion would be vacuous.
+        mesh = Mesh.from_grid(grid, boundary_conditions={"xmin": "PMC"})
+        plane = PortPlane.from_mesh(BoxFace.X_MIN, mesh)
+        m_eps = np.array(build_M_eps(mesh), dtype=float)
+
+        target = int(plane.e_u_indices[plane.e_u_indices.size // 2])
+        m_eps[target] = 0.0
+        dt = 1e-12
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            r_u, r_v, live_u, live_v = _complement_absorber_arrays(
+                plane,
+                mesh,
+                BoxFace.X_MIN,
+                m_eps,
+                dt,
+                None,
+            )
+
+        assert np.all(np.isfinite(r_u))
+        assert np.all(np.isfinite(r_v))
+        pos = int(np.nonzero(plane.e_u_indices == target)[0][0])
+        assert live_u[pos] == 0.0
+        assert r_u[pos] == 0.0
+        # The neighbouring interior edge with untouched M_eps stays live.
+        assert live_u[pos + 1] == 1.0
+        assert live_u.sum() > 0
+        assert live_v.sum() > 0
