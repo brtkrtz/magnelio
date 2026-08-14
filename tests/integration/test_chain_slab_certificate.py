@@ -100,7 +100,7 @@ class TestChainSlabCertificate:
         assert op.termination_kinds == ["dtbc"]
 
     def test_non_invariant_feed_falls_back_to_mur_loudly(self):
-        with pytest.warns(UserWarning, match="certificate stage 2"):
+        with pytest.warns(UserWarning, match="feed-chain mass slabs"):
             op = _build(_rect_coax_mesh(dielectric_step=True))
         assert op.termination_kinds == ["mur"]
 
