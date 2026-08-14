@@ -693,9 +693,11 @@ operand, so cut tools never need one.
 
 A string-typed thin facade.  Each face takes one of
 ``"PEC"`` | ``"PMC"`` | ``"CPML"`` | ``"Periodic"``, or a symmetry
-declaration — ``"SymmetryPEC"`` / ``"SymmetryPMC"`` or a
-``Symmetry(kind, position=)`` instance (public in
-``magnelio.boundaries``) — see below.  Declared on the
+declaration (DD-159) — ``"SymmetryPEC"`` / ``"SymmetryPMC"``
+(domain clip at plane 0.0), a ``("SymmetryPEC", position)`` tuple
+(clip at the given world coordinate), or ``"ForceSymmetryPEC"`` /
+``"ForceSymmetryPMC"`` (no clip; the geometry is built as the half
+model) — see below.  Declared on the
 ``GeometryModel`` (or ``Mesh.from_grid`` /
 ``mesh.with_boundary_conditions``) and carried by the ``Mesh`` —
 DD-103.  One declaration drives all its consequences: CPML grid
@@ -707,9 +709,9 @@ the mesh (``analysis.boundary_conditions`` is read-only).
 ```python
 @dataclass
 class BoundaryConditions:
-    xmin: str = "PEC"          # face values accept str or Symmetry;
+    xmin: str = "PEC"          # face values accept str or symmetry tuple;
     xmax: str = "PEC"          # normalised to the physical wall type
-    ymin: str = "PEC"          # in __post_init__ (DD-154)
+    ymin: str = "PEC"          # in __post_init__ (DD-154/DD-159)
     ymax: str = "PEC"
     zmin: str = "PEC"
     zmax: str = "PEC"
@@ -724,11 +726,13 @@ normalised to the physical wall type (``"PEC"``/``"PMC"``), so every
 consumer dispatching on the type keeps working; the semantics live in
 the canonical ``symmetry`` map, read via
 ``boundaries.boundary_conditions.symmetry_entries()``.  At most one
-symmetry face per axis.  A ``Symmetry(kind, position=<world coord>)``
-makes the mesher clip the computational domain to the kept half-space
-before plane clustering (DD-154) — the full geometry may be modelled,
-the mirror half is never meshed; without a position the geometry is
-taken to end at the plane.  Symmetry-aware readers restore full-model
+symmetry face per axis.  A clip declaration (``"SymmetryPEC"``/
+``"SymmetryPMC"``, plane 0.0, or the tuple form with an explicit
+world coordinate) makes the mesher clip the computational domain to
+the kept half-space before plane clustering (DD-154) — the full
+geometry may be modelled, the mirror half is never meshed; a
+``ForceSymmetry*`` declaration carries no position and the geometry
+is taken to end at the plane.  Symmetry-aware readers restore full-model
 semantics: port reports publish full-model impedances (per cutting
 PMC plane ``z_full = z_half/2``, per PEC plane ``×2``), field plots /
 overlays / ParaView exports mirror on read, and declared source

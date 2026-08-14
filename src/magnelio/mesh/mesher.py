@@ -515,19 +515,20 @@ class Mesh:
         for spec in _thin_sheets:
             axis_anchors[spec.axis].append(spec.position)
 
-        # Domain clip on symmetry faces (DD-154).  A symmetry face
-        # declared WITH a position clips the domain to the kept
+        # Domain clip on symmetry faces (DD-154, vocabulary DD-159).
+        # A symmetry face declared WITH a position ("SymmetryPEC"/"PMC",
+        # default plane 0.0 or tuple form) clips the domain to the kept
         # half-space: the full geometry may be modelled and the mirror
         # half is simply never meshed.  Every critical plane on the
         # discarded side — including the clustering band around the
         # plane itself, so the position survives verbatim — is dropped,
         # and the symmetry plane enters as an exact face plane (it wins
         # the KB-013 clustering against bbox extents).  The wall
-        # placement downstream needs no special case: a SymmetryPMC
-        # face is in pmc_faces and gets the step-2c pull-in, a
-        # SymmetryPEC face is in pec_wall_faces and gets its edge mask.
-        # Without a position the declaration is semantic only — the
-        # geometry already ends at the symmetry plane.
+        # placement downstream needs no special case: a PMC symmetry
+        # face is in pmc_faces and gets the step-2c pull-in, a PEC
+        # symmetry face is in pec_wall_faces and gets its edge mask.
+        # Without a position ("ForceSymmetry*") the declaration is
+        # semantic only — the geometry already ends at the plane.
         for face, sym_pos in symmetry_entries(boundary_conditions).items():
             if sym_pos is None:
                 continue

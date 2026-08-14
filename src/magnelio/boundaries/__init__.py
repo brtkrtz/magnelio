@@ -4,7 +4,7 @@ core ``magnelio`` namespace; this component holds the concrete
 boundary classes for custom setups.
 """
 
-from magnelio.boundaries.boundary_conditions import BoundaryConditions, Symmetry
+from magnelio.boundaries.boundary_conditions import BoundaryConditions
 from magnelio.boundaries.cpml import CPMLBoundary
 from magnelio.boundaries.pec import PECBoundary
 from magnelio.boundaries.periodic import PeriodicBoundary
@@ -15,5 +15,4 @@ __all__ = [
     "PMCBoundary",
     "CPMLBoundary",
     "PeriodicBoundary",
-    "Symmetry",
 ]

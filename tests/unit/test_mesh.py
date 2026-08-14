@@ -1197,12 +1197,12 @@ class TestFromGeometryEmptyModel:
             Mesh.from_geometry(model, MeshControl(), f_max=1e9)
 
     def test_empty_model_with_symmetry_bcs_raises_value_error(self):
-        from magnelio.boundaries import BoundaryConditions, Symmetry
+        from magnelio.boundaries import BoundaryConditions
         from magnelio.geo import GeometryModel
         from magnelio.mesh.mesher import Mesh, MeshControl
 
         model = GeometryModel(
-            boundary_conditions=BoundaryConditions(xmin=Symmetry("PMC"), ymin=Symmetry("PEC"))
+            boundary_conditions=BoundaryConditions(xmin="ForceSymmetryPMC", ymin="ForceSymmetryPEC")
         )
         with pytest.raises(ValueError, match="contains no shapes"):
             Mesh.from_geometry(model, MeshControl(), f_max=1e9)

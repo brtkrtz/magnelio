@@ -5,8 +5,8 @@ A shielded microstrip line with a dielectric block over the trace
 built twice and run twice:
 
 * ``full`` — no symmetry declared; the whole cross-section is meshed.
-* ``half`` — ``{"xmin": Symmetry("PMC", position=0.0)}``; the mesher
-  clips the domain to x >= 0 and the mirror half is never meshed.
+* ``half`` — ``{"xmin": "SymmetryPMC"}``; the mesher clips the domain
+  to x >= 0 and the mirror half is never meshed.
 
 Certificate quantities (full vs. half):
 
@@ -46,7 +46,6 @@ import numpy as np
 
 import magnelio as mio
 from magnelio import geo, ports
-from magnelio.boundaries import Symmetry
 from magnelio.monitors import MonitorFieldFrequency, MonitorFluxTime
 
 F_MAX = 12e9
@@ -74,7 +73,7 @@ def run_case(symmetric: bool) -> dict:
     fr4 = mio.Material.from_isotropic(name="FR4", epsilon=EPS_R)
     blocker = mio.Material.from_isotropic(name="blocker", epsilon=10.0)
 
-    bc = {"xmin": Symmetry("PMC", position=0.0)} if symmetric else None
+    bc = {"xmin": "SymmetryPMC"} if symmetric else None
     model = mio.GeometryModel(boundary_conditions=bc, allow_overlaps=True)
     model.add(geo.Brick(origin=(-W_BOX / 2, 0.0, 0.0), size=(W_BOX, H_SUB, L), material=fr4))
     air_cap = geo.Brick(

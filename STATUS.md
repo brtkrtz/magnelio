@@ -58,6 +58,7 @@ changed, do not append.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-159** (2026-08-14) — string/tuple symmetry vocabulary: bare `"SymmetryPEC"`/`"SymmetryPMC"` clip at plane 0.0, `("SymmetryPEC", position)` clips elsewhere, `"ForceSymmetry*"` declares an as-built half model; the `Symmetry` class is removed.
 * **DD-158** (2026-08-14) — unregistered-wall warning only for scenes with lossy conductors (declared at mesh time, or via the σ-fallback at `resolve_wall_conductors` time); registration stays unconditional.
 * **DD-157** (2026-08-14) — section contours are closed or the plane is re-taken (nudge retry, loud drop); open chains on tangent-band planes of Boolean solids booked fantasy coverage and sent coax ports to Mur; closes KB-015.
 * **DD-156** (2026-08-14) — conductor grouping: PEC-cell links fuse component labels, never add nodes; kills phantom conductors from isolated staircase fragments; closes KB-014.
@@ -235,13 +236,15 @@ gate), and ``compute_band_s_parameters`` decomposes ONE pulsed
 record per frequency with the DD-056 true-mode machinery.  Only
 analytical-path modes remain on modal Mur-1st (DD-047).
 
-Symmetry planes (DD-154/DD-155): a symmetry plane is a boundary
-declaration (``"SymmetryPEC"``/``"SymmetryPMC"`` or ``Symmetry(kind,
-position=)``); the ``BoundaryConditions`` face field keeps the
-physical wall type, semantics live in the canonical ``symmetry`` map
-(``symmetry_entries()``).  A declared ``position=`` clips the domain
-at mesh time — the mirror half is never meshed, pinned bit-exact
-against the natively built half model.  Port reports publish
+Symmetry planes (DD-154/DD-155, vocabulary DD-159): a symmetry plane
+is a boundary declaration — ``"SymmetryPEC"``/``"SymmetryPMC"`` clip
+the domain at plane 0.0, ``("SymmetryPEC", position)`` at the given
+coordinate, ``"ForceSymmetryPEC"``/``"ForceSymmetryPMC"`` declare an
+as-built half model without clipping; the ``BoundaryConditions`` face
+field keeps the physical wall type, semantics live in the canonical
+``symmetry`` map (``symmetry_entries()``).  The clip happens at mesh
+time — the mirror half is never meshed, pinned bit-exact against the
+natively built half model.  Port reports publish
 full-model impedances (PMC cut ÷2, PEC cut ×2); declared source
 amplitudes are full-model quantities (injection ×1/√(2^k), recorder
 ×√(2^k) on ``record_scale``, ``reference_signal`` stays unscaled;

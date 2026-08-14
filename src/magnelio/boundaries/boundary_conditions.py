@@ -8,13 +8,15 @@ into the concrete runtime BC instances the solver expects.
 A face may also be declared a *symmetry plane* — physically
 identical to a PEC/PMC wall, plus the semantic "the mirror image of
 the model exists beyond this wall".  Declared as the type strings
-``"SymmetryPEC"`` / ``"SymmetryPMC"`` or as a :class:`Symmetry`
-instance carrying an explicit plane position.  The dataclass fields
-always hold the *physical* type ("PEC"/"PMC") after normalisation, so
-every consumer that dispatches on the wall type keeps working
-unchanged; the symmetry semantics live in the separate
-:attr:`BoundaryConditions.symmetry` map, read through
-:func:`symmetry_entries`.
+``"SymmetryPEC"`` / ``"SymmetryPMC"`` (the mesher clips the domain at
+the plane position, default 0.0 — pass a ``("SymmetryPEC", position)``
+tuple for a plane away from the origin) or as ``"ForceSymmetryPEC"`` /
+``"ForceSymmetryPMC"`` (no clip: the geometry itself already ends at
+the symmetry plane).  The dataclass fields always hold the *physical*
+type ("PEC"/"PMC") after normalisation, so every consumer that
+dispatches on the wall type keeps working unchanged; the symmetry
+semantics live in the separate :attr:`BoundaryConditions.symmetry`
+map, read through :func:`symmetry_entries`.
 
 The boundary closure is declared on the *model* — it is
 passed to :class:`~magnelio.geo.GeometryModel` (or to
@@ -31,7 +33,7 @@ canonical ``{face: type_str}`` map every consumer dispatches on.
 """
 
 # Design: DD-103 (boundary closure declared on the model), DD-154 (symmetry
-# planes).
+# planes), DD-159 (string/tuple symmetry vocabulary).
 
 from __future__ import annotations
 
@@ -39,46 +41,50 @@ from dataclasses import dataclass, field
 
 FACES = ("xmin", "xmax", "ymin", "ymax", "zmin", "zmax")
 
+# Symmetry vocabulary (DD-159).  Clip strings declare the plane and let
+# the mesher clip the domain there (position 0.0 unless a tuple carries
+# an explicit one); Force strings declare the domain as built.
+_CLIP_SYMMETRY_STRINGS = {"SymmetryPEC": "PEC", "SymmetryPMC": "PMC"}
+_FORCE_SYMMETRY_STRINGS = {"ForceSymmetryPEC": "PEC", "ForceSymmetryPMC": "PMC"}
+_SYMMETRY_VOCABULARY = (*_CLIP_SYMMETRY_STRINGS, *_FORCE_SYMMETRY_STRINGS)
 
-@dataclass(frozen=True)
-class Symmetry:
-    """Symmetry-plane declaration for one domain face.
 
-    Physically the face is closed with the wall named by *kind*; the
-    declaration additionally records that the model continues as its
-    mirror image beyond the plane, so symmetry-aware readers (port
-    impedance reports, field plots, exports) can restore full-model
-    semantics.
+def _parse_symmetry_value(value) -> tuple[str, float | None] | None:
+    """Parse one face value as a symmetry declaration.
 
-    Parameters
-    ----------
-    kind : str
-        Wall type of the symmetry plane: ``"PEC"`` (electric symmetry,
-        tangential E vanishes on the plane) or ``"PMC"`` (magnetic
-        symmetry, tangential H vanishes).
-    position : float, optional
-        World coordinate of the symmetry plane on the face's axis [m].
-        When given, the mesher clips the computational domain to the
-        kept half-space at exactly this plane — the full geometry may
-        be modelled and the discarded half is simply never meshed.
-        When *None* (default), the domain is taken as built: the
-        geometry itself already ends at the symmetry plane.
+    Returns ``(wall_kind, position_or_None)`` for the three accepted
+    forms — a clip string (position 0.0), a ``(clip_string, position)``
+    tuple, a Force string (position *None*) — or *None* when *value*
+    is not a symmetry declaration at all.  Malformed tuples raise.
     """
-
-    kind: str
-    position: float | None = None
-
-    def __post_init__(self) -> None:
-        if self.kind not in ("PEC", "PMC"):
+    if isinstance(value, str):
+        if value in _CLIP_SYMMETRY_STRINGS:
+            return _CLIP_SYMMETRY_STRINGS[value], 0.0
+        if value in _FORCE_SYMMETRY_STRINGS:
+            return _FORCE_SYMMETRY_STRINGS[value], None
+        return None
+    if isinstance(value, tuple):
+        if len(value) == 2 and value[0] in _FORCE_SYMMETRY_STRINGS:
             raise ValueError(
-                f"Symmetry kind must be 'PEC' or 'PMC'; got {self.kind!r}",
+                f"{value[0]!r} declares the domain as built and takes no "
+                f"plane position; use ('SymmetryPEC'|'SymmetryPMC', "
+                f"position) to clip the domain at a plane.",
             )
-        if self.position is not None:
-            object.__setattr__(self, "position", float(self.position))
-
-
-# String shorthand for a Symmetry declaration without a position.
-_SYMMETRY_STRINGS = {"SymmetryPEC": "PEC", "SymmetryPMC": "PMC"}
+        if len(value) != 2 or value[0] not in _CLIP_SYMMETRY_STRINGS:
+            raise ValueError(
+                f"symmetry tuple {value!r} is not valid; expected "
+                f"('SymmetryPEC'|'SymmetryPMC', position) with the plane "
+                f"position as a world coordinate in metres.",
+            )
+        try:
+            position = float(value[1])
+        except (TypeError, ValueError):
+            raise ValueError(
+                f"symmetry plane position {value[1]!r} is not a number; "
+                f"expected the world coordinate of the plane in metres.",
+            ) from None
+        return _CLIP_SYMMETRY_STRINGS[value[0]], position
+    return None
 
 
 @dataclass
@@ -87,17 +93,23 @@ class BoundaryConditions:
 
     Parameters
     ----------
-    xmin, xmax, ymin, ymax, zmin, zmax : str or Symmetry
+    xmin, xmax, ymin, ymax, zmin, zmax : str or tuple
         BC type for each face.  One of ``"PEC"``, ``"PMC"``, ``"CPML"``,
-        ``"Periodic"``, ``"SymmetryPEC"``, ``"SymmetryPMC"``, or a
-        :class:`Symmetry` instance.  Default ``"PEC"`` everywhere.
-        Symmetry declarations are normalised on construction: the field
-        keeps the physical wall type (``"PEC"``/``"PMC"``) and the
-        symmetry semantics move into :attr:`symmetry`.
+        ``"Periodic"``, or a symmetry declaration: ``"SymmetryPEC"`` /
+        ``"SymmetryPMC"`` clip the computational domain at the plane
+        (position 0.0; pass a ``("SymmetryPEC", position)`` tuple for a
+        plane away from the origin — the full geometry may be modelled
+        and the discarded half is simply never meshed), while
+        ``"ForceSymmetryPEC"`` / ``"ForceSymmetryPMC"`` declare the
+        domain as built (the geometry itself already ends at the
+        symmetry plane).  Default ``"PEC"`` everywhere.  Symmetry
+        declarations are normalised on construction: the field keeps
+        the physical wall type (``"PEC"``/``"PMC"``) and the symmetry
+        semantics move into :attr:`symmetry`.
     symmetry : dict, optional
         Canonical symmetry map ``{face: position_or_None}``.
-        Filled automatically from Symmetry-typed face values; may also
-        be passed directly.  At most one face per axis can be a
+        Filled automatically from symmetry-declared face values; may
+        also be passed directly.  At most one face per axis can be a
         symmetry plane — two parallel mirror planes would describe an
         infinite image chain, not a finite full model.
     cpml_thickness_cells : int, default 8
@@ -126,19 +138,21 @@ class BoundaryConditions:
         sym = dict(self.symmetry)
         for face in FACES:
             val = getattr(self, face)
-            if isinstance(val, Symmetry):
-                sym[face] = val.position
-                setattr(self, face, val.kind)
-            elif val in _SYMMETRY_STRINGS:
-                sym.setdefault(face, None)
-                setattr(self, face, _SYMMETRY_STRINGS[val])
+            parsed = _parse_symmetry_value(val)
+            if parsed is not None:
+                kind, pos = parsed
+                # An explicit symmetry= entry (e.g. from the project
+                # store) takes precedence over the face-value default.
+                sym.setdefault(face, pos)
+                setattr(self, face, kind)
         for face in FACES:
             val = getattr(self, face)
             if val not in self._VALID:
                 raise ValueError(
                     f"BoundaryConditions.{face}: {val!r} is not valid. "
                     f"Choose from "
-                    f"{list(self._VALID) + list(_SYMMETRY_STRINGS)!r}.",
+                    f"{list(self._VALID) + list(_SYMMETRY_VOCABULARY)!r} "
+                    f"or a ('SymmetryPEC'|'SymmetryPMC', position) tuple.",
                 )
         for face, pos in sym.items():
             if face not in FACES:
@@ -242,16 +256,16 @@ def bc_type_entries(boundary_conditions) -> dict[str, str]:
             raise ValueError(
                 f"unknown boundary face {face!r}; choose from {list(FACES)!r}.",
             )
-        if isinstance(value, Symmetry):
-            out[face] = value.kind
+        parsed = _parse_symmetry_value(value)
+        if parsed is not None:
+            out[face] = parsed[0]
             continue
         if isinstance(value, str):
-            value = _SYMMETRY_STRINGS.get(value, value)
             if value not in BoundaryConditions._VALID:
                 raise ValueError(
                     f"boundary condition {value!r} on face {face!r} is "
                     f"not valid. Choose from "
-                    f"{list(BoundaryConditions._VALID) + list(_SYMMETRY_STRINGS)!r}.",
+                    f"{list(BoundaryConditions._VALID) + list(_SYMMETRY_VOCABULARY)!r}.",
                 )
             out[face] = value
             continue
@@ -289,7 +303,7 @@ def resolve_boundary_conditions(boundary_conditions):
     entries = bc_type_entries(boundary_conditions)  # validates
     if isinstance(boundary_conditions, BoundaryConditions):
         return boundary_conditions
-    if all(isinstance(v, (str, Symmetry)) for v in boundary_conditions.values()):
+    if all(isinstance(v, (str, tuple)) for v in boundary_conditions.values()):
         return BoundaryConditions(
             **entries,
             symmetry=symmetry_entries(boundary_conditions),
@@ -318,10 +332,9 @@ def symmetry_entries(boundary_conditions) -> dict[str, float | None]:
         return {}
     out: dict[str, float | None] = {}
     for face, value in boundary_conditions.items():
-        if isinstance(value, Symmetry):
-            out[face] = value.position
-        elif isinstance(value, str) and value in _SYMMETRY_STRINGS:
-            out[face] = None
+        parsed = _parse_symmetry_value(value)
+        if parsed is not None:
+            out[face] = parsed[1]
     return out
 
 

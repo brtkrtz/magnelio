@@ -6,6 +6,11 @@ physical wall type (so every type-dispatching consumer keeps working)
 with the symmetry recorded in a separate map, and a declared position
 clips the computational domain to the kept half-space — the full
 geometry may be modelled, the mirror half is never meshed.
+
+Vocabulary (DD-159): ``"SymmetryPEC"``/``"SymmetryPMC"`` clip at the
+plane (0.0, or the position of a ``("SymmetryPEC", pos)`` tuple);
+``"ForceSymmetryPEC"``/``"ForceSymmetryPMC"`` declare the domain as
+built (no clip).
 """
 
 from __future__ import annotations
@@ -15,7 +20,6 @@ import pytest
 
 from magnelio.boundaries.boundary_conditions import (
     BoundaryConditions,
-    Symmetry,
     bc_type_entries,
     resolve_boundary_conditions,
     symmetry_entries,
@@ -30,40 +34,55 @@ CONTROL = MeshControl(min_nodes_per_wavelength=6, max_cell_size=1e-3)
 
 class TestDeclaration:
     def test_string_shorthand_normalises_to_physical_type(self):
-        bc = BoundaryConditions(xmin="SymmetryPMC", zmax="SymmetryPEC")
+        bc = BoundaryConditions(xmin="SymmetryPMC", zmax="ForceSymmetryPEC")
         assert bc.xmin == "PMC"
         assert bc.zmax == "PEC"
-        assert bc.symmetry == {"xmin": None, "zmax": None}
+        # A bare clip string declares the plane at the origin; a Force
+        # string declares the domain as built (no clip position).
+        assert bc.symmetry == {"xmin": 0.0, "zmax": None}
 
-    def test_symmetry_instance_carries_position(self):
-        bc = BoundaryConditions(xmin=Symmetry("PMC", position=1.5e-3))
+    def test_tuple_carries_the_plane_position(self):
+        bc = BoundaryConditions(xmin=("SymmetryPMC", 1.5e-3))
         assert bc.xmin == "PMC"
         assert bc.symmetry == {"xmin": 1.5e-3}
 
     def test_type_entries_report_the_physical_wall(self):
         entries = bc_type_entries(
-            {"xmin": Symmetry("PMC", position=0.0), "ymax": "SymmetryPEC"},
+            {"xmin": ("SymmetryPMC", 0.0), "ymax": "ForceSymmetryPEC", "zmin": "SymmetryPEC"},
         )
         assert entries["xmin"] == "PMC"
         assert entries["ymax"] == "PEC"
+        assert entries["zmin"] == "PEC"
 
     def test_symmetry_entries_reads_every_declaration_form(self):
-        decl = {"xmin": Symmetry("PEC", position=2e-3), "ymin": "SymmetryPMC", "zmin": "PEC"}
-        assert symmetry_entries(decl) == {"xmin": 2e-3, "ymin": None}
+        decl = {
+            "xmin": ("SymmetryPEC", 2e-3),
+            "ymin": "ForceSymmetryPMC",
+            "zmax": "SymmetryPMC",
+            "zmin": "PEC",
+        }
+        assert symmetry_entries(decl) == {"xmin": 2e-3, "ymin": None, "zmax": 0.0}
         resolved = resolve_boundary_conditions(decl)
         assert isinstance(resolved, BoundaryConditions)
-        assert symmetry_entries(resolved) == {"xmin": 2e-3, "ymin": None}
+        assert symmetry_entries(resolved) == {"xmin": 2e-3, "ymin": None, "zmax": 0.0}
         assert resolved.xmin == "PEC"
         assert resolved.ymin == "PMC"
+        assert resolved.zmax == "PMC"
         assert symmetry_entries(None) == {}
 
     def test_two_parallel_mirror_planes_rejected(self):
         with pytest.raises(ValueError, match="infinite image chain"):
             BoundaryConditions(xmin="SymmetryPMC", xmax="SymmetryPEC")
 
-    def test_symmetry_kind_must_be_a_wall(self):
-        with pytest.raises(ValueError, match="'PEC' or 'PMC'"):
-            Symmetry("CPML")
+    def test_malformed_symmetry_declarations_are_rejected(self):
+        with pytest.raises(ValueError, match="not valid"):
+            BoundaryConditions(xmin="SymmetryCPML")
+        with pytest.raises(ValueError, match="symmetry tuple"):
+            BoundaryConditions(xmin=("SymmetryPEC",))
+        with pytest.raises(ValueError, match="not a number"):
+            BoundaryConditions(xmin=("SymmetryPEC", "abc"))
+        with pytest.raises(ValueError, match="takes no plane position"):
+            BoundaryConditions(xmin=("ForceSymmetryPEC", 0.0))
 
     def test_direct_symmetry_map_must_name_a_wall_face(self):
         with pytest.raises(ValueError, match="PEC or PMC"):
@@ -93,15 +112,16 @@ def _layered_model(x_min: float, symmetry_decl) -> GeometryModel:
 
 class TestDomainClip:
     def test_clip_starts_the_grid_exactly_on_the_plane(self):
-        model = _layered_model(-4e-3, {"xmin": Symmetry("PEC", position=0.0)})
+        # Bare clip string: plane position defaults to 0.0.
+        model = _layered_model(-4e-3, {"xmin": "SymmetryPEC"})
         mesh = Mesh.from_geometry(model, CONTROL, F_MAX)
         assert mesh.grid.x[0] == 0.0
         assert mesh.grid.x[-1] == pytest.approx(4e-3)
 
     @pytest.mark.parametrize("kind", ["PEC", "PMC"])
     def test_full_model_clipped_equals_half_model_as_built(self, kind):
-        full = _layered_model(-4e-3, {"xmin": Symmetry(kind, position=0.0)})
-        half = _layered_model(0.0, {"xmin": f"Symmetry{kind}"})
+        full = _layered_model(-4e-3, {"xmin": f"Symmetry{kind}"})
+        half = _layered_model(0.0, {"xmin": f"ForceSymmetry{kind}"})
         mesh_full = Mesh.from_geometry(full, CONTROL, F_MAX)
         mesh_half = Mesh.from_geometry(half, CONTROL, F_MAX)
         assert np.array_equal(mesh_full.grid.x, mesh_half.grid.x)
@@ -111,7 +131,7 @@ class TestDomainClip:
         assert np.array_equal(mesh_full.pec_mask_edges, mesh_half.pec_mask_edges)
 
     def test_pmc_pull_in_lands_the_wall_on_the_plane(self):
-        model = _layered_model(-4e-3, {"xmin": Symmetry("PMC", position=0.0)})
+        model = _layered_model(-4e-3, {"xmin": "SymmetryPMC"})
         mesh = Mesh.from_geometry(model, CONTROL, F_MAX)
         x0, x1 = mesh.grid.x[0], mesh.grid.x[1]
         assert x0 > 0.0
@@ -120,7 +140,7 @@ class TestDomainClip:
         assert x0 - (x1 - x0) / 2.0 == pytest.approx(0.0, abs=1e-15)
 
     def test_features_in_the_discarded_half_leave_no_planes(self):
-        model = _layered_model(-4e-3, {"xmin": Symmetry("PEC", position=0.0)})
+        model = _layered_model(-4e-3, {"xmin": ("SymmetryPEC", 0.0)})
         # The blob sits inside the air layer; the overlap audit runs on
         # the full model (a mirrored-half overlap is just as real), so
         # last-wins semantics are fine for this grid-only check.
@@ -142,7 +162,7 @@ class TestDomainClip:
             max_cell_size=1e-3,
             forced_planes={"x": [-2e-3, 1e-3]},
         )
-        model = _layered_model(-4e-3, {"xmin": Symmetry("PEC", position=0.0)})
+        model = _layered_model(-4e-3, {"xmin": "SymmetryPEC"})
         with pytest.warns(UserWarning, match="beyond the symmetry plane"):
             mesh = Mesh.from_geometry(model, control, F_MAX)
         assert mesh.grid.x[0] == 0.0
@@ -154,19 +174,19 @@ class TestRedeclaration:
         model = _layered_model(0.0, None)
         mesh = Mesh.from_geometry(model, CONTROL, F_MAX)
         with pytest.raises(ValueError, match="re-mesh"):
-            mesh.with_boundary_conditions({"xmin": Symmetry("PMC", position=0.0)})
+            mesh.with_boundary_conditions({"xmin": "SymmetryPMC"})
 
     def test_redeclaring_the_built_closure_is_allowed(self):
-        decl = {"xmin": Symmetry("PMC", position=0.0)}
+        decl = {"xmin": ("SymmetryPMC", 0.0)}
         model = _layered_model(-4e-3, decl)
         mesh = Mesh.from_geometry(model, CONTROL, F_MAX)
         again = mesh.with_boundary_conditions(decl)
         assert symmetry_entries(again.boundary_conditions) == {"xmin": 0.0}
 
-    def test_positionless_symmetry_can_be_declared_after_the_fact(self):
+    def test_forced_symmetry_can_be_declared_after_the_fact(self):
         model = _layered_model(0.0, {"xmin": "PMC"})
         mesh = Mesh.from_geometry(model, CONTROL, F_MAX)
-        redeclared = mesh.with_boundary_conditions({"xmin": "SymmetryPMC"})
+        redeclared = mesh.with_boundary_conditions({"xmin": "ForceSymmetryPMC"})
         assert symmetry_entries(redeclared.boundary_conditions) == {"xmin": None}
 
 
@@ -264,7 +284,7 @@ class TestPortReportFullModel:
         # symmetry plane through the middle of the parallel plate.
         op_half = self._pp_geometry_port(
             8e-3,
-            dict(self._BC_GEO, ymax=Symmetry("PMC", position=4e-3)),
+            dict(self._BC_GEO, ymax=("SymmetryPMC", 4e-3)),
         )
         assert op_half.port_report.symmetry_faces == (("ymax", "PMC"),)
         # Raw solver value carries the half-window factor 2 ...
@@ -293,7 +313,7 @@ class TestPortReportFullModel:
         op_half = self._parallel_plate_port(
             8e-3,
             1e-3,
-            dict(self._BC_FULL, zmax="SymmetryPEC"),
+            dict(self._BC_FULL, zmax="ForceSymmetryPEC"),
         )
         assert op_half.port_report.symmetry_faces == (("zmax", "PEC"),)
         assert op_half.port_report.z_line_num == pytest.approx(
@@ -321,7 +341,7 @@ class TestPortReportFullModel:
             op = self._parallel_plate_port(
                 8e-3,
                 2e-3,
-                dict(self._BC_FULL, xmax="SymmetryPMC"),
+                dict(self._BC_FULL, xmax="ForceSymmetryPMC"),
             )
         assert op.port_report.symmetry_faces == ()
 
@@ -446,7 +466,7 @@ class TestMirrorRules:
         from magnelio.monitors.base import resolve_mirrors, resolve_region
 
         mesh_pmc = Mesh.from_geometry(
-            _layered_model(0.0, {"xmin": "SymmetryPMC"}),
+            _layered_model(0.0, {"xmin": "ForceSymmetryPMC"}),
             CONTROL,
             F_MAX,
         )
@@ -458,7 +478,7 @@ class TestMirrorRules:
         assert m.wall == pytest.approx(0.0, abs=1e-15)
 
         mesh_pec = Mesh.from_geometry(
-            _layered_model(0.0, {"xmin": "SymmetryPEC"}),
+            _layered_model(0.0, {"xmin": "ForceSymmetryPEC"}),
             CONTROL,
             F_MAX,
         )
@@ -473,7 +493,7 @@ class TestMirrorRules:
         from magnelio.monitors.base import resolve_mirrors, resolve_region
 
         mesh = Mesh.from_geometry(
-            _layered_model(0.0, {"xmin": "SymmetryPEC"}),
+            _layered_model(0.0, {"xmin": "ForceSymmetryPEC"}),
             CONTROL,
             F_MAX,
         )
@@ -487,7 +507,7 @@ class TestMirrorRules:
         from magnelio.monitors.field_time import MonitorFieldTime
 
         mesh = Mesh.from_geometry(
-            _layered_model(0.0, {"xmin": "SymmetryPMC"}),
+            _layered_model(0.0, {"xmin": "ForceSymmetryPMC"}),
             CONTROL,
             F_MAX,
         )
@@ -547,12 +567,12 @@ class TestFluxUnderSymmetry:
 
     def test_cutting_plane_doubles_the_record(self):
         p_plain = self._flux_power({"xmin": "PMC"})
-        p_sym = self._flux_power({"xmin": "SymmetryPMC"})
+        p_sym = self._flux_power({"xmin": "ForceSymmetryPMC"})
         assert p_sym == pytest.approx(2.0 * p_plain, rel=1e-12)
 
     def test_parallel_plane_leaves_the_record_unscaled(self):
         p_plain = self._flux_power({"zmin": "PMC"})
-        p_sym = self._flux_power({"zmin": "SymmetryPMC"})
+        p_sym = self._flux_power({"zmin": "ForceSymmetryPMC"})
         assert p_sym == pytest.approx(p_plain, rel=1e-12)
 
 
@@ -575,14 +595,14 @@ class TestWallLossFullModel:
 
     def test_transverse_symmetry_leaves_the_fraction_factor_at_one(self):
         mon = self._monitor(
-            {"xmin": "SymmetryPMC"},
+            {"xmin": "ForceSymmetryPMC"},
             reference_plane=("y", 2e-3),
         )
         assert mon._sym_fraction_factor == 1.0
 
     def test_parallel_symmetry_doubles_the_fraction_factor(self):
         mon = self._monitor(
-            {"xmin": "SymmetryPMC"},
+            {"xmin": "ForceSymmetryPMC"},
             reference_plane=("x", 2e-3),
         )
         assert mon._sym_fraction_factor == 2.0
@@ -590,7 +610,7 @@ class TestWallLossFullModel:
     def test_symmetry_face_listed_as_wall_is_dropped_loudly(self):
         with pytest.warns(UserWarning, match="not a physical wall"):
             mon = self._monitor(
-                {"xmin": "SymmetryPEC"},
+                {"xmin": "ForceSymmetryPEC"},
                 reference_plane=("y", 2e-3),
                 bc_faces=("xmin", "zmin"),
             )
@@ -635,7 +655,7 @@ class TestOverlayMirroring:
     def test_overlay_is_drawn_once_per_mirror_image(self):
         base = self._overlay_artists({"xmin": "PMC"}, with_geometry=False)
         plain = self._overlay_artists({"xmin": "PMC"}, with_geometry=True)
-        mirrored = self._overlay_artists({"xmin": "SymmetryPMC"}, with_geometry=True)
+        mirrored = self._overlay_artists({"xmin": "ForceSymmetryPMC"}, with_geometry=True)
         assert plain - base > 0  # the overlay actually drew something
         assert mirrored - base == 2 * (plain - base)
 
@@ -649,7 +669,7 @@ class TestParaViewSymmetry:
         from magnelio.io.paraview import _symmetry_config
 
         mesh = Mesh.from_geometry(
-            _layered_model(0.0, {"xmin": "SymmetryPMC"}),
+            _layered_model(0.0, {"xmin": "ForceSymmetryPMC"}),
             CONTROL,
             F_MAX,
         )
@@ -682,7 +702,7 @@ class TestStoreRoundTrip:
         h5py = pytest.importorskip("h5py")
         from magnelio.io.project import _load_mesh, _save_mesh
 
-        decl = {"xmin": Symmetry("PMC", position=0.0), "ymin": "SymmetryPEC"}
+        decl = {"xmin": "SymmetryPMC", "ymin": "ForceSymmetryPEC"}
         model = _layered_model(-4e-3, decl)
         mesh = Mesh.from_geometry(model, CONTROL, F_MAX)
         path = tmp_path / "mesh.h5"

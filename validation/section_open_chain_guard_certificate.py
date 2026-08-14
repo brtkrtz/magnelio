@@ -27,7 +27,6 @@ import numpy as np
 
 import magnelio as mio
 from magnelio import geo, ports
-from magnelio.boundaries import Symmetry
 from magnelio.constants import C0
 from magnelio.geo._occ_backend import cross_section_polygons
 from magnelio.geo._polygon_clip import (
@@ -148,8 +147,8 @@ def check_ports_exact_dtbc(bodies, p):
     model = mio.GeometryModel(
         background=mio.Material.pec(),
         boundary_conditions={
-            "xmin": Symmetry("PMC", position=0.0),
-            "ymin": Symmetry("PEC", position=0.0),
+            "xmin": "SymmetryPMC",
+            "ymin": "SymmetryPEC",
         },
     )
     for b in bodies:

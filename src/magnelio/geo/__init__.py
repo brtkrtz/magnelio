@@ -88,11 +88,13 @@ class GeometryModel:
         bbox faces.
     boundary_conditions : BoundaryConditions or dict or None
         Closure of the six domain faces — ``"PEC"``, ``"PMC"``,
-        ``"CPML"``, ``"Periodic"``, ``"SymmetryPEC"``/``"SymmetryPMC"``
-        or a :class:`~magnelio.boundaries.Symmetry` per face.  Declared
-        here because it is a property of the modelled domain, not of
-        the analysis run on it: a symmetry face is a mirror plane, a
-        CPML face is an opening.
+        ``"CPML"``, ``"Periodic"``, or a symmetry declaration
+        (``"SymmetryPEC"``/``"SymmetryPMC"``, optionally as a
+        ``("SymmetryPEC", position)`` tuple, or
+        ``"ForceSymmetryPEC"``/``"ForceSymmetryPMC"``) per face.
+        Declared here because it is a property of the modelled domain,
+        not of the analysis run on it: a symmetry face is a mirror
+        plane, a CPML face is an opening.
         :meth:`~magnelio.mesh.mesher.Mesh.from_geometry` derives all
         mesh-time consequences from it (CPML grid extension, PMC
         grid-line pull-in, PEC wall mask, symmetry domain clip), and
@@ -121,18 +123,18 @@ class GeometryModel:
         model.add(cavity)
 
     A magnetic symmetry plane at ``x = 0`` — the full geometry may be
-    modelled; the declared position clips the mesh to ``x >= 0`` and
-    the mirror half is never meshed::
-
-        from magnelio.boundaries import Symmetry
+    modelled; the declared plane clips the mesh to ``x >= 0`` and the
+    mirror half is never meshed::
 
         model = GeometryModel(
             background=pec,
-            boundary_conditions={"xmin": Symmetry("PMC", position=0.0)},
+            boundary_conditions={"xmin": "SymmetryPMC"},
         )
 
-    If the geometry itself already ends at the symmetry plane, declare
-    the plane without a position: ``{"xmin": "SymmetryPMC"}``.
+    For a plane away from the origin pass the position explicitly:
+    ``{"xmin": ("SymmetryPMC", 1.5e-3)}``.  If the geometry itself
+    already ends at the symmetry plane, declare it without clipping:
+    ``{"xmin": "ForceSymmetryPMC"}``.
     """
 
     def __init__(

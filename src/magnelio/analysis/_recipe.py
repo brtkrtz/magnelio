@@ -285,13 +285,16 @@ _BC_OBJECT_TYPE = {
 
 def _bc_value_to_str(face: str, value) -> str:
     """Map one boundary entry (string or BC object) to its type string."""
-    from magnelio.boundaries.boundary_conditions import Symmetry  # noqa: PLC0415
+    from magnelio.boundaries.boundary_conditions import (  # noqa: PLC0415
+        _parse_symmetry_value,
+    )
 
-    if isinstance(value, Symmetry):
+    parsed = _parse_symmetry_value(value)
+    if parsed is not None:
         # The recipe rebuilds runtime walls, and a symmetry face is
         # physically its wall type; the symmetry semantics round-trip
         # with the mesh (DD-154), not with the recipe.
-        return value.kind
+        return parsed[0]
     if isinstance(value, str):
         return value
     for cls, name in _BC_OBJECT_TYPE.items():

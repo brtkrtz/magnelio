@@ -10025,7 +10025,10 @@ metadata that symmetry-aware readers interpret:
 
 - **Declaration** extends the DD-103 closure vocabulary: type strings
   `"SymmetryPEC"` / `"SymmetryPMC"`, or a `Symmetry(kind,
-  position=)` instance (public in `magnelio.boundaries`).  On
+  position=)` instance (public in `magnelio.boundaries`).
+  *(Vocabulary reworked by DD-159 before v0.1.0: the class is gone;
+  bare clip strings default to plane 0.0, tuples carry the position,
+  `ForceSymmetry*` is the as-built form.  Semantics unchanged.)*  On
   normalisation the `BoundaryConditions` face field keeps the
   *physical* wall type — every existing consumer that dispatches on
   the type (`getattr(bc, face) == "PMC"` in the flux half-weights,
@@ -10159,7 +10162,7 @@ but the mirrored-half arrow sign is inverted.
 **Certificate:**
 `validation/symmetry_full_vs_half_certificate.py` — shielded
 microstrip with a dielectric block (non-trivial S11), FULL geometry
-built twice, run without and with `{"xmin": Symmetry("PMC", 0.0)}`:
+built twice, run without and with `{"xmin": "SymmetryPMC"}`:
 44 892 → 24 768 cells, max |Δ|S11|| = 1.5e-3 and
 |Δ|S21|| = 2.2e-4 over 3–9 GHz, published z_line 51.67 vs 51.23 Ω
 (0.85 % — the two grids differ on the shared half-space), flux peak
@@ -10406,3 +10409,49 @@ the warning at resolution time.
 
 **Files:** `mesh/_surfaces.py` (`warn_unregistered_walls`,
 `resolve_wall_conductors`), `mesh/mesher.py` (gated call).
+
+## DD-159 — String/tuple symmetry vocabulary, `Symmetry` class removed
+
+**Date:** 2026-08-14 (pre-v0.1.0-tag API break) — **Status:** shipped
+
+**Context.**  Every name in the boundary vocabulary is a plain string
+handed to `BoundaryConditions` — except the symmetry plane, which
+required a dedicated class import (`from magnelio.boundaries import
+Symmetry`).  Developer call: the class is a foreign body in an
+otherwise string-typed facade.
+
+**Decision.**  One declaration vocabulary, strings and tuples only
+(the last vocabulary change before v0.1.0):
+
+* `"SymmetryPEC"` / `"SymmetryPMC"` — symmetry plane **with domain
+  clip at position 0.0** (symmetry planes conventionally sit on the
+  global origin, so the common case needs no number);
+* `("SymmetryPEC", position)` — clip at the given world coordinate;
+* `"ForceSymmetryPEC"` / `"ForceSymmetryPMC"` — declaration only, no
+  clip: the geometry is already built as the half model (this is the
+  pre-DD-159 semantic of the bare `SymmetryP*` strings).
+
+The `Symmetry` class is deleted, not deprecated (no public release
+ever shipped it).  All parsing funnels through one private helper
+(`_parse_symmetry_value`); the internal normal form stays the
+`BoundaryConditions.symmetry` `{face: position_or_None}` map, so
+every `symmetry_entries()` consumer (mesher clip, DD-155 power
+scaling, monitors, mirroring, ParaView) and the project-store schema
+are untouched.  The resume recipe now collapses *all* symmetry forms
+to the physical wall type (previously bare `SymmetryP*` strings
+leaked verbatim into the recipe — latent inconsistency fixed).
+
+**Explicitly changed semantics:** a bare `"SymmetryPEC"`/
+`"SymmetryPMC"` used to mean "no clip"; it now clips at 0.0.  The
+as-built meaning moved to the `Force*` prefix.
+
+**Gates:** `tests/unit/test_symmetry_declaration.py` (bare string
+clips at 0.0, tuple position honoured, `Force*` does not clip,
+malformed tuples rejected loudly);
+`validation/symmetry_full_vs_half_certificate.py` and
+`validation/section_open_chain_guard_certificate.py` run on the new
+vocabulary.
+
+**Files:** `boundaries/boundary_conditions.py`,
+`boundaries/__init__.py`, `analysis/_recipe.py`, docstrings in
+`geo/__init__.py` / `mesh/mesher.py`.
