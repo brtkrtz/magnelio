@@ -4,6 +4,33 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
+## KB-015: ~~Open section chains book fantasy coverage — coax ports fall back to Mur under declared symmetry~~ — Resolved (DD-157, 2026-08-14)
+
+On a plane in the near-tangent band of a curved face of a
+tolerance-inflated Boolean union, `BRepAlgoAPI_Section` returns a
+mutilated edge set; the wire assembly accepted the resulting OPEN
+chains and the polygon consumers implicitly closed them — one
+13-point chain spanning both coax bores of the stripline coupler
+booked a bore-wall H face at 0.80 free instead of 0.19, broke the
+feed-chain slab invariance (defect 0.43) and sent both coax ports to
+modal Mur-1st.  Only the uncut full-model body triggered it, so it
+surfaced when DD-154 symmetry declarations replaced manual Boolean
+quarter cuts.  Fixed by the DD-157 closedness contract (open chains →
+nudge retry → loud drop).  Certificate:
+`validation/section_open_chain_guard_certificate.py`; gate:
+`tests/unit/test_geometry.py::TestSectionAtFace`.
+
+## KB-014: ~~A two-node phantom conductor shadows the real TEM mode~~ — Resolved (DD-156, 2026-08-14)
+
+An isolated PEC staircase fragment above a curved electrode's apex
+formed its own conductor group; its near-zero-gap TEM channel has an
+enormous C', sorts first in the capacitance-ordered channel basis and
+shadowed the real stripline mode at `n_modes=1` (reported z_line
+0.95 Ω instead of ~46 Ω).  Fixed by DD-156 label fusion: PEC-cell
+corner links decide which edge components are one conductor, without
+adding nodes.  Gate:
+`tests/unit/test_modal_factory_auto_conductors.py::TestSurfaceFragmentAbsorption`.
+
 ## KB-013: ~~A 50 nm domain-boundary offset sends every port channel to Mur~~ — Resolved (DD-151, 2026-08-13)
 
 OCCT Booleans on interpenetrating operands inflate the bounding box by

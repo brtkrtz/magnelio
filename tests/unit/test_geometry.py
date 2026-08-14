@@ -3406,20 +3406,23 @@ class TestSectionAtFace:
         """The behaviour that motivates the option — the seam eats area.
 
         *How much* it eats is not a contract.  A plane lying in a face
-        makes the plain section ill-posed, so what OCC returns there
-        moves with kernel settings: it dropped from half the strip to a
-        quarter when DD-146 stopped Booleans editing their operands.
-        Neither figure is the right answer — that the area comes back
-        short is the point, and it is why ``exact_at_faces`` exists.
-        No production caller takes this path on such a plane: plotting
+        makes the plain section ill-posed; historically what OCC
+        returned there moved with kernel settings (half the strip, a
+        quarter after DD-146 — implicitly closed partial chains,
+        neither the right answer).  Since the open-chain guard, such
+        chains are dropped with a warning instead of being implicitly
+        closed, so the plain path now comes back short *loudly* — and
+        that shortfall is why ``exact_at_faces`` exists.  No
+        production caller takes this path on such a plane: plotting
         opts in (DD-137) and the mesher re-takes degenerate planes a
         step to either side.
         """
         from magnelio.geo._occ_backend import cross_section_polygons
 
         _occ()
-        polys = cross_section_polygons(self._strip()._occ_shape(1.0), "z", 0.0, 1e-5)
-        assert 0.0 < self._area(polys) < 40e-6
+        with pytest.warns(UserWarning, match="open section chain"):
+            polys = cross_section_polygons(self._strip()._occ_shape(1.0), "z", 0.0, 1e-5)
+        assert (self._area(polys) if polys else 0.0) < 40e-6
 
     def test_exact_at_faces_recovers_it(self):
         from magnelio.geo._occ_backend import cross_section_polygons

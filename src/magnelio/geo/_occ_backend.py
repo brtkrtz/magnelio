@@ -781,7 +781,13 @@ def cross_section_polygons(
         solid from hole by the even-odd rule — a point is inside the
         region iff it lies within an odd number of contours — which is
         what ``classify_cells_from_cross_sections`` and the geometry
-        plot both use.
+        plot both use.  The signed-area consumer
+        (``compute_face_material_areas``) additionally relies on the
+        kernel's habit of pairing opposite windings on degenerate
+        tangency bands (their contributions cancel); every returned
+        contour is guaranteed CLOSED — open section chains mark a
+        degenerate plane and are re-taken a nudge away, never
+        implicitly closed (see ``_tessellate`` below).
     """
     plane_position = plane_position * scale
     deflection = max(deflection * scale, 1e-7)
@@ -815,15 +821,15 @@ def cross_section_polygons(
         raise ValueError(f"plane_normal must be 'x', 'y', or 'z'; got {plane_normal!r}")
     normal_dir, u_idx, v_idx = _normal_map[plane_normal]
 
-    # Position the plane origin on the normal axis
-    origin_coords = [0.0, 0.0, 0.0]
-    origin_coords[{"x": 0, "y": 1, "z": 2}[plane_normal]] = plane_position
-    plane = gp_Pln(gp_Pnt(*origin_coords), normal_dir)
-
     axis_idx = {"x": 0, "y": 1, "z": 2}[plane_normal]
-    if exact_at_faces and _plane_lies_in_a_face(shape, axis_idx, plane_position):
-        wires = _face_region_wires(shape, plane)
-    else:
+
+    def _wires_at(position: float) -> tuple[list, bool]:
+        """Section wires at *position* [scaled units]; ``(wires, from_faces)``."""
+        origin = [0.0, 0.0, 0.0]
+        origin[axis_idx] = position
+        pln = gp_Pln(gp_Pnt(*origin), normal_dir)
+        if exact_at_faces and _plane_lies_in_a_face(shape, axis_idx, position):
+            return _face_region_wires(shape, pln), True
         # Intersect shape with plane. SetRunParallel enables OCCT's own
         # internal multi-threading for the Boolean-operation kernel — the
         # computed intersection is unaffected, only its execution strategy;
@@ -833,10 +839,10 @@ def cross_section_polygons(
         section.SetRunParallel(True)
         keep_operands_intact(section)
         section.Init1(shape)
-        section.Init2(plane)
+        section.Init2(pln)
         section.Build()
         if not section.IsDone():
-            return []
+            return [], False
 
         section_shape = section.Shape()
 
@@ -848,7 +854,7 @@ def cross_section_polygons(
             explorer.Next()
 
         if not edges:
-            return []
+            return [], False
 
         # Group edges into separate closed wires (handles disjoint contours,
         # e.g. outer boundary + hole from a CSG difference).
@@ -870,46 +876,110 @@ def cross_section_polygons(
                         break
             if mw.IsDone():
                 wires.append(mw.Wire())
+        return wires, False
 
-    # Tessellate each wire using BRepTools_WireExplorer (respects topology)
-    polygons: list[np.ndarray] = []
-    for wire in wires:
-        points: list[tuple[float, float]] = []
-        we = BRepTools_WireExplorer(wire)
-        while we.More():
-            edge = we.Current()
-            curve = BRepAdaptor_Curve(edge)
-            reversed_edge = edge.Orientation() == TopAbs_REVERSED
-            discretizer = GCPnts_TangentialDeflection(
-                curve,
-                math.radians(5.0),
-                deflection,
-            )
-            n_pts = discretizer.NbPoints()
-            rng = range(n_pts, 0, -1) if reversed_edge else range(1, n_pts + 1)
-            for k in rng:
-                pnt = discretizer.Value(k)
-                coords = (pnt.X(), pnt.Y(), pnt.Z())
-                uv = (coords[u_idx], coords[v_idx])
-                if not points or (
-                    abs(uv[0] - points[-1][0]) > 1e-12 or abs(uv[1] - points[-1][1]) > 1e-12
-                ):
-                    points.append(uv)
-            we.Next()
+    def _tessellate(wires: list) -> tuple[list[np.ndarray], int]:
+        """Tessellated closed contours [scaled units] + open-chain count.
 
-        if len(points) >= 3:
+        A wire whose tessellated endpoints do not meet is an OPEN
+        chain: on a degenerate section (a plane in the near-tangent
+        band of a curved face of a tolerance-inflated Boolean solid,
+        ``BRepAlgoAPI_Section`` drops or mis-chains edges) the wire
+        builder happily returns partial chains, and implicitly closing
+        them books arbitrary coverage — measured: one 13-point chain
+        spanning both coax bores of a stripline coupler, booking the
+        complement of a bore-wall face and breaking the feed-chain
+        slab invariance behind the port.  Closedness is judged
+        against the tessellation scale and the contour perimeter, both
+        far above genuine vertex-tolerance seams.
+        """
+        closed: list[np.ndarray] = []
+        n_open = 0
+        for wire in wires:
+            points: list[tuple[float, float]] = []
+            we = BRepTools_WireExplorer(wire)
+            while we.More():
+                edge = we.Current()
+                curve = BRepAdaptor_Curve(edge)
+                reversed_edge = edge.Orientation() == TopAbs_REVERSED
+                discretizer = GCPnts_TangentialDeflection(
+                    curve,
+                    math.radians(5.0),
+                    deflection,
+                )
+                n_pts = discretizer.NbPoints()
+                rng = range(n_pts, 0, -1) if reversed_edge else range(1, n_pts + 1)
+                for k in rng:
+                    pnt = discretizer.Value(k)
+                    coords = (pnt.X(), pnt.Y(), pnt.Z())
+                    uv = (coords[u_idx], coords[v_idx])
+                    if not points or (
+                        abs(uv[0] - points[-1][0]) > 1e-12 or abs(uv[1] - points[-1][1]) > 1e-12
+                    ):
+                        points.append(uv)
+                we.Next()
+
+            if len(points) < 3:
+                continue
+            arr = np.array(points)
+            gap = float(np.hypot(*(arr[0] - arr[-1])))
+            seg = np.hypot(*(arr[1:] - arr[:-1]).T)
+            perimeter = float(seg.sum()) + gap
+            if gap > max(8.0 * deflection, 5e-2 * perimeter):
+                n_open += 1
+                continue
             # Remove closing duplicate
-            if (
-                abs(points[0][0] - points[-1][0]) < 1e-10
-                and abs(points[0][1] - points[-1][1]) < 1e-10
-            ):
-                points.pop()
-            if len(points) >= 3:
-                # Back to meters in one bulk divide (lossless: scale is
-                # a power of two; identity for scale = 1).
-                polygons.append(np.array(points) / scale)
+            if gap < 1e-10:
+                arr = arr[:-1]
+            if len(arr) >= 3:
+                closed.append(arr)
+        return closed, n_open
 
-    return polygons
+    # Nudge-retry: an open chain marks the section itself as degenerate
+    # at this position — re-take it a few tessellation lengths away
+    # (deterministic sequence, well below any cell size) rather than
+    # booking a fantasy contour.  A nudge that comes back EMPTY where
+    # the un-nudged section saw material is rejected too: it stepped
+    # clear off a feature thinner than the nudge (a sub-tessellation
+    # sliver), which would silently erase it.  The exact-in-face path
+    # keeps its position semantics: no nudge, open chains are dropped.
+    polygons_scaled: list[np.ndarray] = []
+    base_closed: list[np.ndarray] = []
+    base_seen_material = False
+    for nudge in (0.0, 4.0, -4.0, 8.0, -8.0):
+        wires, from_faces = _wires_at(plane_position + nudge * deflection)
+        polygons_scaled, n_open = _tessellate(wires)
+        if nudge == 0.0:
+            base_closed = polygons_scaled
+            base_seen_material = bool(polygons_scaled) or n_open > 0
+        if from_faces:
+            break
+        if n_open == 0 and (polygons_scaled or not base_seen_material):
+            break
+    else:
+        warnings.warn(
+            f"cross-section at {plane_normal}={plane_position / scale:.6g} m: "
+            f"open section chain(s) persisted through nudge retries; "
+            f"the open chains are dropped (the section is degenerate "
+            f"here — typically a plane in the near-tangent band of a "
+            f"curved face on a Boolean solid).",
+            UserWarning,
+            stacklevel=2,
+        )
+        polygons_scaled = base_closed
+        n_open = 0
+    if n_open and from_faces:
+        warnings.warn(
+            f"cross-section at {plane_normal}={plane_position / scale:.6g} m: "
+            f"{n_open} open face-region chain(s) dropped on the "
+            f"exact-in-face path.",
+            UserWarning,
+            stacklevel=2,
+        )
+
+    # Back to meters in one bulk divide (lossless: scale is a power of
+    # two; identity for scale = 1).
+    return [arr / scale for arr in polygons_scaled]
 
 
 class _PlanarSectionEngine:

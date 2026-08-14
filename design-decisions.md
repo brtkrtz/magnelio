@@ -10264,3 +10264,106 @@ warning).
 injection), `ports/_modal/band_dtbc.py` (`amplitude=`),
 `ports/_modal/factory.py` (mirror-twin warning),
 `monitors/flux.py` (aperture factor).
+
+## DD-156 — Conductor grouping: cell links fuse labels, never add nodes
+
+**Date:** 2026-08-14
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  The auto-derived conductor groups
+(`ports/_modal/auto_conductors.py`) walked the PEC *edge* graph
+alone; PEC-cell corner links were only a rescue for < 2 components.
+On a curved conductor the staircase edge graph can leave a sub-cell
+surface fragment disconnected from the conductor body (a u-edge above
+the apex whose connecting v-edges fall below the classifier
+threshold).  Grouped as its own "conductor", the fragment forms a
+phantom TEM channel across a near-zero gap whose enormous C' sorts
+FIRST in the capacitance-ordered channel basis and shadows the real
+mode at small ``n_modes`` — measured on the stripline-coupler ZL
+worksheet: ``z_line = 0.95 Ω`` reported instead of ~46 Ω, the phantom
+being a 2-node component a hair above the electrode apex (internal
+record: `investigations/section-open-chains/`).
+
+**Decision.**  The PEC-cell corner links of the port-adjacent slab
+are consulted unconditionally, but only to decide which edge-graph
+components belong to the same conductor (label fusion).  The
+conductor node sets stay those of the edge graph: adding cell-corner
+nodes would widen a staircased conductor and shift its line
+impedance (measured −10 % on the `test_modal_factory` coax fixture
+with full node merging — the reason the naive "merge everything"
+variant was rejected).  Distinct conductors cannot fuse: the
+mesher's feature-gap floor keeps them at least one non-PEC cell
+apart.  The under-resolved rescue (< 2 edge components) keeps the
+full merged node sets — there the cell graph is the only material
+source — and keeps its refine-the-mesh warning.
+
+**Gates:** `tests/unit/test_modal_factory_auto_conductors.py::
+TestSurfaceFragmentAbsorption` (a surgically isolated surface
+fragment is a phantom on the edge graph alone and joins its
+conductor under label fusion), plus the pre-existing extractor,
+fallback and parallel-plate pins (unchanged numbers).
+
+**Files:** `ports/_modal/auto_conductors.py`.
+
+## DD-157 — Section contours are closed or the plane is re-taken
+
+**Date:** 2026-08-14
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  `cross_section_polygons` grouped the section edges into
+wires and tessellated whatever came back; a wire that failed to close
+was implicitly closed by the polygon consumers.  On a plane in the
+near-tangent band of a curved face of a tolerance-inflated Boolean
+solid (the DD-106 shifted re-evaluation samples exactly such planes:
+``x = r ± deflection`` next to a bore tangent, with Boolean edge
+tolerances of ~43 µm), ``BRepAlgoAPI_Section`` returns a mutilated
+edge set; the implicit closure then books arbitrary coverage.
+Measured on the stripline coupler: a single open 13-point chain
+spanning both coax bores (69.6 mm start-to-end gap), booking a
+bore-wall H face at 0.80 free instead of 0.19 — and y-layer
+dependent, so the feed-chain mass slabs behind the coax port deviated
+by 0.43 and every channel fell back to modal Mur-1st.  The
+boolean-CUT quarter model sectioned cleanly, which is why the defect
+appeared only when the DD-154 symmetry declaration replaced the
+manual cut (internal record:
+`investigations/section-open-chains/MEASUREMENTS.md`).
+
+**Decision.**  Closedness is part of the section contract:
+
+* A tessellated wire whose endpoints miss by more than
+  ``max(8 · deflection, 5 % of the contour perimeter)`` is an OPEN
+  chain — never implicitly closed.  (Small genuine seams — vertex
+  tolerances, a dropped closing lid segment — stay far below 5 % and
+  keep the historical implicit closure.)
+* An open chain marks the *plane* as degenerate: the section is
+  re-taken at deterministic nudges ``±4, ±8 tessellation lengths``.
+  A nudge that comes back empty where the un-nudged plane saw
+  material is rejected too — it stepped clear off a feature thinner
+  than the nudge and would silently erase it.
+* If open chains persist, they are dropped with a `UserWarning` and
+  the closed subset of the un-nudged section is returned — a loud
+  shortfall instead of silent fantasy coverage.
+* The exact-in-face path (DD-137) keeps its position semantics: no
+  nudge, open face-region chains are dropped loudly.
+
+Explicitly NOT adopted: canonical even-odd re-winding of the
+returned contours.  The winding of a section contour remains
+meaningless by contract (consumers use the even-odd rule; the
+signed-area consumer relies on the kernel pairing opposite windings
+on degenerate tangency bands so their contributions cancel) — a
+prototype that re-wound contours by nesting depth changed the
+calibrated tangency-band bookkeeping and moved the coax
+``z_line_num`` from < 5 % to −10.7 % off the closed form.
+
+**Certificate:**
+`validation/section_open_chain_guard_certificate.py` — the full
+coupler union (the smallest body reproducing the mutilated section;
+every reduced variant sections cleanly) has consistent signed vs
+even-odd coverage on the offending plane and a y-invariant bore-wall
+M_μ column.  Gate:
+`tests/unit/test_geometry.py::TestSectionAtFace` (open chains on a
+seam plane warn and are dropped).
+
+**Files:** `geo/_occ_backend.py` (`cross_section_polygons`:
+`_wires_at` / `_tessellate` split, closedness test, nudge retry),
+`tests/unit/test_geometry.py`.

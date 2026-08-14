@@ -558,3 +558,98 @@ class TestParallelPlate:
             f"|Z_num - Z_anal| / Z_anal = {rel_err:.3f} (target < 0.10);"
             f" Z_num={z_num:.3f} Ω, Z_anal={z_anal:.3f} Ω"
         )
+
+
+class TestSurfaceFragmentAbsorption:
+    """Isolated PEC surface fragments must not become phantom conductors.
+
+    On a curved conductor the staircase edge graph can leave a handful
+    of flagged edges near the apex disconnected from the conductor
+    body (their connecting edges fall below the classifier threshold).
+    Grouped as its own "conductor", such a fragment forms a
+    near-zero-gap TEM channel with an enormous C' that sorts first in
+    the capacitance-ordered channel basis and shadows the real mode
+    (measured z_line 0.95 Ω instead of ~50 Ω on a curved-electrode
+    stripline).  The PEC-cell corner links restore the physical
+    connectivity, so the fragment joins the conductor it sits on.
+    """
+
+    @staticmethod
+    def _fragment_mesh():
+        """Rect-coax detection mesh with one isolated surface u-edge.
+
+        Cuts the flagged edges around one u-edge on the inner
+        conductor's top surface, leaving that edge as an isolated
+        two-node fragment in the PEC *edge* graph while the PEC cells
+        underneath still carry the conductor body.
+        """
+        import dataclasses
+
+        from magnelio._operators.curl import build_gradient_matrix
+        from magnelio.ports._modal.curl_curl_2d import build_2d_gradient
+
+        mesh, y0, z0, a = _rect_coax_mesh()
+        det = _detection_mesh(mesh)
+        plane = PortPlane.from_mesh(BoxFace.X_MIN, det)
+
+        g_3d = build_gradient_matrix(det.grid)
+        g_2d, _, primal_2d = build_2d_gradient(plane, det.grid, g_3d)
+        g = g_2d.tocsr()
+        pair_to_row = {}
+        for r in range(g.shape[0]):
+            nz = g.indices[g.indptr[r] : g.indptr[r + 1]]
+            if nz.size == 2:
+                pair_to_row[frozenset((int(nz[0]), int(nz[1])))] = r
+
+        # Local raster node = i_u * Nv_node + i_v; on X_MIN u = y, v = z.
+        Nv_node = plane.n_nodes_v
+        iu_mid = int(np.argmin(np.abs(det.grid.y - (y0 + a / 2))))
+        iv_top = int(np.argmin(np.abs(det.grid.z - (z0 + a))))
+        node_a, node_b, node_c, node_d = ((iu_mid + k) * Nv_node + iv_top for k in (-1, 0, 1, 2))
+        assert frozenset((node_b, node_c)) in pair_to_row
+
+        cut = [frozenset((node_a, node_b)), frozenset((node_c, node_d))]
+        for n in (node_b, node_c):
+            cut.append(frozenset((n, n - 1)))
+            cut.append(frozenset((n, n + 1)))
+
+        n_ex = det.Nx * (det.Ny + 1) * (det.Nz + 1)
+        n_ey = (det.Nx + 1) * det.Ny * (det.Nz + 1)
+        mask = det.pec_mask_edges.copy()
+        for pair in cut:
+            r = pair_to_row.get(pair)
+            if r is None:
+                continue
+            gidx = int(primal_2d[r])
+            if gidx < n_ex:
+                mask[0, gidx] = False
+            elif gidx < n_ex + n_ey:
+                mask[1, gidx - n_ex] = False
+            else:
+                mask[2, gidx - n_ex - n_ey] = False
+
+        det = dataclasses.replace(det, pec_mask_edges=mask)
+        plane = PortPlane.from_mesh(BoxFace.X_MIN, det)
+        return det, plane, (node_b, node_c)
+
+    def test_fixture_is_a_phantom_on_the_edge_graph_alone(self):
+        """Sanity: without cell links the fragment is its own group."""
+        from unittest import mock
+
+        from magnelio.ports._modal import auto_conductors
+
+        det, plane, fragment = self._fragment_mesh()
+        empty = (np.empty(0, dtype=np.int64), np.empty(0, dtype=np.int64))
+        with mock.patch.object(auto_conductors, "_pec_cell_corner_links", return_value=empty):
+            groups = extract_conductor_groups_from_mesh(plane, det)
+        assert len(groups) == 3
+        assert sorted(groups[-1].tolist()) == sorted(fragment)
+
+    def test_fragment_joins_its_conductor(self):
+        det, plane, fragment = self._fragment_mesh()
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            groups = extract_conductor_groups_from_mesh(plane, det)
+        assert len(groups) == 2
+        signal = set(groups[1].tolist())
+        assert set(fragment) <= signal

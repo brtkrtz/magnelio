@@ -17,14 +17,19 @@ component touching at least one bbox-lateral-wall node is placed first
 node count.  When no component touches the bbox walls (rare — typically
 "floating" geometries), the largest component is used as ground.
 
-When the PEC-edge graph yields fewer than two connected components, the
-detection falls back to the cell material of the port-adjacent cell
-slab (``material_id`` + ``Material.is_pec``): every PEC cell links its
-four corner nodes, and the merged edge+cell graph is regrouped.  This
-rescues conductors that are under-resolved on the conformal path (the
-sub-cell classifier's η threshold admits their edges even though the
-cell centres lie inside the conductor) and emits a :class:`UserWarning`
-instead of a hard error.
+Two material sources feed the grouping: the PEC *edge* mask carries
+the conductor node sets, and the corner links of PEC *cells* in the
+port-adjacent slab (``material_id`` + ``Material.is_pec``) decide
+which edge components belong to the same conductor — isolated
+staircase fragments on a curved conductor's surface would otherwise
+form phantom conductors.  The cell links fuse component labels only;
+they never add nodes to a conductor (that would widen staircased
+conductors and shift line impedances).  The exception is the
+under-resolved rescue: when the edge graph alone yields fewer than
+two components (a thin conductor whose edges pass the sub-cell
+classifier's η threshold while only its cell centres classify PEC),
+the merged node sets are used as the only material source, with a
+:class:`UserWarning` (refine the transversal mesh).
 
 This closes the gap between the high-level ``PortSpecMultiConductor``
 and a true OCC-cross-section discretisation: the user's ``Mesh`` already
@@ -143,30 +148,59 @@ def extract_conductor_groups_from_mesh(
     edges_a = edges_a[:n_kept]
     edges_b = edges_b[:n_kept]
 
-    comp_to_nodes = _connected_node_groups(edges_a, edges_b, n_2d_nodes)
+    comp_edges = _connected_node_groups(edges_a, edges_b, n_2d_nodes)
+    comp_to_nodes = comp_edges
 
-    if len(comp_to_nodes) < 2:
-        cells_a, cells_b = _pec_cell_corner_links(plane, mesh)
-        if cells_a.size:
-            merged = _connected_node_groups(
-                np.concatenate([edges_a, cells_a]),
-                np.concatenate([edges_b, cells_b]),
-                n_2d_nodes,
-            )
+    # PEC continuity through cell bodies: the edge graph alone can
+    # leave sub-cell fragments of a curved conductor's surface as
+    # separate components (a handful of edges above the apex whose
+    # connecting edges fall below the classifier threshold).  Such a
+    # fragment forms a phantom conductor with a near-zero gap — its
+    # phantom TEM channel has an enormous C', sorts FIRST in the
+    # capacitance-ordered channel basis, and shadows the real mode at
+    # small n_modes (measured z_line 0.95 Ω instead of ~50 Ω on a
+    # curved-electrode stripline).  The PEC-cell corner links decide
+    # ONLY which edge components belong to the same conductor (label
+    # fusion) — the conductor node sets stay those of the edge graph,
+    # so the Dirichlet sets of the mode solvers are unchanged wherever
+    # the edge graph was already whole (a cell-corner node without a
+    # PEC edge widens a staircased conductor and was measured to move
+    # a coax z_line by −10 %).  Distinct conductors stay distinct
+    # because the mesher's feature-gap floor keeps them at least one
+    # non-PEC cell apart.  Only the under-resolved rescue (< 2 edge
+    # components) books the full merged node sets — there the cell
+    # graph is the only material source — and warns.
+    cells_a, cells_b = _pec_cell_corner_links(plane, mesh)
+    if cells_a.size:
+        merged = _connected_node_groups(
+            np.concatenate([edges_a, cells_a]),
+            np.concatenate([edges_b, cells_b]),
+            n_2d_nodes,
+        )
+        if len(comp_edges) >= 2:
+            merged_label: dict[int, int] = {}
+            for lbl, nodes in merged.items():
+                for n in nodes:
+                    merged_label[n] = lbl
+            fused: dict[int, list[int]] = {}
+            for nodes in comp_edges.values():
+                fused.setdefault(merged_label[nodes[0]], []).extend(nodes)
+            comp_to_nodes = {lbl: sorted(nodes) for lbl, nodes in fused.items()}
+        else:
+            comp_to_nodes = merged
             if len(merged) >= 2:
                 warnings.warn(
                     f"port plane on {plane.face.value!r}: the PEC "
                     f"staircase-edge graph yields "
-                    f"{len(comp_to_nodes)} connected component(s); "
+                    f"{len(comp_edges)} connected component(s); "
                     f"fell back to cell-material (is_pec) grouping "
-                    f"({len(merged)} components).  This typically means "
-                    f"a conductor is under-resolved by the grid on the "
-                    f"port plane — consider refining the transversal "
-                    f"mesh there.",
+                    f"({len(merged)} components).  This typically "
+                    f"means a conductor is under-resolved by the grid "
+                    f"on the port plane — consider refining the "
+                    f"transversal mesh there.",
                     UserWarning,
                     stacklevel=2,
                 )
-            comp_to_nodes = merged
 
     if len(comp_to_nodes) == 0:
         raise ValueError(
@@ -253,7 +287,7 @@ def _pec_cell_corner_links(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Node–node links from PEC *cells* in the port-adjacent cell slab.
 
-    Fallback material source for under-resolved conductors (finding F2):
+    Second material source alongside the PEC edge mask (finding F2):
     on the conformal path the sub-cell classifier's η threshold can
     admit the edges of a thin conductor, while the cell centres still
     classify as PEC in ``material_id``.  Each PEC cell links its four

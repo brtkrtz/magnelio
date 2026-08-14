@@ -9,7 +9,11 @@ pre-v0.1.0 API break was the vocabulary unification DD-153
 time step comes from the measured spectral radius (DD-150, 17–34× on
 conformal meshes), degenerate conformal edges are frozen instead of
 pinning `dt` (DD-147/DD-149), and OCCT Booleans no longer edit their
-operand shapes (DD-146).  **No open entries in known-bugs.md.**
+operand shapes (DD-146).  Post-release-prep hardening (2026-08-14):
+section contours are closed by contract (DD-157) and conductor
+grouping fuses labels through PEC cell bodies (DD-156) — both found
+on the stripline-coupler worksheet.  **No open entries in
+known-bugs.md.**
 
 **Suite: 2081 passed / 6 skipped / 0 failed** (2026-08-13, GPU box —
 unit 1751 (+2 scikit-rf skips), integration 330 (+4 skips); GPU tests
@@ -54,6 +58,8 @@ changed, do not append.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-157** (2026-08-14) — section contours are closed or the plane is re-taken (nudge retry, loud drop); open chains on tangent-band planes of Boolean solids booked fantasy coverage and sent coax ports to Mur; closes KB-015.
+* **DD-156** (2026-08-14) — conductor grouping: PEC-cell links fuse component labels, never add nodes; kills phantom conductors from isolated staircase fragments; closes KB-014.
 * **DD-155** (2026-08-14) — full-model power semantics under symmetry: injection ×1/√(2^k), recorder ×√(2^k), flux ×2 per cutting plane.
 * **DD-154** (2026-08-13) — symmetry planes as boundary declarations; a declared `position=` clips the domain at mesh time, bit-exact vs the half model; full-model port impedances, mirrored plots, ParaView Reflect.
 * **DD-153** (2026-08-13) — one API vocabulary: `corners=`, `normal=`/`position=`, `name`, written-out radii, `PortAnalytical(family=)`, `from_ranges`; breaking, no shims.
