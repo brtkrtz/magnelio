@@ -1,0 +1,109 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "magnelio"
+version = "0.1.0"
+description = "Python library for full-wave 3D electromagnetic field simulation"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "LGPL-3.0-or-later" }
+# No contact address in the package metadata: PyPI publishes it verbatim
+# and a published release can never be edited.  Contact runs through the
+# issue tracker declared under [project.urls].
+authors = [
+    { name = "Bernd Breitkreutz" },
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+]
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.12",
+    "h5py>=3.10",
+    "vtk>=9.3",
+    "matplotlib>=3.8",
+    "numba>=0.59",
+]
+
+[project.urls]
+Homepage = "https://github.com/brtkrtz/magnelio"
+Repository = "https://github.com/brtkrtz/magnelio"
+Issues = "https://github.com/brtkrtz/magnelio/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov",
+    "ruff",
+    "mypy",
+    "pre-commit",
+]
+interop = [
+    "scikit-rf",
+]
+gpu = [
+    "cupy-cuda12x>=13.0",
+]
+docs = [
+    "sphinx>=7.0",
+    "myst-parser>=2.0",
+    "sphinxcontrib-bibtex>=2.6",
+    "pydata-sphinx-theme>=0.15",
+    "sphinx-gallery>=0.15",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
+filterwarnings = [
+    "ignore::DeprecationWarning:importlib._bootstrap",
+]
+
+[tool.pyright]
+pythonVersion = "3.11"
+reportMissingTypeStubs = false
+reportUnknownVariableType = false
+reportUnknownMemberType = false
+reportUnknownArgumentType = false
+reportUnknownParameterType = false
+reportAny = false
+reportUnusedCallResult = false
+reportMissingParameterType = false
+reportExplicitAny = false
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+# sphinx-gallery build output regenerated from examples/tutorials
+extend-exclude = ["docs/tutorials"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = [
+    "E741", # ambiguous names: l (length), I (current) are standard EM notation
+    "E731", # lambda assignment: idiomatic for short math closures in tests/scripts
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Component namespaces import names whose documented home is the top-level
+# __all__ (single-home invariant, validation/tools/check_api_surface.py).
+"src/magnelio/**/__init__.py" = ["F401"]
+# Example style: `from magnelio.constants import *` is part of the
+# documented user-facing idiom (constants has a curated 4-name __all__).
+"examples/**" = ["F403", "F405"]
+# Imports must follow pytest.importorskip / matplotlib.use("Agg").
+"tests/integration/test_conformal_convergence.py" = ["E402"]
+"tests/unit/test_plot_geometry.py" = ["E402"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["magnelio"]

@@ -1,0 +1,43 @@
+# Python build/runtime artefacts
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.mypy_cache/
+.ruff_cache/
+
+# Simulation output formats (regenerable)
+*.h5
+*.hdf5
+*.vtu
+*.vtk
+
+# Local environment and editor configuration
+.env
+*.~
+*~
+.vscode/
+.zed/
+.idea/
+pyrightconfig.json
+.ipynb_checkpoints/
+.claude/
+
+# cProfile dumps from benchmarks/profile_*.py (regenerable, binary)
+benchmarks/results/*.prof
+
+# Structure diagrams from validation/tools/draw_structure.py: regenerable,
+# and they change with every rename, so committing them is diff noise
+validation/results/structure/
+
+# Sphinx documentation build output
+docs/_build/
+
+# sphinx-gallery output (generated from examples/tutorials/)
+docs/tutorials/
+docs/sg_execution_times.rst

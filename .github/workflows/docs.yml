@@ -1,0 +1,44 @@
+name: Docs
+
+# Build the Sphinx documentation (sphinx-gallery executes all
+# tutorials, CPU-only: allow ~1 h) and deploy it to GitHub Pages.
+# Deployment on push is gated by the repository variable
+# DEPLOY_DOCS == 'true' so docs go live deliberately, not with the
+# first push; workflow_dispatch always runs.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || vars.DEPLOY_DOCS == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      # environment.yml (not pip): the geometry tutorials need
+      # pythonocc-core, which exists only on conda-forge.
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: environment.yml
+          init-shell: bash
+          cache-environment: true
+      - run: sphinx-build -b html docs docs/_build/html
+        shell: bash -el {0}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_build/html
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

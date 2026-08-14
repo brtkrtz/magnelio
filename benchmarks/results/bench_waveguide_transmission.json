@@ -1,0 +1,17 @@
+{
+  "case": "waveguide_transmission",
+  "date": "2026-08-09T21:43:24.333236+00:00",
+  "grid_cells": [
+    8,
+    8,
+    24
+  ],
+  "n_steps": 415,
+  "probe_z_mm": 12.0,
+  "probe_peak_Ex_Vm": 0.9995652362704277,
+  "t_peak_measured_ps": 437.26042841112564,
+  "t_peak_expected_ps": 440.02769142377826,
+  "timing_error_pct": 0.6288838331284801,
+  "timing_tolerance_pct": 10.0,
+  "passed": true
+}

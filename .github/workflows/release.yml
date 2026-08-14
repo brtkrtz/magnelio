@@ -1,0 +1,67 @@
+name: Release
+
+# Publish to PyPI on a version tag.  The PyPI project uses trusted
+# publishing (OIDC) with this workflow and the `pypi` environment —
+# keep both names in sync with the publisher registered on pypi.org.
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Guard — tag matches the package version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          if [ "$TAG" != "$VERSION" ]; then
+            echo "tag v$TAG does not match project version $VERSION" >&2
+            exit 1
+          fi
+      - run: pip install build
+      - run: python -m build
+      # The PyPI wheel is the geometry-less install path: importing
+      # magnelio must work without pythonocc-core (conda-forge only).
+      # A meta_path block makes any OCC import fail loudly instead of
+      # silently finding a leaked host install.
+      - name: Smoke-test the wheel in a clean venv, OCC blocked
+        run: |
+          python -m venv /tmp/smoke
+          /tmp/smoke/bin/pip install dist/*.whl
+          /tmp/smoke/bin/python - <<'EOF'
+          import sys
+
+          class BlockOCC:
+              def find_spec(self, name, path=None, target=None):
+                  if name == "OCC" or name.startswith("OCC."):
+                      raise ImportError("OCC blocked in smoke test")
+                  return None
+
+          sys.meta_path.insert(0, BlockOCC())
+          import magnelio
+
+          print("import OK without pythonocc:", magnelio.__version__)
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

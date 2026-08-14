@@ -1,0 +1,10266 @@
+# Magnelio – Design Decisions Log
+
+This document records architectural and implementation decisions with their rationale.
+New entries are appended.  Closed entries may be compacted to their
+decision/rationale/verdict essence, and superseded entries collapse to a
+tombstone (struck-through title + a few lines of what/why/where-to) — but DD
+numbers are never reused or deleted: they are the anchor system cited across
+src/, tests/ and the reference documents
+(gate: `validation/tools/check_dd_references.py`).
+
+Citations of the form `investigations/<topic>/…` (measurement dossiers:
+DERIVATION/MEASUREMENTS/FINDINGS records with their probe scripts) and
+`userscripts/…` (developer worksheets) refer to the maintainers' internal
+records, which are kept outside the public repository.  They remain in the
+text as provenance anchors: they name the evidence a decision rests on,
+even where the record itself is not shipped.
+
+---
+
+## DD-001 — CPML over UPML
+
+**Date:** 2026-03-09
+**Status:** Accepted
+
+**Decision:** Use Convolutional PML (CPML) as the absorbing boundary condition, not Uniaxial PML
+(UPML) or Berenger Split-Field PML.
+
+**Options evaluated:**
+| Option                  | Notes |
+|-------------------------|-------|
+| CPML                    | Selected |
+| UPML (Uniaxial PML)     | Requires modified constitutive relations throughout the PML region |
+| Berenger Split-Field PML| Increases number of field components, non-physical split |
+
+**Rationale:** CPML integrates directly into the standard FIT update equations via auxiliary
+convolution variables (ψ fields), without requiring globally modified Maxwell equations or
+coordinate stretching. Absorption performance is equivalent to UPML. Widely validated in open
+tools (openEMS, MEEP). Auxiliary field storage is localized to PML cells only.
+
+---
+
+## DD-002 — Structure-of-Arrays (SoA) field storage
+
+**Date:** 2026-03-09
+**Status:** Accepted
+
+**Decision:** Store E and H field components as six separate arrays (Ex, Ey, Ez, Hx, Hy, Hz),
+i.e., Structure-of-Arrays (SoA) layout.
+
+**Options evaluated:**
+| Option      | Notes |
+|-------------|-------|
+| SoA         | Selected — six separate arrays |
+| AoS         | Array of shape (Nx, Ny, Nz, 6) — poor vectorization |
+| Interleaved | Mixed layouts — complex index arithmetic |
+
+**Rationale:** SoA allows NumPy and CuPy to operate on entire field components in a single
+contiguous memory pass, maximizing cache utilization and vectorization. Staggered Yee shapes
+(e.g., Ex: (Nx, Ny+1, Nz+1) vs Hz: (Nx, Ny, Nz+1)) make a single-array AoS impractical
+without padding. SoA is the dominant convention in FIT/FDTD literature and open implementations.
+
+---
+
+## DD-003 — pythonocc-core as OCC binding
+
+**Date:** 2026-03-09
+**Status:** Accepted
+
+**Decision:** Use `pythonocc-core` (Python bindings to OpenCASCADE Technology) for CSG geometry
+operations and mesh-critical queries.
+
+**Options evaluated:**
+| Option          | Notes |
+|-----------------|-------|
+| pythonocc-core  | Selected — full OCCT API |
+| cadquery        | Higher-level; wraps pythonocc-core but abstracts away low-level queries |
+| build123d       | Similar to cadquery; even newer, smaller community |
+
+**Rationale:** Bounding-box extraction and face/edge intersection queries required for the
+grid-line generation algorithm need low-level OCCT API access (BRep_Builder, BRepBndLib,
+IntCurvesFace_ShapeIntersector). Higher-level wrappers (cadquery, build123d) hide these APIs.
+pythonocc-core is available on conda-forge and covers all required OCCT functionality.
+
+---
+
+## DD-004 — Python ≥ 3.11 requirement
+
+**Date:** 2026-03-09
+**Status:** Accepted
+
+**Decision:** Require Python 3.11 or newer.
+
+**Options evaluated:** Python 3.10, 3.11, 3.12
+
+**Rationale:** Python 3.11 provides `tomllib` in the standard library (useful for config files),
+meaningful performance improvements over 3.10 (10–60% faster in CPython benchmarks), and is
+broadly supported by all key dependencies (numpy, scipy, pythonocc-core on conda-forge).
+Python 3.12 was considered but narrows the user base with limited additional benefit at this stage.
+
+---
+
+## DD-005 — Explicit / Imperative API style
+
+**Date:** 2026-03-09
+**Status:** Accepted
+
+**Decision:** Adopt an explicit, imperative API style (object mutation, step-by-step calls) rather
+than a fluent builder or declarative DSL.
+
+**Options evaluated:**
+| Option               | Notes |
+|----------------------|-------|
+| Fluent / Builder     | Method chaining (`.set_bc().add_port().run()`) |
+| Explicit/Imperative  | Selected — objects created and mutated explicitly |
+| Declarative config   | YAML/TOML-driven — poor discoverability |
+
+**Rationale:** Explicit imperative code is consistent with NumPy/SciPy conventions familiar to
+the target audience. Each step is inspectable in a Jupyter notebook cell. Debuggers can set
+breakpoints between steps. No magic or hidden state mutations.
+
+---
+
+## DD-006 — Custom backend abstraction (get_xp pattern)
+
+**Date:** 2026-03-09
+**Status:** Accepted
+
+**Decision:** Implement a minimal custom backend abstraction (`get_xp()` returning `numpy` or
+`cupy`) rather than using a third-party compatibility layer.
+
+**Options evaluated:**
+| Option              | Notes |
+|---------------------|-------|
+| Direct numpy import | Non-switchable; blocks GPU path |
+| array-api-compat    | Full standard compliance; heavier dependency |
+| Custom wrapper      | Selected — minimal, sufficient for current scope |
+
+**Rationale:** With a NumPy-only backend, a thin `get_xp()` / `set_backend()` pattern
+is sufficient and zero-dependency. All numerical modules import `xp = get_xp()` instead of `np`.
+Migration to `array-api-compat` is straightforward when CuPy support is added.
+
+---
+
+## DD-007 — scipy.sparse.linalg.eigsh for eigenmode solver
+
+**Date:** 2026-03-09
+**Status:** Accepted
+
+**Decision:** Use `scipy.sparse.linalg.eigsh` (ARPACK wrapper) for both 2D and 3D eigenmode
+solvers.
+
+**Options evaluated:**
+| Option                   | Notes |
+|--------------------------|-------|
+| ARPACK via scipy (eigsh) | Selected |
+| LOBPCG                   | Better for very large problems; less mature in scipy |
+| Custom Lanczos           | Unnecessary complexity |
+| FEAST                    | Contour-integral method; requires external library |
+
+**Rationale:** `eigsh` is battle-tested, ships with SciPy (no extra dependency), and handles
+2D problems (typically < 100k DOF) with excellent performance. For 3D eigenmodes at
+moderate grid sizes, ARPACK is adequate. FEAST can be revisited later for large 3D problems.
+
+---
+
+## DD-008 — M_mu dual-cell convention (A_primal / l_dual)
+
+**Date:** 2026-03-10
+**Status:** Accepted
+
+**Decision:** M_mu[f] = μ₀ · μr · A_primal[f] / l_dual[f], not the inverse.
+
+For the Hx face (dual y-z face): `M_mu = μ₀ · μr · dy[j] · dz[k] / dx_avg`
+where `dx_avg = (dx[i-1] + dx[i]) / 2` is the dual edge length.
+
+**Options evaluated:**
+| Option                   | Notes |
+|--------------------------|-------|
+| A_primal / l_dual        | Selected — correct unit [H] (Henry = V·s/A) |
+| l_dual / A_primal        | Wrong unit [1/(H)] — initial erroneous implementation |
+
+**Rationale:** The FIT mass matrix M_mu represents inductance per H-face. The correct formula
+integrates the magnetic flux Φ = μ · H · A_primal over the primal face area and divides by the
+dual edge length l_dual (the path length over which the EMF is defined). The inverted formula
+l/A produces units of [1/H], causing eigenfrequencies to be off by a factor of Δ² (cell size
+squared), shifting resonances from GHz to MHz. This bug was detected and fixed in Session 3 by
+comparing a 10×8×6 mm cavity's computed TE101 mode against the analytical value (24.1 GHz).
+
+---
+
+## DD-009 — PEC boundary conditions in eigenmode solver via DOF submatrix extraction
+
+**Date:** 2026-03-10
+**Status:** Accepted
+
+**Decision:** Apply PEC boundary conditions in the 3D eigenmode solver by identifying
+tangential-E DOFs on PEC domain faces and extracting a reduced submatrix that excludes them,
+rather than using a penalty method or projection.
+
+**Options evaluated:**
+| Option                   | Notes |
+|--------------------------|-------|
+| DOF submatrix extraction | Selected — exact, no tuning required |
+| Penalty term             | Approximate; requires large penalty constant; can cause ill-conditioning |
+| Projection               | Iterative; works but adds complexity; equivalent to extraction for simple masks |
+
+**Rationale:** For an all-PEC cavity, the natural (Neumann) boundary condition of the
+variational formulation is PMC (H_tangential = 0), not PEC. Solving the full unreduced system
+therefore yields PMC-cavity modes, not the physically correct PEC modes. DOF elimination
+(extracting the submatrix of free DOFs) is the exact discrete analogue of the strong PEC BC
+E_tangential = 0, eliminates the null space entirely, and requires no penalty tuning. The free
+DOF mask is computed from `build_pec_mask_faces()` in `mesh/indexing.py`.
+
+---
+
+## DD-010 — ARPACK shift-σ estimation BC-aware (0.75 · λ₁_est)
+
+**Date:** 2026-03-10
+**Status:** Accepted
+
+**Decision:** Estimate the ARPACK shift parameter σ as `0.75 · λ₁_est` where λ₁_est is the
+estimated lowest eigenvalue ω₁², computed from the two longest domain dimensions and the
+boundary condition type on each axis.
+
+```
+k_n(axis) = π/L        (PEC–PEC: half-wave)
+           = π/(2·L)   (PEC–PMC or PMC–PEC: quarter-wave)
+           = 0         (PMC–PMC: no propagating mode → skip axis)
+
+λ₁_est = (c₀²/ε_r,max) · (k²_L1 + k²_L2)   (two longest axes with k > 0)
+
+σ = 0.75 · λ₁_est
+```
+
+**Options evaluated:**
+| Option                  | Notes |
+|-------------------------|-------|
+| Fixed σ (e.g., 1e20)    | Fails for varying grid sizes and BCs |
+| BC-naive heuristic      | Uses π/L for all axes regardless of BC; over-estimates σ for PMC BCs |
+| BC-aware heuristic      | Selected — accounts for half-wave vs quarter-wave per axis |
+| User-supplied σ         | Supported as override; falls back to heuristic if None |
+
+**Rationale:** The shift σ must satisfy λ₁/2 < σ < λ₁ to place it between the lowest and
+zero-frequency modes (null space), so that shift-invert ARPACK ("LM" mode) finds physical
+cavity modes before any spurious null-space modes. PMC boundaries on an axis double the
+effective wavelength (quarter-wave resonance) compared to PEC (half-wave), so a BC-naive
+estimate using π/L for all axes over-estimates σ and may place it above λ₁, causing ARPACK to
+converge to the wrong modes. The factor 0.75 provides a safe margin below λ₁ for any aspect
+ratio. If fewer than 2 axes have k > 0 (e.g., all-PMC box), a `ValueError` is raised with
+guidance to supply σ manually.
+
+---
+
+## DD-011 — ~~Discrete Port: soft-source injection~~ → Superseded by DD-030
+
+Additive soft source with matched-load convention (V_inc = V_src/2);
+replaced by DD-030's semi-implicit Thévenin loading, which owns the
+port-edge update instead of injecting past it.
+
+---
+
+## DD-012 — ~~Port2D: Hz dual formulation~~ → Deprecated (Port2D removed)
+
+Hz-dual EVP chosen to dodge the E-formulation gradient null space;
+the whole Port2D solver was removed with the Phase-2 modal pipeline
+(DD-040/DD-048), whose 2D operators are the 3D-restricted ones.
+
+---
+
+## DD-013 — PlaneWaveSource: TF/SF formulation with `attach(solver)` + split inject
+
+**Date:** 2026-03-11
+**Status:** Accepted
+
+**Decision:** Implement the plane-wave TF/SF source as a two-hook injection scheme:
+`inject_E(fields, t_E)` called after the E update, and `inject_H(fields, t_H)` called
+after the H update.  A one-time `attach(solver)` call in `FITTimeDomainSolver.setup()`
+caches the solver's `_beta_E`, `_beta_H`, grid, and snapped box indices.
+
+**Correction formulae (example: +z propagation, x-polarisation):**
+
+- **E-correction at z_min** (`k = iz0`): E-update for `Ex[i,j,iz0]` incorrectly used
+  `Hy[i,j,iz0-1]` from the SF region. Correction: `Ex[i,j,iz0] += β_E · Hy_inc(r, t_H)`.
+- **H-correction at z_min** (`k = iz0−1`): H-update for `Hy[i,j,iz0-1]` incorrectly
+  used `Ex[i,j,iz0]` from the TF region. Correction: `Hy[i,j,iz0-1] -= β_H · Ex_inc(r, t_E)`.
+- z_max, x_min/max, y_min/max faces follow the same pattern with signs determined by
+  which C / C^T term references the mismatched region.
+
+**Current restriction:** Axis-aligned propagation only (k ∈ {±x̂, ±ŷ, ẑ}).  Oblique
+incidence raises `NotImplementedError`.
+
+**Options evaluated:**
+| Option | Notes |
+|--------|-------|
+| Single `inject()` call between E and H | Cannot correctly time-stamp both corrections |
+| Split `inject_E` / `inject_H` hooks | Selected — matches leapfrog half-step timing exactly |
+| Hard-wire 1-D auxiliary FDTD for inc. field | Needed for oblique incidence; deferred |
+
+**Rationale:** The leapfrog scheme stores E at integer steps and H at half-steps.
+An E-correction needs H_inc at t − dt/2; an H-correction needs E_inc at t.
+Splitting into two hooks avoids any interpolation error and matches the existing
+CPML `update_E` / `update_H` pattern already used in `FITTimeDomainSolver`.
+
+---
+
+## DD-014 — I/O: HDF5 + VTK binary mode; cell-centre truncation for visualisation
+
+**Date:** 2026-03-11
+**Status:** Accepted
+
+**Decision:** A unified project directory format replaces the earlier separate
+`save_hdf5` / `load_hdf5` / `export_vtk` / `export_xdmf` functions:
+
+- **`save_project(path, mesh, ...)`** writes `data.h5` (HDF5 with all data),
+  `fields.xdmf` (ParaView descriptor), and optionally `geometry.stl`.
+- **`load_project(path)`** reads back the full state including live monitor objects.
+- Monitor field data is stored in XDMF row-major order `(n, nz, ny, nx)` so that
+  ParaView reads it directly; `load_project` transposes back automatically.
+- Schema version stored in `/metadata/project_schema_version`.
+- The standalone VTK export was removed — XDMF+HDF5 covers all ParaView use cases.
+
+**S-parameter zero-division:** `compute_sparameters` previously triggered a
+`RuntimeWarning` from NumPy's divide-by-zero even though the result was correctly masked
+by `np.where`.  Fixed by pre-masking the denominator before division.
+
+---
+
+## DD-015 — Waveguide benchmark: PlaneWaveSource timing metric; CPML and port limitations
+
+**Date:** 2026-03-11
+**Status:** Accepted
+
+**Context:** The `bench_waveguide_transmission.py` benchmark went through three failed
+designs before a working metric was found.
+
+**Approaches evaluated:**
+
+| Approach | Problem |
+|----------|---------|
+| `DiscretePort` S11 energy ratio | Z0=50 Ω ≠ η₀=377 Ω free-space impedance → S11 > 0 dB by definition; not a propagation quality metric |
+| `DiscretePort` in 3×3 mm PEC box | TE10 cutoff = c₀/(2a) = 50 GHz >> f_max=10 GHz; all modes evanescent; wave cannot propagate |
+| CPML residual-energy absorption | All-PEC (no CPML) box: CPML achieves only ~−3 dB/bounce in the current 8-cell layer; energy leaks back before the test window; not a reliable metric |
+
+**Decision:** Use `PlaneWaveSource` (TF/SF) injecting a Gaussian pulse into an all-PEC box,
+with a `FieldProbe` measuring peak arrival time at z = L_z/2.
+
+Acceptance criteria:
+1. `peak_Ex > 1e-4 V/m` — wave reached the probe.
+2. Timing error `|t_peak_measured − t_peak_expected| / t_peak_expected < 10 %` — numerical
+   phase velocity ≈ c₀ within FIT dispersion (0.2 % achieved with 1 mm cells).
+
+**Rationale:** This metric is insensitive to CPML quality, independent of port impedance
+matching, and directly tests that the TF/SF injection and FIT leapfrog propagate a wave at
+the correct phase velocity.  It serves as a combined integration test for `PlaneWaveSource`,
+`FieldProbe`, and `FITTimeDomainSolver`.
+
+---
+
+## DD-016 — Geometry: `GeometryModel` container + `BRepClass3d_SolidClassifier` for material filling
+
+**Date:** 2026-03-11
+**Status:** Accepted
+
+**Context:** `Mesh.from_geometry()` previously had a placeholder stub that filled all cells
+with air regardless of the CSG geometry.
+
+**Decisions:**
+
+1. **`GeometryModel` class** — thin ordered list wrapper (`add(shape)`, iteration, `bounding_box()`).
+   Accepted by `Mesh.from_geometry()` and `extract_critical_planes()` via the `__iter__` protocol,
+   so plain Python lists of shapes also work.
+
+2. **Material filling via `BRepClass3d_SolidClassifier`** — for each CSG shape, the cell
+   centres are tested against the OCC solid classifier:
+   ```python
+   classifier.Load(occ_shape)
+   classifier.Perform(gp_Pnt(x, y, z), tolerance)
+   state = classifier.State()   # TopAbs_IN or TopAbs_ON → inside
+   ```
+   Shapes are applied in insertion order; later shapes overwrite earlier ones (last-wins
+   semantics, same as `from_grid(regions=...)`).
+
+3. **OCC tests gated by `pytest.importorskip`** — all 30 OCC-dependent tests are
+   automatically skipped when `pythonocc-core` is not installed.  The 18 non-OCC tests
+   (class creation, material inheritance, `GeometryModel` API) always run.
+
+**Alternatives considered:**
+
+| Approach | Problem |
+|----------|---------|
+| AABB material filling for `from_geometry()` | Lossy for non-box shapes (sphere, cylinder, boolean ops) |
+| Ray-casting (custom) | Complex to implement correctly; OCC provides robust tested implementation |
+| Penalty shift (project to nearest face) | Not a volume classifier; ambiguous for complex BReps |
+
+**Limitation:** Point-in-shape loop is O(N_cells × N_shapes) with no spatial acceleration.
+Acceptable for current mesh sizes.  A BVH or OCC `BVH_Tree` wrapper can be added later.
+
+---
+
+## DD-017 — Thin PEC conductor: edge-mask via `apply_thin_pec_sheet()`
+
+**Date:** 2026-03-11 (revised 2026-03-11)
+**Status:** Accepted
+
+**Decision:** Model an electrically thin PEC metallization as an **edge mask** at a single
+grid-node plane, with no PEC volume cell and no extra cell layer.  The function
+`apply_thin_pec_sheet(mesh, axis, position, rect)` in `mesh/indexing.py` sets the
+`pec_mask_edges` bits directly for all tangential E-edges at the specified plane.
+
+For a microstrip trace of width *w* on a substrate of height *h* (sheet normal = y-axis):
+
+```
+apply_thin_pec_sheet(mesh, axis="y", position=h,
+                     rect=(x_trace_start, 0.0, x_trace_end, L))
+```
+
+**FIT model (axis="y", sheet at y = y[j_h]):**
+
+- Tangential directions: x and z.  Normal direction: y (Ey **not** affected).
+- `Ex[i, j_h, k]` for `x_c[i] ∈ [x_min, x_max]` and `z[k] ∈ [z_min, z_max]` → PEC
+  (flat index `i*(Ny+1)*(Nz+1) + j_h*(Nz+1) + k`)
+- `Ez[i, j_h, k]` for `x[i] ∈ [x_min, x_max]` and `z_c[k] ∈ [z_min, z_max]` → PEC
+  (flat index `i*(Ny+1)*Nz + j_h*Nz + k`)
+
+Only **one** `forced_plane` at `y=h` is needed in `MeshControl` (to snap the grid node
+to the substrate surface).  No PEC `Brick` in the geometry, no `y=h+t` plane.
+
+**Options evaluated:**
+| Option | Notes |
+|--------|-------|
+| Edge mask at one grid node (`apply_thin_pec_sheet`) | **Selected** — correct FIT model, no spurious cell layer |
+| One-cell PEC brick + forced_planes at y=h and y=h+t | Previous approach (DD-017 v1) — adds an extra grid plane, violates thin-sheet spirit |
+| Zero-thickness OCC face | OCC solids require non-zero volume; face-only BRep not classifiable by BRepClass3d |
+
+**Rationale:** A PEC Brick with non-zero thickness creates two forced planes and adds a cell
+layer, potentially degrading the mesh aspect ratio.  The edge-mask approach matches the FIT
+theory for a perfectly conducting sheet: tangential E-field components at the sheet plane are
+set to zero while the normal component is unaffected.  The mode solver reads
+`pec_mask_edges` when building its free-DOF lists, so it automatically sees the
+metallization.
+
+---
+
+## DD-018 — ~~Port2D S-parameter deembedding~~ → Deprecated (Port2D removed)
+
+Incident-amplitude tracking via excite_signal died with Port2D;
+power-wave a/b extraction lives in the modal recorder chain.
+
+---
+
+## DD-019 — Energy-based early stopping in `FITTimeDomainSolver`
+
+**Date:** 2026-03-11
+**Status:** Accepted
+
+**Decision:** Add an `energy_stop_db: float | None` parameter to `FITTimeDomainSolver`.
+When set, the solver monitors total electromagnetic energy every `energy_check_interval`
+steps (default 100) and terminates once:
+
+```
+E_total(t) < E_peak × 10^(−energy_stop_db / 10)
+```
+
+Total energy is computed as:
+```
+E_total = 0.5 · (M_eps · e² + M_mu · h²)     [scalar dot-products]
+```
+
+using the precomputed `M_eps` and `M_mu` diagonals stored in `setup()`.
+
+The solver also saves `_peak_energy` and `_actual_steps` for postprocessing diagnostics.
+
+**Options evaluated:**
+| Option | Notes |
+|--------|-------|
+| Fixed `total_time_steps` only | Simulation may terminate before energy decays (under-run) or waste time after (over-run) |
+| Energy-based adaptive stopping | Selected — standard practice in production FIT/FDTD codes (e.g. openEMS) |
+| Port-signal-based stopping | Requires FFT during run; more complex; misses stored energy in evanescent fields |
+
+**Rationale:** For wideband S-parameter extraction, the simulation must run until all
+transients have decayed to negligible amplitude. A fixed step count derived from
+`10 / f_max` may under-run for long structures or over-run for short ones.
+Energy monitoring at 10^(−25/10) ≈ −25 dB is the standard criterion in openEMS
+(`--energy-limit -25`) and matches user expectations.  The check every 100 steps
+adds negligible overhead (two dot products per check).
+
+---
+
+## DD-020 — ~~Port2D quasi-TEM Laplace solver~~ → Deprecated (Port2D removed)
+
+Port2D's 2D electrostatic Laplace path; the idea returned
+3D-consistently as ``solve_tem_laplace`` / ``solve_qtem_laplace``
+on the FIT-restricted operators.
+
+---
+
+## DD-021 — ~~Mur scalar ABC on modal-port faces~~ → Superseded (modal operators own port faces)
+Superseded by the modal port termination chain (DD-027 → DD-040 →
+DD-054/DD-055).  What survives is the face-closure mechanism it
+introduced: a bbox face hosting a modal port is exempted from the
+global PEC closure and the port operator owns that boundary (the
+`solver/fit_td.py` port-face masks cite this entry).  The entry text
+itself was never authored — tombstone reconstructed in session 147.
+---
+## DD-022 — ~~Port2D waveform~~ → Deprecated (Port2D removed)
+
+Gaussian (TEM) vs modulated-Gaussian (TE/TM) selection; survives as
+the ``ExcitationSpec.waveform`` choice of the modal factory.
+
+---
+
+## DD-023 — ~~Port2D modal E+H ABC~~ → Superseded by DD-027
+
+Full modal E+H absorbing condition at Port2D faces; folded into the
+modal Mur chain (DD-027) and ultimately the modal port operator
+(DD-040).
+
+---
+
+## DD-025 — Z_pi (power-current line impedance) for TEM modes
+
+**Date:** 2026-03-19
+**Status:** Accepted
+
+**Decision:** Compute and store the power-current line impedance `Z_pi` in `ModeResult` for
+TEM/quasi-TEM modes. TE/TM modes get `Z_pi = None`.
+
+**Context:** The existing `Z_wave = √(μ₀/(ε₀·ε_eff))` is the wave impedance (E/H ratio), not
+the characteristic line impedance (e.g. 50 Ω of a coaxial cable). `Z_pi` is needed for
+S-parameter normalisation and circuit matching.
+
+**Mathematics:** After Poynting normalisation (P = 1 W):
+- `Z_pi = V²/P = V²`
+- `V = |∫ E · dl|` along a path between conductors
+- For TEM modes E is curl-free (Laplace), so V is path-independent
+- All TEM impedance definitions coincide: `Z_pi = Z_pv = Z_vi = Z_char`
+
+**Implementation:**
+1. `ModeResult` gains `Z_pi: float | None = None` (backward-compatible default)
+2. `FITModeSolver._compute_zpi_tem()` integrates E along a straight v- or u-directed path
+   between the reference conductor (conductor 0) and the excited conductor
+3. `AnalyticalCoaxialSolver` sets `Z_pi = Z_char` directly (exact analytical value)
+4. `WaveguidePort` stores `_Z_pi_modes` alongside `_Z_modes`
+
+**Poynting normalisation fix:** For TEM modes in inhomogeneous media (e.g. microstrip),
+`_apply_poynting_norm` now accepts optional `mat_u`/`mat_v` arrays so each edge uses its
+local wave impedance `η(x,y) = √(μ₀/(ε₀·ε_r(x,y)))` instead of the area-averaged `Z_w`.
+Without this, Z_pi for a microstrip on RO4003 diverged from the Wheeler reference by ~25 %;
+with local η the error drops below 5 % at N=30.
+
+**Verification:** Parallel-plate Z_pi matches η₀·d/W within 5 %, stripline Z_pi < Z_wave,
+microstrip Z_pi converges to Wheeler within 5 % at N=30, TE modes return None.
+
+---
+
+## DD-026a — H-field storage + API extension for WaveguidePort (Phase A)
+
+**Date:** 2026-03-19
+**Status:** Implemented
+
+**Problem:** `WaveguidePort.interpolate_fields` only returned E-fields,
+`plot_mode_field` could not plot H-fields, and `ModeResult` did not store H-fields.
+For reference-grade waveguide ports, both field profiles must be available.
+
+**Decision — Phase A:** Derive H_t from E_t via the plane-wave impedance relation
+`H_t = (1/Z)(ẑ × E_t)`. This is exact for TEM and homogeneous-fill waveguide modes.
+
+**Implementation:**
+
+1. **ModeResult** extended with optional `h_t_u`, `h_t_v` fields (`None` default for
+   backward compatibility).
+
+2. **FIT eigenvalue solver** (TE/TM modes): After Poynting normalisation, computes
+   `h_t_u = -e_t_v / Z_w`, `h_t_v = e_t_u / Z_w` using the scalar area-averaged Z_w.
+
+3. **Laplace/TEM solver**: Uses per-DOF local impedance
+   `η(i,j) = √(μ₀/(ε₀·ε_r(i,j)))` from `mat_u`/`mat_v` arrays. H_u DOFs sit at
+   ev_free positions, H_v at eu_free positions.
+
+4. **AnalyticalCoaxialSolver**: Sets `h_t_u = [0.0]`, `h_t_v = [C_norm/η]` and
+   stores `_coax_C_h = C_norm/η` for `H_θ = C_h/r` interpolation.
+
+5. **`interpolate_fields`**: New `field="E"|"H"` parameter. H uses swapped DOF lists
+   (H_u on ev_free, H_v on eu_free). Inline fallback if `h_t_u is None`.
+
+6. **`attach_to_mesh`**: Builds `h_profiles = [(Z_m*e_eu, Z_m*e_ev)]` for ABC overlap.
+   `update_bc` uses pre-computed `h_profiles` instead of inline `Z_m * e_eu[loc]`.
+   Functionally equivalent in Phase A, but decoupled for Phase B.
+
+7. **Plotting** (`plot_waveguide_port.py`): `_fields_to_cell_centres`,
+   `sample_mode_on_grid`, `plot_mode_field`, `_select_field`, and `plot_mode_summary`
+   all accept `field="E"|"H"`. H-field staggering (H_u on Ev grid, H_v on Eu grid)
+   is handled correctly in cell-centre interpolation.
+
+**Phase B (DD-026b):** See below.
+
+**Verification:** 49 unit tests pass including:
+- `test_h_fields_populated`: h_t_u/h_t_v non-None after solve
+- `test_h_field_impedance_relation`: h_t_u ≈ -e_t_v/Z, h_t_v ≈ e_t_u/Z (rtol=1e-12)
+- `test_poynting_cross_product`: ∫(E_u·H_v - E_v·H_u) dA ≈ 1 W
+- `test_tem_h_fields`: TEM H-fields populated and non-trivial
+- `test_interpolate_fields_h`: field="H" returns correct values
+
+---
+
+### DD-026b — TM eigenvalue solver, β(f_ref), frequency-dependent Z_wave (Phase B)
+
+**Problem:** Phase A (DD-026a) uses η = √(μ₀/(ε₀·ε_eff)) as wave impedance for all
+modes. This is correct for TEM and at cutoff, but wrong for propagating TE/TM modes:
+- TE: Z_TE(f) = ωμ/β = η / √(1-(f_c/f)²) — higher than η
+- TM: Z_TM(f) = β/(ωε) = η · √(1-(f_c/f)²) — lower than η
+
+Additionally, the Hz-based EVP only finds TE modes. TM modes (E_z-based) were missing.
+
+**Solution (5 parts):**
+
+1. **TM Eigenwert-Solver** (`_solve_tm_evp`): Scalar E_z eigenvalue problem
+   -∇·((μ₀μ_r)⁻¹ ∇E_z) = ω_c² · ε₀ε_r · E_z, with Dirichlet E_z=0 on PEC nodes.
+   The 1/MU0 factor in the stiffness matrix ensures eigenvalues are ω_c² directly
+   (matching the TE EVP convention). Transversal E_t is reconstructed via
+   E_t = -∇E_z at free edge DOFs.
+
+2. **PEC node set extraction** (`_build_pec_node_set`): Factored out of
+   `_count_conductors` for reuse by both the conductor counter and TM EVP.
+
+3. **TE + TM mode merge**: `_solve_on_grid` now runs both the Hz-based TE EVP
+   and the E_z-based TM EVP, then merges and sorts by f_cutoff, keeping the
+   top n_modes_evp non-TEM modes.
+
+4. **β and Z_wave(f_ref)**: When `f_ref` is provided:
+   - β² = (ω_ref² - ω_c²) · μ₀ · ε₀ · ε_eff (evanescent if ≤ 0 → β=0)
+   - TE: Z_wave = ω_ref · μ₀ / β
+   - TM: Z_wave = β / (ω_ref · ε₀ · ε_eff)
+   - TEM: β = ω_ref · √(μ₀ · ε₀ · ε_eff), Z_wave unchanged (η)
+   When `f_ref=None` (default): Z_wave = η, β = None (Phase A behaviour).
+
+5. **ModeResult.beta**: New optional field storing the propagation constant at f_ref.
+   WaveguidePort gains `f_ref` parameter, passed through to solver.
+
+**Backward compatibility:**
+- `f_ref=None` (default) produces identical results to Phase A
+- TM modes now appear with `mode_type="TM"`. Since TM11 cutoff > TE10 cutoff,
+  existing tests with n_modes ≤ 3 in WR-90 are unaffected.
+
+**Verification:** 61 unit tests pass (49 existing + 12 new):
+- `test_tm11_cutoff`: TM11 in WR-90 matches analytical f_c = c/2·√(1/a²+1/b²) (<5%)
+- `test_te_tm_degenerate_square`: TE11/TM11 degenerate in square waveguide
+- `test_tm_poynting_norm`: TM mode Poynting integral ≈ 1 W
+- `test_beta_te_with_fref`: β matches √((ω²-ω_c²)·μ₀ε₀) (<2%)
+- `test_z_wave_te_with_fref`: Z_TE = ωμ/β at f_ref (<2%)
+- `test_z_wave_tm_with_fref`: Z_TM = β/(ωε) at f_ref (<2%)
+- `test_evanescent_beta_zero`: f_ref < f_c → β = 0
+- `test_backward_compat`: f_ref=None → Z=η, β=None
+
+---
+
+## DD-027 — ~~Modal Mur-ABC for waveguide ports~~ → Superseded by DD-040
+
+First-order Mur on the modal amplitude; superseded by the DD-040
+modal port operator (and later the exact DTBC, DD-054/DD-055) —
+modal Mur survives only as the analytical-path fallback branch.
+
+---
+
+## DD-028 — Feature-based mesh resolution (two-scale grading)
+
+**Date:** 2026-03-23, refined 2026-04-25
+**Status:** Accepted
+
+**Decision:** `Mesh.from_geometry()` uses **two independent cell-size scales** per
+axis:
+
+1. **`h_max`** (bulk, wavelength-based):
+   `h_max = λ_min / min_nodes_per_wavelength` — the global cap on cell size,
+   applies far from material interfaces.
+2. **`h_fine`** (interface, feature-based):
+   `h_fine = min_gap / min_cells_per_feature` — the cell size at material
+   interfaces, where `min_gap` is the smallest distance between adjacent critical
+   planes on any axis that has at least 3 critical planes.
+
+Crucially, **`h_fine` applies only locally** (cells touching material interfaces).
+Between `h_fine` at interfaces and `h_max` in the bulk, cells grow geometrically
+by `growth_factor`.
+
+**Problem (initial, 2026-03-23):** Without feature-based resolution, geometries
+with small features relative to the wavelength were severely under-resolved. Example:
+rect-coax with 2 mm inner conductor at f_max=10 GHz (λ_min=20.7 mm in PTFE): only
+2 cells across the inner conductor, causing S11=0 dB at DC (total reflection).
+
+**Initial fix (2026-03-23):** Added the feature rule and combined it with the
+wavelength rule via `h_target = min(h_wavelength, h_feature)`, applied globally.
+Plus a "cell-size cap" guard that fell back to uniform spacing whenever any
+graded cell exceeded `h_target`.
+
+**Problem with the initial fix:** `min(h_wavelength, h_feature)` was applied
+**globally** — a single 1.27 mm coax-inner gap forced 0.32 mm cells across the
+entire 60 mm bulk waveguide, ~10× more cells than the wavelength criterion
+required. The cell-size cap also disabled all grading in long intervals (max_step
+inevitably > h_target after a few growth steps).  The boundary-grading unit tests
+"passed" only by floating-point luck (cell_at_wall = 4.000000000000002e-04 vs
+3.999999999999996e-04), hiding the broken behaviour.
+
+**Refined fix (2026-04-25):** Split `h_target` into two parameters passed
+separately to `_generate_axis_lines`:
+
+* Per interval, cells start at `h_fine` next to material interfaces and grow by
+  `growth_factor` toward `h_max`.
+* Boundary intervals use `_grade_then_uniform`: ramp from `h_fine` at the
+  interior interface, uniform fill with `h_max` toward the domain wall. The
+  ramp's last cell is retargeted in a single pass so its size matches
+  `h_uniform · g`, eliminating the back-step at the ramp/uniform boundary.
+* Interior intervals use `_grade_symmetric_to_uniform`: symmetric ramps from
+  both ends, uniform middle. Short intervals fall back to legacy
+  `_graded_subdivision` for clean ratio-`g` cells.
+* Tiny remainders (rest < 0.5·h_max) are absorbed into the last ramp cell
+  rather than spawning a mini-cell that would create a backward jump.
+* `from_geometry`: `h_max = h_wavelength` (never reduced); `h_fine =
+  min(h_wavelength, h_feature)`.
+
+**Parameter:** `MeshControl.min_cells_per_feature: int = 4` — minimum cells
+across the smallest geometry gap. Set to 0 to disable feature-based refinement.
+
+**Industry practice:** mainstream time-domain solvers default to 3–4 cells
+per feature; FEM-based tools use adaptive refinement with similar geometric
+constraints. openEMS recommends ≥3 cells per feature in its documentation.
+
+**Bug fix (2026-03-23):** `extract_critical_planes()` in `occ_backend.py` was
+not iterating over `GeometryModel` shapes — it treated the entire model as a
+single shape and only extracted its overall bounding box. Fixed: `list(geometry)`
+when iterable.
+
+**Verification:**
+
+* Rect-coax (a=2mm, b=10mm) with default `MeshControl()` at 10 GHz: Nx=20
+  (uniform, all cells ≤ h_target). S11 < −50 dB, energy converges.
+* WR-90 / coax transition (60 mm bulk, 1.27 mm inner-conductor gap) at
+  f_max=12.4 GHz: before refinement 923 520 cells, mesh build 527 s, dx
+  uniform 0.32 mm; after refinement ~33 000 cells, mesh build ~60 s, dx 0.32–
+  ~2 mm with grading, max consecutive cell ratio 1.30 (= growth_factor) on
+  boundary intervals.
+
+## DD-029 — ~~Port grid independence~~ → Superseded by DD-048
+
+Reframed as the reference-mode path of DD-048's two-path
+architecture (the drive mode must be an eigenvector of the actual
+FIT-TD operator; only the *reference* mode is mesh-independent).
+
+---
+
+## DD-030 — DiscretePort: semi-implicit Thévenin + update_bc integration
+
+**Date:** 2026-04-02
+**Status:** Accepted (supersedes DD-011)
+
+**Decision:** Replace the soft-source `DiscretePort` with a semi-implicit Thévenin lumped
+port that integrates with the `update_bc` / `SignalRecorder` pipeline used by
+`TransientAnalysis`.
+
+### Key changes from DD-011
+
+| Aspect | DD-011 (old) | DD-030 (new) |
+|--------|-------------|--------------|
+| Definition | `position` + `direction` | `start` + `end` (two points) |
+| Impedance model | None (soft source) | Semi-implicit Thévenin (single lumped element) |
+| Solver integration | Legacy `inject_E` / `sample` | `update_bc` (same as WaveguidePort) |
+| S-parameter pipeline | Own `s11()` method | `TransientAnalysis` + `SParameterResult` |
+| Multi-edge | No | Yes (arbitrary number of edges along one axis) |
+
+### Physics
+
+The port acts as a **single lumped circuit element** across all its edges.  After the
+standard E-update, the port reads the total voltage and applies a semi-implicit Thévenin
+correction:
+
+```
+V_total = Σ E_k · dl_k                    (total voltage from standard update)
+β_sum   = Σ beta_E_k                      (electromagnetic cell impedance [Ω])
+I_port  = (V_src − V_total) / (Z0 + β_sum)  (semi-implicit lumped current)
+ΔE_k    = beta_E_k · I_port / dl_k        (same I_port at every edge — series circuit)
+```
+
+The effective port impedance is `Z0 + β_sum`, which is always positive → unconditionally
+stable.  For typical meshes `β_sum ≫ Z0`, so the port behaves as a nearly-transparent
+source.  The `Z0` term provides physically correct absorption at the port.
+
+Wave amplitudes (matched-load convention, unchanged from DD-011):
+```
+a = V_src / 2,   b = V_corrected − V_src / 2
+V_corrected = V_total + I_port · β_sum
+```
+
+### Options evaluated
+
+| Option | Notes |
+|--------|-------|
+| Distributed impedance (`M_sigma_port_k = L/(Z0·dl_k)`) per edge | Rejected — over-damps multi-edge ports; each edge independently absorbs, `V_total → 0` as `N → ∞` |
+| Explicit post-correction (`I = (V_src − V)/Z0`) | Rejected — unstable when `β_sum > Z0` (typical case) |
+| **Semi-implicit** (`I = (V_src − V)/(Z0 + β_sum)`) | Selected — stable, self-consistent, correct single- and multi-edge limit |
+
+### Encapsulation
+
+The solver passes its coefficient arrays (read-only) via `read_solver_coefficients()`.
+The port stores `beta_E` values at its edges but does **not modify** any solver state.
+
+**Applies to:** `port_discrete.py`, `fit_td.py` (5-line hook in `setup()`).
+
+---
+
+## DD-031 — ~~PML-backed waveguide ports with multi-mode S-parameters~~ → Superseded by DD-040
+
+CPML-terminated port faces with dual E-overlap mode extraction;
+superseded by the DD-040 modal operator after the x/y-face
+instability (BUG entry below) and the cost of the PML slab.
+
+---
+
+## BUG — PML-backed waveguide ports unstable on x/y-axis faces
+
+**Date:** 2026-04-05
+**Status:** Fixed
+
+**Root cause:** All four CPML convolutional corrections for `axis="y"` in
+`cpml.py` had flipped signs (`+=` instead of `-=` and vice versa).  The curl
+equations cycle as x→y→z→x; the y-axis code was written by analogy to z-axis
+but applied the signs to the wrong tangential components (Ex instead of Ez and
+vice versa), causing the PML to amplify instead of absorb.
+
+**Fix:** In `update_E` y-axis: `Ex += …` → `Ex -= …`, `Ez -= …` → `Ez += …`.
+In `update_H` y-axis: `Hx -= …` → `Hx += …`, `Hz += …` → `Hz -= …`.
+The x-axis code was verified correct by derivation from Maxwell's curl equations.
+
+---
+
+## DD-032 — Three-tier solver kernel dispatch and GPU backend
+
+**Date:** 2026-04-11
+**Status:** Accepted (GPU path untested — CuPy not yet installed)
+
+**Decision:** Replace the single sparse-matvec solver loop with a three-tier kernel dispatch
+and make the entire solver pipeline backend-agnostic (NumPy / CuPy).
+
+**Kernel tiers (fastest first):**
+
+| Tier | Function | Backend | Temp buffers | How it works |
+|------|----------|---------|-------------|--------------|
+| 1 | `update_E_fused` / `update_H_fused` | Numba CPU | None | `@njit(parallel=True)` — fused curl + material multiply in one pass per component. Boundary E-edges handled via conditional accumulation. |
+| 2 | `update_E_stencil` / `update_H_stencil` | CuPy GPU or NumPy | 6 curl buffers | Uses only `+=`, `-=`, `[:] =` slice ops — compatible with any array backend. GPU path: CuPy translates these to CUDA kernels. |
+
+**Selection logic:** `setup()` checks `get_xp()`. GPU → always tier 2 (Numba cannot operate on
+CuPy device arrays). CPU → tier 1 if Numba available, else tier 2.
+
+**GPU data flow:**
+- Fields allocated on GPU via `FieldState.zeros(xp=cupy)`.
+- Material coefficients and PEC index arrays computed on CPU in `setup()`, then transferred
+  once via `xp.asarray()`.
+- PEC/CPML boundary conditions use slice assignments — CuPy-compatible.
+- Energy monitoring uses `@` operator (returns Python float via implicit device→host scalar copy).
+- CPML auxiliary arrays remain on CPU in this version (implicit transfers per step).
+  Full GPU-native CPML is a follow-up.
+
+**Performance results (CPU, xlarge 1.6M cells / 11201 steps):**
+
+| Phase | Solve time | Speedup vs baseline |
+|-------|-----------|---------------------|
+| Baseline (sparse CSR matvec) | 2432s | 1× |
+| + Flat FieldState + in-place ops | 1211s | 2× |
+| + Matrix-free numpy stencils | 347s | 7× |
+| + Numba fused kernels + PEC int-idx | 134s | 18× |
+
+At 1.6M cells, the CPU solver is now memory-bandwidth-limited (~40 GB/s DDR4).
+GPU (RTX 4070 Super, ~504 GB/s GDDR6X) is projected to yield ~12× additional speedup.
+
+**Rationale:** FDTD is bandwidth-bound (arithmetic intensity ~2 FLOP/byte). Adding CPU threads
+beyond what Numba's `parallel=True` already provides cannot exceed the memory bus. GPU has 10–25×
+higher memory bandwidth than DDR4/DDR5, making it the natural next step. The CuPy drop-in approach
+avoids a separate CUDA codebase while still enabling GPU acceleration for the entire solver loop.
+
+---
+
+## DD-033 — Scalable 3D eigenmode solver: evaluated approaches
+
+**Date:** 2026-04-11
+**Status:** Accepted (iterative approaches evaluated and rejected)
+
+**Problem:** The ARPACK `eigsh` shift-invert path builds the full sparse matrix
+`A = C^T diag(M_mu_inv) C` and factors `(A - σB)` via SuperLU.  Both steps are O(n^1.5)
+to O(n^2) for 3D problems and become the bottleneck above ~50k cells.
+
+**Current solution:** ARPACK + SuperLU remains the production backend.  Works
+reliably up to ~100³ grid cells.  SciPy's default COLAMD reordering provides
+good factorisation performance without explicit configuration.
+
+**CurlCurlOperator** (`operators/curl_curl_operator.py`): Matrix-free operator applying
+`A @ x = C^T diag(M_mu_inv) C @ x` via stencil operations (`curl_e_stencil` → M_mu_inv
+multiply → `curl_h_stencil`).  Operates in the PEC-free DOF subspace. Pre-allocates 9
+workspace buffers.  Verified bit-exact against explicit sparse matrix in unit tests.
+Retained for future GPU solvers.
+
+**LOBPCG folded-spectrum backend** (`solver="lobpcg"`, experimental):
+PEC cavities have a large gradient null space (~N³ modes with eigenvalue 0).  Naive
+LOBPCG with `largest=False` finds these trivial modes first.  The folded-spectrum
+transformation `S_std² y = μ y` with `S_std = B⁻½(A/σ−B)B⁻½` maps modes near σ to
+the smallest μ = (λ/σ−1)² while the null space folds to μ ≈ 1.  The B⁻½ absorption
+into the operator avoids B-orthogonalisation issues from small M_ε entries (~10⁻¹⁴).
+True eigenvalues are recovered via the Rayleigh quotient on the original (A, B) pair.
+
+Evaluated and rejected approaches for null-space elimination:
+- Tree-cotree gauging: PEC restriction breaks de Rham exactness → spurious modes
+- Gradient regularisation A + α·G·Gᵀ: ILU singular (GGᵀ is graph Laplacian),
+  Jacobi amplifies null space by O(α/diag(A)) ≈ O(10¹⁴)
+- Direct LOBPCG + AMG on free subspace: failed to converge (200 iterations)
+
+Current limitation: unpreconditioned LOBPCG is ~75× slower than ARPACK+SuperLU at
+2800 cells and achieves only ~2% accuracy (vs. 0.2% for ARPACK).  A Maxwell-specific
+preconditioner (e.g. AMS from hypre, or subspace correction with the gradient operator)
+would be needed to make LOBPCG competitive.  Not auto-dispatched; retained for
+experimental use and as foundation for future GPU solvers.
+
+**ILU-GMRES evaluated and rejected:**
+- `spilu` fails with "Factor is exactly singular" for fill-reducing orderings (MMD,
+  COLAMD) on the indefinite shifted matrix (A−σB)
+- `NATURAL` ordering produces a valid ILU but GMRES doesn't converge (ILU quality
+  too poor for the indefinite system — 9.6× fill yet wrong eigenvalues)
+
+**pyamg AMG-CG evaluated and rejected:**
+An AMG-preconditioned CG inner solve for the shifted system (A−σB) was implemented
+and benchmarked using pyamg's smoothed-aggregation solver.  Results:
+
+| Grid | n_free | AMG-CG [s] | SuperLU [s] | Ratio |
+|------|--------|-----------|-------------|-------|
+| 10×7×5 | 762 | 1.7 | 0.2 | 9× slower |
+| 20×13×10 | 6,663 | 29 | 1.4 | 20× slower |
+| 30×20×15 | 24,365 | 1,139 | 36 | 32× slower |
+
+AMG gets **worse** with increasing mesh size: CG iteration counts grow instead of
+staying constant, indicating that pyamg's scalar SA-AMG does not achieve mesh-independent
+convergence for the vector-valued Maxwell curl-curl operator.  Tested configurations:
+- Default Jacobi smoother (best: 162 CG iters at 6.6k DOFs)
+- Gauss-Seidel smoother (worse: 246 iters)
+- Near-null-space vectors (3 constant-field columns): diverged
+- W-cycle: no improvement
+
+Root cause: pyamg's smoothed-aggregation AMG is designed for scalar elliptic problems.
+The curl-curl operator's vector-field structure requires Maxwell-specific AMG approaches
+(e.g., Auxiliary-Space Maxwell Solver from hypre) which pyamg does not implement.
+
+The AMG-CG path is retained as `solver="arpack-amg"` for experimental use but is not
+auto-dispatched.  Inner tolerance: rtol=1e-8 (looser values produce wrong eigenvalues
+because scipy's ARPACK wrapper does not support inexact shift-invert).
+
+**CHOLMOD Cholesky evaluated (experimental):**
+Approach: tree-cotree gauging eliminates the gradient null space, making the cotree system
+positive definite → CHOLMOD Cholesky factorisation of (A_ct − σ·B_ct).
+
+Implementation:
+- `build_gradient_matrix(grid)` added to `operators/curl.py`: discrete gradient G (nodes→edges),
+  verified C·G = 0 (de Rham exactness).
+- Tree-cotree via BFS on PEC-component-collapsed super-node graph.  Union-Find identifies
+  PEC-connected node groups.  Tree size = dim(ker(A_f)) exactly.
+- Sigma estimation bug fixed: was using two LARGEST k² terms (giving σ > ω₁² for non-cubic
+  cavities), corrected to two SMALLEST k² terms.
+
+Results: tree-cotree gauging correctly eliminates the null space (A_cotree is PD), but the
+gauging introduces **spurious low-frequency modes** (artifacts from constraining tree-edge
+DOFs to zero).  These modes have eigenvalues well below the physical spectrum (e.g., 5e20
+vs. ω₁²=3.2e21 for 30×20×15mm cavity).  Consequently (A_ct − σ·B_ct) remains indefinite
+whenever σ exceeds the lowest spurious eigenvalue — which it typically does for auto-estimated
+σ.  This is a known limitation of tree-cotree in eigenvalue (as opposed to source) problems.
+
+Also evaluated and rejected:
+- Gradient regularisation (A + α·G_f·G_fᵀ): PEC restriction breaks de Rham (C_f·G_f ≠ 0),
+  so G_f·G_fᵀ perturbs physical modes by 10–100%.
+- Diagonal beta shift (CHOLMOD beta parameter): gradient modes contaminate ARPACK spectrum
+  at all β values (physical and shifted-gradient modes have similar ARPACK θ values).
+
+The CHOLMOD path is retained as `solver="arpack-cholmod"` for cases where an explicit small
+σ is provided, but is not recommended for general use.
+
+**GPU shift-invert via CuPy evaluated and rejected (2026-07-18, session 111,
+`benchmarks/profile_eigenmode_shift_invert.py`):**
+Measured on a vacuum PEC cube (k=9, RTX 4070 SUPER, 16-core host), stage-split
+via an instrumented `OPinv` passed to scipy `eigsh`:
+
+| Grid | n_free | assembly | SuperLU factor | ARPACK (33 solves) | factor share |
+|------|--------|----------|----------------|--------------------|--------------|
+| 30³ | 75,690 | 0.15 s | 63.7 s (fill 215×, 2.5 GB) | 4.9 s | 93 % |
+| 40³ | 182,520 | 0.35 s | 629 s (fill 365×, 10 GB) | 15.6 s | 98 % |
+
+Two independent rejection grounds:
+1. cupyx `splu`/`factorized` compute the LU **on the CPU by design** (their
+   docstrings state the decomposition is not GPU-accelerated; only the
+   triangular solves run on device via cuSPARSE `spsm`).  The factorisation is
+   93–98 % of total time → nothing that dominates can move.
+2. The triangular solves that *do* move are **~74× slower on the GPU**:
+   125 ms/solve CPU vs 9,247 ms GPU on the identical N=30³ factors —
+   device-resident timing 9,246 ms, so transfers are irrelevant; the 215×-fill
+   factors' sequential dependency chains defeat `spsm` level scheduling.
+   Solutions agree to 5e-14; ARPACK end-to-end 4.5 s CPU vs 305 s GPU-OPinv.
+
+The iterative route (GPU matvecs through the xp-agnostic CurlCurlOperator) was
+not re-measured: it fails on this DD's already-measured convergence wall (no
+Maxwell preconditioner), which a GPU does not change.  cuSOLVER `csrlsvqr`
+(cupyx `spsolve`) refactorises per RHS — rejected by construction.
+
+**Future scaling options** (not yet implemented):
+1. PARDISO/MUMPS: symmetric indefinite LDLᵀ factorisation — drop-in replacement for SuperLU
+   with ~2× speedup.  Requires pypardiso or python-mumps (not currently installed).
+2. hypre AMS via PETSc: Maxwell-specific AMG, mesh-independent convergence.
+   Heavy dependency (MPI, PETSc, hypre).
+3. ~~GPU shift-invert via CuPy + CurlCurlOperator~~ — evaluated and rejected
+   2026-07-18, see above.  The genuine GPU direct-sparse candidate would be
+   NVIDIA cuDSS (multifrontal factorisation on device); no binding in our
+   stack, unevaluated.
+
+---
+
+## DD-034 — Conformal Material Matrices
+
+**Date:** 2026-04-12
+**Status:** Accepted (Phase 1–4 implemented)
+
+**Decision:** Replace staircase-only material filling with a unified cross-section pipeline
+that (a) assigns cell materials via 2D point-in-polygon on OCC cross-section polygons and
+(b) computes area-weighted effective ε_r on dual faces at material boundaries.
+
+**Options evaluated:**
+| Option                          | Notes |
+|---------------------------------|-------|
+| Cross-section polygon clipping  | Selected — O((Nx+Ny+Nz)·N_shapes) OCC calls |
+| Per-cell point-in-shape (OCC)   | Previous approach — O(Nx·Ny·Nz·N_shapes), very slow |
+| Sub-cell sampling / Monte Carlo | Inaccurate for thin features, no polygon reuse |
+| Analytic surface integration    | Over-complex for general OCC shapes |
+
+**Rationale:** FIT material matrices are integrals over dual/primal faces:
+`M_eps[e] = (1/dl) · ∫_Ã ε(r) dA`.  For cells at material boundaries, the staircase
+approximation (binary assignment) converges as O(h).  Area-weighted averaging of ε_r
+over the actual material polygons on the dual face recovers O(h²) convergence.
+
+The cross-section pipeline serves dual purpose: (1) cell classification via point-in-polygon
+on cross-section polygons replaces `point_in_shape()`, cutting OCC calls from ~5M to ~1.5k
+for a 100³ mesh; (2) polygon clipping against dual-face rectangles yields conformal fractions.
+
+**Key design choices:**
+- **NaN-sentinel dense array:** `ConformalData.effective_eps_r` is NaN where staircase applies,
+  enabling vectorized `np.where(isnan, staircase, conformal)` without dict lookups.
+- **Boundary-only computation:** `detect_boundary_cells()` identifies the 1–5% of cells at
+  material interfaces; only their edges get conformal treatment.
+- **Domain-boundary edges skipped:** Edges at j=0, j=Ny (etc.) are excluded because the
+  `_avg_d()` convention uses full cell width at boundaries (image-charge method in FIT).
+  Conformal values would be inconsistent with this convention.
+- **PEC exclusion:** PEC area on a dual face is excluded from the ε integral (D=0 in PEC).
+  Uncovered area defaults to vacuum (ε_r=1).  PEC enforcement via E=0 mask is orthogonal.
+- **Courant safety cap:** Automatically reduced to 0.90 when `mesh.conformal is not None`,
+  vs. the normal 0.95, to account for locally modified material coefficients.
+- **Sutherland-Hodgman + Shoelace:** Pure NumPy polygon clipping (no Shapely dependency).
+
+- **Overlap handling:** When shapes overlap (e.g. PEC brick + air cylinder), entries are
+  processed in reverse order (last-wins area budget).  Each shape claims its clipped area
+  from the remaining budget; earlier shapes only get the leftover.  This prevents
+  double-counting that inflated mu_r_eff and degraded eigenfrequency accuracy.
+- **M_mu conformal (Phase 5):** Area-weighted mu_r on primal faces at grid-node cross-sections.
+  PEC is included (mu_r = 1.0).  Separate `batch_cross_sections()` call for node planes.
+
+**Implementation:**
+- `geometry/polygon_clip.py` — `polygon_area()`, `clip_polygon_to_rect()`, `point_in_polygon()`
+- `mesh/conformal.py` — `ConformalData`, `PECSurfaceData`, `detect_boundary_cells()`,
+  `extract_pec_surface()`, `ThinSheetSpec`, `detect_thin_metallizations()`
+- `geometry/filling.py` — `classify_cells_from_cross_sections()`, `compute_conformal_eps()`,
+  `compute_conformal_mu()`, `_area_weighted_eps()`, `_area_weighted_mu()` (reverse-order overlap)
+- `geometry/occ_backend.py` — `batch_cross_sections()` added
+- `mesh/mesher.py` — `Mesh.from_geometry()` refactored to unified cross-section pipeline
+- `operators/material_matrices.py` — `build_M_eps()` / `build_M_sigma()` / `build_M_mu()` apply conformal overlay
+
+- **PEC mask correction for conformal (Phase 7.1):** The staircase PEC mask uses a union rule
+  (any adjacent cell PEC → edge PEC).  This is correct for staircase but too aggressive for
+  conformal: boundary edges with partial air coverage (eps_r > 0) must carry E ≠ 0 — the
+  reduced M_eps handles the boundary physics.  After conformal computation, edges with
+  non-NaN eps_r > 0 are un-masked from PEC.  Edges fully inside PEC (eps_r = 0 or NaN with
+  staircase PEC) remain masked.
+
+**Verification:**
+
+Cylindrical PEC cavity TM010 eigenmode (a=15mm, PEC walls):
+- Staircase h=5mm: 8.40% error, h=4mm: 8.22% error
+- Conformal h=5mm: 8.07% error, h=4mm: 7.87% error
+- Conformal consistently closer to analytical f = 7.65 GHz
+
+Coaxial line Z₀ via energy method (a=5mm, b=15mm, Z₀_ana=65.87 Ω):
+- h=5mm (13³): Staircase 3.18%, Conformal 1.28% (2.5× improvement)
+- h=2mm (15³): Staircase 2.95%, Conformal 0.66% (4.5× improvement)
+- Tests M_eps directly without eigensolver; PEC mask correction essential for effect
+
+---
+
+## DD-035 — Thin Metallization Auto-Detection
+
+**Date:** 2026-04-12
+**Status:** Accepted
+
+**Decision:** Automatically detect PEC shapes thinner than one grid cell along any axis and
+model them as thin PEC sheets (zero-thickness E=0 planes) instead of volumetric fills.
+
+**Options evaluated:**
+| Option                        | Notes |
+|-------------------------------|-------|
+| Bounding-box heuristic        | Selected — simple, fast, works for axis-aligned sheets |
+| Mesh-based detection          | Would require meshing first, then re-meshing — circular |
+| User annotation               | Burdens users; easy to forget for PCB traces |
+
+**Rationale:** Thin metallizations (e.g., 35 μm copper on PCB) are thinner than any practical
+grid cell.  Without special treatment they either vanish (no cell centre inside) or get
+staircase-approximated with wrong thickness.  Auto-detection compares the bounding-box extent
+along each axis against the local minimum cell size; if `extent < min_cell_size`, the shape
+is reclassified as a `ThinSheetSpec` and applied via `apply_thin_pec_sheet()`.
+
+**Key design choices:**
+- Detection runs before the cross-section pipeline; detected thin shapes are removed from the
+  volumetric fill list.
+- Only axis-aligned thin sheets are supported (first implementation).
+- The thin sheet position is the midpoint of the bounding box in the thin direction.
+- Transverse extent is preserved from the original shape's bounding box.
+- The conformal pipeline sees the finite-volume effect of the thin conductor on adjacent dual
+  faces (reduced capacitance where PEC area is excluded from ε averaging).
+
+**Implementation:**
+- `mesh/conformal.py` — `ThinSheetSpec`, `detect_thin_metallizations()`
+- `mesh/mesher.py` — Hook before cross-section fill + `apply_thin_pec_sheet()` after mesh build
+
+---
+
+## DD-036 — Dey-Mittra conformal PEC edge shortening
+
+**Date:** 2026-04-12
+**Status:** Accepted
+
+**Problem:** Conformal material matrices (DD-034) compute area-weighted effective ε_r on dual faces
+at PEC boundaries. When PEC covers most of the dual face, ε_r_eff becomes very small (e.g. 0.05),
+increasing the local wave speed and requiring a ~3× CFL penalty (dt *= sqrt(0.1)). Edges below
+the threshold (CONFORMAL_EPS_THRESHOLD = 0.1) are kept PEC-masked, losing accuracy.
+
+**Decision:** Implement Dey-Mittra edge shortening for PEC boundary edges.
+
+**Approach:** For each E-edge at a PEC boundary, compute the fraction f_L of the primal edge length
+that lies outside PEC. The modified material matrix entry becomes:
+
+    M_eps_DM[e] = EPS0 · eps_r_eff · A_dual / (f_L · L_primal)
+               = M_eps_conformal[e] / f_L[e]
+
+Since the existing conformal pipeline already encodes the area fraction f_A in eps_r_eff, the only
+new geometric computation is f_L (edge-PEC intersection via line-polygon scanning on existing
+cross-section polygons at grid-node planes).
+
+**Enlarged-cell technique:** When f_L < η (default 0.4), the short edge remnant would violate CFL.
+Instead, the edge is treated as PEC (E = 0) and its dual-face contribution (eps_r_eff · A_dual)
+is transferred to the neighbouring edge along the same direction. This guarantees stability with
+the **standard CFL time step** — no penalty needed (dt ratio ≈ 3.16× improvement).
+
+**Key design choices:**
+- f_L is computed via 3D line-solid intersection (`compute_edge_pec_fractions()` using
+  `BRepIntCurveSurface_Inter` + segment-midpoint `BRepClass3d_SolidClassifier`).
+  The effective PEC solid respects last-wins CSG ordering via `build_effective_pec_solid()`.
+  Supersedes the earlier 2D node-plane scan-line approach (more robust, no column-swap hack
+  for Ez, handles arbitrary 3D PEC geometries).
+- DM and conformal dielectric averaging coexist: DM handles PEC boundaries (modifies denominator),
+  conformal handles dielectric boundaries (modifies numerator). At PEC-dielectric-dielectric triple
+  points, both apply.
+- Enlarged-cell neighbours are selected along the edge direction (not perpendicular), preferring
+  the neighbour with the highest f_L.
+- Static energy tests (e.g. Z₀ via analytical E-field) disable DM because they use full edge
+  lengths as edge voltages, which is incompatible with the shortened-edge assumption.
+- DM is controlled via `MeshControl.dey_mittra_eta` (default 0.4, in line with
+  established industry practice). Setting 0 disables DM.
+- M_sigma also receives the DM f_L correction (Ampère: both D and J affected). Enlarged-cell
+  borrowing for sigma deferred until conformal sigma computation is implemented.
+
+**Implementation:**
+- `geometry/occ_backend.py` — `build_effective_pec_solid()`, `compute_edge_pec_fractions()`
+- `geometry/filling.py` — `classify_edges()` (unified classification), `EdgeClassification`,
+  `_pec_boundary_masks()`, `_enlarged_cell()`
+- `mesh/conformal.py` — `ConformalData`, `DeyMittraData` dataclasses
+- `mesh/mesher.py` — `classify_edges()` call in `from_geometry()`
+- `operators/material_matrices.py` — `_apply_dey_mittra()` for M_eps,
+  `_apply_dey_mittra_sigma()` for M_sigma
+- `solver/stability.py` — `courant_dt()` with `min_effective_eps`
+
+---
+
+## DD-037 — 3D Face-Solid Intersection for Conformal Material Matrices
+
+**Date:** 2026-04-13
+**Status:** Accepted
+**Supersedes:** DD-034 conformal eps/mu computation method (area-fraction via 2D cross-sections)
+
+**Decision:** Replace the 2D cross-section polygon clipping pipeline for conformal
+eps_r and mu_r with 3D thin-box Boolean intersection using `BRepAlgoAPI_Common`
+and `BRepGProp.VolumeProperties`.
+
+**Problem:** The previous approach computed area fractions (f_A) via 2D polygon
+clipping on tessellated cross-section boundaries, while Dey-Mittra length
+fractions (f_L) used 3D line-solid intersection via `BRepIntCurveSurface_Inter`.
+These different computational paths introduced numerical inconsistencies
+(tessellation chordal deflection, polygon clipping rounding) that could violate
+the stability condition f_A/f_L >= 1, requiring a CFL time-step penalty.
+
+**Method:** For each boundary dual/primal face:
+
+1. Construct a thin box (face rectangle extruded by ±δ along normal axis)
+2. `BRepAlgoAPI_Common(thin_box, material_solid)` → intersection volume
+3. `area = volume / (2·δ)` — exact material area on the face
+4. Materials processed in reverse priority order (last wins), same as before
+
+The half-thickness δ is set to `max(h_min × 10⁻³, 10⁻⁶ m)` where h_min is
+the minimum cell size — well above OCC's geometric tolerance (~10⁻⁷) and well
+below any cell dimension.
+
+**Rationale:**
+- Both f_A and f_L now use the same OCC Boolean kernel on the same 3D solids
+  → geometric consistency by construction
+- No tessellation step → no chordal deflection error
+- No polygon clipping → no floating-point accumulation
+- Cell classification (material_id via point-in-polygon on cross-sections) unchanged
+
+**Trade-offs:**
+- `BRepAlgoAPI_Common` is slower than polygon clipping (~1.5 ms vs. ~1 μs per face)
+- Acceptable: only boundary faces are processed (1–5% of mesh), total ~seconds
+
+**Verification:** 458 tests passed (identical to pre-change), including:
+- Cylindrical cavity TM010 eigenfrequency
+- Coaxial Z₀ via energy method
+- Dey-Mittra stability, convergence, and CFL tests
+
+**Resolves:** KB-005
+
+**Implementation:**
+- `geometry/occ_backend.py` — new `compute_face_material_areas()`
+- `geometry/filling.py` — rewritten `compute_conformal_eps()` (returns eps + sigma),
+  rewritten `compute_conformal_mu()`, updated `classify_edges()` signature
+  (`shapes_with_material` instead of `cross_section_cache`)
+- `mesh/mesher.py` — updated `from_geometry()` pipeline
+- Removed: `_area_weighted_eps()`, `_area_weighted_mu()` (2D polygon clipping helpers)
+
+---
+
+## DD-038 — GeometryModel overhaul: background material, overlap detection, multi-tool Difference, transform repeat/copy
+
+**Date:** 2026-04-13  
+**Session:** 39
+
+**Context:** GeometryModel had several known limitations (KB-001, KB-002,
+KB-004) that together hindered clean CSG-based geometry workflows.  The
+"last wins" overlap semantics diverged from standard CAD practice and
+masked geometry errors.
+
+**Decisions:**
+
+1. **Configurable background material (KB-001):**
+   `GeometryModel(background=Material.pec())` sets the material for cells
+   not covered by any shape.  Default remains air.  `Mesh.from_geometry()`
+   reads `geometry.background` automatically.  The conformal pipeline
+   (`compute_face_material_areas`) uses background properties for uncovered
+   face area instead of hardcoded air.
+
+2. **Even-odd rule for cross-section classification (KB-002):**
+   `classify_cells_from_cross_sections()` now counts how many contours of
+   a shape contain each cell centre.  A point belongs to the shape iff the
+   count is odd.  This correctly handles Difference shapes with holes.
+   The polygon extraction (`cross_section_polygons`) already returned both
+   outer and inner contours; only the classification logic was wrong.
+
+3. **Overlap detection with strict error default (KB-004):**
+   `GeometryModel(allow_overlaps=False)` (default).  At meshing time,
+   `validate()` is called automatically.  It checks all shape pairs via
+   bounding-box pre-filter + `BRepAlgoAPI_Common` volume check.  Raises
+   `GeometryOverlapError` on nonzero volumetric intersection.  Legacy code
+   can pass `allow_overlaps=True`.
+
+4. **Multi-tool Difference:**
+   `Difference(base, tool1, tool2, ...)` — variadic `*tools`, matching
+   Union's existing `*shapes` pattern.  Multiple tools are fused first
+   (`boolean_union`), then a single `BRepAlgoAPI_Cut` is performed.
+   Backward compatible: `Difference(base, tool)` still works.
+
+5. **Transform repeat/copy (the interface convention common in major EM suites):**
+   `translate(shape, vec, repeat=3, copy=True)` returns
+   `[original, shape@1×vec, shape@2×vec, shape@3×vec]`.  `unite=True`
+   returns a Union.  Same for `rotate`.  `GeometryModel.add()` extended
+   to accept lists.
+
+**Resolves:** KB-001, KB-002, KB-004
+
+**Verification:** 480 tests passed, 1 skipped (up from 458, +22 new tests).
+
+**Implementation:**
+- `geometry/__init__.py` — `GeometryModel` with `background`, `allow_overlaps`,
+  `validate()`, `GeometryOverlapError`, `add(list)`
+- `geometry/operations.py` — `Difference` with `*tools`
+- `geometry/transforms.py` — `translate`/`rotate` with `repeat`, `copy`, `unite`
+- `geometry/filling.py` — even-odd rule in `classify_cells_from_cross_sections`
+- `geometry/occ_backend.py` — `check_pairwise_overlaps()`, background-aware
+  `compute_face_material_areas()`
+- `mesh/mesher.py` — background from GeometryModel, automatic overlap validation
+
+---
+
+## DD-039 — ~~Dey-Mittra deactivated for eigenmode solver~~ → Superseded by DD-051 Variante A
+
+DD-039 documented an ``apply_dm=False`` switch in the eigenmode solver
+to compensate for a systematic Rayleigh-quotient downward bias under
+the original ConformalData + DeyMittraData overlay (one-sided ``M_ε``
+reduction without ``M_μ`` correction).  DD-051 Variante A replaced
+that pipeline with a *symmetric* Krietenstein sub-cell correction on
+both ``M_ε`` and ``M_μ``; the rotated-cavity benchmark that DD-039
+recorded as 6.95–17.59 % conformal+DM error now lands at 0.22–1.63 %
+on the same resolutions (11–32× improvement; ``p_obs = 1.64`` vs
+DD-039's 0.9).  ``build_M_eps`` no longer accepts an ``apply_dm``
+keyword and the eigensolver consumes the unified mass matrices
+directly.
+
+See ``validation/rotated_cavity_convergence.py`` for the
+empirical re-measurement.
+
+---
+
+## DD-040 — Modal waveguide port operator as solver plugin
+
+**Date:** 2026-04-27 (session 49, Phase-1 closeout of the modal-port rewrite)
+**Status:** Accepted
+**Supersedes:** DD-027 (modal Mur-ABC, TEM only) and DD-031 (PML-backed, TE/TM)
+
+**Decision:** Replace the dual ``WaveguidePort`` (Mur-ABC for TEM, PML-backed
+dual-E for TE/TM, runtime-dispatched via ``needs_pml``) with a single
+``PortOperatorModal`` that runs as a solver plugin at the port plane.  Each
+mode is absorbed independently via a per-mode 1st-order absorbing condition
+applied **after** the Ampère update, on a 2D slice of the E-vector.
+
+**Rationale:** DD-027 + DD-031 had three structural problems whose interaction
+made the system brittle:
+
+1. **Two completely different absorbers, dispatched at runtime.**  TEM-only
+   ports used a port-face Mur-ABC; ports with any TE/TM mode used a
+   CPML-backed soft-source pipeline plus dual-E ``(V₁, V₂)``-decomposition.
+   The dispatch was driven by ``needs_pml = any(mode.omega_c > 0)``, so
+   adding a single TE10 mode to a TEM coax fundamentally changed the
+   absorber, the mesh extent (``Mesh.with_port_pml``), the recorder
+   channel-name suffixes (``_total``/``_excite`` vs ``_V1``/``_V2``), and
+   the S-parameter post-processing — all unobservable from the call site.
+2. **PML behind the port doubled the cost of every TE/TM run.**  16 cells
+   of CPML on each port face plus the dual-E monitoring planes (20-cell
+   offset + 10-cell separation) added at least 30 cells per port to the
+   axial mesh size, just to absorb modes that the per-mode 1st-order
+   absorbing condition handles in the port plane itself.
+3. **Voltage S-parameters needed a √(Z_exc/Z_obs) post-correction**
+   (``transient.py:295``) because the modal projection used B-orthonormal
+   profiles instead of power-wave-normalised ones.  This worked but
+   couldn't be inlined into the recorder; it lived in the assembly stage
+   alongside the dual-E ``(V₁, V₂)``-to-``(a, b)`` decomposition.
+
+The modal operator solves all three at once: one absorber for every mode
+type (per-mode ``e_p −= dt · (1/Z_m) · ê_m,p · V_m^-``), no PML extensions,
+power-wave S-parameters from a single-plane V/I projection (DD-041 + DD-042).
+
+**Algorithm (per mode m, per time step):**
+
+1. **Pre-Ampère hook** (optional, currently unused): ``before_e_step(n, h)``
+   reads ``H_t`` at the port plane.  Phase-1 operator does nothing here —
+   I-recording happens after the E-update so V_m and I_m are on the
+   solver's standard staggered-Yee schedule (V at integer time, I at
+   half-integer).
+
+2. **Standard FIT E-update** runs unchanged, producing candidate
+   ``e_p^{n+1}`` at port-plane primal edges.
+
+3. **Post-Ampère hook**: ``after_e_step(n, e, h)``:
+
+   a. **Project** ``V_m(t^{n+1}) = Σ_p ê_m,p · e_p^{n+1}`` and
+      ``I_m(t^{n+1/2}) = Σ_q ĥ_m,q · h_q^{n+1/2}`` for each mode.
+   b. **Compute** the outgoing wave amplitude
+      ``V_m^- = (V_m − Z_m · I_m) / 2`` (with Z_m the modal wave impedance
+      from ``Mode.z_modal`` at the user-supplied mode-calc frequency).
+   c. **Apply** the modal-Mur-1 correction to ``e_p^{n+1}``:
+      ``e_p^{n+1} ← e_p^{n+1} − dt · (1/Z_m) · ê_m,p · V_m^-`` summed
+      over modes.
+   d. **Inject** the soft source (excited port only): legacy TF/SF
+      formula ``V_port = s(t) + scat_int_prev + r·(scat_int_now −
+      scat_face_prev)`` with ``scat = total − incident`` and ``incident``
+      from a linearly-interpolated source-history ring buffer at delay
+      ``τ_m = dx_n / v_p,m``.  See ``ports/modal/operator.py``.
+
+4. **No standalone Mur on the port face**: in Phase 1 the operator alone
+   absorbs at the port; the global ABC infrastructure (``CPMLBoundary``,
+   ``MurBoundary``) is not used at port faces.
+
+**Cross-cutting design rules:**
+
+- The ``ModeSolver`` is a Protocol; Phase 1 ships
+  ``CoaxAnalyticalModeSolver`` and ``RectWGAnalyticalModeSolver`` only.
+  Both produce ``Mode``s sorted by ascending ``omega_c``.  Phase 2 will
+  add ``Numerical2DModeSolver`` for arbitrary cross-sections (rectangular
+  coax, microstrip, etc.) — the operator's contract is unchanged.
+- Mode profiles are B-orthonormalised in the M_ε inner product
+  (``eᵀ M_ε e = 1``) at port-attach time.  ``ĥ`` is rescaled per mode
+  (DD-042 V/I calibration) so that ``V_m / I_m = Z_modal`` holds exactly
+  for the analytical mode at the port plane and approximately (modulo
+  discretisation) for the FIT-evolved field.
+- The operator owns the source-history ring buffer; the user supplies
+  only the waveform closure via ``ExcitationSpec``.
+
+**Public API:**
+
+- ``CoaxPortSpec`` / ``RectWGPortSpec`` / ``ExcitationSpec`` — frozen
+  dataclasses describing a port in the global tangential frame.
+- ``build_modal_port(spec, mesh, m_eps, m_mu, *, dt, f_calc) →
+  PortOperatorModal`` — the only public factory.  Dispatches on spec
+  type, normalises the (u, v)-frame at the bbox face, calls
+  ``discretize_modes`` for B-orthonormalisation, builds the operator.
+- ``FITTimeDomainSolver(port_operators=[...])`` — solver loop calls
+  ``op.after_e_step(n, e, h)`` between the E-update and the H-update.
+
+**Where:**
+
+- ``src/magnelio/ports/_modal/{operator,coax,rect,solver,mode,port_plane,
+  discrete,recorder,factory}.py``
+- ``src/magnelio/solver/fit_td.py`` — adds ``port_operators`` field;
+  loop hooks ``op.after_e_step`` after the E-update.
+- ``src/magnelio/postprocessing/modal_sparameters.py`` —
+  ``compute_s_parameters`` (see DD-042).
+
+**Verified (Phase-1 close):** mode-solver unit ladder green; WR-90
+TE10 ``|S21| ≤ 0.23 dB`` / ``|S11| ≤ −19 dB`` across 8.2–12.4 GHz;
+cross-mode margin −260 to −310 dB (FFT floor).  The −19 dB Mur-1st
+absorber limit was later removed by the exact DTBC chain
+(DD-054/DD-055); the PML-backed absorber idea died in DD-043
+(rejected).
+
+---
+
+## DD-041 — Single-plane V/I recording at port face; tuple-keyed recorders
+
+**Date:** 2026-04-27 (session 49)
+**Status:** Accepted
+
+**Decision:** All port signal recording goes through dedicated tuple-keyed
+recorder classes; the legacy generic ``SignalRecorder`` (channel-name-keyed,
+``"port0_mode0_total"`` strings) is removed.  Two recorders cover the active
+port families:
+
+- ``ModalSignalRecorder``: one ``(V_signal, I_signal)`` pair per
+  ``(port_label, mode_idx)`` channel.  V is sampled at integer time,
+  I at half-integer (Yee stagger).  V-projection uses M_ε-weighted ê_m
+  against e^{n+1}; I-projection uses M_μ-weighted ĥ_m against h^{n+1/2}.
+- ``DiscretePortRecorder``: one ``Signal1D`` per ``(port_label, kind)``
+  channel where ``kind ∈ {"total", "excite"}``.  ``"excite"`` is recorded
+  only when ``record(...)`` is called with a non-``None`` ``excite=`` argument
+  (passive ports get a ``"total"`` channel only).
+
+**Rationale:** Three concrete problems with the previous channel-name-keyed
+approach:
+
+1. **String parsing in postprocessing.**  ``compute_sparameters`` had to
+   parse keys like ``"port1_mode0_V1"`` to recover ``(port_idx, mode_idx,
+   "V1")``.  Tuple keys eliminate the parser and the coupled string-format
+   contract that ``fit_td.py`` had to keep in sync with ``transient.py``
+   and ``sparameters.py``.
+2. **Doubly-stored buffers on the port objects.**  ``DiscretePort`` held a
+   ``_signals[0]`` list and an ``_excite_signal`` list internally and
+   simultaneously emitted ``recorder.record("port0_mode0_total", ...)`` to
+   the external recorder.  Tests asserted against ``port.signal`` directly,
+   ignoring the recorder.  The duplication invited drift and made the
+   recorder's role unclear.
+3. **API asymmetry across port families.**  ``PortOperatorModal`` already
+   had a tuple-keyed contract through ``project_V`` / ``project_I``;
+   ``DiscretePort`` used string keys.  Two recorder shapes were needed for
+   the same conceptual job (record a port's time-domain signals).
+
+**Resolution:**
+
+- ``ModalSignalRecorder`` (``ports/modal/recorder.py``): existing tuple-keyed
+  modal recorder, kept as-is.  Constructor takes ``port_operators``,
+  validates unique labels, allocates per-``(label, mode)`` V/I lists at
+  construction.  ``record(e, h)`` is called once per FIT step from the
+  solver, between ``after_e_step`` and the H-update.
+- ``DiscretePortRecorder`` (``ports/discrete_recorder.py``, new in step 9b):
+  takes ``dt`` and a list of unique ``port_labels``.  ``record(port_label,
+  *, total: float, excite: float | None = None)`` appends a sample;
+  ``finalize() → dict[(label, kind), Signal1D]``.
+- ``DiscretePort`` gained a ``label`` constructor argument (default
+  ``f"port{port_id}"``); the legacy ``_signals[0]`` / ``_excite_signal``
+  buffers and the ``port.signal`` / ``port.signals`` / ``port.excite_signal``
+  properties were removed.  ``update_bc`` returns
+  ``tuple[float, float] = (v_total, v_exc)`` directly (no per-mode
+  amplitude array — DiscretePort is single-channel by definition).
+- Solver loop in ``fit_td.py`` calls
+  ``recorder.record(port.label, total=..., excite=v_exc if is_excited else None)``
+  per port per step (``ModalSignalRecorder`` is hooked separately as
+  ``modal_recorder``).
+- ``SignalRecorder`` (``signals/recorder.py``) deleted in full.  The
+  ``signals/__init__.py`` re-export and the ``TestSignalRecorder`` unit-test
+  class are gone.
+
+**Net architectural impact:** Every recorder in magnelio now uses tuple keys;
+channel-name string formatting is gone from the codebase; ``port.signal`` is
+not a thing anymore.
+
+**Where:**
+
+- ``src/magnelio/ports/_modal/recorder.py`` — ``ModalSignalRecorder``.
+- ``src/magnelio/ports/discrete_recorder.py`` — ``DiscretePortRecorder``
+  (new).
+- ``src/magnelio/ports/port_discrete.py`` — ``DiscretePort.label``,
+  ``update_bc`` return shape, removed signal accessors.
+- ``src/magnelio/solver/fit_td.py`` — recorder hook in the run loop.
+- ``src/magnelio/io/hdf5.py`` — ``save_project`` no longer writes a
+  per-port ``signal`` dataset (signals live in the recorder).
+
+**Verified:**
+
+- ``tests/unit/test_modal_recorder.py`` — 13 unit tests for
+  ``ModalSignalRecorder`` (construction, projection, finalize, repr).
+- ``tests/unit/test_discrete_recorder.py`` — 13 unit tests for
+  ``DiscretePortRecorder`` (construction validation, total-only / total
+  + excite paths, mixed-port routing, ``finalize`` ``Signal1D``
+  properties, ``__repr__``).
+- ``tests/integration/test_discrete_port.py`` — both pre-existing
+  smoke tests pass on the new recorder API.
+- ``tests/integration/test_modal_*`` — all green; modal recorder
+  unchanged in behaviour.
+
+---
+
+## DD-042 — Power-wave S-parameters with √W excitation normalisation; per-mode V/I calibration
+
+**Date:** 2026-04-27 (session 49)
+**Status:** Accepted
+**Supersedes:** the ``S_power = S_voltage · √(Z_exc/Z_obs)`` post-correction
+  in the deleted ``TransientAnalysis.run`` (DD-031, archived).
+
+**Decision:** S-parameter post-processing for the modal pipeline uses the
+power-wave decomposition
+
+```
+a_jn(ω) = (V_jn(ω) / √Re(Z_jn) + √Re(Z_jn) · I_jn(ω)) / 2
+b_km(ω) = (V_km(ω) / √Re(Z_km) − √Re(Z_km) · I_km(ω)) / 2
+S_(km, jn)(ω) = b_km(ω) / a_jn(ω)
+```
+
+evaluated on the recorded V and I time-series with an explicit Yee-stagger
+phase correction ``I_FFT(ω) ← I_FFT(ω) · exp(+jω·dt/2)`` (V is sampled at
+integer time, I at half-integer; the correction lifts I onto the same
+time axis in the frequency domain).
+
+This replaces both the dual-E ``(V₁, V₂)``-to-``(a, b)`` decomposition of
+DD-031 and the legacy voltage-to-power-wave ``√(Z_exc/Z_obs)`` correction.
+``compute_s_parameters`` returns a raw
+``dict[(port_label, mode_idx), np.ndarray]`` keyed identically to the
+recorder; one call per excited ``(port, mode)``.
+
+**Rationale:** Three reasons to bake the √W normalisation into the
+amplitude formula at recording time, rather than as a post-hoc voltage
+correction:
+
+1. **One formula, all mode types.**  TEM, propagating TE/TM, and the
+   limit cases (open / short / matched load) all fall out of the same
+   ``a/b`` definition.  No per-mode dispatch, no special case for
+   ``Z_pi`` vs ``Z_wave``.
+2. **Power-wave passivity ``Σ |S_km|² ≤ 1`` directly testable.**  The
+   integration-test suite (``test_coax_pec_confined_wave_arrival``,
+   ``test_rectwg_te10_*``) asserts ``\|S\|²-sum ≤ 1.1`` as the
+   architectural sanity bound; voltage-S would fail this at frequencies
+   where Z_exc ≠ Z_obs even on a perfectly lossless network.
+3. **Cutoff-band frequencies kept (established solver convention).**  Below cutoff,
+   ``Re(Z_modal) → 0`` and the formula becomes ill-conditioned.  Phase 1
+   guards only ``\|a_excited\|`` against the relative noise floor (NaN if
+   below threshold) and lets the user inspect cutoff-band S values
+   diagnostically rather than masking them.
+
+**V/I calibration (per-mode ĥ rescale):**
+
+The mode-discretisation step (``discretize_modes``) B-orthonormalises ``ê``
+in the M_ε inner product and applies the same scalar α to ``ĥ`` to keep
+the analytical ``E/H = Z`` field-level ratio.  But the M-weighted FIT
+projections ``V_m = Σ M_ε · ê · e``, ``I_m = Σ M_μ · ĥ · h`` use *different*
+material matrices, and the asymmetric weighting breaks
+``V_m / I_m = Z_modal`` for the analytical mode at the port plane.
+
+**Resolution:** ``PortOperatorModal._calibrate_v_i`` (called once during
+``__init__``) rescales ``ĥ`` per mode by
+``γ = (V_test / I_test) / Re(Z_modal)`` evaluated on the analytical
+discretised mode at the port plane.  After this, ``V_m / I_m = Z_modal``
+holds exactly for the analytical mode and approximately (modulo
+conformal-cell effects, ~few % at coarse mesh) for the FIT-evolved
+field.  Evanescent modes (``\|Im(Z_modal)\| > \|Re(Z_modal)\|``) are passed
+through unchanged — a real scalar rescale cannot match an imaginary
+impedance, and below cutoff ``a/b`` is diagnostic anyway.
+
+**Trick exploited by the calibration:** the FIT identity
+``M_μ[h_v at u-edge] · L_dual_for_h_v = μ₀ · normal_dx · L_primal_u``
+(and the v-edge analogue) holds for any bbox-aligned port face, so
+``I_test`` can be computed without exposing the (currently-private)
+dual-edge lengths.
+
+**Where:**
+
+- ``src/magnelio/postprocessing/modal_sparameters.py`` —
+  ``compute_s_parameters``.
+- ``src/magnelio/ports/_modal/operator.py`` —
+  ``PortOperatorModal._calibrate_v_i``.
+
+**Verified:**
+
+- ``tests/unit/test_modal_sparameters.py`` — 14 unit tests:
+  open/short/matched-load limit cases, multi-port routing,
+  cutoff-band sanity, threshold-driven NaN behaviour, validation.
+- ``tests/unit/test_modal_operator.py::TestVICalibration`` — 2 tests:
+  synthetic FIT-discretised TEM gives ``V_m/I_m = Z_modal`` to machine
+  precision; ``mode.z_modal`` unchanged by rescale.
+- ``tests/integration/test_modal_source_decay.py::test_coax_pec_confined_wave_arrival``
+  — end-to-end ``\|S\|²-sum ≤ 1.1`` and ``max \|S21\| > −2 dB`` after
+  calibration (raw measurement before calibration was ``\|S\|² ≈ 3.49``
+  at some frequencies on the same setup).
+
+---
+
+## DD-043 — Out-of-Phase-1: late-time silence absorber (PML-backed) — REJECTED
+
+**Status:** **Rejected** (sessions 49–54, multi-pilot diagnostic).  Do
+not revive; higher-order Mur, port-side PML, fractional-delay BCs and
+similar approximations are excluded as crutches (developer guidance,
+session 54).
+
+**Question.**  The IC-driven WR-90 silence test stalls at a hard
+−7.7 dB energy floor: standing-wave content has zero net Poynting
+flux at the port plane, so the DD-040 per-mode Mur-1st absorber
+cannot drain it by construction (closed-form ``|r| ≈ 0.29`` at the
+test point).  Hypothesis under test: a thin CPML slab behind the port
+plane, since material loss drains energy density independently of
+flux.
+
+**Falsified by measurement.**  (1) The floor is
+mode-solver-independent — analytical and numerical 2D modes give
+floors identical to the digit (−7.68 dB at 25 and 80 traversals), so
+it is not a projection artefact.  (2) Four session-54 pilots
+(wave-packet bandwidth, ``n_modes`` 1–8, phase-velocity calibration,
+naive per-mode Klein-Gordon aux-line) leave the source-driven −30 dB
+|S11| floor unchanged; the naive aux-line is 7 dB *worse* (closed-loop
+coupling).  The floor originates deeper than the boundary
+approximation — loss volume behind the plane cannot reach it.
+
+**Consequence.**  True co-simulation is the only path to
+reference-grade port performance: per-mode auxiliary 1D lines sharing
+the port-plane node (Luo-Chen 2007), captured as DD-047 and
+ultimately realised exactly by the DTBC chain (DD-054/DD-055).
+
+---
+
+## DD-044 — Numerical 2D Mode Solver (curl-curl + Laplace dispatch)
+
+**Date:** 2026-04-27 (session 53; closes Phase-2a sub-block).
+**Status:** Accepted, partially implemented.  Phase-2a delivered the
+TE/TM curl-curl path; the TEM Laplace and QTEM dispatch land in
+Phase 2b (the architecture-document §2.2 three-class deliverable).
+
+**Decision:** Establish ``Numerical2DModeSolver`` (in
+``src/magnelio/ports/_modal/numerical_2d.py``) as the second
+implementation of the ``ModeSolver`` Protocol from DD-040, alongside
+the analytical solvers.  The solver uses the FIT-consistent 2D
+operators built by ``build_2d_curl_curl``
+(``src/magnelio/ports/_modal/curl_curl_2d.py``) and produces
+``Mode`` objects on the Phase-2 numerical path (``field_evaluator =
+None``, four ``discrete_*_profile`` arrays filled).
+
+**Eigenvalue formulation** (architecture §2.1).  Solve
+
+    K · ê = ω_c² · M · ê
+
+with ``K = C̃_2D · M_μ⁻¹ · C_2D`` (sparse SPD-with-null-space) and
+``M = M̃_ε`` (sparse diagonal), via
+``scipy.sparse.linalg.eigsh(K, k=n_total, M=M, sigma=σ)``.  σ is
+chosen by a heuristic just below the lowest expected TE cut-off
+(``σ ≈ 0.95² · (π · c_eff / L_max)²``) so the gradient null-space at
+λ = 0 is suppressed but the lowest physical eigenmodes are inside
+the shift-invert window.  A positive threshold filters surviving
+null-space contamination; eigenvectors are then sorted by ascending
+``λ = ω_c²``.
+
+**Why generalised, not standard.**  ``A · ê = ω_c² · ê`` with
+``A = M̃_ε⁻¹ · C̃_2D · M_μ⁻¹ · C_2D`` requires materialising
+``M̃_ε⁻¹`` densely and loses the symmetric-positive structure that
+ARPACK's shift-invert exploits.  The generalised form keeps both
+operators sparse and symmetric.
+
+**Sign convention** (architecture §2.4 / Reference §8.1).  After
+each ``eigsh`` call, every eigenvector is sign-flipped so that its
+largest-magnitude entry is positive.  Without this, the gauge is
+machine-dependent and breaks inter-port phase consistency.  The
+sign-flip is bilinear-invariant on the operator-level
+``(E × H) · n̂`` invariant: H-profiles are derived from the modal
+Ohm's law (``H_u = -E_v / Z``, ``H_v = +E_u / Z``), so a sign-flip
+on E flips H consistently and Poynting orientation is preserved.
+
+**Phase-2b extensions.**  The architecture-§2.2 three-class
+dispatch (TEM Laplace, TE/TM curl-curl, QTEM single-frequency
+curl-curl) is staged across Phase 2a (TE/TM only) and Phase 2b
+(TEM and QTEM); see the architecture document §5 for the work order.
+
+**Where:**
+``src/magnelio/ports/_modal/numerical_2d.py`` and
+``src/magnelio/ports/_modal/curl_curl_2d.py``.  Tests:
+``tests/unit/test_modal_numerical_2d.py`` (21 unit tests),
+``tests/unit/test_modal_curl_curl_2d.py`` (16 unit tests).
+
+---
+
+## DD-045 — Mode Dataclass Extension for Discrete Edge Profiles (Variant B)
+
+**Date:** 2026-04-27 (session 53; closes Phase-2a sub-block).
+**Status:** Accepted.
+
+**Decision:** Extend the existing ``Mode`` dataclass
+(``src/magnelio/ports/_modal/mode.py``) with four optional
+``discrete_*_profile`` arrays carrying the per-edge eigenvector
+data of a numerically-solved mode.  ``field_evaluator`` is made
+optional in the same change.  The validity invariant — exactly
+one of (``field_evaluator``, all four ``discrete_*_profile``)
+populated — is enforced in ``__post_init__``.  ``discretize_modes``
+dispatches on the populated path: analytical → existing
+Gram-Schmidt; numerical → pass-through (no resampling, no
+re-orthonormalisation, since the numerical solver already produces
+M_ε-orthonormal vectors by construction).
+
+**Why Variant B (extend ``Mode``) over Variant C (parallel
+``DiscreteModeSolver`` Protocol).**  The factory, operator,
+recorder, and S-parameter pipeline treat the resulting
+``DiscreteMode`` identically — the only Phase-1-vs-Phase-2 fork is
+*how* a ``Mode`` is filled, not *what* downstream code does with it.
+A parallel Protocol would force every consumer to dispatch with no
+clarity gain.
+
+**Mixed-list policy.**  ``discretize_modes`` rejects lists that mix
+analytical and numerical modes.  The two paths have incompatible
+inner-product conventions — running Gram-Schmidt on a mixed list
+would orthogonalise the analytical modes against the numerical ones
+in list order, silently corrupting the numerical modes' native
+orthonormality.
+
+**Where:**
+``src/magnelio/ports/_modal/mode.py`` (``Mode.__post_init__``
+invariant), ``src/magnelio/ports/_modal/discrete.py``
+(``discretize_modes`` dispatch + ``_discretize_numerical``
+pass-through helper).  Tests:
+``tests/unit/test_modal_mode.py::TestModeValidityInvariant``
+(6 tests),
+``tests/unit/test_modal_discretize.py::TestDiscretizeNumericalPassThrough``
+(6 tests).
+
+---
+
+## DD-046 — Read-from-3D-Mesh Geometry for Numerical Port Specs (Phase-2a hybrid)
+
+**Date:** 2026-04-27 (session 53; closes Phase-2a sub-block).
+**Status:** Accepted with Phase-2a / Phase-2b split.  Phase-2a
+implements an explicit ``lateral_pec_faces`` field on
+``NumericalPortSpec``; Phase-2b will add the full read-from-mesh
+path of architecture-document §2.6 for TEM/QTEM cross-sections.
+
+**Decision (Phase-2a):** ``NumericalPortSpec``
+(``src/magnelio/ports/_modal/factory.py``) describes a numerical-
+mode-solver port via ``label`` / ``plane`` / ``n_modes`` /
+``epsilon_r`` / ``mode_type`` / ``lateral_pec_faces:
+tuple[BoxFace, ...]`` / ``excitation``.  ``build_modal_port``
+dispatches the new spec type to the numerical path: builds
+``K``, ``M``, ``primal_2d_indices`` via ``build_2d_curl_curl``,
+constructs the lateral-PEC edge mask via the private helper
+``_build_lateral_pec_edge_mask`` from ``lateral_pec_faces``, runs
+``Numerical2DModeSolver``, and feeds the result through the
+existing ``discretize_modes`` pass-through and
+``PortOperatorModal`` build.
+
+**Why a hybrid instead of architecture-§2.6 read-from-mesh.**
+Architecture §2.6 specifies ``conductor_mask`` and
+``epsilon_r_field`` as 3D-mesh-read inputs (cell arrays).  That
+design assumes the conductor pattern is mesh material — correct
+for TEM/QTEM cross-sections where the conductor *is* a mesh region
+(rectangular coax, microstrip), but Phase-2a's primary use case
+(WR-90 hollow waveguide) carries PEC walls via
+``boundary_conditions={ymin: PECBoundary, ...}`` rather than
+material-tagged cells.  The factory has no mesh-side conductor
+mask available in that case.  Phase-2a therefore lands the
+explicit ``lateral_pec_faces`` field; Phase-2b will add a
+``conductor_groups`` argument that auto-detects from
+``mesh.material_id`` + ``mesh.material_library[…].is_pec`` for
+TEM/QTEM.
+
+**PortOperatorModal calibration extension.**
+``PortOperatorModal._calibrate_v_i`` is extended to handle the
+numerical path: when ``mode.field_evaluator is None`` the four
+``discrete_*_profile`` arrays are used directly as the per-edge
+test fields (the only "test" available for a numerical mode).
+DD-042's V/I calibration mechanism is unchanged otherwise — the
+γ rescale logic still produces ``V_m / I_m = Z_modal`` to
+discretisation accuracy.
+
+**Where:**
+``src/magnelio/ports/_modal/factory.py`` (``NumericalPortSpec`` +
+``_build_lateral_pec_edge_mask`` + ``build_modal_port`` numerical
+branch), ``src/magnelio/ports/_modal/operator.py``
+(``_calibrate_v_i`` numerical-path fork).  Tests:
+``tests/unit/test_modal_factory.py::TestNumericalPortSpecFactory``
+(5 tests),
+``tests/unit/test_modal_factory.py::TestLateralPecEdgeMaskHelper``
+(2 tests).
+
+---
+
+## DD-047 — Phase 3: true co-simulation modal port operator (Luo-Chen) — realised by the DTBC chain
+
+**Status:** Accepted session 54 as the firm long-term direction;
+**goal reached** by the exact DTBC chain (DD-054/DD-055) — the
+ghost-relation convolution is the exact closed form of the
+semi-infinite per-mode auxiliary line Luo-Chen 2007 couples in, so
+the co-simulation exterior is emulated without literal 1D aux-line
+state.  Measured endpoint: rect-coax max in-band |S11| = −159.3 dB
+(``tests/integration/test_rect_coax_sparams.py``).
+
+**Problem (then).**  The DD-040/DD-042 modal Mur-1st port floors at
+peak |S11| ≈ −19 dB near cutoff on hollow WR-90, mesh-independently —
+inadequate for filters, sensitive matching and high-Q components.
+Reference-grade solvers reach the −160 dB class on the same sanity
+setup (Thoma 2019).
+
+**Explicit non-paths (session-54 falsifications — do not revive).**
+1. Phase-velocity calibration in the Mur formula: ~0.05 dB.
+2. ``r = 0`` by construction (``v_p·dt = dx_n``): +1.7 dB — Mur
+   reflection is not the dominant factor in-band.
+3. Higher-order Mur / Higdon-N: cannot absorb evanescent content
+   (Luo-Chen 2007); refuted again TD-measured in DD-069.
+4. Naive modal aux-line as a post-update hook: −7 dB *worse*
+   (closed-loop coupling unstable) — the coupling must be part of
+   the update, which is what the DTBC formulation provides.
+
+**Measurement-artefact findings absorbed elsewhere.**  The in-band
+floor away from cutoff was largely the spatial half-cell stagger of
+the I sampling plane (WP1 de-stagger, ~6 dB median) plus the
+pointwise ``h = ±e/η`` H-voltage convention on graded transversal
+meshes — resolved by the travelling-wave profiles + M-metric V/I
+calibration (DD-052; graded parallel plate −23 → −64.1 dB).  Graded
+transversal port meshes are first-class (regression-pinned); the
+one-time "prefer uniform transversal spacing" guidance is withdrawn.
+Re-measurement record: ``validation/wr90_te10_dd047_reeval.py``.
+
+---
+
+## DD-048 — Modal port pipeline: two-path architecture
+
+**Date:** 2026-04-29 (session 58).
+**Status:** Accepted.  Supersedes DD-029.  Refines DD-040 / DD-042 /
+DD-044 / DD-046 by clarifying which mode object drives the FIT-TD
+update versus user-visible reporting.
+
+**Decision.**  Per modal port and per mode index, the pipeline
+computes **two independent modes**:
+
+- **Reference mode** (`mode_ref`) — mesh-independent.  Source: a
+  closed-form analytical solver
+  (``CoaxAnalyticalModeSolver``, ``RectWGAnalyticalModeSolver``)
+  where one is available, otherwise ``solve_modes_refined``
+  (adaptive 2D mesh refinement, Cleanup 3 of session 56).  Drives
+  the user-visible reporting fields (``z_line_ref``, ``cutoff_ref``,
+  ``beta_ref``).  **Does not** drive the FIT-TD coupling.
+
+- **Operator-consistent mode** (`mode_num`) — solved on the 2D
+  transversal slice of the 3D simulation mesh.  Source:
+  ``solve_tem_laplace`` / ``solve_qtem_laplace`` (TEM/QTEM via 2D
+  Laplace and dual-Laplace) or ``Numerical2DModeSolver`` (TE/TM via
+  2D curl-curl).  Drives the ``PortOperatorModal`` excitation and
+  loading and the S-parameter extraction.  **Mandatory** path: every
+  spec must produce a ``mode_num`` even when an analytical reference
+  is available.
+
+The two modes converge as the 3D mesh is refined.  Their persistent
+difference at the user's working mesh is *physical*, not a defect:
+it is the discretisation gap between the continuous geometry and
+its staircased FIT approximation.  Both numbers are correct in their
+own context.
+
+**Why two paths instead of one.**
+
+- *Path (a) only* (analytical, projected to FIT slice).  The
+  analytical mode is not an eigenmode of the staircased FIT operator;
+  injecting it as the source mode produces a mode-orthogonal residue
+  that the volume operator partially propagates as a mode-mismatched
+  wave.  Observed in session 58 on
+  ``examples/notebooks/straight_coax.ipynb`` (D_i = 0.41 mm,
+  D_a = 5 mm, ε_r = 9, 27³ mesh): max |S11| ≈ +0.2 dB at 0.25 GHz,
+  max |S|² ≈ 3.0 across [0.25, 10] GHz.  This was the historical
+  ``CoaxPortSpec`` behaviour.
+
+- *Path (b) only* (operator-consistent, no reference).  Z_line at
+  the user's working mesh deviates from the analytical value by a
+  few percent on staircased radial geometry (47.93 Ω measured vs
+  50.0 Ω analytical for the notebook coax at 27³).  Without a
+  reference, the user cannot tell whether 47.93 Ω is "correct".  It
+  *is* correct for that mesh, but the user usually wants the
+  continuous-geometry design target as well.
+
+- *Path (a) + (b).*  Both numbers are reported; FIT-TD uses (b);
+  Δ(Z_line) is informational, not a warning trigger.
+
+**No Δ-warning.**  An automatic warning on
+``|Z_ref - Z_num| / Z_ref > τ`` would suggest that one of the two
+values is wrong.  Both are correct.  A user pursuing accuracy
+refines the 3D mesh until Δ shrinks; ``solve_modes_refined``
+provides per-level convergence data when that is needed.  Forcing a
+default warning would clutter the reporting and train users to
+ignore it.
+
+**API impact.**
+
+- ``PortOperatorModal`` gains a frozen ``port_report: PortOperatorReport``
+  attribute populated by ``build_modal_port``.  Fields:
+
+  ```
+  z_line_num     : float           # always populated (Path b)
+  z_line_ref     : float | None    # Path a, when available
+  cutoff_num     : float | None    # TE/TM only
+  cutoff_ref     : float | None    # TE/TM only
+  refinement_log : ModeRefinementReport | None
+                                   # numerical specs with
+                                   # reference_refinement > 0
+  ```
+
+- ``CoaxPortSpec`` and ``RectWGPortSpec`` now build *both* paths.
+  The analytical solver continues to fill the reference fields; the
+  FIT slice produces the operator-consistent mode that drives the
+  operator.  User-API surface is unchanged.
+
+- ``RectWGPortSpec`` falls back to "all four lateral bbox faces are
+  PEC" when the mesh PEC mask on the port slice is empty.  This
+  covers test setups that build a bare grid with ``Mesh.from_grid``
+  and do not run OCC geometry; production OCC runs always have a
+  populated PEC mask.  ``CoaxPortSpec`` does **not** offer a
+  fallback — its two-conductor topology has no sensible default.
+
+- ``NumericalPortSpec`` and ``MultiConductorPortSpec`` keep their
+  current API.  Their ``port_report`` carries ``z_line_num`` /
+  ``cutoff_num`` (path b only) with the reference fields ``None``.
+  Users who want a reference value invoke
+  :func:`solve_modes_refined` separately — that function needs a
+  ``GeometryModel`` and a ``MeshControl``, which the factory does not
+  see — and overwrite ``op.port_report`` with the augmented record.
+  Auto-invocation from inside the factory was rejected to keep the
+  spec API geometry-free per DD-046.
+
+- ``CoaxPortSpec`` / ``RectWGPortSpec`` validate at construction
+  time that the auto-detected conductor centroids on the 3D mesh
+  slice agree with ``spec.center`` to within one mesh cell.
+  Otherwise ``ValueError`` — typical cause: mesh too coarse or
+  geometry displaced from spec.
+
+**Relation to DD-047.**  Bug-5 fix + DD-048 dropped the TEM |S11|
+floor from ≥ −20 dB to ≤ −31 dB; the residual parallel-plate floor
+was later identified as the spatial I-stagger measurement artefact
+(WP1 de-stagger, session 68 → −71.9 dB; see DD-047/DD-052).
+
+**Where.**
+
+- ``src/magnelio/ports/_modal/factory.py`` — two-path dispatch per
+  spec.
+- ``src/magnelio/ports/_modal/operator.py`` — ``PortOperatorReport`` dataclass
+  and operator field.
+- ``src/magnelio/ports/_modal/__init__.py`` — public exports.
+
+---
+
+## DD-049 — Tangentialpunkt-Bug: background-PEC not represented in OCC effective PEC solid
+
+**Date:** 2026-04-29 (session 58); **resolved** session 61; the
+bbox-wall half **superseded by DD-103** (session 136).
+
+**Problem.**  With ``GeometryModel(background=pec)`` and a dielectric
+tangent to the bbox (coax with bbox = ``D_a × D_a × L``), the
+background-PEC region was invisible to the OCC effective-PEC solid:
+DM-active edges got ``conformal_eps = 0`` → ``min_effective_eps = 0``
+→ dt clamped ×1000 → NaN at step 0, plus a fragmented bbox-wall PEC
+mask that broke auto-conductor detection (Z_line +26 %, divergent
+under refinement).  Historically hidden by a ``1.2 × D_a``
+PEC-bbox-brick crutch in the coax notebook.
+
+**Fix** (``mesher.py::Mesh.from_geometry``, two coordinated changes):
+1. Synthesize an explicit bbox-sized PEC ``Brick`` at lowest priority
+   before ``classify_edges`` / ``build_effective_pec_solid`` — the
+   effective-PEC solid then includes the background region
+   (``f_L = 0`` on embedded edges).
+2. OR-in the bbox-face tangential E-edges via
+   ``_or_in_bbox_pec_walls`` (shared with ``with_pec_boundaries``) so
+   isolated tangency points cannot fragment the wall's connected
+   component.  *This blanket per-face version silently overrode PMC
+   and CPML faces — replaced by the closure-driven per-face rule of
+   DD-103; read DD-103 before touching the wall mask.*
+
+Clean coax geometry then gives ``Z_line_num ≈ 48 Ω`` (analytical
+50 Ω, matches the retired crutch) and runs FIT-TD without NaN.
+
+**Session-60 re-analysis.**  The suspected "broadening" to the
+round-WG mantle was benign: those ``conformal_eps = 0`` edges are
+mathematically correct (dual face fully embedded in PEC) and
+correctly masked.  The round-WG TE11 accuracy gap traced to a
+separate conformal-mass coupling issue (→ DD-051).
+
+**Diagnostic scripts (session 58, kept):**
+``validation/coax_transversal_bbox_pilots.py``,
+``validation/coax_translation_invariance_pilot.py``,
+``validation/coax_force_bbox_wall_pilot.py``.
+
+---
+
+## DD-050 — NumericalPortSpec consolidates on ``mesh.pec_mask_edges`` (DD-046 completion)
+
+**Date:** 2026-04-29 (Session 60).
+
+**Status:** Decided.
+
+**Why this surfaced.**  When extending the TE/TM stress-test work
+order (Session 59) from the rectangular hollow waveguide to the
+round hollow waveguide with PEC bbox padding, the
+``NumericalPortSpec`` factory branch was found to read PEC-wall
+information *only* from a ``lateral_pec_faces: tuple[BoxFace, ...]``
+field on the spec.  This is the pre-DD-046 path: the user enumerates
+bbox faces declaratively rather than letting the 3D mesh be the
+single source of truth.  For a round hollow waveguide the PEC wall
+is a curved cylindrical contour — *not* describable as a tuple of
+bbox faces — so ``NumericalPortSpec`` simply could not represent the
+geometry.
+
+DD-046 (Session 55, Cleanup 2) had already declared
+``mesh.pec_mask_edges`` the canonical source of all PEC information;
+DD-046 extended the ``Mesh`` API with ``Mesh.with_pec_boundaries``
+to consolidate ``BoundaryConditions(<face>="PEC")`` into the same
+mask.  ``RectWGPortSpec`` (Session 58, DD-048) and the two
+``MultiConductor`` / ``Coax`` paths followed DD-046 fully.
+``NumericalPortSpec`` did not — it was the last remaining island
+of the old declarative-PEC API.
+
+**Decision.**
+
+The ``NumericalPortSpec.lateral_pec_faces`` field is **removed**.
+Both factory branches that drive ``Numerical2DModeSolver``
+(``RectWGPortSpec`` for hollow-rectangle TE/TM and
+``NumericalPortSpec`` for arbitrary hollow-cross-section TE/TM) read
+PEC information through a single internal helper
+``_resolve_pec_edge_mask(plane, mesh)`` that:
+
+1. slices ``mesh.pec_mask_edges`` onto the port plane's
+   ``[e_u | e_v]`` 2D-edge basis (canonical DD-046 path);
+2. falls back to "all four lateral bbox faces are PEC" when the
+   sliced 2D mask is empty (typical for bare ``Mesh.from_grid``
+   setups without OCC and without ``Mesh.with_pec_boundaries``).
+
+The ``_build_lateral_pec_edge_mask`` helper is retained as an
+implementation detail used only by the fallback path.  It is no
+longer reachable from the public API except by direct import for
+unit tests.
+
+**TM-path consistency.**
+
+The TM-path scalar Laplace operator
+(:func:`build_2d_node_laplace`) gains an optional
+``pec_edge_mask: np.ndarray | None`` parameter.  When provided, the
+returned ``pec_node_mask`` is derived from the edge mask via
+``node_pec[k] = any(edge_pec[e] for e ∈ incident_edges(k))`` — the
+discrete form of the TM-mode E_z = 0 boundary condition on every
+PEC wall (curved OCC contours, straight bbox walls, internal PEC
+inclusions).  Without the parameter, the helper falls back to its
+prior ``_hollow_pec_node_mask`` default (all four bbox-boundary
+node rows), correct only for hollow-bbox setups.  Both factory TM
+branches now thread the edge mask through.
+
+**API impact.**
+
+- ``NumericalPortSpec(lateral_pec_faces=...)`` no longer accepts
+  the field; users who previously declared lateral PEC walls must
+  migrate to ``BoundaryConditions(<face>="PEC")`` +
+  ``Mesh.with_pec_boundaries(...)`` or to a real OCC body via
+  ``Mesh.from_geometry(...)``.  Both paths populate
+  ``mesh.pec_mask_edges`` automatically and the factory picks the
+  result up.
+
+- ``build_2d_node_laplace`` gains the optional ``pec_edge_mask``
+  keyword.  Internal helper; no breaking change for direct callers
+  who passed positional arguments only.
+
+**Why eliminate rather than deprecate.**
+
+``MAJOR = 0`` per the project's semver policy explicitly permits
+API breakage.  A deprecation shim would have re-introduced the
+parallel-PEC-source pathology DD-046 was meant to eliminate; that
+is the exact opposite of what "consolidate" means in this context.
+
+**Where:**
+
+- ``src/magnelio/ports/_modal/factory.py`` — ``NumericalPortSpec``
+  field removal, ``_resolve_pec_edge_mask`` helper, both factory
+  branches simplified.
+- ``src/magnelio/ports/_modal/curl_curl_2d.py`` —
+  ``build_2d_node_laplace`` gains the ``pec_edge_mask`` parameter.
+- ``tests/unit/test_modal_factory.py`` — ``TestNumericalPortSpecFactory``
+  migrated to bare-mesh fallback path; new
+  ``test_pec_mask_consolidated_via_with_pec_boundaries`` asserts
+  the canonical DD-046 path matches the fallback.
+  ``TestLateralPecEdgeMaskHelper`` rewritten as direct unit tests
+  on the internal helper.
+
+---
+
+## DD-051 — Sub-cell classifier reformulation: unified (ε̄, A_free, L_free) per edge
+
+**Date:** 2026-04-29 (session 62, Variante B + Variante A).
+**Status:** **Implemented (Variante A complete).**
+*Session-82/83 update (DD-053):* on H faces with a unique locally
+translation-invariant ladder direction the Krietenstein
+``A_face_free`` value is replaced at meshing time by the LC-consistent
+pair value; Krietenstein remains the correction on genuinely 3D
+contours.  *Session-91 update (DD-058):* the enlarged-cell H-face
+donor follow-up is implemented, measured neutral to machine
+precision, and dormant.
+
+**Problem.**  Round-WG TE11 cut-off converged **non-monotonically**
+under ``conformal=True`` (−8.87 → −4.34 → −4.45 → −3.02 % across
+``n_t ∈ {17, 25, 33, 49}``; ``validation/round_wg_conformal_convergence.py``)
+and stayed ~3× worse than its design target — the signature of a
+structural defect, on exactly the geometry class (curved PEC) the
+conformal path exists for.
+
+**Root cause.**  The old pipeline composed two override stages on
+``M_ε``: conformal ε averaged over the *free* dual-face area, then
+applied against the *full* area; Dey-Mittra dividing by ``f_L``
+afterwards.  Orthogonal on straight walls (disjoint edge classes),
+double-counting on curved PEC where both stages hit the same edges.
+Additionally — found by the Variante-A diagnostics — the *magnetic*
+side carried no sub-cell correction at all: the primal-face-area
+shrinkage on PEC-boundary H-faces was missing, over-estimating
+boundary magnetic inertia (direction matches the measured 8.0 vs
+8.79 GHz cut-off).  Two supporting diagnostics: OCC-pipeline
+divergence empirically falsified (``Δf_L = Δε̄ = 0`` vs a 1000×-finer
+tessellation, ``validation/round_wg_subcell_diagnostic.py``);
+enlarged-cell threshold a contributor but not the cause
+(``validation/round_wg_eta0_test.py``).
+
+**Decision.**  One single-pass sub-cell classifier per E-edge
+producing a category plus the triple ``(ε̄, A_free, L_free)`` from one
+OCC pass against the shared ``pec_solid`` snapshot
+(``EdgeMaterialData``; ``_apply_dey_mittra`` ceased to exist), with
+the mirrored construction for H-faces (``FaceMaterialData``):
+
+| Category | Condition | M_ε (E) / M_μ (H) |
+|---|---|---|
+| 0 interior bulk | homogeneous dual face | ``ε_r · A_dual / L_primal`` |
+| 1 dielectric boundary | crosses dielectrics, no PEC | ``ε̄ · A_dual / L_primal`` |
+| 2 curved-PEC sub-cell | crosses PEC | ``ε̄ · A_free / L_free`` |
+| 3 interior PEC | fully inside PEC | masked (E only) |
+
+A 1 % ``A_face_free`` floor keeps ``1/M_μ`` finite (falls back to
+bulk staircase); ``courant_dt`` reads both ``min_effective_eps`` and
+``min_effective_mu``.
+
+**Measured (Variante A, round-WG TE11 cut-off, analytical 8.79 GHz):**
+
+| n_t | rel.err staircase | rel.err conformal |
+|---:|---:|---:|
+| 17 | −2.86 % | **−0.45 %** |
+| 25 | −1.69 % | **+0.10 %** |
+| 33 | −1.16 % | **−0.22 %** |
+| 49 | −0.91 % | **−0.21 %** |
+
+Sub-percent on every resolution, 4–6× better than staircase.  The
+~0.3 % oscillation around the analytical value (instead of monotone
+``p_obs ≥ 1.8``) is the known cat-1/cat-2 classification-flip
+signature of sub-cell methods on structured grids; the envelope is
+the practical accuracy claim.  The rotated-cavity benchmark
+(``validation/rotated_cavity_convergence.py``) re-measured
+0.22–1.63 % vs 6.95–17.59 % under the old overlay (closes the DD-039
+revision).  Eigensolver uses the unified pipeline directly — no
+``apply_dm`` switch survives.
+
+**Reference.**  Krietenstein, Schuhmann, Thoma, Weiland, LINAC'98 —
+the per-edge sub-cell triple this DD reproduces (terminology note:
+in-project we say "conformal material matrices").
+
+---
+
+## DD-052 — Exact discrete travelling-wave port profiles (pair-consistent launch/measurement chain)
+**Status:** Decided ~sessions 80/81 (WP7.1/WP7.2); cited by code,
+tests and validation scripts from the start, but the entry was never
+authored — reconstructed from those citations in session 147.
+**Decision.**  Port H profiles are the dual voltages of the *exact
+discrete* travelling wave, not pointwise continuum samples: per
+co-located (e, h) pair, ``h ∝ e_partner / M_μ`` with overall scale
+``μ0·normal_dx / Z``
+(``ports/_modal/tem_laplace.travelling_wave_h_profiles``).  On a
+z-uniform feed section the modal amplitude then obeys the exact 1D
+leapfrog Klein–Gordon chain whose modal Courant number is the
+co-located pair product ``r = dt / sqrt(M_eps[e] · M_mu[h_partner])``
+(pair identity ``M_eps · M_mu = εμ · dz · dz~`` on the flattened
+port slab).
+**Rationale.**  The pointwise convention ``H = ±E/Z`` is exact for
+*fields* but wrong for FIT face *voltages* on non-uniform transversal
+grids (WP7.1 spike, session 80); the dual-voltage form stays a
+faithful travelling-wave probe on graded meshes and is the chain the
+exact DTBC (DD-054/DD-055) terminates.
+**Measured.**  Rect-coax broadband match −34.6 → −39.8 dB max |S11|
+on the 0.8 mm mesh when these profiles replaced pointwise sampling
+(later −159.3 dB with the exact DTBC;
+``tests/integration/test_rect_coax_sparams.py``).
+**References.**  ``validation/straight_coax_conformal_pair_diag.py``,
+``validation/coax_pair_consistent_mu_spike.py``; DD-042 (V_m/I_m
+calibration), DD-053 (conformal M_μ pairing, same pair identity).
+---
+## DD-053 — LC-consistent conformal M_μ coupling + tangential-surface masking
+
+**Date:** 2026-07-09 (session 82 spike + session 83 production).
+**Status:** **Implemented.**  STATUS construction site 0 closed;
+follow-up of DD-051/DD-052.
+
+**Why this surfaced.**  After DD-052, the straight_coax demo retained
+a −32.6 dB |S11| floor that staircase meshes of the *same* resolution
+beat by >12 dB (at 10 % worse z_line).  Session-81 diagnosis: on
+conformal cross-sections the E-edge (ε, DD-051 cat 2) and Krietenstein
+H-face (μ, DD-051 Variante A) sub-cell corrections are computed
+independently, breaking the co-located pair identity
+
+    M_ε[edge] · M_μ[face] = ε0μ0 · ε_pair · μ̄ · d · d̃
+
+on which the DD-052 exact discrete TEM travelling wave rests
+(profile-weighted pair spread 3.1 %).
+
+**Spike findings (session 82,**
+``validation/coax_pair_consistent_mu_spike.py``**).**  Two
+independent defects, BOTH must be fixed:
+
+1. Restoring the pair identity alone (μ override) drives the spread
+   to exactly 0 and — because ``1/M_μ`` becomes ∝ ``M_ε`` per pair —
+   turns the free Ez rows of ``C^T M_μ^{-1} C`` into the *same*
+   weighted Laplacian the 2D TEM solve zeroes (residual 1.2 → 1e-13),
+   yet the TD floor does not move (−32.5 → −32.8 dB).
+2. The remaining wave-equation violation sits exclusively on
+   *conductor-footprint nodes*: the 2D mode solve treats them as
+   Dirichlet (surface charge), but the conformal classifier leaves
+   their longitudinal edges unmasked (line-solid ``f_L = 1`` — they
+   run parallel to the contour, the classifier cannot see the
+   tangentiality), so the 3D update evolves a surface-tangential E
+   that no transversal port profile can launch or record.  Masking
+   them makes the lifted travelling wave exact on ALL free rows to
+   machine precision.
+
+Dead end recorded: replacing the φ-Laplace profile by a "discrete
+harmonic" form has no discrete null space — after the μ pairing the
+free rows already vanish for the Laplace profile; the conductor-node
+rows are legitimately nonzero.  The profile was never the problem.
+
+**Physical picture.**  The conformal ``M_ε`` on a curved-PEC edge is
+the correct flux-tube capacitance ``C = ε·f_A·A_dual/(f_L·L)``
+(f_A = free dual-face area fraction, f_L = free edge-length
+fraction).  On a transmission line, ``L·C = εμ·d·d̃`` holds per
+section *independently of the tube shape* — so the section inductance
+is fixed by the capacitance.  The pair-consistent
+``M_μ = μ0·μ̄·d·d̃·(L_primal/A_dual)·(f_L/f_A)`` is the LC partner of
+the correct C; Krietenstein's ``A_face_free`` reduction is an
+independent B-flux-exclusion rule — right where no ladder structure
+exists (genuinely 3D contours), the wrong LC partner on a line.
+
+**Decision (three mechanisms).**
+
+1. **f_A in ``EdgeMaterialData``** — ``compute_conformal_eps`` returns
+   the free-area fraction of the dual face from the same OCC
+   tessellation as ``eps_avg``, so ``ε_pair = eps_avg / f_A`` is the
+   material average over the free region (exact for inhomogeneous
+   cross-sections too).
+2. **Tangential-surface re-masking** (classifier step 6b) — an
+   unmasked E edge whose two endpoint nodes are connected through the
+   masked-edge graph runs tangentially along a PEC surface and stays
+   masked (category 3).  The connected-COMPONENT test (not mere
+   adjacency) spares edges bridging *different* conductors across a
+   resolved gap.  One pass is a fixed point.  This is the DD-050
+   consolidation line: 2D mode solvers and 3D update see the same
+   conductor.  Side fix: enlarged-cell donors can no longer be
+   masked edges (previously donated mass onto interior-PEC neighbours
+   silently vanished).
+3. **LC-consistent M_μ coupling** (mesher step 4b,
+   ``couple_face_material_pairs``) — per H face, the two spanning
+   axes are candidate ladder directions with the co-located E edges
+   on the bounding planes as partners.  A ladder is valid when both
+   partners are free and their targets agree (rtol 1e-6) — the local
+   translation-invariance test; domain-boundary slabs inherit
+   validity from the adjacent interior face (a single boundary
+   partner cannot certify invariance — measured failure mode: bbox
+   tangent points, DD-049 geometry).  One valid ladder, or two that
+   agree → ``M_μ := ε0μ0·ε_pair·μ̄·d·d̃ / M_ε[partner]``, encoded as
+   an equivalent ``A_face_free`` (so ``build_M_mu``, ``m_mu_flat``
+   consumers and ``compute_min_effective_mu`` see it consistently);
+   two valid ladders that disagree → genuinely 3D neighbourhood, no
+   wave to preserve → Krietenstein stays.  Bulk pairs reproduce their
+   bulk value exactly (strict no-op away from conformal contours).
+   The ``build_M_mu`` 1 % ``A_face_free`` floor applies unchanged.
+
+**Measured (conformal round coax, D_i 0.41 mm / D_a 5 mm / ε_r 9,**
+``validation/straight_coax_conformal_pair_diag.py``**).**
+
+    case              pair spread   z_line      max |S11|   median
+    19×19×25 before      3.1 %      48.12 Ω     −32.5 dB    −35.8
+    19×19×25 after       0 (exact)  48.12 Ω     −44.1 dB    −61.4
+    staircase 19×19      0 (exact)  44.73 Ω     −45.3 dB    −60.6
+    33×33×50 after       0 (exact)  49.60 Ω     −56.3 dB    −73.6
+
+(Analytic z_line 49.97 Ω.)  Acceptance met: staircase-level port
+floor at conformal impedance accuracy; refinement now buys floor
+(−44 → −56 dB), which it previously did not (−32.5 → −41.2).
+
+**DD-051 benchmark non-regression.**  Round-WG TE11 cut-off
+(conformal): −0.29 / −0.14 / −0.15 / −0.17 % at n_t ∈ {17, 25, 33,
+49} (DD-051 recorded −0.45 % at n_t = 17 — slightly improved, still
+sub-percent everywhere; staircase branch untouched).  Rotated cavity
+(production branch, h ∈ {4, 3, 2.5, 2, 1.5, 1.25} mm): 0.48 / 0.63 /
+0.45 / 0.20 / 0.11 / 0.11 % with p_obs = 1.66 — better than the
+DD-051 record (0.22–1.63 %, p_obs ≈ 1.64) at every resolution.
+
+**Scope notes.**
+
+* TE/TM ports keep their DD-047 Mur-limited floors; the coupling
+  changes transversal H faces only where a unique invariant ladder
+  exists, and hollow-WG cut-offs live on the (conflicting-ladder)
+  Hz faces, which the rule leaves to Krietenstein by construction.
+* QTEM/inhomogeneous sections get ``ε_pair`` per pair from
+  ``eps_avg/f_A`` — the pair product then varies with the local ε,
+  which is the physically correct ladder (the residual QTEM floor is
+  the genuine E_z ≠ 0 modal limit, DD-052).
+* The coupling runs at meshing time (``Mesh.from_geometry`` step 4b)
+  and sees geometric PEC only; BC-PEC walls consolidated later
+  (``with_pec_boundaries``) are planar and never conformal, so they
+  need no coupling.
+
+**Files.**  ``geometry/filling.py`` (f_A return),
+``geometry/subcell.py`` (``EdgeMaterialData.f_A``, step 6b, donor
+blocking), ``operators/material_matrices.py``
+(``couple_face_material_pairs`` + staircase lookup helpers),
+``mesh/mesher.py`` (step 4b call).  Tests:
+``tests/unit/test_pair_consistent_subcell.py`` (f_A population,
+re-mask fixed point, donor guard, per-pair identity, bulk no-op),
+``tests/integration/test_conformal_coax_sparams.py`` (floor < −40 dB,
+median < −55 dB, z_line 48.12 ± 1 %).
+
+---
+## DD-054 — Exact discrete transparent boundary condition (DTBC) for TEM port modes
+
+**Date:** 2026-07-09 (session 84 method gate, session 85 production).
+**Status:** **Implemented** — WP-R2 of ``REFLECTION_FREE_PLAN.md``.
+*(Session 86: the WP-R3 status block of DD-055 extends the DTBC to
+TE/TM; the "TEM only" limit below is retired.)*
+Scope: TEM modes; TE/TM follow in WP-R3, inhomogeneous QTEM in WP-R4.
+Supersedes the DD-047 Mur termination *for TEM modes only*; Mur stays
+the fallback branch for every other mode.
+**Method (gated analytically in WP-R1 before any solver code).**  On a
+uniform feed line the modal amplitude is the exact 1D leapfrog chain
+(DD-052/DD-053 separation); its exact discrete transparent boundary is
+the ghost relation with symbol ``λ = A − √(A²−1)``,
+``A(z) = 1 + (z − 2 + 1/z + q²)/(2r²)`` (TEM: ``q = 0``), kernel via
+contour integration.  Reflection of an approximated symbol is exactly
+``Γ = (λ̃−λ)/(λ⁻¹−λ̃)``.  See the plan's method note and
+``validation/dtbc_kernel_spike.py``.
+**Decisions.**
+1. **Per-mode termination gate in ``PortOperatorModal``.**  A TEM mode
+   is DTBC-terminated iff its co-located pair product certifies a
+   uniform chain: ``r_pair = dt/√(M_ε[e]·M_μ[h_partner])`` per
+   transversal pair (the DD-053 pair identity with
+   ``dz = d̃z = normal_dx`` on the flattened port slab; no continuum
+   velocity enters), modal-energy-weighted RMS spread ``< 1e-8``.
+   Homogeneous sections (any ε_r) pass at roundoff; inhomogeneous QTEM
+   lines fail at the material-contrast level and keep Mur — no silent
+   misuse.  ``termination="mur"`` forces the legacy branch (A/B).
+2. **Exactness by kernel auto-extension, not truncation.**  At step
+   ``n`` the ghost convolution reaches ``n`` samples back, so a kernel
+   longer than the run is the *exact* DTBC — no truncation error, no
+   passivity question (the R1 truncation/passivity analysis applies
+   only to a future compressed sum-of-exponentials form, which is
+   deferred until the O(n) per-step convolution cost matters).
+3. **Excitation through the ghost plane.**  The incident wave is
+   prescribed at the ghost plane; the same kernel propagates it to the
+   port plane (``u_inc = ℓ ⊛ s``) — the *exact discrete* incoming
+   wave, replacing the Mur-era fractional-delay interpolation.  The
+   transparent condition acts on the scattered part only.
+4. **Discrete de-stagger in ``compute_s_parameters``.**  For DTBC
+   channels the two-plane a/b solve uses the exact discrete half-cell
+   factor ``λ^{1/2}(e^{jωdt})`` (``port_line_params``, threaded from
+   ``PortOperatorModal.dtbc_line_params``) instead of the continuum
+   ``e^{−γ·dz/2}``.  The continuum factor's grid-dispersion gap
+   ``≈ (βdz/2)³(1−r²)/6`` capped *measured* floors near −70 dB on
+   λ/20 meshes — that measurement gap, not Mur, set the old
+   parallel-plate −71.9 dB record.  For the discrete TEM chain the
+   V/I magnitude ratio is frequency-independent (equal to the static
+   travelling-wave calibration), so the decomposition is exact for
+   the discrete wave.
+**Measured (session 85,**
+``validation/dtbc_tem_port_floors.py``**, band
+0.25–10 GHz).**
+    geometry                        before        after (max / median)
+    parallel plate uniform          −71.9 dB      −138.7 / −164.0 dB
+    parallel plate graded (1.4)     −64.1 dB      −136.1 / −158.1 dB
+    rect coax (PTFE, ε 2.1)         −39.8 dB      −159.3 / −159.4 dB
+    conformal round coax (ε 9)      −44.1 dB      −131.0 / −131.3 dB
+Conformal z_line unchanged at 48.12 Ω; |S21| flat within ±0.012 dB.
+All four sit 30+ dB below the −100 dB acceptance line.  The conformal
+coax passes the pair gate *because of* DD-053 (the coupling makes the
+pair product exact per co-located pair); its former −44 dB residual is
+hereby attributed entirely to the absorber + measurement chain, not to
+conformal geometry.
+**Alternatives considered.**  Truncated kernel with
+passivity-enforced rational fit (R1 finding: raw truncation is weakly
+active) — unnecessary while the kernel outlives the run; revisit for
+very long runs.  CFS-PML / mode-matching / co-simulation — archived
+2026-05-06 (``archive/reflection-free-ports``), not a design
+reference (ground rule, sessions 63–65).
+**Limits.**
+* TEM only.  TE/TM (``q > 0`` Klein-Gordon kernel with the mode's
+  *discrete* cut-off) is WP-R3; the DD-047 −19 dB near-cutoff Mur
+  peak stands until then.
+* The factory's three-equidistant-cells validation at the port is a
+  prerequisite (uniform continuation of the boundary cell).
+* Non-zero initial conditions start the chain with zero velocity
+  (same convention as Mur's ``initialize_state``); exactness assumes
+  a quiescent exterior at t = 0, which interior ICs satisfy.
+* Per-step cost is one O(n) reduction per DTBC mode (two when
+  excited): O(N²) per run — measured 2.2 s total at N = 6·10⁴,
+  negligible against the 3D update; the compressed form is the
+  escape hatch if profiling ever says otherwise.  Implementation
+  note: the reduction is ``np.einsum``, *not* ``np.dot`` — BLAS ddot
+  multithreads past ~16k elements and its per-call thread-team
+  overhead (ms-class, all cores spinning) made long fixed-step runs
+  ~1000× slower before the switch (session-85 finding).
+
+**Files.**  ``ports/modal/dtbc.py`` (symbol, kernel, reflection
+bound, ``destagger_theta``, ``DTBCTermination``),
+``ports/modal/operator.py`` (gate, ghost excitation,
+``dtbc_line_params``), ``postprocessing/modal_sparameters.py``
+(``port_line_params``), ``analysis/scattering_td.py`` (threading).
+Tests: ``tests/unit/test_dtbc.py`` (33), ``test_modal_operator.py``
+(DTBC selection), ``test_modal_sparameters.py`` (discrete de-stagger
+float-noise + continuum-leak anchor); integration bounds tightened to
+−110…−130 dB on all three straight-line geometries.
+---
+## DD-055 — Klein-Gordon DTBC for TE/TM port modes + unified multi-mode port
+
+**Date:** 2026-07-09 (session 86).
+**Status:** **Implemented** — WP-R3 of ``REFLECTION_FREE_PLAN.md``.
+Extends DD-054 from TEM to TE/TM; closes STATUS construction site 1
+(unified multi-mode port) and retires the DD-047 −19 dB near-cut-off
+Mur limitation structurally.  Inhomogeneous QTEM stays on Mur until
+WP-R4.
+**Pre-check gate (before any production code,**
+``validation/kg_dtbc_precheck_spike.py``**).**  Ran the raw
+3D leapfrog on modal initial conditions and projected per plane:
+1. **TE separates exactly as built.**  The 2D TE eigenproblem
+   (``build_2d_curl_curl``) is the index-sliced restriction of the
+   3D operators, so the eigenvector is an exact transversal
+   eigenvector and ``Mode.omega_c`` is the exact *discrete* cut-off:
+   KG-chain residual ~6e-16 (WR-90 TE10) and ~7e-16 (conformal round
+   TE11), ``q = omega_c·dt`` to 1e-15, pair spread ~1e-16 — DD-053
+   already answers the transversal side; TE needs no further
+   analogue, conformal sections included.
+2. **TM did NOT separate with the lumped node-Laplace.**  The
+   hand-built ``build_2d_node_laplace`` (geometric dual areas) was
+   inconsistent with the 3D metric: ``q²`` off by 9e-10 (uniform
+   staircase) to 1.7e-5 (conformal round TM01), profile leakage
+   5.7e-5, end-to-end lock-in capped at −77 dB — the "DD-053
+   analogue for TM" the plan's pre-check asked about, answered yes.
+3. **Discrete wave impedance.**  The V/I ratio of the discrete
+   travelling wave through the production projections is *not* the
+   continuum ``z_wave(ω)`` (gap O((ωdt)², (βdz)²) — measured caps
+   −33…−72 dB with continuum Z) but exactly
+       Z_TE(ω) = z0·s/√(s²−(q/2)²),  Z_TM(ω) = z0·√(s²−(q/2)²)/s,
+       s = sin(ω·dt/2),   z0 = r·nV·c_pair/(dt·nI)
+   — the continuum relations under ``ω → (2/dt)·sin(ωdt/2)``,
+   ``β → (2/dz)·sin(β̂dz/2)``, with the static constant from the
+   stored profiles (``nV``/``nI`` the M_ε/M_μ norms, ``c_pair`` the
+   per-pair dual-voltage ratio of the DD-052 travelling-wave H
+   form).  Verified against the coupled-chain symbol to 1e-15 and by
+   CW lock-in through a bit-faithful replica of the recorder
+   sampling: |b/a| of a pure outgoing wave −152…−165 dB with the
+   discrete Z vs −33…−72 dB with ``z_modal``.
+**Decisions.**
+1. **Exact TM eigenproblem ``build_2d_tm_curl_curl``** (replaces and
+   removes ``build_2d_node_laplace``).  The TM cut-off oscillation is
+   the pure (e_n, h_t) resonance of one longitudinal cell, so the
+   exact discrete TM eigenproblem is
+   ``C_s^T·M_μ⁻¹·C_s · ê_n = ω̂_c² · M_ε[e_n] · ê_n`` with ``C_s``
+   the row/column slice of the 3D primal curl (rows = transversal H
+   faces at the port-adjacent half-plane = ``plane.h_u/h_v_indices``,
+   columns = the normal-E edges, 1:1 with plane nodes) — the exact
+   TM counterpart of ``build_2d_curl_curl``.  Given the DD-053 pair
+   identity, the remaining modal-closure conditions hold
+   automatically and ``ê_t ∝ G_2d·ê_n`` (topological gradient) —
+   the construction ``_solve_tm`` already used, now with the exact
+   eigenpair.  Dirichlet = the 3D PEC state of the normal-E edges
+   themselves (post-DD-053 tangential re-masking guarantees conductor
+   footprints are included); hollow-window fallback for bare meshes.
+   Post-fix: TM chain residuals 1e-15, q² to 4e-15, conformal TM01
+   lock-in −77 → −132 dB.  Also repairs the former 9e-10 staircase
+   inconsistency.
+2. **KG-DTBC gate in ``PortOperatorModal``.**  The DD-054 pair gate
+   generalises unchanged; the mass is ``q = omega_c·dt`` for
+   *numerical-path* TE/TM modes (the discrete eigenvalue).
+   Analytical-path modes carry the continuum cut-off — wrong ``q``
+   at the (ω_c·dt)² level — and stay on Mur.  Excitation through the
+   ghost plane is dispersion-exact by construction (the kernel *is*
+   the propagator); nothing mode-specific was added.
+3. **Discrete wave impedance in ``compute_s_parameters``.**
+   ``dtbc_line_params`` values extend to ``(r, q, z0)``; channels
+   with ``z0 ≠ None`` replace ``z_modal(ω)`` by
+   ``dtbc_wave_impedance`` (closed form evaluated on the unit circle,
+   offset-free; below cut-off the branch ``rad = −j√((q/2)²−s²)``
+   continues the decaying root — Z_TE inductive, Z_TM capacitive,
+   like the continuum).  z0 is covariant under the V/I calibration
+   rescale, so the reflection zero is calibration-independent.
+4. **Unified multi-mode port (closes STATUS site 1).**
+   ``PortSpecNumerical.mode_type`` defaults to ``None`` = solve both
+   TE and TM families, keep the ``n_modes`` lowest cut-offs, mixed
+   types, in ONE operator — injection, recording and termination per
+   mode in one place, so the former two-operator TE+TM
+   source-injection collision cannot occur by construction.  The
+   layer-a hollow resolution (``PortWaveguide``) uses it.
+**Measured (session 86,**
+``validation/kg_dtbc_wg_port_floors.py``**).**  CW lock-in
+through the full production solver/operators/recorder (the certified
+measurement; methodology finding below):
+
+    geometry           |S11| at 1.01·f̂_c   …across the band
+    WR-90 TE10             −150.4 dB        −153 … −166 dB
+    WR-90 TM11             −137.3 dB        −154 … −165 dB
+    round WG TE11 (conf.)      —            −124 … −132 dB  (1.05–1.5·f̂_c)
+    round WG TM01 (conf.)      —            −124 / −129 dB  (1.05 / 1.2·f̂_c)
+
+All 24+ dB below the −100 dB acceptance line; the WR-90 numbers sit
+37–66 dB below it — including 1.01·f̂_c, where the DD-047 Mur peak
+was −19 dB.  (The conformal round-WG near-edge points were skipped
+for run-time only: the forced-plane mesh's small dt makes the CW
+settling ~10⁶ steps; the measured 1.05–1.5 trend and the exactness
+argument cover the edge.)
+
+**Measurement-methodology finding (pulsed band-edge S-parameters).**
+The broadband pulsed workflow is *finite-record truncation-limited*
+near a cut-off: the band-edge resonance decays only algebraically
+(v_g → 0; energy diffuses into the exact absorber ~ √t), so the
+rectangular-window DFT of a run truncated at finite in-domain energy
+leaks into the near-edge S-parameters — measured ~+10 dB per 10× run
+length, independent of the absorber; the Tukey taper is no remedy
+(it clips the incident pulse on long runs).  A property of pulsed
+measurement on dispersive lines, not of the port — the R1 lesson
+("CW lock-in, not pulse FFT ratios") carried end-to-end.  The
+benchmark prints the pulsed overview alongside (WR-90 TE10 max
+−33.6 dB / median −88.9 dB at default run length) to document the
+practical pulsed floor.  Candidate future feature: late-time
+autoregressive estimation for pulsed runs.
+**Alternatives considered.**  Keeping the node-Laplace with a
+correction factor — rejected (the exact restriction exists and is
+simpler); continuum Z with a fitted frequency correction — forbidden
+by the ground rule and unnecessary (closed form exact).
+**Limits.**
+* Homogeneous cross-sections (any scalar ε_r); inhomogeneous QTEM
+  and hybrid modes are WP-R4.
+* The eigsh eigenvector residual (~3e-8 l2) bounds modal leakage at
+  the −150 dB class — irrelevant at the −100 dB criterion, listed
+  for completeness.
+* Analytical-path modes (layer-b use of the closed-form solvers)
+  remain on Mur; the production factory paths all build
+  numerical-path modes.
+**Files.**  ``ports/modal/curl_curl_2d.py``
+(``build_2d_tm_curl_curl``; ``build_2d_node_laplace`` removed),
+``ports/modal/numerical_2d.py`` (TM path docs),
+``ports/modal/factory.py`` (``_build_tm_operators``, unified
+multi-mode branch, ``PortSpecNumerical.mode_type=None``),
+``ports/modal/operator.py`` (``_chain_params``, ``_chain_z0``,
+``dtbc_line_params → (r, q, z0)``), ``ports/modal/dtbc.py``
+(``dtbc_wave_impedance``), ``postprocessing/modal_sparameters.py``
+(discrete-Z consumption), ``ports/declarative.py`` (hollow
+resolution).  Tests: KG-DTBC selection in ``test_modal_operator.py``,
+unified-port merge in ``test_modal_factory.py``, TM builder parity in
+``test_modal_numerical_2d.py``; integration in
+``tests/integration/test_wg_kg_dtbc_sparams.py``.
+---
+## DD-056 — CW true-mode ports for inhomogeneous lines (per-frequency zeta pencil)
+
+**Date:** 2026-07-09/10 (session 88).
+**Status:** **Implemented** — WP-R4a of ``REFLECTION_FREE_PLAN.md``
+(production form Option B, developer decision 2026-07-09).
+Scope: QTEM / hybrid modes on transversally inhomogeneous straight
+lines, measured **CW, one frequency per run** — the certified
+intermediate step before the broadband band-subspace DTBC (WP-R4b).
+Modal Mur-1st remains the fallback for pulsed broadband runs on
+inhomogeneous lines and for analytical-path modes.
+**Method (pre-check gate before any production code,**
+``validation/qtem_cw_precheck_spike.py``**).**  The WP-R4
+method-selection spike (``validation/qtem_dtbc_method_spike.py``)
+established that on a z-uniform section the true discrete modes
+at one frequency are the eigenpairs ``(ζ, φ)`` of the quadratic zeta
+pencil over the period trace ``x_p = (e_t(p), e_z(p+1/2))``, and that
+no *fixed* profile reaches −100 dB broadband.  A CW run only needs
+exactness *at the drive frequency*; five legs make the existing
+scalar production machinery carry the true mode there:
+1. **Period blocks from the production matrices**
+   (``ports/modal/zeta_pencil.py::build_period_blocks``): row slices
+   of ``A = M_ε⁻¹CᵀM_μ⁻¹C`` at the port-adjacent periods (no global
+   matrix product; DD-053 conformal metric and PEC masks enter
+   as-is), with three certificates — ≥ 4 equidistant cells along the
+   port normal, z-uniform PEC mask, and translation invariance of
+   the blocks extracted at periods 1 vs 2 (rtol 1e-9).  The DD-054
+   pair-gate analogue: it certifies that the pencil's uniform
+   continuation IS the exterior the port emulates.
+2. **On-circle eigensolve, sparse** (``solve_zeta_modes`` /
+   ``find_propagating_modes``): ``σ̂ = 2 − 2cos(ω·dt)`` is real on
+   the unit circle, eigenvalues come in conjugate pairs = the
+   incident/reflected wave pair.  The linearised pencil has a
+   singular ``B`` (infinite eigenvalues), so scipy's generalised
+   path is bypassed: one sparse LU of ``A_lin − σB_lin`` + ARPACK on
+   ``(A_lin − σB_lin)⁻¹B_lin``.  Shift targets spread along the
+   unit-circle arc ``(0, 1.3·θ_DC]`` — every propagating mode has a
+   smaller phase advance than the fundamental, and a single target
+   near the fundamental misses higher modes hiding among the
+   evanescent cluster near ``+1`` (measured failure).  Frequency
+   continuation: the QTEM Laplace solve (DD-vintage dual-Laplace)
+   bootstraps the tracking profile and the ``ε_eff``-based arc hint.
+3. **Frequency-local exact chain fit** (``chain_fit``): the scalar
+   KG chain matches ``ζ`` at ``ω`` exactly through ONE real
+   equation, ``q² = 4[sin²(ω·dt/2) − r²sin²(θ/2)]`` (θ = −arg ζ) —
+   pure trig arithmetic, no cancellation; ``r²`` is spent on
+   matching the *derivative* ``dζ/dσ̂`` (group delay), closed-form
+   by Hellmann-Feynman with the palindromic left eigenvector
+   ``ψ = W·conj(φ)``.  By construction ``λ(e^{iωdt}; r, q) = ζ`` to
+   machine precision (measured ≤ 2.5e-12, a-priori |Γ(ω)| ≤
+   −209 dB), so the **unchanged** ``DTBCTermination`` terminates the
+   true mode exactly at the drive frequency, and its ghost injection
+   launches it.  ``q² ≥ 0`` ⇔ normal dispersion (ε_eff rising with
+   f) — enforced, anomalous sections raise.  Passivity: (r, q) real
+   → exact passive half-lattice symbol (R1).
+4. **Real port profile + dual-basis projection.**  On the circle the
+   pencil is real, and the z-reflection pairing fixes a gauge with
+   ``φ_t`` real (measured residual ≤ 2.5e-13) — the stored profile
+   is a standard real ``DiscreteMode``.  True modes of different
+   branches are NOT M_ε-orthogonal on the e_t block, so multi-channel
+   ports project with the Gram-inverse dual profiles
+   (``PortOperatorModal(dual_e_profiles=…)``); reconstruction stays
+   primal.  V/I calibration is skipped (``calibrate=False``) — the
+   stored profiles must stay exactly as built.
+5. **Exact V/I phasors, convention-proof** (``cw_wave_phasors``):
+   the unit incident wave's recorder response is computed by
+   synthesising its Bloch field on the two port-adjacent planes and
+   applying the *actual* 3D curl, ``H = −dt(C E)/(M_μ(z^{1/2} −
+   z^{−1/2}))``, then projecting with the stored profiles exactly as
+   ``project_V``/``project_I`` do.  The reflected wave is the
+   conjugate eigenpair with ``v_out = conj(v_in)`` but
+   ``i_out = −conj(i_in)`` — the purely imaginary leapfrog
+   denominator flips sign under conjugation; this is the discrete
+   transmission-line reverse-current sign (session-88 finding: with
+   ``+conj`` the S11 floor survives — the measurement is then a pure
+   a-wave — but |S21| comes out +25 dB).  The CW a/b decomposition
+   (``cw_lockin_phasors`` + ``cw_decompose``) solves the exact 2×2
+   system per port — the R2 λ^{1/2} de-stagger and the R3 discrete
+   wave impedance are *contained* in the phasors; no closed-form
+   scalar impedance appears.
+**Pre-check gate results (session 88, reduced vector chain).**
+q_eff² > 0 at every band point on both spike geometries; production-
+equivalent boundary floors −135.9 … −154.2 dB (single and dual
+channel); sparse = dense to |Δζ| ≤ 1.2e-13; no exponential drift over
+32k-step noise probes (PEC reference conserves to 1e-6; non-modal
+content is trapped-neutral, not amplified).  Probe-methodology
+lesson: stability probes must force within the image of the update
+operator — a raw state kick excites the static gradient modes, whose
+leapfrog Jordan block drifts linearly and mimics boundary activity.
+**Measured (session 88,**
+``validation/qtem_cw_dtbc_port_floors.py``**),** CW lock-in
+|S11| through the full production chain (``build_cw_true_mode_port``
+→ ``FITTimeDomainSolver`` → ``PortSignalRecorder`` → 2×2
+decomposition), |S21| on the matched line 0.00 dB throughout:
+    geometry          band / point                   |S11|
+    layered plate     1.0 … 7.8 GHz (fundamental)    −244.6 … −196.5 dB
+    layered plate     2nd mode, f̂_c = 8.4465 GHz:
+                      1.01 / 1.05 / 1.2 · f̂_c        −176.3 / −194.6 / −200.6 dB
+    dielectric block  2.1 … 6.2 GHz (fundamental)    −250.2 … −225.2 dB
+    microstrip        1.0 … 7.8 GHz (fundamental)    −250.8 … −206.5 dB
+
+All points 76–150 dB below the −100 dB acceptance line; ε̂_eff
+tracks the dispersion (layered 1.6032 → 1.8584 against the 1.6035
+DC anchor; microstrip 3.083 → 3.216).  The layered fundamental is
+measured through the single-channel port (the second mode is
+evanescent below 8.45 GHz); the second-mode points exercise the
+two-channel dual-basis port for real.
+**Cost-watch (developer caveat 2026-07-09) — RESOLVED, criterion
+stands.**  Measured per-frequency mode-solve cost (blocks + sparse
+eigensolve + fit + phasors, *per port* — two ports per S-point) vs
+the 3D CW run on the same host:
+
+    layered      41 ms/port    3D run   2.7 s/point    share ~3 % (2 ports)
+    block        31 ms/port    3D run   1.9 s/point    share ~3 %
+    microstrip  433 ms/port    3D run 196   s/point    share 0.9 %
+
+On the production-sized case the share is < 1 %; the toy lines only
+reach ~3 % because their whole 3D run lasts seconds.  Well inside
+the "few percent" line — no renegotiation of the criterion.
+Cross-section scaling (mode solve only, microstrip refinement):
+N = 2 710 / 11 132 / 45 112 → 86 ms / 0.49 s / 3.6 s per point,
+ARPACK-dominated (block extraction ≤ 0.16 s).  For the future
+WP-R4b broadband path (one eigensolve per S-axis point in
+post-processing) a 200-point sweep on the N = 45k cross-section
+costs ~12 min — the point where warm-started continuation and the
+R4b band-subspace form matter.
+**Measurement methodology.**  Near a channel's cut-on the CW ramp
+must narrow spectrally with the gap to the cut-off
+(``σ ∝ 1/(ω·dt − 2asin(q/2))``), or its below-cut-off spectral
+leakage never drains and floors the lock-in fit (the R3 band-edge
+lesson carried over; measured: −97.6 dB with a fixed 6-period ramp
+at 1.01·f̂_c, −174.4 dB with the gap-scaled ramp).
+**Alternatives considered.**  Matrix-DTBC kernel in production —
+exact broadband but the per-contour-point QZ at production sizes is
+prohibitive and the raw kernel tail is full-rank (WP-R4 spike);
+deferred to the band-subspace form (WP-R4b).  Complex ρ-offset
+eigensolve (R1-style) — replaced by the exact on-circle solve; the
+conjugate-pair structure is what makes the real gauge and the
+reflected-wave phasors exact.
+**Limits.**
+* CW measurements only: the port is exact at ``f_cw``; off-frequency
+  content is transient.  Broadband pulsed runs on inhomogeneous
+  lines stay on Mur until WP-R4b.
+* Requires ≥ 4 equidistant cells and a locally uniform straight feed
+  at the port (certificates raise otherwise).
+* Only propagating modes get channels; evanescent arrivals at the
+  port plane are wiped (the R2 non-modal-remainder situation —
+  keep ports away from discontinuities, unchanged guidance).
+* Anomalous dispersion (``q_eff² < 0``) is not certified and raises.
+* Multi-conductor lines track the fundamental of ``conductors[1]``;
+  exciting a *different* fundamental-family member per frequency is
+  future work.
+**Files.**  ``ports/modal/zeta_pencil.py`` (new),
+``ports/modal/factory.py`` (``build_cw_true_mode_port``),
+``ports/modal/operator.py`` (``chain_overrides``,
+``dual_e_profiles``, ``calibrate``), ``ports/modal/__init__.py``
+(exports).  Tests: ``tests/unit/test_zeta_pencil.py`` (9),
+``tests/integration/test_qtem_cw_dtbc_sparams.py``.  Benchmarks:
+``validation/qtem_cw_precheck_spike.py`` (gate),
+``validation/qtem_cw_dtbc_port_floors.py`` (acceptance +
+cost-watch).
+---
+## DD-057 — Galerkin band-subspace DTBC: broadband ports for inhomogeneous lines
+
+**Date:** 2026-07-10 (session 89 certificate gate, session 90
+production).
+**Status:** **Implemented** — WP-R4b / WP-R4b-impl of
+``REFLECTION_FREE_PLAN.md``.
+Scope: **pulsed broadband** port termination and S-parameters on
+transversally inhomogeneous straight lines (QTEM / hybrid) — one
+operator terminates the whole band, one pulsed run yields the whole
+S-parameter axis.  Retires modal Mur as the pulsed fallback on these
+lines (Mur remains only for analytical-path modes).  The CW
+per-frequency path (DD-056) stays as the single-frequency instrument.
+**Method (certificate gate before any solver code, session 89,**
+``validation/qtem_band_dtbc_certificate_spike.py``**).**
+The WP-R4 spike showed the raw matrix-DTBC kernel tail is full-rank,
+but the tracked mode-family traces over the band span a rank-p
+subspace (p ≈ 5–25).  The gate fixed the production form as the
+**Galerkin-projected exterior**: with ``V`` a real W-orthonormal
+family basis (W = M_ε over the period trace), the exterior half-line
+is replaced by the projected lattice ``D̃_k = VᵀW·D_k·V`` (p×p).
+The palindromic W-symmetry is inherited (``D̃₋₁ = D̃₊₁ᵀ``), so the
+projected half-line is itself a lossless lattice: its exact
+small-system DTBC is **passive by construction**, and the coupled
+full-interior + projected-boundary-period system is block-symmetric
+lossless.  The naive alternative — projecting the *kernel*
+(``U·Uᵀ·W_t·Λ·V·Vᵀ·W``) — is weakly ACTIVE (noise probes grow 2.3–66×
+over 4094 steps; the spike keeps it as the measured negative
+control) and is not implemented.  Every contour/eigen operation runs
+at size 2p instead of 2N — the broadband kernel is cheap at
+production cross-sections.
+**Decisions.**
+1. **Boundary trace pairing** (``build_period_blocks(...,
+   pairing="boundary")``): period ``p`` holds ``(e_t(p),
+   e_z(p−1/2))``.  In this pairing the exterior-facing block
+   ``D₋₁`` has ``e_t`` columns only, so interior periods touch the
+   boundary period exclusively through the port-plane tangential
+   trace, and the boundary period's ``e_z`` half-plane lies outside
+   the mesh — it exists only inside the projected p-state ``xt``.
+   The operator writes ``e_t(port) = V_t·xt`` each step (the modal-
+   overwrite pattern; the unprojected remainder does not cap the
+   floor — gate certificate ii) and touches nothing else.
+2. **Two exact small kernels** (contour QZ at 2p, R1 recipe).  The
+   ghost kernel is the DTBC of the *swapped* projected pencil
+   (outgoing radiation decays toward −p); the excitation kernel is
+   the DTBC of the *unswapped* pencil (the incident wave prescribed
+   at the ghost period decays toward +p).  The scalar chain
+   degenerates to one kernel — the matrix case does not.  Both
+   auto-extend past the run length (DD-054 pattern: within a run the
+   boundary is exact); the excitation kernel is built lazily, so
+   passive ports pay half the contour cost.
+3. **Frequency-tracked ghost source.**  A *fixed* source direction
+   launches, away from its reference frequency, a wave whose profile
+   deficit against the true mode excites an evanescent interface
+   halo **at the measurement plane** — measured −40 dB |S11| class
+   at the band edges (the single-profile refutation reappearing at
+   the injection).  The ghost source is therefore synthesised
+   spectrally, ``ŝ(f) = ŵ(f)·VᵀW·φ_f``, with the family direction
+   cubically interpolated over the tracking grid.
+   ``set_excitation_band`` provides the natural broadband drive: an
+   erfc-product spectral window (flat measurement span, Gaussian-
+   class roll-offs reaching the ``skirt`` level at the subspace band
+   edges, hard zero outside).  A merely C¹ window decays like
+   ``t⁻³`` and is still at 1e−4 of peak at the window end
+   (measured); a source truncated while active kicks broadband grid
+   modes up to Nyquist which the band boundary structurally does not
+   absorb (measured: 1e−5 near-Nyquist ringing for thousands of
+   steps).  A **compactness gate** (< 1e−6 of peak at the synthesis-
+   window end) turns both failure modes into a loud contract:
+   excitation spectra must fit inside the subspace band.
+4. **Subspace + certificates.**  Families tracked per grid frequency
+   by W-overlap continuation over the sparse arc-target eigensolve
+   (DD-056 machinery); real W-orthonormal SVD basis of (Re φ, Im φ)
+   columns, rank by relative singular-value threshold (default
+   1e−8, the subspace-capture certificate).  The projected blocks
+   must pass the palindromic-symmetry residual gate (1e−10, then
+   enforced exactly).  ``band_apriori_reflection`` evaluates the
+   exact frequency-domain modal reflection of the built boundary
+   (the gate formula in production orientation: scattered ansatz
+   over the into-domain branch set, N_t×N_t solve) — dense, for
+   gate-sized cross-sections; evaluated off-grid it is flat at the
+   ρ-offset evaluation floor (−130…−148 dB), i.e. the subspace
+   captures the family *continuum*, not just the grid points.
+5. **Pulsed postprocessing** (``compute_band_s_parameters``): DFT of
+   the recorded fixed-channel V/I at arbitrary axis frequencies +
+   per-frequency true-mode solve on the stored inward chain + exact
+   cross-phasors of every (mode, recording channel) pair through
+   ``cw_wave_phasors`` → joint 2·N_ch least-squares for ``a_j(f)``,
+   ``b_j(f)``.  ONE 3D run serves the whole axis; the per-frequency
+   mode-solve cost is the DD-056 cost-watch number (30 ms–3.6 s per
+   point), independent of the 3D run.
+**Measured (session 90,**
+``validation/qtem_band_dtbc_port_floors.py``**, one pulsed
+run per case, |S21| = 0.00 dB throughout).**
+    layered fundamental   1.0–7.8 GHz (18 pts):  −159.6…−231.3 dB
+    layered 2nd family    1.05–1.28·f̂_c:         −166.7…−189.8 dB
+    dielectric block      2.1–6.2 GHz (12 pts):  −186.7…−202.8 dB
+    microstrip            1.0–7.8 GHz (18 pts):  −171.1…−211.0 dB
+Record end/peak 1e−11…1e−13 (complete ring-down inside the record).
+A-priori ceilings on the family points: −114…−125 dB — the ρ-offset
+*evaluation* floor at the cut-on grid points; the TD floors go
+deeper, as in the gate spike.
+**Alternatives considered.**  Kernel projection — refuted (weakly
+active, gate certificate iii).  Sum-of-exponentials compression of
+the p×p kernel — deferred until profiling demands (R2 precedent).
+Fixed-direction injection — measured −40 dB class, replaced by the
+tracked source.  Interior-plane trace measurement — unnecessary once
+the injection halo is at subspace-capture level.
+**Limits.**
+* The measurement span must sit inside the subspace band with
+  roll-off guard room; the compactness gate raises otherwise.  The
+  synthesis window scales with 1/dt for the same physical roll-off
+  (fine meshes need longer windows).
+* Pulsed points close to a cut-on are finite-record limited (the
+  WP-R3 methodology finding); higher families are measured pulsed
+  from 1.05·f̂_c here, the 1.01·f̂_c anchor stays CW (DD-056:
+  −176.3 dB).
+* Kernel build: 4·n_kernel ordered-QZ solves of size 2p per kernel
+  (~10 s at n_kernel = 16384, p = 17; ~1 min at 65536, p = 9); runs
+  longer than the kernel trigger a rebuild at doubled length — set
+  ``n_kernel_init`` ≥ the planned run length.  SOE compression is
+  the escape hatch if this ever dominates.
+* Out-of-band content is not certified: injection is band-limited by
+  construction; deep sub-band content reflects near-totally
+  (measured rattle before band-limiting was introduced).
+* ``initialize_state`` assumes a quiescent port region (as DD-054).
+**Files.**  ``ports/modal/band_dtbc.py`` (new: solvent/kernel,
+family tracking, subspace, Galerkin exterior, boundary state
+machine, port operator, a-priori evaluator),
+``ports/modal/zeta_pencil.py`` (boundary pairing),
+``ports/modal/factory.py`` (``build_band_dtbc_port``),
+``postprocessing/modal_sparameters.py``
+(``compute_band_s_parameters``), package exports.  Tests:
+``tests/unit/test_band_dtbc.py`` (12),
+``tests/integration/test_qtem_band_dtbc_sparams.py`` (3).
+Benchmarks: ``validation/qtem_band_dtbc_certificate_spike.py``
+(gate), ``validation/qtem_band_dtbc_port_floors.py``
+(acceptance).
+
+---
+
+## DD-058 — H-face enlarged-cell donor: implemented, measured neutral, dormant
+
+**Date:** 2026-07-10 (session 91, WP-R5 — the last open item of
+``REFLECTION_FREE_PLAN.md``).
+**Status:** **Implemented, dormant.**  The mechanism exists
+(``assign_h_face_donors``), is unit-tested and callable, but is *not*
+wired into ``Mesh.from_geometry``: the trigger benchmark built for it
+measured the DD-051 trigger gate as **not met** and the mechanism
+itself as neutral to machine precision.
+**Why this existed.**  DD-051 Variante A left one asymmetry between
+the ε and μ sub-cell corrections: cat-2 H-faces with
+``A_face_free / A_face < 1 %`` fall back to the *bulk staircase*
+``M_μ`` (to keep ``1/M_μ`` finite), over-estimating the local Faraday
+inertia by up to 100×, while short E-edges get an enlarged-cell donor.
+Round-WG measurements showed the fallback harmless there (~48 % floor
+share, no mode energy on the floored faces); STATUS site 2 recorded
+the trigger conditions under which a deep-PEC-inclusion geometry
+(iris-loaded cavity, narrow aperture, DTL cell) would need the donor:
+(a) floor share > 70 %, (b) convergence benchmark > 1–2 % off,
+(c) mode energy at the PEC boundary — any one necessary, all three
+sufficient.
+**Trigger benchmark**
+(``validation/iris_cavity_donor_trigger.py``): pillbox
+cavity R = 9.7 mm split by a t = 2 mm PEC iris with an a = 3.1 mm
+aperture — the TM010 0/π pair concentrates its field at the curved
+aperture rim, which cuts transversal H-faces at grazing angles.
+Three branches per resolution (n_t ∈ {17, 21, 25, 33}): staircase,
+conformal (floor fallback), conformal + donor.  Reference =
+Richardson extrapolation ``f_inf + C·h^p`` per branch (grid-search p,
+linear LSQ), methodology anchored on the iris-free pillbox against
+the analytic TM010 (the anchor shows the staircase extrapolation is
+only good to ~1 %, the conformal finest-mesh values to a few tenths
+of a percent — adequate for a 1–2 % criterion).
+**Measured (session 91):**
+* Trigger (a) **fires**: floor share 70.3–71.8 % of 4 500–19 420
+  cat-2 faces (81.6–91.7 % inside the iris slab).
+* Trigger (c) partially: 8.7–28.8 % of the *electric* mode energy
+  within 2h of the rim, but only 1.3–7.4 % of the magnetic energy —
+  falling with refinement.
+* Trigger (b) **does not fire**: conformal finest-mesh error
+  −0.17/−0.23 % (π/0 mode) vs the cross-branch reference;
+  staircase +1.0/+1.1 %.  No accuracy deficit anywhere near the
+  1–2 % line.
+* **The donor is neutral to machine precision**: with 1 328–4 976
+  donated faces the eigenfrequencies of the donor branch match the
+  fallback branch to < 1e-15 relative (last-bit noise).
+**Structural finding (why the fallback can never inject error
+here).**  A face whose free area collapsed below 1 % lies ≥ 99 %
+inside PEC — and its four circulation E-edges then sit inside (or
+tangential to) the conductor, i.e. inside the PEC *mask*.  With
+``C e = 0`` on the face's boundary, ``h`` never leaves 0 regardless
+of the inertia assigned to it, and its EMF contribution ``C^T h``
+stays 0.  The floored faces are *Faraday-dead by construction*; the
+staircase fallback only serves to keep ``1/M_μ`` finite.  This is
+the sharp version of the DD-051 "no mode energy there" heuristic,
+and it holds independently of the geometry class — which is why even
+the purpose-built deep-inclusion benchmark cannot trigger the donor.
+**Mechanism (kept, dormant).**  ``assign_h_face_donors(mesh)``
+(``operators/material_matrices.py``) mirrors the E-edge donor: per
+floored cat-2 face, the residual inertia ``μ̄·A_face_free`` moves to
+the neighbour face along the dual-edge axis (the shared flux tube;
+receiver = larger free-area ratio, never a floored face, never a
+staircase interior-PEC face), recorded in the new
+``FaceMaterialData.enlarged_cell_donor / enlarged_cell_area`` fields
+(default ``None``).  ``build_M_mu`` then freezes donated faces
+(``M_μ = 0``) and adds ``μ0·borrowed/L_dual`` to the receiver.  The
+update helpers translate ``M_μ = 0`` into the *exact* zero:
+``β_H = 0`` (fit_td), ``1/M_μ = 0`` (eigenmode_3d, 2D mode solvers,
+ζ-pencil), h-profile 0 (``tem_laplace`` travelling-wave pairs).  It
+must run **after** ``couple_face_material_pairs``.  Wiring point and
+condition are documented in ``Mesh.from_geometry`` (step 4b comment);
+re-run the trigger benchmark adapted to the candidate geometry first.
+**Hardening by-catches (production fixes in this session):**
+1. ``couple_face_material_pairs`` gained a **finite gate**: on
+   degenerate faces (μ̄ = 0) the encoded equivalent area was
+   ``inf``, which ``build_M_mu`` turned into ``0·inf = NaN`` — a
+   silently poisoned spectrum.  Non-finite values are never written
+   into the mesh data any more.
+2. The μ̄ = 0 faces came from **sliver cells**: cylinder tangent
+   planes return from CSG solids with ~1e-16 float wiggle, and a
+   tangent plane that lands within float distance of — but not
+   bit-exactly on — a forced grid node produces a ~1e-18 m cell
+   (the session-88 snap-plane lesson, third occurrence).  The
+   benchmark guards this loudly; a mesher-side clustering of
+   forced planes against geometry critical planes (within
+   ``min_feature_gap``) is the structural fix — noted as an open
+   mesher improvement, not done here.  *Resolved session 92
+   (WP-M1, ``_merge_axis_planes``): forced planes are verbatim
+   anchors, critical planes within ``min_feature_gap`` snap onto
+   them; R = 10 mm / a = 3 mm meshes sliver-free at every n_t.*
+3. The ``M_μ = 0`` guards double as protection against exactly such
+   degenerate faces: they freeze cleanly instead of the historical
+   ``dt/1.0`` placeholder coefficient.
+**Files:** ``operators/material_matrices.py``
+(``assign_h_face_donors``, ``_build_pec_cell_mask``, donor branch in
+``build_M_mu``, finite gate in ``couple_face_material_pairs``),
+``geometry/subcell.py`` (``FaceMaterialData`` donor fields),
+``solver/fit_td.py`` / ``solver/eigenmode_3d.py`` /
+``ports/modal/curl_curl_2d.py`` / ``ports/modal/zeta_pencil.py`` /
+``ports/modal/tem_laplace.py`` (exact-zero guards),
+``validation/iris_cavity_donor_trigger.py`` (sentinel
+benchmark), ``validation/subcell_floor_histogram.py``
+(pointer update), ``tests/unit/test_h_face_donor.py`` (8 tests).
+---
+
+## DD-059 — Thin-sheet pipeline reorder: detect-before-grid, one substrate-side plane + sub-cell filling
+
+**Date:** 2026-07-10 (session 92, WP-M2 of ``MESHER_PLAN.md``;
+developer decisions 2026-07-10).
+**Status:** Implemented.
+**Decision.**  A PEC shape whose bounding box is thinner than the hard
+``min_cell_size`` floor along exactly one axis (and at least a floor
+wide along the other two) is modelled as a **thin sheet**: it gets
+**one** grid plane at its *substrate-side* face carrying the
+``apply_thin_pec_sheet`` tangential-E mask, the far-side face is
+dropped from the critical-plane set, and the metal volume **stays in
+the DD-051 sub-cell classification** of the adjacent cells — the
+thickness effect enters through the conformal material matrices
+(normal-E ``L_free`` reduction, H-face ``A_face_free`` reduction)
+instead of a resolved cell layer.
+**Why the old path was dead.**  ``detect_thin_metallizations`` ran
+*after* grid-line generation and classified "thin" against the local
+cell size of the very grid that had already resolved the layer — both
+metallization faces were critical planes, so the local cell was
+exactly the layer thickness and ``extent < local_min_cell`` could
+never hold above ``min_feature_gap``.  Measured on the session-91
+microstrip reproducer (0.635 mm εr = 4.3 substrate, 1.8 mm × 35 µm
+strip, floor 100 µm): grid nodes at 0.635 **and** 0.670 mm, a 35 µm
+cell layer, ``courant_dt`` collapsed to 0.099 ps.
+**Detection (rewritten, pre-grid).**  Threshold = the hard
+``min_cell_size`` — thin-sheet handling is **opt-in via the floor**
+(developer-accepted "simplest honest option": without a floor the
+local cell size is unknowable before the grid exists).  The substrate
+side is the face whose adjacent material has the higher permittivity,
+probed at the transverse centre just outside each face
+(``point_in_shape`` against the shape list in priority order; PEC
+neighbours and a PEC background count as ε = 1; ties pick the
+lower-coordinate face).  Sub-floor **wires** (thin along ≥ 2 axes)
+and thin **dielectric** layers (solder-mask class) are *not*
+detected — wires stay with the conformal machinery, dielectrics are
+deferred.
+**Three structural findings during implementation:**
+1. **The far-side face re-enters through the negative imprint.**
+   Dropping the far face from the thin shape's own critical-plane
+   contribution is not enough: ``Difference(air, strip)`` contributes
+   the cavity face at the same position.  The drop is therefore
+   *global* (any plane within ``min_feature_gap`` of the far face,
+   unless it is also within tolerance of the sheet plane) —
+   implemented on top of the WP-M1 per-shape extraction
+   (``extract_critical_planes_per_shape``).
+2. **The DD-051 classifier is material_id-gated in every stage** and
+   ``material_id`` cannot see a sub-cell-thin volume (no cell centre
+   lies inside the metal).  Both candidate gates are therefore
+   seeded explicitly from the metal boxes
+   (``thin_sheet_boxes`` → ``compute_subcell_data`` /
+   ``compute_subcell_data_mu``): cells overlapping a box become
+   boundary cells for the conformal ε̄/μ̄ passes
+   (``extra_boundary_cells``), and E-edges whose segment intersects a
+   box (strict along the span, inclusive transversally) join the
+   PEC-adjacency set for the line-solid ``f_L`` pass.  The metal
+   volume itself enters through the effective PEC solid — the thin
+   shape stays in the classifier shape list but is excluded from
+   cell-centre filling (a centre inside the metal would resolve the
+   sheet as a full staircase cell layer whenever ``d < 2t``).
+3. **Cell-fill and classifier lists split.**
+   ``shapes_with_material`` (cross-section cell filling) excludes
+   detected sheets; ``classifier_shapes_all`` keeps them.
+**Measured (microstrip reproducer).**  ONE grid plane at 0.635 mm, no
+node inside the metal layer, no 35 µm cell (``dz`` above the sheet =
+317.5 µm at ``min_cells_per_feature = 2``), ``courant_dt``
+0.108 → 0.573 ps; the Ez edges above the strip are cat 2 with
+``L_free = dz − t`` exactly.  **Impedance sanity**
+(``validation/thin_sheet_impedance_sanity.py``, shielded
+microstrip through the public modal-port factory, matched transverse
+resolution ``max_cell_size = 100 µm``): thin-sheet vs resolved
+reference ε_eff 3.5785 vs 3.5293 (**1.39 %**), Z₀ 39.76 vs 40.13 Ω
+(**0.91 %**), with dt 0.174 vs 0.039 ps (4.5×).  At a shared *coarse*
+bulk the deltas are dominated by ordinary transverse discretization
+(6.5 % on Z₀ at 15 × 9 cells), not by the sheet model.  The 2 %
+acceptance gate in the benchmark was **accepted by the developer
+2026-07-10** (session 92) from these numbers.  Note: the thin-sheet
+branch initially showed one 90.7 µm cell — the grading-refit floor
+softness, closed by WP-M3 (re-measured there: d_min exactly
+100.0 µm).
+**Out of scope / deferred:** thin dielectric layers; conductor-loss
+(R_s) sheet models; footprint-exact masking for non-brick sheets
+(the rect mask is the shape's transverse bounding box — exact for
+bricks; curved traces would over-mask and should gain a
+cross-section-polygon footprint before detection admits them).
+**Files:** ``mesh/conformal.py`` (``detect_thin_metallizations``
+rewritten, ``ThinSheetSpec`` gains ``far_position``/``shape``,
+``_probe_eps``), ``mesh/mesher.py`` (step-0 detection, per-shape
+critical-plane filtering + global far-face drop, fill/classifier list
+split, ``thin_sheet_boxes`` threading),
+``geometry/occ_backend.py`` (``extract_critical_planes_per_shape``),
+``geometry/subcell.py`` (``_thin_sheet_cell_seed``,
+``_edges_intersecting_box``, ``thin_sheet_boxes`` parameters),
+``geometry/filling.py`` (``extra_boundary_cells`` parameters),
+``tests/unit/test_thin_sheet_detection.py`` (13 tests),
+``validation/thin_sheet_impedance_sanity.py``.
+---
+
+## DD-060 — Hard min_cell_size: floor merge, floor-aware refits + longitudinal series-eps correction
+
+**Date:** 2026-07-10 (session 92, WP-M3 of ``MESHER_PLAN.md``).
+**Status:** Implemented.
+**Decision.**  ``min_cell_size`` is a **hard floor**: no generated cell
+may be smaller (the only exception: anchor pairs — user-forced planes
+and thin-sheet planes — closer than the floor are respected verbatim
+with a loud warning).  Session-91 finding: the floor was soft twice
+over — (a) critical-plane intervals below it were meshed as one
+smaller cell (the 35 µm cell at a 100 µm floor), and (b) the grading
+refit produced sub-floor cells even inside wide intervals (measured
+91.3/70.2 µm ramp cells; the clamp bound only the ``h_fine``/``h_max``
+*targets*, then ``_grade_symmetric_to_uniform`` refit below it).
+**(a) Floor merge** (``_floor_merge_planes``, a second merge stage
+after the WP-M1 clustering): non-anchor planes within the floor of an
+anchor drop (the anchor wins); among the rest a keep-first scan drops
+every plane closer than the floor to the previously kept one; the
+domain-end plane always survives.  **Survivor choice (open detail,
+measured):** keep-first — the survivor is a *real* material face, so
+grid nodes stay on geometry boundaries (consistent with the DD-059
+substrate-side convention); with the longitudinal correction below,
+keep-first vs midpoint is second-order (+0.31 % vs −0.11 % on the
+measured example).
+**(b) Floor-aware refits:** every node generator now receives
+``min_cell`` — uniform fills cap the cell count so ``interval/n ≥
+floor`` (``_n_uniform_floor``; the pre-fix ``rest/ceil(rest/h_max)``
+undershoots whenever ``h_max < 2·floor``), sub-floor remainders are
+absorbed into the adjacent ramp cell, and the one-sided/symmetric
+ratio-g refits back off ``n`` while ``h0(n) < floor`` (h0 grows as n
+shrinks — floor beats the ``h_fine`` refinement wish by design).
+**Structural finding — the transverse-average assumption breaks.**
+The plan's premise "dielectric planes → merged, conformal sub-cell
+absorbs the offset" is **false as stated**: the DD-051 dual-face ε̄ is
+a *transverse* area average at the edge midpoint and cannot represent
+a **series stack along the edge**.  Before WP-M3 this could never
+surface — material boundaries were always grid planes, so no primal
+edge ever crossed one.  Measured (layered parallel plate, 60 µm ε=8
+layer at a 100 µm floor, analytic series-capacitor reference
+ε_eff = 1.38817): fine reference −0.000 %, floor merge without the
+correction **+3.72 %** (keep-first) / **−2.56 %** (midpoint),
+non-converging (locked to the floor scale).
+**Fix — longitudinal harmonic eps** (``_apply_longitudinal_eps``):
+``_floor_merge_planes`` records the absorbed material planes; edges
+crossing one get the length-weighted **harmonic** mean over their
+segments, ``ε̄ = L / Σ (L_seg / ε_seg)``, where each segment's ε is
+the dual-face area average sectioned at the *segment* midpoint through
+the same OCC backend (so combined transverse × longitudinal variation
+is handled; σ analogously with the exact DC short-circuit ``σ_seg = 0
+⇒ σ̄ = 0``).  PEC-adjacent edges are skipped (the line-solid f_L path
+owns them).  Measured after the fix: keep-first **+0.31 %**, midpoint
+**−0.11 %** (residual = the wall-edge columns the conformal pass has
+always left to staircase).  The mu analogue (series stacks of
+μ-contrast materials across a dual edge) is noted as deferred —
+μ-contrast dielectrics are rare; the stress sentinel (WP-M5) will
+flag it if it ever matters.
+**Acceptance (property tests):** randomised axis-line generation
+(300 parameter draws) and randomised brick-stack meshes (8 OCC
+draws) — every cell ≥ floor, monotone nodes, exact endpoint
+preservation; the session-91 refit case is pinned as a regression
+test; negative control verified (both property tests fail on the
+pre-WP-M3 code).  Thin-sheet impedance sanity re-measured with the
+hard floor active: d_min exactly 100.0 µm, dt 0.183 ps, ΔZ₀ 1.09 % /
+Δε_eff 1.49 % vs the resolved reference (2 % gate, accepted with the
+session-92 sign-off).
+**Files:** ``mesh/mesher.py`` (``_floor_merge_planes``,
+``_n_uniform_floor``, ``_h0_symmetric``/``_h0_one_sided``,
+``min_cell`` threading through ``_generate_axis_lines`` /
+``_grade_then_uniform`` / ``_grade_symmetric_to_uniform`` /
+``_n_one_sided``, ``_widths_to_nodes``, absorbed-plane threading),
+``geometry/subcell.py`` (``_apply_longitudinal_eps``,
+``absorbed_planes`` parameter), ``tests/unit/test_mesh.py``
+(``TestFloorMergePlanes``, ``TestHardMinCellSize`` incl. the
+harmonic-eps unit test).
+---
+
+## DD-061 — Mesher helper audit: per-axis h_fine, hard sliver gate, pinned generator contracts
+
+**Date:** 2026-07-10 (session 92, WP-M4 of ``MESHER_PLAN.md``).
+**Status:** Implemented.
+**Per-axis ``h_fine``.**  The feature-based fine size was the *global*
+minimum over all axes — one small gap on z refined every x/y interface
+too.  Now per axis: ``h_fine[axis] = min_gap[axis] /
+min_cells_per_feature`` (axes without interior material planes stay at
+the wavelength size).  Measured on the microstrip reproducer
+(floor 100 µm): 630 → 378 cells (−40 %), ``courant_dt``
+0.573 → 0.783 ps (+37 %), x-interface cells 232 → 600 µm while the
+z resolution is unchanged — the gap is a *directional* quantity and
+``min_cells_per_feature`` now resolves each axis against its own
+features (matching the behaviour of established meshers).
+**Hard sliver gate.**  The DD-058 corruption class (a ~1e-18 m cell
+whose degenerate faces silently poison M_μ) previously produced only
+an aspect-ratio *warning*.  ``Mesh.from_geometry`` now **raises** when
+a generated cell is below ``min_feature_gap`` unless both bounding
+nodes are user anchors (forced / thin-sheet planes — those pairs are
+kept verbatim by design and already warn).  After WP-M1…M3 the gate
+is an invariant assertion: it cannot fire from geometry alone; if it
+ever does, the clustering failed and the failure is loud instead of a
+silently corrupted spectrum.  Aspect-ratio and growth-factor checks
+stay warnings (legitimate meshes exceed them; the hard invariants are
+the gate + the WP-M5 sentinel).
+**Pinned generator contracts** (measured over randomised parameter
+draws, 3000 offline + 500 in the suite): exact endpoints, strictly
+positive monotone widths, hard floor respected, and neighbour-cell
+ratio ≤ **1.5·g** — the 1.5 factor is the sub-``h_max/2`` remainder
+absorbed into the last ramp cell; the pre-audit code held the same
+bound but nothing pinned it.
+**Closed audit items without code change:** ``_snap_planes`` midpoint
+semantics — decided by WP-M1 (midpoint clustering for symmetric
+material pairs, verbatim-anchor snap for forced/sheet planes);
+``min_cells_per_feature`` × thin-layer explosion — gone by WP-M2 (the
+sub-floor layer no longer exists as an interior feature gap; the
+reproducer's z feature is the 0.635 mm substrate, giving 317.5 µm at
+``min_cells_per_feature = 2``).
+**New coverage:** PML extension (depth ≥ ``pml_thickness_cells``,
+uniform extension cells at the boundary width, material continuation
+into the PML slab, both min/max sides), degenerate axes (N = 1
+cells), injected-sliver gate test (monkeypatched generator), forced
+sub-gap pair pass-through.
+**Files:** ``mesh/mesher.py`` (per-axis ``h_fine_axis``, hard gate,
+docstring), ``tests/unit/test_mesh.py`` (``TestPerAxisHFine``,
+``TestPMLExtension``, ``TestDegenerateAxis``,
+``TestRampFixpointProperty``, ``TestSliverGate``).
+---
+
+## DD-062 — Permanent mesher stress sentinel (30 cases x 7 invariants)
+
+**Date:** 2026-07-10 (session 92, WP-M5 of ``MESHER_PLAN.md`` — the
+last work package; the plan is fully worked off).
+**Status:** Implemented; runs as the permanent sentinel for every
+future mesher change.
+**What it is.**  ``validation/mesher_stress_sentinel.py`` —
+30 randomised and pathological geometries through
+``Mesh.from_geometry`` (``--fast`` for a CI-smoke subset), each
+checked against machine-checkable invariants: **I1** monotone
+positive axes; **I2** hard ``min_cell_size`` floor; **I3** no cell
+below ``min_feature_gap`` (the DD-058 sliver class — the WP-M4 gate
+raising counts as FAIL, not crash); **I4** neighbour growth ratio
+≤ 1.5·g when feature refinement is active; **I5** M_ε/M_μ finite and
+M_μ ≥ 0 (the DD-058 spectrum-poisoning class); **I6** production
+``courant_dt`` within budget of the floor-implied bound; **I7**
+thin-sheet planes on-grid, no node inside a detected metal layer.
+Case families are the session-88/91/92 lessons as permanent
+regressions: tangent cylinders on/off forced-grid multiples,
+CSG-wiggled faces vs forced nodes (1e-16…1e-9), thin PEC layers at
+0.1×…2× the floor, near-coincident dielectric faces (noise scale to
+1.5× floor), rotated bricks, seeded random brick/cylinder soups with
+random floors.  Measured: 30/30 clean in ~16 s.
+**Two findings from the sentinel's first run:**
+1. **Across-interval growth jumps with ``min_cells_per_feature = 0``**
+   (measured 3.2–7.6× on the tangent-cylinder family): the two-scale
+   design never promised smoothing between adjacent critical-plane
+   intervals when feature refinement is off — every interval is
+   meshed independently against ``h_max``.  With
+   ``min_cells_per_feature ≥ 1`` every interval starts at the shared
+   per-axis ``h_fine`` (DD-061), so the 1.5·g contract extends across
+   boundaries; I4 is therefore gated on feature refinement, and the
+   ``mcpf = 0`` jumps remain a user-accepted trade covered by the
+   quality warning.  A global smoothing pass stays a possible future
+   feature, not a defect.
+2. **The OCC kernel cannot build solids at/below its precision**
+   (``Precision::Confusion()`` = 1e-7 m): a 100 nm brick died deep in
+   ``MakeBox`` with a cryptic ``Standard_DomainError``.  The geometry
+   layer now rejects sub-precision dimensions with an informative
+   ``ValueError`` (``occ_backend._check_dimensions`` on brick /
+   sphere / cylinder builders) pointing at material/BC modelling for
+   sub-100-nm features.
+**Files:** ``validation/mesher_stress_sentinel.py``,
+``geometry/occ_backend.py`` (``_check_dimensions``),
+``tests/unit/test_geometry.py`` (``TestOccPrecisionGuard``, 3 tests).
+---
+
+## DD-063 — Layer-a band-pipeline auto-dispatch + exact time-domain power waves
+
+**Date:** 2026-07-10 (session 93; developer request 2026-07-10:
+"the high-level API must not use an outdated model on a microstrip").
+**Status:** Implemented.
+Scope: ``AnalysisScatteringTD`` (layer a) catches up with the
+reflection-free port work (DD-054…DD-057) on two fronts: the port
+pipeline for inhomogeneous lines and the time-domain power-wave
+accessors.
+**1. Port-pipeline dispatch (``port_model="auto"`` default).**
+``run()`` probes every ``PortSpecMultiConductor`` by building its
+modal operator and reading ``termination_kinds``: if all channels are
+DTBC-certified (homogeneous cross-sections), the cheap modal pipeline
+runs as before; if any channel would fall back to modal Mur-1st (the
+inhomogeneous-QTEM case — microstrip, layered substrates, measured
+−30 dB-class |S11|), the run switches to the DD-057 band-subspace
+DTBC pipeline: ``build_band_dtbc_port`` per spec (built **once**,
+reused across excitations via the new ``reset_state()`` — kernels
+and subspace kept, boundary state and histories zeroed),
+``set_excitation_band`` flat-spectrum drive over the measurement
+span, fixed-length pulsed record, ``compute_band_s_parameters``
+per-frequency true-mode decomposition.  ``port_model="modal"`` opts
+back into the Mur fallback, ``"band"`` forces the band pipeline;
+mixing an uncertified multi-conductor port with other spec types
+raises (band decomposition needs band ports on every face — layer-b
+territory).  Auto-derived parameters (``band_options`` overrides):
+``f_band`` = measurement span padded 25 % both sides (floored at
+``0.25·f_min``), ``n_grid`` = 25, ``n_syn`` from the erfc roll-off
+compactness budget (13 Gaussian time constants, power of two,
+min 8192) with automatic doubling when the DD-057 compactness gate
+rejects, record = ``n_syn`` + ring-down (8 diagonal traversals at
+``0.5·c``, min 4096), kernels pre-sized past the record.
+``energy_stop_db`` / ``taper_signals`` do not apply to the band
+record (fixed-length DFT contract; a ring-down-quality warning fires
+at end/peak > 1e-4).  Measured (CI-scale layered line, pure
+defaults): |S11| −204.8…−226.1 dB, |S21| 0.000 dB, ~1 min end to
+end; with CI overrides −120…−227 dB in ~20 s.  The declarative
+``PortWaveguide`` path feeds this dispatch naturally (inhomogeneous
+faces resolve to ``epsilon_r=None`` multi-conductor specs).
+**2. Exact time-domain power waves (``destagger=True`` default).**
+``result.a()`` / ``result.b()`` previously used the co-located
+``(V/√Z ∓ √Z·I)/2`` split with midpoint-aligned I; the spatial
+half-cell stagger of the I plane leaks ``≈ β·dz/4`` of the incident
+pulse into ``b`` — a smooth derivative-of-pulse ghost measured at
+−37.8 dB of the a1 peak on the rect-coax notebook mesh while the
+S-parameters (exactly de-staggered per frequency) sit at −159 dB.
+The accessors now default to the frequency-domain path
+(``destaggered_power_waves``): rfft → the *same* per-bin corrections
+as ``compute_s_parameters`` (Yee half-step rotation, two-plane
+de-stagger with the exact discrete ``λ^{1/2}`` on certified chains,
+exact discrete wave impedance) → irfft.  The shared per-channel core
+is factored into ``spectral_power_waves`` (consumed by both paths;
+``guarded=True`` NaNs out singular bins — continuum cos-denominator
+zeros beyond the trust band, wave-impedance cut-off collapse — which
+then fall back to the frozen-Z co-located split; those bins carry no
+pulse energy on band-limited excitations).  Measured on the
+rect-coax regression fixture: time-domain max|b1|/max|a1| drops
+1.29e-2 → 1.07e-8 (−37.8 → −159.4 dB, the port floor), a1→b2 energy
+conserved to 1e-7.  ``destagger=False`` restores the historical
+split.  ``ScatteringTDResult`` carries ``port_normal_dx`` /
+``port_line_params`` / ``port_model_used`` for this.  On band
+results the accessors raise with guidance: the band port's recorded
+channels are fixed subspace projections whose a/b split is defined
+per frequency (DD-057) — a scalar split has no calibrated Z
+(measured: b1/a1 ≈ 1); a per-frequency-synthesised time-domain
+split (phasor interpolation over the tracking grid) is a possible
+future extension.
+**Audit items closed in the same pass.**  Outdated ``energy_stop_db``
+docstring (pre-DTBC "physical Mur-1 floor ~−20 dB"); ``f_calc``
+semantics documented (only analytical-path Mur modes depend on it —
+for QTEM the static ε_eff makes v_p frequency-flat, DTBC/band paths
+are exact per frequency); commercial-solver names and the
+conformal-averaging trademark removed from source/tests/benchmarks
+(IP rule); the missing DD-059…DD-062 headings restored (the DD-055/
+DD-056/DD-058 slip pattern — bodies were committed without their
+``##`` lines).
+**Near-DC cost gate (same-day developer field report).**  The first
+real microstrip run through the new dispatch hung for minutes before
+the TD progress bar, single-threaded, right after the dispatch
+message — the *default* frequency axis (``f_min = 0`` → first point
+at ``f_max/n_freq``) reaches toward DC, the pulsed band drive needs
+spectral roll-off room *below* the first axis point (deep sub-band
+content is structurally not absorbed, DD-057 limit), and that room
+is bounded by ``f_axis[0]`` itself: the auto-sized pulse came out at
+``O(1/f_axis[0])`` ≈ hundreds of thousands of steps, and the
+single-threaded contour-QZ ghost-kernel build scales with it (hours,
+silently).  Fix: ``_BAND_AUTO_N_SYN_MAX = 131072`` — the auto-sizing
+raises a ValueError carrying the measured pulse length and the
+*recommended axis start* (exact inversion of the sizing chain);
+explicit ``band_options["n_syn"]`` bypasses the gate deliberately.
+The verbose path announces the kernel-build phase *before* it starts
+(it was the silent long phase).  Measuring close to DC with a pulsed
+band port is inherently long — the gate turns physics into a loud
+contract instead of a hang (the compactness-gate pattern).
+**Alternatives considered.**  Band-dispatch on the *spec* marker
+(``epsilon_r=None``) alone — rejected: the marker means "read ε from
+the mesh", which may still be homogeneous; the termination
+certificate probe (one cheap Laplace solve per port) decides on the
+physics.  Making band the unconditional multi-conductor default —
+rejected: homogeneous lines get −131…−159 dB from the modal DTBC at
+a fraction of the build cost.  Time-domain destagger via
+convolution filters — rejected: needs a dispersive fractional-delay
+design per mode; the rfft path reuses the certified frequency-domain
+corrections verbatim.
+**Files.**  ``analysis/scattering_td.py`` (dispatch, ``_run_band``,
+``_band_setup``, ``_set_band_excitation``, result fields, destagger
+accessors), ``postprocessing/modal_sparameters.py``
+(``spectral_power_waves``, ``destaggered_power_waves``),
+``ports/modal/band_dtbc.py`` (``reset_state`` on boundary +
+operator, ``band_source_spectrum``, ``channel_band``),
+``postprocessing/__init__.py`` (export).  Tests:
+``tests/integration/test_analysis_scattering_band.py`` (6),
+``tests/integration/test_rect_coax_sparams.py``
+(``test_destaggered_time_domain_power_waves``).
+---
+
+## DD-064 — QTEM default acceptance renegotiated: modal pipeline default, band DTBC opt-in
+
+**Date:** 2026-07-10 (session 93, same-day follow-up to DD-063;
+developer decision).
+**Status:** Implemented.
+**Developer decision.**  After the DD-063 field trial on a small
+production microstrip the band pipeline is too slow for routine work
+even with a sensible lower band edge (f_min = f_max/3: kernel build +
+mandatory pulse/ring-down record on a 20×7×19-cell line still
+minutes), and commercial-suite reference results for simple
+microstrip lines sit at the −30 dB class themselves.  The original
+−100 dB QTEM acceptance (2026-07-09) is therefore **renegotiated for
+the default path**: "reflections at −30 dB, fast runtimes and
+time-domain signal access are definitively worth more than −100 dB
+with a long, band-limited run and no time-domain signals."  The
+−100 dB machinery stays fully available as an explicit choice.
+**Decision.**  ``AnalysisScatteringTD(port_model=...)`` defaults to
+``"modal"``: exact DTBC on certified chains, modal Mur-1st on
+inhomogeneous QTEM channels, with a one-time verbose notice naming
+the Mur-fallback channels and pointing at ``port_model='band'``.
+``"band"`` and ``"auto"`` keep their DD-063 semantics unchanged
+(band-subspace DTBC, certificate-probe auto-dispatch, near-DC cost
+gate).  Nothing else of DD-063 is rolled back — destaggered
+time-domain power waves remain the default accessors and work on the
+default path.
+**Measured basis (this session's experiments; not shipped).**  A
+cheap middle path was attempted: the DD-056 zeta-pencil true mode at
+band centre as a *single-profile pulsed port* (fitted ``(r_eff,
+q_eff)`` scalar DTBC termination, V/I calibration enabled so the
+standard broadband decomposition applies).
+* Extreme layered line (half ε_r = 4, ε_eff 1.6→1.9 over the band):
+  Mur −13…−16 dB, mid-band single-profile −14…−20 dB — on strongly
+  dispersive lines the **transverse profile drift dominates** and
+  the longitudinal termination is secondary (the DD-057
+  single-profile refutation reappearing at level a).
+* Realistic shielded microstrip (ε_r = 4.3 substrate, 10×8×20
+  cells, 2–10 GHz): Mur −25.8 dB worst (−26…−39 dB) at |S21| errors
+  ≤ 0.01 dB; the mid-band port reaches −33…−48 dB in the band
+  interior but **degrades to −19.1 dB at the lower band edge and
+  pollutes |S21| by up to 1.2 dB**.  Structural cause: the
+  frequency-local Klein-Gordon fit implies an *artificial cut-off*
+  (``f̂_c = q_eff/(2π·dt)`` landed near the lower band edge) — the
+  fitted chain treats low-band content as near-evanescent where the
+  true QTEM mode propagates, and the constant-Z decomposition
+  (``z0 = None``) misses the fitted chain's V/I there.
+* Conclusion: **no robust cheap +10 dB exists today.**  Candidate
+  future work (not started): a cut-off-free symbol fit (q ≡ 0,
+  r matched to β(f_mid)), an edge-aware fit, or a 2–3-profile
+  variant — each needs the full derive-then-measure treatment
+  (feedback rule: no crutches).  The experimental ``calibrate``
+  pass-through in ``build_cw_true_mode_port`` was reverted with the
+  measurement recorded here.
+**Files.**  ``analysis/scattering_td.py`` (default ``"modal"``,
+docstrings, one-time Mur-fallback notice);
+``tests/integration/test_analysis_scattering_band.py`` (default-is-
+modal test incl. TD-wave availability; auto/near-DC tests pass
+``port_model`` explicitly).
+---
+
+## DD-065 — Natural TD PMC wall + ``pmc_faces`` mesher placement
+
+**Date:** 2026-07-11 (session 95, WP-U0 of ``PORT_MODES_PLAN.md``;
+developer decision 2026-07-10: fix, two stages).
+**Status:** Implemented (both stages).
+**Problem (measured, session 94).**  Three PMC implementations placed
+the magnetic wall at *two different* positions: the 2D port mode
+solver and ``EigenmodeSolver3D`` use the natural boundary — wall Δ/2
+*outside* the outermost primal grid line (parallel-plate TE(1,0)
+cut-off = ``c/2(a+Δx)`` exactly) — while the TD ``PMCBoundary.apply``
+zeroed tangential H on the first/last *cell-centre* layer, i.e. wall
+~Δ/2 *inside*.  One full cell apart: on the PMC parallel plate the TD
+transmission edge sat at ``c/2(a−Δx)`` ≈ 15.8 GHz vs. the port mode's
+14.26 GHz, the S-matrix was non-passive between the two cut-offs
+(|S21| up to +14.6 dB) and in-band |S11| never beat −17 dB.  TEM
+modes carry no tangential H on PMC walls, which is why the TEM
+notebooks never exposed this.
+**Stage 1 — the TD update uses the natural boundary.**
+``PMCBoundary`` performs no field surgery at all (pure face-coverage
+marker): the E-update kernels already accumulate only in-domain H
+faces (missing faces contribute zero) and ``_build_avg_d`` assigns
+boundary E-edges a *full* dual cell — together exactly the mirror
+closure ``H_tan(−Δ/2) = 0``, the same wall as both mode solvers.  The
+natural BC is the free operator: symmetric, energy-conserving, no new
+stencil.
+**Stage 2 — the mesher places the wall ON the requested bbox face.**
+``Mesh.from_geometry(..., pmc_faces=[...])`` pulls the outermost grid
+line to one third of the original boundary cell: the boundary cell
+shrinks to 2Δ/3 and its outside half-cell reaches exactly back to the
+nominal face — the wall lands on the requested geometry for any Δ.
+Local cell-ratio 1.5, below the quality-warning threshold; a face in
+both ``pml_faces`` and ``pmc_faces`` raises; a user-forced plane on
+the moved node warns.  Layer b (``Mesh.from_grid``) is untouched —
+explicit grids keep user-placed lines, wall Δ/2 outside.
+**Measured (fixture: 10×5×20 mm air brick, PMC x, PEC plates y,
+TE(1,0) z-ports; ``validation/pmc_wall_te10_port_floor.py``):**
+* CW lock-in |S11| −156.6 dB at 1.05 f̂_c, monotone to −165.2 dB at
+  1.8 f̂_c (acceptance < −100 dB) — pre-fix in-band |S11| ≈ −17 dB.
+* Pulsed passivity through the former double-cut-off window:
+  max |S21| +0.055 dB / power sum 1.0589 at the 1.001 f̂_c edge bin,
+  1.0045 at 1.05 f̂_c — bit-for-bit the truncation-limited measurement
+  class of the accepted all-PEC WR-90 reference (+0.046 dB / 1.0594 /
+  1.0042) run through the identical pipeline.  Pre-fix: +14.6 dB.
+* TEM channel vs. the legacy zeroing: max |ΔS| = 1.7e-14 — the
+  double-precision floor (the zeroing had erased ~1e-16 Laplace-solver
+  noise in the wall Hy/Hz each step).  No physical change.
+* Stage-2 gate: from-geometry TE(1,0) cut-off vs. ``c/2a`` rel. error
+  −1.14e-3 (Δx = 0.5 mm) → −2.71e-4 (0.25 mm), ratio 4.2 = O(Δx²);
+  without ``pmc_faces`` the O(Δx) half-cell bias is −4.9e-2.
+**Files.**  ``boundaries/pmc.py`` (no-op marker + rationale);
+``mesh/mesher.py`` (``pmc_faces`` step 2c);
+``validation/pmc_wall_te10_port_floor.py`` (acceptance);
+``examples/straight_waveguide_parallel_plate.py`` (``pmc_faces`` in
+the layer-a target form); ``tests/integration/test_pmc_wall_te10.py``
+(6: CW floor, wall-convention pin, pulsed passivity, wall-on-face,
+second-order convergence, pml/pmc conflict);
+``tests/unit/test_boundaries.py`` (PMC no-op contract).
+---
+
+## DD-066 — Unified multi-mode port: TEM ⊕ TE/TM factory merge + multi-TEM Gram-eigenbasis
+
+**Date:** 2026-07-11 (session 95, WP-U1…U5 of ``PORT_MODES_PLAN.md``).
+**Status:** Implemented; one open item (conformal-chain KG-DTBC
+residual, see below).
+**The merge (WP-U2).**  ``build_modal_port`` on a
+``PortSpecMultiConductor`` with homogeneous scalar ``epsilon_r`` and
+``n_modes > K−1`` no longer raises: the K−1 Laplace TEM channels are
+joined by the lowest TE/TM curl-curl channels of the same
+``PortPlane`` (both families were WP-U1-certified on
+multiply-connected cross-sections; the measured discrete
+cross-orthogonality through the production projections is
+8e-16…2.2e-14).  Merged by ascending cut-off (TEM first, f_c = 0),
+one operator, one recorder, per-channel termination dispatch
+unchanged (TEM q = 0 / DD-054, TE/TM Klein-Gordon / DD-055),
+family-explicit labels (``TEM_lap00``, ``TE_num00``, …).  The QTEM
+path (``epsilon_r=None``) keeps the cap and raises with WP-U6
+guidance — higher modes on inhomogeneous cross-sections are hybrid.
+Layer a follows for free (WP-U3): ``resolve_declarative_port``
+already produced the MC spec for any ``n_modes``.
+**Multi-TEM channel basis (the load-bearing fix).**  The
+per-conductor ``V_k = +1 V`` Laplace modes are individually
+M-normalised but mutually NON-orthogonal — measured 32 % overlap on
+the symmetric two-wire — while the entire downstream pipeline
+(``discretize_modes`` numerical pass-through, operator projections,
+TF/SF injection, per-channel DTBC) assumes an M_ε-orthonormal basis.
+Measured consequence on the first-ever 2-signal fixture: the DTBC
+feedback loop between overlapping channels blows up to 1e64, TEM
+|S11| −17 dB (pre-existing bug, no merge involved).
+``solve_tem_laplace`` now returns the **Gram-matrix eigenbasis of
+the TEM subspace** (eigenvectors of the raw-field FIT-metric Gram =
+capacitance-matrix eigenmodes; descending-eigenvalue order,
+largest-|w| sign gauge): the exact odd/even pair on the symmetric
+two-wire, with distinct line impedances (84.28 / 161.94 Ω), all TEM
+channels of a homogeneous line being degenerate so any orthogonal
+basis of the subspace is equally valid.  ``z_line`` of a mixed
+channel refers to its unit-Euclidean conductor-voltage pattern.
+Single-signal cross-sections keep the historical path bit-identically.
+K > 2 QTEM retains the non-orthogonal per-conductor basis (per-mode
+ε_eff forbids mixing) — a WP-U6 prerequisite, documented in code.
+**Degenerate-pair gauge (WP-U4).**
+``_fix_degenerate_polarisation_gauge``: same-family numerical modes
+with cut-offs within the degeneracy rtol are rotated to the
+principal axes of the u-edge energy form (descending u-energy,
+largest-|e_u| sign) — deterministic across meshes/runs, verified
+exact unit ``project_V`` after rotation.  TEM channels excluded.
+Total-power convention for degenerate arrivals documented in
+``compute_s_parameters`` (Σ|S21|² over the degenerate subspace).
+**Measured (acceptance, WP-U5).**  Examples 1–4 run through pure
+layer-a defaults: parallel plate TEM −164.5 dB / TE(1,0) 14.974 GHz;
+coax TEM −144.6 dB / TE11 pair pulsed −44.4 dB; two-wire odd+even
+TEM −159.2 dB / 2 TE pulsed −43…−45 dB; WR-90 unchanged.  CW lock-in
+floors (``merged_port_cw_floors.py``): two-wire TE#1
+−149.5/−154.6/−157.2 dB (1.05/1.2/1.5 f̂_c), two-wire TEM odd
+−159.7 dB, coax TEM −144.6 dB — acceptance < −100 dB passed with
+~50 dB margin on grid-aligned chains.
+**Open item — conformal-chain KG-DTBC residual (DD-055 scope,
+predates the merge).**  The conformal coax TE11 CW floor is
+−34.8/−42.1/−49.2 dB (1.05/1.2/1.5).  Isolated: the identical
+channel on a staircase coax measures −157.9 dB, on the grid-aligned
+rectangular coax −158.5 dB, and halving dx moves the conformal
+number −42.1 → −57.5 dB — a *convergent* discretisation residual of
+the conformal transversal operator (the 2D mode is not an exact
+eigenvector of the volume-restricted chain; boundary-slab M_μ is not
+port-flattened — suspect list), which the pair-product chain
+certificate is structurally blind to (the DD-053 LC-consistent
+coupling makes pair products uniform BY CONSTRUCTION on z-invariant
+conformal contours).  The round-WG conformal fixture sat at
+−124…−132 dB and passed WP-R3 — gentler curvature, finer relative
+resolution.  Open developer question: accept as a documented
+accuracy class (à la DD-064) or extend the certificate by the
+measured 2D eigenresidual → honest Mur/band fallback.
+Derive-then-measure required either way.
+**Files.**  ``ports/modal/factory.py`` (MC-branch merge, QTEM
+guidance raise, ``_fix_degenerate_polarisation_gauge``, PortOperatorReport
+``cutoff_num`` for merged ports); ``ports/modal/tem_laplace.py``
+(Gram-eigenbasis, helper returns ``e_raw``, QTEM note);
+``ports/declarative.py`` (uniform mode-count semantics);
+``postprocessing/modal_sparameters.py`` (degenerate-pair Notes);
+``validation/merged_port_cw_floors.py`` (CW acceptance);
+``examples/straight_waveguide_*.py`` (status + measured numbers);
+``tests/integration/test_unified_multimode_port.py`` (6: composition
+coax/two-wire, orthonormal TEM basis, QTEM raise, layer-a 4-mode
+S-parameters incl. the 1e64 stability regression, two-wire TE CW
+floor pin).
+---
+
+## DD-067 — Feed-chain slab-consistency certificate + port-plane μ-flatten
+
+**Date:** 2026-07-11 (session 95; developer decision 2026-07-11 on
+the DD-066 open item: "extend the certificate").
+**Status:** Implemented; the DD-066 open item is CLOSED.
+**Root cause (measured).**  The conformal boundary-slab **normal-face
+M_μ** (Hz for a z-port) deviates 36 % from the first interior slab
+on the RG-58 coax (halved cell neighbourhood on the bbox face —
+the same mechanism the M_ε flatten has always corrected for
+tangential E; interior slabs agree to 1e-15, transversal H faces to
+8e-15).  The normal-face M_μ enters the TE transversal curl-curl
+operator directly, so the 2D port mode was solved against a
+*different* transversal operator than the volume propagates — the
+DD-066 −34.8…−49.2 dB conformal coax TE11 CW floor, while the
+transversal pair-product certificate (which forms no pair containing
+Hz-M_μ, and whose pair products the DD-053 coupling makes uniform BY
+CONSTRUCTION on z-invariant conformal contours) certified "uniform".
+Staircase and grid-aligned chains have identical slabs — hence their
+−158 dB floors.
+**Fix — ``flatten_port_plane_mu``.**  The exact counterpart of
+``flatten_port_plane_mass`` for the magnetic mass: the normal
+H-faces ON the port plane get the first-interior-slab values; same
+rationale (a z-invariant feed's wavefronts all see the interior
+values, so mode solver and TD update at the port plane must too).
+Applied in all three port factories (modal / CW true-mode / band)
+and in ``FITTimeDomainSolver.setup`` alongside the M_ε and PEC-mask
+flattens.  Transversal H faces are untouched (measured identical).
+**Guard — the slab-consistency certificate stage.**
+``_port_chain_slab_defect`` (factory): the maximum relative slab
+deviation over EVERY mass entry feeding the port's 2D mode solve,
+across the first feed cells — per E/H component, plane-sampled
+components compare slabs (0,1) and (1,2), layer-sampled components
+layers (0,1) and (1,2); entries zero in both compared slabs are
+skipped.  A z-invariant feed measures ~1e-15.  Above
+``_DTBC_SLAB_DEFECT_TOL = 1e-8`` the ``PortOperatorModal`` withholds
+the exact DTBC on every channel (modal Mur-1st) and the factory
+warns loudly with the measured defect.  This subsumes the "2D
+eigenresidual" formulation of DD-066: with slab-consistent masses
+and the flattened PEC mask, the 2D operator IS the volume-restricted
+transversal operator, and the eigenresidual reduces to the eigsh
+solver tolerance.
+**Measured (gates).**
+* Conformal coax TE11 CW floor: −34.8/−42.1/−49.2 dB →
+  **−134.3/−139.5/−142.0 dB** at 1.05/1.2/1.5 f̂_c — the full
+  certified-DTBC class; every channel of every merged port now
+  passes the WP-U5 < −100 dB acceptance.
+* Pulsed layer-a coax example: TE11 pair −44.4 → −78.2 dB max above
+  1.2 f_c; TEM unchanged (−144.6 dB).  The TE cut-off moves
+  34.344 → 34.195 GHz (the mode solve now consumes the interior
+  Hz-M_μ — the discretisation the volume actually propagates); TM01
+  is untouched (normal-face M_μ does not enter the TM node
+  Laplacian).  WP-U1 leg A re-measured: convergence envelope
+  unchanged in class (+1.6e-2 → −4.0e-4 over dx 0.24 → 0.03 mm).
+* Guard: trips (Mur + warning) on a feed with a dielectric step in
+  the second cell; silent on invariant feeds; conformal-coax defect
+  0.36 without / <1e-12 with the μ-flatten
+  (``tests/integration/test_chain_slab_certificate.py``).
+* Staircase meshes: the flatten is a no-op (identical slabs) — all
+  grid-aligned pins bit-unchanged.
+**Files.**  ``operators/material_matrices.py``
+(``flatten_port_plane_mu``); ``ports/modal/factory.py``
+(``_port_chain_slab_defect``, μ-flatten in the three builders, loud
+fallback warning); ``ports/modal/operator.py``
+(``chain_slab_defect`` veto in ``_chain_params``,
+``_DTBC_SLAB_DEFECT_TOL``); ``solver/fit_td.py`` (μ-flatten in
+``setup``); benchmarks re-measured
+(``merged_port_cw_floors.py``, ``curlcurl_conductor_certification.py``,
+coax example); ``tests/integration/test_chain_slab_certificate.py``
+(3 tests).
+---
+
+## DD-068 — Multi-mode QTEM ports via the ζ-pencil hybrid channels
+
+**Date:** 2026-07-11 (session 95, the last work package of
+``PORT_MODES_PLAN.md``).
+**Status:** Implemented; the five straight-waveguide acceptance
+scripts all run through pure layer-a defaults.
+**What.**  ``PortSpecMultiConductor`` with ``epsilon_r=None``
+(inhomogeneous cross-section) and ``n_modes > K−1`` no longer
+raises: the K−1 Laplace QTEM line modes (unchanged — the DD-064
+default path, bit-identical for ``n_modes ≤ K−1``) are extended by
+the ``n`` lowest true hybrid eigenpairs of the DD-056 ζ-pencil of
+the production matrices at ``f_calc``
+(``_qtem_zeta_hybrid_modes``): ``find_propagating_modes`` arc
+targeting, the Laplace family identified and dropped by W_t
+overlap, channels ordered by ascending frequency-local cut-off.
+No exact TEM/TE/TM split exists there — reusing the homogeneous
+merge would be an unfounded crutch; the pencil eigenpairs are the
+same objects the CW and band pipelines already trust.
+**Channel form.**  DD-056 real gauge (tangential trace real to
+~1e-13, enforced), M_ε-normalised; ``omega_c = q_eff/dt`` — the
+frequency-local Klein-Gordon fit as *metadata* (report + the
+dispersive Mur ``v_p``; per the DD-064 lesson no termination is
+fitted from it); ``epsilon_r`` chosen so ``Mode.gamma(2π f_calc)``
+equals the exact discrete ``β = θ/dz`` — Mur-1st then uses the
+channel's true phase velocity at ``f_calc``; ``mode_type = TEM``
+with the frequency-flat ``η₀/√ε_r`` V/I norm — a TE-form ``Z(ω)``
+would diverge at the *estimated* ``f̂_c``, exactly the DD-064
+artificial-cut-off failure mode.  Projections are dual-basis over
+ALL channels (Gram inverse in the port-plane M_ε — the DD-056
+machinery): the hybrids are not M_ε-orthogonal to each other or to
+the Laplace modes, and primal projections would re-create the
+DD-066 cross-talk instability class.  Termination per DD-064
+defaults: the pair-product/slab certificates fail on inhomogeneous
+fillings → every channel modal Mur-1st with the loud notice;
+``port_model="band"`` stays the reflection-critical opt-in for the
+tracked family.
+**Measured (shielded-microstrip acceptance, 35-GHz band,
+``straight_waveguide_microstrip.py`` +
+``qtem_multimode_port_probe.py``).**
+* QTEM fundamental: max |S11| −21.2 dB / median −29.1 dB — the
+  documented Mur class of the default path on this band.
+* Hybrid channels (f̂_c 18.2 / 27.2 GHz): max |S11| −9.5 / −7.8 dB
+  above 1.2 f̂_c, median −18.1 / −10.5 dB; total transmitted power
+  within ±1 dB.  Mur-1st with the port-wide ``f_calc = f_max`` phase
+  velocity is increasingly detuned toward each channel's own
+  cut-off — the honest Mur-class number, structurally the DD-047
+  near-cut-off Mur behaviour.
+* Hybrid profile drift vs. the f_calc profile (the WP-U6 honesty
+  number; profiles are frequency-dependent): 4.7e-4 / 2.7e-4 at
+  34 GHz → 2.1e-2 / 4.9e-3 at 30 GHz → 1.1e-1 / 1.3e-2 at 26 GHz.
+* **Fundamental invariance**: ≤ 5.5e-2 |ΔS| between the 1-mode and
+  3-mode ports below the first hybrid cut-off (the 3-mode dual
+  projection separates evanescent hybrid tails the 1-mode primal
+  projection folds into the QTEM channel — within the Mur
+  measurement class).  ABOVE the hybrid cut-offs the 1-mode port is
+  structurally under-modelled: the injected Laplace profile excites
+  propagating hybrids that a 1-channel port neither absorbs nor
+  separates — measured max |S11| −1.18 dB and |S21| overshoot
+  +3.0 dB (n=1) vs. −21.2 dB / +0.6 dB (n=3).  A multi-mode port is
+  what makes QTEM S-parameters meaningful on bands crossing hybrid
+  cut-offs.
+**Limits (loud, tested).**  Channels must propagate at ``f_calc``
+(evanescent-at-f_calc raises with guidance: raise f_calc/f_max or
+reduce n_modes).  Exactly degenerate hybrid pairs are not supported:
+the pencil eigenvalue dedup collapses them to one representative
+whose tangential profile is not real in the DD-056 gauge — the
+real-gauge check refuses (coax-through-QTEM test); the target
+cross-sections (microstrip & friends) are non-degenerate.
+K > 2 QTEM line modes keep the non-orthogonal per-conductor basis
+*between themselves* (per-mode ε_eff forbids the DD-066 Gram
+mixing) — but the WP-U6 dual-basis projections now cover them too
+whenever the port is multi-mode.
+**Files.**  ``ports/modal/factory.py`` (``_qtem_zeta_hybrid_modes``,
+QTEM-branch extension, dual-basis projector construction);
+``ports/declarative.py`` + spec docstrings (uniform layer-a
+semantics); ``examples/straight_waveguide_microstrip.py`` (f_max
+35 GHz, measured numbers);
+``validation/qtem_multimode_port_probe.py``;
+``tests/integration/test_unified_multimode_port.py`` (microstrip
+3-mode composition incl. dual-projection unit response +
+guidance/degeneracy raises).
+---
+## DD-069 — Per-channel Mur reference velocity for dispersive ports: investigated, DD-068 baseline retained
+**Date:** 2026-07-11 (session 96; DD-068 documented follow-up
+candidate — "Hybrid-Mur quality: per-channel v_p reference instead of
+the port-wide f_calc").
+**Status:** Investigated, both stages measured, **neither adopted** —
+the DD-068 port-wide ``f_calc`` Mur reference is retained (developer
+decision after the measurements below).  No code, test, or example
+change ships from this entry; it is the record that closes the
+follow-up candidate.  A branch (``dd069-dispersive-mur-reference``)
+carries the full stage-1 implementation should it ever be revived.
+**Problem.**  Every Mur-terminated channel takes its phase velocity
+from ``Mode.gamma(ω_calc)`` at the single port-wide ``f_calc = f_max``
+(``operator.py`` init loop).  A Mur-1st boundary annihilates exactly
+one velocity, so on a dispersive channel (QTEM ζ-pencil hybrids,
+DD-068; analytical/numerical TE/TM in the Mur fallback) the boundary
+is exact at the top of the band and increasingly detuned toward the
+channel's own cut-off, where ``v_p(ω) = ω/β(ω)`` grows — the honest
+Mur class, but avoidably lop-sided (DD-068 measured hybrid max |S11|
+−9.5/−7.8 dB above 1.2 f̂_c, medians −18.1/−10.5 dB on the
+shielded microstrip).
+**Stage 1 — band-minimax reference (measured, not adopted).**
+A dispersive channel with a non-empty usable band
+``[1.2·ω_c, ω_calc]`` would take ``v_ref = √(v_p(1.2·ω_c) ·
+v_p(ω_calc))``, the geometric mean of the phase velocities at the two
+band edges.  ``v_p`` is monotone-decreasing on that interval, so the
+geometric mean equalises the residual mismatch
+``|R| = |v_p − v_ref|/(v_p + v_ref)`` at both edges (the minimax point
+for a one-velocity boundary).  ``β(ω_ref)`` comes from the same
+Klein-Gordon parameters already carried on the Mode (``epsilon_r``,
+``omega_c``) — no extra eigensolves.  TEM (``omega_c = 0``) keeps the
+single-frequency evaluation *bit-identically* (no ``sqrt(v·v)``
+round-trip); empty-band (``1.2·ω_c ≥ ω_calc``) and
+evanescent-at-ω_calc channels keep the old reference / ``C0``.  The
+same ``v_ref`` feeds the Mur coefficient ``r_m``, the TF/SF incident
+delay ``τ_m``, and — through the unchanged init loop — every mode
+including the DTBC-certified ones (inert there: ``update_e``
+overwrites the naive Mur value for DTBC modes, so grid-aligned DTBC
+pins stay bit-identical).
+**Stage 2 — Higdon-2, measured and refuted.**  A single retuned
+reference only *redistributes* one velocity's worth of error, so the
+minimax buys the band edge at the band centre's expense (measured: H1
+median −15.1 → −17.0 dB but H1 max −10.6 → −8.1 dB — a wash, not a
+win).  The structural fix is the Higdon-2 product boundary: two
+one-way factors at ``v_hi = v_p(ω_calc)`` and ``v_lo = v_p(1.2·ω_c)``,
+implemented as a nested Mur recursion over three projection planes
+(port + two interior) and three time levels, keeping the ``v_hi``
+top-of-band exactness *and* nulling the band-edge velocity.
+Analytically (single harmonic, real operator coefficients) Higdon-2
+is 10–30 dB better than Mur-1 across the whole propagating band, with
+a second reflection null exactly at 1.2 f_c; the boundary state
+recursion is bounded over 4000 driven steps.  **But** in the coupled
+TD run it regressed the QTEM fundamental catastrophically: max |S11|
+−21.3 → **−2.6 dB** with 1.5 dB of transmitted-power loss, the damage
+a sharp resonance at 17.0–18.1 GHz — just *below* the first hybrid's
+cut-off (18.24 GHz).  Higdon-2 is a propagating-wave absorber; below
+a channel's cut-off the mode is evanescent and the two-velocity
+product of superluminal ``v_ref`` supports a near-cut-off boundary
+resonance, which the shared dual-basis port reconstruction couples
+back into the (propagating, plain-Mur) fundamental.  Mur-1st is
+gently dissipative there — exactly why stage 1 left the fundamental
+untouched (−21 dB).  The developer's "structurally never worse"
+premise is disproved for the near-cut-off regime (cf. the DD-064
+artificial-cut-off precedent — a measured, refuted upgrade is
+recorded, not re-promoted).  Higdon damping (a δ term pulling the
+poles off the real axis) could suppress the resonance but adds a
+tuning parameter and degrades the deep null; not pursued given the
+modest propagating-band gain.
+**Decision.**  Stage 1 is a net wash (the H1 median gain trades
+against the H1 max) and stage 2 regresses the operating mode, so
+neither beats the DD-068 baseline enough to justify the added
+machinery.  The **port-wide ``f_calc`` Mur reference is retained**;
+this entry documents the closed follow-up.  The DD-068 sentence
+"Mur-1st then uses the channel's true phase velocity at f_calc"
+stands.
+**Measured (shielded microstrip, identical mesh, 35-GHz band).**
+* DD-068 baseline (retained): QTEM fundamental −21.2/−29.1 dB;
+  hybrids max −9.5/−7.8 dB above 1.2 f̂_c, medians −18.1/−10.5 dB;
+  leg-A below-16-GHz |ΔS| 5.2e-2/5.5e-2.
+* Stage-1 band-minimax (not adopted): QTEM fundamental unchanged
+  (−21.3/−29.0 dB); hybrids max −10.6/−8.4 dB, medians −15.1/−10.2 dB
+  — the H1 median improves, the H1 max regresses; a wash.
+* Stage-2 Higdon-2 (refuted): QTEM max −2.6 dB / power −1.52 dB;
+  leg-A below-16-GHz |ΔS11| 1.16e-1 — the fundamental-invariance loss
+  that ruled it out.
+**Files.**  No production change (baseline retained): only this entry
+and the STATUS session-96 log.  The full stage-1 implementation
+(``_mur_reference_velocity`` in ``ports/modal/operator.py`` + the
+dispersive-minimax / TEM-bit-identity / empty-band-guard tests) lives
+on branch ``dd069-dispersive-mur-reference`` for future revival.
+
+---
+
+## DD-070 — On-disk project store: separation of simulation and post-processing
+
+**Date:** 2026-07-12 (session 97; developer-initiated).
+**Status:** Accepted; **fully implemented** (WP-S1…S9 + session-99
+frequency/flux persistence + session-122 planned-run
+pre-registration).
+
+**Problem.**  The workflow was single-phase and in-RAM: ``run()``
+marched to completion and returned everything in memory.  Failures at
+production scale: a full-volume ``FieldTimeMonitor`` cannot hold its
+snapshot list in RAM; and there was no way to watch a running
+simulation converge or to continue a run that stopped too early
+without restarting from zero.
+
+**Decision.**  A **project directory** is the central artefact:
+simulation streams into it on-the-fly, post-processing is a separate
+read-only path over the same directory (live or after the fact),
+finished/aborted runs resume bit-exactly.  Nine frozen decisions:
+
+| # | Decision |
+|---|----------|
+| D1 | Project **directory**, not a monolith file (artefacts have write-once / streaming / overwrite lifecycles). |
+| D2 | Streaming store = **HDF5 in SWMR mode** (live view; keeps ParaView/XDMF; no new dependency). |
+| D3 | ``.run()`` returns a **lazy ``Project`` reader** — the same object ``open_project`` returns; live and batch post-processing are one code path. |
+| D4 | **Bit-exact resume** — checkpoint the full solver state (E/H, CPML ψ, DTBC convolution history, band state machine, Mur prev-values); a seam transient would pollute the decaying tail being resolved. |
+| D5 | The store is a **Level-B primitive**; Level A consumes it; RAM-only stays the Level-B default. |
+| D6 | Store unit = **named run = one time-marching trajectory**; the S-matrix is **derived on read** from stored raw V/I — never stored — so partial fill and later fill-in are natural. |
+| D7 | **Shared container for TD + eigen**: runs (streamable, TD) and results (one-shot); streaming/resume are TD-specific. |
+| D8 | Geometry: **BREP** (exact round-trip) + **STL** (viz); STEP dropped. |
+| D9 | Old ``save_project``/``load_project`` **deleted**; its writers reused inside the store. |
+
+Rejected forks (developer, session 97): Zarr / hand-rolled append-log
+(dependency / custom code); eager-in-RAM return; pragmatic E/H-only
+resume (self-defeating against the <−100 dB port ethos).
+
+**Layout.**  ``project.json`` (setup + frequency plan + run
+index/status + run recipe), ``geometry.brep``/``.stl``, ``mesh.h5``
+(write-once), ``runs/<name>/{results.h5 [SWMR-append], checkpoint.h5
+[overwrite], fields.xdmf}``, ``eigenmodes.h5``,
+``runs/<name>/fields_freq.h5`` (see below).
+
+**Load-bearing implementation facts (WP-S1…S9, sessions 97–99):**
+
+- **SWMR rules**: no object creation and no attribute edits after the
+  mode switch → the recorded step count is the ``reference`` stream
+  *length*, and mutable run ``state`` lives in ``project.json``.  The
+  streaming sink (``FITTimeDomainSolver.sink``, flushed at every
+  energy check) is the **single** write path.
+- **Checkpointing** (``Checkpointable`` protocol): pure nested
+  ``state_dict`` maps 1:1 onto the HDF5 tree (one recursive walker,
+  cupy → host).  ``checkpoint.h5`` is overwritten via temp +
+  ``os.replace`` (atomic; a resumer never sees a partial write).
+  Same-operators rewind is **bit-identical** (``max|Δ| = 0``) on DTBC
+  + CPML; an independent ARPACK TE/TM rebuild sits at ~1e-13, so
+  resume reloads into the same operators where determinism matters.
+- **Graceful abort is cooperative**: ``request_stop()`` checked at
+  the top of each iteration → the break lands on a consistent
+  leapfrog pair.  Level A traps ``SIGINT`` (checkpoint + ``aborted``
+  + partial project); ``SIGUSR1`` = snapshot-and-continue (same
+  consistency point, no stop).
+- **Unbounded default**: ``total_time_steps=None`` marches on the
+  energy criterion alone.  Subtlety: the energy-check cadence was
+  tied to the step-count estimate, so unbounding one path shifted the
+  stop step and broke in-RAM == streamed parity —
+  ``energy_check_interval`` decouples cadence from cap; both paths
+  resolve it identically.
+- **``magnelio.resume(project, excited=…)``** rebuilds the run
+  path-only from the stored recipe (``analysis/_recipe.py``);
+  ``from_project`` reconstruction is idempotent on the stored
+  (already consolidated) mesh.  Subtleties: the resume sink samples
+  the reference at ``(step_offset + local_k)·dt`` (else the reference
+  stream phase-shifts against the pre-resume tail); criterion knobs
+  are treated as *one* setting (pass one → the other is disabled;
+  pass neither → inherit the launch criterion); ``results.h5`` is
+  reopened truncated to the checkpoint step (a hard kill can flush
+  past it — the orphaned tail is dropped).  Acceptance: rebuilt +
+  resumed run **bit-identical** to an uninterrupted one (TEM/DTBC
+  line), including the derived S.
+- **Monitors**: ``FieldTimeMonitor`` streams snapshots into
+  ``results.h5`` (declared pre-SWMR, drained per flush — never
+  accumulates in RAM) and is checkpointed → resumed monitors continue
+  bit-exactly.  ``FluxTimeMonitor`` streams append-only likewise
+  (session 99).  ``FieldFrequencyMonitor`` is different *in kind*
+  (fixed-size running DFT sum, not append-safe): it gets its own
+  ``fields_freq.h5``, written whole + atomically at each checkpoint —
+  simultaneously the user's converging partial-DFT result *and* the
+  resume source; ``n_completed`` ties it to ``checkpoint.h5`` (on
+  mismatch after a crash between the two atomic writes: raise, never
+  integrate from a wrong partial).  ``Project.monitors[name]``
+  resolves all three kinds by name.
+- **Planned-run pre-registration** (session 122): all planned
+  excitations are registered ``pending`` up front, so finishing run
+  *k* no longer flips ``status = "done"`` mid-analysis (live-watcher
+  race, user-reported).  Watcher idiom: iterate ``project.runs``,
+  skip ``state == "pending"``; polling ``status == "done"`` is
+  race-free.  Fill-in never clobbers existing ``done``/``aborted``
+  entries.
+
+---
+
+## DD-071 — Geometry authoring: Brick.from_corners + material-preserving Group
+
+**Date:** 2026-07-14 (session 100; developer-initiated — a bundle of
+geometry-authoring / lumped-element / thin-wire wishes sorted into a
+roadmap, ``GEOMETRY_CIRCUIT_PLAN.md``).  This DD records the first two
+work packages (Cluster 1, WP 1a + 1f); later cluster decisions land in
+``DD-072…``.
+**Status:** Accepted — implemented and merged behind the plan.
+**Problem.**  Building a realistic multi-material assembly (the motivating
+case: an SMA connector = PEC pin + PTFE dielectric + PEC shell) meant
+placing each solid by hand, because the only multi-shape container was the
+Boolean ``Union``, which *fuses* its operands into **one** solid carrying
+**one** material (``operations.py``: ``Union.material = shapes[0].material``).
+There was no way to translate/rotate a heterogeneous bundle as a unit while
+each member keeps its own material.  Separately, an axis-aligned box could
+only be given as ``origin`` + ``size``; a two-opposite-corners form (the
+common CAD idiom) required the user to normalise min/max by hand.
+**Decision.**
+1. **``Brick.from_corners(p1, p2, *, material, name=None)``** — a
+   classmethod that normalises min/max per axis and populates the ordinary
+   ``origin``/``size`` fields, so the result is indistinguishable from a
+   directly constructed ``Brick`` downstream.  No rounding: ``size = hi −
+   lo`` is a plain FP subtraction (any ~1e-18 residue is far below OCC
+   precision; a geometry constructor must not silently move coordinates).
+2. **``Group(*shapes, name=None)``** — a new **compound-node category** in
+   the geometry algebra: a *heterogeneous* container that **preserves each
+   member's material and OCC solid**.  It is the material-preserving
+   sibling of ``Union``.  Load-bearing consequences:
+   - A Group has **no single** ``.material`` and **no** ``._occ_shape()`` —
+     it is not a physical solid.  Its protocol is ``.members()`` (recursive
+     leaf iterator, flattens nested Groups) + ``.bounding_box()`` (union of
+     member boxes).  This is the one hard boundary: **CSG Boolean ops
+     (``Union`` / ``Intersection`` / ``Difference``) reject a Group
+     operand** (``_reject_group`` → ``TypeError``), because there is no
+     single solid to cut/fuse.
+   - **Transforms distribute over members.**  ``translate`` / ``rotate`` /
+     ``scale`` applied to a Group return a new Group whose members are each
+     transformed (recursively for nested Groups), so materials are
+     preserved through placement.
+   - The repeat helpers grow a **``group=True``** flag — the third branch of
+     ``_apply_repeat`` beside ``unite=True`` — that aggregates repeated
+     copies into a Group instead of fusing them into a ``Union`` or
+     returning a bare list.  ``unite`` and ``group`` are mutually exclusive.
+   - **Flattened at ``GeometryModel.add``**: a Group is expanded into its
+     leaf members on insertion (recursively; lists may contain Groups), so
+     the mesher, material filling and overlap layers **never see a Group**.
+     This keeps the entire solver-facing pipeline (which keys materials by
+     ``id(mat)`` and requires one ``._occ_shape()`` per shape) unchanged —
+     the Group is purely an authoring-time convenience that vanishes before
+     meshing.
+**Rationale.**  A Group is deliberately *not* a Boolean op: fusing would
+collapse the materials, which is exactly what the multi-material assembly
+must avoid.  Keeping it a pure authoring container that flattens before the
+mesh means no downstream code (mesher, filling, overlap check, sub-cell
+machinery) needs to know Groups exist — the single flatten point in
+``add`` is the whole integration surface.  The CSG-rejection is a hard
+error rather than a silent "use the first member" so a heterogeneous bundle
+can never leak a wrong material into a Boolean result.
+**Consequences / scope.**  ``Group`` is exported from ``magnelio`` and
+``magnelio.geometry``.  This is the foundation the roadmap builds on:
+Cluster 1 continues with a standalone ``Face`` (optional material) + generalised
+``extrude`` (1b/1d) and an abstract ``Curve`` + ``sweep``/``revolve`` (1c/1e);
+Cluster 3 (discrete-port audit → lumped RLC → thin-wire) shares one
+``Curve → grid-edge`` rasterizer.  Overlap policy 2a (same-material overlaps
+allowed, compared by value) is a separate small change, not part of this DD.
+---
+## DD-072 — Standalone planar Face + generalised extrude
+
+**Date:** 2026-07-14 (session 100; ``GEOMETRY_CIRCUIT_PLAN.md`` Cluster 1,
+WP 1b + 1d — the continuation of DD-071).
+**Status:** Accepted — implemented and merged behind the plan.
+**Problem.**  Solids could only be authored as CSG primitives + Boolean
+ops; there was no way to give an arbitrary planar profile and sweep it into
+a solid.  ``extrude`` existed but only for a *face of an existing solid*
+selected by ``face_near`` — it could not take a free-standing profile.  The
+motivating cases (spiral inductor, arbitrary microstrip pad, connector
+cross-sections) start from a hand-drawn 2D polygon.
+**Decision.**
+1. **``Face(normal, points, offset=0.0, material=None, name=None)``** — a
+   standalone planar polygon in an axis-normal plane.  ``points`` are
+   in-plane ``(u, v)`` vertices; ``(u, v)`` map to the two axes orthogonal
+   to *normal* using the **same convention as ``cross_section_polygons``**
+   (normal ``x`` → u=y, v=z; ``y`` → u=x, v=z; ``z`` → u=x, v=y), so a Face
+   and the cross-section of its extrusion share one coordinate frame.
+   ``offset`` positions the plane along the normal axis.  Built by a new
+   ``occ_backend.make_face`` (``BRepBuilderAPI_MakePolygon`` closed →
+   ``BRepBuilderAPI_MakeFace(wire, planar=True)``).  Validated at
+   construction: ``normal ∈ {x,y,z}`` and ``≥ 3`` points.
+2. **Optional material** is the load-bearing design point.  A Face with
+   ``material=None`` is a **construction profile** (input to
+   ``extrude``/``sweep``, not a physical object).  A Face **with** a
+   material is a **thin sheet** — but thin-sheet *physics* wiring (DD-035)
+   is deferred, so:
+   - a Face is not a ``_BaseShape`` (whose ``material`` is required); it is
+     its own dataclass with ``material`` optional;
+   - ``Mesh.from_geometry`` **rejects** any standalone Face up front with a
+     clear ``NotImplementedError`` (before grid construction, which would
+     otherwise die on the zero-thickness bounding box) — a zero-volume face
+     must not silently mesh to nothing, and a ``material=None`` face must
+     not reach the ``id(mat)`` material-keying.
+3. **``extrude`` generalised** to ``extrude(shape, *, vector,
+   face_near=None, material=None)``.  A **Face** input *is* the profile
+   (``face_near`` unused; ``BRepPrimAPI_MakePrism`` runs directly on
+   ``Face._occ_shape()`` — no ``find_nearest_face``); a **solid** input
+   keeps the existing ``face_near`` selection.  The extruded solid needs a
+   material: explicit ``material=`` wins, else the Face's own material, else
+   (construction Face) a ``ValueError`` asks for one.  ``face_near`` became
+   keyword-optional — backward compatible, since every existing caller
+   passes ``face_near=``/``vector=`` by keyword.
+**Rationale.**  Reusing the ``cross_section_polygons`` (u, v) convention
+means no new coordinate mental model and guarantees consistency between a
+profile and its swept solid's cross-sections.  Keeping ``material`` optional
+lets the Face object carry the eventual thin-sheet material for free while
+the physics is still deferred, and the up-front mesher rejection turns the
+deferral into a loud, actionable error instead of a silent wrong result.
+Making the Face-vs-solid dispatch live inside ``extrude`` (rather than a
+separate ``extrude_face``) keeps one verb for "sweep a profile linearly",
+matching how the later ``sweep``/``revolve`` (1c/1e) will also take a
+profile.
+**Consequences / scope.**  ``Face`` is exported from ``magnelio`` and
+``magnelio.geometry``.  Thin-sheet meshing, ``sweep``/``revolve`` (Cluster 1
+WP 1c/1e via the abstract ``Curve``), and the overlap-policy relaxation
+(Cluster 2, 2a) remain future work.
+---
+## DD-073 — Curve (polyline / arc / spline / helix) + sweep/revolve; optimal bounding boxes
+
+**Date:** 2026-07-14 (session 100; ``GEOMETRY_CIRCUIT_PLAN.md`` Cluster 1,
+WP 1c + 1e — continuation of DD-071 and DD-072).
+**Status:** Accepted — implemented and merged behind the plan.
+**Problem.**  There was no way to author a curved solid (a coil, a bent
+trace, a solid of revolution).  The plan's motivating case — a spiral
+inductor — is a rectangular profile (WP 1b ``Face``) swept along a helix.
+That needs a *curve* object and *sweep*/*revolve* verbs.
+**Decision.**
+1. **``Curve``** — one abstract, OCC-backed 3D locus (a ``TopoDS_Wire``)
+   with **no material** (1D is never a physical object on its own); a
+   Curve exposes only ``_occ_shape()`` + ``bounding_box()``.  Consumers
+   decide use: ``sweep`` (→ solid), later Cluster 3 (rasterise onto grid
+   edges for voltage integration / thin-wire).  Four lazy classmethod
+   constructors (in ``curves.py``): ``Curve.polyline`` (open wire),
+   ``Curve.arc`` (3-point ``GC_MakeArcOfCircle``), ``Curve.spline``
+   (``GeomAPI_PointsToBSpline``), ``Curve.helix``.  Cheap validation is
+   eager (like ``Face``); OCC-dependent validation (collinear arc,
+   degenerate points) stays lazy in the ``make_*`` helpers.
+2. **Helix is exact, not sampled.**  ``make_helix`` builds the helix as a
+   straight line in the ``(angle, height)`` parameter space of a
+   ``Geom_CylindricalSurface`` (radius exact to machine precision), with
+   ``breplib.BuildCurve3d`` forcing the 3D curve — **required**, or the
+   edge carries only a pcurve on the surface and ``sweep``'s Frenet frame
+   dies with ``Standard_NullObject``.  Parameter span
+   ``last = turns·hypot(2π, pitch)``; handedness flips the 2D u-slope sign.
+3. **``sweep(profile, spine)``** via ``BRepOffsetAPI_MakePipe``.  MakePipe
+   uses the profile *at the position it already occupies*, so ``sweep``
+   first **auto-positions** the profile: it reads the profile plane's
+   normal + centroid (from the OCC face, so a transformed Face works too)
+   and the spine's start point + unit tangent (``BRepAdaptor_CompCurve``,
+   multi-edge safe), then applies a rigid ``gp_Trsf.SetDisplacement`` that
+   moves the profile centroid onto the spine start with its normal along
+   the start tangent (in-plane roll fixed by a deterministic perpendicular).
+   The user need not pre-place the profile — the canonical call is
+   ``sweep(Face(...), Curve.helix(...))``.  Verified: straight-spine volume
+   is exactly area·length; helix/arc volume matches area·arclength to
+   < 2 %; the tube is centred on the spine.
+4. **``revolve(profile, axis, angle_deg, origin)``** via
+   ``BRepPrimAPI_MakeRevol`` (no positioning ambiguity — profile used
+   as-is; must not cross the axis).  Full-revolution volume matches Pappus
+   to 1e-3.  ``axis`` accepts ``'x'/'y'/'z'`` or a vector.
+5. **``bounding_box`` → ``brepbndlib.AddOptimal(shape, box, False, False)``**
+   (a **correctness fix** these features force).  Plain ``Add`` bounds a
+   freeform (B-spline) surface by the convex hull of its control poles,
+   which over-sizes a swept / lofted / revolved solid by ~2× per axis
+   (~8× mesh cells).  ``AddOptimal`` computes geometry-based bounds:
+   **exact** for analytic primitives (box/cylinder/sphere/Boolean — and no
+   slower there, so a safe drop-in; the old gap correction is dropped) and
+   **tight** for freeform.  Measured: a 2 mm-radius helix coil now bounds
+   to ±2.4 mm (was ±4–5 mm) and meshes on a ~10³ grid instead of a
+   ~20³ one.  This also fixes the pre-existing ``loft`` bbox looseness.
+**Rationale.**  A single ``Curve`` type (rather than PolylineCurve /
+ArcCurve / … classes) matches the plan's "one locus, consumers decide use"
+and keeps the future rasterizer (Cluster 3) pointed at one type.
+Auto-positioning ``sweep`` matches how commercial suites present "sweep
+along path" and removes the error-prone manual step of placing the profile
+perpendicular to the path start.  The exact surface-helix (over a sampled
+spline) honours the Genauigkeit-first design priority.  The bbox fix is not
+optional polish: without it every curved solid inflates the grid, violating
+the Effizienz priority and the "must scale to large geometries" goal.
+**Consequences / scope.**  ``Curve`` exported from ``magnelio`` +
+``magnelio.geometry``; ``sweep``/``revolve`` from ``magnelio.geometry`` (with
+the other modifiers).  Cluster 1 (geometry authoring) is now complete
+(WP 1a/1f/1b/1d/1c/1e).  Next: Cluster 2 (2a same-material overlaps,
+compare by value) and Cluster 3 (discrete-port audit → RLC → thin-wire on
+one shared ``Curve → grid-edge`` rasterizer).
+---
+## DD-074 — Same-material overlaps allowed (value-equal materials)
+
+**Date:** 2026-07-14 (session 100; ``GEOMETRY_CIRCUIT_PLAN.md`` Cluster 2,
+WP 2a — the only Cluster-2 change; 2b "air is overwritable" was deleted
+before implementation and must not be reintroduced).
+**Status:** Accepted — implemented and merged behind the plan.
+**Problem.**  ``GeometryModel.validate()`` reported *every* volumetric
+overlap, forcing the user to partition with CSG (``Difference``/``Union``)
+or set ``allow_overlaps=True`` globally.  But an overlap between two shapes
+of the **same** material is physically unambiguous — the overlap region
+gets that material whichever shape "wins" the cell classification — so
+requiring the user to resolve it is friction with no benefit (and the whole
+point of allowing overlaps is that users deliberately build them, e.g. an
+L-shape from two overlapping bricks, or a ``Group`` of touching
+same-material segments).
+**Decision.**  Relax ``validate()`` so overlapping pairs whose materials
+are **value-equal** are not reported; different-material overlaps still
+raise ``GeometryOverlapError``.  Equality is
+``Material.__eq__`` (the plain-dataclass value comparison over
+name/ε/μ/σ/σ*/is_pec; color/alpha/visible are ``compare=False``) — **not**
+``id()``: two distinct ``Material.pec()`` instances are the same material.
+This is deliberately *not* identity, because the mesher keys its material
+library by ``id(mat)`` and would otherwise treat two value-equal instances
+as different.  The material *name* is part of the identity, so two
+differently-named materials with identical physics are treated as different
+(they are distinct library entries) and their overlap still raises.
+Implementation: ``check_pairwise_overlaps`` gained an optional
+``materials=`` argument; when supplied it skips value-equal pairs **before**
+the expensive ``BRepAlgoAPI_Common`` Boolean (after the cheap AABB reject),
+so a same-material overlap costs no intersection computation — this matters
+for large assemblies of touching same-material primitives.  ``validate()``
+passes ``[s.material for s in shapes]``.  The warning text and the
+``allow_overlaps`` escape hatch are unchanged (the latter still bypasses the
+whole check for the genuinely-different-material cases a user accepts).
+**Rationale.**  Value equality over identity is required for the relaxation
+to be useful at all (every ``Material.pec()`` call is a fresh instance).
+Skipping before the Boolean keeps the check scalable.  Reporting
+different-material overlaps preserves the safety the check exists for: those
+*are* ambiguous (which ε fills the overlap?) and usually a modelling
+mistake.
+**Consequences / scope.**  Cluster 2 is complete (2a only).  No mesher
+change beyond the existing ``validate()`` gate; the mesher still assigns one
+library id per distinct material *object* (value-equal duplicates get
+separate ids, as before — a pre-existing minor redundancy, out of scope
+here).  Next: Cluster 3 (discrete-port audit → lumped RLC → thin-wire on one
+shared ``Curve → grid-edge`` rasterizer).
+
+---
+
+## DD-075 — Discrete-port audit (3a): co-temporal power-wave fix + Thévenin-invariant gates; single-edge limit documented
+
+**Date:** 2026-07-14 (session 101; ``GEOMETRY_CIRCUIT_PLAN.md`` Cluster 3,
+WP 3a — the foundation audit before the lumped-RLC generalisation 3b;
+continuation of [[DD-042]]).
+**Status:** Accepted — F3 fix + F1 doc + gates implemented; F4 documented as
+a constraint on 3b.
+
+**Problem.**  The plan's Cluster 3 builds a lumped-RLC companion model on top
+of the existing ``PortOperatorLumped`` (a passive discrete port already *is*
+a resistor ``Z0``).  But that operator was only smoke-tested (V/I ≠ 0, FFT
+finite, energy bounded) and the one quantitative test
+(``test_quarter_wave_stub_null``, S11-null at design frequency) was
+``pytest.skip``.  "Audit before building on it": verify the matched-
+termination reflection, the √W power-wave normalisation vs. DD-042, and the
+``Σ e·dl`` convention.
+
+**What the audit found.**
+
+- **F2 — core physics is analytically sound.**  The semi-implicit Thévenin
+  update solves ``i_port = (v_src − v_total)/(Z0 + Σβ)`` and injects it, so
+  the post-update line integral is ``V = v_total + i_port·Σβ`` and hence
+  ``v_src = V + Z0·I`` identically (I flows out of the + terminal into the
+  line).  With the √W power-wave reference = ``Z0`` (the ``_LumpedModeStub``
+  that ``AnalysisScatteringTD`` synthesises for ``compute_s_parameters``)
+  this gives ``a₁ = v_src/(2√Z0)`` — **load-independent**, the defining
+  property of a clean power-wave source — and ``S11 = (Z_in − Z0)/
+  (Z_in + Z0)``.  The ``Σ e·dl`` sign/convention is correct.  So all three
+  audit targets (√W, Σe·dl, Thévenin) pass by construction.
+- **F3 — real bug: the Yee temporal half-step was applied to the lumped I.**
+  ``compute_s_parameters`` multiplied *every* I channel by
+  ``exp(+jω·dt/2)``.  That is correct for **modal** ports (V ∼ e at
+  ``t^{n+1}``, I ∼ h at ``t^{n+1/2}``), but a lumped port's ``project_I``
+  returns the ``t^{n+1}`` Thévenin current cached in ``update_e`` and
+  *ignores h* (confirmed against the solver loop order), so lumped V and I
+  are **co-temporal**.  The spurious ``ω·dt/2`` rotation caps a lumped
+  port's achievable match at ``~π·f·dt/2`` (≈ −26 dB at band top on a λ/20
+  mesh; measured: the co-temporal and temporally-corrected splits diverge by
+  up to 0.9 dB at 14.75 GHz, dt = 2.24 ps).  The *spatial* de-stagger already
+  had a lumped fall-back (``port_normal_dx`` absence → co-located split); the
+  *temporal* one had no guard.
+- **F4 — single-edge vs. distributed-mode mismatch (usage constraint, not a
+  bug).**  A discrete port is a **single edge-chain**, a 2-terminal element
+  on one grid edge; it does **not** span a distributed cross-section.  On a
+  parallel-plate TEM line it therefore does not act as a clean termination:
+  the mode occupies every transverse edge-column, so a single-edge load of
+  value ``R`` terminates it as ``≈ (N_columns)·R`` (measured cleanly on an
+  Nx=1 plate: effective ``2R`` — nulls at ``R = z_line/2``, ``−9.5/−4.4 dB``
+  at ``z_line``/``2·z_line`` exactly per ``R_eff = 2R``), and on a wider mesh
+  the localised load reflects the distributed wave resonantly
+  (max\|S11\| → 0 dB for every ``Z0``, Nx = 1…8).  The clean modal-to-modal
+  baseline on the *same* meshes is −168 dB, so this is the lumped port, not
+  the line.  Consequence: a quantitative matched-termination / λ/4-stub gate
+  is **not achievable** until a genuine single-edge line exists (thin-wire,
+  Cluster 3c) — and **3b's RLC validation must use a single-edge context,
+  never a distributed TEM line**.
+- **F1 — stale doc:** the ``AnalysisScatteringTD`` docstring called lumped
+  ports an uncovered "Limitation"; they are in fact fully wired into layer a
+  (``_build_operator`` → ``build_lumped_port``, ``_modes_for_operator`` →
+  ``_LumpedModeStub``).  **F5 — gotcha:** ``run()`` is unbounded by default
+  (DD-070), and a weakly-absorbing lumped fixture never reaches
+  ``energy_stop_db`` → pin ``total_time_steps`` in lumped tests.  **F6
+  (benign):** the recorded lumped V/I sit at ``t^{n+1}`` while
+  ``reference_signal`` is on the ``n·dt`` axis (a one-step offset); S-
+  parameters extract ``a`` from V/I self-consistently, not from the
+  reference, so this does not affect S — noted for direct V/I-vs-source
+  comparisons only.
+
+**Decision.**
+1. **Fix F3.**  ``_LumpedModeStub`` grows an ``i_cotemporal`` property
+   (``True``); **both** power-wave paths skip the ``exp(+jω·dt/2)`` factor on
+   any channel whose mode reports ``getattr(mode, "i_cotemporal", False)`` —
+   ``compute_s_parameters`` (the S-matrix) and ``destaggered_power_waves``
+   (the ``result.a()``/``b()`` time-domain split, which carried the identical
+   unguarded correction).  Real ``Mode`` objects lack the attribute → default
+   ``False`` → the modal path is **bit-identical** (verified: the parallel-
+   plate/modal S-parameter and a/b suites are unchanged).  A one-attribute
+   signal keeps the two shared signatures stable.  The synthetic
+   ``test_matched_forward_wave_has_vanishing_b`` (WP5.2) fed a lumped stub
+   *staggered* I — encoding the old bug — and is corrected to co-temporal I,
+   where the lumped matched wave gives ``b ≡ 0`` exactly (a tighter gate than
+   the former O((ω·dt)²) bound).
+2. **Fix F1** — the docstring now states lumped ports are covered and lists
+   the genuine layer-a limitations (simultaneous multi-port drive, nonlinear
+   materials, hand-tuned excitations).
+3. **Replace the skipped λ/4 test** with two fixture-free physics gates
+   (``tests/integration/test_discrete_port.py``):
+   ``test_discrete_port_thevenin_invariant`` asserts ``V + Z0·I = s`` to
+   machine precision (rel < 1e-12; validates √W + Σe·dl + sign, mesh-
+   independent), and ``test_discrete_port_cotemporal_decomposition`` asserts
+   ``result.S`` equals the co-temporal split and differs from the temporal
+   one (the F3 regression guard, with teeth).
+4. **Document F4** here and in the plan; the ``test_discrete_port`` module
+   docstring records why the λ/4-null gate awaits 3c.
+
+**Rationale.**  Because F4 makes a clean matched-termination null impossible
+on any distributed fixture available today, the exact algebraic Thévenin
+invariant ``V + Z0·I = s`` is the *stronger* gate — it pins the operator's
+core physics at machine precision with zero wave-fixture confounders, where a
+−40 dB null never could.  Fixing F3 in post-processing (not by re-centring
+the operator's current) keeps the discrete port's own time-stepping untouched
+and matches the physical fact that a lumped element ties V and I at one
+instant (instantaneous Ohm's law), unlike a travelling wave's Yee-staggered
+E/H.
+
+**Consequences / scope.**  No change to the discrete-port operator, the
+solver, or the modal path.  3b (lumped RLC companion model) inherits a
+verified ``v_src``/``z_eff`` slot and a documented single-edge validation
+requirement.  The degenerate rasterizer in ``ports/discrete/factory.py``
+(argmin node-snap + single-axis edge run) is unchanged; it is subsumed later
+by the shared ``Curve → grid-edge`` rasterizer whose first consumer is
+``integrate_E`` (the F4 edge-multiplicity is exactly the normalisation that
+rasterizer must get right).  ``DiscretePortSpec``/``build_lumped_port`` API
+unchanged.
+
+---
+
+## DD-076 — Canonical curve rasteriser (Curve → ordered directed grid edges) + integrate_E
+
+**Date:** 2026-07-14 (session 101; ``GEOMETRY_CIRCUIT_PLAN.md`` Cluster 3,
+the cross-cutting rasteriser + its first consumer ``integrate_E``;
+continuation of [[DD-073]] (``Curve``) and [[DD-075]] (3a audit)).
+**Status:** Accepted — implemented + validated.
+
+**Problem.**  Every Cluster-3 grid consumer (voltage integration now; lumped
+RLC and thin-wire later) must map an abstract ``Curve`` onto the primary-grid
+E-edges it occupies.  ``build_lumped_port`` already contains a *degenerate*
+rasteriser (argmin node-snap + a single-axis edge run,
+``ports/discrete/factory.py``) that only handles an axis-aligned straight
+segment.  The general problem — an oblique curve (a helix is oblique
+everywhere), ordered and *signed* edges for ``Σ E·dl`` and current
+continuity — needs one shared kernel.  **Guardrail: exactly one canonical
+rasteriser**, or voltage integration and a thin-wire current could disagree
+on which edges a curve occupies.
+
+**Decision.**  A new package ``src/magnelio/circuit/`` (the home for Cluster-3
+edge elements) with ``rasterize.py``:
+
+1. **``rasterize_curve(curve, grid, *, samples_per_cell=4) → EdgePath``.**
+   (a) *Sample* the wire at quasi-uniform arc length ≤ ``min_cell /
+   samples_per_cell`` via a new ``occ_backend.sample_wire`` (a
+   ``BRepAdaptor_CompCurve`` — which resolves multi-edge wire order and
+   per-edge orientation — plus ``GCPnts_QuasiUniformAbscissa``), so no node is
+   skipped.  (b) *Snap* each sample to its nearest primary node (per-axis
+   independent on the rectilinear grid) and collapse consecutive repeats.
+   (c) *Staircase*: walk the node chain in unit steps; a rare multi-axis jump
+   between adjacent chain nodes is filled by a monotone x→y→z run.  Each unit
+   step emits the primary E-edge at the **lower** node with ``sign = ±1`` and
+   its length ``dl``.
+2. **``EdgePath``** carries ``axes`` / ``ijk`` (lower node) / ``signs`` /
+   ``dls`` / ``flat_indices`` (into the concatenated ``Ex|Ey|Ez`` layout — the
+   ``FieldState`` / ``M_eps`` ordering), so both field-array and flat-vector
+   consumers share one path.
+3. **``integrate_E(field, curve, grid) → float``** — the first, read-only
+   consumer: ``Σ sign · E · dl`` along the chain.  Exposed top-level from
+   ``magnelio`` alongside ``rasterize_curve`` / ``EdgePath``.
+
+**Rationale.**  A *signed* staircase makes the discrete line integral equal
+the continuous one: the signed edge sum is a telescoping displacement, so for
+a uniform (or any conservative) field the result depends only on the snapped
+endpoints and an oblique curve integrates correctly despite the staircase
+geometry.  Sampling the whole wire as one ``CompCurve`` sidesteps per-edge
+orientation bookkeeping.  Snapping per-axis is exact on the rectilinear grid.
+Placing the kernel in ``circuit/`` (not ``mesh/`` or ``ports/``) gives the
+Cluster-3 elements one home and keeps ``ports/discrete`` free to adopt it
+later without a mesh↔ports dependency.
+
+**Validated** (``tests/unit/test_curve_rasterize.py``, 8 tests, all to
+machine precision): a uniform field over a **diagonal polyline** integrates
+to ``E·(B−A)``; over an **oblique helix** (108-edge / 108 mm staircase) to the
+same net displacement (rel 1e-15) — the key path-independence property; a
+non-uniform conservative field ``φ = x²`` (``E_x = −2x`` midpoint-sampled)
+integrates to ``φ(A) − φ(B)`` **exactly on both uniform and graded grids**
+(cell-midpoint of a linear ``E_x`` telescopes); flat-index and field-array
+integration agree; reversing the curve negates the integral; an axis-aligned
+segment yields the expected all-``z``/``+1`` edge run; a sub-cell curve and
+``samples_per_cell < 2`` raise.
+
+**Consequences / scope.**  ``integrate_E`` needs the field and the grid
+(``FieldState`` carries no grid), so the signature is
+``integrate_E(field, curve, grid)`` — a deliberate deviation from the plan's
+2-arg sketch.  The degenerate rasteriser in ``ports/discrete/factory.py`` is
+**not yet** replaced (a follow-up: ``build_lumped_port`` becomes
+``rasterize_curve`` on a straight ``Curve``, and the resolved edges + ``dl``
+match by construction).  F4 (DD-075) does **not** bite ``integrate_E`` — a
+line integral is a single path, no transverse multiplicity — but the same
+rasteriser is what a lumped element (3b) will use to place its companion
+model, and there the single-edge-vs-distributed-mode normalisation must be
+handled by the element, not the rasteriser.  Next: 3b lumped RLC on a
+single-edge curve fixture.
+
+---
+
+## DD-077 — Trapezoidal RLC companion models (3b core); operator unification pending
+
+**Date:** 2026-07-14 (session 101; ``GEOMETRY_CIRCUIT_PLAN.md`` Cluster 3,
+WP 3b physics core; continuation of [[DD-075]] (the discrete-port audit) and
+[[DD-076]] (the rasteriser)).
+**Status:** Accepted — companion models implemented + validated; the
+Port-protocol operator that consumes them is the next step (developer chose
+the **unified** operator design, see "Consequences").
+
+**Problem.**  3b generalises the discrete port's constant internal impedance
+``Z0`` to a lumped **R/L/C** element.  A time-stepping solver needs the
+element's constitutive relation as a per-step companion
+``V^{n+1} = R_eq·I^{n+1} + V_hist`` (a constant equivalent resistance + a
+history source), which drops into the discrete-port update
+``i = (v_src − v_total)/(Σβ + Z0)`` by ``Z0 → R_eq`` and
+``v_src → v_src − V_hist``.
+
+**Decision (physics — developer sign-off).**  **Trapezoidal (bilinear)**
+integration: 2nd-order like the FIT leapfrog and **energy-conserving for
+L/C** — backward-Euler's numerical damping would corrupt the high-Q resonance
+a lumped element usually models (its one cost, a known O(dt) response at a
+hard-step discontinuity that decays over τ, is inert under the smooth erfc/
+Gaussian excitations used in practice).  **Both series and parallel
+topologies** (developer scope choice).  ``src/magnelio/circuit/companion.py``:
+
+- ``SeriesRLC(R?, L?, C?)`` — shared current; ``R_eq = R + 2L/dt + dt/(2C)``;
+  state ``{I, V_L, V_C}``; ``V_hist = [−(2L/dt)I^n − V_L^n] + [V_C^n +
+  (dt/2C)I^n]``.
+- ``ParallelRLC(R?, L?, C?)`` — shared voltage; Norton ``G_eq = 1/R + dt/(2L)
+  + 2C/dt`` converted to Thévenin ``R_eq = 1/G_eq``, ``V_hist = −I_hist/G_eq``;
+  state ``{V, I_L, I_C}``.
+
+Absent elements (``None``) drop their term; ``SeriesRLC(R=Z0)`` *is* the
+discrete port.  Each carries ``r_eq(dt)`` / ``v_hist(dt)`` / ``advance(i, v,
+dt)`` / ``reset()`` + a ``state_dict`` for bit-exact resume.
+
+**Validated** (``tests/unit/test_companion.py``, 7 tests): the ``r_eq`` /
+``v_hist`` match the closed forms; a series-RL and series-RC step response
+**converges** to ``i∞(1−e^{−t/τ})`` / ``i0·e^{−t/τ}`` (error falls ~O(dt) at
+the step — the expected trapezoidal-at-a-discontinuity behaviour, asserted by
+convergence not a magic tolerance); an underdamped series RLC rings at exactly
+``ω_d = √(1/LC − (R/2L)²)`` (FFT peak ±2 %); a parallel RC converges to its
+dual response.  The driver is a mini source-resistor circuit that mirrors the
+solver solve (``Vs`` behind ``Rs`` ↔ ``v_src`` behind ``Σβ``), so it validates
+the update structure too.
+
+**Consequences / scope.**  The **operator unification is the next step**
+(developer chose it over a parallel operator or a discrete-port extension): a
+general ``LumpedElementOperator`` (EdgePath from the DD-076 rasteriser +
+``CompanionElement`` + optional independent source) becomes the base, and
+``PortOperatorLumped`` a thin ``SeriesRLC(R=Z0)`` special case.  Analysed as
+**behaviour-neutral** (with ``r_eq=Z0, v_hist=0`` the update is byte-for-byte
+the current discrete port, and an ascending axis-aligned segment rasterises to
+all-``+1`` signs), but it touches the DD-070 checkpoint ``state_dict`` (now
+also the companion state) and the recipe — so it is gated on the **full
+resume/S-parameter suite staying bit-identical** and done as its own focused
+pass, not rushed.  ``SeriesRLC`` / ``ParallelRLC`` are exported from
+``magnelio.circuit`` (top-level export deferred until the operator makes them
+usable in a run).
+
+---
+
+## DD-078 — Physical √W port-amplitude convention (κ pinning)
+
+**Date:** 2026-07-15 (session 103; reframes [[DD-075]] F4 and the session-102
+lumped-port investigation, `investigations/lumped_port/FINDINGS.md`).
+**Status:** Accepted — implemented + gated (`tests/integration/test_port_units.py`).
+**Problem.**  The analytical mode evaluators are Poynting-normalised to 1 W
+(`ports/modal/coax.py`), but `discretize_modes` re-orthonormalises the runtime
+profiles in the FIT M_ε inner product and *discards* the physical scale — the
+recorded modal V/I live in a basis whose volts-per-unit κ is aperture- **and
+mesh-dependent** (measured: κ = 7 916 / 10 620 / 3 958 / 2 799 across four
+plate fixtures; pure Ny-refinement of the same geometry changes the implied
+power by 4×).  Intra-port S-parameters cancel κ exactly, which is why nothing
+was ever visible on same-cross-section fixtures.  But: (a) **heterogeneous
+modal↔modal** S21 carried κ₁/κ₂ — an ε_r 1→4 TEM step measured |S21| = 1.886
+(= 2×Fresnel) with |S11|²+|S21|² = 3.67 on a lossless line; (b) **mixed
+lumped↔modal** S was meaningless — the session-102 "−78 dB point-feed mode
+coupling" was exactly 1/κ, not physics (the field-level launch is the perfect
+circuit-theory TEM wave; unitarity |S11|²+|S21|² ≈ 0.005 was the missed red
+flag).  Developer directive: the modal machinery is the reference and must not
+change; the intended convention is the commercial-style **mode amplitude =
+√(1 W)**; lumped ports adapt.
+**Decision.**  Per-mode physical pinning computed at build time inside
+`PortOperatorModal._calibrate_v_i` (no dynamics touched):
+- ``P₁`` = physical Poynting flux of the unit-coefficient travelling wave,
+  ``P₁ = Σ_u ê_u·H_v·dA_u − Σ_v ê_v·H_u·dA_v`` with geometric area patches
+  (primal edge length × dual node spacing, reconstructed from the plane's
+  edge midpoints) and ``H`` the wave's physical field (analytic path: pre-γ ĥ
+  is sampled A/m; numerical path: undo the dual-voltage convention,
+  ``H = ĥ·M_μ/(μ₀·normal_dx)``).
+- ``record_scale κ = √(|P₁|·Re Z_modal)`` — the **recorder** (only) multiplies
+  projected V/I by κ; Mur/DTBC internals keep basis units bit-identically.
+- ``source_scale = √(Re Z_modal)/κ`` — ``set_excitation`` scales the user
+  waveform, which is thereby the incident power-wave amplitude **a(t) in √W**
+  (developer-approved TD convention: default pulse peak 1 → 1 W peak
+  instantaneous incident power).
+- ``PortOperatorLumped.set_excitation`` scales by the Thévenin identity
+  ``v_src = 2√Z0·a(t)`` (Z0 = 0 keeps the raw waveform); its recorded volts
+  are already physical → no record scaling.
+- Uncalibrated channels (evanescent at ω_calc; `calibrate=False` CW true-mode
+  ports; band path) keep κ = 1 — behaviour unchanged.
+**Validated.**  κ reproduces the field-probe measurement on all four fixtures
+to 7e-4; the ε-step gate hits Fresnel (|S11| = 1/3, |S21| = √(8/9)) with
+unitarity 1.000 ± 3e-4; the mixed gate moves lumped→modal |S21| from −78 dB to
+−0.5 dB; identical-plane modal↔modal S is unchanged (κ cancels); full suite
+green.
+**Consequences / follow-ups.**  (i) Frequency monitors are now "fields per
+1 W CW": the pre-existing ``FieldFrequencyMonitor.renormalize(result.
+reference_signal)`` divides by the source spectrum, which since DD-078 is
+a(f) in √W — verified to 1e-4 against the analytic √(z_line·1 W)/gap and
+gated (``test_frequency_monitor_fields_per_1w_cw``); work item (ii) thereby
+closed with zero new machinery.  (ii) The remaining −0.5 dB mixed-family deficit is *real*:
+the single-column lumped port's V/I bookkeeping is not discrete-energy-
+consistent by the transverse-coupling factor (1+f), f ≈ 1/Nx (sharpened
+session-102 open item; converges away with transverse resolution; belongs to
+the 3b lumped-element pass, NOT to a units fix — do not hard-code /(1+f)).
+(iii) TE/TM κ inherits the ω_calc-fixed calibration approximation of the
+existing V/I rescale; heterogeneous TE/TM port pairs should get their own
+validation fixture when they become a use case.  (iv) Recorded signal
+magnitudes changed (now physical): recipes/resume are internally consistent,
+but results.h5 files written before DD-078 mix conventions with new runs.
+
+---
+
+## DD-079 — Unified LumpedElementOperator (3b part 2)
+
+**Date:** 2026-07-15 (session 103; completes ``GEOMETRY_CIRCUIT_PLAN.md``
+Cluster 3 WP 3b — part 1 was [[DD-077]]; developer chose the unification in
+session 101).
+**Status:** Accepted — implemented + gated (`tests/integration/test_lumped_element.py`).
+**Decision.**  ``ports/discrete/operator.py`` now hosts the general
+``LumpedElementOperator``: a trapezoidal companion element
+(:class:`SeriesRLC` / :class:`ParallelRLC`, DD-077) in series with an
+optional Thévenin source on a chain of grid edges with **per-edge field
+components and orientation signs** (EdgePath-shaped, so the DD-076 canonical
+rasteriser can drive it for future curve-based elements).  Per-step update
+    i = (v_src − v_hist − v_total) / (r_eq + Σβ),
+then ``element.advance(i, r_eq·i + v_hist, dt)``.  ``PortOperatorLumped``
+is the thin special case (axis-aligned two-point chain, all-+1 signs,
+``element = SeriesRLC(R=Z0)`` by default) with an unchanged constructor
+surface; ``Z0`` stays the power-wave reference (``_modes_for_operator`` and
+the DD-078 ``2√Z0`` source convention read it).  ``PortSpecLumped`` gains
+``element=`` (deep-copied per built operator so spec instances stay
+pristine); the DD-070 recipe serialises it (old recipes load unchanged);
+``state_dict`` gains an ``element`` group (pre-unification checkpoints
+without it still load).  ``SeriesRLC``/``ParallelRLC`` are now exported
+top-level (the DD-077 deferral is over — the operator makes them usable).
+**Behaviour-neutrality (the hard gate).**  For a pure resistance the
+companion returns ``r_eq = Z0`` (same float) and ``v_hist = 0.0``; IEEE
+subtraction of 0.0 and multiplication by ±1.0 are exact, so the update is
+arithmetically identical.  Verified: a two-discrete-port S-run produces
+**byte-identical V/I/S** before vs after the refactor (A/B npz compare),
+and the full suite is unchanged.
+**Validated (new gates).**
+- Passive impedance: a passive ``element=`` port on a TEM plate presents
+  exactly ``−Z_trap(ω)`` in ``DFT(V)/DFT(I)`` with the bilinear map
+  ``jω̃ = j(2/dt)tan(ωdt/2)`` — rel < 1e-6 for series RLC, bare L, and
+  parallel RC (a per-step KVL identity, immune to the (1+f) transverse
+  factor because it reads the element's own V/I).
+- Recipe + ``state_dict`` round-trips (incl. legacy-checkpoint tolerance).
+- **Resume bit-exact:** an RLC-backed source (R+L+C history state) aborted
+  at a checkpoint and resumed is byte-identical to one uninterrupted run.
+**Follow-ups.**  (i) ``build_lumped_port``'s degenerate two-point
+rasteriser still stands beside the canonical DD-076 one (needs OCC-free
+handling before subsuming — a ``Curve``-based lumped element spec is the
+natural vehicle).  (ii) The DD-078 sharpened item stands: the single-column
+port's V/I is not discrete-energy-consistent by (1+f) — a 3c/thin-wire-era
+question.  (iii) Next per plan: 3c thin-wire (own DD).
+
+## DD-080 — Holland/Simpson thin-wire model (3c)
+
+**Date:** 2026-07-16 (session 104; completes ``GEOMETRY_CIRCUIT_PLAN.md``
+Cluster 3 WP 3c — the roadmap's largest item; developer approved the scope
+(staircase paths, endpoint set, geometry-object API, lossless v1), the
+**paired L/C correction** and the analytic-κ₀ policy in the planning pass).
+**Status:** Accepted — implemented + gated (``tests/unit/test_thin_wire.py``,
+``tests/integration/test_thin_wire_line.py``, ``test_thin_wire_antenna.py``).
+**Problem.**  A conductor much thinner than the cell (bond wires, probes,
+coil filaments) cannot be resolved as a solid.  A bare PEC-masked edge chain
+behaves like a conductor of the *grid's* equivalent radius r₀ ≈ 0.2·Δ —
+radius-blind, with the wrong per-length inductance.
+**Decision.**  New geometry leaf category ``ThinWire(curve, radius, name=…)``
+(``geometry/wire.py``): implicitly PEC (``.material`` → ``Material.pec()``),
+``_occ_shape()`` = the curve's wire, bbox = the curve's (radius NOT included —
+it is a sub-cell parameter, not a feature size).  The mesher splits wires off
+before filling/classification (``mesher.py``), anchors grid planes on the
+curve's OCC vertex coordinates + bbox extents (axis-aligned polyline segments
+land exactly on grid lines; endpoint snap displacement > 0.3·cell warns), and
+applies the model at mesh-build time through the ONE canonical rasteriser
+(DD-076 ``rasterize_curve → EdgePath``) in ``mesh/thin_wire.py``:
+- **PEC edge chain** (``mask_thin_wires``): the path's E-edges OR into
+  ``pec_mask_edges``, BEFORE ``couple_face_material_pairs`` so no DD-053
+  ladder is certified through a wire edge.
+- **Paired Holland/Noda–Yokoyama correction** (``correct_thin_wire_materials``,
+  after the coupling pass): per axis-aligned segment the 4 encircling H-faces
+  scale M_μ by ``m_f = ln(Δ_f/a)/ln(Δ_f/r₀)``, ``r₀ = κ₀·Δ̄``,
+  ``Δ̄ = (d_u⁻ d_u⁺ d_v⁻ d_v⁺)^{1/4}``, and the co-located radial E-edges
+  (exactly the faces' DD-053 ladder partners) scale M_ε by ``1/m`` — the
+  Holland & Simpson (1981) closure L'·C' = εμ in material-matrix form
+  (Noda & Yokoyama 2002).  **The DD-053 pair identity M_ε·M_μ is preserved
+  exactly** (machine-gated), so the exact discrete travelling wave survives
+  on the wire; a μ-only correction would leave the wire wave at ~0.73c
+  (a = 0.05Δ) and Z₀ ~12 % low — why the roadmap's literal "correct M_μ"
+  was extended, with developer sign-off.
+- **Encoding via existing channels only:** faces → cat-2
+  ``A_face_free = m·(current M_μ)·L_dual/(μ₀·μ̄)`` (the
+  ``couple_face_material_pairs`` convention; composes multiplicatively over
+  cat-1 dielectric values), edges → cat-1 ``eps_avg = eps_eff/m`` with
+  ``sigma_avg = NaN`` (σ stays staircase).  No new category, no solver change;
+  ``build_M_mu``/``build_M_eps``/CFL/2D mode solvers/serialisation all see it
+  natively.  Precedence: conformal-solid cat-2 faces/edges win (warned);
+  PEC-masked radial edges (the monopole footpoint) skip silently.
+- **Composition rule:** requests are collected globally over all wires, each
+  face/edge takes the **minimum** m (never a product) — conservative toward
+  the bare grid at staircase corners and between parallel wires < 2 cells
+  apart (warned).
+- **κ₀ policy (developer-approved):** ``KAPPA0 = e^(−γ)/2^{3/2} ≈ 0.19854``
+  (square-lattice Green's function) as a named constant; gate T3 measures the
+  grid's own bare r₀ (**measured ≈ 0.18–0.27 Δ** depending on extraction,
+  inside the asserted [0.15, 0.30] window); recalibration only once, with
+  sign-off and a derivation — no silent fitting.
+- **Validity:** ``a ≥ 0.30·Δ_min`` raises (use a resolved cylinder);
+  ``0.20–0.30·Δ_min`` warns (m < 1, dt shrinks ≤ ×0.86); the 1 %
+  ``A_face_free`` floor is unreachable (min m ≈ 0.744, asserted).  CFL is
+  handled by the existing machinery: the ε-side 1/m enters
+  ``compute_min_effective_eps`` → dt × √(1/m) (×0.73 at a = 0.05Δ) —
+  conservative (the physical wave speed is unchanged); a pair-aware CFL is a
+  follow-up.
+**Endpoints (v1, developer-selected).**  (a) PEC solid: the shared node joins
+the masked-edge sets — current continuity is topological; the solid's
+conformal faces take precedence in the last ring (O(1-cell) end error).
+(b) Open end: nothing to do (current null emerges); Holland's known
+end-capacitance bias (few %) documented.  (c) Lumped gap: two wires (or a
+chain with a skipped edge) + ``PortSpecLumped(element=…)`` driving exactly
+the gap edge — THE single-edge fixture DD-075 F4 deferred the quantitative
+gates to.  (d) PMC wall: **image-theory CORRECTION to the plan** — the H
+field of a perpendicular current is tangential to the wall, so PMC mirrors
+it ANTI-directed: current null, i.e. a PMC wall is the ideal line OPEN (no
+fringing), not a current-maximum mirror; the electric mirror (monopole,
+current maximum) is the PEC wall.  Both are gated.
+**Validated.**
+- Unit (20): factor formula uniform+graded; ring stencil == the 4 faces with
+  nonzero discrete-curl circulation (cross-checked against
+  ``build_curl_matrix``) for all 3 axes; boundary clipping; **pair product
+  preserved to 1e-15**; corner min-rule; precedence + silent masked-edge
+  skip; cat-1 composition; floor unreachable; radius/anisotropy warnings;
+  CFL minima; ``mesh.h5`` byte round-trip; OCC end-to-end
+  (validate-with-contact, anchor planes, store ``kinds``/``radii``).
+- Line gates (square PEC duct, closed form Z₀ = (η₀/2π)ln(1.0787·s/d)):
+  **T1** Z₀ radius sweep a/Δ ∈ {0.05, 0.1, 0.2} — median Z_in within 5 %
+  (measured 0.2/0.5/0.9 %), matched |S11| ≤ −15 dB (measured ≈ −22.5 dB),
+  ln-tracking Z₀(0.05Δ)−Z₀(0.2Δ) = 83.1 Ω ± 15 % (measured 3 % off), and a
+  both-axes-graded variant within 5 % (pins the Δ̄ rule).  **T2** λ/4 stub
+  null (short → gap feed → open) at c/(4·L_eff) ± 4 %, L_eff = span − gap
+  cell (exact two-stub series resonance).  **T5** wire ending ON a PMC wall:
+  short(PEC)→open(PMC) resonator hits c/(4·L_eff) ± 2 % — the PMC end is an
+  ideal open.  **T3** correction OFF: bit-identical across the radius sweep
+  (radius-blind) and the bare plateau solves to r₀ ∈ [0.15, 0.30]·Δ.
+  **T6** project-backed run with a wire resumed across a checkpoint seam is
+  **bit-exact** (the wire lives in the stored consolidated mesh; resume
+  never re-meshes).
+- Antenna gates: **T4** center-gap-fed dipole (2h = 30Δ, Ω ≈ 14.4) — first
+  Im Z_in = 0 at 0.44–0.50 of the half-wave frequency (measured 0.456,
+  = 2h ≈ 0.457λ — the classical few-% thin-dipole shortening), R_in ∈
+  [50, 90] Ω (measured 75 Ω).  **T5b** monopole on PEC: f_res within 2 % of
+  the dipole, R_in ≈ R_dipole/2 ± 20 %.
+- **(1+f) open item CLOSED by measurement** (``investigations/thin_wire/``):
+  on the genuine single-edge line the mixed-power deficit
+  |S21|²/(1−|S11|²) = 1.0000–1.0015 (vs 1/(1+f) ≈ 0.89 on the Nx=8 plate) —
+  the DD-078/079 deficit is transverse multiplicity on distributed lines,
+  not a port-bookkeeping defect; nothing to hard-code, standing instruction
+  satisfied by doing nothing.
+**Persistence.**  ``geometry.json`` gains schema-additive ``kinds``/``radii``;
+wires are excluded from the STL (viz-only); the v1 reader exposes loaded
+geometry without the wires + a warning (re-meshing a loaded project would
+drop them; resume uses the stored mesh and is unaffected).
+``GeometryModel.validate()`` excludes wires from the volumetric overlap check
+(an endpoint inside a PEC solid is the documented monopole topology).
+**Known limitations (v1, documented + warned).**
+(i) Transverse **anisotropy** at the wire degrades the correction (~11 % low
+Z₀ at 2.5:1 single-axis grading; measured) — warned above 1.5:1; grade both
+transverse axes alike (the both-axes-graded gate passes at 5 %).  A
+direction-resolved in-cell model (Edelvik/Ledfelt) is the follow-up.
+(ii) Corner inductance is conservative (min rule), open ends carry Holland's
+end-capacitance bias, and a wire within ~1 cell of a bbox/PML face loses part
+of its ring (clipped).  (iii) Extreme grading where a face's own extent is
+within 0.1 log units of r₀ keeps the bare value (warned).
+**Non-goals (v1).**  Oblique in-cell segments (staircase only); wire-wire /
+wire-sheet junctions; distributed Z'(ω)/skin loss (DD-077 companions are the
+vehicle); insulated/coated wires; wires through modal port planes; ThinWire
+reconstruction from a loaded BREP (metadata only); pair-aware CFL; subsuming
+the discrete-factory two-point rasteriser (still a separate follow-up).
+
+---
+
+## DD-081 — Lossy metals, bulk sigma physics gate, sigma* (Cluster A)
+
+**Date:** 2026-07-16 (session 105; ``MATERIAL_MODELS_PLAN.md`` Cluster A —
+cluster order A→B→C→D and the power-loss sufficiency decision fixed by the
+developer in the planning pass).
+**Status:** Accepted — implemented + gated (``tests/unit/test_materials.py``,
+``tests/unit/test_operators.py``, ``tests/integration/test_lossy_materials.py``).
+**Problem.**  Three foundation defects blocked the material-models roadmap:
+(i) ``Material.__post_init__`` forced ``sigma = inf`` on ``is_pec=True`` — a
+pure marker (``build_M_sigma`` overrides PEC with ``pec_value=0.0``; PEC is
+realised by edge masking) that made a finite-σ "lossy metal" unrepresentable;
+(ii) bulk σ was wired end-to-end (conformal ``build_M_sigma``, semi-implicit
+``α_E/β_E``) but had NO physics gate; (iii) ``sigma_m`` was a silent dead
+dataclass field (``_alpha_H = ones``, no ``build_M_sigma_m``) — promised by
+the dataclass and spec §3.1 since day one, ignored by the solver.
+**Decision.**
+- **Lossy metal (A1):** the σ=∞ override is dropped (grep-verified: no
+  consumer read it).  ``Material.lossy_metal(name, sigma, mu=1)`` sets
+  ``is_pec=True`` with finite σ retained — ``is_pec`` STAYS the single
+  field-solve classification (all ~10 consumers unchanged, field solution
+  bit-identical to PEC, gated), σ/μ are consumed only by loss models
+  (Cluster B power-loss; R_s = √(ωμ₀μ_r/2σ)).  ``is_lossy_metal`` property
+  (finite check excludes legacy stores carrying σ=inf on plain PEC);
+  ``lossy_metal`` rejects σ ≤ 0, σ = inf.  Store round-trips by value —
+  no schema change.
+- **σ gates (A2):** parallel-plate TEM fixtures vs the EXACT
+  ``γ = jω√(µε)·√((1−jσ/ωε)(1−jσ*/ωμ))``; two-length ratio
+  ``S21(L2)/S21(L1)`` cancels the lossy-fill port mismatch (modal port is
+  built lossless, |S11| ≈ −25 dB; residual = multiple-reflection ripple
+  ~r²·e^(−2αL1) at the low band edge).  Measured: α 1.0 %, β 0.22 %
+  (gates 2 %/0.5 %); lossy half-space Fresnel |r| 0.6 %, complex 0.9 %
+  (gates 1.2 %/2 %) — the discrete staircase interface sits dz/2 in FRONT
+  of the material plane (one-sided clamped E-edge sampling; de-embed with
+  d − dz/2, shift-swept); transverse-only σ leaves the Ey mode lossless
+  (|S21| < 0.006 dB).
+- **σ* implemented (A3):** ``build_M_sigma_m`` — exact staircase mirror of
+  ``build_M_mu``'s bulk part (same clamped one-sided face sampling, same
+  geometric factor, ``pec_value=0.0``; conformal cat-1/2 overrides a
+  recorded non-goal, matching M_sigma's staircase policy), unit-gated
+  ``M_sigma_m == M_mu/μ₀`` when ``sigma_m ≡ mu``.  Solver:
+  ``α_H = (M_μ−σ*Δt/2)/(M_μ+σ*Δt/2)``, ``β_H = Δt/(M_μ+σ*Δt/2)`` — the
+  E-side form; WP-R5 donor faces (M_μ=0) stay frozen (σ* dropped there).
+  With σ* = 0 the coefficients reduce BIT-EXACTLY to the lossless ones
+  (x/x == 1.0; suite unchanged).  All three update kernels (CUDA fused,
+  Numba fused, stencil) already took per-face ``α_H/β_H`` — no kernel
+  change; CPML ``update_H(fields, beta_H)`` inherits the lossy β_H
+  consistently.  No new state — checkpoints untouched.  Physics gate:
+  σ*-filled line vs exact γ, α 1.2 %, β 0.22 % (gates 2.5 %/0.5 %).
+**Non-goals (recorded).**  Conformal averaging of σ*/dispersive material
+boundaries (staircase v1); thin conductive sheets (δ ≳ thickness) and
+gyrotropic ferrites (project scope exclusions, 2026-07-16); surface-loss
+consumption of lossy-metal σ arrives with Cluster B (DD-082).
+
+---
+
+## DD-082 — Perturbative power-loss wall losses (Cluster B)
+
+**Date:** 2026-07-16 (session 105; ``MATERIAL_MODELS_PLAN.md`` Cluster B).
+**Status:** Accepted — implemented + gated (``tests/unit/test_surfaces.py``,
+``tests/integration/test_wall_loss_q.py``, ``test_wall_loss_monitor.py``).
+**Problem.**  Wall losses are the dominant loss mechanism for cavities and
+air-filled guides, but resolving the skin depth volumetrically (µm at GHz)
+is infeasible.  The developer accepted the perturbative power-loss method
+(``P = ½R_s∮|H_tan|²dA`` on the PEC-solve fields) as SUFFICIENT — the
+self-consistent broadband SIBC stays deferred (Cluster D, optional).
+**Decision.**
+- **B1 — surface enumeration** (``mesh/surfaces.py``):
+  ``enumerate_pec_surfaces(mesh, bc_pec_faces=…) → list[WallSurface]`` —
+  per-tag (material id / BC face name) arrays of the wall-adjacent
+  tangential-H SAMPLES with footprint-area weights (per face and
+  tangential component the weights tile the full face area; corner
+  samples accumulate both walls).  Covers material-PEC solids (staircase
+  cell classification, faces between different PEC materials excluded,
+  solid faces flush on the domain boundary skipped) AND PEC domain
+  walls (cells already PEC excluded — no double count where a solid
+  meets a wall).  ``inv_l_dual`` converts state → physical H using the
+  SOLVER dual-length convention (``_build_avg_d``: boundary entry =
+  FULL first/last cell) — the geometric half-cell misreads boundary
+  samples ×2 (measured: PMC-wall Hx; a 1.182 flat error in the plate
+  fraction, decomposed exactly as 1.3/1.1).
+- **B2 — eigenmode Q** (``postprocessing/wall_loss.py``):
+  ``wall_loss_Q(result, mode=0, sigma=…, mu=…) → WallLossQ`` — Q = ωW/P
+  with W = ¼(eᵀM_ε e + hᵀM_μ h) (scale-invariant in the mode
+  normalisation), per-tag P breakdown + partial ``Q_of(tag)`` (1/Q
+  additivity gated to 1e-12).  Lossy-metal solids (DD-081) bring their
+  own σ/μ_r; plain-PEC solids and BC walls take the caller's ``sigma``
+  (missing → clear error).  ``AnalysisEigenmode`` now records
+  ``boundary_conditions`` in ``solver_info`` (omitted faces default
+  PEC) so the postprocessing can enumerate the domain walls.  Gates:
+  copper TE₁₀₁ 20×10×30 mm vs the closed form (Pozar 6.46,
+  cross-checked in-session against an independent explicit surface
+  integration): +0.22 % at 1 mm cells, +0.05 % at 0.5 mm (O(h²));
+  the SAME cavity as an air volume in a lossy-metal shell (material
+  path, σ from the material) reproduces the BC-wall Q to 1e-4.
+- **B3 — TD monitor** (``monitors/wall_loss.py``): ``WallLossMonitor(
+  freqs, reference_plane=(axis,pos), sigma=…, bc_faces=…)`` — running
+  DFT of ONLY the wall samples plus one reference cross-section
+  (surface storage ~N², never a volume).  KEY DESIGN: results are the
+  scale-free ratio ``dissipated_fraction = P_loss(f)/P_flow(f)`` with
+  P_flow from the FIT identity ``P = ½Re Σ ê·ĥ*`` (no area weights in
+  the grid-quantity basis; boundary H states rescaled ×½ to the
+  physical half-cell patch).  Both quantities are quadratic in the
+  states, so the run's global mesh-dependent state scale cancels —
+  measured session 105: the volume states are FIT grid quantities
+  ê = E·l, ĥ = H·l_dual times a GLOBAL constant C set by the port
+  (measured C·dy_port = 1: 1 mm → 1000/m, 0.5 mm → 2000/m, graded →
+  1051.75/m) — the M_ε-basis scale DD-078 pinned at the port recorders
+  but which still lives in the volume states.  ``power_loss(P_in)``
+  scales to Watts.  Gates: copper parallel plate vs α = R_s/(η₀b):
+  max 0.14 % over 2–10 GHz; copper TE₁₀ waveguide vs the closed-form
+  α_c over 1.4–2.3 f_c: max 1.3 % (bounded run — sub-cutoff pulse
+  content makes the energy stop useless in a closed guide).
+**Consequences / found issues.**  (i) The state-scale measurement shows
+the EXISTING field-monitor family reports mesh-dependent absolute
+values: ``FluxTimeMonitor`` multiplies state products by patch areas
+(the ê·ĥ identity needs none), and Field monitors return raw states —
+correct only where C·l = 1 (e.g. fully uniform cubic grids).  Recorded
+as a follow-up (align the family on the ê/ĥ convention or pin the
+volume-state scale — the DD-078 analogue for states); NOT changed in
+this cluster to avoid silently altering existing results.
+**Non-goals / follow-ups.**  Conformal face areas (staircase over-counts
+oblique/curved walls ~4/π on cylinders — why the pillbox TM₀₁₀ gate is
+deferred to the conformal follow-up; flat-wall fixtures gate exactly →
+DONE in [[DD-087]]); surface roughness multipliers (Hammerstad/Huray) on
+R_s → DONE in [[DD-088]]; WallLossMonitor project-store/recipe/checkpoint
+integration (v1 is in-RAM on ``monitors=[…]`` runs) → DONE, see the
+addendum below; modal-port faces are simply not passed as ``bc_faces``
+(no automatic BC discovery in the monitor — the attach protocol only
+sees the mesh).
+
+### Addendum (2026-07-17, session 109) — WallLossMonitor store integration
+
+Package 6 of ``FIELDS_AND_LOSSES_PLAN.md``; no new DD, this amends B3.
+
+**Problem.**  The v1 monitor was RAM-only: a project-backed run dropped
+its wall-loss result, and a resumed run silently lost the monitor
+entirely (see the whitelist note below).
+
+**Decision.**  A WallLossMonitor is the same KIND as a
+FieldFrequencyMonitor — a fixed-size running DFT, not an append stream —
+so it follows the session-99 Freq pattern (``a4af028``) exactly: its own
+result file ``runs/<name>/wall_loss.h5``, written whole and atomically
+(temp + ``os.replace``) at each checkpoint, tagged with the
+``n_completed`` that ties it to ``checkpoint.h5``.  It is NOT in the
+SWMR ``results.h5`` for the same reason the Freq monitor is not: an
+in-place overwrite is not SWMR-consistent.  Written AFTER
+``checkpoint.h5`` and with the same ``n_completed``, so a crash between
+the two leaves ``wall_loss.h5`` older and the resume step-check rejects
+the stale accumulator rather than integrating on from a wrong partial
+DFT (gated by mutating the attribute).
+
+**One structural difference from the Freq pattern, and it drives the
+file layout.**  A frequency monitor's accumulators ARE its result; a
+wall-loss monitor's result is a REDUCTION of them (P_loss/P_flow per
+tag).  A reader gets only a run directory, so recomputing the reduction
+would mean loading the mesh, re-enumerating the PEC surfaces and
+re-resolving materials — a second place that produces, and could get
+wrong, the same number.  So ``wall_loss.h5`` carries BOTH: the reduced
+per-tag fractions (what ``_LoadedWallLossMonitor`` serves — making
+"reader == in-RAM monitor" true by CONSTRUCTION, gated bit-exactly) and
+the raw ``h_bins``/``ref_bins`` (what a resume reloads).  The reduction
+costs ``n_freqs × (n_tags+1)`` floats next to accumulators orders of
+magnitude larger.  Tags travel as their own JSON list because they are
+heterogeneous (material ids are ints, BC walls are face-name strings)
+and HDF5 group names are not.
+
+``Project.monitors[name]`` resolves the new kind alongside time/flux/freq
+— the user still knows only the name, not the kind or the file (DD-070).
+The recipe carries the spec (reference plane, sigma/mu, bc_faces, and the
+DD-088 roughness via the store's own ``_roughness_to_dict``, so there is
+one format for the one concept).
+
+**Found on the way (worth recording).**  ``_serialisable_monitors`` in
+``analysis/_recipe.py`` is a WHITELIST, deliberately (a resume must not
+reconstruct a ``_CallAtStep`` SIGINT control monitor — its abort would
+re-fire).  The cost is that a new persisted monitor kind is SILENTLY
+DROPPED from a resumed run until it is added there; both the resume gate
+and the stale-file gate failed on exactly that before the entry was
+added.  Its call site also still claimed "Only FieldTimeMonitors are
+streamed + resumable" — stale since session 99; corrected.
+
+**Gates** (``tests/integration/test_wall_loss_store.py``, 6): reader ==
+in-RAM monitor bit-for-bit (fractions, ``f``, ``power_loss(P_in)``, tag
+types preserved); resume across a checkpoint seam == uninterrupted run
+(``assert_array_equal``); recipe round-trip incl. roughness; a rough
+monitor's persisted fractions are the ROUGH ones (ratio == K(f) to
+1e-12, i.e. the multiplier rides the recipe rather than silently
+dropping to smooth); a run without the monitor writes no file and loads
+unchanged (legacy projects); a mutated ``n_completed`` raises.
+
+---
+
+## DD-083 — Pole-residue DispersionModel (Cluster C1)
+
+**Date:** 2026-07-16 (session 105) · **Status:** implemented
+One general mechanism for frequency-dependent permittivity:
+`eps(omega) = eps_inf + sum_p r_p/(j*omega - a_p)` with real poles and
+complex-conjugate pairs stored once (`materials/dispersion.py`,
+`DispersionModel`, exported top-level).  Debye (multi-term), Lorentz
+(under- and overdamped branches), Drude and Djordjević–Sarkar are
+*constructors* on this single form, not separate models — the solver
+runs one recursion for all of them (DD-084).
+Decisions:
+- **Passivity check at construction is mandatory** (the plan's
+  requirement): `Re(a_p) <= 0` for every pole, real poles need real
+  residues, and `eps''(omega) >= 0` on 128 log-spaced samples across the
+  declared validity band `f_band`.  `Re(a_p) = 0` is allowed only for
+  the **real Drude DC pole** (with `r > 0`), whose trapezoidal update is
+  exactly the semi-implicit conductor with `sigma = eps0*r` — undamped
+  oscillatory poles (`Re = 0, Im != 0`) are rejected.  Every constructor
+  defaults a sensible band; the generic constructor requires one.
+- **Drude via partial fractions** carries that DC pole plus one
+  relaxation pole (`a = -gamma`, `r = -omega_p^2/gamma`); the negative
+  residue is fine — passivity is a property of `eps''`, not of residue
+  signs.
+- **Djordjević–Sarkar at 2 poles/decade**, `eps_inf`/`delta_eps` solved
+  exactly from (`eps_r`, `tan_delta`) at `f_ref`.  At that density the
+  comb ripple is negligible against the model's *inherent* causal
+  tan-delta slope (~5 % per 1.5 decades from `f_ref` at 4.3/0.02) —
+  densifying further does not flatten it; it IS the Kramers–Kronig
+  behaviour the sigma_eff shortcut lacks.
+- **`Material.dispersive(name, model, mu=, sigma=)`** sets
+  `epsilon = (eps_inf,)*3`; `__post_init__` enforces the match (the mass
+  matrix and the CFL limit read `epsilon`) and excludes `is_pec`.
+  A static `sigma` may coexist (runs through the standard σ channel).
+  `is_lossless` is False for any dispersive material; `dispersion`
+  participates in Material equality (DD-074 overlap checks work).
+- **Store schema-additive**: `_material_to_dict` gains a `dispersion`
+  key (complex poles flattened to re/im quadruples for JSON); the one
+  serialiser pair covers the mesh.h5 material table AND geometry.json.
+  Old stores load unchanged; new stores with dispersive materials
+  round-trip to equality.
+Gates (`tests/unit/test_dispersion.py`, 20): every constructor vs its
+closed form at machine precision; DS pins (`eps_r`, `tan_delta`) at
+`f_ref` to 1e-12 and stays flat to 2 % / 6 % over ±0.5 / ±1.5 decades;
+all rejection branches; Material integration; store round-trip.
+
+---
+
+## DD-084 — Trapezoidal ADE for dispersive materials (Cluster C2)
+
+**Date:** 2026-07-16 (session 105) · **Status:** implemented
+`solver/dispersion.py` (`DispersionOperator`) realises DD-083 models in
+the FIT-TD leapfrog by the ADE method with the **DD-077 trapezoidal
+convention** — per pole one polarisation-current state on the E-edges of
+the dispersive region only.
+Mechanics (derived and gated):
+- Discrete Ampère on a dispersive edge:
+  `M_eps_inf de/dt + M_sigma e + J|_{n+1/2} = C^T h`, pole recursion
+  `J_p^{n+1} = k_p J_p^n + c_p g (e^{n+1}-e^n)` with
+  `k_p = (1+a dt/2)/(1-a dt/2)`, `c_p = r_p/(1-a dt/2)`,
+  `g = eps0*A_dual/l_primal` (the M_eps geometry factor).  Substituting
+  the recursion splits the midpoint current into (a) a coefficient
+  `W = g*sum_p w_p Re(c_p)` (`w_p` = 1 real / 2 pair) that enters BOTH
+  sides of the semi-implicit E-update — folded into `alpha_E`/`beta_E`,
+  so **all three update kernels stay untouched** — and (b) a history
+  term `beta_E * sum_p w_p Re((1+k_p)/2 J_p^n)` subtracted from `e`
+  right after the curl kernel.  `save_e` at the top of the iteration
+  stashes the fully corrected `e^n`; on every edge no later stage
+  rewrites (all bulk dispersive edges) the implicit solution is exact.
+  A-stable for every passive pole at any dt (trapezoidal).
+- **Edge subsets staircase-by-classification**: the identical clamped
+  one-sided cell lookup as `build_M_sigma`'s bulk sampling; PEC-masked
+  edges excluded at build time.  Conformal averaging of dispersive
+  boundaries stays the recorded non-goal; the DD-081 interface
+  convention applies (discrete interface dz/2 in front of the material
+  plane — transmission needs no de-embedding, reflection does).
+- **Memory**: index-subset storage only (never full-field); real poles
+  (Debye/DS — the common substrate case) use float64 states, conjugate
+  pairs complex128 stored once.  Elementwise xp ops, cupy-compatible
+  (`bind` moves states to the backend).
+- **CFL from eps_inf**: `Material.epsilon = eps_inf` drives the existing
+  `courant_dt` chain unchanged — the high-frequency wave speed is the
+  stability-relevant one; in-band `eps' > eps_inf` only slows the wave.
+  Gated: production dt identical to a static `eps_inf` fill.
+- **Checkpoint**: solver `state_dict` gains a schema-additive
+  `dispersion` key (`{mat_id: {J0..}}`); `e_prev` is deliberately NOT
+  state (rewritten by `save_e` before every use).  Old checkpoints load
+  unchanged.
+- **No-dispersion path bit-identical**: without dispersive materials the
+  coefficient expressions are the exact master formulas (no `+0.0`
+  detour) — gated by array equality.
+- **Found by the exact-equivalence gate**: a factor-2 error in the
+  W coefficient (midpoint ½ applied twice) that the line physics nearly
+  averages out at small dt (beta was off only 0.2 %) — the Drude-DC ≡
+  conductor gate (< 1e-10 after 200 steps) pinned it exactly.  This is
+  why the reduction gates exist.
+Measured physics (`tests/integration/test_dispersive_materials.py`, 7,
+11×6 cross-section parallel-plate fixtures, 2–10 GHz, dz = 0.5 mm):
+- Debye line (relaxation mid-band) vs exact `gamma(omega)`: alpha 1.8 %
+  (4–10 GHz), beta 0.46 % full band.  The low band edge shows the
+  DD-081 Fabry–Pérot residual amplified by the dispersive port mismatch
+  (|S11| ≈ −16 dB vs −25 dB on the σ line: the modal port is built
+  lossless at `eps_inf`, in-band `eps'` is higher) — oscillating sign,
+  −9.9 % at 2 GHz, not an ADE error.
+- Debye+σ half-space vs complex Fresnel with
+  `eps_c = eps_debye(omega) − j sigma/(omega eps0)`: 0.68 % — the ADE
+  and the σ channel share one denominator and are gated COMBINED; the
+  Debye pole set moves r by 15 % beyond σ-only (the gate rejects a
+  σ-only reference).
+- Lorentz slab vs exact transfer matrix: resonance dip on frequency,
+  complex S21 within 0.03.
+- Drude slab: cutoff switch (0.37 → 0.96 across `f_p`) with |S21|
+  matching the exact slab to **0.005 dB / 0.0012 complex** (planar
+  grid-aligned interfaces are nearly exact).
+- DS line: alpha vs the causal model 3 % full band, beta 0.5 %; the
+  narrowband σ_eff shortcut is REJECTED by the same measurement (its
+  1/f tan-delta misses alpha by > 30 % at the band edges, its constant
+  `eps'` misses the causal phase slope by > 3× the DS beta error).
+- Disk resume (WP-S8 chain): a Lorentz+σ fill resumed across a
+  checkpoint seam is bit-identical to an uninterrupted run — dispersion
+  survives the mesh.h5 material round-trip, complex pole currents
+  survive checkpoint.h5.
+Non-goals / follow-ups (recorded): magnetic dispersion `mu(omega)`
+(structurally identical on H-faces; σ* covers narrowband magnetic
+loss); conformal averaging of dispersive boundaries; C4 vector fitting
+of tabulated `eps(f)` data onto the pole-residue form (the passivity
+check is the acceptance filter); dispersive media extending into CPML
+(the ψ recursion uses the W-folded `beta_E` consistently, but the pole
+delta accounting misses the ψ corrections — keep an eps_inf buffer
+before the PML, as every FDTD vendor recommends).
+---
+
+## DD-085 — Physical volume states (C = 1 at the source) + physical monitors
+
+**Date:** 2026-07-16 (session 106; package 1 of `FIELDS_AND_LOSSES_PLAN.md`,
+developer decision "pin at the source" from the session-105 planning pass).
+**Status:** Accepted — implemented + gated (`tests/integration/test_physical_states.py`;
+measurement record `investigations/state_scale/FINDINGS.md`).
+**Problem (measured, [[DD-082]]).**  The volume states were FIT grid
+quantities times a GLOBAL constant C set by the excitation (plate
+fixtures: 1 mm → C = 1000/m, 0.5 mm → 2000/m, graded → 1455/m; C_e = C_h
+exactly; C tracks the E-polarisation cell size).  Field monitors returned
+raw states, `FluxTimeMonitor` multiplied states by patch areas — absolute
+monitor values were mesh-dependent, correct only where C·l = 1 (uniform
+cubic grids).  The session-106 measurement (state-scale probe) also
+localised the per-family conventions:
+- **Solver kernels** are the pure FIT incidence form → native states ARE
+  grid quantities (`e = E·l_primal` [V], `h = H·l_dual` [A]).
+- **Modal TF/SF** injected the M_ε-orthonormal basis profile → C = the
+  basis scale × source_scale (the [[DD-078]] κ story one level deeper).
+- **Discrete port** read `V = Σ e·dl` and injected `β·i/dl` — a
+  self-consistent *field interpretation*, equal to grid quantities only
+  on uniform grids (latent misscale on graded grids).
+- **Plane wave** injected `β_E·H_inc [A/m]` / `β_H·E_inc [V/m]` — field
+  interpretation again.
+**Decision.**  Pin C = 1 at the source for every excitation family; the
+volume states are thereafter physical FIT grid quantities, and monitors
+convert states → fields locally with no port knowledge (the
+attach-sees-only-the-mesh protocol survives):
+- **Modal** (`_calibrate_v_i`): the state scale of the unit-coefficient
+  wave is computed at build time,
+  `C = sqrt(S_H / ⟨ĥ_post-γ, H·l_dual⟩_Mμ) / κ` with
+  `S_H = Σ_u ê_u·H_v·dv_dual − Σ_v ê_v·H_u·du_dual` and H the physical
+  A/m shape (analytic path: stored pre-γ profile; numerical path:
+  `ĥ·M_μ/(μ₀·ndx·l_partner)`); Z cancels, profile scales cancel, the
+  stored ĥ enters linearly as the projection-metric partner (derived
+  from the calibration guarantee I = V/Z).  Then `source_scale /= C`,
+  `record_scale *= C` — recorded V/I are analytically unchanged
+  (measured vs master: max 2.9e-15 on V/I and S21; S11 shifts only on
+  its DTBC floor).  Validated exact on five fixtures (plate uniform ×2 /
+  graded / ε_r = 4, TE10); the measured C is kept as
+  `PortOperatorModal.state_scale` for introspection.  Uncalibrated
+  (evanescent, CW true-mode) channels keep C = 1 — unchanged.
+- **Discrete port**: voltage form — `project_V = Σ ±e`, injection
+  `e += β·i` (drops both `dl` factors).  Uniform grids: identical
+  analytically; graded grids: the latent inconsistency is FIXED.
+- **Plane wave**: injects grid quantities (`H_inc·l_dual`, `E_inc·l`,
+  solver dual convention).  The absolute gate exposed a PRE-EXISTING
+  bug: all 12 H-side TF/SF corrections had the sign of the kernel's
+  `H = a·H − β·curl` outer minus wrong — measured TF amplitude 0.39
+  of nominal with 0.19 SF leakage (master, uniform grid, in field
+  units).  Fixed; now: monitor peak 0.99995 of amplitude, SF leakage
+  −91 dB.
+- **Monitors**: Field monitors divide each staggered sample by its own
+  edge/dual length before cell-centre averaging → E [V/m], H [A/m]
+  (uniform-grid outputs unchanged — C·l = 1 there); `FluxTimeMonitor`
+  is the FIT identity `P = Σ e·h` in watts with boundary-h terms ×½
+  (solver dual = full end cell vs physical half patch, the DD-082
+  precedent); `WallLossMonitor` is a scale-free ratio — unchanged.
+**Gates** (`test_physical_states.py`): grid independence — the same
+plate problem on uniform and graded grids gives the same |Ey|, |Hx| per
+1 W CW (vs analytic, 2 %) and the same flux energy (1 %; pre-fix the
+graded flux was off by (C·l)² ≈ 0.5–3.3); flux through a matched line
+= incident pulse energy (1 %; probe: 1e-4-class); per-edge pin identity
+`ê·source_scale = (√Z/B)·l` to 1e-9 on the graded plate; discrete
+project_V reads grid-quantity volts exactly on a graded grid; plane-wave
+monitor peak = amplitude (5 %); the DD-078 1 W-CW frequency-monitor gate
+stays green.
+**Consequences.**  (i) 0.x MINOR break, developer-accepted: absolute
+monitor values on non-uniform grids change (they were wrong); results.h5
+written before DD-085 mixes conventions with new runs for *monitor*
+data (V/I and S are unaffected).  (ii) Heterogeneous port pairs whose
+modes have different C (different polarisation/shape on shared grids)
+had a latent |S21| scale error C₁/C₂ in the old convention; all suite
+fixtures pair equal-C ports (why S never showed it) — the pin removes
+the error class.  (iii) Tests that build raw states must write grid
+quantities (`E·l`), see updated `test_port_units` gate 1 /
+`test_monitors` renormalize fixture.  (iv) The plane-wave TF/SF H-sign
+fix changes every plane-wave result (amplitude was 0.39× nominal).
+---
+
+## DD-086 — In-repo vector fitting of tabulated eps(f) onto the pole-residue form (C4)
+
+**Date:** 2026-07-16 (session 106; package 2 of `FIELDS_AND_LOSSES_PLAN.md`,
+the C4 follow-up recorded in [[DD-084]]).
+**Status:** Accepted — implemented + gated (`tests/unit/test_vector_fit.py`,
+`tests/integration/test_from_table_line.py`).
+**Decision.**  Measured permittivity tables enter the [[DD-083]]
+pole-residue form through `DispersionModel.from_table(f, eps,
+n_poles=None, f_band=None, tol=1e-3, max_poles=30)`:
+- `eps` accepts complex `eps' − j·eps''` or an `(eps_prime, tan_delta)`
+  pair; `f_band` defaults to the table span.
+- **In-repo Gustavsen/Semlyen vector fitting**
+  (`materials/vector_fit.py`, pure NumPy linear algebra — no new
+  dependency): real-coefficient partial-fraction basis (conjugate pairs
+  as two real columns), [Re; Im]-stacked least squares, pole relocation
+  via the eigenvalues of `A − b·ĉᵀ`, per-iteration left-half-plane
+  flipping (the standard VF stability rule).  Both canonical start sets
+  are tried per order — log-spaced REAL poles (smooth relaxation data;
+  without them the DS continuum stalled at 3e-3 with collapsing pole
+  counts) and weakly damped complex pairs (resonant data) — best fit
+  wins.
+- **Automatic order** (`n_poles=None`): the order grows until the max
+  relative table error beats `tol` AND the candidate passes the
+  passivity filter; the cap raises an actionable error naming the best
+  error and the `n_poles` escape hatch.  An explicit `n_poles` is
+  accepted at whatever error it reaches (noisy measured tables) — only
+  passivity is enforced.
+- **Passivity is the acceptance filter** (the DD-083 mandate): the
+  `DispersionModel` constructor rejects active/unstable fits with the
+  offending frequency.  Gain data (`eps'' < 0` in the table itself) is
+  rejected up front with its frequency.  Measured: 1 % noise overfit at
+  an explicit n=6 lands in a clearly active pole set (`eps'' = −0.58`)
+  — the filter is load-bearing, not theoretical.
+**Validated.**  Debye table → 1 pole at 3e-16 (machine precision);
+Lorentz → the exact conjugate pair (2.8e-6, off-grid < 1e-3); DS
+continuum (5 decades) → 13 poles at 9.1e-4 on-grid / 4.2e-4 off-grid;
+1 %-noise table with `tol = 0.04` (≈ noise max-norm) recovers the CLEAN
+1-pole model to 8e-4.  Full chain: a two-relaxation table (knees 3 and
+8 GHz) fitted and run on the DD-084 TEM line matches gamma computed by
+complex interpolation FROM THE TABLE — alpha 1.9 % (≥ 4 GHz, the DD-084
+Fabry–Pérot convention), beta 0.38 %; the dispersionless counterfeit
+reference is rejected at 34 % beta error.
+**Consequences / notes.**  (i) The noisy-data workflow is
+auto-order-with-raised-tol (the max-norm criterion counts noise peaks;
+`tol` above the noise max-norm lets the smooth low-order model win) —
+documented in the docstring and the cap error message.  (ii) The fit
+never produces a DC pole (`a = 0`), so from_table materials carry
+conduction loss inside the pole set; a separate static sigma still
+composes via `Material.dispersive(..., sigma=)`.  (iii) The passivity
+check remains band-sampled (128 points) — a fit can in principle dip
+negative between samples; unchanged from DD-083 (shared risk class).
+---
+
+## DD-087 — Conformal wall areas + conformal H sampling for wall loss
+
+**Date:** 2026-07-16/17 (sessions 106–108; package 3 of
+`FIELDS_AND_LOSSES_PLAN.md`).
+**Status:** Accepted — implemented + gated
+(`tests/integration/test_conformal_wall_area.py`; measurement record
+`investigations/conformal_wall_area/FINDINGS.md` + probes).
+
+**Problem ([[DD-082]]).**  Staircase face counting over-books a curved
+PEC wall by exactly 4/π (measured 1.2732, resolution-independent —
+the acceptance instrument), which put the perturbative wall-loss Q of
+curved cavities ~21 % low; the pillbox TM010 gate was deferred to this
+package.  Curved cavities are the accelerator norm.
+
+**Decision — three mechanisms, all schema-additive, staircase path
+bit-preserved.**
+
+1. **Geometric PEC area channel.**  The DD-051/DD-053 face data is
+   built for M_μ, not for area bookkeeping: `couple_face_material_pairs`
+   overwrites `A_face_free` with the LC-consistent pair value, and
+   `BRepAlgoAPI_Section` degenerates on planes lying on a shape
+   bounding box (tangent planes, grid-snapped lids), reporting zero
+   PEC on fully covered faces.  The mesher therefore carries a
+   separate geometric channel: `pec_area_geom_out` re-evaluates
+   degenerate planes at `plane ± deflection` and per face takes the
+   MAX of both sides ("shift towards the PEC" — the wall lands in the
+   adjacent air cell, where the live H samples are; the opposite
+   choice parks lids inside PEC cells and measured 0.39× wall sums).
+   → `FaceMaterialData.A_face_pec`, never NaN (staircase cell rule
+   off the candidate set), written BEFORE the coupling pass.
+2. **Divergence cell vector + signed-jump corner split.**  Per cut
+   cell `w = Σ_faces A_face_pec·n_out` gives `‖w‖ = A_wall` exactly
+   for ONE plane cut.  A corner cell holding a flat lid AND the curved
+   mantle adds them as vectors (`|a+b| < |a|+|b|`, pillbox area 0.955,
+   Q error growing on refinement).  The flat family is split off by
+   the SIGNED JUMP `A_PEC(p+δ) − A_PEC(p−δ)` across the face's own
+   plane: wall lying IN a plane is the set of face points with PEC on
+   one side and non-PEC on the other, so |jump| is that wall's area
+   and the sign names the owning (non-PEC) side; a face merely
+   shadowed by a wall standing in front of it does not jump.
+   `A_wall = Σ|w_flat| + ‖w − w_flat‖`.  REJECTED candidate: "exactly
+   one of the two d-faces fully PEC" mistakes shadow for wall and
+   over-books the through-cylinder (which has no flat wall at all) by
+   24 %.  → `FaceMaterialData.A_face_pec_jump` from `pec_frac_jump`
+   (the ±δ sections already computed for the max convention carry it
+   for free).  Measured areas: cylinder side 0.9997/0.9999, pillbox
+   total 0.9991/0.9996, lid channel alone 0.9987/0.9993 (1/0.5 mm).
+3. **Conformal H sampling: uncut-only booking with a normal-direction
+   walk (the DD-082 inheritance the Q gate exposed).**  With correct
+   areas the pillbox Q still diverged (+3.8 % → +17.9 %); the
+   measured root causes are that CUT-FACE STATES ARE NOT CLEAN GRID
+   INTEGRALS in either convention: (a) fully-masked faces are
+   Faraday-dead (`C e = 0` ⇒ `b ≡ 0`; their loss share grew
+   16 % → 35 % on refinement — the divergence), and (b) partially-cut
+   faces mis-read resolution-INDEPENDENTLY (~+18 % power at generic
+   grid phase) because their rim edges live under the DD-051 sub-cell
+   metric — a flux reading `b/(μ0·μ̄·A_free)` was measured and
+   REJECTED (the discrete contour is the four full edges, so the
+   effective area lies between A_free and A_full; the sub-cell-scale
+   centred fixture hid this by symmetry: 10² = 6² + 8² puts lattice
+   points exactly on the circle, and its +0.55 % turned out to be a
+   phase fluke against −13/−18 % at shifted centres).  The estimator
+   therefore books weight EXCLUSIVELY onto uncut, Faraday-live faces
+   (`_face_alive_views`, ground truth `edge_material.pec_mask`),
+   found by a ≤ 4-step walk that displaces the candidate cell along
+   the inward wall normal read off the wall vector itself
+   (air = −sign(w) per axis — geometry-blind; a walk along the
+   component's own axis is structurally wrong: a z-invariant mantle
+   cuts every z-face in the column, dropping the mantle's whole
+   z-weight, measured 18-25 %).  Booked weight/area 0.997-1.000.
+   Sampling H_tan a small step inside the volume along the surface
+   normal is the standard perturbative-loss practice.
+
+**Gates** (`test_conformal_wall_area.py`): cylinder side area < 0.5 %
+vs 2πRL; pillbox total area < 0.2 % (corner cells); pillbox TM010 Q vs
+`Q = x01·η0/(2·Rs·(1+R/H))` — measured **−11.1 % at 1 mm
+(10 cells/radius) → −7.4 % at 0.5 mm**, IDENTICAL at generic grid
+phase (−10.9/−6.9 %; the pre-repair estimator scattered +0.5 → −18 %),
+gated as envelope + convergence + phase robustness.  The residual is
+100 % inward sample-position bias: the J1 position-pullback
+experiment recovers ALL fixtures to ±1.9 % — pure position, O(h).
+DD-082's axis-aligned fixtures (TE101 +0.05 %, plate, TE10) never
+enter the conformal branch and stay green on the untouched staircase
+path.
+
+**Consequences.**  (i) Absolute wall-loss numbers on conformal meshes
+change (they were wrong: the area by 4/π-class factors, the sampling
+by the cut-face reads); staircase meshes bit-identical.  (ii)
+`WallSurface.area` is an explicit field — the historical `Σweight/2`
+convention does not survive 3-component sampling.  (iii) Old stores
+load `A_face_pec`/`A_face_pec_jump` as None and fall back to the
+staircase path.  (iv) `wall_loss_Q(mu=)` is RELATIVE permeability
+(passing μ0 costs √μ0 ≈ 1/892 in R_s — measured the hard way).
+(v) Known O(h) residual: the inward sample-position bias (−11 % at
+10 cells/radius, −7 % at 20, converging; the J1 position-pullback
+ceiling test recovers ±1.9 %, so the residual is 100 % position).
+**The two-point wall extrapolation was built and REJECTED by
+measurement** (session 108, code on branch
+`dd087-wall-extrapolation-rejected`): better or equal on every fixture
+(0.5 mm mean −7.2 → −6.0 %) but the phase spread WIDENS 0.45 → 2.6
+points, and it lands nowhere near the ±2-3 % target.  The reason is
+fundamental to a walk-based stencil: one finite difference along the
+step `s` yields `∇H·s` while the extrapolation needs `∇H·n̂`, and
+`d_in` quantises the normal onto 26 directions — up to 45° off on a
+curved wall, so the step runs partly TANGENTIAL, and a Cartesian
+component (`Hx = −Hφ·y/r`) varies tangentially as strongly as
+normally.  Measured, consistent: `|v2|/|v1| = 0.88` on extrapolated
+mantle samples where J1 says the field RISES inward; a nonzero wall
+offset makes Q monotonically WORSE (0 → 0.25 → 0.5: −7.40 → −7.66 →
+−8.05 %) — a longer lever on the wrong gradient.  Nodal-line sign
+flips were suspected and RULED OUT (3.0 % of weight).  The ceiling
+test only succeeds because it knows the TRUE radius and the EXACT
+field shape.  **Two well-posed successors, both recorded, neither
+implemented (developer decision 2026-07-17, "state of the art"
+discussion):**
+  (a) *Exact wall plane per cut cell.*  The DD-087 geometry channels
+  (`A_face_pec` on all 6 faces + the signed jump) determine the cut
+  cell's wall PLANE, hence the true normal AND the true `d1` — then
+  `H_wall = H1 − d1·(∇H·n̂)` with a full central-difference gradient
+  (still linear, still DFT-compatible).  This is precisely what the
+  commercial cartesian FIT codes hand their loss integrator and we
+  currently withhold from ours; it is the wohlgestellt version of what
+  failed here.
+  (b) *SIBC* (the deferred material-plan Cluster D) is the strategic
+  answer: it makes losses self-consistent in the TIME domain (lossy-S
+  parameters, not just eigenmode Q) and removes post-hoc sampling
+  entirely — the route the cartesian competition takes.  FEM codes
+  dodge the problem by construction (curved higher-order elements
+  evaluate H_tan ON the wall).
+(vi) The pillbox
+eigenmode fixture needs `n_modes ≥ 4` (ARPACK returns nothing at 1)
+and probe resolutions must divide the lid heights (h = 0.35 mm puts
+forced planes next to snapped geometry planes → sliver seams,
+growth 67; f stays +0.2 % but the surface-sampled Q degrades to
++32 % — production meshes route through the DD-059 anchors).
+---
+
+## DD-088 — Conductor surface roughness as one factor K(f) on R_s
+
+**Date:** 2026-07-17 (session 109; package 4 of
+`FIELDS_AND_LOSSES_PLAN.md`).
+**Status:** Accepted — implemented + gated
+A rough conductor dissipates more than a smooth one of the same
+footprint: the current follows a longer path over the profile, and once
+the skin depth drops below the profile height the field starts to
+resolve individual protrusions.  On the electrodeposited copper foils
+of real boards this is not a correction but a factor of two in
+conductor loss above ~10 GHz — the dominant error term of an otherwise
+exact loss chain.
+The perturbative chain (DD-082, conformal since DD-087) evaluates
+    P_loss = 1/2 * R_s(f) * sum(w * |H_tan|^2)
+per frequency, on a lossless PEC field solution.  Roughness enters that
+expression through exactly one scalar.
+Carry roughness as a frequency-dependent multiplier on the surface
+resistance, `R_s,rough(f) = K(f) * R_s,smooth(f)`, K >= 1 — pure
+postprocessing, no solver change, no field-solution change.  ONE
+lossless solve therefore serves every roughness variant, which is also
+how the gates are built (a single eigen run, two `wall_loss_Q` calls; a
+single TD run, two `WallLossMonitor`s).
+`materials/roughness.py` holds the models as frozen dataclasses behind
+an abstract `SurfaceRoughness.factor(f, sigma, mu) -> K`; frozen means
+they join `Material` equality and the store with no further machinery.
+Both models are functions of the roughness scale relative to the skin
+depth `delta = 1/sqrt(pi*f*mu*sigma)` only:
+* `Hammerstad(rms_height)` — `K = 1 + (2/pi)*arctan(1.4*(Rq/delta)^2)`.
+  The classical curve fit; one datasheet number.  Its ceiling K -> 2 is
+  structural (the arctan saturates), which is exactly where it stops
+  being right for strongly roughened foil.
+* `Huray(radius, coverage, base_ratio=1)` — the physics-based snowball
+  model, `K = base_ratio + (3/2)*coverage/(1 + delta/a +
+  delta^2/(2a^2))` (Bracken DesignCon 2012 eq. 5; identical to Polar
+  AP8195 eq. 1, whose leading `A_matte/A_flat` generalises Bracken's
+  `1`).  `coverage = N*4*pi*a^2/A_flat` is the sphere surface per unit
+  tile area.  The asymptotes are its content: `K -> base_ratio` when
+  `delta >> a` (the field does not resolve the spheres) and
+  `K -> base_ratio + 1.5*coverage` when `delta << a` — a ceiling that
+  follows the profile instead of saturating at 2.
+  `Huray.cannonball(rz)` closes the gap to what datasheets actually
+  publish: the fixed 14-sphere stack (9+4+1) on a tile of side 6a with
+  its height identified with Rz gives `a = Rz/16.73` (the published
+  rounding of `4*sqrt(3)*(1+sqrt(2))`) and a CONSTANT
+  `coverage = 56*pi/36` — Rz sets the radius alone.
+Two channels, mirroring DD-082's sigma handling: lossy metals carry
+their own (`Material.lossy_metal(..., roughness=)`, schema-additive
+store field via the single `_material_to_dict` pair), and PEC walls
+(plain-PEC solids, BC walls) take a caller override on `wall_loss_Q` /
+`WallLossMonitor` alongside their `sigma`.  `Material.__post_init__`
+rejects roughness on anything that is not a lossy metal: it multiplies
+`R_s(sigma)`, so without a sigma there is nothing for it to act on —
+caught at construction, not at loss-evaluation time.
+1. `surface_resistance(f, sigma, mu, roughness=None)` is the single
+   place K is applied; every consumer inherits it.  Smooth stays the
+   default everywhere — no existing result moves (DD-082/DD-087 gates
+   bit-unchanged).
+2. In the monitor, K enters per DFT bin, so the reported fraction is
+   frequency-SHAPED, not scaled by a constant (the plate gate spans
+   K = 1.33..2.11 across 2-10 GHz).
+3. `K(f)` is real-valued: it raises the loss but leaves the reactive
+   part of the surface impedance alone, breaking the Hilbert relation
+   between them — non-causal AS A TIME-DOMAIN IMPEDANCE BOUNDARY
+   CONDITION (Bracken 2012, the paper's whole subject).  Harmless here
+   because the chain evaluates power per frequency (an eigenmode's f0,
+   a monitor's bins) and never forms a TD impedance.  RECORDED FOR THE
+   SIBC FOLLOW-UP (material-plan Cluster D): a self-consistent surface
+   impedance in the update needs the complex causal form, not this
+   factor.
+4. ACCURACY CAVEAT (DD-087 interaction): conformal wall losses carry a
+   -7 % position bias at 20 cells/radius.  Roughness MULTIPLIES R_s, so
+   in a smooth-vs-rough RATIO — the usual engineering question — the
+   bias cancels exactly; in an absolute rough Q or alpha it does not.
+   The bias is DD-087's, not DD-088's; axis-aligned walls (the staircase
+   path) are unaffected either way.
+5. Multiple Huray sphere classes are additive in the original model but
+   are not offered as one object: the single-class Cannonball fit is
+   the industry parameter set, and a multi-class fit needs SEM data
+   that the datasheet channel cannot supply.  Sum per-class `factor`
+   contributions manually if such data exists.
+`tests/unit/test_roughness.py` (25): both closed forms at machine
+precision; Hammerstad smooth limit (K == 1 for Rq = 0 exactly) and
+saturation (K -> 2 from below, never past); Huray's two asymptotes;
+monotonicity in f for both; Cannonball against the published equations
+(r = Rz/16.73, A_flat = (6r)^2, N = 14 -> coverage = 56*pi/36) plus the
+check that 16.73 IS `4*sqrt(3)*(1+sqrt(2))` and not a typo; parameter
+validation; Material equality + store round-trip (smooth writes no key;
+pre-DD-088 stores load unchanged); the `Material(roughness=)`-without-
+sigma rejection.
+`tests/integration/test_roughness_wall_loss.py` (4): TE101 Q divides by
+K(f0) EXACTLY (1e-12, every tag, W and f untouched) and matches the
+K-scaled closed form within the smooth gate's 1 %; the same cavity as a
+rough-lossy-metal shell reaches the same closed form through the
+MATERIAL channel; the copper plate line's rough fraction is the smooth
+one times K(f) bin by bin (1e-12) and tracks alpha = K*R_s/(eta0*b)
+within 0.3 %.
+Deliberately NOT gated against a "published K value" for the Cannonball
+worked example: the only numbers reachable for it came from an
+unreliable secondary extraction (which also produced two demonstrably
+wrong radii), and a gate on a mis-cited number would cement the
+mis-citation as the target.  The gates hold the primary-source
+EQUATIONS instead.
+---
+
+## DD-089 — mu(omega) dispersion — the H-side ADE by parameterising DD-084
+
+**Date:** 2026-07-17 (session 109; package 5 of
+`FIELDS_AND_LOSSES_PLAN.md`).
+**Status:** Accepted — implemented + gated
+DD-083/DD-084 gave every dispersive *permittivity* ONE mechanism: a
+pole-residue `eps(omega)` realised by a trapezoidal ADE on the E-edges.
+Permeability had no counterpart — magnetic materials were limited to a
+static mu_r plus the sigma* channel, which cannot represent a
+ferrite/absorber relaxation (mu' falling with frequency while mu''
+peaks).
+Mirror DD-084 exactly, and mirror it by PARAMETERISING the operator, not
+by copying it.  Substituting `M_eps -> M_mu`, `M_sigma -> M_sigma_m`,
+`g = eps0*A_dual/l_primal -> g_m = mu0*A_primal/l_dual` and
+`(C^T h) -> -(C e)` leaves the DD-084 derivation character for
+character: the curl term enters it only as an opaque right-hand side R
+(the kernel produces `alpha f^n + beta R` whatever R's sign, and
+`- beta*j_hist` completes the implicit solution either way).  So
+`DispersionOperator` gained a `side` parameter ("E"/"H") and its hooks
+became `save_field`/`update_field`; only `from_mesh` knows a real
+difference (which material attribute, which owning-cell lookup, which
+constant, which geometry factor, which exclusion).  A twin class would
+have been a second place to get the coefficients wrong — and DD-084's
+factor-2 bug lived in exactly those coefficients.
+`DispersionModel` is reused VERBATIM: it is a relative-units
+pole-residue form, so its `eps_inf` field carries mu_inf, its
+constructors (debye/lorentz/drude/…) describe the magnetic analogues,
+and its mandatory passivity check reads `mu'' >= 0`.  The field name is
+the one wart of the reuse; the alternative (a parallel model class, or
+renaming the field across DD-083/084/086) buys nothing but churn.
+`Material.dispersion_mu` + `Material.dispersive_mu(name, model,
+epsilon=, sigma=, sigma_m=)` (mu = (mu_inf,)*3, validated in
+`__post_init__` like the eps side; mutually exclusive with is_pec).
+Both channels may be dispersive at once — via the constructor directly,
+which the both-dispersive gate exercises.  Store is schema-additive
+through the single `_material_to_dict` pair, now sharing one
+`_dispersion_to_dict`/`_from_dict` helper with the eps side.
+Solver: `W_mu` folds into `alpha_H`/`beta_H` on BOTH sides alongside
+sigma_m (one shared denominator), `save_field(h)` at the loop top,
+`update_field(h)` right after the H-curl kernel.  The loop-top placement
+is not cosmetic: CPML `update_H`, PMC `apply_H` and TF/SF `inject_H` all
+run AFTER the ADE hook, so h^n must be the previous step's FINAL field —
+the same reasoning the E side records.  WP-R5 donor faces (`M_mu == 0`,
+exact `beta_H = 0`) are excluded from the subsets via the new `frozen`
+argument AND carry `W_mu = 0`, so they stay frozen exactly as under
+sigma_m.
+1. CFL is the mu_inf chain with no code change: `Material.mu` IS mu_inf,
+   so `compute_min_effective_mu` reads it automatically (gated).  The
+   poles are A-stable at any dt — that is the trapezoidal rule's gift,
+   inherited unchanged.
+2. No-dispersion path bit-identical: the `if/else` mirrors the E side's
+   "adding nothing, not 0.0" structure, so `alpha_H`/`beta_H` are
+   array-EQUAL to the DD-081 expressions when no material is
+   mu-dispersive (gated).
+3. The two channels are independent: an eps-dispersive material builds
+   no H-side operator and vice versa (gated both ways).
+4. J_m states ride the checkpoint schema-additively under
+   `"dispersion_mu"`; disk resume bit-exact.
+5. NON-GOAL (unchanged from DD-083): conformal averaging of dispersive
+   boundaries — the H subsets are staircase-by-classification, matching
+   `build_M_sigma_m`'s policy.  Tensor mu (gyrotropic ferrites) stays
+   out of scope: it is not a scalar pole-residue form and would need a
+   different mechanism.
+`tests/unit/test_solver_dispersion_mu.py` (11).  THE mandatory one
+(plan-mandated after DD-084's lesson):
+`test_drude_dc_pole_equals_sigma_m` — a mu-side DC pole (a = 0,
+r = sigma_m/mu0) IS the semi-implicit magnetic conductor, matched over
+200 steps to < 1e-10.  The reduction is DYNAMIC (with h^0 = 0 the
+trapezoidal state J^n = W h^n holds by induction, so the pole current
+accumulates into sigma_m*h), which is exactly why a wrong coefficient
+cannot hide here the way it nearly did in the line physics.  Seeding E,
+not H — the mu-ADE integrates dH/dt, so a nonzero h^0 would be a
+deliberate initial-magnetisation offset.  Alongside it
+`test_drude_dc_W_equals_M_sigma_m` pins the coefficient itself
+(W_mu == build_M_sigma_m, face for face) so a failure localises in one
+line.  Plus: subset construction (hand-checked single cell), g ==
+M_mu/mu_inf, frozen-face exclusion, channel independence, the
+array-equality no-dispersion path, mu_inf CFL, and the WP-S6 same-ops
+rewind with complex (Lorentz) and real (Debye) mu-states plus an
+eps-block in the same run.
+`tests/integration/test_dispersive_mu.py` (5), all against the exact
+`gamma = j*omega*sqrt(mu0*mu_c*eps0*eps_c)`, `mu_c = mu(omega) -
+j*sigma_m/(omega*mu0)` — the DD-081 sigma_m form with mu_r promoted to
+the model.  Measured, on par with the DD-084 eps mirror (1.8 %/0.46 %):
+mu-Debye line alpha 2.27 % / beta 0.54 %; with sigma_m = 3500 alongside
+1.92 % / 0.57 %; eps-Debye AND mu-Debye in one fill 0.54 % / 0.14 %.
+Every counterfeit is REJECTED at 19-21 % beta (static mu_inf; sigma_m
+without poles; either channel alone) — two orders above the gate, which
+is what makes the fits meaningful.  Disk resume bit-exact across a
+checkpoint seam with both ADEs and sigma_m crossing it.
+MEASURED FIXTURE CONSTRAINT (recorded in the test module): the
+two-length gamma extraction unwraps the ratio's phase over frequency and
+therefore recovers beta only while `beta*(L2-L1) < pi` at the FIRST
+frequency — `np.unwrap` fixes relative jumps, never the absolute branch
+of f[0].  An eps-Debye AND mu-Debye fill at eps_inf = mu_inf = 2 reaches
+n ~ 2.9 at 2 GHz (3.65 rad) and the gate then reads beta off by exactly
+2*pi/dL: measured 1.728, which the arithmetic reproduces to three
+digits.  The fixtures keep n <= ~1.7 at the band start (the zone the
+DD-084 fixtures already live in) and `_assert_phase_branch` guards it.
+
+---
+
+## DD-090 — Public backend selection — GPU via backend="auto"
+
+**Date:** 2026-07-18 (session 111, Workstream 3 of
+`PERFORMANCE_PROFILING_PLAN.md`; developer decision: "auto" as default).
+**Status:** Accepted — implemented + gated
+(`tests/integration/test_gpu_backend.py`).
+**Problem.**  The DD-032 three-tier kernel dispatch (Numba CPU / CUDA
+fused / generic stencil) was architecturally wired but practically
+unreachable: no public parameter selected the GPU, the only activation
+path was the internal module-global `set_backend("cupy")` — called
+nowhere in `src/`, `examples/` or `tests/`.  The GPU path had never run
+end-to-end.
+**Decision.**  `FITTimeDomainSolver` and `AnalysisScatteringTD` take
+`backend="auto" | "numpy" | "cupy"` (default `"auto"`, the behaviour of
+the large commercial suites): `resolve_backend()` probes once per
+process for a usable CuPy + CUDA device (import, device count, forced
+context creation) and falls back to NumPy with a one-time warning;
+`"cupy"` raises with a clear message when the GPU is unavailable.  The
+`MAGNELIO_BACKEND` environment variable overrides the `"auto"` probe
+("numpy"/"cupy") — the deterministic anchor for test suites and batch
+farms; `tests/conftest.py` pins the suite to NumPy so every
+bit-exactness gate keeps meaning CPU rounding, and the dedicated GPU
+tests request `backend="cupy"` explicitly.  The backend is per-solver
+state (`xp` is resolved in `setup()` and forwarded to CPML
+`initialize`/`set_pec_mask`); the module-global `get_xp()` remains only
+for consumers not wired to a solver.  It is NOT persisted in the
+project recipe — a resumed run re-resolves `"auto"` on the machine it
+runs on.
+**Port operators on the GPU.**  The modal V/I recursion (Mur/DTBC
+histories, source ring buffers) stays host-side scalar work: the
+port-edge subsets are gathered to the host once per call
+(`_gather_host`, one small D2H per port per step) and the port-plane
+modal reconstruction is built host-side and written back in one H2D
+scatter per axis — bit-identical operation order on the CPU backend,
+no GPU port of the recursion.  Discrete ports work unchanged
+(element-wise `float()` reads are implicit syncs).
+**Measured (RTX 4070 SUPER, session-111 CPU baselines).**  End-to-end
+GPU S-parameters agree with the CPU **exactly** (max|ΔS| = 0 on the
+coax gate; FIT updates are element-wise with fixed per-element op
+order, the V/I recursion is host-side either way); the permanent gates
+use 1e-12.  Scaling: the per-step GPU floor is launch/sync-bound
+(~1.1–1.4 ms/step nearly independent of grid size), so the GPU loses
+below ~300k cells (95k: 1.07 vs 0.65 ms/step CPU), breaks even around
+~350k (379k baseline: 1.45 vs 1.47) and wins on dispersive loads
+(379k: 1.63 vs 1.92, −15 %) — the margin grows with cell count toward
+the multi-million-cell production regime.  `cupy-cuda12x` from pip
+additionally needs `nvidia-cublas-cu12` (cuBLAS for the energy-check
+matmul) — pinned in `environment.yml`.
+**Rejected.**  A cell-count threshold inside `"auto"` (hardware-
+dependent magic constant); porting the modal recursion to the GPU
+(per-step D2H of a few hundred port values is not the bottleneck —
+the launch/sync floor is, and that calls for kernel fusion or CUDA
+graphs, recorded as a future option, not for moving scalar recursions).
+---
+
+## DD-091 — Broadband TD-SIBC conductor walls (opt-in wall_model="sibc")
+
+**Date:** 2026-07-18/19 (sessions 112–116; the revived material-plan
+Cluster D as its own initiative, `SIBC_PLAN.md`).
+**Status:** Accepted — implemented + gated
+(`tests/unit/test_surface_impedance.py`,
+`test_sibc_surfaces.py`, `test_sibc_operator.py`,
+`test_sibc_analysis.py`; `tests/integration/test_sibc_end_to_end.py`,
+`test_sibc_validation.py`; derivation dossier
+`investigations/sibc/DERIVATION.md`).
+**Problem ([[DD-082]]/[[DD-087]]/[[DD-088]]).**  The perturbative loss
+chain evaluates conductor loss on a lossless PEC field solution —
+exact to first order only: no loaded-Q feedback, no lossy
+S-parameters, the H-sample position bias stays outside the solution,
+and the real roughness factor K(f) is non-causal as a TD boundary
+condition.  The Leontovich condition `E_tan = Z_s(omega) (n x H)` puts
+the loss into the update itself — the route the cartesian TD
+competition takes.
+**Decision.**  PEC edges STAY frozen; the SIBC is an additive damping
+term in the Faraday update of wall-adjacent faces — the masked wall
+edge's physical voltage restored from the face's own H state
+(`T_f = Z_s G_f h_f`, `G_f = weight * inv_l_dual^2` — the
+[[DD-082]]/[[DD-087]] wall booking reused VERBATIM, so no coefficient
+ever lands on a cut or Faraday-dead face).  `Z_s(s)` is a
+Foster/Stieltjes ladder `c0 + sum c_p s/(s + b_p)` fitted by NNLS on
+log-spaced poles (guard ~10, normalised coordinates — raw physical
+scales fail on conditioning alone), branch count from an acceptance
+loop; every coefficient non-negative, so the ladder is *elementarily
+passive* and an exact per-branch discrete dissipation identity gives
+non-increasing energy at the UNCHANGED lossless CFL, independent of
+fit accuracy.  Causal roughness: subtracted-KK completion of the
+roughness EXCESS `(K-1) R_s` (<= 2e-4 vs the smooth closed form)
+feeds the same real-part-targeted fit — the [[DD-088]] recorded
+prerequisite.  The instantaneous `G_f R_inst` folds as a PLAIN
+addition to the `M_sigma_m` diagonal; branch histories advance
+trapezoidally on the midpoint `h_mid`, added `beta_H`-weighted after
+the H kernel — `SIBCOperator` mirrors `DispersionOperator` (two-phase
+hooks, block per tag, `bind`, Checkpointable), with a second
+two-phase pass over blocks so bimetal-seam faces booked by two tags
+stay jointly exact.  Opt-in at layer a:
+`wall_model="perturbative"(default)|"sibc"` +
+`wall_sigma/wall_mu/wall_roughness` on `AnalysisScatteringTD` (both
+[[DD-082]] channels; port faces carry no wall — port planes stay
+lossless; `AnalysisEigenmode` keeps the perturbative route);
+recipe/checkpoint/resume through the [[DD-070]] machinery bit-exactly;
+`WallLossMonitor` on an SIBC run reports the operator's OWN
+accounting (`Re Z_fit` on the spec's faces and weights — no double
+counting).
+**Mandatory gate (twofold sigma -> inf => PEC).**  Gate A: a zero
+fitted impedance takes the structural no-op path and is BIT-identical
+to the master PEC run (coefficients and marched fields).  Gate B:
+end-to-end at layer a, the deviation from the PEC run vanishes as
+sigma^(-1/2) — measured slopes −0.4975 (max|S21 − S21_pec|) and
+−0.4991 (mean −ln|S21|) over 5.8e3…5.8e7 S/m, copper endpoint 5.9e-4
+against a 7e-8-clean lossless baseline; operator-level damping-rate
+slope −0.5000 over four decades.
+**Measured (WP-D6 record, a-priori targets from DERIVATION.md §7).**
+Parallel-plate alpha ratio 0.981…0.997; WR-90 TE10 vs closed-form
+alpha_c 0.944…0.976 (O(h) H-position class, largest toward cut-off);
+conformal vacuum coax 0.723…0.815 at ~6 cells per inner radius →
+0.768…0.860 at ~12.5 (the [[DD-087]] position mechanism amplified by
+the line field's 1/r — curved conductors need resolution; the
+DD-053-sized inner conductor at ~2 cells/radius under-reads by ~2x);
+pillbox TM010 ring-down Q_sibc/Q_pert = 1.023 (combined-budget
+agreement, SIBC closer to the closed form: −8.7 % vs −10.8 % at 10
+cells/radius); rough/smooth attenuation ratio tracks K(f) per bin at
+0.950…0.969 over K = 2.45→3.58 (the residual scales with |Z_s| — the
+l_dual/2 offset does NOT fully cancel in the ratio on BC walls).
+Recorded limitation: DTBC ports are exact for the LOSSLESS chain;
+lossy walls raise the port floor to the O(Z_s/eta0) ≈ alpha/(2 beta)
+mismatch class (plate −38…−50 dB, coax −26 dB at 3 GHz) — far below
+physical reflections, but no longer the −130 dB class.
+**Rejected.**  Free-sign vector fitting as the production route
+(passivity would rest on a global numerical PR test; Foster-NNLS is
+passive by construction at equal accuracy ~1e-3); fixed-pole
+real-part LS (structurally dead: Lorentzian 1/omega^2 basis vs sqrt
+growth); a fused Numba kernel for the branch recursion
+(surface-scaling state counts sit far below the measured 65536-state
+fused-ADE threshold); an eigenmode SIBC (nonlinear eigenproblem —
+the eigen path keeps perturbative Q); a default flip to "sibc" (its
+own decision now that the validation record exists).
+---
+
+## DD-092 — GPU step orchestration: device-staged recording, fused port transfers, CUDA graphs
+
+**Date:** 2026-07-19 (sessions 117–118, `GPU_ORCHESTRATION_PLAN.md`
+WP-G1…WP-G4; developer goal: fast parameter sweeps on mid-size grids,
+~50k–350k cells).
+**Status:** Accepted — implemented + gated
+(`tests/unit/test_modal_recorder.py`,
+`test_modal_port_fused_transfers.py`;
+`tests/integration/test_gpu_backend.py` — nine GPU gates, all
+verified live on the reference machine).
+**Problem — and a refuted attribution.**  [[DD-090]] recorded a
+grid-independent GPU per-step floor of ~1.1–1.4 ms/step and attributed
+it to "launch/sync"; the GPU lost to the CPU below ~350k cells — the
+sweep regime.  The session-117 prototype decomposed the floor at 95k
+cells **additively and exactly** (0.123 kernel dispatch + 0.370 modal
+ports + 0.321 recorder + 0.107 python rest = 0.921 ms/step full loop):
+the launch-overhead hypothesis is **refuted** — kernel dispatch is 13 %
+of the floor; the bulk is ~12–16 small blocking D2H/H2D round trips
+per step (each a full pipeline drain, ~25 µs): four recorder
+`_gather_host` per port per step, two port-plane gathers plus the modal
+write-back scatters in `update_e`, each per-call re-uploading its NumPy
+index array.
+**Decision — three structural changes, all bit-identical by
+construction** (they change *when and in how many pieces* samples cross
+the bus, never the numbers; every dot/recursion stays host-side in the
+master op order — max|Δ| = 0 gates throughout):
+1. **WP-G1, recorder device staging.**  On the CuPy backend
+   `PortSignalRecorder` gathers the raw port-plane samples into a
+   per-port device ring buffer (`_DevicePortStage`, 8 MiB/port budget,
+   16…4096 steps) — two fancy-index kernels per port per step, no
+   sync — and drains one host block at `tail()` (the sink's flush
+   hook), `finalize()`, or buffer-full; the port's unchanged host dots
+   (`project_V_samples`/`project_I_samples`) then materialise V/I.
+   NumPy path byte-for-byte unchanged; drain-on-`tail()` covers
+   checkpoints (recorder stays outside the solver `state_dict`,
+   [[DD-070]] WP-S8).
+2. **WP-G2, fused port-plane transfers.**  `PortOperatorModal` builds
+   concatenated index arrays at construction and caches device
+   copies lazily: `project_V`/`project_V_interior`/`project_I` take
+   ONE fused gather each, the `update_e` write-back ONE H2D scatter of
+   the concatenated block; host math consumes the split halves
+   unchanged.  Also removes the former per-call index re-upload.
+3. **WP-G3, CUDA-graph capture (`solver/gpu_graphs.py`).**  The two
+   contiguous device-only step segments — E phase (ADE/SIBC stashes →
+   fused E kernel → ADE completion → BC E passes → optional PEC
+   re-enforcement) and H phase (fused H kernel → μ-ADE/SIBC
+   completion → CPML H → PMC) — are closures shared by the CPU path,
+   GPU eager path and capture; after a double warm-up each phase is
+   captured once and replayed as one graph launch per step.  Capture
+   runs under a **private CuPy memory pool** so temp blocks recorded
+   into the graph stay reserved for its lifetime (the
+   silent-corruption hazard of naive capture: the main pool would
+   hand those blocks to eager work between replays).  Capture failure
+   warns once and stays eager; `MAGNELIO_GPU_GRAPHS=0` disables
+   (deterministic anchor).  **Default ON** on the gate evidence:
+   capture engages and the graph march is bit-identical
+   (max|Δe,h| = 0) on a CPML fixture, a dispersive ADE case and an
+   SIBC case.
+**Supporting fix.**  Resume on the CuPy backend was previously
+impossible: `load_state_dict` slice-assigned host checkpoint arrays
+into device arrays (CuPy rejects that).  New
+`magnelio._backend.array_api.copy_into(dst, src)` stages through
+`cupy.asarray`; applied to solver e/h, CPML ψ, dispersion pole
+currents, SIBC branch states.  GPU resume is now gated bit-exact
+across the recorder drain seam.
+**Measured (RTX 4070 SUPER, same-day A/B chain at the 95k-cell
+"large" coax, 4000 steps).**  1.205 → 0.938 (WP-G1, −0.27) → 0.739
+(WP-G2, −0.20) → **0.607 ms/step** (WP-G3, −0.13; −50 % total); V/I
+and S bit-exact vs master at every stage.  Dispersive large 0.651 —
+the GPU ADE surcharge shrinks to +0.04 because the ADE ops are inside
+the captured graphs.  Break-even sweep (same-day pairs, ms/step
+CPU / GPU): 10k cells 0.258/0.410 and 0.352/0.422 (dispersive);
+38k 0.428/0.470 and 0.739/0.495; 95k 0.774/0.613 and 1.071/0.650;
+379k 2.892/2.476 and 3.369/2.667.  **New break-even ≈ 50k cells
+baseline, ≈ 25k dispersive** (was ~350k, [[DD-090]]); the small-grid
+GPU floor is ~0.41 ms/step at 10k and no longer grid-independent.
+Cross-day caveat: this day's CPU runs ~15 % above the session-111
+record (0.65 → 0.77 ms/step at 95k, verified against a pre-WP-G1
+worktree — no CPU regression from the refactor; warm Numba cache
+required, a fresh worktree's first run carries JIT compile time);
+the pairwise same-day comparisons are the evidence.
+**Non-goals / rejected.**  Mega-kernel fusion (one fused step kernel)
+— declined by the developer, the operator separation stays; GPU port
+recursion ([[DD-090]]'s rejection stands — only the transfer pattern
+changed); cross-step port batching (structurally impossible: the
+corrected `e` feeds the next FIT update); the plan's projected
+~0.25–0.3 ms/step floor was not fully reached (0.41 at 10k — the
+remainder is the per-port feedback round trips plus the Python loop
+rest; a future WP would need port-hook restructuring, recorded here,
+not scheduled).
+## DD-093 — Conformal averaging of dispersive / σ* boundaries
+
+**Date:** 2026-07-28 (session 126, `CONFORMAL_DISPERSIVE_PLAN.md`
+WP-C1…C5; planned session 118).
+**Status:** Accepted — implemented + gated (22 new tests across
+`test_material_fractions.py`, `test_conformal_dispersion.py`,
+`test_conformal_sigma_m.py`, `test_pair_consistent_subcell.py`;
+validation benchmark
+`validation/rotated_dispersive_slab_convergence.py`).
+**Problem.**  The four constitutive channels were booked
+inconsistently at material boundaries: static ε (incl. `eps_inf`) and
+σ conformal (`eps_avg`/`sigma_avg`), but the χ(ω) ADE subsets (both
+sides) staircase-by-classification and σ* staircase by recorded
+non-goal — a boundary edge saw a mixed instantaneous part with an
+all-or-nothing dispersive part.
+**Decision (developer, session 118).**  Arithmetic area-weighted
+susceptibility mixing on all three channels: an entity joins the ADE
+block of every dispersive material with its post-priority area share
+as the weight on the entity's OWN mass-matrix geometry factor, so
+``ε_eff(ω) = Σᵢ fᵢ·εᵢ(ω)`` (and the μ mirror) holds exactly — the
+identical mixing rule as the static conformal averages; passivity is
+structural.  Two-phase overlap support from the start.
+**Implementation.**  WP-C1: per-material area fractions out of the
+section pipeline (`face_shape_area_kernel` budget-cascade mirror;
+`fraction_mids`/`material_fractions` on Edge/FaceMaterialData,
+codec-native schema-additive; **NaN = not-processed** → staircase
+lookup — a computed 0 is a genuine zero share; the DD-053 pair pass
+promotes uniform-ladder faces to cat 2 WITHOUT an OCC statement,
+which forced that convention).  WP-C2: E-side conformal membership
+(cat-2 `L_primal/L_free` via `geom_conf`) + the two-phase
+`update_field` (subtract every `β·j_hist`, then advance every pole
+set — shared states become the joint implicit solve; fused kernel
+split `_fused_subtract`/`_fused_advance`, disjoint bit-identical).
+WP-C4: σ* as `prop="sigma_m"` through the face pipeline
+(`sigma_m_avg`, `build_M_sigma_m` cat-1/2 mirroring `build_M_mu`'s
+form incl. the 1 % floor).  WP-C3: H-side mirror, membership
+restricted to cat-1 + SAFE cat-2 (floored/promoted faces keep
+staircase on the BULK geometry factor).
+**Key gates.**  Drude-DC ≡ conformal σ and μ-Drude-DC ≡ conformal σ*:
+W equals the conformal conductivity diagonal edge/face-for-entity
+(rtol 1e-12 — both channels consume the same fractions, a wrong
+weight cannot hide) and 400-step marches match < 1e-10; shared-edge
+joint recursion ≡ independent scalar reference (1e-13); GPU graph
+capture bit-identical on a shared-edge mesh (verified live);
+fraction-free meshes (from_grid, no dispersive materials)
+bit-identical.
+**Validation (WP-C5, rotated dispersive slab).**  DD-051 rotation
+trick, cavity form (developer decision: waveguide ports are
+axis-bound, so the plan's |S21| wording became the TE_z layered-cavity
+resonance under PMC lids, exact for all three channels): complex
+fundamental (f, γ) vs the exact transcendental root using the SAME
+pole-residue models.  Result (rot 30°, h = 2…0.75 mm): the damping
+error γ — the direct image of the dispersive loss — is conformal
+< staircase throughout: ε −3.6e-3 vs −2.2e-2 (6×), μ +2.5e-2 vs
++5.3e-2 (2–2.6×), σ* ≈ ±1e-2 (extraction-floor limited) vs
++3.6e-2…+9.5e-2 (4–10×) at the finest/coarsest grids; |err_f|
+converges ~O(h^1.1) in both configs (dominated by the shared static
+conformal booking + the rotated PEC frame).  Regression: the planar
+DD-084 Drude-slab gates stay green (suite).
+**Found in flight.**  The WP-C5 μ-slab reference exposed a latent
+DD-053 bug: `couple_face_material_pairs`' ladder target omitted the
+μ̄ factor of its own documented LC identity, HALVING M_μ on every
+μ_r = 2 uniform-ladder face (exactly invisible on the historical
+μ_r = 1 fixtures).  Fixed (`tgt·mu_face`, bit-identical for μ_r = 1)
++ the sharp μ_r = 2 bulk no-op regression gate.
+**Non-goals (unchanged).**  Harmonic/normal-direction mixing (not
+pole-residue-realisable; the static scheme is arithmetic too);
+per-edge vector refits; dispersive media extending into CPML (keep an
+eps_inf buffer); tensor μ; `from_grid` meshes (no OCC sections — stay
+staircase).
+
+## DD-094 — Selectable time-loop precision (single default, double opt-in)
+
+**Date:** 2026-07-21 (session 119, precision plan
+`plans/quizzical-finding-kurzweil.md` WP0…WP4; developer goal: performance
+parity with commercial FIT/FDTD tools, which default to single precision).
+**Status:** Accepted — implemented + gated on CPU
+(`tests/unit/test_precision.py`,
+`tests/integration/test_precision_sparams.py`) AND live on the reference card
+(RTX 4070 SUPER: `tests/integration/test_gpu_backend.py::TestGPUSinglePrecision`
++ 2 gates, all nine prior GPU gates re-verified; WP0/WP4 benchmarks below).
+WP0 (kernel throughput micro-benchmark, ``benchmarks/precision_kernel_ab.py``)
+caught+reversed a double-curl slowdown before it shipped.  WP1b (M-diag +
+CPML dtypes) landed — bare-solver memory −50 %.  WP1c (ADE + SIBC aux-state
+dtypes) landed too — the whole time-loop state is now single in single mode;
+nothing remains deferred.
+**Problem.**  Every grid state and update coefficient lived in `float64`
+(`FieldState` `dtype=float`; the α/β/M coefficients built from float64 mesh
+arrays; the CUDA kernel hard-wired to `double*`).  That is more precision
+than the default path needs: the discretisation error (staircase/conformal,
+finite h) dominates at **0.1–1 %** on the S-parameters, three-to-four orders
+of magnitude above the single-precision field floor (~1e-7 ≈ −140 dB).  The
+cost is real: on the target consumer card (RTX 4070 SUPER, Ada, FP64:FP32 =
+1:64) the bandwidth-bound leapfrog pays ~2× in memory traffic plus a
+crippled-FP64-ALU penalty; on CPU, double halves the AVX2 SIMD lane count.
+And the update coefficients (α_E, β_E, α_H, β_H ≈ 12·N doubles) outweigh the
+field arrays (e+h ≈ 6·N), so single halves *more* than "just the fields".
+**Decision.**  A per-solver `precision="single"|"double"` knob (default
+`None` → `MAGNELIO_PRECISION` else **single**), on `AnalysisScatteringTD` and
+`FITTimeDomainSolver`, resolved by `resolve_precision` to a (real, complex)
+dtype pair.  **Single is the production default**; double is the opt-in for
+high-Q (Q ≳ 1e4–1e5, where float32 coefficient resolution limits Q) or
+high-dynamic-range studies.  Precision (`dtype`) and backend (`xp`) are
+**orthogonal axes** — any precision runs on any backend; `FieldState.zeros`
+gained a `dtype=` beside its existing `xp=`.  An explicit `precision` value
+wins over `MAGNELIO_PRECISION` (mirrors `backend="cupy"` bypassing
+`MAGNELIO_BACKEND`) — no silent footgun for a run that explicitly asks for
+double.
+**Numerical policy — and a WP0-refuted accumulation choice.**  The per-step
+kernel multipliers α/β cast down to the field dtype (the fused CUDA kernel
+takes one `scalar_t` for fields *and* coefficients), but the `/denom`
+coefficient arithmetic stays float64 (CFL/timestep resolution is never
+single).  `_M_eps_diag` / `_M_mu_diag` are deliberately NOT cast, so the
+energy reduction `(M·e)@e` promotes to double.  The curl accumulator was
+initially planned `double` in both variants ("single storage, double
+accumulation").  **WP0 refuted this on the GPU:** a `double curl` in the
+float32 kernel makes single *slower than double* (0.63–0.68× at 97k–373k
+cubic cells) — the few FP64 register ops dominate a bandwidth-bound kernel on
+the 1:64 card.  A pure `scalar_t curl` restores the win (1.25× at 97k → 2.43×
+at 373k).  So the float32 CUDA kernel and the float64 kernel both use a
+`scalar_t curl` (float64 path byte-identical to before); the 4-term curl is a
+sum of similar-magnitude neighbour differences, float32 accumulation stays at
+the ~1e-7 field floor.  The CPU Numba kernels keep the float64 `curl = 0.0`
+literal — double accumulation is *free* on a full-rate-FP64 CPU, so the
+CPU/GPU single results differ by ~2e-6 (below the floor, and single≢double
+bit-identity was never a goal).
+**Double-precision islands stay double regardless of the knob**, because
+they are not per-cell-per-step and cost negligibly: the DFT/Freq/wall-loss
+accumulators (`complex128`, running sums — the naive-single-sum catastrophe
+over 1e5–1e6 steps), the modal-port solve / eigenmode solver, and the whole
+geometry/meshing pipeline (Boolean robustness).  The DFT already up-casts a
+float32 sample into its complex128 bins (`_bins += phase*data`), so the
+running sum was never at risk — WP3 makes that guarantee explicit.  This
+mirrors how commercial tools accumulate the DFT in double under single
+fields.
+**WP2 — the one structural break.**  `operators/numba_kernels.py`
+`_CUDA_SOURCE` is templated over a `typedef SCALAR_T scalar_t` prelude
+(pointer args AND curl `scalar_t`, see the accumulation note above);
+`_compile_cuda(dtype)` caches one RawModule per scalar dtype and the fused
+entry points dispatch by `Ex.dtype`.  Because single is now the default,
+single+GPU *requires* the float32 kernel to exist — a double-only kernel
+would misread float32 memory.  The float64 path is byte-identical to before
+(`scalar_t == double` there — verified: GPU-double vs CPU-double max|ΔS| = 0,
+all nine existing GPU gates green).
+**Evidence — CPU accuracy.**  Parallel-plate S-parameter A/B (11×6×41, 81
+frequencies), single vs double: `|S21|` (insertion loss) agrees to **2.6e-7**
+relative; the linear S-matrix to **2.1e-6**; the physical `|S21|`
+discretisation deviation (9.76e-3 dB) is *identical* in both and four orders
+of magnitude larger than the single-double gap.  The *only* visible effect:
+the `|S11|` reflection floor rises from **−138.75 dB** (double) to
+**−113.08 dB** (single) — exactly the float32 field floor (20·log₁₀(2e-6) ≈
+−114 dB), still well below the −100 dB reflection-free acceptance line.  The
+ultra-deep floor is a double-only feature; the high-dynamic-range user opts
+in.  GPU single is equally faithful: coax GPU-single vs GPU-double max|ΔS11| =
+5.2e-7, max|ΔS21| = 2.1e-6.
+**Evidence — GPU performance (RTX 4070 SUPER), and the honest caveat.**  Raw
+fused E+H kernel, float32-vs-float64 ms/step: 97k cubic 0.0295→0.0236
+(**1.25×**), 373k cubic 0.0722→0.0297 (**2.43×**) — the bandwidth win grows
+with grid size.  BUT the *whole-solver* speedup on the thin coax fixture is
+marginal: `profile_solver` large (95k) 0.478→0.495 (single 3% *slower*),
+xlarge (~380k) 0.909→0.886 (2.5% faster).  The reason is [[DD-092]]: the
+fused kernel is only ~13–16 % of the coax step (ports/recorder/DFT dominate,
+and those stay double by design), so a 2× kernel moves the total ~8 % at most,
+and on the thin 14×14×N coax the kernel is in its small-grid regime.  Net: the
+single default pays off most for **large 3D geometries** (the production
+target — big meshes, few ports), least for thin port-heavy S-parameter
+fixtures.
+**Evidence — memory (WP1b landed).**  Bare solver (fields + coefficients +
+M-diagonals + CPML ψ — the converted set, no port/recorder/DFT machinery),
+216k cubic cells with CPML: double 63.9 MB → single **31.9 MB (−50.1 %)** —
+the full halving for a field-dominated problem.  The earlier WP1-only coax
+figure was −21 % because the port-heavy coax is dominated by the double-only
+port/recorder/DFT arrays; WP1b converted the last full-grid double set
+(M_eps/M_mu, each as large as the fields) and the CPML boundary state, so
+field-dominated 3D now hits −50 %.
+**Resume.**  The recipe (`_recipe.py`) persists the *resolved* concrete
+precision ("single"/"double"), not the None sentinel, so a resumed run
+reproduces the dtype the run used regardless of `MAGNELIO_PRECISION` at resume
+time; a recipe predating this DD (missing key) means the old double-only
+default.  A precision switch across a resume seam is out of scope.
+**Suite pinning.**  `tests/conftest.py` pins `MAGNELIO_PRECISION=double` (the
+existing accuracy/bit-exactness gates were written against double); single
+tests pass `precision="single"` explicitly, which wins over the env pin.
+**Non-goals / deferred.**  Half precision (fp16/bf16 — no headroom under the
+field floor); driving DFT/port/eigenmode/geometry precision from the knob;
+per-region or per-material mixed precision; a precision switch mid-run.
+**WP1b — done (M-diagonals + CPML).**  `_M_eps_diag` / `_M_mu_diag` (a
+full-grid array each, used ONLY by the energy monitor — the coefficients were
+built from the float64 `M_eps`/`M_mu` locals) now carry the field dtype; the
+energy reduction is `xp.sum(M·e·e, dtype=float64)`, forcing double
+accumulation over the grid so the energy-decay stop criterion is unaffected.
+CPML `initialize(dtype=)` allocates the ψ recursion state and the b/c/ck
+coefficients at the field dtype, so the `β·ψ` correction is a same-dtype op
+(no float64 penalty on a float32 GPU run); a `None` dtype keeps float64 for
+standalone use.  Gated: GPU CPML march (`test_cpml_march_matches_cpu`) green,
+1289 unit + resume/energy integration green (the dot→sum energy change is
+float64-accumulated, no regression).
+**WP1c — done (ADE + SIBC aux-states).**  The ADE pole current
+(`solver/dispersion.py`) and the SIBC Foster-branch state (`solver/sibc.py`)
+now follow the field dtype: `bind()` reads `beta.dtype` (already cast to the
+real field dtype by the solver) and casts the geometry factor `g`, the field
+stash `f_prev`/`h_prev` and the state array to it — real poles / branches →
+float32, conjugate-pair poles → complex64.  The per-pole/branch scalar
+coefficients (`k`/`c`/`q`/`r_inst`, a handful of numbers) stay double, so each
+step is a single-store / double-op update; the fused ADE Numba kernel gains a
+new dtype specialisation (a separate type signature, not the DD-090 parallel-
+flag cache trap).  The real/complex-pole discriminator moved off
+`p.J.dtype == complex128` (which the complex64 conversion would break) onto
+`np.iscomplexobj(p.J)`.
+*Why single is safe here (unlike the DFT).*  The DFT bin is a pure running
+sum (`|phase| = 1`) → √N error growth → must stay complex128.  The ADE/SIBC
+states are decaying IIR filters (`|k| < 1` for every passive pole / Foster
+branch), so old contributions fade and the error stays at the ~1e-7 field
+floor — the same structure that already put the CPML ψ state at the field
+dtype in WP1b.  The one worst case is the Drude **DC pole** (`a = 0`, `k = 1`,
+a pure integrator), but it telescopes: `J = r·g·(fₙ − f₀)` is field-bounded,
+not a growing sum.
+*Evidence (RTX 4070 SUPER, single vs double, rel. to max double field):*
+Lorentz-filled cube (conjugate-pair pole, complex64) 400 steps CPU **1.2e-6**,
+GPU 300 steps **9.7e-7**; Drude-DC cube (float32, the k=1 case) 4000 steps CPU
+**2.8e-6** — stable, no √N blow-up; SIBC copper cavity 1500 steps CPU
+**6.0e-6**, GPU 1200 steps **7.3e-6**; all finite, all at the float32 floor.
+Debye-line two-port S21 single≡double < 1e-4 (`test_precision_sparams.py`).
+Gated: `test_precision.py::TestDispersionAuxPrecision` (+3),
+`test_sibc_operator.py::TestSIBCPrecision` (+3),
+`test_precision_sparams.py::test_single_matches_double_on_dispersive_line`.
+Resume stays consistent — the recipe pins precision, so a single run
+checkpoints/loads complex64 on both sides of the seam.  Nothing deferred.
+
+## DD-095 — Modal port power calibrated to the discrete Poynting reference (conformality patch)
+
+**Date:** 2026-07-27 (sessions 123–124, `PORT_POWER_PLAN.md`
+WP-P0…P4; trigger: developer-measured |S12| − |S21| ≈ 0.59 dB,
+frequency-flat, between a conformal PTFE-coax TEM port and a rect-WG
+TE10 port on the coax2rect fixture).
+**Status:** Accepted — implemented + gated
+(`tests/integration/test_port_power_reciprocity.py`; derivation dossier
+`investigations/port_power/DERIVATION.md` with versioned evidence
+scripts).  Full-size coax2rect re-run by the developer post-fix:
+asymmetry < 0.02 dB.
+**Problem.**  The modal V/I calibration ([[DD-078]]/[[DD-085]],
+`_calibrate_v_i`) measured the constructed basis wave's power with a
+flux surrogate `s_h` that combines a single global wave impedance with
+*geometric* Voronoi patch areas.  At conformal port cross-sections the
+true discrete travelling wave follows the reduced ([[DD-053]]
+`eps_avg`/`f_A`) local admittance, so the surrogate over-counted the
+flux at exactly the cut cells whose M_ε profile norm used reduced
+areas: the round PTFE coax over-recorded power by s² = 1.0721
+(over-injected by the same factor via `source_scale = √Z/record_scale`).
+Same-type port pairs cancel s exactly and reflections are
+scale-invariant, so the entire prior validation record (through-lines,
+port floors, unitarity of same-type fixtures) was structurally blind;
+only mixed-type pairs exposed it as S21 = s·T, S12 = T/s.
+**Reference decision.**  Modal |a|², |b|² are defined against the
+**discrete Poynting sum** through the port plane — the FIT identity
+P = Σ e·h with half-cell weights at bbox-boundary nodes, exactly as
+`FluxTimeMonitor` implements it.  Port power ≡ monitor power by
+definition; the closed-form defect prediction
+s² = ε₀·ε_r·d̃_n·Σ ê²·A_geo/l² (M_ε-orthonormality collapse) matched
+the measurement within the gate floor *before* any code change
+(staircase exact 1.00000; conformal 1.06443 predicted vs 1.0721
+measured; mixed-fixture prediction 0.555 dB vs 0.5423 dB measured).
+**Decision.**  `conformal_flux_patch_scale` (ports/modal/operator.py)
+computes a per-edge conformality factor from the port's own flattened
+M_ε and the first interior slab's edge classification —
+χ = 1 (categories 0/1/3), χ = M_ε·l/(ε₀·eps_pair·A_geo) with
+eps_pair = eps_avg/f_A (category 2) — and `_calibrate_v_i` multiplies
+it onto the DD-078 patch areas, correcting `p_one` (κ, state_scale)
+and `s_h` (record/source scale) in one place.  The correction is
+conformality-only: dividing the slab M_ε by its own free-part
+permittivity strips every dielectric contribution, so layered
+staircase planes stay bit-identical.  Mode shapes, 2D eigenproblems,
+z_line, DTBC kernels, reflections: untouched.  A Δχ estimator warns
+when enlarged-cell mass parked on category-0/1 edges (the known χ
+blind spot) would bias the scale by > 1e-3.
+**Affectedness (measured matrix).**  Modal was the *only* violator.
+Band ([[DD-057]]) acquitted: +0.0000 dB on the mixed fixture — its
+recording functionals are bi-orthogonal to the per-frequency true
+wave, making the unit-wave Wronskian port-independent (measured
+0.9909352 at both ports to 7 digits despite 2.5 % different eigenvector
+scales).  CW true-mode ([[DD-056]]) acquitted and power-unitary
+(column sums 1.00000, lock-in residuals < 5e-7).  Band/CW cannot host
+TE/TM hollow-waveguide ports (multiconductor-only) — n/a by
+construction.
+**Gates (post-fix).**  Conformal round coax |b|²/flux 1.0721 →
+1.00725 (+0.031 dB, staircase floor class); plate TEM / WR-90 /
+layered-QTEM staircase bit-identical; round→square mixed coax
+reciprocity +0.5423 → −0.0001 dB; compact coax2rect +0.5625 →
++0.0663 dB (hard gate ≤ 0.1 dB; the residual is the constructed-basis
+class bounded in the dossier §5d, not the blind spot — Δχ measured 0);
+modal |S21| now equals the band/CW true transmission (−0.063 dB, was
+−0.334); full suite 1530/15/0.  Historical mixed-pair transmissions
+shift by design (~0.3 dB per direction); |T| = √(S12·S21) values are
+unchanged.
+**Non-goals / rejected.**  Candidate B (local admittance from the
+partner-face M_μ) — refuted by measurement (s² = 0.954, wrong
+direction; the plane M_μ is flattened and the DD-053 pair coupling
+lives on other faces).  A per-edge ε_r generalization of the closed
+form — rejected: layered staircase planes measure clean (1.0096), an
+ε-mixing correction would *introduce* bias there.  H-B
+(normal_dx vs graded dz) — cleared twice: graded port slabs are
+rejected by the three-equidistant-cells validator, and on the
+numerical path every μ₀·ndx/M_μ factor cancels through the γ step
+(hq = 1/Re Z identically).  Machine-exact reciprocity — not claimed:
+the corrected surrogate still evaluates the constructed basis pair;
+the residual is the measured ≤ 0.7 % class, shrinking with mesh
+refinement.
+---
+## DD-096 — Mur complement absorber + port-signal stop criterion
+
+**Date:** 2026-07-28 (sessions 125–126, `MUR_STABILITY_PLAN.md`
+WP-M0…M2; trigger: late-time energy regrowth on the shielded-microstrip
+example — decay to ~−37 dB, then exponential regrowth to peak within
+~400k steps, single AND double precision; workaround commit `5bbc09d`
+had bounded the example).
+**Status:** Accepted — implemented + gated
+(`tests/integration/test_mur_complement_absorber.py`; derivation
+dossier `investigations/mur_stability/DERIVATION.md`, measurement
+record `MEASUREMENTS.md`, exact-spectrum tooling `exact_eigs.py` /
+`candidate_eigs.py`).
+**Problem (WP-M0/M1, measured and derived).**  The modal boundary
+wipe (`update_e`: project → Mur-1 → overwrite the plane with the modal
+reconstruction) pins every port-unrepresented transverse family to
+zero at the plane.  Cut-off-trapped families thereby become Dirichlet
+resonators coupled to the Mur channels through the oblique dual
+projection (χ = ⟨w_c, ψ_t⟩ ≈ η = ⟨w_t, φ_c⟩ ≈ 0.23 on the DD-056
+layered fixture); whether the closed loop damps or pumps is a phase
+condition with no discrete energy statement.  The exact
+boundary-closed companion matrix (one production step per unit
+vector; sparse shift-invert) reproduces every measured rate,
+frequency and sign flip: nz sweep 12/24/48/96 → −1.2e-6 / **+8.6e-5**
+/ **+1.3e-5** / +2.0e-5 per step at the trapped 15.71-GHz resonance.
+One Mur port + PEC far wall suffices (mirror symmetry); roundoff
+seeds it — every such run eventually diverges.  QTEM channels have
+χ = 0 by x-parity; DTBC-certified channels are unaffected.
+**Decision (fix).**  Complement absorber on modal ports: the
+port-unrepresented remainder at the interior companion plane
+(exactly dual-orthogonal by construction) is advanced to the port
+plane by a per-edge scalar Mur-1 and ADDED to the modal write —
+unrepresented families see an absorbing plane instead of a Dirichlet
+wall.  ``r_p = (c_p·dt − dx_n)/(c_p·dt + dx_n)`` with
+``c_p = c0/√eps_eff,p`` from the exact per-edge ratio
+``M_eps/M_eps_vacuum`` (geometric factors cancel; **no free
+parameter**).  Residual-PEC plane edges (sub-face window frames) stay
+pinned via a live mask.  Scoped to ports with ≥ 1 Mur channel
+(developer decision): fully DTBC-certified ports keep the exact
+pre-DD-096 path bit-identically.  Complement state (4 arrays/port)
+joins ``state_dict`` (schema-additive; pre-DD-096 checkpoints restart
+the absorber from rest).
+**Decision (termination).**  New ``port_signal_stop_db`` solver
+criterion (developer decision): stop when the cross-channel |V|
+envelope (windowed max between energy checks, DD-078-scaled) decays
+the given dB below its run peak.  Root cause: the only |λ| = 1 modes
+surviving the absorber are TM-cut-off (k_z = 0) cavity resonances
+with **zero tangential E everywhere** — invisible to any port-plane
+tangential scheme (wipe, Mur, DTBC, absorber alike) and already
+exactly neutral pre-fix.  They hold the stored-energy plateau
+(fixture: −39 dB hybrid- / −14 dB QTEM-seeded), so ``energy_stop_db``
+alone can never terminate shielded lossless runs; the port tails —
+the S-parameter deliverable — collapse to the machine floor and are
+the robust signal.  Unbounded runs accept either criterion.
+**Gates (post-fix, exact + production).**  Exact spectra (production
+code, complement state in the eigen-vector; linearity residual
+~2e-16): no coupled mode above the unit circle at any nz, former
+growth → decay (slowest coupled −1.1e-4 at nz 48); 1–40 GHz wide scan
+clean.  TD fixture: hyb 400k steps — V tails at machine floor
+(−335 dB vs −69.5 dB and growing pre-fix); qtem 2M — no
+roundoff-seeded growth (was +1.30e-5).  Port-signal perturbation vs
+pre-fix, normalized to the excited-channel peak: QTEM −300 dB
+(untouched), hybrid −27 dB = removal of the spurious trapped ringing
+(≪ DD-068 hybrid Mur error, median −10.5 dB).
+**Non-goals / rejected.**  F-A (Mur-state dissipation
+``V *= 1 − δ``) — refuted by exact measurement: d|λ|/dδ = 0.026 (the
+trapped mode holds > 99 % of its energy in the field), a curative
+δ ≈ 3.3e-3 would wreck the absorption floors.  F-B
+(complement-preserving wipe without absorption) — leaves the families
+neutral: the plateau still defeats the energy criterion.  Higdon-2
+([[DD-069]] refuted; its "Mur-1 gently dissipative near cut-off"
+intuition is measured-false for the full discrete loop).  Absorbing
+the TM-cut-off tower — impossible from the port plane (zero
+tangential trace); handled by the termination criterion instead.
+---
+
+## DD-097 — Wall-plane H reconstruction: derivation validated, estimator measured-REFUTED
+
+**Status:** Decided 2026-07-28 (session 128).  **No production
+change** — the DD-087 perturbative estimator and the DD-091 SIBC
+stay as they are.  Full record:
+`investigations/wall_plane/{DERIVATION,MEASUREMENTS}.md` + probes.
+
+**What was derived and PASSED (reusable):**
+
+- **WP-W0** re-calibrated the instrument: the session-108 centred
+  pillbox numbers moved −11.11/−7.39 → −10.80/−7.99 % by
+  ENVIRONMENT drift (a `43481c3` worktree A/B reproduces today's
+  numbers bit-for-bit on the old code; areas and f0 unchanged; only
+  the lattice-degenerate centred alignment responds).  Current
+  baseline: phase spread 1.01 points at 20 cells/radius.
+- **Gate 1 — the wall plane (n̂, p) of every cut cell is exactly
+  reconstructible from EXISTING mesh channels at zero mesher cost.**
+  n̂ = −w/‖w‖ (divergence identity); the offset by inverting the
+  covered-area function A(q) of one cut, non-jump face (monotone
+  piecewise-quadratic; sensitivity-weighted combination over faces).
+  Synthetic single-plane cuts: 1e-14.  Pillbox mantle,
+  geometry-blind: radius to O(h²) AT the secant-sagitta constant
+  h²/(8R) (rms 11.5 → 3.3 µm at 1 → 0.5 mm), phase-robust.  Jump
+  faces = flat families (their plane is the face plane — including
+  tangent-plane apex cells, where that IS the tangent plane).  A
+  V_pec/centroid mesher channel was evaluated and is NOT needed.
+- **Gate 2 — the d1 + central-difference stencil is correct on
+  smooth fields:** on the analytic J1 field at the actual sample
+  positions/masks, +0.74…0.81 % at 20 cells/radius (phase spread
+  0.07 points), +3.0…3.3 % at 10; dead-end fallback share ≤ 0.7 %.
+
+**What FAILED (gate 3, the funding gate) and why:**
+
+On MEASURED eigenfields the reconstruction lands −4.6…−7.0 % (band
+was ±2–3 %) and WIDENS the 0.5 mm phase spread 0.70 → 2.46 points —
+the session-108 failure mode reproduced with provably exact
+geometry.  Isolated mechanism (A/B/C probe): the measured local FD
+gradient deviates from the true gradient by **240–420 % RMS** — the
+discrete near-wall field error is O(h) pointwise with cell-scale
+phase-dependent structure, so ANY local finite difference over an
+O(h) span carries an O(1) relative gradient error; the correction
+inherits it.  Control C (exact analytic gradient on measured
+samples) still misses the band at 10 cells/radius (−4.95 %): beyond
+first-order position bias the near-wall samples carry field error
+no linear geometric pullback can remove.  **The method class
+"post-hoc sampling + local FD extrapolation" is refuted on measured
+FIT fields — the session-108 rejection was not a geometry problem.**
+
+**Recorded, unfunded successors:** non-local (patch-fit) gradient
+estimation with a noise-averaging gate; the SIBC (DD-091) as the
+accuracy route for curved-wall losses.  The WP-W4 SIBC scalar
+position factor was NOT reached (its prerequisite gate failed).
+
+*Session-128 developer decisions (same day, consultation pass):*
+
+- **Plan RETIRED** with sign-off (git history keeps it).
+- **Funded successor: the geometric curvature pullback (DD-098,
+  `WALL_CURVATURE_PLAN.md`)** — a mode-free multiplicative booking
+  factor from the PEC-wall identity ``∂H_tan/∂n = −κ·H_tan`` (the
+  tangential curl component vanishes AT the wall because E_tan
+  does), exact for 1/r line fields (the conformal-coax worst case).
+  It consumes gate 1 of this record and NONE of the refuted
+  machinery — no measured-field differentiation anywhere.
+- **Deliberately DEFERRED, recorded as a note for a possible future
+  initiative: a locally exact cut-cell update** (deformed Faraday
+  contours around the PEC cut — the root-cause fix for near-wall
+  field quality).  Rationale: the schemes shipped by the cartesian
+  competition are proprietary, so this would be a clean-room
+  re-derivation with real research risk (late-time stability is the
+  historical minefield; CFL preservation would be a hard
+  prerequisite) for a benefit concentrated on near-wall consumers.
+  Noted explicitly because **wake impedances are a central intended
+  use case** — if that initiative comes, near-wall field quality
+  becomes load-bearing and this deferral is the first thing to
+  revisit.  The patch-fit gradient route stays unfunded (its
+  measured ceiling is the C column above).
+
+---
+
+## DD-098 — Geometric curvature pullback for curved-wall losses
+
+**Status:** Decided 2026-07-28 (session 128).  Default-on for
+conformal scenes (developer call, escape hatch
+``curvature_correction=False`` on both enumeration functions).
+Full record: `investigations/wall_curvature/{DERIVATION,
+MEASUREMENTS}.md` + probes; spike branch
+`spike/dd-098-sibc-curvature-factor` (K2 instrument, not merged).
+
+**The identity (WP-K1 gate 1, analytic):** at a PEC wall
+``E_tan ≡ 0`` and ``H_n ≡ 0`` kill both extra curl terms, leaving
+exactly ``∂H_tan/∂n = −W·H_tan`` with ``W = ∇_tan n̂`` the shape
+operator (n̂ into the air; convex-from-air positive).  No 3D
+rest terms.  Integrating along the normal with the offset-surface
+curvature gives the **linear pullback**
+
+    c_b = max(1 + κ̃_b·d1_b, 0),   weights scaled by c_b²
+
+exact at EVERY distance for 1/r line fields (coax class),
+first-order exact generally, second-order J1 residue
+−2.9·(d1/R)².  The divisive form 1/(1+κ̃d1) sketched in the plan
+is only its first-order twin and misses 1/r at d1²/R² — rejected.
+Scope limit (derived + measured): the per-entry factor keeps the
+diagonal normal curvature along the component direction; mixed
+components on non-axis-aligned curved walls are under-corrected
+(the off-diagonal Weingarten term needs the other tangential
+component).
+
+**κ̃ from grid data (gate 2):** per wall FAMILY (flat = jump
+plane; curved = DD-097 gate-1 plane with
+**n̂ = −w_curved/‖w_curved‖** — the combined-w normal of a corner
+cell is tilted by the full-area jump face, found + fixed here),
+angle-gated (45°) symmetric LS fit of the neighbour-plane Gauss
+map rotation, 3×3×3 stencil.  Rule (b) decided: flat families get
+the same fit — coplanar-only neighbourhoods give bit-exact 0
+(grid-aligned flat scenes are exact no-ops), apex tangent columns
+recover 81–96 % of the mantle curvature.  Signs correct
+everywhere (coax 0/9576 wrong); sliver cells without an
+invertible face book unscaled (c = 1) and never feed a fit.
+
+**Measured (gates 3, 4, K2):**
+
+- Pillbox TM010 Q on measured eigenfields (per-family probe):
+  −5.5…−7.9 % → **−1.9…+1.8 %** on all five fixtures, 0.5 mm
+  phase spread 0.70 → 0.45 pts NARROWED — inside the ±2–3 % band
+  the DD-097-refuted gradient class could not reach.  The
+  multiplicative form is the decisive difference: it scales the
+  measured sample instead of adding an O(h)-noisy derivative.
+- Conformal coax α (SIBC end-to-end): 0.723…0.815 →
+  **0.801…0.903** (0.16 mm), 0.768…0.860 → **0.828…0.926**
+  (0.08 mm) — exactly the analytic position-bias share (×1.108
+  measured vs 1.115 predicted).  The K2 target ≥ 0.95 was NOT
+  met; the residual is measurably NOT the factor's class:
+  booking coverage (0.960 inner / 0.854 outer, the z-invariant
+  axial-walk deficit) and near-wall field error (~0.92 at
+  6 cells/inner-radius, identical in raw and factored columns)
+  cap ANY per-entry booking factor at ~0.92 @ 0.16 mm.
+  Developer decision: **fund production anyway** — the factor
+  removes its entire derived error class on both consumers; the
+  coverage fallback is recorded as a separate candidate follow-up
+  (DD-097 WP-W2 class), the field error's root-cause fix remains
+  the deferred cut-cell update (DD-097 note).
+- WR-90/staircase/BC walls: enumeration bitwise identical with
+  the factor on/off.
+
+**Implementation:** `mesh/curvature.py` (`CurvatureFactors`,
+closed-form covered-area inversion — piecewise quadratic in the
+offset with cancellation-free corner gaps), applied per booking
+entry in `_conformal_solid_surfaces`; consumed by BOTH
+`enumerate_pec_surfaces` (DD-087 perturbative weights, physical
+monitors) and `enumerate_sibc_surfaces` (DD-091 ``G_f`` — a
+non-negative scalar per branch, passivity identity untouched).
+No mesher/store change; old stores work immediately.
+``area_total`` stays the geometric area (the factor scales
+weights, not areas).
+
+**Addendum (2026-07-28, follow-up measurement,
+`investigations/wall_curvature/probe_coverage_followup.py`):** the
+"booking coverage" attribution above is corrected, and the
+recorded fallback-walk candidate is REFUTED.  The production
+per-cell walk (combined ``−sign(w)`` direction) drops nothing —
+``Σweight/(3·area_total)`` = 0.997…1.0 on all pillbox fixtures and
+0.99999 on the coax, dropped power 0.0000; the drop class existed
+only in the investigation probes' per-family booking.  The coax
+0.960/0.854 "coverage" is area REGISTRATION: the WP-D6 fixture's
+outer conductor (r = 2.5 mm) is tangent to the domain bbox
+(±2.5 mm), so four ~20° zones carry a sub-cell PEC sliver that
+``A_face_pec`` never registers (booked/exact 0.068 per tangent-zone
+bin).  A padded fixture (explicit PEC shell to 3.25 mm) restores
+the outer wall area (0.839 → 1.026) and measures end-to-end TD α
+**0.850…0.953** at 0.16 mm (stock 0.801…0.903) — the ~0.92
+"booking-factor ceiling" above was an artifact of the tangent
+fixture.  Open (developer decision): re-fixture
+``test_conformal_coax_alpha`` on the padded shell; a mesher
+warning/fix for the generic thin-shell/bbox-tangency registration
+class (a curved conductor tangent to the bbox, or thinner than a
+cell, silently books no wall loss there).
+
+## DD-099 — Boundary walls join the wall-loss family
+
+**Status:** Decided 2026-07-29 (sessions 129-131).  Shipped
+default-on; full record: `BOUNDARY_WALL_PLAN.md`,
+`investigations/boundary_wall/{DERIVATION,MEASUREMENTS}.md`.
+
+**Problem.**  A conductor degenerating into the domain boundary lost
+its wall: the bbox-tangent coax outer conductor silently booked
+0.068 of the exact wall area in four ~20-degree zones (×1.056 alpha
+under-read end-to-end, DD-098 addendum).  Root cause measured, NOT
+the assumed w-cancellation: a candidate-gate registration VOID —
+`detect_boundary_cells` is pure 6-neighbour material_id contrast, a
+sliver that captures no cell centre is never sampled and does not
+exist in any channel.
+
+**Decisions (developer, sessions 129-131):**
+
+1. **No silent domain padding** (PEC fill costs full bandwidth,
+   +70 % on the coax fixture).
+2. **Candidate-gate fix instead of a tangency detector**: non-PEC
+   cells of the six boundary layers are seeded into the conformal
+   sampler for the GEOMETRIC channels only (separate classifier
+   call, fresh section cache; ``pec_frac_geom``/``jump`` feed only
+   ``A_face_pec``/``A_face_pec_flat``, so material matrices are
+   bit-identical by construction — verified exact).  PEC-classified
+   cells are excluded (seeding them registers the domain's PEC hull
+   as phantom walls).
+3. **Port planes get continuation semantics** at enumeration
+   (`_masked_face_pec_views`): a face hosting a port (or a non-PEC
+   BC) takes the adjacent interior plane's coverage and zero jump —
+   the structure continues, no wall books, no coverage step, the
+   SIBC target gate keeps its exclusions.  The occ_backend
+   degenerate max convention needed NO change: with a PEC background
+   the world beyond a shape end plane IS a shorting lid, correct for
+   portless ends; the port is analysis knowledge.  This also removed
+   a latent pre-DD-099 error: the conformal cell path used to book
+   ~1 % phantom conductor-cross-section wall area on port planes.
+4. **Unregistered-wall warning** at mesh consolidation
+   (`detect_unregistered_walls`, threshold 0.1 inside the measured
+   empty window: suite floor 0.49 = ordinary cut cells, must-fire
+   signal 0.0055 = unresolved 30 µm shell): one warning per scene
+   for the interior w-cancellation class (a conductor shell thinner
+   than one cell books ~nothing).
+5. **The PEC boundary condition carries the wall material**
+   (large-suite convention): ``PECBoundary(face, wall_sigma=...,
+   wall_mu=..., wall_roughness=...)`` overrides the analysis-global
+   fallback per face, through the shared `resolve_wall_conductors`
+   rule (SIBC + perturbative monitor + eigen wall_loss_Q).  Parity
+   gate: per-face declaration reproduces the global-fallback run to
+   1e-12.
+
+**Measured:** padded and tangent coax become EXACTLY equivalent
+under the seed (booked area equal to 4 decimals) and read alpha
+0.838…0.929 at 0.16 mm (window 0.83…0.97; tangent pre-fix
+0.801…0.903, padded pre-fix 0.850…0.953 incl. the phantom
+cross-sections).  Declared side BCs on top change nothing (the ok
+gate drops BC pairs on covered faces — "registration wins" is the
+de-facto seam rule; an uncovered flat BC wall books through the BC
+leg as before).  Gate tests: ``test_tangent_coax_alpha``,
+``test_bc_wall_material_parity``, ``test_unregistered_wall_warning``.
+
+**Recorded conventions and limitations:**
+
+- *Rim over-booking of the SIBC BC leg*: (N_t+1)/N_t per tangential
+  family (full-voltage corner rule, SIBC DERIVATION §3) — an O(1/N)
+  convention contained in the WR-90 record 0.944…0.976; kept.
+- *Residual void class — inscribed tangency with an AIR background*:
+  the seed recovers the wall only where a (PEC) background registers
+  boundary-plane coverage; an air-background inscribed cavity keeps
+  its tangency wedge unbooked.  The warning fires there correctly
+  (verified true positive on the `test_conformal_convergence`
+  cavity); kept as a documented limitation.
+- *Curved interior shell missing ALL cell centres*: stays
+  channel-invisible even after the fix; the corner-classify seed is
+  the recorded complete-fix candidate (not scheduled).
+- The warning names worst-cell indices/coordinates/ratio (no
+  covering material id — recorded deviation from the dossier).
+
+## DD-100 — Dead-tile skipping for the fused TD kernels
+
+**Status:** Decided 2026-07-29 (session 132).  Shipped default-on
+(GPU backend; `MAGNELIO_TILE_SKIP=0` kill switch); full record:
+`investigations/pec_fill/` (census, tile-shape bench,
+plan-vs-census gate, runtime A/B) — plan file retired.
+
+**Problem.**  The fused curl kernels sweep dense full-grid arrays;
+a PEC-frozen edge (`alpha_E = beta_E = 0`) costs the same memory
+bandwidth as a live one.  Structured tensor-product grids make
+this unavoidable at the mesh level: a single feed line forces the
+bbox over large dead conductor blocks (`coax2rect`: 74 % of
+elements dead; PEC-padding the coax fixture had cost +70 %
+runtime, session 129).
+
+**Decisions (developer, session 132):**
+
+1. **Runtime only.**  Memory savings via block-structured storage
+   stay off the roadmap (no current constraint; ~10x the effort).
+   Bbox cropping was rejected on the flagship case: L-shaped live
+   regions have a full-domain bbox — crop saves exactly nothing.
+2. **Static live-tile launch lists at tile (2, 4, 32)** — chosen
+   by measurement, not geometry intuition: cubic tiles capture
+   best on curved dead regions but fail the dense gate (+11…+69 %
+   float32: 32 B k-run segments, and 1024-thread blocks cap Ada
+   occupancy at 1024/1536); k = 32 shapes at 256 threads are
+   dense-free AND (2,4,32) beats the old flat block's capture on
+   every fixture.
+3. **Provable no-op skip rules on the solver-final coefficients**
+   (port-plane flattening included — mesh-level masks are wrong):
+   E edge `alpha == 0 and beta == 0`; H face `alpha == 1 and
+   beta == 0` (WP-R5 donated) or curl-dead (all four bounding E
+   edges frozen).  PMC faces suppress curl-dead skipping in their
+   outermost layer; TF/SF field sources and BC types outside the
+   `_pec_reenforce_after_bc` safe list self-disable the analysis
+   (dense fallback).  Runtime-writer audit in the
+   `solver/tile_skip.py` module docstring (ports write E only;
+   CPML corrections vanish on curl-dead faces; thin-wire edges are
+   plain PEC edges at runtime).
+4. **Two kernel compile variants from one source** (`-DLISTED`).
+   The planned single code path (dense == identity list) was
+   measured-refuted: the dependent per-block list load costs +12 %
+   in the L2-resident float32 regime typical of production sizes
+   (~40 MB working set vs 48 MB L2), and a division-free decode
+   does not recover it.  Dense keeps the direct 3-D grid at the
+   new (32, 4, 2) block (+0.9 % / −0.2 % vs the old launch); the
+   listed variant decodes packed ids `(bi<<20 | bj<<10 | bk)`
+   (1024 tiles per axis, asserted host-side).
+5. **One-time dead-element zeroing** before the march makes the
+   skip invariant unconditional across checkpoint resumes;
+   donated no-op faces are excluded — their frozen value must
+   survive.
+
+**Measured (RTX 4070 SUPER, graphs on, whole-step ms):** coax2rect
+−33 % single / −57 % double; vacuum-tank fixture −10 % / −13 %
+(24.9 % dead); fine tank −41 % / −49 % (43 % dead).  Skipping is
+bit-identical by construction (elementwise kernels, skipping only
+omits writes) and by gate: dense-vs-skip BIT equality marched with
+CPML + graphs in both dtypes
+(`tests/integration/test_tile_skip_solver.py`,
+`test_tile_skip_kernels.py`); plan-vs-census equality to the digit
+(68.03 % / 24.88 %); full suite 1607 passed.
+
+**Limitations (recorded):** TF/SF plane-wave sources disable
+skipping entirely (`inject_H` is beta_H-weighted and beta_H != 0
+inside PEC; footprint marking is the upgrade path if scattering
+runs ever need the speed); periodic BCs disable; CPU
+Numba/stencil paths stay dense (possible follow-up); capture on
+coarse curved geometries is resolution-limited (tank 24.9 % at
+2 mm cells vs 65.7 % raw — the tile skin shrinks with refinement).
+
+## DD-101 — Prefiltered line-solid queries for edge PEC fractions
+
+**Status:** Decided 2026-07-30 (session 134).  Shipped default-on
+(pure implementation change inside
+`occ_backend.compute_edge_pec_fractions`; no API or semantics
+change — bit-identical on the identity gate).
+
+**Problem.**  `compute_edge_pec_fractions` dominated realistic mesh
+builds (session-133 census: 118.7 s of 130.6 s, 90.9 %, at 96
+primitives) and scaled superlinearly with the primitive count
+(scaling profile at ~1000 primitives:
+``benchmarks/profile_csg_scaling.py``):
+every per-edge query — `BRepIntCurveSurface_Inter.Init(shape, …)`
+for the crossings and `BRepClass3d_SolidClassifier.Perform` per
+sub-segment midpoint — rescans *every* face of the fused PEC solid
+(measured ~1 µs/face each), and the face count grows with the
+primitive count.  Threads cannot help (pythonocc's SWIG layer
+never releases the GIL, session-133 measurement).
+
+**Decision — three cooperating mechanisms, one helper class**
+(`_PrefilteredLineSolid`):
+
+1. **Face-bbox prefilter.**  Faces and their `Bnd_Box` extents are
+   collected once per call; a slab test over the (tolerance-padded)
+   boxes yields each query line's candidate faces with their
+   parameter intervals [w_in, w_out].  Intersections run only
+   against candidates, through per-face
+   `IntCurvesFace_Intersector` objects built lazily and cached —
+   construction digests the face restriction once, which is the
+   expensive part for faces with many wires (a plate pierced by
+   hundreds of slots made every whole-shape `Init` touching it
+   O(primitives), the last surviving superlinear term).  Verified:
+   per-face intersectors return bit-identical W and state, and
+   their `Transition` is already face-orientation-resolved (the
+   whole-shape intersector reports it relative to the natural
+   surface normal instead).
+2. **Transition-derived states.**  Sub-segment inside/outside
+   states come from the orientation-resolved crossing transitions
+   (entering/leaving along the line) instead of per-midpoint solid
+   classification.  Crossing parameters, dedup, boundary
+   construction and the outside-length accumulation are unchanged
+   line-for-line, so clean edges reproduce the old float results
+   exactly.
+3. **Carrier-line cache.**  Structured-grid edges are collinear in
+   droves; the full crossing structure of each distinct carrier
+   line (candidates, transversal crossings, clean flag) is computed
+   once and shared by every edge on it.  Parity along a full line
+   is anchored for free — a line enters the bounded solid from
+   outside.  Fallback midpoints (edges whose window hits cannot
+   anchor transitions: face-border hits, tangencies, inconsistent
+   alternation) are classified by cached perpendicular probe
+   lines under the same parity rule, with `TopAbs_ON` semantics
+   preserved (a crossing within tolerance of the point = on the
+   boundary = PEC side); the O(faces) full-solid classifier
+   remains only as a last resort for points whose every probe
+   line is untrusted (~0.02 % of edges on the slot fixture).
+
+**Gate (bit-identity):** old implementation vs new on four solids
+(48-tooth comb incl. deliberate in-plane/on-face edges, cylinder
+bore incl. tangent edges, sphere+brick fuse, degenerate edges) —
+`np.array_equal` exact on all 2 065 edges.
+
+**Measured.**  Micro (comb, 1 158 faces): 3.80 → 0.088 ms/edge
+(43x); per-edge cost now grows 2.1x for 15x faces (vectorised slab
+residue) instead of 15x.  End-to-end slotline beam coupler
+(`userscripts/beamcoupler_slotline.py` geometry, public API,
+n slots / cells / `Mesh.from_geometry` wall):
+
+| n | cells | before | after |
+|---|---|---|---|
+| 12 | 174 200 | 16.9 s | 6.4 s |
+| 50 | 569 400 | 142 s (user-reported) | 33.1 s |
+| 100 | 1 089 400 | ~295 s | 53.8 s |
+
+Per-cell cost is flat-to-falling with size (37/58/49 µs) — the
+superlinear term is gone.  f_L itself: 118.7 s → 23.2 s at the
+doubled-size case; `compute_face_material_areas` (20.6 s at n=50)
+is now the dominant mesh-build term (separate site, untouched).
+
+**Limitations / follow-ups:** the whole loop is still one Python
+thread — route (b) from session 133 (process pool over edge
+chunks, prefill machinery reuse) remains available as an
+independent multiplier; probe-line slab tests are O(faces) each
+(NumPy-vectorised, ~ns/face — a bin/BVH structure would flatten
+the residue if geometries grow another order of magnitude);
+`compute_face_material_areas` deserves the same treatment next.
+
+## DD-102 — Planar section engine for face material areas
+
+**Status:** Decided 2026-07-30 (session 135).  Shipped default-on
+(implementation change inside `occ_backend` /
+`filling.compute_conformal_mu`; no API change — mesh results
+bit-identical on all three mesh gates).
+
+**Problem.**  After DD-101, `compute_face_material_areas` was the
+dominant mesh-build term (20.6 s of 33 s at 50 slots): its
+section-based pipeline calls `cross_section_polygons` once per
+(plane, shape), and each call runs a `BRepAlgoAPI_Section` Boolean
+against the whole shape.  Measured on the slotline coupler at n=50:
+4 486 sections totalling 17.1 s sequential.  All three "use OCC
+harder" routes were measured and rejected:
+
+- candidate-face compound (only faces whose bbox meets the plane):
+  6.8 → 4.9 ms per plane — the Boolean's fixed cost is ~0.35 ms per
+  *candidate* face pair, and a single-face section still costs
+  1.05 ms;
+- one multi-plane Boolean per axis (compound of N bounded plane
+  faces as tool): superlinear in N (1.3 ms/plane at N=10, 8.8
+  ms/plane at N=1320) — worse than per-plane calls;
+- the existing spawn pool: at this size it was *slower* than
+  sequential (20.1 s vs 17.1 s — 3 pool startups, BRep broadcast,
+  OCCT-TBB oversubscription).
+
+In addition, the O(E²) `BRepBuilderAPI_MakeWire` wire assembly in
+`cross_section_polygons` dominates contour-rich planes (an x-plane
+through 50 slots: 58 ms assembly on 18 ms Boolean).
+
+**Decision — four cooperating changes:**
+
+1. **Exact planar fast path** (`_PlanarSectionEngine`, one instance
+   per shape in `compute_face_material_areas` and
+   `batch_cross_sections`).  Faces (planarity, outward normal from
+   the parametric XDir × YDir cross product and the face
+   orientation — NOT `Axis().Direction()`, which an indirect gp_Ax3
+   flips), straight edges (exact endpoints), edge→face adjacency
+   and bounding boxes are collected once per shape.  A plane whose
+   bbox candidates are all planar faces and straight edges crossed
+   strictly transversally (no vertex within the shape-tolerance-
+   anchored on-plane band, no coplanar face) is sectioned exactly:
+   one intersection point per crossed edge; per-face segments by
+   parity along the face/plane intersection line, directed along
+   n_plane × n_outward (outer contours and holes thereby
+   counter-rotate consistently — the only orientation property the
+   area kernels rely on, since they take abs() per shape); segments
+   stitch into closed chains through shared edge indices — exact,
+   no tolerance matching, because both adjacent faces reference the
+   same intersection-point object of their common edge.
+2. **Per-plane delegation for everything else.**  Curved candidate
+   faces or edges, tangencies, vertex-on-plane, coplanar faces (all
+   DD-087 degenerate planes are in this class by construction) and
+   stitch anomalies return ``None`` and run through the unchanged
+   `cross_section_polygons` Boolean — every boundary-case semantic,
+   including the degenerate-plane behaviour the DD-051/DD-087 M_mu
+   machinery depends on, is preserved verbatim.
+3. **Pool triggers on delegated work only.**  Fast-path-answerable
+   queries no longer reach the prefill; the pool fires on the raw
+   query count (unchanged threshold) OR on the work-weighted sum
+   ``Σ face_count`` of the queried shapes
+   (`_SECTION_PARALLEL_MIN_FACE_WORK` = 150k ≈ the ~5 s pool
+   startup at the measured 40–80 µs per face-query).
+4. **The DD-099 geom-only call shares the section cache** (its
+   SEPARATE call is what carries the DD-099 semantics; cache
+   entries are keyed ``(axis, plane_pos, shape)`` and deterministic
+   at fixed deflection, so a hit returns exactly what a fresh cache
+   would recompute).  `compute_conformal_mu` now normalises
+   ``section_cache=None`` to a call-shared dict like the eps path.
+
+**Found on the way:** BOPAlgo orients disjoint section-contour
+groups independently — on coupler x-planes the OCC path's net
+signed area is off by twice a group area while the |area| multisets
+match to 4e-13.  Production never noticed because the area kernels
+take abs() per shape and a face rectangle essentially never spans
+two independently-flipped groups.  The engine's net is consistent
+by construction (verified against hand-computed cross sections);
+the polygon gate therefore compares |area| multisets, not net sums.
+
+**Gates.**  (a) Polygon gate: engine vs `cross_section_polygons`
+on seven solids (coupler union/brick, cylinder, brick−cylinder,
+sphere+brick fuse, plain brick, full coupler union), 360 planes
+each across all axes: sorted-|area| multisets match ≤ 4.3e-13
+relative; delegation is 100 % on the cylinder and exactly the
+curved-candidate planes on mixed solids.  (b) Mesh gate:
+`Mesh.from_geometry` old-vs-new on beamcoupler n=12, a coax
+cylinder pair, and a mixed brick+cylinder-post model —
+**bit-identical** in every float array of the mesh (not guaranteed
+in general: polygon vertex rotation may differ on non-axis-aligned
+geometry; the |area| gate is the general bound).  (c) Suite: unit
++ integration green.
+
+**Measured** (slotline beam coupler, `Mesh.from_geometry` wall
+time; f_L = DD-101 edge fractions, areas = this site):
+
+| n | cells | total before | after | areas before | after |
+|---|---|---|---|---|---|
+| 12 | 174 200 | 6.4 s | 3.7 s | ~4.6 s | 0.58 s |
+| 50 | 569 400 | 33.1 s | 14.0 s | 20.6 s | 2.38 s |
+| 100 | 1 089 400 | 53.8 s | 33.6 s | ~21 s | 6.54 s |
+
+Engine query cost ~0.2–0.5 ms/plane (27x under the OCC Boolean on
+the coupler union).  The remaining delegated cost is the
+coplanar-plane class (grid-snapped slot boundaries: O(n) planes ×
+O(n) shape faces); the user-reported 569 400-cell case is now 14 s
+against 142 s at the session-133 baseline.  With areas off the
+critical path, `compute_edge_pec_fractions` dominates again
+(22.8 s of 33.6 s at n=100) — route (b) is the next lever.
+
+**Limitations / follow-ups:** curved faces always delegate — a
+quadric extension (IntAna plane×cylinder sections are exact
+circles/line pairs) would extend the fast path to coax-class
+geometries if their meshing ever dominates; the O(E²) wire
+assembly still stands in the delegated path; route (b) (process
+pool over edge chunks for `compute_edge_pec_fractions`) remains
+the next independent multiplier.
+
+## DD-103 — Boundary conditions belong to the model, declared once
+
+**Status:** Decided 2026-07-30 (session 136).  Shipped; hard API
+break (MAJOR = 0).  Supersedes the background-driven bbox-wall rule
+of DD-049 and folds in the BC-PEC consolidation of DD-050.
+
+**Problem.**  The boundary closure was declared on the *analysis*
+(`AnalysisScatteringTD(boundary_conditions=...)`), but three of its
+four consequences happen at mesh-build time, before the analysis
+exists.  They were therefore steered by separate, unchecked
+parameters — or by nothing at all:
+
+| consequence | was steered by |
+|---|---|
+| CPML grid extension | `Mesh.from_geometry(pml_faces=...)` |
+| PMC grid-line pull-in (WP-U0) | `Mesh.from_geometry(pmc_faces=...)` |
+| PEC wall mask | nothing per face — see below |
+| runtime BC objects | `AnalysisScatteringTD(boundary_conditions=...)` |
+
+Nothing tied the two declarations together.  The PML depth even
+existed twice as an independent number (`MeshControl.
+pml_thickness_cells` for the grid extension,
+`AnalysisScatteringTD.cpml_thickness_cells` for the profile), so a
+layer could grade over a span the grid did not have.
+
+The wall mask was the damaging one.  DD-049 keyed it on the
+*background material*: `background.is_pec` force-masked the
+tangential E-edges of **all six** bbox faces, to keep a PEC chamber
+wall one connected component for the auto-conductor detection
+(a dielectric touching the bbox at isolated tangent points otherwise
+un-masks the edges between those cells and fragments the wall).
+That rule cannot see the declared closure, so it overrode it:
+
+- a **PMC symmetry plane** in a PEC chamber became an electric wall.
+  `PMCBoundary` is deliberately a no-op — the magnetic wall is the
+  *natural* BC of the free curl operators — so nothing downstream
+  could take the mask back off, and `fit_td` freezes masked edges
+  with `alpha_E = beta_E = 0`.  The half-model then ran the opposite
+  symmetry, silently.
+- a **CPML face** became a mirror in front of the absorber (same
+  mechanism; no shipped example hit it because every PML fixture
+  uses an air background).
+- on a **port touching such a plane**, the mode-path detection
+  (`resolve_declarative_port` → `extract_conductor_groups_from_mesh`)
+  saw the inner conductor fused to the wall frame: one PEC component
+  instead of two, so the TEM/QTEM path was rejected and the port
+  resolved as a hollow TE/TM guide.  Reported on a half-modelled
+  rectangular coax (`userscripts/beamcoupler_slotline.py`), where
+  both ports came back TE.
+
+**Decision.**  The closure is a property of the modelled domain, not
+of a run on it — a PMC face is a symmetry plane, a CPML face an
+opening.  It is declared once, on the `GeometryModel` (or on
+`Mesh.from_grid` for the OCC-free path), carried by the `Mesh`, and
+read from there by the layer-a analyses:
+
+```python
+model = GeometryModel(background=pec, boundary_conditions={
+    "xmin": "PMC", "xmax": "PEC", ...})
+mesh = Mesh.from_geometry(model, control, f_max)
+analysis = AnalysisScatteringTD(mesh=mesh, ports=[...], f_max=f_max)
+```
+
+Rules:
+
+1. **The declaration decides the wall, per face.**  `PEC` masks that
+   face's tangential edges; `PMC`/`CPML`/`Periodic` do not.  The
+   background fills the *volume* outside every shape and no longer
+   closes anything by itself.  DD-049's purpose survives: a declared
+   PEC face is force-masked whole, so the wall stays one component
+   under dielectric tangency.
+2. **An undeclared face closes with PEC** — the conventional closure
+   and the safe default.  Note the change of meaning: a *partial*
+   BC dict used to leave the remaining faces to the free curl update
+   (i.e. a magnetic wall); those faces are now electric.  Call sites
+   that wanted the old behaviour say `"PMC"` explicitly.
+3. **One type per face.**  The former `pml_faces`/`pmc_faces` overlap
+   check is unrepresentable now and was dropped.
+4. **The CPML depth lives on the declaration**
+   (`BoundaryConditions.cpml_thickness_cells`), driving both the grid
+   extension and the profile.  `MeshControl.pml_thickness_cells` and
+   `AnalysisScatteringTD.cpml_thickness_cells` are gone.
+5. **Layer C is untouched.**  `FITTimeDomainSolver` /
+   `EigenmodeSolver3D` keep their `boundary_conditions=` argument —
+   they must stay usable without a geometry.
+
+`Mesh.with_boundary_conditions(bc)` *replaces* a closure on a built
+mesh: PEC faces are masked, faces that are no longer PEC get the
+edge values they had before any wall was forced on them (kept in
+`Mesh._wall_backup` — the OR is lossy on its own).  It cannot grow a
+CPML extension or move a PMC grid line, so declare those on the
+model; conversely that is exactly why fixtures which must keep their
+grid use it instead of re-declaring upstream.
+
+**API changes (hard).**
+
+- `GeometryModel(boundary_conditions=...)`, `Mesh.from_grid(
+  boundary_conditions=...)`, `Mesh.boundary_conditions`,
+  `Mesh.with_boundary_conditions()` — new.
+- `Mesh.from_geometry(pml_faces=, pmc_faces=)`,
+  `MeshControl.pml_thickness_cells`,
+  `AnalysisScatteringTD(boundary_conditions=, cpml_thickness_cells=)`,
+  `AnalysisEigenmode(boundary_conditions=)` — removed.  The two analyses
+  expose `boundary_conditions` / `cpml_thickness_cells` as read-only
+  properties onto the mesh.
+- `BoundaryConditions.to_objects(grid)` — the
+  `cpml_thickness_cells` argument moved into the dataclass.
+- New readers in `boundaries.boundary_conditions`:
+  `bc_type_entries` (any accepted form → `{face: type}`),
+  `resolve_boundary_conditions`, `cpml_thickness_of`.  These replace
+  four copies of an `isinstance` cascade in the analysis.
+- The closure left the resume recipe (`RECIPE_SCHEMA_VERSION` 1.0 →
+  2.0) for `mesh.h5`, where it round-trips as a type map plus the
+  CPML depth.
+
+**Verification.**  Full suite green: 1335 unit + 262 integration
+(27 skipped).  `tests/unit/test_boundary_closure.py` pins the
+defect: on the half-model rect coax the port resolves as
+`PortSpecMultiConductor` with `xmin="PMC"` and as `PortSpecNumerical`
+under the old all-PEC forcing; PMC and CPML faces stay unmasked
+under a PEC background; `with_boundary_conditions` is path
+independent and round-trips.  On the reported coupler both ports now
+solve TEM (f_c = 0, Z = 117.7 Ω on the half model) instead of TE.
+
+**Limitations / follow-ups.**
+
+- A `PECBoundary` carrying its own wall material (DD-099) still does
+  not survive a store round-trip — the closure persists as a type
+  map.  Pre-existing (the recipe route had the same hole), not
+  addressed here.
+- `Mesh._wall_backup` is not serialised, so on a mesh reloaded from
+  the store `with_boundary_conditions` can only re-declare the same
+  closure (which is what the store does).
+- `examples/pml_verification_coax_discrete.py` turned out to import
+  `TransientAnalysis`, a class that no longer exists in `src/` — dead
+  before this change, and deleted right after it (session 136).
+
+## DD-104 — Monitor regions are corner boxes; open-ended recording schedules
+
+**Status:** Decided 2026-07-30 (session 136).  Shipped; two hard API
+breaks on the three monitor classes (MAJOR = 0).
+
+**Problem.**  Both defects surfaced from one user script.
+
+*Region.*  Monitors took `center=` and `size=`, with `size = 0`
+encoding a point/plane and `size = inf` a full-domain extent.  A user
+reaching for "the whole domain" wrote
+`center=(-1e30,)*3, size=(2e30,)*3`, reading the pair as *start* and
+*stop* — two corners.  The interval it actually describes is
+`[-2e30, 0]`, whose upper bound lands on exactly 0: on a domain at
+x, y ≥ 0 that resolves to the boundary-nearest cell in x and y, i.e.
+a **line at the domain edge instead of the volume**, recorded without
+complaint.  Nothing about the spelling is wrong — the mistake is
+invisible because `(center, size)` and `(corner, corner)` are the same
+shape of input with different meanings.  Every practical selection
+(this box, this plane, this point) is naturally stated by its corners,
+and the geometry API already does exactly that
+(`Brick.from_corners`).
+
+*Schedule.*  `FieldTimeMonitor` took `times=`, a materialised array of
+instants.  A run whose length is set by a stop criterion has no known
+end time, so "record every 0.5 ns until the run ends" was
+inexpressible; the attempt, `np.arange(0.5e-9, 1e30, 0.5e-9)`, asks
+for 2·10^39 elements and dies in `np.arange` (which is eager) before
+allocating.
+
+**Decision.**
+
+1. **`corners=((x0, y0, z0), (x1, y1, z1))`** replaces `center`/`size`
+   on `FieldTimeMonitor`, `FieldFrequencyMonitor` and
+   `FluxTimeMonitor`.  Corner order is free (each axis is sorted).  A
+   component may be `None` — "unbounded on this side", read as `∓inf`
+   by position — or an explicit `±math.inf`.  Omitting `corners`
+   records the whole domain.  An axis whose two values coincide is
+   degenerate and selects one cell layer: that *is* the plane / line /
+   point case, so the former `size = 0` convention disappears.
+2. **`FluxTimeMonitor` reads its normal off the degenerate axis.**
+   Exactly one axis may be degenerate, and its coordinate is the plane
+   position — replacing "exactly one zero-extent dimension".  The
+   tangential bounds remain unused: this monitor always integrates the
+   full cross-section (unchanged behaviour, now stated in the
+   docstring rather than hidden behind an `inf` that looked load-bearing).
+3. **`FieldTimeMonitor(interval=, start=)`** records every *interval*
+   seconds from *start* until the run ends; `times=` stays the
+   explicit-instants form.  Exactly one of the two must be given.  The
+   k-th target is `start + k·interval` computed absolutely, so the
+   cadence cannot drift; the sample lands on the step nearest its
+   target (±dt/2).  Progress stays a single counter, which is what
+   `state_dict()` already persisted, so the resume path was unaffected.
+
+**API changes (hard).**  `center=` / `size=` removed from all three
+monitors; `resolve_region(center, size, grid)` →
+`resolve_region(corners, grid)`, joined by `normalize_corners`.  The
+store keeps a `(2, 3)` corner array instead of the `center`/`size`
+attribute pair, the resume recipe `[[x0,y0,z0],[x1,y1,z1]]` with the
+existing `±inf` string sentinels (a bare `Infinity` token is not
+standard JSON), plus `interval`/`start`; recipes predating the
+schedule carry `times` only and still load.
+
+**Verification.**  Full suite green (1347 unit + 262 integration, 27
+skipped), 13 new monitor tests: corner order, `None`/`inf`
+equivalence, half-open axes, degenerate-axis validation, the interval
+cadence over runs of different length, and the recipe round trip.
+
+**Limitations / follow-ups.**  An open-ended interval monitor on a
+long in-RAM run accumulates snapshots without bound — the streaming
+path (`project=`) is the answer, and the docstring says so.  A
+partial-aperture flux (integrating over a sub-rectangle rather than
+the full cross-section) is still not available; the corner form now
+makes it expressible, so implementing it is a contained follow-up.
+
+## DD-105 — Mesh warnings report what costs something
+
+**Status:** Decided 2026-07-30 (session 137).  Shipped; no API change.
+One warning removed, one added, and the cell-count rule that caused
+the reported loss given tolerance.
+
+**Problem.**  `check_quality` warned above a global cell-size ratio
+`max(dx ∪ dy ∪ dz) / min(dx ∪ dy ∪ dz) > 10`.  On the reported coupler
+that fired at 76.3, pairing a z cell of 14.99 mm with a y cell of
+0.197 mm — two cells 100 mm apart, on different axes, that never see
+each other.  It is not a cell aspect ratio, and not a mesh property at
+all: 14.99 mm *is* λ/10 at f_max (the wavelength criterion, met
+exactly) and 0.197 mm is the feature size, so their ratio only
+restates how far apart the problem's smallest geometry and its
+wavelength are.  A 1 mm wall at 150 mm wavelength *has* ratio 76.  The
+advice it gave ("adjust growth_factor or max_cell_size") points the
+wrong way: a smaller `max_cell_size` adds cells and leaves dt
+untouched, i.e. is strictly worse.
+
+Behind the false alarm sat a real loss, unreported.  Cell counts per
+interval are integers, and the cell-count rules took `h_fine` as a
+hard bound — `_grade_symmetric_to_uniform` scanning for the smallest
+count whose starting cell fits underneath it:
+
+```python
+if h0 <= h_fine * (1.0 + 1e-10):
+```
+
+On the coupler's 2 mm rail gap, `n = 6` yields `h0 = 0.2506 mm`, which
+exceeds `h_fine = 0.25 mm` by **0.24 %** and was rejected; `n = 7`
+then yielded 0.1965 mm.  Since the explicit time loop takes one global
+step bounded by the smallest cell anywhere, that 21 % undershoot cost
+steps across the whole model and bought resolution nowhere.  Not an
+exotic case: the same 8·h_fine constellation appears in two unrelated
+suite fixtures, because wall thicknesses and conductor thicknesses
+tend to sit in small integer ratios.
+
+**Decision.**
+
+1. **The global aspect-ratio warning is removed.**  A dimensionless
+   grid ratio with no reference to the wavelength cannot carry an
+   accuracy or stability statement.
+2. **Cell counts may overshoot `h_fine` by `_H_FINE_TOL` = 5 %.**
+   `h_fine` is a convention (`min_gap / min_cells_per_feature`), not a
+   physical constant, so a few percent above it is free — while
+   refusing costs a whole extra cell.  Applied in
+   `_grade_symmetric_to_uniform` and `_n_one_sided`, i.e. exactly
+   where `h_fine` bounds a count.  **Never applied to `h_max`**: that
+   is the user's wavelength criterion, set deliberately
+   (`min_nodes_per_wavelength`), and 5 % of it is theirs to give, not
+   the mesher's.
+3. **A grading-undershoot warning covers the remainder**
+   (`check_grading_undershoot`), reported only for the *globally*
+   smallest cell — cells elsewhere do not bound dt, so reporting them
+   gains nothing.  Silent on anchor pairs (forced planes, thin
+   sheets), on intervals shorter than `h_fine`, on a cell already
+   sitting on the user's `min_cell_size`, and on an axis whose fine
+   size is wavelength-driven (`h_fine >= h_max`) rather than
+   feature-driven.  Threshold 15 %: the gaps between consecutive cell
+   counts mean an undershoot of up to ~13 % can be unavoidable (for a
+   1 mm interval, `n = 3` overshoots by 21 % and `n = 4` undershoots
+   by 13 % — there is nothing in between), so a tighter threshold
+   would report what no setting can fix.  The message names
+   `min_cell_size` with the value that removes it; taking that offer
+   trades feature resolution for dt, which is the user's call.
+4. **The growth-factor threshold stays at 2.0**, now with a measured
+   basis rather than none — see below.
+
+**Measurement (grid transition reflection).**  1D leapfrog on a
+non-uniform grid — the same second-order scheme FIT uses per axis,
+isolated from ports and modes.  The reflected wave is obtained by
+differencing against a reference run whose grid stays fine everywhere,
+so the source, the left boundary and its residual reflection cancel
+exactly.  Calibration: a uniform grid (g = 1) returns −240 dB, i.e.
+round-off.  Courant number 0.5, so the dispersion term carries
+(1 − S²) = 0.75; for axis-parallel propagation in 3D the corresponding
+value is ≳ 2/3, so the figures are representative and not flattered by
+the 1D magic time step.
+
+Single step h → g·h, Γ in dB by cells per wavelength N in the *coarse*
+region:
+
+| g | N=30 | N=20 | N=15 | N=10 |
+|---|---|---|---|---|
+| 1.1 | −66.4 | −59.2 | — | — |
+| 1.3 | −59.0 | −51.8 | — | — |
+| 2.0 | −53.7 | −46.6 | −41.4 | −34.1 |
+| 4.0 | −51.7 | −44.6 | −39.6 | −32.2 |
+
+A full ramp 1 mm → 8 mm, same endpoints, only the steepness differing:
+
+| g | ramp cells | N=30 | N=20 | N=10 |
+|---|---|---|---|---|
+| 1.1 | 22 | −55.9 | −54.8 | −48.3 |
+| 1.3 | 8 | −51.9 | −45.5 | −37.0 |
+| 2.0 | 3 | −51.4 | −44.3 | −32.2 |
+| 4.0 | 2 | −51.3 | −44.3 | −32.1 |
+
+Both sets follow `Γ ≈ 2.5 · (h_coarse/λ)² · (1 − 1/g²)` to within
+0.5 dB over the whole range.  The consequences:
+
+- **Resolution dominates, the growth factor does not.**  Halving N
+  costs 12 dB; g = 1.3 → 4 costs 7 dB, and g = 2 → 4 only 2 dB — the
+  (1 − 1/g²) factor saturates.
+- At the default `min_nodes_per_wavelength = 20`, one transition sits
+  below −44 dB even at g = 4.  A threshold on g therefore separates
+  nothing the wavelength criterion has not already settled.
+- A gentle ramp is worth its cells only where the coarse region is
+  marginally resolved: at N = 30, g = 1.1 buys 4.6 dB over g = 4 for
+  22 cells instead of 2; at N = 10 the same trade buys 16 dB.
+
+The threshold is therefore kept at 2.0 not as an accuracy limit but as
+a **pathology gate**: above it a grading mesher has stopped grading,
+which points at the mesher, not at the physics.  The warning text says
+that instead of the former "may cause numerical dispersion", which the
+measurement does not support at any g the mesher can produce.
+
+**Verification.**  Full suite green (1624 passed, 27 skipped) with
+every mesh in the repository changed by the tolerance and no numerical
+reference moved — the 5 % are physically inert.  The six undershoot
+warnings the suite produced before the tolerance are all gone; the
+reported coupler is the one case where a remainder survives, which is
+what the warning is now for.  15 tests in
+`tests/unit/test_mesh_quality.py` cover the undershoot check
+(threshold, anchor pairs, short intervals, user floor, wavelength-
+driven axes, global-minimum selection, suggested value), pin that a
+wide cell-size spread at a smooth gradient is *not* a warning, and pin
+both sides of the tolerance — the six-cell result end to end, and the
+warning still reaching the production path with the slack patched to
+zero.  On the reported coupler the tolerance alone takes the mesh from
+569 400 to 525 600 cells with h_min 0.1965 → 0.2112 mm; the warning
+then offers `min_cell_size=0.00025`, worth 494 064 cells and h_min
+0.2506 mm — together −13 % cells and +28 % on the time step.
+
+**Limitations / follow-ups.**  The measurement covers reflection and
+dispersion at a transition; it says nothing about the stability margin
+of strongly non-uniform grids (magnelio derives dt from the actual
+grid, so this is bounded anyway) or about material discretisation on
+oblique interfaces in heavily graded regions.  `_H_FINE_TOL` is a
+single global constant; a per-interval rule (accept the count whose
+`h0` is *closest* to `h_fine` when the alternatives straddle it) would
+capture the remaining cases but changes more meshes for less gain.
+
+## DD-106 — Deterministic conventions on tangent section planes
+
+**Status:** Decided 2026-07-30 (session 138).  Shipped; no API change
+(one new optional `domain_bounds` parameter on
+`compute_face_material_areas`).  Supersedes the DD-087 decision to
+keep the matrix channel on raw exact-plane sections.
+
+**Problem.**  `BRepAlgoAPI_Section` with a plane that *contains* a
+flat face of the solid is ill-posed — the intersection is
+two-dimensional, not a curve — and OCC returns coincident-face
+boundary wires, tessellation fragments or nothing, depending on the
+solid's topology.  This is not an edge case but the constructed
+normal case: the mesher snaps grid lines onto exactly these planes
+(`extract_critical_planes`), so every axis-parallel material boundary
+sits on a section plane.  Two consequences, both measured on
+`userscripts/beamcoupler_slotline.py` (session 137):
+
+1. The M_μ matrix channel (`pec_frac` → `A_face_free`) took whatever
+   the exact-plane section returned — DD-087 had deliberately left it
+   raw for bit-identity.  On the coupler's chamber ceiling the PEC
+   fraction ran 13.5 → 40.6 → 67.7 → 94.7 → 100 % along a
+   translation-invariant wall (a tessellation-diagonal front), and
+   mid-wall H columns flipped between 0.0 and 1.0.  The DD-067
+   stage-2 port certificate correctly measured a feed-chain slab
+   defect of 4.55e-01 and withheld the exact DTBC from a geometry
+   that is perfectly invariant along the port normal.
+2. Degeneracy detection tested only shape *bounding-box* tangency.
+   The coupler ceiling lies in the interior of one
+   `Union(chamber, slots, rail_line)` solid, so no bbox witnessed it:
+   both channels took the garbage, and the flat-wall jump
+   (`A_face_pec_jump`) stayed zero — the wall was also missing from
+   the DD-099 wall-area bookkeeping on such geometries.
+
+Reproduced minimally: an air chamber with one slotted wall, built as
+a Union, returns a 0 → 0.5 → 1.0 `pec_frac` front stepping at a
+position where the geometry has no feature.  Built from separate
+bricks (bbox tangency fires), the same wall reads deterministically —
+the answer depended on how the solid was *composed*.
+
+**Decision.**
+
+1. **Detection is per face, not per bbox.**  A plane is degenerate
+   when it lies within `1e-12·(1+|p|)` of any axis-normal tangent
+   position of any face of any shape, computed by
+   `_face_critical_planes` — the same machinery whose output the
+   mesher snaps grid lines to, so precisely the constructed
+   coincidences are caught (planes exactly; cylinder/sphere mantle
+   tangents analytically; cones/tori/free-form conservatively via the
+   retained bbox extents).  Cached per shape in the shared section
+   cache (`("__tangent_planes__", si)`).
+2. **A degenerate plane is never sectioned exactly.**  Both shifted
+   positions `p ± deflection` are sectioned instead and feed *every*
+   channel.
+3. **Matrix channel: min-convention.**
+   `A_PEC := min(A_PEC(p+δ), A_PEC(p−δ))` — a face is blocked only
+   where it is *embedded* in PEC on both sides; a wall merely
+   tangential to the face leaves it free.  This is the staircase
+   limit (a perfectly gridded PEC wall face keeps its DOF; the flux
+   through it stays zero dynamically because its PEC edge circulation
+   vanishes), it keeps conformal resolution for in-plane structure
+   (a face partly wall, partly slot opening gets the transversal
+   fraction), and it is translation-invariant along extruded feeds.
+   Property averages (μ̄, σ*, DD-093 material fractions) take the
+   arithmetic mean of the two sides — the staircase cell-pair mean in
+   the gridded limit.
+4. **Geometric channel: max-convention, unchanged semantics**
+   (DD-087: wall area lands in the adjacent non-PEC cell, jump =
+   signed side difference) — but now firing on interior tangent
+   planes too, which closes the wall-bookkeeping gap on Union/
+   Difference geometries.
+5. **Domain-hull planes are one-sided for the matrix channel.**
+   `compute_conformal_mu` passes the grid extents as
+   `domain_bounds`; a degenerate plane on the hull uses the interior
+   side only — averaging with the fictitious outside would report
+   μ̄ = 1.5 for a μ_r = 2 feed at the port plane.  The geometric
+   channel keeps both sides (a registered domain-end plane must still
+   read as a shorting lid, DD-099).
+
+**Bit-identity is given up** where DD-087 had preserved it: every
+geometry with grid-snapped flat boundaries gets different (correct)
+M_μ entries on tangential faces.  Measured consequences: the full
+suite passes unchanged (1366 unit tests green, no numerical reference
+moved); coupler port certificate 4.55e-01 → 2.6e-13 / 1.6e-12
+(p1/p2), i.e. the invariant-feed class, exact DTBC restored on both
+ports; TEM at 117.65 Ω unchanged; mesh time unchanged (15.0 s).
+
+**Traps.**
+
+- The flipping mid-wall columns (session 137, y = 50.5 mm) were on a
+  plane the bbox test could never see; do not reintroduce bbox-only
+  reasoning anywhere in degeneracy handling.
+- The per-side property kernels write a value for every positive-area
+  face (background fill), so "NaN = staircase" continues to mean
+  *non-candidate* faces only; the min/mean combination must not
+  invent values where both sides are unprocessed.
+- `_face_critical_planes` filters tangent candidates against the
+  trimmed face bbox — Boolean trim edges do not become degenerate
+  planes.  Keep that filter; without it every Boolean seam would
+  force the slow two-sided path.
+- The DD-099 geom-only batch stays a separate classifier call; its
+  faces share the section cache but never the per-call plane
+  grouping.
+
+## DD-107 — Three equidistant cells at every domain face
+
+**Status:** Decided 2026-07-30 (session 138); shipped session 139
+(session 138 ended in a machine crash mid-edit — the flag gating and
+the `_absorb` helper were completed afterwards).  No API change.
+
+**Problem.**  The modal-port operator (DD-040) is a difference
+operator between the port plane and the next interior plane;
+reference_waveguide_ports.md §2.4 requires the three cells adjacent
+to the port plane to be equidistant, or the V/I projection silently
+scales by orders of magnitude (the port factory validates this hard).
+But ports are declared on the *analysis*, after meshing —
+`Mesh.from_geometry` cannot know which faces carry one.  Whether the
+boundary grading happened to satisfy §2.4 was decided by an accident
+of interval arithmetic: on `beamcoupler_slotline.py` the ramp from
+the slot region (h_fine 0.5 mm, g 1.3) saturated at `h_max` = 15 mm
+(2 GHz) about 38 mm before the domain wall — uniform tail, port
+valid.  At 1.4 GHz (`h_max` = 21.4 mm) saturation needs ~84 mm of the
+100 mm beampipe, the last three cells were still on the ramp
+(13.9/18.0/23.4 mm, ratio 1.69 = g²), and the port factory rejected a
+previously working model because the *frequency* changed.
+
+**Decision.**  The mesher guarantees a uniform tail of
+`_BOUNDARY_BUFFER_CELLS` = 3 cells adjacent to **every** domain face
+(commercial meshers do the equivalent with port-aware meshing; ports
+here are attachable to any bbox face after the fact, so all six get
+the buffer).  Two exceptions, both deliberate:
+
+- the **single-cell degenerate axis** stays single-cell (2.5D-style
+  thin domains, pinned by `TestDegenerateAxis`) — it can never host a
+  waveguide port anyway;
+- the hard **`min_cell_size` floor wins** (WP-M3): when three legal
+  cells cannot fit, the legacy profile stands and the port validator
+  reports the conflict if a port actually lands there.
+
+Implementation is two-stage, because the buffer is a property of the
+axis' outermost CELLS, not of its outermost interval — a
+forced-planes grid can satisfy §2.4 across interval boundaries
+(uniform raster), and rewriting its boundary interval would *destroy*
+the equidistance:
+
+1. The first pass generates every interval with the plain profiles
+   (`boundary_buffer=False`, bit-identical to the pre-DD-107 grid).
+2. The post-pass `_enforce_boundary_buffer` checks each assembled
+   axis end and only where the buffer is violated regenerates the
+   boundary interval with `boundary_buffer=True`.  Critical planes
+   never move; if the regenerated interval still cannot host the
+   buffer, the original grading is kept.
+
+Inside `_grade_then_uniform(boundary_buffer=True)` (interior
+intervals are untouched):
+
+1. **Saturated path** (uniform run ≥ 3 cells): unchanged — this was
+   the accidental-pass case.
+2. **Short uniform run / absorbed remainder** (n_uniform < 3, incl.
+   the old "absorb rest into the last ramp cell"): ramp cells donate
+   their length to a 3-cell uniform tail; the donor count is chosen
+   per case to minimise the seam ratio (a fixed count is g-class only
+   for the default growth factor).
+3. **Interval shorter than the ramp** (the legacy pure-geometric
+   fallback — the coupler case): new `_tailed_widths` refit with two
+   free parameters — fine-end size `h0` (held at the DD-105 `h_fine`
+   tolerance whenever possible) and tail size `h_u` — coupled by the
+   seam constraint ratio ≤ g.  Coupling the tail rigidly to the ramp
+   end would coarsen the count granularity by the buffer factor and
+   reintroduce the DD-105 fine-end undershoot (measured: −24 % on the
+   DD-105 end-to-end fixture, warning reactivated; with the two-
+   parameter refit: −11.7 %, same class as the legacy refit, silent).
+4. Whole-axis-uniform intervals bump 2 cells to 3; 1 stays 1 (see
+   above).
+
+**Measured.**  Property sweep (16 632 parameter combinations,
+h_fine/h_max/g/min_cell/L grid): buffer violations 5289 → 0, short
+intervals 48 → 0; worst neighbour ratio per g: 1.49·g → 1.49·g
+(g = 1.15, pre-existing saturated-path case), 1.48·g → **1.20·g** at
+the default g = 1.3, 1.38·g → 1.25·g at g = 2.  Beamcoupler at
+1.4 GHz: meshes and solves ports without workarounds (previously
+`ValueError` from the §2.4 validator; re-verified post-crash:
+557 175 cells, TEM 114.25 Ω both ports, chain-slab defect
+2.3e-13 / 5.4e-13); at 2 GHz the DD-106 certificate level is
+preserved.  Unit suite 1371 passed including the DD-105 undershoot
+pins and the ramp fix-point property pin (≤ 1.5·g); 5 new gates in
+`TestBoundaryBufferCells`.
+
+**Measured costs (session 139, found by the integration suite the
+crashed session never ran).**  Two fixture classes move:
+
+- *Pinched boundary intervals* (a feature tangent plane within
+  < 3 cells of the wall): the buffer re-splits the short interval
+  and the re-split cell becomes the new global minimum — the
+  conformal-dispersion fixture (forced 1 mm raster, cylinder tangent
+  0.7 mm from the wall) went 0.3 → 0.233 mm and its fixed
+  `DT = 1e-12` marched NaN.  The sanctioned remedy is the floor
+  exception: `min_cell_size = 3e-4` restores the legacy grid
+  bit-identically (fixture updated so).  **Warning gap (closed
+  2026-08-12):** `check_grading_undershoot` skips wavelength-driven
+  axes (`h_fine >= h_max`) because pre-DD-107 no undershoot could
+  arise there; a buffer re-split cell in such an axis used to set dt
+  silently.  Fixed as sketched: the mesher now hands the buffered
+  axis ends (and whether they come from declared ports or the
+  buffer-all-faces fallback) to the check, which exempts buffered
+  boundary intervals from the skip — but only when the buffer forced
+  more cells than a plain fill would have used (`n_plain <
+  _BOUNDARY_BUFFER_CELLS`); ordinary integer rounding stays skipped
+  as the user's accuracy choice.  The warning names the buffer and
+  the applicable remedy (declare ports on the model / widen the
+  interval).  Gates: `TestBufferUndershoot` (5 unit cases + one
+  production-path fixture).
+- *Bbox-tangent conductors*: the uniformised wall tail
+  (4.25/3.25/2.5 → 4 × 2.5 mm on the DM coax fixture) puts a
+  smaller cell in the tangent zone and cuts a thinner μ sliver —
+  `μ_eff_min` 0.131 → 0.030, DM CFL ratio 0.285 → 0.138.  Not an
+  ECT defect (the 1 % `A_face_free` floor bounds the ratio near
+  0.08); the fixture gate is recalibrated 0.25 → 0.10.  Production
+  meshes at 20/λ saturate their wall ramps and are untouched.
+
+**Traps.**
+
+- The 1.5·g fix-point pin is sensitive to every profile change at
+  g far from the default; the adaptive donor count plus the
+  refit-on-seam-violation fallback is what keeps large and small g
+  inside it — a fixed donor count is not enough (measured 1.58·g at
+  g = 2, 2.03·g at g = 1.09 with short ramps).
+- `_tailed_widths` must never run on intervals where the ramp
+  saturates (its geometric refit has no h_max cap); it is reachable
+  only from the short-interval and donor-fallback paths, where the
+  interval is bounded by ramp + 2·h_max.
+- `boundary_buffer=False` must reproduce the legacy profile exactly:
+  the post-pass compares the assembled axis against the buffer
+  property, and an always-buffered first pass would chop a uniform
+  forced-planes boundary interval (e.g. 1 mm raster) into three
+  sub-cells — seam ratio 3 against the neighbouring raster cell,
+  destroying the very equidistance the buffer exists for.
+- The buffer changes meshes only where the boundary grading had not
+  saturated — fixtures meshed at default `min_nodes_per_wavelength`
+  = 20 mostly saturate and stay bit-identical; low-resolution runs
+  (10/λ) are where cells move.
+
+
+## DD-108 — Two-tier public namespace: high-level API + components
+
+**Status:** Decided 2026-08-02 (session 143, pre-release API review
+with the developer); shipped same session.  Hard API break (permitted:
+MAJOR = 0, no external users yet).  Two-tier framing superseded by
+DD-117 (thin core + domain namespaces); the one-home rule, the
+underscore-internals marking and the audit tooling remain in force.
+
+**Problem.**  The top-level namespace had grown to 63 flat names plus
+two accidental leaks (`GridLines`, the deprecation-shim factory), 34
+of them *also* exported from a subpackage — two documented homes per
+name.  The "layer a/b/c" model (spec.md §8) never matched the code:
+it suggested a horizontal cut through the whole library, but geometry
+or materials have no a/b split — the distinction only ever applied to
+*solving*.  Meanwhile the single most-needed object, `GeometryModel`,
+was not importable from the top level at all.
+
+**Decision.**  Two tiers plus internals, enforced by tooling:
+
+- **High-level API** = the top-level `magnelio` namespace (30 names):
+  the model vocabulary + the problem classes.  Placement rule: *a name
+  a typical simulation script uses lives at the top level; a name only
+  needed when assembling custom simulations from parts lives in
+  exactly one component namespace; everything else is an underscore
+  module.*
+- **Components** = curated subpackage namespaces (`magnelio.ports`,
+  `magnelio.solver`, `magnelio.post` — renamed from `postprocessing` —
+  `magnelio.plot`, `magnelio.signals`, `magnelio.mesh`,
+  `magnelio.boundaries`, `magnelio.materials`, `magnelio.circuit`,
+  `magnelio.io`, `magnelio.sources`, `magnelio.constants`,
+  `magnelio.analysis`, `magnelio.geometry`), each with a curated
+  `__all__`; every public name has exactly one documented home.
+- **Internals** = underscore packages/modules (`_operators`,
+  `_fields`, `_backend`, `ports/_modal`, `ports/_lumped`, plus
+  module-level `_`-prefixes wherever no name reaches a public
+  `__all__`) — the former "layer c", made machine-readable.
+- The terms "layer a/b/c" / "Level A/B" are retired everywhere
+  (spec.md, STATUS.md, docstrings); the documentation vocabulary is
+  **high-level API** and **components**.
+- `validation/tools/check_api_surface.py` enforces the one-home rule
+  and the no-underscore-in-`__all__` rule;
+  `validation/tools/check_imports.py` AST-sweeps the script
+  directories (no test coverage there) after every rename.
+
+Physical constants moved to `magnelio.constants` (C0 exact, MU0 CODATA
+2018, EPS0/ETA0 derived so the free-space relations hold exactly in
+floating point) — previously 14 drifting definitions including a
+mode-solver C0 of 299792457.66 m/s.  `BoxFace` moved from
+`ports/modal/port_plane.py` to `mesh/faces.py`, removing the only
+upward `_operators` → `ports` edge.
+
+## DD-109 — Ports are declared on the model, before meshing
+
+**Status:** Decided 2026-08-02 (session 143); shipped same session.
+Refines DD-107 (whose all-face buffer remains as the fallback).
+
+**Problem.**  Ports were declared on the analysis, *after* meshing —
+the mesher could not know which faces carry one, so DD-107 buffered
+all six domain faces, and port-driven mesh refinement (cross-section
+resolution, adaptive meshing) had no hook at all.  The
+boundary-closure work (DD-103) had already shown the right pattern:
+declare a domain property once, early, and let the mesh carry it.
+
+**Decision.**  The declarative ports (`PortWaveguide`,
+`PortAnalytical`, `PortLumped`) are declared on the
+`GeometryModel` via `add_port()` (unique labels; spec-level ports
+rejected — the model must not depend on solver detail).
+`Mesh.from_geometry` copies the declarations onto the new
+`Mesh.ports` field and buffers exactly the declared faces
+(bit-identical there to the all-face result); `Mesh.with_ports()` is
+the late-attachment path for `from_grid` meshes.
+`AnalysisScatteringTD.ports` defaults to `None` = resolve the
+mesh-carried declarations; an explicit `ports=` overrides them
+completely.  Mode physics resolution is unchanged (analysis-time,
+against the finished mesh); `resume` recipes keep serialising
+resolved specs.  The declarations round-trip through `mesh.h5`.
+
+- A model with **no** declarations keeps the DD-107 all-face buffer,
+  so "mesh first, ports at analysis time" workflows stay valid; the
+  §2.4 port validator remains the backstop either way.
+- The mesher still imports nothing from `ports/` — it reads only the
+  declared plane (`BoxFace` lives in `mesh.faces`); interior ports
+  (lumped) request no face buffer.
+- `PortLumped` is new: the high-level spelling of the lumped Thévenin
+  port (endpoints, Z0, optional RLC element), resolved to
+  `PortSpecLumped`.
+
+## DD-110 — One port naming scheme; "Lumped" is canonical
+
+**Status:** Decided 2026-08-02 (session 143); shipped same session.
+
+**Problem.**  Three naming schemes coexisted (`PortSpecCoax`,
+`PortWaveguide`, `DiscretePortOperator` vs `ModalPortOperator`), four
+report classes followed three patterns, and "discrete" vs "lumped"
+named the same concept.
+
+**Decision.**  The qualifier always follows "Port": declarative
+`Port<X>` (`PortWaveguide`, `PortAnalytical`, `PortLumped`), specs
+`PortSpec<X>`, operators `PortOperator<X>` (`PortOperatorModal`,
+`PortOperatorLumped`, `PortOperatorBandDTBC`).  Canonical term is
+**Lumped** (`ports/discrete/` → `ports/_lumped/`,
+`PortSpecDiscrete` → `PortSpecLumped`, `build_discrete_port` →
+`build_lumped_port`).  Reports: `PortReport` (user-facing, from
+`solve_ports()`; formerly `PortModeReport`), `PortOperatorReport`
+(the DD-048 operator diagnostic; formerly `PortReport` — renamed
+first to vacate the name), `ModeReport` (one mode),
+`ModeRefinementReport` (formerly `RefinedModeReport`).  Problem
+classes share the `Analysis` prefix (`EigenAnalysis` →
+`AnalysisEigenmode`) so autocompletion enumerates them.
+
+## DD-111 — Store schema v1.0: one version, hard validation
+
+**Status:** Decided 2026-08-02 (session 143); shipped same session.
+
+**Problem.**  Four independent schema constants (project 2.0, results
+2.0, checkpoint 1.0, recipe 2.0) were written but never read back for
+branching; compatibility with older stores lived in silent
+`.get()`-with-default sites.  Publishing that state would have made
+the accumulated tolerances an invisible permanent contract.
+
+**Decision.**  `io/_schema.py` holds the ONE `SCHEMA_VERSION = "1.0"`;
+every artefact stamps it and every reader hard-validates it
+(`ProjectSchemaError` with a "re-run the simulation" hint).  The
+tolerance sites became required keys (recipe precision / monitors /
+wall\_\*, checkpoint `peak_signal`); `Material.is_lossy_metal` dropped
+the legacy `sigma = inf` special case.  Genuinely semantic absent-key
+encodings stay (absent `dispersion` = non-dispersive).  Additions:
+`Mesh.ports` round-trips through `mesh.h5` (DD-109); a free-form
+`params=` dict on the analysis is stored and read back as
+`Project.params` (the sweep/optimizer hook without a sweep
+framework); the run index records `port_signal_stop_db` alongside
+`energy_stop_db`.
+
+## DD-112 — One scattering-result contract; Touchstone/scikit-rf export
+
+**Status:** Decided 2026-08-02 (session 143); shipped same session.
+
+**Problem.**  `run()` returned an in-RAM `ScatteringTDResult` or a
+store-backed `Project` reader with similar-but-diverging surfaces
+(dB yes / phase no; run settings not readable back; custom `f_axis`
+recompute store-only), and there was no industry-format export at all.
+
+**Decision.**  `magnelio/analysis/result_interface.py` pins the
+contract: a `ScatteringResult` Protocol, a `RunSettings` dataclass
+(f_max/f_min/n_freq/dt/n_actual_steps/energy_stop_db/…), and
+`ScatteringResultMixin` providing `phase()`, `plot_s()` and the
+export delegates.  Both implementations satisfy it;
+`tests/integration/test_result_contract.py` runs identical assertions
+over both (measured note: the in-RAM and streamed execution paths are
+not bit-identical — max |dV| ≈ 7e-15 on the same setup — so
+cross-checks allow eps-level run divergence).  Interop:
+`SParameterResult.to_touchstone()` (.sNp; Touchstone ports =
+channels, mapping in the comment header; hard error when any channel
+was never excited — no silent padding) and `.to_skrf()`
+(`skrf.Network`, optional `magnelio[interop]` extra, lazy import).
+
+## DD-113 — Geometry verbs: CSG operators + chainable methods
+
+**Status:** Decided 2026-08-02 (session 143); shipped same session.
+
+**Problem.**  CSG verbs were CamelCase classes (`Difference(a, b)`)
+while transform/modifier verbs were snake_case free functions
+(`translate(shape, v)`) — two conventions for the same kind of
+operation, and the free functions forced extra imports in every
+script.
+
+**Decision.**  A `ShapeOps` mixin (geometry/_shape_ops.py), inherited
+by every shape *including the private transform/modification
+wrappers* (which is what makes chaining work): operators `a + b` /
+`a - b` / `a & b` build `Union`/`Difference`/`Intersection` (the
+classes remain as the explicit spelling and result types; Group
+operands keep their descriptive rejection), and chainable methods
+`.translated/.rotated/.scaled/.chamfered/.filleted/.extruded/
+.revolved/.swept/.lofted` delegate to the implementations, which left
+the public API.  Ergonomics decided alongside: every `axis=` accepts
+a letter or any 3-vector (`geometry/_axes.normalize_axis`); a
+negative primitive height extrudes along −axis; port bboxes are two
+opposite corner points in the face's tangential frame (aligned with
+the DD-104 monitor corner convention — beware: the old symmetric
+spelling `((-r, r), (-r, r))` reads as two identical corners and now
+raises "degenerate").
+
+## DD-114 — Port-signal stop criterion on by default ("auto")
+
+**Status:** Decided 2026-08-03 (session 144, developer sign-off);
+shipped same session.
+
+**Problem.**  The v0.1.0 example acceptance runs exposed a trap in
+the DD-096 termination design: `port_signal_stop_db` was opt-in, and
+`energy_stop_db` — the only default criterion — can *never* fire on a
+shielded lossless structure, because the complement absorber leaves
+the TM-cut-off cavity tower (zero tangential E, invisible from any
+port plane) exactly neutral and its stored energy plateaus.  Four of
+the five examples therefore ran unbounded (observed: 1.6 M steps and
+climbing, with the exact-DTBC history convolution adding O(n) work
+per step).  Any user modelling a closed lossless device with default
+settings would hit the same silent infinite run.
+
+**Decision.**  `AnalysisScatteringTD.run(port_signal_stop_db="auto")`
+is the new default: it resolves to 60 dB (the DD-096 verification
+value, also used by every example) when at least one modal port is
+present, and to disabled on lumped-only runs — the criterion watches
+the modal |V| envelope, and the solver rejects it without one.
+`None` still disables it explicitly; an explicit float is forwarded
+unchanged (including the lumped-only hard error, which now only an
+explicit value can reach).  The band pipeline ignores the criterion
+as before.
+
+**Arming guard (measured-mandatory).**  Defaulting the raw DD-096
+criterion broke 16 integration tests: the |V| envelope transiently
+sits far below the incident peak in the quiet gap between the
+excitation leaving the driven port and the (attenuated) response
+reaching the far ports, so the criterion fired mid-transit
+(`test_lossy_line_sigma_m_gamma`: α error 0.012 → 5.66).  The
+criterion therefore only *arms* at the auto-sized step estimate
+(``2·t0 + 25 diagonal transits``, the pre-DD-070 bounded-run size;
+solver field ``port_signal_min_steps``, set by the analyses on both
+the in-RAM and the streamed path).  Consequence: every run that
+previously terminated on the energy criterion before the estimate
+stops bit-identically — the signal criterion is a pure safety net
+for the plateau runs that formerly never ended (it also protects
+explicit `port_signal_stop_db` users from the same transit trap; the
+resume/run-longer path stays energy-only, DD-096 follow-up note).
+All 16 failures pass again with the guard; full suites green.
+
+**Consequences.**  The examples, README quickstart and notebooks are
+back to pure-default `run()` calls.  `RunSettings` and the project
+store record the *resolved* float (or None), never the "auto"
+string.  The resume/run-longer path keeps its explicit signature
+(the DD-096 follow-up note stands).
+
+## DD-115 — Ready-to-open ParaView sessions from the project store
+
+**Status:** Decided 2026-08-04 (session 150); shipped same session.
+
+**Problem.**  The store's ParaView surface was raw material, not a
+result: `geometry.stl` collapsed all solids into one unnamed,
+uncoloured triangle soup; `fields.xdmf` loaded but left the user to
+hand-build every pipeline (cell→point conversion, slices, glyphs);
+`FieldFrequencyMonitor` had *no* working ParaView path at all (the
+`write_xdmf_xml` frequency branch was dead code that never matched
+the actual `fields_freq.h5` layout — cell-centre axes, complex
+`(nf, nx, ny, nz)` bins); and naive glyph scaling is unusable on FIT
+results because edge singularities produce a few huge vectors that
+dictate the arrow scale and colour range.
+
+**Decision.**  A three-layer exporter in `io/paraview.py`, riding on
+the already-declared (previously unused) `vtk` dependency:
+
+1. **Geometry** — `export_vtm` tessellates each solid into its own
+   named block of a `geometry.vtm` multiblock (OCC per-face
+   triangulation, deflection 0.2 % of each solid's bbox diagonal),
+   with a `MaterialIndex` cell array into a deterministic material
+   table (colours from `post/_colors.material_color`, the 3D-viewer
+   palette).  Replaces `geometry.stl` in the store (`export_stl`
+   stays as API); `geometry.json` gains a schema-additive `names`
+   list and `_LoadedShape` a `name`, so loaded projects keep block
+   identity.
+2. **Monitors** — field-time monitors stay on XDMF over `results.h5`
+   (no data duplication; one descriptor per monitor under
+   `runs/<run>/paraview/` for clean per-monitor pipelines).
+   Frequency monitors become a `.vtr`-per-frequency series plus a
+   `.pvd` collection (frequency as the ParaView time axis), with
+   scalar `<comp>_re/_im`, vector `E_re/E_im` (glyphs at phase 0)
+   and complex-magnitude `|E|` cell arrays; node axes are recovered
+   exactly by re-resolving the stored corners against the stored
+   grid.  The dead `write_xdmf_xml` was deleted.
+3. **Session** — run close generates `paraview_open.py`
+   (`paraview.simple`; open via `paraview --script=…`) and, when
+   `pvpython` is on the PATH, bakes a double-clickable
+   `paraview.pvsm`.  The pre-built pipeline per monitor:
+   `CellDatatoPointData` → Calculator clipping the field vector to a
+   cap (98th percentile of |v|, estimated from sampled steps at
+   export time) → three slice planes through the monitor centre
+   (default visible: normal to the shortest extent; planar monitors
+   glyph directly) → arrow glyphs (uniform spatial distribution,
+   scaled so a cap-length vector spans 1/25 of the monitor
+   diagonal) → a geometry `Clip` whose plane is proxy-linked to the
+   slice plane, so dragging one drags the other.  Colour ranges are
+   pinned to `[0, cap]` — singularities can neither stretch arrows
+   nor wash out the colormap.  Only the first monitor's default
+   slice is shown; all other sources are created hidden and unread,
+   so many-monitor projects stay RAM-cheap until toggled visible.
+   `Project.export_paraview()` regenerates with different options;
+   `MAGNELIO_PVSM_BAKE=0` suppresses the bake (test-suite pin).
+   Everything is best-effort: a viz failure at run close warns,
+   never invalidates the run.
+
+**Found along the way (fixed).**  Since GPU became the production
+default (DD-090), *every* field/flux monitor crashed on the cupy
+backend: the DD-085 interpolation and the flux weights mixed NumPy
+operands into device arrays (`TypeError` at the first recorded
+step).  `_interp_to_cell_centres` now interpolates on the device and
+transfers only region-sized results; `FluxTimeMonitor` moves its
+weight planes to the device once.  `WallLossMonitor` has the same
+defect and remains open — see known-bugs.md (KB-006).
+
+**Glyph length law (measured correction, same session).**  The first
+implementation used the clip cap as *both* the saturation point and
+the length reference (`scale = l_ref / cap`), which made the glyphs
+unusable on the first real fixture — measured on a slotline beam
+coupler, whole-domain H monitor, 561 050 cells: 25 % of cells are
+exactly zero and 54 % sit below 5 % of the p98 (PEC interior and quiet
+volume), so the p98 lands next to the maximum and the *median* arrow
+came out 1.1 mm on a 200 mm structure — invisible, while the maximum
+ran to 82 mm.  The developer independently arrived at ~1e8 as a usable
+factor; the fitted reference gives 8.6e7, confirming the diagnosis.
+The two roles are now separate: the cap still saturates outliers, and
+a length **exponent** is fitted per monitor so that the typical
+field-carrying magnitude (p60 over cells above 1 % of the peak) is
+drawn at 45 % of the full length, while the cap maps to exactly 1.
+The Calculator emits a dimensionless 0…1 direction array, so the glyph
+`ScaleFactor` is the longest arrow in metres — interpretable, and
+inside the range ParaView's slider offers (the previous magnitude-
+derived factor of 2.6e7 sat far outside it).  Result on that fixture:
+median 1.1 → 4.4 mm, p75 7.6 → 13.8 mm, maximum 82 → 32 mm (bounded).
+A distribution needing no compression fits exponent 1 (pure linear),
+so the law degrades gracefully.  Verified in ParaView itself: both
+direction arrays evaluate to magnitude range exactly 0…1.
+
+**Every arrow sits on an even lattice; the computational grid is not
+used for placement.**  ParaView's spatial glyph seeding snaps each seed
+onto the nearest *mesh* point, so arrows expose the computational grid:
+on the beam coupler the z spacing runs from 0.44 mm in the
+geometry-refined slot region to 18.7 mm in the wavelength-sized
+waveguide (a factor 43; 30 coarse cells cover 65 % of the length),
+which reads as arrows crowding into isolated x-y planes with voids
+between them.  Developer's verdict after seeing it: numerically honest,
+practically unusable, and not what commercial tools show.  Every
+monitor is therefore resampled (`ResampleToImage`) onto a lattice with
+**one spacing for all axes** and glyphed with *All Points* — a fixed
+sample count per axis would make the spacing directional on an
+elongated region, reintroducing the very bias being removed.  A
+correctly set up simulation has a grid fine enough that interpolating
+is legitimate, and the user is after the field, not the discretisation
+that produced it.  No mesh-true branch is kept: it was offered and
+declined.
+Two lattices per 3D monitor, because the two views need different
+densities.  The **section** lattice is sized for arrows per unit area
+(~2000 in the largest section, the one the default cut shows) and feeds
+the three slice planes; the **volume** lattice is coarser (~8000 points
+over the region) because glyphing every point of the section lattice in
+3D would bury the field under its own arrows.  Planar monitors resample
+to a single layer — degeneracy is decided by cell count, not by
+thickness, so a one-cell-thick plane does not get several layers
+through a thickness carrying no second sample.  Measured on the beam
+coupler: section lattice 12x14x154 at 5.2-5.4 mm giving 2156 / 1848 /
+168 arrows on the three cuts, volume lattice 9x10x109 at 7.4-7.6 mm
+giving 1711 arrows after the threshold.
+Resampling happens on the **raw** field, ahead of the direction
+calculators, so the non-linear length map is applied to interpolated
+field values rather than the interpolation being applied to compressed
+ones.  Ahead of the volume glyphs sits a Threshold keeping only cells
+above 2 % of the cap — 297 k of 561 k cells on that fixture, i.e.
+exactly the PEC interior and quiet volume that would otherwise bury the
+field in short arrows.  Thresholding needs a scalar (ParaView's
+Threshold offers no vector-magnitude mode), hence a scalar
+``<arr>_mag`` Calculator per field array.  Slice glyphs keep every
+lattice point: on a single cut the empty regions read as information.
+Volume sets are created hidden — a slice stays the cheaper first look.
+**Frequency glyphs carry both phases.**  The first implementation
+offered only the real part; where the field is mostly imaginary that
+shows nearly nothing.  Real and imaginary part (phase 0 and −90°) each
+get their own Calculator + glyph set sharing the cap and exponent from
+the complex magnitude; the imaginary set is created hidden, one click
+from visible.  Phase animation is not available — the `.pvd` time axis
+is already spent on frequency.
+
+**Consequences.**  `geometry.stl` is no longer written (alpha break;
+store docs updated, round-trip test moved to `.vtm`).  `vtk` added
+to `environment.yml` (was already in pyproject/recipe).  Gates:
+`tests/unit/test_paraview_export.py` (material table, VTM blocks,
+slice specs, script config round-trip),
+`tests/integration/test_paraview_session.py` (artefacts on a real
+streamed run, `.vtr` ↔ `fields_freq.h5` value/ordering parity,
+regeneration, an actual `pvpython` state bake, and warn-not-raise on
+export failure).
+
+## DD-116 — Documentation portal: four pillars, tutorials from sphinx-gallery
+
+**Status:** Decided 2026-08-07; structure skeleton shipped same day.
+Tutorial content is deliberately deferred to its own work package.
+
+**Problem.**  The Sphinx site was framed as "Scientific
+Documentation" yet carried the API reference; the components
+reference was a single unnavigable automodule stream (15 namespaces
+on one page, no sidebar entries); and there was no user-facing
+tutorial tier at all.
+
+**Decision.**
+
+1. **One portal** ("Magnelio Documentation"), four pillars:
+   Tutorials / API reference / Numerical methods / Bibliography.
+   The former scientific documentation lives on unchanged as the
+   Numerical-methods pillar.  Separate user/scientific sites were
+   rejected: duplicate infrastructure, shared bibliography, brittle
+   cross-references.
+2. **API reference: one page per component namespace**
+   (`docs/api/<ns>.md`, 15 pages, workflow order geometry → … →
+   constants).  Each namespace gets its own sidebar entry and the
+   pydata theme's per-page member list — the one-page automodule
+   stream is gone.
+3. **Tutorials are generated from runnable scripts** by
+   sphinx-gallery (the Scientific-Python standard:
+   scipy/scikit-learn/matplotlib).  Source of truth =
+   `examples/tutorials/*.py` (public API only, per the `examples/`
+   policy); build products = HTML pages plus `.ipynb` downloads
+   under `docs/tutorials/` (gitignored).  Scripts named `plot_*`
+   execute at build time (gallery-cached; tutorials must be
+   budgeted to run fast — coarse meshes are a feature, users copy
+   fast examples), other names render without execution.
+   `sphinx-gallery` added to the pyproject `[docs]` extra and to
+   `environment.yml`.  The placeholder
+   `examples/tutorials/plot_01_first_simulation.py` validates the
+   pipeline end to end.
+
+**Found along the way (open).**  The per-page autodoc sweep
+surfaces ~11 pre-existing rST defects in public docstrings
+(undefined `|V|`/`|S11|` substitution references, indentation
+slips, ambiguous cross-references on the `io`/`plot` pages) —
+tracked in STATUS.md, to be cleaned when those docstrings are next
+touched.
+
+## DD-117 — Thin core + domain namespaces (supersedes the DD-108 two-tier framing)
+
+**Status:** Decided 2026-08-07 (API review session with the
+developer); shipped same session.  Hard API break (permitted:
+MAJOR = 0, no external users).
+
+**Problem.**  Three developer-reported defects of the DD-108 surface:
+(a) 30 flat top-level names scatter prefix-free across the alphabet —
+geometry primitives and monitors do not cluster in autocompletion or
+in the rendered API page; (b) the one-home rule emptied the domain
+doc pages (`magnelio.geometry` documented only `ThinWire` +
+`GeometryOverlapError`); (c) context-free top-level names are
+unintelligible — `SeriesRLC`/`ParallelRLC` read as standalone
+geometry-carrying components when they are port-attached companion
+models (`PortLumped(..., element=...)`).  The "high-level vs
+component" axis itself forced every placement to be re-litigated.
+
+**Decision.**  One axis — the domain (SciPy-style):
+
+1. **Core** (`magnelio`, 10 names, pinned as `EXPECTED_CORE` in
+   `check_api_surface.py`): `GeometryModel`, `Material`,
+   `Mesh`/`MeshControl`, `BoundaryConditions`,
+   `AnalysisScatteringTD`/`AnalysisEigenmode`,
+   `open_project`/`resume`, `__version__`.  No re-import shims for
+   demoted names — a clean break.
+2. **Domain namespaces** carry everything else, one documented home
+   per name (rule and tooling from DD-108 unchanged): primitives/
+   CSG/`Curve` → `magnelio.geometry`; declarative ports →
+   `magnelio.ports`; `SeriesRLC`/`ParallelRLC` → `magnelio.circuit`;
+   monitors → `magnelio.monitors`.  Class names are NOT shortened to
+   their module (`ports.PortWaveguide`, not `ports.Waveguide`):
+   self-describing on direct import, and the module split already
+   provides the clustering.
+3. **Monitors renamed to the DD-110 noun-first pattern** — the last
+   naming exception falls: `MonitorFieldTime`,
+   `MonitorFieldFrequency`, `MonitorFluxTime`, `MonitorWallLoss`.
+   The store type tags and resume-recipe type strings follow the new
+   names (schema vocabulary = class names; pre-release stores with
+   monitors do not rehydrate — regenerate by re-running).
+4. **Plumbing hidden generously** (dropped from curated `__all__`,
+   imports kept — soft-private, checker-clean): port builders,
+   `PortOperator*`, `Port` base, `PortPlane`, `PortSignalRecorder`,
+   `LevelResult`, `solve_modes_refined`, `MonitorRegion`,
+   `destaggered_power_waves`, `ScatteringResultMixin`.  Kept public
+   (usage-verified): `PortSpec*` + conductor specs + `Mode`/
+   `ModeType` + reports (the custom-setup tier), `GridLines`
+   (parameter type of `Mesh.from_grid`), `BoxFace` (notebook API).
+   No module underscore-renames — revisit only if soft-privacy is
+   abused.
+
+Blast radius (measured): 59 in-repo files + 26 private-workspace
+scripts rewritten; migration was mechanical import-splitting.
+Docs: `docs/api/highlevel.md` → `core.md`; domain pages fill
+automatically from the curated `__all__`.  Gates:
+`check_api_surface.py` (incl. the new core pin), full suite, ruff,
+sphinx build, `check_imports.py` over the private script dirs.
+
+## DD-118 — Magnetic-wall dual booking: PMC window edges own the full boundary cell
+
+**Status:** Decided + shipped 2026-08-07 (found while grounding the
+first tutorial: the parallel-plate `z_line` refused to be exact).
+
+**Problem.**  The natural magnetic wall of the staggered grid lies
+half the outer dual cell BEYOND the outermost grid line — DD-103
+places it on the requested bbox face by pulling that line in by d/3;
+a post-meshing declaration (or `from_grid`) leaves it half a cell
+outside.  Three physical-bookkeeping quadratures still assumed
+"wall ON the outermost line" at tangential PMC window edges:
+
+1. the TEM/QTEM capacitance integrals
+   (`tem_laplace._tangential_boundary_factor`, ×½ at bbox edges) —
+   on the parallel plate the reported `z_line` was exactly
+   `η0·b/(a − 2d/3)` instead of `η0·b/a`: an O(h) bias of `2/(3·Nx)`
+   (+2.1 % at Nx = 32) although the discrete TEM mode itself is exact;
+2. the DD-078 physical-power Poynting patches
+   (`operator._patch_duals`, half-cell end duals) — a "1 W" injection
+   physically carried `w_eff/w` watts;
+3. `MonitorFluxTime`'s boundary-h ×½ weights — the flux through the
+   two outer half-cell strips was dropped (energy ratio 0.909 on the
+   Nx = 10 gate fixture).
+
+(1) and (2) cancelled in the per-1W gates — both booked the same
+fictional width — so the bias was invisible until `z_line` was held
+against the analytic value.  The numerical TE/TM eigensolver needs no
+change: its Neumann closure extends the half cell implicitly (TE10
+cut-offs were already second-order correct on both declaration paths).
+
+**Decision.**  One wall-position convention for every physical
+quadrature: at a window end that coincides with a declared PMC bbox
+face, the end dual extends to the wall — the FULL boundary cell
+(factor/weight 1.0 instead of 0.5).  Shared predicate
+`port_plane.magnetic_window_ends(plane, grid, boundary_conditions)`;
+threaded as `boundary_conditions=` into `solve_tem_laplace` /
+`solve_qtem_laplace` (all factory call sites pass
+`mesh.boundary_conditions`), as `magnetic_patch_ends=` into
+`PortOperatorModal` (factory-computed), and BC-aware weights in
+`MonitorFluxTime.attach`.  The mode-normalisation metric (raw 3D
+`M_ε`) is deliberately untouched: injected profiles, DTBC chains and
+the certified port floors are bit-unchanged; only the physical
+bookkeeping (`z_line`/`ε_eff`, the √W amplitude scales, flux watts)
+moved.
+
+**Measured.**  Parallel plate a×b, PMC sides, on-model declaration:
+`z_line = η0·b/a` to 3e-12 relative on EVERY resolution incl. the
+7×4×14 default mesh (was O(h)); post-meshing/`from_grid` path reports
+`η0·b/(a + d)` — the impedance of the structure actually simulated
+(wall half a cell outside; confirmed independently by the TE10
+cut-off sitting at `c/2(a+d)`); flux-monitor energy ratio
+0.909 → 1.000; |Ey|,|Hx| per 1 W match the analytic line values with
+the effective width.  Regression:
+`tests/unit/test_boundary_closure.py::TestMagneticWallCapacitance`
+(both declaration paths, machine-precision gates); the three
+integration gates that had encoded the requested-width fiction now
+assert `w_eff = w + dx` (`test_solve_ports.py`,
+`test_declarative_ports.py`, `test_physical_states.py`).
+
+**Consequence for users.**  On lines-kept meshes the simulated line
+is one outer cell wider than the requested geometry; `z_line` now
+says so truthfully instead of echoing the request.  The mesher's
+on-model path (the production default) simulates exactly the
+requested faces and now reports exact TEM impedances on uniform
+cross-sections.
+
+## DD-119 — Namespace renames `geo`/`plots` + the standard example style
+
+**Status:** Decided + shipped 2026-08-08 (developer style review of
+the first two tutorials).
+
+**Decision 1 — renames.**  `magnelio.geometry` → **`magnelio.geo`**
+(used constantly when building models; the short name is the point,
+following the scipy-style precedent of heavily-used namespaces) and
+`magnelio.plot` → **`magnelio.plots`** (noun form, reads better in
+the namespace roster next to `ports`/`constants`).  Clean break as in
+DD-117: package directories renamed, no aliases, every dotted
+reference migrated (src, tests, validation, benchmarks, examples,
+docs pages, spec/STATUS, private workspace dirs — historical DD
+entries untouched).
+
+**Decision 2 — standard example style** (developer-authored in
+`userscripts/plot_02_coax_line.ipynb`, adopted for `examples/`
+including tutorials).  Rationale: the flat-import style forced the
+reader to enumerate every primitive at the top of the script; the
+namespace style defers that choice to the call site and gives a
+constant three-line header:
+
+```python
+import magnelio as mio
+from magnelio import geo, plots, ports   # domains as needed
+from magnelio.constants import *         # curated 4-name __all__
+```
+
+Core names are used as ``mio.GeometryModel``, ``mio.Mesh`` …; domain
+classes as ``geo.Cylinder``, ``ports.PortWaveguide``,
+``plots.plot_cross_section``.  The constants star import is
+well-defined (curated ``__all__``: C0/EPS0/MU0/ETA0) and covered by a
+ruff per-file ignore (`examples/**`: F403/F405) — it is example
+style, not library style; library code keeps explicit imports.
+
+Gates: full suite (1410 + 315), `check_api_surface.py`,
+`check_imports.py` over the private dirs (936 imports resolve),
+notebook AST scan, ruff, sphinx build with regenerated `api/geo` and
+`api/plots` pages.
+
+## DD-120 — Scale-robust geometry pipeline: automatic OCC unit scaling + relative tolerances
+
+**Status:** Decided + shipped 2026-08-08 (meter → optics scale
+initiative; developer decisions: target = optics incl. sub-µm,
+mechanism = automatic bbox-derived scaling, scope = full remediation).
+
+**Problem.**  The public unit contract is SI meters, but the geometry
+and mesh layers carried absolute meter-valued constants that only make
+sense in the mm regime.  Fatal at optics scale (~µm coordinates):
+`min_feature_gap = 1e-6` clustered every transverse critical plane of
+a micron structure into one position (silent geometry annihilation),
+and the OCC kernel's fixed `Precision::Confusion()` = 1e-7 model units
+rejected sub-100-nm features outright (DD-062) while giving µm-scale
+Booleans a ~10 % relative tolerance.  Silently degrading: the
+tessellation deflection floor `1e-7` made the chordal error 10× the
+cell below ~10 µm cells (conformal material matrices corrupted without
+warning); `point_in_shape` (1e-7 m), `compute_edge_pec_fractions`
+(1e-8 m) and the overlap tolerance (1e-18 **m³**, scaling as L³)
+followed the same pattern.  OCC itself is unit-agnostic and its
+Confusion constant is not configurable — the industry-standard fix is
+coordinate scaling, exactly what commercial suites' "model unit"
+provides for their CAD kernels (their field solvers are scale-free,
+as is ours).
+
+**Decision — WP-A: automatic internal unit scaling at the OCC
+boundary.**  One **power-of-two** scale factor `s` per model, a pure
+function of the shape set: `geo/_scaling.py::model_scale` computes it
+OCC-free from conservative *analytic* bounding boxes (`_analytic_bbox()`
+on every shape class; transform algebra for rotations, generous pads
+for lofts/sweeps/splines — only the order of magnitude matters, and
+the OCC-free computation breaks the bbox↔OCC circularity).  `s` is
+threaded explicitly as a `scale=` keyword through `_occ_shape(scale)`
+(per-instance cache now keyed by scale — no invalidation logic, a
+changed scale is a different key) and every backend entry point.
+Contract: **meters at every function boundary**, scaled units strictly
+inside the backend; inputs ×s in bulk numpy, outputs ÷s / ÷s² / ÷s³;
+dimensionless outputs pass through.  `compute_face_material_areas` /
+`batch_cross_sections` convert at the *leaf* (`_PlanarSectionEngine` /
+`cross_section_polygons` return meters), so the DD-101/102 accounting
+machinery, its cache keys and the DD-106 degenerate handling are
+structurally untouched; the spawn-pool workers receive blobs
+serialised at `s` and tasks carrying `s`, keeping the meter-in/
+meter-out contract identical to the sequential path.  Identity band:
+`s = 1` for model diagonals within [1e-3, 1e4] m — every existing
+meter/mm model runs the bit-identical legacy path; outside, `s`
+brings the diagonal to O(128) scaled units (target 2^7), lifting the
+100-nm wall (effective feature limit `1e-7 / s` m; DD-062 finding 2
+superseded for auto-scaled models — `_check_dimensions` now checks in
+scaled units and reports the effective meter limit).  Power-of-two
+scaling is IEEE-754-lossless, so coordinates round-trip bit-exactly.
+Rejected alternatives: a user-facing `unit=` parameter (API addition
+the solver does not need); `s` owned by `GeometryModel` (bare-shape
+calls and plain shape lists exist before any model); module-global
+state (hidden coupling).  Known limitation (documented, accepted): a
+model with diagonal ≥ 1 mm keeps `s = 1`, so sub-100-nm features
+inside such a model remain rejected — resolving nm features across a
+mm domain is computationally absurd anyway.
+
+**Decision — WP-B: the library's own absolute tolerances became
+relative.**  `MeshControl.min_feature_gap` default `None` →
+`1e-5 ×` bbox diagonal (`mesher.resolve_feature_gap`; the DD-058 CSG
+float wiggle is *relative*, so the tolerance must be; resolved value
+exposed as `mesh._resolved_feature_gap` for the sentinel I3).
+Tessellation deflection: pure `h_min · 1e-2` (conformal areas) and
+`h_min · 0.1` (cell-centre classification) — the absolute 1e-4 cap
+and 1e-7 floor are gone from the callers; the OCC robustness floor
+(`Standard_ConstructionError` below 1e-7) now lives in *scaled units*
+inside `cross_section_polygons`, unreachable for auto-scaled models.
+`compute_edge_pec_fractions` tolerance `1e-4 · h_min` (from
+`compute_subcell_data`), thin-sheet probe `point_in_shape` tolerance
+`1e-3 · min_cell_size`, port-factory RegionConductor `eps_tol`
+`1e-9 · extent` (the relative form the lateral-wall matching already
+used), overlap tolerance `None` → per-pair `1e-12 · min(AABB volume)`,
+STL deflection default `1e-3 ×` bbox diagonal, meter-domain bbox
+slacks `1e-12 · (1+|pos|)`.  Backend-internal absolute epsilons
+(polygon dedup 1e-12/1e-10, section-engine seeds) deliberately stay
+numeric: they act in scaled units, the O(100) regime they were tuned
+for.  Audited safe (no change): the 1e-30 exact-zero guards in
+`_polygon_clip`/area budgets and `stability.py` sit 12+ decades below
+worst-case nm-scale face areas (~1e-16 m²) — pinned by
+`tests/unit/test_scaling.py::TestNanoscaleGuards`.
+
+**Measured.**  mm-identity gate (WG90 + RG-58 coax, full mesh arrays
+incl. edge/face material, NaN-aware): **bit-identical** after every
+work package (internal record
+`investigations/dd120_scale_robustness/`).
+`validation/scale_invariance_certificate.py`: |S| over the normalized
+frequency axis at geometric scales 1×/1e-3×/1e-6× (frequencies
+inverse) — parallel plate TEM ≤ 5.8e-11, TE10 ≤ 1.9e-7, coax TEM ≤
+1.7e-7; worst 1.9e-7, pinned bound 1e-6 (the 1e-7 level is the
+float32 solver default of DD-094, not a geometry artefact; micron
+coax runs at s = 2^23, nano coax at s = 2^33).
+`validation/fiber_micron_regression.py`: step-index fiber (core
+4.5 µm / cladding 62.5 µm / coating 125 µm) meshes at s = 2^18 with
+every ±r feature plane intact on both transverse axes, resolved
+feature gap 4.4 nm, all four materials present — pre-DD-120 this
+geometry was silently annihilated.  A 20-nm brick builds through the
+scaled path (unit-gated); `mesher_stress_sentinel.py --fast` 11/11;
+pool-vs-sequential at s = 2^19 bit-equal
+(`TestSectionPoolAtScale`); full suite 1763 passed.  CSG stress
+benchmark (1002 primitives, `benchmarks/profile_csg_scaling.py`):
+73.1 s vs. 73.9 s pre-change — the bulk-numpy scaling costs nothing
+measurable.
+
+**Consequence for users.**  Nothing at the API: everything stays SI
+meters (now stated as a "Units" section in the user docs).  Micron-
+and sub-micron-scale models (THz, integrated optics, fiber
+cross-sections) mesh and solve without workarounds; `min_feature_gap`
+only needs touching to *opt out* of the relative default.  Solver-side
+follow-up (out of scope here): at optical frequencies the float32
+default of DD-094 bounds |S| reproducibility near 1e-7 — consider
+`precision="double"` for tighter needs.
+
+## DD-121 — Slice plots for 3D field data + normal-component encoding in vector plots
+
+**Status:** Decided + shipped 2026-08-09 (gap surfaced by tutorial 05,
+which had to hand-roll Yee interpolation with internals; developer
+decisions: ⊙/⊗ markers instead of a background colour layer, single
+magnitude colour scale with sign in the marker shape, existing 2D
+plots included in the fix, `interact()` in scope).
+
+**Problem.**  Three related holes in field plotting.  (1) Both field
+monitors record 3D volumes but `plot()` raised `NotImplementedError`
+for `ndim == 3` — no way to look at a volume recording.  (2)
+`EigenmodeResult` had no plot API at all; tutorial 05 accessed
+`mode.Ex` / `mesh.grid` and re-derived the staggered-edge averaging
+inline, violating the examples policy.  (3) `plot_field_vector`
+silently dropped the out-of-plane component everywhere it is used: a
+field crossing the plotted plane at right angles rendered as an
+*empty* plot, and the colour bar claimed "Field magnitude" while
+showing the in-plane projection only.  TEM-dominated test cases had
+masked this; hybrid port modes and eigenmode slices expose it.
+
+**Decision 1 — plane-view resolver.**  `monitors/base.py` gains
+`PlaneView` + `resolve_plane_view(region, normal, position)`: for a 2D
+region the plane is the region itself (a given `normal` is validated),
+for a 3D region `normal=`/`position=` select the slice, snapped to the
+nearest cell-centre plane — the same normal-plus-offset convention as
+`plot_cross_section` and the geometry overlay.  Both monitors'
+`plot()` **and** `interact()` route through it (slider = time/
+frequency at a fixed plane); titles carry the plane (e.g. `y=0.667
+mm`).  The duplicated `_free_axes`/`_make_overlay` pair collapsed into
+it.
+
+**Decision 2 — normal component in the shared vector renderer.**
+`plot_field_vector` accepts an optional `w`.  Arrow direction and
+relative length stay in-plane, arrow *colour* becomes the full 3D
+magnitude on an explicit 0-anchored norm, and with `w` the
+auto-scale also references the full-magnitude peak (in-plane peak
+without `w`), so arrow length over colour reads as the out-of-plane
+tilt everywhere.  The in-plane reference would amplify honest small
+residues to full-length arrows — measured on the sphere quintet's
+H slice, where the half-cell offset of the cell-centre slice plane
+from the symmetry plane leaves a genuine ~0.5 %-energy in-plane
+residue (checked against the raw staggered DOFs; it grows ∝ x² off
+the plane, so it is physics, not interpolation) that used to bury
+the pattern's node lines under visible arrows.  The monitors'
+`interact()` fixed-scale precompute follows the same reference.  Grid points whose
+vector tilts out of the plane by more than ~72° (`|w| >= 3x` the
+in-plane part, at magnitude above `max(threshold, 0.02)` of the
+peak) are drawn as filled circles on the same colour scale with a ⊙
+(towards `+axis`) or ⊗ (towards `-axis`) glyph and a small legend —
+deliberately axis-referenced, not "towards the viewer", which would
+depend on axis handedness and `flip`.  The criterion is *local*
+tilt, not a comparison against the global in-plane peak: quiver
+auto-scales arrows to the in-plane maximum, so a slice pierced
+almost at right angles everywhere (e.g. the H field of a TM
+eigenmode on a meridional slice, in-plane residue ~6 %) would
+otherwise still render as a full-length arrow picture — measured on
+the sphere quintet before the criterion was fixed.  Rationale vs.
+the background-colour alternative: markers keep geometry overlays
+visible and keep one colour scale; the sign lives in the marker
+shape (a 2D glyph has two visual channels for three vector
+components plus sign — one channel must be the shape).  Without `w`
+the behaviour is unchanged except the honest colour-bar label
+"In-plane field magnitude".  Monitors pass `w` whenever the normal
+component was recorded; port `ModeReport.plot()` passes no `w`
+(`DiscreteMode` stores transverse profiles only — there is no
+longitudinal profile to pass).
+
+**Decision 3 — `EigenmodeResult.plot()`.**  Same signature family
+(`mode=`, `component=`, `normal=`, `position=`, `plot_type=`,
+`geometry=` overlay): interpolates only the requested slab via
+`_interp_to_cell_centres` (the eigenmode `FieldState` holds FIT grid
+quantities, `h = (1/ω)·M_μ⁻¹·C·e`, so the monitor converter applies
+verbatim), labels amplitudes "arb. units" (normalisation
+`eᵀ M_ε e = 1`).  Tutorial 05 now plots modes through this API; the
+canonical ⊙/⊗ demonstration (developer-suggested) is quintet mode 3
+on the slice where its E field lies fully in-plane: the E panel is
+all arrows, the H panel — everywhere perpendicular to E — is all
+markers with alternating ⊙/⊗ sectors.  Verified by an
+energy-weighted normal-fraction scan over all modes and slice
+normals (E/H normal fractions 0.00/0.99-style splits).  Tutorial
+prose must stay sign-agnostic about which region is ⊙ vs. ⊗
+(eigenvector sign is a gauge; it flipped between otherwise identical
+runs), and every figure must be generated with the tutorial's exact
+`n_modes` — the degenerate-cluster basis (orientation *and* mixing)
+changes with `n_modes` (1 vs. 4 vs. 8 gave three different mode-0/3
+orientations).
+
+**Decision 6 — conductor-aware destaggering in port mode plots.**
+Mode profiles carry exact `0.0` on every non-DOF edge; the plain
+two-point average onto cell centres therefore halved the magnitude
+and rotated the direction of every vector whose stencil touches a
+conductor — measured on the tutorial coax (78 of 460 cells: median
+angle error 10.3°, magnitude down to 0.39x of the 1/r value; the
+"colour speckle at the inner conductor" the developer spotted
+visually).  `_avg_nonzero` in `mode_report.py` now averages only the
+live contributors: touched cells improve to median 5.4° / magnitude
+>= 0.78x (the remainder is genuine conformal/staircase
+discreteness); interior cells (median 0.24°, |E|·r flat to ±6 %) are
+bit-unchanged.  Plot-side only — `_interp_to_cell_centres` (DD-085)
+defines recorded *monitor data* and stays strictly two-point.
+
+**Decision 4 — transparent materials as outlines in cross-sections.**
+`plot_cross_section` used to *skip* fully transparent (air/vacuum)
+shapes — correct for filled inspection plots of visible parts, but it
+made the geometry overlay useless for the most common eigenmode
+geometry, a cavity carved into a conducting background (the air
+shape's boundary *is* the wall; tutorial 05 had to hand-draw the
+circle).  Transparent shapes now render as a dashed black outline
+with a white under-stroke (`patheffects`), readable on any field
+colour map; `outline_transparent=False` restores the skip, and
+`visible=False` still hides a shape unconditionally.  Tutorial 05
+passes `geometry=model` instead of drawing the wall by hand.
+Related trap recorded there: the overall sign of an eigenvector is
+arbitrary, so tutorial prose must not pin which region carries ⊙
+vs. ⊗ (it flipped between two otherwise identical runs).
+
+**Decision 5 — geometry overlay on port mode plots.**
+`ModeReport.plot()` accepts `geometry=` like the monitor and
+eigenmode plots (tutorials 02/04 pass their model).  Two port-plane
+subtleties, both pinned by
+`test_solve_ports.py::test_geometry_overlay_wiring`: (1) the
+cross-section is sliced **half a boundary cell inward**
+(`coordinate + inward_sign · normal_dx/2`) — exactly on the bbox
+face the OCC section is tangent to the solids' end faces
+(ill-defined), and a port requires an extruded cross-section there
+anyway; (2) three of the six faces order their local `(u, v)` axes
+*descending* (`u x v` points inward: X_MAX, Y_MIN, Z_MAX), while the
+cross-section renderer slices in ascending order —
+`CrossSectionOverlay` gained a `swap_axes` flag that XORs with the
+plot's `flip`.
+
+**Gates.**  Unit suite 1471 passed (new: `test_eigenmode_plot.py`
+with an exact uniform-field recovery check, plane-view resolution and
+3D-slice-vs-data tests, marker/colour-norm tests, air-outline
+cross-section tests); integration 317 passed incl. the port-overlay
+wiring and `_avg_nonzero` tests (the 4 `test_tile_skip_solver`
+bit-identity tests need the documented `CUPY_ACCELERATORS=""` when
+the env binary is called directly); `check_imports.py` over the
+private dirs (947 imports resolve); tutorials 02, 04 and 05 executed
+end-to-end on the public API; ruff clean (plus `extend-exclude` for
+the generated `docs/tutorials/` gallery output, which had drifted
+into the lint scope).
+
+## DD-122 — Port-signal stall watchdog + runtime cap for unbounded runs
+
+**Status:** Decided + shipped 2026-08-10 (design round with the
+developer: watchdog *and* cap, arming floor −40 dB, full stop-reason
+bookkeeping; cap factor raised 10×→40× after quantifying the implied
+Q-ceiling for resonant structures).  Closes KB-008.
+
+**Problem.**  `port_signal_stop_db="auto"` (−60 dB) presumes the port
+|V| envelope decays exponentially — then any threshold is reached in
+finite time.  Band-edge (cut-off) ring-down decays *algebraically*
+(Bessel-tail, vanishing group velocity), so its envelope plateaus; on
+the WR-90 magic tee the E-arm drive plateaus near −56 dB and the
+default unbounded run marched indefinitely (>40 000 extra steps, no
+envelope movement — KB-008).  `energy_stop_db` is defeated by the same
+content (the DD-096 motivation).  Truncating *at* the plateau is
+harmless for S-parameters: the residual is at the plateau level and
+`taper_signals` bounds its spectral leakage.
+
+**Decision 1 — runtime cap `max_time_steps`.**  New knob on
+`run()`/`resume()` (and the solver): unbounded runs get an absolute
+step bound; hitting it stops with a `RuntimeWarning` and
+`stop_reason="runtime_cap"` — the industry-standard backstop.
+`"auto"` (default) = 40× the auto step estimate (≈10³ diagonal
+transits).  A transit-based cap is implicitly a Q-ceiling,
+Q ≲ 23·C·L_diag/λ: C = 40 accommodates loaded Q up to ~900·(size/λ)
+before a 60-dB ring-down is cut short — covering realistic
+narrow-band filters (C = 10 would already truncate compact Q_L ≈ 230).
+`None` removes the cap (march forever — the pre-DD-122 contract);
+an explicit `total_time_steps` wins (cap + watchdog off).  Each
+launch/resume segment gets its own cap budget past its start step.
+
+**Decision 2 — stall watchdog.**  `_SignalStallDetector`
+(`solver/fit_td.py`): armed once the envelope is ≤ −40 dB below peak,
+it least-squares-fits the envelope samples the criterion already
+polls over a window spanning half the transit estimate of physical
+time, and extrapolates the step at which the threshold would be
+crossed.  Beyond the cap (or slope ≥ 0) → stop *now* with
+`stop_reason="port_signal_stall"`, a `RuntimeWarning` naming the
+achieved level, and the plateau accepted as the effective floor — by
+construction the same outcome the cap would deliver, minus the wasted
+marching.  The projection form avoids a hidden Q-limit that a fixed
+"flatness" threshold would impose (a Q ≈ 10⁴ resonator decays only
+~0.1 dB per window yet reaches −60 dB in finite time); window reset on
+new peaks / recovery above the arming floor keeps regimes unmixed.
+Active only on capped unbounded runs.
+
+**Decision 3 — stop-reason bookkeeping.**  Every `run()` exit sets
+`_stop_reason` ∈ {"steps", "energy", "port_signal",
+"port_signal_stall", "runtime_cap", "aborted"} and
+`_final_signal_db` (|V| level below peak at the stop; 0.0 legal when
+the envelope never sampled below peak).  The store books both into
+the run index (schema-additive) and the reader surfaces them via
+`proj.runs[...]` and `RunSettings.stop_reason` /
+`.final_port_signal_db`; the in-RAM path reports via the warning only
+(deliberate scope cut).  The resume guard "done run already reached
+energy_stop_db" now consults `stop_reason`: cap-/stall-truncated runs
+are "done" *without* having reached their criterion, and a bare
+`resume()` is their intended escape hatch (legacy projects without
+the field keep the historical guard).
+
+**Validation.**  `validation/wr90_tee_signal_stall_certificate.py`:
+magic-tee E-arm with pure defaults stops at step 9101
+(`port_signal_stall`, plateau −55.6 dB, exactly one warning, 7.9 s
+GPU) instead of marching indefinitely; max |ΔS| = 4.3e-4 against the
+`port_signal_stop_db=50` tutorial-06 reference across the design
+band.  Unit: detector verdicts on synthetic plateau/exponential/
+slow-exponential envelopes + solver wiring via a scripted fake port
+(`tests/unit/test_stall_detector.py`).  Integration: cap truncation +
+bare-resume completion, index/settings bookkeeping
+(`tests/integration/test_project_scattering.py`).
+
+---
+
+## DD-123 — Declarative passive lumped elements (`circuit.LumpedElement`)
+
+**Date:** 2026-08-10 (session: tutorial-10 design round; closes the
+deferral opened in [[DD-077]] "top-level export deferred until the
+operator makes them usable in a run").
+**Status:** Accepted — implemented, certificate PASSED.
+
+**Problem.**  Every discrete impedance was forcibly a *port*: the
+general `LumpedElementOperator` (DD-077/078 unification) existed, but
+its only consumer was `PortOperatorLumped` — no way to drop a passive
+load (e.g. a Wilkinson isolation resistor) into a model without it
+acquiring an S-matrix column, excitation capability and recording.
+
+**Decision (developer sign-off: `circuit` namespace + pure sink).**
+`circuit.LumpedElement(label, start, end, element=SeriesRLC/ParallelRLC)`
+declared via `GeometryModel.add_element()` (deliberately *not*
+`add_port` — it is a component, not a terminal).  Carried by the mesh
+(`Mesh.elements`, `with_elements()` for the `from_grid` path) exactly
+like DD-109 ports; `AnalysisScatteringTD(elements=...)` overrides.
+Builder `build_lumped_element` (shared `_snap_edge_chain` with the
+port builder) returns a plain `LumpedElementOperator` with `Z0 = 0`,
+fresh-deep-copied companion per excitation.  The operator joins the
+solver's port list (unified `update_e` hook, label-keyed checkpoint
+state → bit-exact resume for free) but stays out of the recorder,
+S-matrix, `excited=` validation and the port-signal criterion (only
+modal operators expose `poll_signal_absmax`).  Ports and elements
+share ONE label namespace (solver checkpoints key by label).  Scope
+cut: pure sink — no dissipated-power readback (later, if wanted).
+
+**En-route fix.**  The mesh round-trip serialiser used
+`dataclasses.asdict` on RLC companions, which also emits the
+``init=False`` transient-state fields (``_i``/``_vL``/…) that the
+constructor rejects — every `PortLumped` carrying an `element=` was
+un-reloadable from a store (latent since DD-109; no test covered it).
+Now `_companion_to_dict` writes constructor fields (R/L/C) only.
+
+**Traps.**  (i) `with_boundary_conditions`/`with_pec_boundaries`
+reconstruct `Mesh(...)` field-by-field — a new carried field must be
+added at BOTH sites or it silently drops (caught by unit test).
+(ii) The element path has real distributed physics: deviation from
+the closed shunt form grows ~(βd)² with the path's electrical length
+(grid-independent; halving the path shrinks it ×4.7) and acts as a
+~1 nH-class series inductance per few mm of path — keep element paths
+electrically short, exactly like a physical SMD.
+
+**Validation.**  `validation/lumped_element_shunt_certificate.py`
+(PASSED): parallel-plate TEM line with exact DTBC ports, mid-line gap
+shunt vs the closed form S11 = −Z0/(Z0+2Z), S21 = 2Z/(Z0+2Z) —
+(1) quasi-static anchor < 1e-3 (measured 3.6e-4/9.1e-4 at βd ≈ 0.05);
+(2) (βd)² envelope (ratio 4.71 on path halving); (3) series-RLC
+resonance lands on f_res (2.90 vs 3.00 GHz with the path inductance
+as a small documented perturbation).  Unit:
+`tests/unit/test_lumped_element.py` (13: declaration, carriage,
+builder, wiring).  Integration: store round-trip + cap-truncated
+resume with an element (`tests/integration/test_project_scattering.py`).
+
+---
+
+## DD-124 — Footprint-exact thin-sheet rasterisation
+
+**Date:** 2026-08-10 (Wilkinson tutorial groundwork; corrects a WP-M2
+limitation in the [[DD-059]]-era thin-sheet mechanism).
+**Status:** Accepted — implemented, gated.
+
+**Problem.**  `ThinSheetSpec.rect` is the detected sheet's *bounding
+box*, and the WP-M2 rasterisation painted that whole rectangle of
+tangential E edges PEC.  Exact for a straight strip — every use until
+now — but silently wrong for any non-rectangular thin metallization:
+the Wilkinson racetrack (annulus + feed/stub/line bricks, one CSG
+union 17 µm thin) turned into a solid metal plane spanning the box,
+and the waveguide ports then failed with "hollow cross-section" (the
+strip had merged with a full-plane short).  No warning at any stage.
+
+**Decision.**  `rasterize_thin_sheet_footprint` (`mesh/_conformal.py`)
+replaces the rect fill at the mesher's step 4b: the rect only
+pre-filters candidates, and each candidate edge midpoint is classified
+against the source shape's OCC solid (`point_in_shape` at the metal
+mid-thickness, tolerance 0.45·t, DD-120 scale-aware).  Edges on the
+lateral metal boundary count as metal (OCC `ON`), matching the
+inclusive node selection of the rect path — bit-identical for straight
+strips.  Fallback to the rect fill when the spec carries no shape or
+OCC classification fails.  Cost: one point test per candidate edge
+(~10 k for the Wilkinson plane, well under a second).
+
+**Traps (measured en route).**  `min_cell_size` must stay ≥ ~3·t: at
+32 µm < 2·t the cell above the sheet is nearly metal-filled, f_A → 0
+faces produce NaN conformal matrices (32 µm run: NaN warnings + a 5 %
+eps_eff jump; 42–51 µm clean).  Thin-sheet detection itself only runs
+when `min_cell_size` is set — the sub-cell metallization story of the
+Wilkinson tutorial depends on it.
+
+**Validation.**  `tests/unit/test_thin_sheet_footprint.py`: an
+L-shaped 17 µm sheet keeps its empty bbox corner PEC-free while the
+legs rasterise; Wilkinson spike meshes with ports resolving at
+49–50 Ω (previously unresolvable).  Straight-strip behaviour covered
+by the existing microstrip fixtures (suite green).
+
+---
+
+## DD-125 — Meshes are immutable inputs: no write-back from solver or port builds
+
+**Date:** 2026-08-10 (found via the DD-123 Wilkinson spike:
+reciprocity broke on the second excitation).
+**Status:** Accepted — implemented, gated.
+
+**Problem.**  Both the FIT-TD solver setup and `build_modal_port` (all
+three factory variants) applied the port-plane PEC flatten
+([[DD-067]]-era: port plane := first interior slab, so the mode solver
+and the update see the contour the volume wave sees) and then wrote
+the flattened mask **back into the caller's mesh**
+(`object.__setattr__(mesh, "pec_mask_edges", ...)`).  Every *later*
+operator build on the same mesh — second excitation of one `run()`,
+second `run()`, `solve_ports()` before a run — then computed its 2D
+port modes against a plane already stripped of its wall contour:
+`_pec_faces_from_mask` misclassified the cross-section boundary and
+the mode solver produced a wrong profile, so the arriving field
+projected to ~nothing.  Measured on the three-port Wilkinson: S21
+−3.1 dB but S12 −26 dB (reciprocity broken), the port-1 *recording*
+of the second run losing 23 dB while the raw physics (other channels)
+was unchanged.  Every existing multi-port fixture has its ports on
+opposite faces of one axis, where re-flattening is idempotent and
+harmless — which is why 1800 tests never saw it.
+
+**Decision.**  The flatten becomes strictly local: solver setup and
+the port factories now derive a builder-local
+`dataclasses.replace(mesh, pec_mask_edges=flattened)` view (the
+flatten helper already returned a fresh array; only the write-back was
+the defect).  The caller's mesh is never touched — codified invariant:
+**meshes are immutable inputs to analyses, solvers and operator
+builds**.  Side effect: within one build sequence, each port now
+flattens against the pristine mask instead of inheriting earlier
+ports' flattens — indistinguishable on opposite-face fixtures (suite
+green), and the only correct choice for multi-face port sets.
+
+**Validation.**
+`test_analysis_scattering_td.py::test_run_leaves_the_mesh_untouched_and_is_repeatable`
+(mask invariance + run-to-run identity); Wilkinson spike: S12 = S21 =
+−3.11 dB, mask bit-identical before/after, repeat runs identical.
+
+---
+
+## DD-126 — Plane mirror as a geometry verb (`.mirrored()`)
+
+**Date:** 2026-08-10
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  The [[DD-113]] verb set covered translate / rotate /
+scale but no reflection, so a structure symmetric about a plane had
+to be either modelled twice or faked.  Both fakes are wrong in
+general: `rotated('y', 180)` is a reflection *composed with* a flip of
+the third axis, correct only for a body that is prismatic along that
+axis and then only with a hand-computed offset; `scaled(-1.0)` is
+`gp_Trsf::SetScale` with a negative factor — a point inversion through
+the centre, i.e. all three axes negated, not a plane reflection.  Plane
+symmetry is the common case in the target application (dividers,
+couplers, filters, arrays), and a layer stack is almost never
+symmetric about the plane normal, so the rotation fake breaks as soon
+as the substrate and ground plane enter the model (found while
+building a Wilkinson divider, internal record `userscripts/wilkinson.py`).
+
+**Decision.**  `geo.transforms.mirror(shape, *, normal, position=0.0,
+copy=False, unite=False, group=False)` plus the chainable
+`ShapeOps.mirrored(...)`.  The plane is `p · n̂ == position`, so for an
+axis letter *position* is simply the coordinate of the plane; *normal*
+goes through `normalize_axis`, so a letter or any 3-vector works, per
+the [[DD-113]] ergonomics rule.  Backend: `gp_Trsf::SetMirror(gp_Ax2)`
+via `occ_mirror`, and `mirror_box` for the [[DD-120]] analytic box.
+
+Two deliberate departures from the sibling transforms:
+
+1. **No `repeat`.**  Mirroring twice across one plane is the identity,
+   so a repeat count has no meaning.  `copy=True` (with `unite=True`)
+   remains — it is the point of the verb: `half.mirrored(normal="x",
+   copy=True, unite=True)` is the symmetric whole in one expression.
+2. **`unite`/`group` without `copy` raise** instead of being silently
+   ignored (the `_apply_repeat` behaviour the other verbs inherit).
+   With no repeat count there is nothing to bundle, and honouring the
+   flag silently would hand back a bare mirror image where the caller
+   asked for the whole — a wrong geometry that meshes and solves.
+
+**Reflections invert orientation** (determinant −1).
+`BRepBuilderAPI_Transform` compensates by reversing the shape, which
+is asserted rather than assumed: the test suite checks preserved
+positive volume and `BRepCheck_Analyzer.IsValid()` on the image.
+
+**Validation.**  `tests/unit/test_shape_ops.py::TestMirror` (15 cases):
+reflection touches the normal axis only; mirror ≠ rotation on a chiral
+body; volume/validity preserved; offset plane; involution; oblique
+normal; analytic box matches the OCC box; copy/unite/group; Group
+distribution keeps per-member materials; guard on `unite` without
+`copy`.
+
+---
+
+## DD-127 — Material is optional: solids without one are construction bodies
+
+**Date:** 2026-08-10
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  `material` was a required field on every primitive, but
+a large share of the solids in a CSG script are Boolean *tools* —
+bodies that only shape other bodies and never reach the mesher.
+`Difference`/`Union`/`Intersection` take their material from the
+base (resp. first) operand and ignore the tools' entirely, so the
+material on a cut cylinder was pure ceremony that had to be typed,
+read and maintained.  The obvious alternative — defaulting to PEC —
+is the worst option available in an EM solver: a forgotten `material=`
+would silently insert a perfect conductor into the model, and PEC is
+the one material whose accidental presence changes every result.
+
+**Decision.**  `material` defaults to `None` on `_BaseShape`.  A solid
+with a material is a physical object; a solid without one is a
+**construction body**, the volumetric sibling of the material-less
+`Face` construction profile that has existed since [[DD-035]].  The
+omission is caught at the model boundary: `GeometryModel.add()`
+rejects any shape whose `.material` is `None` (Groups are checked
+member-by-member, since `add()` flattens them), naming the shape and
+explaining the two ways out.  Because Boolean results inherit their
+material, a rejected result also correctly points at the operand that
+was the construction body.
+
+**Rationale for the guard site.**  `add()` is the single door into a
+model, so every downstream consumer (`mesher`, `_conformal`,
+`plot_geometry`, `io.paraview`, `io.project`) keeps its unconditional
+`shape.material` access and no None-check spreads through the code
+base.  Failing there also fails *early* — at model assembly, not at
+mesh time with a stack trace far from the offending line.
+
+**Validation.**  `tests/unit/test_geometry.py::TestConstructionSolids`
+(7 cases): cut tool needs no material; Boolean result inherits from
+the base; model rejects a bare construction solid, a Boolean result
+whose base was one, a Group member without one, and a transformed
+one; the message names the shape.
+
+---
+
+## DD-128 — `Shape` is public: one documented home for the operators and verbs
+
+**Date:** 2026-08-10
+**Status:** Accepted — implemented, gated.
+
+**Problem.**  The [[DD-113]] verbs were undiscoverable in the API
+reference: `docs/api/geo.md` renders `automodule:: magnelio.geo`, and
+nothing in that chain reached them.  Two independent gaps, found by the
+developer while looking for `.translated()` in the built docs.
+
+1. The verbs were methods of the `ShapeOps` mixin in the private
+   `geo/_shape_ops.py`, which `geo/__init__.py` does not re-export, so
+   autodoc never saw the class.  The primitives inherit them, but
+   autodoc skips inherited members without `:inherited-members:`
+   (verifiable in the built page: `id="magnelio.geo.Brick.from_corners"`
+   exists, `…Brick.translated` does not).
+2. The *substantive* documentation was not on the methods at all but on
+   the free functions in `geo/transforms.py` / `geo/modifications.py`;
+   the methods were one-liners of the form "Translated copy; see
+   :func:`…transforms.translate`".  No doc page renders those two
+   modules — every page is an `automodule` on a namespace — so the
+   targets did not exist and the pointers went nowhere.
+
+The root cause is a [[DD-113]] leftover: that decision moved the free
+functions out of the public API in favour of the methods, but the
+prose stayed behind at the now-private location.
+
+**Options evaluated:**
+| Option | Notes |
+|--------|-------|
+| Public `Shape` base class, full docstrings on the methods | Selected |
+| `:inherited-members:` + render `transforms`/`modifications` | Republishes exactly the spelling DD-113 retired; the verb list repeats on all 12 shape classes and the prose lives at a second location |
+| Full docstrings on the methods, mixin stays private | No API growth, but rendering still needs `:inherited-members:`, so all 10 verbs print in full on each of the 12 classes |
+
+**Decision.**  `geo/_shape_ops.py` becomes `geo/shape.py` and `ShapeOps`
+becomes **`Shape`**, exported from `magnelio.geo` and first in its
+`__all__`.  The full descriptions move from the free functions onto the
+methods — parameters, returns, raises, worked examples — and the free
+functions keep a one-line "Implementation of :meth:`…Shape.<verb>`"
+plus whatever is true only of them (Group distribution, the OCC
+operation used).  The class docstring carries what applies to all of
+them: shapes are immutable and every verb returns a new one; materials
+follow the base operand; and the shared `copy`/`unite`/`group`
+vocabulary is explained once.
+
+`Shape` is honest as a public name for a second reason: it is the type
+users already hold in every variable, and the one they need for an
+`isinstance` check or a type annotation.  `Curve` and `ThinWire` stay
+outside the hierarchy — they are 1D objects (a sweep spine, a sub-cell
+wire), and neither the Boolean operators nor the verbs apply to them.
+
+**Validation.**  `tests/unit/test_shape.py::TestDocumentedSurface`:
+`Shape` is exported; every solid class and every Boolean result is a
+`Shape`; each of the 10 verbs carries its own `Parameters` *and*
+`Returns` section (this is the regression gate — a verb degraded back
+to a pointer fails it); the three operators are documented.  Built
+docs re-checked: `id="magnelio.geo.Shape.<verb>"` present for all ten,
+zero new Sphinx warnings.
+
+---
+
+## DD-129 — The scattering-result contract documents itself
+
+**Date:** 2026-08-10
+**Status:** Accepted — implemented, gated.
+
+**Problem.**  The object every user script holds after `run()` —
+`ScatteringTDResult`, or a `Project` reader with a store — published
+almost none of its contract in the API reference.  Found by sweeping
+all 69 exported classes for members inherited from non-exported bases,
+the follow-up to [[DD-128]].  Three independent causes, stacked:
+
+1. **Inherited and invisible.**  `phase`, `plot_s`, `to_touchstone` and
+   `to_skrf` come from `ScatteringResultMixin`, which
+   `analysis/__init__.py` imports but leaves out of its `__all__`;
+   autodoc skips inherited members by default, so the Touchstone and
+   scikit-rf exports — the two calls that get results out of Magnelio
+   and into anything else — appeared nowhere.
+2. **Undocumented, therefore unrendered.**  `S`, `db`, `f_axis`,
+   `channels` and `excitations` carried no docstring at all on
+   `ScatteringTDResult` (and `db`, `f_axis`, `channels`, `excitations`
+   on `Project`).  Autodoc renders only documented members, so the
+   central accessor of the whole library, `result.S("port2", "port1")`,
+   was absent from its own class page.
+3. **A phantom member.**  The class docstring carried an invented
+   numpydoc section, `Convenience\n-----------`, holding exactly the
+   prose those methods were missing.  Napoleon does not know the
+   heading, so it rendered as an attribute named "Convenience" and the
+   text stayed stuck to the class instead of reaching the methods.
+
+The `ScatteringResult` protocol had the same shape of hole: it declared
+the contract but every member was a bare `...` stub, so the page showed
+a class with a one-line summary and no members.
+
+**Decision.**  The contract is documented where it is implemented, and
+the reference is configured to show it.
+
+- The `Convenience` section is dissolved: its content moves onto `S`,
+  `db`, `a`/`b` as real docstrings, and what remains that is genuinely
+  about the class as a whole becomes a proper `Notes` section.
+- `S`, `db`, `f_axis`, `channels`, `excitations` get docstrings on both
+  implementations; `settings` joins the `Attributes` block.
+- The protocol's stubs get one-line docstrings and its class docstring
+  lists the members, so it reads as the contract it claims to be.
+- `docs/api/analysis.md` and `docs/api/io.md` gain
+  `:inherited-members:`.  Unlike the geometry case in [[DD-128]] this
+  is proportionate rather than wasteful: both classes inherit from
+  exactly one mixin contributing exactly four methods, and those
+  methods belong conceptually to the result object, which is where a
+  reader looks for them.  No public name is added.
+
+**Validation.**  `tests/unit/test_api_documentation.py` (39 cases):
+every contract member is documented on both implementations (dataclass
+fields via their `Attributes` entry), the protocol declares and
+documents each, both implementations satisfy it, and no class docstring
+invents a numpydoc section heading.  Both gates were shown to fail when
+the defect is reintroduced — a removed docstring and a restored
+`Convenience` heading are each caught.  Built docs: all twelve contract
+members now render on both `ScatteringTDResult` and `Project`; warning
+count unchanged at two, both pre-existing (the `GeometryModel`
+definition-list warning and an ambiguous `label` cross-reference, the
+latter verified present without the new option).
+
+**En-route fix.**  The module docstring cited the cross-check as
+`tests/unit/test_result_contract.py`; it lives in `tests/integration/`.
+
+**Follow-up (same day): the gate generalised, one more defect found.**
+Cause 3 turned out not to be a one-off.  The section-heading check and
+a new phantom-*parameter* check now sweep every object reachable
+through a namespace `__all__` (293 docstrings), and each found a case:
+
+* `GeometryModel` wrote `Example::` where numpydoc wants an `Examples`
+  section.  Napoleon ends a Parameters block only at a heading it
+  knows, so both example paragraphs became parameter *names* with the
+  example code as their description — the class advertised **five**
+  parameters where it takes three, and this was the long-standing
+  `Definition list ends without a blank line` warning in the docs build
+  (recorded as open in this file's own status notes).  Fixed; the build
+  is down to one warning, the remaining one pre-existing and unrelated
+  (an ambiguous `label` cross-reference, present before this work).
+* `Mesh.with_boundary_conditions` wrote `Note` for `Notes` — found by
+  the generalised check on its first run.
+
+Both gates were again shown to fail on the reintroduced defect.  The
+lesson worth keeping: an invalid numpydoc heading fails *silently* in
+the common case (`Convenience` produced no warning at all, just a
+phantom attribute), so a linter cannot be traded for the build log
+here.
+
+**Follow-up, 2026-08-11 — the last warning is closed and the build is
+clean.**  The remaining `label` cross-reference did not live in
+`docs/api/io.md` at all; the warning names the *page*, not the source,
+and carries no line number.  It came from the docstring of
+`Project.export_paraview`, whose parameter type read
+`str or (label, mode)`: napoleon turns a numpydoc type into a `:type:`
+field, Sphinx resolves the field's contents as a cross-reference, and
+two objects in the tree are called `label`.  The type now names only
+resolvable types and the structure moved into the description, where
+double backticks keep `(label, mode)` literal.
+
+A scan of every public docstring found **19** such type fields —
+`(fig, ax)`, `Signal1D`, `Nf` and friends.  None of them warned,
+because outside nitpicky mode Sphinx reports only what is *ambiguous*,
+never what is merely unresolvable; `label` happened to be the one name
+that exists twice.  Latent rather than harmless: a second class gaining
+a member `ax` would surface the same warning somewhere unrelated.  All
+of them are now cleaned up — nine `(fig, ax)` return blocks became
+named `fig`/`ax` entries with their real matplotlib types, five monitor
+`corners` types became `tuple of tuple` with the corner layout moved
+into the description, and the `shape (Nf,)` and
+`dict[(str, int), (Signal1D, Signal1D)]` spellings lost the parts that
+were never types.  `matplotlib` joined `intersphinx_mapping` so the new
+return types link rather than merely read correctly.
+
+`test_type_fields_name_only_resolvable_types` keeps it that way.  It
+flags a parenthesised group in a type field whose words are not
+resolvable type names — the check deliberately allows
+`tuple of (str, int)`, which is ordinary numpydoc, because `str` and
+`int` do resolve.  A first, stricter draft banned parentheses outright
+and produced fourteen false positives on correct docstrings; the list
+of resolvable names is therefore explicit in the test rather than
+implied by a bracket heuristic.  Shown to fail on the reintroduced
+`str or (label, mode)`.
+
+One habit worth keeping: warning-freedom can only be established with
+`sphinx -E`.  A cached rebuild does not repeat warnings for unchanged
+files, so a quiet log from an incremental build proves nothing.
+
+---
+
+## DD-130 — `Brick.from_ranges`: one coordinate range per axis
+
+**Date:** 2026-08-11
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  Layered structures are described by the planes they lie
+between, not by two opposite corners.  A substrate under a ground plane
+at `z = 0` is "x from 0 to w, y from 0 to l, thickness h downwards";
+spelling that as `from_corners((0, 0, -h), (w, l, 0))` interleaves the
+three axes into two tuples, so a value belonging to z sits in the middle
+of a corner and the thickness never appears literally — it has to be
+carried into a coordinate by hand.  Both existing spellings force the
+same rewrite, and it is where sign errors enter.
+
+**Decision.**  A second classmethod, `Brick.from_ranges`, taking one
+range per axis as keywords:
+
+```python
+Brick.from_ranges(x1=0, dx=w, y1=0, dy=length, z2=0, dz=h, material=fr4)
+```
+
+Each axis takes **exactly two** of its three keywords `a1`, `a2`, `da`.
+That single rule covers all three useful spellings — two bounds, lower
+bound plus extent, and upper bound plus extent (a box grown *downwards*
+from a plane, which is what the substrate above needs) — instead of
+privileging one bound as mandatory.  Rationale for the details:
+
+- **Exactly two, never three.**  A redundant third value is rejected
+  rather than checked for agreement.  Consistency checking would need a
+  tolerance, and a tolerance turns a typo that happens to agree to
+  within it into a silent acceptance.
+- **Normalising, like `from_corners`.**  Bounds may come in either
+  order and extents may be negative (matching `Cylinder.height`, where a
+  negative height extrudes backwards).  `origin` always holds the
+  minimum and `size` is non-negative, so both classmethods and the plain
+  constructor produce indistinguishable fields downstream.
+- **Keyword-only.**  Nine floats in fixed positions would be a trap;
+  there is no defensible positional order for them.
+- **Errors name the axis and its three keywords.**  The message says
+  which axis is under- or over-determined and what it accepts, because
+  the mistake is always local to one axis.
+
+`from_corners` stays: it is the natural spelling for a cutting box
+given by two corners, and rewriting it in terms of the other would be
+churn.  The two are alternative front doors to the same fields.
+
+**Consequence.**  No numerical behaviour changes — this is authoring
+sugar over the existing `origin`/`size` fields, resolved before any OCC
+shape exists.  Covered by `TestBrickFromRanges` in
+`tests/unit/test_geometry.py` (14 cases: each spelling, mixed spellings
+across axes, negative extents, swapped bounds, agreement with
+`from_corners`, optional material, and the under-/over-determined
+rejections).
+
+---
+
+## DD-131 — Profiles from curves: `joined`, `covered`, `Path`
+
+**Date:** 2026-08-11
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  `Curve` offered four constructors (polyline, arc, spline,
+helix) and no way to combine them.  Every outline that mixes straight
+runs with arcs — a chamfered pole piece, a rounded pad, a segment of a
+ring — was therefore unbuildable: `Face` covers only axis-normal
+polygons, and there was no route from a wire to a face at all
+(`make_face` was hard-wired to `_FACE_UV` polygons).  The verbs that
+consume profiles (`extruded`/`revolved`/`swept`) already existed and
+already accepted a standalone `Face`, so the gap was exactly one link
+wide.  Reported from modelling a 20° segment of a hollow cylinder.
+
+**Decision.**  Three additions, one link each:
+
+- **`Curve.joined(*curves)`** chains segments into one wire.  An
+  *instance* method, not a classmethod: `a.joined(b, c)` reads as the
+  chain it builds, whereas a classmethod called on an instance would
+  silently drop the receiver.  Chains flatten (`_segments`), so
+  `a.joined(b).joined(c)` is a three-segment wire, not a nest.
+- **`Curve.covered()`** turns a closed planar curve into a planar
+  sheet, via a new backend `make_wire_face` — the free-boundary sibling
+  of `make_face`.
+- **`geo.Path`** is a frozen-dataclass pen over the same machinery:
+  `line_to`/`arc_to`/`spline_to` remember the current point, `curve()`
+  and `closed()` delegate to `joined`.  Pure sugar, no backend of its
+  own; immutable so a common prefix can branch into several outlines.
+
+Supporting rationale:
+
+- **`PlanarSheet` marker base.**  `Face` and the covered sheet are the
+  same kind of thing to four dispatch sites (the extrude material
+  guard, the revolve guard, the extrude profile-vs-solid branch, the
+  mesher's standalone-sheet rejection).  Introducing a shared base and
+  switching those sites from `isinstance(x, Face)` was cheaper than
+  teaching each one about a second type, and it is what makes a covered
+  sheet work in the existing verbs with no further change.
+- **Seam tolerance is relative, not absolute** — 1e-6 of the chain's
+  own bounding-box diagonal.  An absolute metre threshold cannot be
+  right for both a micrometre profile and a kilometre one (DD-120).
+  `BRepBuilderAPI_MakeWire` only fuses vertices within
+  `Precision::Confusion()`, which is tighter, so seams inside the
+  public tolerance but outside the kernel's are healed once through
+  `ShapeFix_Wire`.  It is *not* run unconditionally: it may reorder and
+  reverse edges, and exact input must stay untouched.
+- **Closure is checked eagerly, planarity lazily.**  Endpoints are
+  captured at construction (`_ends`), so a gap names the segment index
+  and the distance — which the kernel cannot.  Planarity needs the
+  actual curves and stays with `BRepBuilderAPI_MakeFace`.
+- **`arc_to` takes `normal=`.**  The `center=` form has two solutions,
+  and for diametrically opposite ends it has infinitely many (the plane
+  itself is free).  That case is not exotic — it is the rounded end of
+  a slot, the most common use of the form.  `normal=` names the axis
+  the arc turns about and settles direction and plane at once, running
+  counter-clockwise about it, the same handedness as `.rotated()`.
+  Without it the short arc is drawn (`major=True` for the long one) and
+  antipodal ends are rejected with a message pointing at `normal=`.
+- **A helix has no `_ends`.**  Its endpoints depend on the `gp_Ax3`
+  frame convention, which is deterministic but not worth pinning for
+  this; a helix in a chain skips the eager check and relies on the
+  kernel.  Helices are sweep spines, not profile segments.
+
+**Deferred/rejected** (recorded so the gaps are known, not forgotten):
+bend and cylindrical-bend operations; `Insert`/`Imprint` Booleans with
+material precedence; STEP import and healing; analytical parametric
+curves (in Python, generate points and spline them); elliptical
+cylinder; sphere pole truncation; twist and taper on extrusions.
+**Local/working coordinate systems are rejected outright**, not
+deferred: they exist in GUI-driven tools because a mouse needs a
+drawing plane, and in a Python API they would add a mode to every call
+for nothing.
+
+**Consequence.**  Covered by `TestCurveJoined`, `TestCurveCovered` and
+`TestPath` in `tests/unit/test_geometry.py`, including the relative
+tolerance at both millimetre and micrometre scale, and the mesher's
+rejection of a standalone sheet.
+
+---
+
+## DD-132 — `Cylinder` gains a bore and an angular segment
+
+**Date:** 2026-08-11
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  A tube and a curved slab — a segmented electrode, a
+septum, a shield sector — are everyday parts, and both needed Boolean
+scaffolding: a tube two cylinders and a cut, a segment a wedge built by
+hand.  The tube case is enough of a staple that the `_BaseShape`
+docstring taught the Boolean spelling as an idiom.
+
+**Decision.**  Two fields on `Cylinder`, both defaulted so every
+existing call is untouched: `inner_radius=0.0` and
+`angle_deg=None` (a scalar for a segment starting at zero, `(start,
+end)` for one anywhere).  The plain solid cylinder keeps its original
+backend path bit-for-bit; the general path builds the segment with the
+four-argument `BRepPrimAPI_MakeCylinder` and cuts the bore with an
+axially overshooting inner cylinder.
+
+- **Angles turn like `.rotated()`.**  Right-handed about the axis, with
+  zero on the first coordinate direction perpendicular to it (`+x` for
+  `'z'`, `+y` for `'x'`).  Both the kernel frame and the analytic
+  bounding box read that frame from one helper, `_axes.reference_dir`,
+  so they cannot drift apart — the failure mode this guards against is
+  a box that is tight but wrong.
+- **A negative height moves the body, it does not reverse the sweep.**
+  The frame is built from the declared axis and the base point shifted
+  instead, so `height=-h` and `angle_deg=(0, 20)` mean what they read.
+- **The segment box is tight, not merely containing.**  A sector's
+  extremes lie on the arc ends, the apex or inner arc, and wherever the
+  arc crosses a coordinate axis; `_scaling.sector_uv_points` enumerates
+  exactly those.  A conservative full-radius box would inflate the
+  DD-120 scale estimate for a thin sector by the ratio of the full disc
+  to the sector.
+
+**Mesher note.**  `_face_critical_planes` handles segments correctly by
+construction: tangent candidates are filtered against the *trimmed*
+face's bounding box, so a 20° segment contributes no far-side tangent
+plane.  The two flat cut faces contribute a critical plane only when
+they are axis-normal, i.e. at multiples of 90°; at other angles they
+fall back to the shape's silhouette extents, which is the same
+treatment every non-axis-aligned face gets.
+
+**Consequence.**  Covered by `TestCylinderSegment` and
+`TestSegmentCriticalPlanes` in `tests/unit/test_geometry.py`: all four
+volume variants against their closed forms, the bit-identical default,
+handedness against `.rotated()`, tightness of the box, containment on
+every axis including a skew one, and the negative-height case.
+
+---
+
+## DD-133 — `shelled()` and `thickened()`: two verbs, not one
+
+**Date:** 2026-08-11
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  A housing, a waveguide run and a cavity are all "a solid
+with its inside removed", which had to be modelled as a difference of
+two solids whose inner one the user had to dimension by hand — for
+anything but a box, that inner solid is not simply the outer one scaled.
+The mirror-image gap: a drawn outline had no direct route to a
+metallisation of a given thickness.
+
+**Decision.**  Two verbs.  `shelled(thickness, opening_face_near=)`
+hollows a solid, walls inward so the outer surface stays put, with the
+named faces left out to become openings.  `thickened(thickness,
+direction=)` grows a planar sheet into a slab along its own plane
+normal.
+
+- **Why not one dispatching verb.**  GUI tools spell this as a single
+  command that switches on what is selected.  Here the two share
+  nothing: different parameters (`opening_face_near` is meaningless for
+  a sheet, `direction` for a solid), different input categories,
+  different kernel machinery.  One verb would let a category mistake —
+  shelling something you thought was a solid — produce a wrong body
+  silently; two verbs turn it into a `TypeError` that names the
+  sibling.
+- **Thicken is a prism, not an offset.**  A sheet grown along its own
+  plane normal is exactly an extrusion, so it reuses `make_extrude`;
+  `BRepOffsetAPI_MakeThickSolid` would be a heavier route to the same
+  slab with more ways to fail.  The normal's sign is canonicalised
+  (largest component positive) so "forward" is reproducible, and
+  `direction="backward"`/`"symmetric"` give the other placements.
+- **Two kernel paths for shelling, because an empty face list is not a
+  shell.**  `MakeThickSolidByJoin` with no faces to remove returns the
+  *shrunk solid*, not a hollow one — silently the wrong shape, and the
+  first version shipped it.  A sealed void is built instead as the
+  original minus its inward offset (`MakeOffsetShape.PerformByJoin`).
+- **`IsDone()` is not sufficient.**  An offset that cannot be built
+  still reports success and hands back a null shape, and walls thicker
+  than the body come back as the *untouched* solid.  Both are checked —
+  the second by comparing volumes — and reported as a wall that does
+  not fit rather than passing through.
+
+Outward and centred shelling are deferred; inward is what keeps a
+housing's outer dimensions, which is the case that matters here.
+
+**Consequence.**  Covered by `TestShelled` and `TestThickened` in
+`tests/unit/test_modifications.py`: wall volumes against their closed
+forms for sealed, one-opening and two-opening boxes and for a cylinder,
+opening deduplication, the three thicken directions by bounding box,
+and both degenerate-wall reports.
+
+---
+
+## DD-134 — `Loft`: an n-ary constructor for free profiles
+
+**Date:** 2026-08-11
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  `make_loft` already wrapped `BRepOffsetAPI_ThruSections`,
+which takes any number of sections, but the public `.lofted()` verb
+reached it only through two *solids* and their face selection.  A horn
+or a taper defined by its cross-sections — the natural way to define
+one — had no route in, and neither did a three-section transition.
+
+**Decision.**  `make_loft` takes a list of wires, and a new public
+`Loft(*sections, blend=, material=, name=)` accepts planar sheets and
+closed curves as sections.  `.lofted()` is unchanged.  (The mode
+argument was spelled `ruled=True/False` until DD-144 turned it into the
+three-valued `blend=`; `Loft` takes the two of those three modes that
+free cross-sections can support.)
+
+- **Why a CamelCase constructor, not an overload of the verb.**  The
+  verb's grammar is receiver-anchored (`self` + `face_near` + `other` +
+  `other_face_near`), which is right for its bridge-two-solids job.  An
+  n-ary loft over free profiles has no privileged receiver and no face
+  selection; forcing it through the verb would need a second argument
+  form.  DD-113 already reserves CamelCase for the n-ary constructors
+  (`Union`), and this is one.
+- **`material` does not default to a section's.**  A cross-section is
+  a curve or a sheet; neither carries a volume material worth
+  inheriting, so the result is a construction body unless told
+  otherwise, and `GeometryModel.add` remains the single guard (DD-127).
+- **The ruled box is exact.**  Every point of a ruled loft is a convex
+  combination of section points, so the union of the section boxes
+  contains it; only the smooth case needs padding.
+
+**Consequence.**  Covered by `TestLoftSections` in
+`tests/unit/test_modifications.py`, including a frustum and a
+two-frustum stack against their closed forms and agreement with
+`.lofted()` on the same profiles.
+
+---
+
+## DD-135 — `Curve.traced()`: conductor tracks from a centreline
+
+**Date:** 2026-08-11
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  A routed track — the standard way a feed line or a
+coupling stub is described — had to be assembled from individual bricks
+and wedges, one per segment, with the corners worked out by hand.
+
+**Decision.**  `Curve.traced(width, thickness, caps=, normal=)`
+offsets the centreline within its plane and extrudes the outline.  A
+verb on `Curve`, symmetric with `covered()`: one fills the inside of a
+closed curve, the other fattens the curve itself.  (The `ThinWire`
+precedent does not apply — that is a mesher category, DD-080, whereas a
+track is an ordinary solid.)
+
+- **The plane must be anchored, not inferred from the wire alone.**
+  `BRepOffsetAPI_MakeOffset` on a bare wire fails for a *straight*
+  centreline, because a straight line lies in infinitely many planes —
+  and a straight feed line is the commonest case of all.  The spine is
+  therefore offset against an explicit plane face (`Init(face)` +
+  `AddWire`).  `normal=` supplies that plane when the curve does not
+  determine one; the error distinguishes "straight, name the plane"
+  from "not planar at all" by testing collinearity, since the two need
+  opposite fixes.
+- **Flat caps by trimming, not by wire assembly.**  Offsetting an open
+  wire as a closed result gives round caps directly.  Building the
+  square-ended outline instead by chaining two one-sided offsets and
+  two cap edges is fragile; cutting the extruded solid with a
+  half-space at each end, placed on the end tangent, is robust and
+  reuses the Boolean path.  Flat is what a track meeting a port plane
+  needs, so it had to work.
+- **A closed centreline goes through its own face.**  With the plane
+  anchor, both signs of the offset return the same inner contour for a
+  closed spine; using the spine's own face as the offset input gives
+  outer and inner as expected, and the track is the ring between them.
+- **A self-intersecting offset is an error, not a repair.**  More than
+  one contour means the widened sides ran into each other; the message
+  names width, bend radius and clearance rather than guessing.
+
+Outside corners of a polyline centreline come out rounded — a property
+of offsetting, and closer to a fabricated track than a mitred corner.
+Spline centrelines are best-effort: `MakeOffset` is most robust on line
+and arc geometry.
+
+**Consequence.**  Covered by `TestCurveTraced` in
+`tests/unit/test_geometry.py`: straight flat and round, a right-angle
+corner and a closed loop against their closed forms, both plane errors,
+and the too-wide report.
+
+---
+
+## DD-136 — `Shape.volume()`: the built geometry, not the nominal one
+
+**Date:** 2026-08-11
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  There was no public way to ask a shape how much volume it
+encloses.  Everything downstream of a Boolean or a modification is
+exactly the case where the answer is not derivable from the parameters:
+a difference reports what its operands were, not what is left; a
+chamfered block reports its box.  The gap surfaced while writing
+tutorial 14, where two constructions of the same electrode had to be
+compared and only `bounding_box()` was available — which agrees for
+many pairs of *different* solids and so proves nothing.  Internally the
+quantity was computed in half a dozen places (`check_pairwise_overlaps`,
+several test helpers), each re-writing the same `BRepGProp` call.
+
+**Decision.**  `Shape.volume(scale=None)` returning cubic meters,
+mirroring `bounding_box()` in shape and in contract: the DD-120 model
+scale is chosen from the shape itself unless given, and the kernel's
+`s³`-scaled result is divided back (lossless — `s` is a power of two).
+The shared `occ_volume()` backend helper replaces the repeated
+`GProp_GProps` boilerplate.
+
+- **A method, not a property.**  It builds the OCC shape and runs a
+  kernel integration; a property would hide that behind attribute
+  syntax.  `bounding_box()` set the precedent for the same reason.
+- **Absolute value.**  A reversed orientation would otherwise report a
+  negative volume, which is a kernel detail, not an answer.
+- **A planar sheet reports zero** rather than raising: a `Face` has no
+  thickness, and zero is the true answer, not an error.
+- **`Group` overrides it and sums its members.**  A Group is a bundle
+  of separate solids with no fused shape of its own.  Summing double
+  counts an overlap — which `GeometryModel` rejects anyway, so the
+  simple sum is right wherever a Group is legal.
+
+**Consequence.**  Covered by `TestShapeVolume` in
+`tests/unit/test_geometry.py`, including a Boolean difference against
+its closed form and the scale sweep from nanometre to kilometre models
+(relative error 1.2e-16 at the extremes, where the automatic scale
+factor has to cancel exactly out of the result).
+
+---
+
+## DD-137 — Cross-sections on a plane that lies in a face
+
+**Date:** 2026-08-11
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  Cutting exactly along a face — the top of a substrate,
+the plane of a metal layer, `z = 0` on a strip standing on it — is the
+first thing a user asks for, and it was quietly wrong.
+`BRepAlgoAPI_Section` looks for intersection *curves*, but the
+intersection of a solid with a plane lying in one of its faces is a
+*face*; on a Boolean result the operator then returns only part of the
+seam structure.  Measured: two 10 mm bricks fused end to end and cut at
+their common bottom face returned 20 mm of strip instead of 40 mm.  It
+looked like a broken `+` operator and was the plot.  Recorded as a trap
+in the private notes since 2026-08-10; this closes it.
+
+**Decision.**  `cross_section_polygons` gains `exact_at_faces=False`.
+When set, a cheap scan detects whether an axis-normal planar face of
+the solid lies in the cutting plane, and those planes are answered by a
+face-face Boolean (`BRepAlgoAPI_Common` against the plane) whose
+resulting faces yield the boundary wires directly.  The geometry plot
+passes it; nothing else does.
+
+- **Opt-in, not default.**  The mesher's cell classification calls this
+  function per cell-centre plane, and by construction those never lie
+  on a face (grid lines are anchored *on* material faces, cell centres
+  fall between them).  Paying a face scan plus a heavier Boolean there
+  would be pure overhead, and changing what a tangent plane returns
+  could shift a cell's material assignment.  Measured overhead of the
+  detection alone: 50 us against 2 ms for the section itself, so the
+  cost is not the reason — the unchanged meshing path is.
+- **The detection is exact coincidence**, within `Precision::Confusion()`.
+  A plane merely *near* a face sections perfectly well; only the
+  degenerate case is diverted.
+
+**Correction found on the way.**  The documented return contract
+("outer boundaries counter-clockwise, holes clockwise") was already
+false: the `y` frame `(u, v) = (x, z)` is left-handed about its own
+normal, so contours come out mirrored there, and a hole in a `z` cut
+came back counter-clockwise too.  Nothing depends on it — both
+consumers (`classify_cells_from_cross_sections` and the geometry plot)
+use the even-odd rule, which is orientation-blind — so the docstring
+now states that contract instead of a winding convention that was never
+maintained.  Normalising the winding was rejected: it would require an
+outer-versus-hole containment test per contour, on a hot path, for no
+consumer.
+
+**Consequence.**  Covered by `TestSectionAtFace` in
+`tests/unit/test_geometry.py`: the plain section's half-strip pinned as
+the motivating behaviour, both faces of the solid recovered, a hole
+surviving a face cut, the plot spanning the whole strip, and — the
+regression that matters — interior planes returning *bit-identical*
+polygons with and without the option.
+
+---
+
+## DD-138 — Eigenmode auto-shift: escalation ladder instead of a single filled-cavity estimate
+
+**Date:** 2026-08-12
+**Status:** Accepted — implemented, tested.  Closes KB-011.
+
+**Problem.**  `EigenmodeSolver3D` estimated its shift-invert target
+once, dividing the empty-cavity eigenvalue estimate by the **global**
+`eps_r_max` of the material library — correct for a filled cavity,
+wrong for a sparsely filled one.  On the KB-011 fixture (ceramic ring,
+eps_r = 45, ~1 % fill) the estimate lands a factor ~12 (in λ) below
+the true fundamental, closer to the curl-curl null space than to any
+physical mode; ARPACK converges on gradient vectors, the 1 MHz filter
+discards them, and the solve hands back **0 of 6** requested modes —
+silently.  Explicit shifts also under-delivered on that fixture
+(shift 2 GHz: 3 of 6) with no indication.
+
+**Decision.**  Two independent changes, matching the two defects:
+
+1. **Auto-sigma is a ladder, not a point.**  Monotonicity gives
+   rigorous brackets: raising ε anywhere only lowers eigenvalues, so
+   the filled-cavity estimate (ε_r,max) bounds the fundamental from
+   below and the empty-cavity estimate (ε_r = 1) from above.  The
+   solve starts at the lower bound — escalating from below can never
+   skip the fundamental — and, whenever fewer physical modes than
+   requested come back, retries with the shift raised ×4 in λ (one
+   octave in f) up to the upper bound, growing the ARPACK subspace
+   (`+6` per attempt).  The **physical eigenpairs of all attempts are
+   merged** (B-metric subspace dedup per near-degenerate cluster), so
+   a raised shift cannot lose an already-found low mode and degenerate
+   partners found by different attempts both survive.  An explicit
+   user `sigma` stays a single attempt: the shift is a user decision.
+   A filled or empty cavity has a single-entry ladder — behaviour and
+   cost unchanged there.
+2. **Under-delivery is loud.**  Whatever the path (auto or explicit,
+   ARPACK or LOBPCG), returning fewer modes than requested emits a
+   `RuntimeWarning` naming the found/requested counts, the discarded
+   null-space count and the `sigma=(2*pi*f_estimate)**2` remedy.
+
+Rejected alternative: a volume-weighted ε estimate (the other KB-011
+candidate).  It is not a bound in either direction — on the DR fixture
+it lands a factor ~8 (in λ) *above* the fundamental, where ARPACK can
+return plausible-but-wrong "lowest" modes with no null-space symptom
+to trigger a retry.  The ladder pays one extra factorisation instead
+and keeps the never-skip guarantee.
+
+**Measured.**  KB-011 fixture (30 926 cells): auto path 0 → 6 modes,
+66 s (two attempts) against 34 s for the old empty result; spectrum
+identical to the explicit-shift reference (2.6192 / 4.7522 ×2 /
+6.7128 ×2 / 6.8043 GHz).  The merge also surfaced that 6.71 GHz is a
+degenerate pair the old single-shift solve silently truncated (it
+reported 6.7128 / 6.8043 as neighbours).  Coarse fixture (3 136
+cells): 5 → 6 modes.  Rectangular-cavity and analysis suites
+unchanged.
+
+**Consequence.**  Gates in
+`test_analysis_eigenmode.py::TestSparseHighContrastCavity`: the
+escalation delivers 6/6 warning-free on the coarse puck fixture, and a
+deliberately bad explicit shift under-delivers with the warning.  The
+`AnalysisEigenmode`/solver docstrings document the escalation and the
+warning; `spec.md` untouched (solver-internal heuristic).
+
+---
+
+## DD-139 — Eigenmodes reach ParaView on the same path as monitors
+
+**Date:** 2026-08-12
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  `Project.export_paraview` covered only monitors of driven
+runs.  Rendering an eigenmode meant writing the `.vtr` by hand — the
+tutorial-13 groundwork did exactly that (internal record
+`investigations/dr_filter/MEASUREMENTS.md`, M11): pull the mode through
+`_interp_to_cell_centres`, call `vtkXMLRectilinearGridWriter`, borrow
+the driven run's `geometry.vtm`.  Roughly thirty lines of solver
+internals per picture, and none of the session machinery (coloured
+geometry, linked slice planes, calibrated glyphs) came with it.
+
+**Decision.**  Eigenmodes get the frequency-monitor shape one directory
+up: `paraview/eigenmodes/mode_*.vtr` + `paraview/eigenmodes.pvd` +
+`paraview_open.py` + `paraview.pvsm`, written **in the project
+directory** rather than under `runs/`, because that is where they
+belong — an eigenmode analysis has no excitation and no run.  The
+session pipeline is spec-driven and needed no change: the exporter
+hands it one more monitor spec with `reader="pvd"`.
+
+Three decisions inside that:
+
+- **The ParaView axis carries the mode index, not the eigenfrequency.**
+  Degenerate pairs share a frequency to the last digit and are the rule
+  in any symmetric cavity — DD-138's cross-attempt merge made a
+  previously truncated pair visible on the very fixture this was
+  written for.  Two datasets at one timestep hide each other, so the
+  frequency travels as field data instead: displayed, exact, and not
+  load-bearing.
+- **Fields are peak-normalised per mode, and the divisor is stored.**
+  An eigenvector has no absolute amplitude; the solver's own scaling
+  ran to 2.2e8 on the tutorial-13 cavity, which reads as V/m and is
+  not.  Writing `E_peak_before_normalisation` / `H_peak_…` into the
+  file keeps the normalisation reversible rather than lossy.
+- **Glyphs on E only.**  E and H are normalised by unrelated peaks, so
+  drawing both would render them at comparable lengths while they are
+  physically incomparable.
+
+**Measured.**  30 x 20 x 15 mm air cavity, 4 modes: session written in
+one call, `|E| = 1` exactly per mode, cell dimensions equal to the
+project grid.  Found and fixed en route: `_freq_vtr_grid` left the
+coordinate arrays unnamed, and VTK then writes them as
+`Array 0x<address>` — the **frequency-monitor export was not
+byte-reproducible between processes** either.  Naming them fixes both.
+
+**Consequence.**  `Project.export_paraview_eigenmodes()`, called
+automatically by `ProjectStore.write_eigenmodes` under the same
+best-effort guard as the run-close export (visualization must never
+invalidate a stored result).  Gates:
+`test_paraview_export.py::TestEigenmodeExport` — session generated on
+write, mode-index axis, normalisation with recoverable divisors, grid
+agreement, byte-identical regeneration, and the empty-project no-op.
+
+---
+
+## DD-140 — `MonitorFieldFrequency(interval=)`: sub-sampling a DFT is not a recording interval
+
+**Date:** 2026-08-12
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  A whole-volume frequency monitor accumulates a DFT over
+every cell at every step — arithmetic comparable to the solver itself.
+Measured on a 33 180-cell guide over 3 000 steps: the monitor costs
+**+144 %** of the bare run's wall-clock time.  Tutorial 13 met the same
+wall (5:32 → 9:54 with the monitor in), and the only remedy available
+was to take the monitor out of the executed run and ship the picture as
+a static asset.  `MonitorFieldTime` has had an `interval` since DD-104;
+the frequency monitor had no way to thin its sampling at all.
+
+**Decision.**  `interval` in seconds, matching `MonitorFieldTime`'s
+vocabulary — but with guards that monitor does not need, because the
+two things are not the same operation.  A time monitor's interval
+decides how many snapshots are *kept*; a DFT interval is genuine
+under-sampling of an oscillating integrand, and too few samples per
+period do not coarsen the output, they corrupt it.  Hence:
+
+- **Rejected below 4 samples per period** of the monitor's highest
+  frequency, **warned below 10.**  Nyquist (2) is the theoretical floor
+  and far too optimistic for a Riemann sum of an oscillation; the
+  documented rule of thumb is 10 and above.
+- **The stride rounds down**, never up: the interval is an upper bound
+  on the sample spacing, and rounding up would sample coarser than
+  asked — which would let an interval derived from a
+  samples-per-period rule trip the very margin it was chosen to keep
+  (measured: a request for exactly 10 per period landed on 9.8 and
+  warned).
+- **The integration weight is the realised spacing** (`stride * dt`),
+  so bins keep their units and `renormalize` is untouched.  The
+  leapfrog half-step for H stays on the *solver* `dt` — that is where H
+  physically sits, not a property of the sampling.
+- **The second condition cannot be checked and is documented instead:**
+  the fields must carry nothing above the resulting Nyquist frequency,
+  or that content folds onto the requested bins.  The monitor does not
+  know the excitation bandwidth; sizing the interval from the
+  analysis's `f_max` rather than the monitor's own frequencies is
+  always safe.
+- **Validated on the first recorded step**, the first moment a monitor
+  sees `dt`, so a rejected interval stops the run immediately rather
+  than after it has been paid for.  The stride is keyed on the absolute
+  step index, so a resumed run samples the same instants.
+
+Rejected alternative: a `samples_per_period` parameter, which would
+carry the safety rule in its units.  It reads well but splits the
+monitor vocabulary in two — and it still cannot see the excitation
+bandwidth, so it would promise a safety it does not have.
+
+**Measured** (33 180 cells, 3 000 steps, whole-volume E monitor, bins
+at 10 and 12 GHz against an every-step reference):
+
+| sampling | monitor overhead cut | max abs deviation / peak |
+|---|---|---|
+| 40 per period | 2 % | 2.9e-14 |
+| 20 per period | 49 % | 3.5e-05 |
+| 10 per period | 72 % | 1.0e-04 |
+
+1e-4 is −80 dB on a field plot.  The 40-per-period row is the honest
+one: on a mesh that fine the solver's own `dt` already oversamples, the
+stride comes out 1, and there is nothing to win.
+
+**What the interval can reclaim is exactly the solver's own
+oversampling**, which is why the two tutorials that adopted it land
+orders of magnitude apart.  Tutorial 13's step is set by a 0.635 mm
+feed pin (`dt` = 0.125 ps against a 3.4 GHz band), so 20 samples per
+period is a stride of **117** and the monitor goes from +79 % of the
+page to inside the build-to-build scatter.  Tutorial 07's step is set
+by the wavelength alone (`dt` = 2.98 ps against 12.4 GHz), so the DFT
+is already sampled 27 times per period and the same rule gives stride
+1 — nothing at all.  Dropping that page to 12 samples per period buys
+a stride of 2, which is still 47 % of a +106 % overhead for a 1.6e-5
+change in the field.  The rule of thumb for a caller: the finer the
+feature driving `dt` relative to the band, the more an interval
+returns.
+
+**Consequence.**  Schema-additive `interval` attribute in
+`fields_freq.h5` (absent means every step, so old files read
+unchanged), carried by `result_dump` and rehydrated by the reader — a
+stored DFT that cannot say how it was sampled cannot be resumed on the
+same stride.  Gates: `test_monitors.py::TestFreqMonitorInterval`
+(8 cases: default, value agreement against every-step, round-down,
+rejection, warning, the 10-per-period rule staying silent, validation
+against the *highest* frequency, absolute-step keying) and
+`test_project_freq.py` (store round trip, and old files reading as
+every-step).
+
+---
+
+## DD-141 — The section pool decides on a measured sample, not an estimate
+
+**Date:** 2026-08-12
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  The DD-102 prefill pool is admitted by two thresholds:
+outstanding query count, and a work score that multiplies queries by
+the queried shape's face count.  Face count is a proxy for cost, and
+how good a proxy it is depends on the geometry class.  On a row of 60
+small PEC posts it over-estimates by an order of magnitude — the fused
+shape has many faces, but bbox prefiltering makes each section cheap —
+so the pool was built for work that did not need it.  Measured on that
+geometry: **12.1 s pooled against 6.9 s sequential**, i.e. the
+"acceleration" cost 75 %.  The pool's own startup is the reason it
+matters: eight fresh interpreters importing NumPy and OCC take ~5 s,
+which is a floor no scheduling improvement can undercut.
+
+**Decision.**  Keep both thresholds as *admission* tests, then measure
+before committing.  `_sample_and_admit` computes
+`_SECTION_SAMPLE_QUERIES` = 24 of the admitted queries in-process,
+times them, and projects the remainder; the pool is built only when
+that projection clears `_SECTION_POOL_STARTUP_S` (5 s, a property of
+the machine) times a 1.5 margin.  Two details carry it:
+
+- **The sample is drawn with a stride, not from the front.**  The
+  schedule is deliberately cost-sorted, rarest axis first, so a head
+  sample times the most expensive queries in the batch and would
+  admit everything.
+- **The sample is not overhead.**  It writes the same cache entries
+  the pool would have written, so whichever way the decision goes,
+  the work counts.
+
+The split is deliberate: the geometry-dependent quantity is measured
+per call, and only the machine-dependent one stays a constant.
+
+**Measured.**  60-post fixture (29 592 cells), default settings:
+**12.1 s → 5.3 s**, and `MAGNELIO_SECTION_WORKERS=1` now gives the
+same 5.3 s — the pool correctly declines to build.  The stress case is
+untouched where it pays: 501 lenses / 1002 primitives (149 583 cells)
+runs **58.0 s sequential vs 33.3 s pooled**, and the pool is still
+built.  A 151-lens middle case comes out neutral either way (8.9 vs
+9.1 s), which is what a break-even test should do at break-even.
+
+**Consequence.**  Gates in
+`test_geometry.py::TestParallelSectionPrefill`: cheap batches stay
+sequential with their sample cached, expensive batches are handed on,
+sample and remainder partition the batch exactly, and the sample is
+spread rather than taken from the head.  The pre-existing
+bit-identity gate now also pins `_SECTION_POOL_STARTUP_S = 0`, without
+which its deliberately cheap fixture would be declined by the new gate
+and the test would silently compare sequential against itself.
+
+---
+
+## DD-142 — Deterministic ARPACK start in the 2D mode solver
+
+**Date:** 2026-08-12
+**Status:** Accepted — implemented, tested.  Closes KB-010.
+
+**Problem.**  `test_coax_tem_vs_te_tm` failed once on 2026-08-10 and
+again in the full run of 2026-08-12, roughly one run in twelve, with
+no code in between to explain it.  `Numerical2DModeSolver` called
+`eigsh(..., sigma=…)` without `v0`, so ARPACK started from a random
+vector and the converged eigenvectors carried a run-dependent
+residual.
+
+The standing hypothesis was that the *basis* inside the degenerate TE
+pair rotated run to run.  Measured over 30 rebuilds of the same port,
+it does not: the basis angle came out 28.9° every single time.  What
+moved was the residual — the cross-projection ratios the test asserts
+on wandered over **3.1e-16 … 1.1e-13**, a factor of 70, against a
+1e-12 gate.  Both ends are physically zero; the gate simply sat within
+reach of the spread's upper tail.
+
+**Decision.**  Pass a fixed generic start vector
+(`np.random.default_rng(0).standard_normal(n)`) to both `eigsh` calls
+in the module.  Generic rather than structured: a vector of ones can
+sit orthogonal to a mode of interest and starve it.  The assertion
+stays as it is — it was never wrong, it was measuring a quantity that
+had no reason to be reproducible, and reproducibility is the fix.
+
+**Measured.**  The same 30 rebuilds now return **identical** ratios
+(5.61e-15 and 2.82e-14), a factor ~35 below the gate, and the test
+passed 30 consecutive runs.
+
+**Consequence.**  Mode profiles shift by their own convergence
+residual (1e-14 class) against previously stored ones — below every
+tolerance in the suite, and no longer a moving target.  KB-010 closed.
+
+---
+
+## DD-143 — Cross-sections draw what has no cross-section
+
+**Date:** 2026-08-12
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  `plot_cross_section` sliced the model's solids and
+nothing else, because slicing is all it did.  Everything in a model
+that carries no volume — `ThinWire` conductors, discrete ports, lumped
+elements, face ports — returned an empty polygon list and silently
+vanished.  Tutorial 08 showed the consequence plainly: a monopole
+antenna rendered as an empty box of air, with neither the wire nor the
+feed visible anywhere on the page.  The picture was not wrong about
+the solids; it was simply not a picture of the model.
+
+**Decision.**  Draw them from their *definitions* rather than from a
+section, and let the cut's relationship to each feature choose the
+mark:
+
+- **along the cut → a line**, **through the cut → a hollow ring.**
+  The two cases are geometrically different facts about the same
+  wire, and drawing either as the other misleads.  The ring is hollow
+  so a field plot underneath still reads through it.
+- **A thin wire is drawn at fixed width, not to its radius.**  It is a
+  sub-cell model by definition — to scale it would be invisible.  The
+  radius is used for the only thing it can honestly decide: whether
+  the cut passes *through* the wire (within one radius) or misses it.
+- **Face ports become the domain edge they occupy.**  A port declared
+  on a bbox face parallel to the cut is *not* drawn: it would cover
+  the whole section and hide the geometry it is meant to annotate.
+- **Feature colours sit outside the material palette** (wire, port and
+  element each get their own).  A reader must never have to work out
+  whether a coloured line is a lossy dielectric or a port.
+- Everything is labelled, and `show_wires` / `show_ports` switch the
+  two families off for a plain material section.
+
+**Consequence.**  Tutorial 08's cut now shows the monopole and its
+feed gap, and the page's plot moved *after* the port declaration —
+before, the port did not exist yet when the figure was drawn, so no
+amount of plotting could have shown it.  `GeometryModel` and
+`Project` inherit the behaviour through their existing `**kwargs`
+wrappers; a stored `LoadedGeometry` without ports degrades to the old
+picture rather than failing (`getattr(..., "ports", ())`).  Gates:
+`test_plot_geometry.py::TestVolumelessFeatures` — one artist per
+feature, line-vs-ring by cut orientation, a miss drawing nothing, the
+off switches, three distinct colours, and the parallel-face-port
+abstention.
+
+---
+
+## DD-144 — `blend="tangent"`: a transition that leaves both faces squarely
+
+**Date:** 2026-08-12
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  `.lofted()` bridged two faces with `ThruSections`, which
+has no concept of a tangent.  With only two sections its `ruled=False`
+"smooth" mode is indistinguishable from `ruled=True` — measured
+identical volumes to every digit on a stripline-to-coax transition —
+because a spline through two profiles and a ruled surface through two
+profiles are the same surface.  Both run straight from one profile to
+the other, so wherever the two faces point in different directions the
+solid meets them at a crease.  That is the normal case for a feedthrough:
+an electrode ends on a face normal to *z*, the inner conductor it feeds
+begins on a face normal to *y*.  The crease sits exactly where the
+current crowds from the wide electrode onto the thin pin — a field
+concentration where a real part is radiused, and a geometric
+singularity the mesh then has to resolve.
+
+Building the bend by hand was the only route, and a poor one: it means
+inventing intermediate cross-sections that have no physical
+definition, placing them by eye, and re-placing them whenever a
+dimension changes.
+
+**Decision.**  A third join mode on the verb, `blend="tangent"`, that
+derives the bend from the two faces instead of from invented sections.
+The end conditions are Hermite — leave each face along its own outward
+normal — written as a cubic Bezier spine whose interior control points
+sit at `centre + normal · tension · span`.  `MakePipeShell` sweeps one
+face wire into the other along that spine, holding the profiles
+perpendicular to it, so the solid meets both faces at a right angle by
+construction rather than by fitting.
+
+- **`blend=` replaces `ruled=`, rather than adding a flag beside it.**
+  Three modes do not fit in a boolean, and `ruled=False, tangent=True`
+  would be a state the caller can contradict.  Magnelio is unreleased,
+  so the rename costs nothing and no deprecation path is owed.
+- **The tension is public, and may differ per end.**  It is not an
+  internal constant: at `1/3` the blend is a clean quarter bend, and by
+  `0.7` the second control point has travelled behind the root of the
+  originating solid and the profile bulges outward.  An asymmetric pair
+  is what an asymmetric transition needs — stiff at the wide end, soft
+  at the pin.
+- **Corrected Frenet, not plain Frenet.**  A plain Frenet frame flips
+  its normal at an inflection point, which a Bezier spine between two
+  arbitrarily posed faces easily has.  On a planar spine, corrected
+  Frenet and a fixed binormal agree to every digit; the corrected frame
+  is the one that also holds up when the two faces are not coplanar,
+  which is the general case Magnelio has to serve.
+- **The normal's sign comes from the face's orientation in its solid,
+  not from `face_plane_normal`.**  That helper deliberately forces a
+  reproducible sign (largest component positive) so an offset direction
+  is predictable; a blend needs the direction that points *out of the
+  body*, which only `TopAbs_REVERSED` can tell it.  Hence the separate
+  `face_outward_normal`.
+- **`tension=` is rejected for the other two modes** rather than
+  silently ignored, so a caller who sets it without switching the mode
+  hears about it.
+
+**Consequence.**  `Loft` (DD-134) takes the same `blend=` argument but
+only its two section-based values; asking it for `"tangent"` names the
+verb that can do it.  The analytic bbox padding scales with the tension
+(`1.5 · max(tension)`), since the bow grows with it.
+
+Gates: `TestTangentBlend` in `tests/unit/test_modifications.py`.  The
+load-bearing one is `test_leaves_the_start_face_along_its_normal`,
+which measures the sideways drift of the section at three depths and
+asserts it grows as the *square* of depth — that exponent is the right
+angle, since any residual tilt would add a first-order term and pull it
+towards 1.  Measured 24.6 µm / 99.9 µm / 409 µm at 0.5 / 1 / 2 mm along
+a 21.6 mm span: ratios 4.06 and 4.09.
+
+---
+
+## DD-145 — Structure diagrams: four views, because one would lie
+
+**Date:** 2026-08-13
+**Status:** Accepted — implemented.
+
+**Problem.**  The package is ~43,000 lines across 20 subpackages and
+149 classes with no overview of its own shape.  The obvious remedy —
+an inheritance diagram — turns out to be the least informative one
+available here: below `Shape` the hierarchy is 27 classes at a maximum
+depth of **2**, so the picture is a star that says "everything is a
+Shape".  What the code actually organises itself by is elsewhere: the
+import graph between subpackages, and the composition tree that a
+geometry expression forms at run time.
+
+**Decision.**  One developer tool, `validation/tools/draw_structure.py`,
+with four subcommands (`packages`, `inheritance`, `composition`,
+`classes`).  It writes DOT directly and shells out to the system `dot`;
+no third-party package is added, and nothing enters the published
+documentation.  Each view also has a `--stats` text mode, which is what
+makes the tool checkable rather than merely decorative.
+
+- **`if TYPE_CHECKING:` is not a dependency.**  Counting those imports
+  as load-time edges invented a `geo ↔ mesh` cycle that cannot occur:
+  the block never executes.  With them excluded, the package has
+  **exactly one** module-level cycle, `analysis ↔ io`.  The guard is
+  recognised in `check_imports._walk_scoped`, so both tools agree.
+- **Deferred imports are drawn separately, and off by default.**
+  Magnelio deliberately defers 37 of its 87 inter-package imports into
+  function bodies to break cycles.  Drawing them like load-time edges
+  misrepresents the architecture; drawing them at all buried the graph,
+  so `--deferred` opts in.
+- **Layering runs on the condensed graph.**  Tarjan's SCC first, then
+  longest-path on the resulting DAG.  A recursive depth over the raw
+  graph is path-dependent wherever a cycle exists and put `mesh` in the
+  bottom layer on one run and not on another.
+- **Composition is drawn as arity, not as class-to-class edges.**  The
+  child fields are all annotated `object`, so no static analysis can
+  name the child's class.  What *is* derivable — and exactly — is which
+  fields a class recurses into, by finding the `self.<field>._occ_shape()`
+  calls it makes (plus a comprehension form for the n-ary containers).
+  That yields leaf / unary / binary / n-ary, which is the concept the
+  inheritance diagram fails to show.
+- **Internal modules are imported too.**  A map that omits `_operators`
+  and `_backend` hides the parts hardest to learn from the public API.
+
+**Consequence.**  Verified against numbers measured independently of the
+tool: 20 subpackages, 50 module-level edges, 37 deferred-only, one cycle;
+27 `Shape` subclasses at depth 2, 15 internal; 19 classes recursing into
+child shapes (13 unary, 3 binary, 3 n-ary).  Output goes to
+`validation/results/structure/`, which is git-ignored — the images are
+regenerable and would otherwise churn on every rename.
+
+---
+
+## DD-146 — Booleans never edit the shapes they are given
+
+**Date:** 2026-08-13
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  OCCT's Boolean kernel defaults to
+`BOPAlgo_Options::NonDestructive = false`: an operation is allowed to
+edit its *argument* shapes in place — raise edge and vertex tolerances,
+insert p-curves, shift vertices — and it uses that freedom routinely.
+Magnelio never set the option, in any of its four Boolean call sites.
+
+Two of the library's own properties turn that default into a
+correctness bug.  `cached_occ_shape` hands out **the same**
+`TopoDS_Shape` on every call, so an edit is permanent rather than
+scoped to one operation.  And an OCCT Boolean *result* shares the
+sub-shapes it did not have to modify with its operands, so an edit
+made to a derived solid reaches back into the body the user built.  A
+mesh build takes thousands of `BRepAlgoAPI_Section` cuts through those
+shapes, and the tolerance creep from each one accumulates.
+
+Measured on a stripline-coupler assembly (internal record:
+`investigations/boolean-operand-mutation`), one mesh build moved the
+maximum edge tolerance of the vacuum body from 1.1e-4 m to 7.0e-3 m —
+7 mm of fuzz on a model with 1 mm electrodes.  Intersecting that body
+with the x>0, y>0 quarter space afterwards no longer returned the
+quarter of a 90 mm pipe but a 4 mm coax stub: a second model built
+from the same bodies meshed one cell across x and looked empty.
+Nothing announced the degradation.  `bounding_box()` stayed exactly
+right throughout — tolerance moves no geometry, only the fuzzy zone
+the Boolean kernel resolves seams in — so the failure was visible only
+in `BRep_Tool::Tolerance`.
+
+**Decision.**  Every Boolean the library runs calls
+`keep_operands_intact()` (i.e. `SetNonDestructive(True)`) before
+`Build()`.  The named helper carries the rationale so the call cannot
+be mistaken for a tuning knob and dropped.  It covers all four sites:
+`_run_bop` (every CSG Union/Intersection/Difference),
+`_face_region_wires`, the section in `cross_section_polygons`, and the
+pair test in `check_pairwise_overlaps` — the last one rebuilt from the
+two-shape constructor to the explicit
+`SetArguments`/`SetTools`/`Build` sequence, since that constructor
+builds before the option could take effect.
+
+The alternative — deep-copying the cached solid before every Boolean —
+was rejected: it pays a copy on every call to avoid an edit that
+usually does not happen, where the kernel copies only the sub-shapes
+it would actually have modified.
+
+**Consequence.**  On the coupler case the tolerance now holds at
+1.105e-4 m across a mesh build and the quarter-space cut stays the
+quarter-space cut.  The meshes are identical with and without the
+option (43 x 68 x 101 either way), and the build costs the same
+(16.4 s vs. 17.1 s) — this buys correctness, not accuracy, and gives
+up no speed.
+
+One measured behaviour change, all of it inside the already-ill-posed
+case: a *plain* section on a plane lying in a face returns less than
+before (the two-brick seam of DD-137 went from half the strip to a
+quarter).  The inflated tolerances had been smearing the degenerate
+seam enough to catch more of it — accidentally, and no closer to the
+right answer, which is the whole strip.  No production caller is
+affected: `plot_cross_section` opts into `exact_at_faces` (DD-137,
+still exact at 40e-6), and the mesher never takes the exact cut on a
+degenerate plane — it detects tangency per face and re-sections a step
+to either side.  `test_plain_section_loses_material_at_a_seam` was
+asserting the old figure as if it were a contract; it now asserts what
+it means (area comes back short), since neither figure is correct.
+
+Gate:
+`tests/integration/test_boolean_operands_intact.py` — edge tolerances
+unmoved across a mesh build (fails without the option), and a second
+model off the same bodies meshing to the same grid.
+
+---
+
+## DD-147 — An edge with no electric energy must not run the solver
+
+**Date:** 2026-08-13
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  `build_M_eps` gives a cat-2 edge whose `eps_avg` is 0 the
+value `M_eps = 0`.  Such an edge lies wholly inside a conductor — the
+sub-cell classifier left it cat-2 and *unmasked* instead of cat-3 — so
+it stores no electric energy at all.  Two places read that 0 as if it
+were a physical permittivity:
+
+- `compute_min_effective_eps` returned **0**, and `courant_dt`'s
+  `max(min_effective_eps, 1e-6)` guard turned that into
+  `eps_factor = 1e-3`.  The guard only prevents a division by zero; it
+  does not rescue the time step, it pins it three decades below the
+  geometric Courant limit.
+- the E-side update coefficients divided straight through `M_eps`, so
+  `alpha_E` and `beta_E` came back NaN on those edges, and the NaN
+  reached every field component on the first step.
+
+Neither said anything.  Measured on a stripline-coupler quarter model
+(internal record: `investigations/degenerate-conformal-edges`): 99 of
+383 818 edges were degenerate, `dt` came out at 6.59e-17 s against a
+geometric limit of 6.58e-13 s, and a 44 200-step run therefore covered
+0.003 ns — the 1 GHz excitation had not started, the stored energy sat
+at its initial value, and `a(t)`/`b(t)` were NaN.  It reads exactly
+like a converging run that needs more steps.
+
+**Decision.**  Treat `M_eps = 0` the way the H side has treated
+`M_mu = 0` since DD-081: the edge is *frozen*, not solved.
+
+- `compute_min_effective_eps` minimises over `eff_eps > 0` only.  A
+  frozen edge cannot go unstable, so it has no business setting the
+  stability limit.  This is the E-side counterpart of the 1 %
+  `A_face_free` floor that `compute_min_effective_mu` already mirrors
+  from `build_M_mu` — the comment there predicts this failure mode
+  ("would shrink dt to the courant_dt internal lower bound and turn a
+  20-second test into a multi-hour one"); only the E side lacked it.
+- `alpha_E` / `beta_E` are built through `np.where(M_eps > 0, …)`,
+  giving frozen edges `alpha = 1`, `beta = 0` — the same pair
+  `alpha_H`/`beta_H` use.  Masking the edge would have produced the
+  same behaviour; NaN never was an option.
+
+The root cause — a classifier that leaves a fully-conducting edge cat-2
+and unmasked — is deliberately *not* addressed here.  Changing the mask
+moves the conductor contour the 2D mode solver and the port detection
+read; the solver-side guard is the conservative half and is correct
+independently of how the edge came to be.
+
+**Consequence.**  On the coupler case `dt` returns to 2.60e-14 s (395x),
+the divide warnings are gone, and the power waves carry signal instead
+of NaN (`max|a| = 5.99e-07` where it had been NaN).  Meshes without
+degenerate edges are unaffected — `eff_eps > 0` holds everywhere and
+`np.where` reproduces the previous arithmetic exactly.  Gates:
+`tests/unit/test_degenerate_edge_stability.py` — the minimum and the
+time step both survive one planted degenerate edge, the coefficients
+stay finite, and that edge comes out frozen rather than NaN.
+
+---
+
+## DD-148 — A sub-face port is drawn as its window, not as the whole wall
+
+**Date:** 2026-08-13
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  `_draw_face_port` (DD-143) drew every bbox-face port as a
+line spanning the full domain edge, because it read the *domain* box
+and never looked at `port.bbox`.  A coax port 3.5 mm across on a 45 mm
+wall was drawn 45 mm wide, and two ports on one face — the normal
+arrangement for a stripline coupler, one feed at each end — landed on
+top of each other as the same line, with the second label hidden under
+the first.  Worse, a cut nowhere near either window still drew both:
+the picture asserted a port on a stretch of wall that is plain wall.
+
+**Decision.**  The window is the port.  `_draw_face_port` reads
+`port.bbox` in the documented global tangential-axis ordering, and
+
+- **abstains when the cut misses the window** on the cutting plane's
+  own axis — there is no port there to draw;
+- **spans the window, clipped to the domain**, on the remaining axis.
+
+`bbox=None` still means the whole face, so the full-face case is
+unchanged.
+
+**Consequence.**  Each feed of a two-port face is drawn on the cut that
+actually passes through it, at its true width.  Gate:
+`tests/unit/test_plot_geometry.py::TestVolumelessFeatures` — a window
+spans 4 mm rather than the 40 mm domain, a cut between two windows
+draws nothing, each window appears on its own cut, and a port without
+a bbox still spans the whole edge.
+
+---
+
+## DD-149 — The free-area floor is a threshold, not an equality test
+
+**Date:** 2026-08-13
+**Status:** Accepted — implemented, tested.
+**Supersedes** the cat-2 half of DD-147 (the DD-147 guards stay as a
+backstop for the remaining paths to `M_eps = 0`).
+
+**Problem.**  DD-147 guarded the case `eps_avg == 0` exactly.  The
+conformal classifier does not always produce a clean zero.  On the same
+coupler model at a 0.25 mm cell size (internal record:
+`investigations/degenerate-conformal-edges`) it produced 10 edges at
+exactly zero *and* three more at `eps_avg ≈ 3.2e-15` — the same
+physical situation, a dual face whose free area has collapsed, but with
+a rounding remainder instead of a zero.  An equality test walks past
+those three; they alone held `min_effective_eps` at 7.2e-15 and `dt` at
+5.95e-17 s against a geometric limit near 6e-13 s.  The user sees a run
+that does not advance, and the workaround — nudge `MeshControl` until
+the pathological edges happen not to appear — is not a workaround at
+all, since which cell sizes are safe cannot be predicted.
+
+`build_M_mu` has had the right shape of guard since the Krietenstein
+reduction landed: a **threshold** on the free-area fraction,
+`A_face_free > 1 % · A_face`, below which the sub-cell formula is not
+applied.  The E side had no equivalent.  `EdgeMaterialData` already
+carries `f_A`, the exact E-side analogue (free dual-face area / dual
+area) — nothing needed measuring, only reading.
+
+**Decision.**  Both mass matrices floor on the same constant,
+`_FREE_AREA_FLOOR = 0.01`, mirrored by both effective-material helpers:
+
+- `build_M_eps` applies the cat-2 sub-cell formula only where
+  `f_A > 0.01`.  NaN `f_A` (an edge carrying no sub-cell data) compares
+  False and is floored.
+- `compute_min_effective_eps` mirrors the same condition, leaving
+  floored edges at the 1.0 default so they stay out of the minimum.
+
+**What replaces the formula differs per side, deliberately.**
+`build_M_mu` hands a floored H-face its bulk-staircase value, which is
+sound there because a floored H-face is Faraday-dead — its circulation
+edges sit inside the PEC mask, so `C e = 0` and `h` stays 0 either way
+(measured neutral to 1e-15 by the DD-058 donor-trigger benchmark).  An
+E-edge carries no such guarantee: the bulk value would let a curl drive
+an edge lying inside a conductor, where E = 0.  Floored E-edges are
+therefore *frozen* (`M_eps = 0`), which routes them through the
+`alpha_E = 1` / `beta_E = 0` branch DD-147 already built.
+
+**Consequence.**  On the coupler quarter model the collapse is gone
+across the mesh-control range that used to trigger it — `min_cell_size
+= t/4` moves from `eps_min = 7.2e-15`, `dt = 5.95e-17 s` to
+`eps_min = 0.118`, `dt = 2.04e-14 s` (343x); the `min_cells_per_feature
+= 6` case moves 195x.  Configurations that were already healthy are
+bit-identical (`t/3`: 0.0681 before and after; `min_cells_per_feature
+= 8`: 0.0465 before and after), and the full suite is unchanged.
+
+The threshold is not a judgement call on this geometry: counting the
+affected edges (`investigations/degenerate-conformal-edges/floorcount.py`)
+gives 0 floored of 4682 cat-2 edges at `t/3` and 0 of 7794 at
+`min_cells_per_feature = 8` — those two meshes are bit-identical, not
+merely close — against 13 of 4464 at `t/4` and 80 of 6934 at
+`min_cells_per_feature = 6`.  Where it does fire, the largest floored
+`f_A` is 5e-13 and the smallest surviving one 1.6e-02: **eleven decades
+of gap**, so any threshold between 1e-12 and 1e-2 selects the same
+edges.  A mesh whose thinnest sub-cell edge retains 1–2 % free area
+keeps its reduction — the floor is not a general-purpose clamp on small
+`ε_eff`.
+Gate: `tests/unit/test_degenerate_edge_stability.py::TestNearlyDeadEdgeIsFlooredToo`
+— a planted 3.2e-15 edge leaves the time step where it was, comes out
+frozen, a 2 % edge keeps its reduction, and the three copies of the
+constant are pinned to each other.
+
+## DD-150 — The time step comes from the measured spectral radius, not the worst-case product
+
+**Date:** 2026-08-13
+**Status:** Accepted — implemented, tested.
+
+**Problem.**  `courant_dt` scaled the geometric Courant limit by
+`sqrt(eps_min · mu_min)` — the worst conformal edge times the worst
+conformal face, as if both coincided with the smallest cell.  They
+never do.  On the stripline-coupler quarter model (internal record:
+`investigations/conformal-cfl/`) the heuristic held `dt` at 2–4 % of
+the geometric limit while the exact stability limit sits at 67–75 %:
+a factor **17.2x** (`min_cell_size = t/2`) to **34.2x**
+(`t/8, min_cells_per_feature = 8`) of runtime thrown away.  The
+`mu_min ≈ 0.0103` driving it is structural — any curved conformal wall
+produces sliver H-faces just above the DD-149 1 % floor — so every
+curved model paid the decade, and a 30 ns run needed 0.8–4.6 million
+steps where ~45 000 suffice.  DD-147/DD-149 capped this collapse at
+the floor; this entry removes the remaining decade by measuring
+instead of estimating.
+
+**Decision.**  `spectral_dt(mesh, accuracy, m_eps=, m_mu=)`
+(`solver/stability.py`) computes the sharp leapfrog criterion
+
+    dt_max = 2 / sqrt(lambda_max(M_eps^-1 C^T M_mu^-1 C))
+
+on the live DOFs (PEC-masked and frozen `M_eps = 0` edges removed,
+frozen H-faces via the exact `1/M_mu = 0` — the operator the solver
+actually iterates).  `lambda_max` is measured by matrix-free Lanczos
+(`eigsh`, k=1, LA, tol 1e-8) on the symmetrised operator
+`D^-1/2 A D^-1/2`; the row-sum (Gershgorin) bound — computed with the
+absolute-valued factors, strictly an upper bound on the spectral
+radius — serves as fallback when Lanczos fails and as certified
+ceiling (a Lanczos value above it is clamped).  Lanczos converges
+from below; the developer accepted the standard 0.95 safety factor as
+sufficient cover for the 1e-8-tolerance residual (2026-08-13).  The
+measured `lambda_max` is cached on the mesh (`_spectral_lambda_max`),
+so `solve_ports()` + `run()` pay one eigensolve; `accuracy` only
+scales the safety factor.  `AnalysisScatteringTD` uses `spectral_dt`
+at both dt sites; `courant_dt` stays for geometric estimates (port
+refinement, step budgeting) and as the vacuum fallback when a mesh
+has no live update operator.
+
+**Sharpness, measured** (coupler t/2 mesh and the certificate
+fixture): a bare matrix leapfrog with the production operators is
+stable at `0.999 · dt_crit` (bounded noise, growth ~2) and blows up
+before step 200 at `1.02 · dt_crit`.  The Gershgorin fallback
+delivered 84 % of the exact step on the coupler, 88 % on the
+certificate fixture.  Where `lambda_max` lives: the top eigenvector
+concentrates on cat-2 sliver edges (`f_A` 0.02–0.5) — lifting them
+further (enlarged cells, DD-058 machinery) could recover the residual
+1.3–1.5x to the geometric limit and stays a possible follow-up, no
+longer the fix.
+
+**Scope of re-validation** (developer-agreed): the measured operator
+is the lossless volume update; sigma/sigma* losses, pole-residue ADE,
+SIBC, thin wire, lumped elements and the Mur/DTBC port updates also
+depend on dt and had only ever run at the throttled step.  The first
+integration run surfaced 19 failures in exactly these paths, all
+diagnosed, none a physics regression:
+
+1. **14 bit-exactness gates** (resume, streamed-vs-in-RAM, GPU
+   staging, dispersive resume, thin-wire T3/T6): ARPACK's default
+   random start left a run-to-run residual in `lambda_max`, so two
+   builds of the same mesh got a dt differing in the last bits — the
+   KB-010/DD-142 lesson replayed on the CFL path.  Fixed in
+   `_measure_lambda_max` with the same deterministic generic start
+   vector (`default_rng(0)`); dt is bit-identical across rebuilds.
+2. **`test_interval_survives_the_store_round_trip`**: the DD-140
+   fixture encoded its stride-2 interval as an absolute 8 ps against
+   a dt of 3.45 ps; the spectral step is 4.12 ps (+19 % on a plain
+   vacuum brick — the per-axis-minima geometric bound is conservative
+   even without conformal cells) and the floored stride silently
+   became 1.  The test now derives the interval from the measured
+   step (`2.5 * spectral_dt`).
+3. **Lumped-port co-temporal guard**: the teeth-check
+   `|S_cotemporal - S_temporal| > 1e-3` sat on the measured value of
+   one dt (1.50e-3 at 1.83 ps; 8.45e-4 at 2.01 ps — the separation
+   moves with the fixture response, not just with omega*dt).  Floor
+   lowered to 1e-4, still five decades above the 1e-9 equality gate
+   it protects.
+4. **SIBC end-to-end windows**: the 2 GHz band-edge point moved in
+   both gates of the parallel-plate fixture on a 1 % dt change — the
+   band edge carries the least excitation energy and the smallest
+   alpha*L.  Alpha ratio 0.986 -> 0.9607 (converged; longer runs do
+   not move it; interior stays in the 0.988–0.999 class, |S11| floors
+   unchanged), window floor re-measured to 0.95; monitor/balance
+   ceiling 1.13 -> 1.15 (band edge 1.139, interior at the rim-strip
+   1.10–1.11 class).  The analytic anchor remains the
+   dt-parameterised SIBC unit layer.
+
+After the fix and the three fixture recalibrations the unit suite
+(1746) and the full integration suite run green at the enlarged step.
+
+**Gates:** `tests/unit/test_spectral_dt.py` (stable at the measured
+step, unstable 5 % above the limit, dominates the heuristic on a
+conformal fixture, vacuum box stays at the geometric value, cache
+skips the second eigensolve, Lanczos failure falls back safely);
+`validation/spectral_dt_certificate.py` (waste factor, empirical
+sharpness bracket, Gershgorin never below Lanczos).
+
+**Files:** `solver/stability.py` (`spectral_dt`,
+`_measure_lambda_max`), `analysis/scattering_td.py` (both dt sites),
+`solver/__init__.py` (export), `docs/methods/fit-discretization.md`
+(stability section rewritten around the algebraic criterion).
+
+## DD-151 — Face planes outrank bounding-box extents in the plane clustering
+
+**Date:** 2026-08-13
+**Status:** Accepted — implemented, tested.  Closes KB-013.
+
+**Problem (KB-013).**  OCCT Booleans on interpenetrating operands
+return a bounding box inflated by `Precision::Confusion` (1e-7 model
+units) beyond the true geometry — the coupler's coax stub reported
+ymax = 75.000100 mm against the real end face at 75.000000 mm.  The
+mesher collected both as untagged critical planes and `_snap_planes`
+clustered them to the midpoint, 75.00005 mm: the domain boundary sat
+50 nm past the material surface, the last cell carried a sliver fill
+factor of `1 − 1.11e-5`, `_port_chain_slab_defect` measured exactly
+that against the 1e-8 tolerance, and every port channel on the face
+fell back to modal Mur-1st (−30 dB class instead of the −124…−166 dB
+DTBC floors) — with a misleading warning blaming the (perfectly
+translation-invariant) feed.
+
+**Decision.**  Critical planes carry provenance from extraction to
+clustering.  `extract_critical_planes_per_shape` returns
+`(position, exact)` pairs — `exact = True` for planes read from an
+analytic face surface (`_face_critical_planes`), `False` for shape
+bounding-box extents.  `_snap_planes` collapses a cluster containing
+at least one exact member to the midpoint of its *exact* members
+only; bbox extents inside the cluster are absorbed without
+influencing the position.  Clusters without any exact member
+(silhouettes of tilted / free-form faces, which only the bbox covers)
+keep the symmetric midpoint — as does a cluster of several exact
+planes, so float-wiggle between two real faces behaves exactly as
+before.  Thin-sheet positions and wire vertex coordinates count as
+exact; wire bbox extents as approximate.  Bare floats normalise to
+exact in `_merge_axis_planes`, keeping the historical unit-test
+behaviour byte for byte.
+
+**Blast radius, measured.**  The change can only move clusters that
+mix face planes with bbox extents — precisely the Boolean-inflation
+case.  All-exact and all-bbox clusters reproduce the historical
+midpoint, and the full unit + integration suites pass unchanged.  On
+the coupler quarter model the grid stays 27 x 29 x 93; the slab
+defect the DTBC gate measures (`M_mu(Hx)`, ymax face) drops from
+**1.11e-5 to 1.14e-11** — three decades below the 1e-8 tolerance —
+and `solve_ports` builds both coax channels with the exact DTBC, no
+slab warning, no Mur fallback (internal record:
+`investigations/degenerate-conformal-edges/`, `planes.py` now prints
+the provenance tags).
+
+**Rejected alternatives** (recorded in KB-013): (b) trimming the
+confusion-sized inflation off Boolean bounding boxes — risks cutting
+real geometry that genuinely ends within 1e-7 of the box; (c) scaling
+the DTBC gate with the measured defect — DD-066 shows the
+defect-to-reflection relation is not linear, so the gate would need
+its own measurement campaign; the geometry was correct and the grid
+wrong, so the grid is what had to move.
+
+**Gates:** `tests/unit/test_mesh.py::TestPlaneProvenance` — a mixed
+cluster snaps onto the face plane bit-exactly, a bbox-only cluster
+keeps its midpoint, faces-only midpoints ignore a bbox member, and
+the end-to-end interpenetrating-union fixture (the coupler's failure
+geometry, minimal) lands its grid boundary on the analytic face to
+1e-12.
+
+**Files:** `geo/_occ_backend.py` (`extract_critical_planes_per_shape`
+provenance, aggregate strips tags), `mesh/mesher.py` (`critical_raw`
+tagged, `_merge_axis_planes` normalisation, `_snap_planes`
+exact-member collapse), `tests/unit/test_mesh.py`.
+
+## DD-152 — Geometric queries never read triangulation
+
+**Date:** 2026-08-13
+**Status:** Accepted — implemented, tested.  Closes KB-012.
+
+**Problem (KB-012).**  `GeometryModel.plot()` changed the mesh of a
+model built afterwards (`N_y` 68 -> 75 on the coupler, reproducible),
+while edge/face/vertex tolerances stayed bit-identical — the DD-146
+class was ruled out by measurement, and the culprit remained "state
+the renderer leaves behind somewhere other than the tolerances".
+
+Found by measuring the mesher's *input*: the renderer
+(`JupyterRenderer.DisplayShape` via `ShapeTesselator`) tessellates the
+cached solids in place, and `BRepBndLib::Add` defaults to
+`useTriangulation = True` — with a triangulation present, a face's
+bounding box comes from the triangle nodes enlarged by the
+tessellation deflection and differs from the analytic box by whole
+tenths of a millimetre (measured 0.039 mm at 2 mm deflection on a
+5 mm cylinder patch).  The plane-extraction trim filter
+(`_face_critical_planes`: "keep tangent candidates inside the trimmed
+face's bbox") then admits tangent positions of surface regions the
+trimmed face does not cover — the probe showed two extra face planes
+at y = 47.805 mm on the coupler after tessellating the bodies, and
+Boolean results reuse (triangulated) input faces, so fresh
+intersections built after a plot inherit the leak.  The mesh then
+depends on whether the model was viewed first: a convergence study
+run either side of a `plot()` call compares two discretisations.
+
+**Decision.**  Every OCC bounding-box read that feeds meshing,
+classification or construction passes `useTriangulation = False`:
+the trim filter in `_face_critical_planes`, the face/edge bbox
+indexes of the conformal classifier's OCC routing, the face boxes of
+the ray-casting helper, and `_occ_bbox_diagonal`.
+`shape.bounding_box` already used `AddOptimal(..., False, False)`.
+For shapes without triangulation OCC uses the geometry either way, so
+un-plotted paths are bit-identical by construction; the change only
+removes the rendering-dependent branch.  The ParaView export's
+deflection heuristic keeps the default — it feeds a display
+tessellation, not geometry.
+
+**Verified.**  `plottest.py` (internal record:
+`investigations/boolean-operand-mutation`, plus the new `facebbox.py`
+probe): N = 43 x 68 x 101 for all of PRE = none / plot3d / xsec /
+both — the 68 -> 75 asymmetry is gone.  Critical planes of both the
+cached and freshly built intersections are identical before and
+after tessellation; the probe geometry meshes 37 x 62 x 104 with and
+without a prior tessellation, bit-identically.
+
+**Gate:**
+`tests/unit/test_geometry.py::TestGeometryQueriesIgnoreTriangulation`
+— a cylinder patch trimmed 10 µm short of its tangent keeps the
+tangent candidate out of the plane set before and after an in-place
+`BRepMesh_IncrementalMesh` at 2 mm deflection (the triangulated box
+would admit it; the analytic box never does).
+
+**Files:** `geo/_occ_backend.py` (five `Bnd_Box` call sites),
+`tests/unit/test_geometry.py`.
+
+## DD-153 — One vocabulary for boxes, planes, anchors and names across the public API
+
+**Context.**  The pre-v0.1.0 API froze several historical dialects
+side by side: box regions were spelled `corners=` (monitors),
+`bbox=` (declarative ports, 2D tangential frame), `tf_sf_box=`
+(plane-wave source, silently degrading swapped corners via
+`searchsorted().clip()`), and `(p1, p2)` (`Brick.from_corners`);
+axis-normal planes appeared as `normal`/`offset` (`Face`),
+`normal`/`position` (`mirrored`, monitor plots),
+`plane_normal`/`plane_position` (`plot_cross_section`),
+`("z", pos)` tuples (`MonitorWallLoss.reference_plane`) and a
+degenerate corners box (`MonitorFluxTime`); radii mixed
+`inner_radius` with `r_bottom`/`r_major`; ports carried `label`
+where shapes and monitors carried `name`; `Cylinder.origin` and
+`Curve.helix(center=)` named the same anchor differently; and the
+shape verbs disagreed on positional vs. keyword-only for identical
+parameters (`translated(vector)` vs. `extruded(*, vector)`).
+A final API review before freezing MINOR-stability caught the lot;
+since nothing is released, all of it was changed at once, without
+deprecation shims.
+
+**Decision.**  Canonical vocabulary, applied everywhere:
+
+- **Box regions** are `corners=` — two opposite corner points in
+  world coordinates, any order, `None`/`±inf` components reaching
+  the domain boundary (or the documented default) on that side.
+  Applies to `MonitorFieldTime`/`MonitorFieldFrequency` (unchanged),
+  `PlaneWaveSource` (was `tf_sf_box`, now normalises corner order)
+  and `PortWaveguide` (was 2D `bbox`; corners are projected onto the
+  port face — differing normal components raise as an axis mix-up).
+  The range spelling `from_ranges(x1=, x2=, dx=, …)` exists on
+  `Brick` (strict: exactly two per axis) and as classmethods on the
+  two field monitors and the plane-wave source (lenient: open axes
+  allowed); shared resolver in `geo/_ranges.py`.
+  The spec layer keeps the tangential-2D window under the new name
+  `window=` (`PortSpecNumerical`/`PortSpecMultiConductor`,
+  `PortPlane.from_mesh`); `window_from_corners`/`point_on_face` in
+  `ports/declarative.py` do the projection.
+- **Axis-normal planes** are `normal=` + `position=` as a kwargs
+  pair (`Face` — was `offset`; `plot_cross_section` — was
+  `plane_normal`/`plane_position`; monitor `plot()`s unchanged), or
+  a `(normal, position)` tuple where the plane is one value among
+  several parameters (`MonitorFluxTime.plane` — was a degenerate
+  corners box; `MonitorWallLoss.reference_plane` unchanged).
+- **Radii** are written out: `Cone(bottom_radius=, top_radius=)`,
+  `Torus(major_radius=, minor_radius=)`; `radius`/`inner_radius`/
+  `outer_radius` unchanged.
+- **Identity is `name`** everywhere: declarative ports, port specs,
+  `LumpedElement`, `Mode`, result accessors (`port_names`).
+  `label` survives only as matplotlib legend vocabulary and on
+  `Signal1D` (a display label, not an identity).
+- **Anchors:** `Curve.helix(origin=)` (was `center=`) matches
+  `Cylinder.origin`; `Brick.origin` stays the min corner (industry
+  convention), `center` stays the true centre (`Sphere`, `Torus`).
+- **Verbs** take their one geometric core argument positionally,
+  options keyword-only: `mirrored("x", position=…)`,
+  `revolved("z", 180.0)`, `extruded((0, 0, h))`,
+  `shelled(2e-3, …)`, `thickened(35e-6, …)`; keyword calls remain
+  valid.  `chamfered(distance=)` (was `dist=`).
+- **`PortAnalytical`**: `family=` (was `type=`, shadowed the
+  builtin and collided with the project-store envelope key),
+  `width=`/`height=` (were `width_a`/`height_b`), `center=` is a 3D
+  world point projected onto the face.
+- Google-style docstrings in public modules converted to NumPy
+  style (`primitives`, `material`, `grid`, `plane_wave`,
+  `boundaries/*`, `GeometryModel.add`).
+
+Deliberately deferred: unifying `PlaneWaveSource`'s
+`waveform`/`f_center`/`f_max` with the modal `ExcitationSpec` — that
+is a semantic change (no `sine` family, no amplitude in
+`ExcitationSpec`), not vocabulary, and needs its own design pass.
+
+**Consequences.**  Old project stores (flux-monitor `corners` attrs,
+port-spec `bbox`/`label` recipe keys) do not rehydrate; acceptable
+pre-release, no migration shim.  All consumers (tests, examples,
+docs 01–14, validation, benchmarks, private workspace scripts) were
+swept in the same change.
+
+**Files:** `geo/` (primitives, shape, curves, modifications,
+`_ranges.py` new, `_occ_backend`), `monitors/` (flux, field_time,
+field_frequency), `sources/plane_wave.py`, `ports/` (declarative,
+base, recorder, `_modal/*`, `_lumped/*`), `circuit/element.py`,
+`mesh/mesher.py`, `analysis/` (scattering_td, _recipe,
+result_interface), `io/project.py`, `post/*`, `boundaries/*`,
+`materials/material.py`.
+
+---
+
+## DD-154 — Symmetry planes are boundary declarations with a mesh-time domain clip
+
+**Date:** 2026-08-13
+**Status:** Accepted; stages A–F shipped (declaration + domain clip,
+full-model port reports, mirrored plots/overlays, wall-loss
+fractions, ParaView Reflect) and certified.  The initially deferred
+excitation power semantics are resolved in [[DD-155]] (full-model
+watts).
+
+**Context.**  Exploiting mirror symmetry (the standard half/quarter/
+eighth-model workflow of the large EM suites) previously required the
+user to halve the geometry by hand — a loop of Boolean intersections
+against a half-space box — and declare `{"xmin": "PMC"}`.  That
+carried the DD-146 operand-mutation and KB-013/DD-151
+tolerance-inflation risks straight onto the symmetry plane, halved
+every reported port impedance and field plot without correction, and
+scaled poorly for models with hundreds of primitives.
+
+**Decision.**  A symmetry plane is a *boundary declaration*, not an
+analysis option.  Physically it IS a PEC/PMC wall — the solver core
+is untouched (the PMC wall is the natural BC of the free curl
+operators, PEC is the existing edge mask) — plus the semantic "the
+mirror image of the model exists beyond this wall", carried as
+metadata that symmetry-aware readers interpret:
+
+- **Declaration** extends the DD-103 closure vocabulary: type strings
+  `"SymmetryPEC"` / `"SymmetryPMC"`, or a `Symmetry(kind,
+  position=)` instance (public in `magnelio.boundaries`).  On
+  normalisation the `BoundaryConditions` face field keeps the
+  *physical* wall type — every existing consumer that dispatches on
+  the type (`getattr(bc, face) == "PMC"` in the flux half-weights,
+  the TEM Laplace path, the port plane; `bc_type_entries` everywhere
+  else) keeps working unchanged — and the symmetry semantics move
+  into the canonical `BoundaryConditions.symmetry` map, read through
+  the new `symmetry_entries()`.  At most one symmetry face per axis
+  (two parallel mirror planes describe an infinite image chain).
+- **Domain clip** (mesher, `Mesh.from_geometry`): a declared
+  `position=` clips the computational domain to the kept half-space
+  before plane clustering — critical planes on the discarded side
+  (including the clustering band around the plane, so the position
+  survives verbatim) are dropped, the symmetry plane enters as an
+  *exact* face plane (winning the KB-013 clustering), and forced
+  planes beyond it drop with a warning.  The full geometry may be
+  modelled; the mirror half is simply never meshed.  No Boolean is
+  involved, so the plane is an exact grid coordinate rather than a
+  CSG face with inflated OCC tolerance.  Wall placement downstream
+  needs no special case: a SymmetryPMC face gets the step-2c PMC
+  pull-in (the magnetic wall lands ON the declared plane), a
+  SymmetryPEC face gets its edge mask.  Without a `position` the
+  declaration is semantic only — the geometry already ends at the
+  plane (half-model style).  Both modelling styles produce identical
+  meshes (pinned bit-exact in the tests), because the conformal fill
+  cannot distinguish "material ends at a shape face on the domain
+  wall" from "material continues past the grid".
+- `Mesh.with_boundary_conditions` cannot clip after the fact (the
+  grid is taken as given): declaring a *new* symmetry position there
+  raises; re-declaring the built closure and adding position-less
+  symmetry semantics remain allowed.
+- **Store:** the symmetry map rides in the `mesh.h5`
+  `boundary_conditions` attribute (`symmetry` key, absent for
+  symmetry-free meshes — old stores load unchanged).  The resume
+  recipe stays physical: it rebuilds runtime walls; symmetry
+  semantics round-trip with the mesh.
+
+**Stage D (shipped).**  Port *reports* publish full-model
+impedances.  The new geometric core `window_domain_faces()`
+(`port_plane.py`) names the bbox face under each lateral window edge;
+the factory joins it with `symmetry_entries()` and records the
+cutting planes as `PortOperatorReport.symmetry_faces` at all three
+operator-construction sites (modal, CW true-mode, band-DTBC).  The
+report's numeric fields stay the raw half-window solver values (the
+honest solver protocol — and the `Mode` objects keep their raw
+normalisation, which drives injection/recording); the *publication*
+layer applies `z_line_full_scale` (per cutting PMC plane
+`z_full = z_half/2` — the halves sit in parallel; per PEC plane
+`z_full = 2·z_half` — in series): `PortReport.z_line_num`,
+`ModeReport.z_line`, the summary line (plus a "cut by symmetry
+plane(s) … full-model values" note), and `z_line_delta_relative`
+(the analytic reference solves the continuous *full* geometry, so
+the delta compares the scaled value — before this stage a half port
+showed a spurious ~+100 % delta against its reference).
+S-parameters need no correction (excitation and a/b share the
+half-model mode normalisation, which cancels), and mode
+compatibility is enforced by construction — the 2D mode solver
+inherits the wall on the port cross-section.  A plain `"PMC"` wall
+is NOT a symmetry cut: only declared symmetry triggers the scale,
+so every existing PMC-wall setup keeps its reading.  Lumped ports
+carry no window solve and stay uncorrected (documented limitation).
+Pinned on the parallel plate (exact η₀·d/W): raw half/full ratio
+exactly 2, published values equal, both cut kinds
+(`tests/unit/test_symmetry_declaration.py`).  Measured trap: on the
+`from_grid` path (no PMC pull-in) the magnetic wall sits half a
+boundary cell outside, so the raw ratio is (W_full+h)/(W_half+h),
+not 2 — the exactness pin needs `from_geometry`.
+
+**Stage E (shipped: mirrored plots + flux).**  Field plots show the
+full model, mirrored on read.  `monitors/base.py` gains the
+machinery: `MirrorSpec` (axis, wall, kind, at_low),
+`resolve_mirrors(region, mesh)` — a plane counts only when the
+region's cells reach the domain wall on that side, and the *wall*
+coordinate is the physical mirror plane (PEC: the outermost grid
+line; PMC: half the boundary cell outside it, where the natural
+magnetic wall sits — after the mesher pull-in that is exactly the
+declared plane, and on the `from_grid` path it is the physically
+correct image plane too); `mirror_sign` implements the continuation
+table (across PMC, E continues like a polar vector — normal odd,
+tangential even — and H like a pseudovector; across PEC the roles
+swap; magnitudes always even); `mirror_extend` /
+`mirror_plane_arrays` do the axis-extend + sign-weighted flip.
+Wired into `plot()`/`interact()` of `MonitorFieldTime` and
+`MonitorFieldFrequency` (1D, 2D scalar and 2D vector branches;
+`interact` delegates to `plot`), resolved in `attach()` and
+round-tripped through the store as a schema-additive `symmetry`
+attribute (`results.h5` monitor groups, `fields_freq.h5`), so the
+`_Loaded*` readers mirror without mesh access.
+**Fluxes and the excitation power semantics (measured).**
+The first certificate run measured that a monitor-side flux ×2
+double-counts under the half-window power-normalised excitation: at
+equal injected power the raw half-model flux already matches the
+full-model run (0.9659 vs 0.9670 W on the certificate case).  The
+underlying question — should "1 W injected" *declare* full-model
+watts — was deferred here and is resolved in [[DD-155]]: the source
+now injects ×1/√2 per port-cutting plane and `MonitorFluxTime` books
+×2 per plane cutting its cross-section, source-independently.
+
+**`MonitorWallLoss` (stage E).**  A symmetry face never books as a
+physical wall: the analysis masks declared symmetry faces alongside
+port planes and non-PEC faces (`_non_wall_boundary_faces`, also the
+SIBC wall enumeration), and a user-listed `bc_faces` entry on a
+symmetry plane is dropped with a warning at attach.
+`dissipated_fraction` (and everything derived from it, including the
+stored reduction) carries full-model semantics: losses double per
+symmetry plane and so does the reference power for planes cutting
+the reference cross-section — those cancel; a plane *parallel* to
+the reference cross-section contributes the remaining factor 2.
+The fraction is a quotient of quadratic forms of the same fields,
+so this is excitation-independent.
+
+**Geometry overlays (stage E).**  `CrossSectionOverlay` carries the
+in-plane mirrors; `render_geometry_overlay` draws the cross-section
+once per mirror image, each image clipped to its half-space and
+reflected via an artist transform (`Affine2D`) — no geometry is
+rebuilt.  The display always shows what the solver saw: the
+simulated half plus its mirror, for full and half-modelled geometry
+alike (an asymmetric far half of a fully modelled geometry never
+shows).
+
+**ParaView (stage F).**  The generated `paraview.simple` pipeline
+gains a `reflected()` stage: one Reflect (CopyInput,
+FlipAllInputArrays where the ParaView version has it) per declared
+plane on every monitor source, and Clip-then-Reflect on the geometry
+reader.  Half-model data on disk, full model in the renderer.  The
+symmetry planes travel in the session CONFIG (`_symmetry_config`,
+reusing the monitor mirror resolution for the wall coordinate).
+Known limitation: FlipAllInputArrays mirrors all vector arrays like
+polar vectors — exact for E; an H pseudovector keeps its magnitude
+but the mirrored-half arrow sign is inverted.
+
+**Certificate:**
+`validation/symmetry_full_vs_half_certificate.py` — shielded
+microstrip with a dielectric block (non-trivial S11), FULL geometry
+built twice, run without and with `{"xmin": Symmetry("PMC", 0.0)}`:
+44 892 → 24 768 cells, max |Δ|S11|| = 1.5e-3 and
+|Δ|S21|| = 2.2e-4 over 3–9 GHz, published z_line 51.67 vs 51.23 Ω
+(0.85 % — the two grids differ on the shared half-space), flux peak
+Δ 0.12 %.  The remaining deltas are discretisation-level, as
+expected for non-identical grids.
+
+**Files:** `boundaries/boundary_conditions.py` (`Symmetry`,
+`symmetry_entries`, normalisation), `boundaries/__init__.py`,
+`mesh/mesher.py` (domain clip, `with_boundary_conditions` guard),
+`io/project.py` (mesh round-trip), `analysis/_recipe.py`
+(Symmetry-aware BC serialisation), `geo/__init__.py` (docstring),
+`ports/_modal/port_plane.py` (`window_domain_faces`),
+`ports/_modal/port_report.py` (`symmetry_faces`,
+`z_line_full_scale`), `ports/_modal/factory.py`
+(`_with_symmetry_faces`), `ports/_modal/mode_report.py`
+(publication layer), `monitors/base.py` (mirror machinery),
+`monitors/field_time.py`, `monitors/field_frequency.py`,
+`monitors/wall_loss.py` (fraction factor + bc_faces guard),
+`analysis/scattering_td.py` (symmetry faces masked from wall
+booking), `post/plot_field.py` (mirrored overlays),
+`io/paraview.py` (Reflect stage + `_symmetry_config`),
+`validation/symmetry_full_vs_half_certificate.py`,
+`tests/unit/test_symmetry_declaration.py`.
+
+## DD-155 — Sources declare full-model watts under symmetry
+
+**Date:** 2026-08-14
+**Status:** Accepted, shipped, certified.
+
+**Context.**  [[DD-154]] left one asymmetry: S-parameters, impedance
+reports, loss fractions and plots were full-model, but absolute
+power quantities followed the *source normalisation* — the modal
+excitation is power-normalised on the meshed half window, so "1 W
+injected" meant one watt into the half-space (full-model fields ×√2
+too high at nominal 1 W), while a field-normalised source (plane
+wave) already produced full-model fields but only half the
+full-model flux.  No monitor-side factor can serve both source
+families at once; the correction belongs to the source declaration.
+
+**Decision.**  Declared source amplitudes are full-model
+quantities, realised by two separate scales that each act exactly
+once:
+
+- **Injection** (`analysis/scattering_td.py`, `_excitation_scale`):
+  a port cut by k symmetry planes injects its waveform ×1/√(2^k)
+  (`PortOperatorReport.power_wave_full_scale` inverse) — half the
+  full-model power enters the meshed half-space and the fields sit
+  at full-model level.  Applied on the analysis layer at all
+  injection sites: the modal/CW `set_excitation` wrapper and both
+  band drives (`set_excitation_band` gained an `amplitude=` factor;
+  an explicit band waveform wraps like the modal one).
+  `reference_signal` keeps sampling the *unscaled* waveform — it is
+  the full-model 1-√W reference the monitors renormalise against;
+  scaling it too would cancel the correction.  Low-level operator
+  use (`spec.excitation` at build time, direct CW drives) stays in
+  the raw solver protocol.
+- **Recording** (`ports/recorder.py`): the recorder composes
+  ×√(2^k) per port onto the DD-078 `record_scale`, so every
+  consumer of the recorded V/I — `a()`/`b()`, both S-parameter
+  paths (`compute_s_parameters` and the band decomposition build
+  b/a entirely from these signals), `result.signals`, the streaming
+  sink and the store read layer — sees full-model wave amplitudes
+  from one scale at one place.  A factor of exactly 1 keeps the
+  scale entry `None`: non-symmetric runs are bit-identical.
+- **Flux** (`monitors/flux.py`): `MonitorFluxTime` books ×2 per
+  symmetry plane whose axis lies in its cross-section (a plane
+  parallel to the surface leaves the aperture whole).  With the
+  sources declaring full-model amplitudes this is
+  source-independent: the port case composes ×1/2 (injection)
+  ×2 (aperture) back to the full-model watt, the plane-wave case is
+  the plain aperture factor.
+- **Mixed port pairs.**  The per-port scale is not cosmetic: for a
+  cut excited port and an uncut receiving port the half-window
+  normalisations do *not* cancel, and the pre-DD-155 S21 was √2 off.
+  With per-port ×√(2^k) the S-matrix entries are the true full-model
+  values — under the only excitation the half model can realise for
+  an uncut port, the symmetric (in-phase) drive of the port and its
+  mirror twin.  Such ports warn at operator construction
+  (`_with_symmetry_faces`): model the port on the plane, or drop the
+  declaration.
+- **Unchanged by construction:** S-parameters of symmetric port
+  pairs (scale cancels in b/a), loss *fractions* (quotients of
+  quadratic forms), stop criteria and ring-down gates (relative),
+  DTBC/Mur terminations (linear).  Lumped ports remain the
+  documented DD-154 limitation.
+
+**Certificate** (`validation/symmetry_full_vs_half_certificate.py`,
+extended): flux peak full 0.9670 vs half 0.9659 W (Δ 0.12 % — the
+injection and aperture scales compose to the same physical watt the
+pre-DD-155 pair measured), excited-port a(t) peak Δ 0.064 %
+(full-model √W on both runs), 1-W-renormalised |E| probe beside the
+strip Δ 2.6 % (discretisation-level point probe on two different
+grids; the old semantics would read √2 ≈ 41 % high), S unchanged
+(max |Δ|S11|| = 1.5e-3).  Unit pins in
+`tests/unit/test_symmetry_declaration.py`
+(`TestFullModelPowerSemantics`, flux aperture factors, mirror-twin
+warning).
+
+**Files:** `ports/_modal/port_report.py`
+(`power_wave_full_scale`), `ports/recorder.py` (scale composition),
+`analysis/scattering_td.py` (`_excitation_scale`, modal + band
+injection), `ports/_modal/band_dtbc.py` (`amplitude=`),
+`ports/_modal/factory.py` (mirror-twin warning),
+`monitors/flux.py` (aperture factor).

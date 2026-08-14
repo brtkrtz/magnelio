@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Magnelio"
+type: software
+# No contact address here either: GitHub renders this file in the
+# repository sidebar.  The repository URL below is the contact path.
+authors:
+  - family-names: Breitkreutz
+    given-names: Bernd
+license: LGPL-3.0-or-later
+repository-code: "https://github.com/brtkrtz/magnelio"
+version: 0.1.0

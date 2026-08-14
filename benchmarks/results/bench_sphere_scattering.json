@@ -1,0 +1,10 @@
+{
+  "case": "sphere_scattering",
+  "date": "2026-03-11T07:06:28.937004+00:00",
+  "sphere_radius_mm": 10.0,
+  "freq_ghz": 5.0,
+  "rcs_analytical_dbm2": -35.028501273058666,
+  "tolerance_db": 2.0,
+  "passed": null,
+  "note": "Stub \u2014 requires TF/SF plane wave + OCC sphere geometry"
+}

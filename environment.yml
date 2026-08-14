@@ -1,0 +1,47 @@
+name: mio
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+
+  # Core numerics
+  - numpy>=1.26
+  - scipy>=1.12
+  - h5py>=3.10
+  - matplotlib>=3.8
+  - vtk>=9.3  # ParaView export (DD-115): geometry.vtm, frequency .vtr series
+
+  # CAD / geometry
+  - pythonocc-core  # conda-forge only
+
+  # Solver acceleration (see design-decisions.md DD-032: three-tier kernel
+  # dispatch — Numba CPU fused / CUDA fused / NumPy-CuPy stencil fallback)
+  - numba>=0.59
+
+  # Jupyter kernel (slider etc.)
+  - ipykernel
+  - ipywidgets
+  - pythreejs
+
+  # Dev tools
+  - pytest
+  - pytest-cov
+  - ruff
+  - mypy
+
+  # Docs build (mirrors the pyproject [docs] extra)
+  - sphinx>=7.0
+  - myst-parser>=2.0
+  - sphinxcontrib-bibtex>=2.6
+  - pydata-sphinx-theme>=0.15
+  - sphinx-gallery>=0.15
+
+  # pip - editable install
+  - pip
+  - pip:
+      - -e .
+      - cupy-cuda12x>=13.0  # optional GPU tier; see pyproject.toml [gpu] extra
+      - nvidia-cublas-cu12  # CUDA-12 runtime libs the pip cupy wheel preloads
+                            # (matmul/energy check needs cuBLAS; without it a
+                            # GPU run fails mid-march with libcublas.so.12
+                            # missing)

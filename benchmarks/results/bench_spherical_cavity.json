@@ -1,0 +1,8 @@
+{
+  "case": "spherical_cavity",
+  "date": "2026-03-11T07:06:28.910241+00:00",
+  "radius_mm": 15.0,
+  "analytical_tm011_ghz": 8.727426475598934,
+  "passed": null,
+  "note": "Stub \u2014 requires OCC geometry + full mesher"
+}

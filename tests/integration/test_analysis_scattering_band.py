@@ -1,0 +1,244 @@
+"""Integration: high-level band-subspace DTBC dispatch (DD-063).
+
+An inhomogeneous QTEM line (half-filled layered parallel plate, the
+CI-scale DD-057 fixture) driven through ``AnalysisScatteringTD``:
+``port_model="auto"`` must detect the failing DTBC uniform-chain
+certificate and route the run through the band pipeline
+(``build_band_dtbc_port`` → ``set_excitation_band`` →
+``compute_band_s_parameters``), reusing the built ports across
+excitations via ``reset_state()``.  The component-level acceptance for the
+same fixture lives in ``test_qtem_band_dtbc_sparams.py``; the analysis
+run must reach the same −100 dB class.
+"""
+
+from __future__ import annotations
+
+import warnings
+
+import numpy as np
+import pytest
+
+from magnelio import AnalysisScatteringTD, Material, Mesh, MeshControl
+from magnelio.geo import Brick, GeometryModel
+from magnelio.mesh import BoxFace
+from magnelio.ports import PortSpecMultiConductor, PortSpecRectWG
+
+
+def _segments(*breaks_and_counts):
+    out = []
+    for lo, hi, n in breaks_and_counts:
+        seg = np.linspace(lo, hi, n + 1)
+        out.extend(seg if not out else seg[1:])
+    return [float(v) for v in out]
+
+
+def _layered_mesh() -> Mesh:
+    w, hy, h_if, nz, dz = 10.0e-3, 8.0e-3, 4.0e-3, 20, 1.0e-3
+    length = nz * dz
+    diel = Material(name="diel", epsilon=(4.0,) * 3)
+    model = GeometryModel()
+    model.add(Brick(origin=(0, 0, 0), size=(w, h_if, length), material=diel))
+    model.add(Brick(origin=(0, h_if, 0), size=(w, hy - h_if, length), material=Material.air()))
+    control = MeshControl(
+        min_nodes_per_wavelength=4,
+        min_cells_per_feature=0,
+        max_cell_size=5.1e-3,
+        forced_planes={
+            "x": _segments((0.0, w, 2)),
+            "y": _segments((0.0, h_if, 4), (h_if, hy, 4)),
+            "z": _segments((0.0, length, nz)),
+        },
+    )
+    return Mesh.from_geometry(model, control, f_max=8.0e9)
+
+
+def _analysis(mesh: Mesh, **kwargs) -> AnalysisScatteringTD:
+    return AnalysisScatteringTD(
+        mesh=mesh.with_boundary_conditions(
+            {
+                "ymin": "PEC",
+                "ymax": "PEC",
+                "xmin": "PMC",
+                "xmax": "PMC",
+                "zmin": "PMC",
+                "zmax": "PMC",
+            }
+        ),
+        ports=[
+            PortSpecMultiConductor(
+                name="port1",
+                plane=BoxFace.Z_MIN,
+                epsilon_r=None,
+            ),
+            PortSpecMultiConductor(
+                name="port2",
+                plane=BoxFace.Z_MAX,
+                epsilon_r=None,
+            ),
+        ],
+        f_max=6.8e9,
+        f_min=1.8e9,
+        n_freq=5,
+        verbose=False,
+        **kwargs,
+    )
+
+
+@pytest.fixture(scope="module")
+def band_result():
+    """One two-excitation analysis run at CI scale (ports built once)."""
+    analysis = _analysis(
+        _layered_mesh(),
+        port_model="auto",
+        band_options={
+            "f_band": (0.3e9, 8.3e9),
+            "n_grid": 9,
+            "n_syn": 3072,
+            "n_kernel_init": 4096,
+        },
+    )
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message=".*neither a BoundaryCondition.*",
+        )
+        return analysis.run(
+            excited=["port1", "port2"],
+            total_time_steps=4064,
+        )
+
+
+def test_auto_dispatch_selects_band_pipeline(band_result):
+    assert band_result.port_model_used == "band"
+
+
+def test_band_s_parameters_reach_reflection_free_class(band_result):
+    """|S11| and (via reset_state reuse) |S22| below −100 dB in-band.
+
+    Measured at this fixture scale: |S11| −146…−227 dB, |S22| the
+    same class from the *reused* port pair — a state-reset defect
+    (stale boundary histories, stale x1 trace) shows up here as a
+    broadband floor collapse on the second excitation.
+    """
+    f_axis = band_result.f_axis
+    for out_p, in_p in (("port1", "port1"), ("port2", "port2")):
+        s = np.abs(band_result.S(out_p, in_p))
+        s_db = 20 * np.log10(s + 1e-300)
+        assert s_db.max() < -100.0, (
+            f"|S{out_p}{in_p}| max {s_db.max():.1f} dB at {f_axis[np.argmax(s_db)] / 1e9:.2f} GHz"
+        )
+    for out_p, in_p in (("port2", "port1"), ("port1", "port2")):
+        s21_db = 20 * np.log10(np.abs(band_result.S(out_p, in_p)))
+        assert np.max(np.abs(s21_db)) < 0.05
+
+
+def test_band_result_time_domain_waves_raise(band_result):
+    with pytest.raises(ValueError, match="band-DTBC"):
+        band_result.b("port1")
+    # Raw V/I stays inspectable.
+    v_sig, i_sig = band_result.signals[("port1", 0)][("port1", 0)]
+    assert v_sig.values.size == band_result.n_actual_steps
+
+
+def test_default_port_model_is_modal():
+    """The production default is the modal pipeline (DD-064).
+
+    Developer decision 2026-07-10 after the DD-063 field trial:
+    −30 dB-class |S11| with seconds of runtime and time-domain
+    power-wave access beats −100 dB floors at kernel-build cost for
+    routine QTEM work.  The Mur fallback stays loud (verbose notice)
+    and the band pipeline stays one argument away.
+    """
+    analysis = _analysis(_layered_mesh())
+    assert analysis.port_model == "modal"
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message=".*neither a BoundaryCondition.*",
+        )
+        result = analysis.run(excited=["port1"])
+    assert result.port_model_used == "modal"
+    # The Mur fallback is orders of magnitude above the band floors;
+    # the bound only pins that the default really ran the modal path.
+    s11_db = 20 * np.log10(np.abs(result.S("port1", "port1")) + 1e-300)
+    assert s11_db.max() > -100.0
+    # Time-domain power waves stay available on the default path.
+    b1 = result.b("port1")
+    assert b1.values.size == result.n_actual_steps
+
+
+def test_near_dc_axis_raises_with_f_min_guidance():
+    """A default axis (f_min = 0 → first point at f_max/n_freq) must
+    raise loudly instead of hanging in an hours-long kernel build.
+
+    The pulsed band drive needs spectral roll-off room below the
+    first axis point; room ∝ f_axis[0] forces an O(1/f_axis[0])
+    pulse — at production dt hundreds of thousands of steps, which
+    the single-threaded contour-QZ kernel build inherits (the
+    developer-observed silent multi-minute hang on a 20×7×19
+    microstrip).  The auto-sizing gate turns this into an error
+    carrying the recommended axis start.
+    """
+    analysis = AnalysisScatteringTD(
+        mesh=_layered_mesh().with_boundary_conditions(
+            {
+                "ymin": "PEC",
+                "ymax": "PEC",
+                "xmin": "PMC",
+                "xmax": "PMC",
+                "zmin": "PMC",
+                "zmax": "PMC",
+            }
+        ),
+        ports=[
+            PortSpecMultiConductor(
+                name="port1",
+                plane=BoxFace.Z_MIN,
+                epsilon_r=None,
+            ),
+            PortSpecMultiConductor(
+                name="port2",
+                plane=BoxFace.Z_MAX,
+                epsilon_r=None,
+            ),
+        ],
+        f_max=6.8e9,  # f_min left at 0 → axis starts at f_max/201
+        port_model="auto",
+        verbose=False,
+    )
+    with pytest.raises(ValueError, match="roll-off room"):
+        analysis.run()
+
+
+def test_port_model_band_requires_multiconductor_everywhere():
+    mesh = _layered_mesh()
+    with pytest.raises(ValueError, match="PortSpecMultiConductor"):
+        AnalysisScatteringTD(
+            mesh=mesh.with_boundary_conditions(
+                {
+                    "ymin": "PEC",
+                    "ymax": "PEC",
+                    "xmin": "PMC",
+                    "xmax": "PMC",
+                    "zmin": "PMC",
+                    "zmax": "PMC",
+                }
+            ),
+            ports=[
+                PortSpecMultiConductor(
+                    name="port1",
+                    plane=BoxFace.Z_MIN,
+                    epsilon_r=None,
+                ),
+                PortSpecRectWG(
+                    name="port2",
+                    plane=BoxFace.Z_MAX,
+                    width_a=10.0e-3,
+                    height_b=8.0e-3,
+                    n_modes=1,
+                ),
+            ],
+            f_max=6.8e9,
+            port_model="band",
+            verbose=False,
+        ).run()

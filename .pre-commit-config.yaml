@@ -1,0 +1,9 @@
+# Local lint/format gate; same rules as CI (both read [tool.ruff] in
+# pyproject.toml).  rev is pinned to the ruff version in the magnelio
+# environment — keep the two in sync when upgrading.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.14
+    hooks:
+      - id: ruff-check
+      - id: ruff-format

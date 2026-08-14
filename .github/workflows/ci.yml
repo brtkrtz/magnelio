@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      # Keep in sync with .pre-commit-config.yaml (rev) and the dev
+      # environment; the rules themselves live in pyproject.toml.
+      - run: pip install ruff==0.15.14
+      - run: ruff check --output-format=github .
+      - run: ruff format --check .
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # environment.yml (not pip): pythonocc-core is conda-forge only —
+      # a pip-only setup would silently skip the mesher/geometry tests.
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: environment.yml
+          init-shell: bash
+          cache-environment: true
+      # GPU-gated tests skip on their own without a CUDA device.
+      - run: python -m pytest tests/unit -q --no-header
+        shell: bash -el {0}
