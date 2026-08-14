@@ -10367,3 +10367,42 @@ seam plane warn and are dropped).
 **Files:** `geo/_occ_backend.py` (`cross_section_polygons`:
 `_wires_at` / `_tessellate` split, closedness test, nudge retry),
 `tests/unit/test_geometry.py`.
+
+## DD-158 — Unregistered-wall warning only for scenes with lossy conductors
+
+**Date:** 2026-08-14
+**Status:** Accepted — implemented, tested.  Amends the DD-099 warning.
+
+**Problem.**  The DD-099 unregistered-wall warning (a conductor shell
+thinner than one cell cancels out of the loss registration) fired
+material-blind at mesh time — also on all-PEC scenes, where there are
+no losses to lose and every re-mesh of e.g. a stripline worksheet
+printed a warning with no actionable content.  Developer call: the
+noise outweighs the advance notice.
+
+**Decision.**  The *registration* stays unconditional (it cannot be
+reconstructed after meshing and is a shared by-product of the
+conformal section pass).  The *warning* fires only when the scene can
+actually dissipate on those walls:
+
+* at mesh time, when a lossy wall conductor is declared —
+  ``Material.lossy_metal`` in the library, or a ``PECBoundary``
+  carrying its own ``wall_sigma`` (dict-form boundary conditions);
+* otherwise at conductor-resolution time
+  (``resolve_wall_conductors``), when a caller-supplied fallback
+  ``sigma=`` / per-face override turns plain-PEC walls lossy after
+  meshing — the single choke point shared by the perturbative chain
+  (``wall_loss_Q`` / ``MonitorWallLoss``) and the SIBC setup, so no
+  loss path can silently miss a dropped surface.  The default warning
+  filter deduplicates repeats from that call site.
+
+The message text is unchanged and now lives in one place
+(`_surfaces.warn_unregistered_walls`).
+
+**Gates:** `tests/unit/test_unregistered_wall_warning.py` — lossy
+shell warns at mesh time, all-PEC shell stays silent (cells still
+flagged by `detect_unregistered_walls`), fallback ``sigma=`` recovers
+the warning at resolution time.
+
+**Files:** `mesh/_surfaces.py` (`warn_unregistered_walls`,
+`resolve_wall_conductors`), `mesh/mesher.py` (gated call).

@@ -58,6 +58,7 @@ changed, do not append.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-158** (2026-08-14) — unregistered-wall warning only for scenes with lossy conductors (declared at mesh time, or via the σ-fallback at `resolve_wall_conductors` time); registration stays unconditional.
 * **DD-157** (2026-08-14) — section contours are closed or the plane is re-taken (nudge retry, loud drop); open chains on tangent-band planes of Boolean solids booked fantasy coverage and sent coax ports to Mur; closes KB-015.
 * **DD-156** (2026-08-14) — conductor grouping: PEC-cell links fuse component labels, never add nodes; kills phantom conductors from isolated staircase fragments; closes KB-014.
 * **DD-155** (2026-08-14) — full-model power semantics under symmetry: injection ×1/√(2^k), recorder ×√(2^k), flux ×2 per cutting plane.

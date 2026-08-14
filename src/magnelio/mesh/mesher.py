@@ -1092,32 +1092,28 @@ class Mesh:
         # Step 5: Quality checks
         check_quality(mesh)
 
-        # Step 5b: DD-099 unregistered-wall warning (WP-B1.3) — one
-        # warning per scene, no behaviour change.
-        from magnelio.mesh._surfaces import detect_unregistered_walls  # noqa: PLC0415
+        # Step 5b: DD-099 unregistered-wall warning (WP-B1.3), gated
+        # on the scene actually declaring a lossy wall conductor
+        # (DD-158): the registration itself always runs, but for
+        # all-lossless scenes there is no loss surface to lose and the
+        # warning would be noise.  Declared sources visible at mesh
+        # time: lossy-metal materials and PECBoundary declarations
+        # carrying their own wall material (dict form only — a
+        # BoundaryConditions names types, not wall materials).  The
+        # analysis-level ``wall_sigma`` fallback surfaces the same
+        # warning later, at conductor-resolution time
+        # (``resolve_wall_conductors``).
+        _bc_raw = getattr(geometry, "boundary_conditions", None)
+        _declares_conductors = any(
+            getattr(_m, "is_lossy_metal", False) for _m in mesh.material_library.values()
+        ) or (
+            isinstance(_bc_raw, dict)
+            and any(getattr(_v, "wall_sigma", None) is not None for _v in _bc_raw.values())
+        )
+        if _declares_conductors:
+            from magnelio.mesh._surfaces import warn_unregistered_walls  # noqa: PLC0415
 
-        _uw_cells, _uw_ratios = detect_unregistered_walls(mesh)
-        if _uw_cells.size:
-            _wi = int(np.argmin(_uw_ratios))
-            _ci = tuple(int(v) for v in _uw_cells[_wi])
-            _pos = (
-                0.5 * (grid.x[_ci[0]] + grid.x[_ci[0] + 1]),
-                0.5 * (grid.y[_ci[1]] + grid.y[_ci[1] + 1]),
-                0.5 * (grid.z[_ci[2]] + grid.z[_ci[2] + 1]),
-            )
-            warnings.warn(
-                f"{len(_uw_ratios)} cell(s) hold a conductor shell "
-                f"thinner than one cell whose wall cancels out of the "
-                f"conformal registration — its loss surface books "
-                f"~nothing.  Worst cell {_ci} at "
-                f"({_pos[0] * 1e3:.3f}, {_pos[1] * 1e3:.3f}, "
-                f"{_pos[2] * 1e3:.3f}) mm, wall/coverage ratio "
-                f"{float(_uw_ratios[_wi]):.4f}.  Resolve the shell to "
-                f">= 1 cell (min_cell_size / min_cells_per_feature), "
-                f"or accept the dropped loss surface.",
-                UserWarning,
-                stacklevel=2,
-            )
+            warn_unregistered_walls(mesh, stacklevel=2)
 
         return mesh
 

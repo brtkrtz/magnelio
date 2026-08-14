@@ -23,14 +23,20 @@ from magnelio.mesh._surfaces import detect_unregistered_walls
 from magnelio.mesh.mesher import Mesh
 
 
-def _thin_shell_mesh():
-    """30 µm cylindrical PEC shell in 150 µm cells — sub-cell, curved,
-    so neither the planar thin-sheet pipeline nor the feature anchors
-    resolve it (floor 100 µm)."""
-    pec, air = Material.pec(), Material.air()
+def _thin_shell_mesh(shell_material=None):
+    """30 µm cylindrical conductor shell in 150 µm cells — sub-cell,
+    curved, so neither the planar thin-sheet pipeline nor the feature
+    anchors resolve it (floor 100 µm).  Default shell material is a
+    lossy metal: since DD-158 the warning is gated on the scene
+    declaring a lossy wall conductor."""
+    air = Material.air()
+    if shell_material is None:
+        shell_material = Material.lossy_metal(name="copper", sigma=5.8e7)
     r, t, h, dom = 1.0e-3, 30e-6, 2.0e-3, 3.0e-3
     box = Brick(origin=(-dom / 2, -dom / 2, -0.5e-3), size=(dom, dom, h + 1.0e-3), material=air)
-    outer = Cylinder(origin=(0, 0, 0), radius=r + t / 2, height=h, axis="z", material=pec)
+    outer = Cylinder(
+        origin=(0, 0, 0), radius=r + t / 2, height=h, axis="z", material=shell_material
+    )
     inner = Cylinder(origin=(0, 0, 0), radius=r - t / 2, height=h, axis="z", material=air)
     model = GeometryModel(background=air)
     model.add(Difference(box, outer))
@@ -92,3 +98,28 @@ def test_silent_on_registered_conformal_scene():
     assert not [w for w in caught if "conductor shell" in str(w.message)]
     cells, _ = detect_unregistered_walls(mesh)
     assert cells.shape[0] == 0
+
+
+def test_silent_without_lossy_conductors():
+    """DD-158: an all-lossless scene has no loss surface to lose — the
+    registration still flags the cells, but the warning stays silent."""
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        mesh = _thin_shell_mesh(shell_material=Material.pec())
+    assert not [w for w in caught if "conductor shell" in str(w.message)]
+    cells, _ = detect_unregistered_walls(mesh)
+    assert cells.shape[0] > 0
+
+
+def test_fallback_sigma_recovers_the_warning():
+    """DD-158: a caller-supplied fallback conductivity turns plain-PEC
+    walls lossy after meshing — resolve_wall_conductors re-emits the
+    warning the (silent) mesh consolidation withheld."""
+    from magnelio.mesh._surfaces import resolve_wall_conductors
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        mesh = _thin_shell_mesh(shell_material=Material.pec())
+    assert not [w for w in caught if "conductor shell" in str(w.message)]
+    with pytest.warns(UserWarning, match="conductor shell"):
+        resolve_wall_conductors(mesh, surfaces=[], sigma=5.8e7)

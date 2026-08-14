@@ -71,6 +71,7 @@ touched by any of this.
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 
 import numpy as np
@@ -284,6 +285,43 @@ def _masked_face_pec_views(mesh, masked_boundary_faces):
         a_pec[ax][tuple(sl)] = a_pec[ax][tuple(sl_in)]
         a_jump[ax][tuple(sl)] = 0.0
     return a_pec, a_full, a_jump
+
+
+def warn_unregistered_walls(mesh, *, stacklevel: int = 2) -> bool:
+    """Emit the unregistered-wall warning if the mesh has such cells.
+
+    Shared formatter for the two call sites of the DD-099 warning
+    (gated per DD-158 on the scene actually carrying a lossy wall
+    conductor): mesh consolidation for scenes that declare one, and
+    :func:`resolve_wall_conductors` when a caller-supplied fallback
+    conductivity turns plain-PEC walls lossy after meshing.  Returns
+    ``True`` when a warning was emitted.
+    """
+    cells, ratios = detect_unregistered_walls(mesh)
+    if not cells.size:
+        return False
+    grid = mesh.grid
+    wi = int(np.argmin(ratios))
+    ci = tuple(int(v) for v in cells[wi])
+    pos = (
+        0.5 * (grid.x[ci[0]] + grid.x[ci[0] + 1]),
+        0.5 * (grid.y[ci[1]] + grid.y[ci[1] + 1]),
+        0.5 * (grid.z[ci[2]] + grid.z[ci[2] + 1]),
+    )
+    warnings.warn(
+        f"{len(ratios)} cell(s) hold a conductor shell "
+        f"thinner than one cell whose wall cancels out of the "
+        f"conformal registration — its loss surface books "
+        f"~nothing.  Worst cell {ci} at "
+        f"({pos[0] * 1e3:.3f}, {pos[1] * 1e3:.3f}, "
+        f"{pos[2] * 1e3:.3f}) mm, wall/coverage ratio "
+        f"{float(ratios[wi]):.4f}.  Resolve the shell to "
+        f">= 1 cell (min_cell_size / min_cells_per_feature), "
+        f"or accept the dropped loss surface.",
+        UserWarning,
+        stacklevel=stacklevel,
+    )
+    return True
 
 
 def detect_unregistered_walls(mesh, threshold: float = 0.1):
@@ -1038,6 +1076,18 @@ def resolve_wall_conductors(
         When a wall has no conductivity source (not a lossy metal and
         no ``sigma`` fallback given).
     """
+    # DD-158: the mesh-time unregistered-wall warning is gated on a
+    # DECLARED lossy conductor; a caller-supplied fallback σ or
+    # per-face override turns plain-PEC walls lossy only now, after
+    # meshing — re-check here so no loss surface goes missing
+    # silently.  (Scenes with lossy-metal materials warned at mesh
+    # time already; the default warning filter deduplicates repeats
+    # from this call site.)
+    if (sigma is not None or overrides) and not any(
+        getattr(m, "is_lossy_metal", False) for m in mesh.material_library.values()
+    ):
+        warn_unregistered_walls(mesh, stacklevel=3)
+
     resolved = {}
     for surf in surfaces:
         tag = surf.tag
