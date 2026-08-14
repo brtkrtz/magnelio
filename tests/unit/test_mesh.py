@@ -1177,3 +1177,32 @@ class TestFromGeometryEpsMax:
 
         # Same number of cells: PEC did not change wavelength-based h_target
         assert mesh_with_pec.Nx == mesh_air.Nx
+
+
+class TestFromGeometryEmptyModel:
+    """A model without shapes fails fast with an actionable message.
+
+    Regression: an empty model (only background, boundary conditions
+    and ports — the ``add`` loop forgotten) used to crash deep in the
+    grid-line machinery, e.g. as an IndexError in the PMC/symmetry
+    pull-in, instead of naming the actual problem.
+    """
+
+    def test_empty_model_raises_value_error(self):
+        from magnelio.geo import GeometryModel
+        from magnelio.mesh.mesher import Mesh, MeshControl
+
+        model = GeometryModel()
+        with pytest.raises(ValueError, match="contains no shapes"):
+            Mesh.from_geometry(model, MeshControl(), f_max=1e9)
+
+    def test_empty_model_with_symmetry_bcs_raises_value_error(self):
+        from magnelio.boundaries import BoundaryConditions, Symmetry
+        from magnelio.geo import GeometryModel
+        from magnelio.mesh.mesher import Mesh, MeshControl
+
+        model = GeometryModel(
+            boundary_conditions=BoundaryConditions(xmin=Symmetry("PMC"), ymin=Symmetry("PEC"))
+        )
+        with pytest.raises(ValueError, match="contains no shapes"):
+            Mesh.from_geometry(model, MeshControl(), f_max=1e9)

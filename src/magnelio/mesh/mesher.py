@@ -395,6 +395,15 @@ class Mesh:
         wires = [s for s in shapes if isinstance(s, _ThinWire)]
         shapes = [s for s in shapes if not isinstance(s, _ThinWire)]
 
+        if not shapes and not wires:
+            raise ValueError(
+                "The geometry model contains no shapes — there is "
+                "nothing to mesh.  Add the solids with "
+                "GeometryModel.add(...) before calling "
+                "Mesh.from_geometry (a model carries only its "
+                "background, boundary conditions and ports)."
+            )
+
         # DD-120: one power-of-two scale factor for every OCC operation
         # of this mesh build, chosen from the analytic (OCC-free) model
         # bounding box.  1.0 for mm/meter-scale models (bit-identical
