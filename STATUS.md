@@ -32,16 +32,17 @@ rotate; the convergence residual does — and is closed by DD-142
 (30/30 green after).  Per-DD gate accounting lives in the
 `design-decisions.md` entries.
 
-**v0.1.0 publication (in progress, 2026-08-14):** version set to
-0.1.0 (`pyproject.toml`, `_version.py`, `CITATION.cff`),
-`CHANGELOG.md` created (Keep a Changelog); release as **Magnelio
-v0.1.0** on github.com/brtkrtz/magnelio, **conda-forge as the primary
-distribution channel** (the CAD geometry stack needs pythonocc-core,
-which exists only on conda-forge), PyPI as the secondary,
-geometry-less install path.  The release and docs-deploy workflows
-and the conda recipe are created as part of this release; CI
-(`.github/workflows/ci.yml`, lint + unit suite) goes live with the
-push.  The repo is ruff-clean: rule set `E`/`F`/`I` pinned in
+**v0.1.0 published (2026-08-14):** tag `v0.1.0` on
+github.com/brtkrtz/magnelio (public, CI + docs green), released on
+PyPI via the tag-triggered trusted-publishing workflow (sdist +
+noarch wheel, verified installable in a clean venv without
+pythonocc-core).  **conda-forge as the primary distribution
+channel** (the CAD geometry stack needs pythonocc-core, which exists
+only on conda-forge) is in flight: staged-recipes PR prepared on
+branch `brtkrtz/staged-recipes:magnelio` (v1 recipe, pythonocc-core
+>=7.9), awaiting submission/review.  PyPI stays the secondary,
+geometry-less install path.  CI (`.github/workflows/ci.yml`, lint +
+unit suite) is live.  The repo is ruff-clean: rule set `E`/`F`/`I` pinned in
 `pyproject.toml`, enforced by workflow rule, pre-commit and CI.
 License LGPL-3.0-or-later in place (`COPYING`, `pyproject.toml`,
 README); all runtime dependencies carry permissive licenses.  The
