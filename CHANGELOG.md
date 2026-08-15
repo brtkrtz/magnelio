@@ -23,6 +23,14 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Port-mode plots draw the outermost ring of arrows again.  It was
+  blanked wherever the field component running *along* the window
+  boundary vanished — which an electric wall forces it to do, on every
+  port, everywhere along the frame — even though the component standing
+  *perpendicular* to that wall is at its maximum there.  Boundary arrows
+  now appear, standing perpendicular on the wall as they should.  Note
+  that the arrow raster is independent of the mesh: to read the field in
+  a thin gap, raise `density` rather than refining the mesh
 - A waveguide port could quietly lose its exact, reflection-free
   termination and fall back to the first-order absorbing one when its
   cross-section sat on a mirrored copy of a curved solid — leaving a

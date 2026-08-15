@@ -10941,3 +10941,46 @@ assertion meaningful.  Certificate on the full coupler:
 that model certifies either way, the same lesson as DD-157.
 
 **Files:** `_operators/material_matrices.py`.
+
+## DD-166 — A boundary line of the mode picture inherits its neighbour's validity
+
+**Date:** 2026-08-15 — **Status:** shipped
+
+**Context.**  DD-162 grew the mode-profile picture out to the port
+window and decided the validity of the two added lines per axis from the
+*genuine* component there — the one whose staggering puts a sample on
+that line — reasoning that a zero means the edge is in or on a
+conductor.  That component is the one tangential to the line, and the
+frame of a 2D mode problem is an electric wall all the way round, so it
+is identically zero on every port, always.  The outermost ring of arrows
+was therefore dropped everywhere, including where the wall carried the
+field's maximum.  Measured on a stripline port: tangential component
+`0.0` on the lower window line, normal component `6.05e7` — three times
+the tangential content of the first interior row.
+
+**Decision.**  An added line is valid exactly where the interior line it
+continues is.  What decides whether there is anything to draw is whether
+the neighbourhood is metal, not how large one component happens to be:
+*on* a conductor is not *in* one.  The resulting boundary arrow is exact
+in its tangential component (identically zero on a wall, genuinely
+sampled) and first-order in its normal one, so it stands perpendicular
+on the wall — the boundary condition made visible rather than hidden.  A
+window reaching into a conductor still stays blank, because there the
+interior line is invalid too.
+
+**Not a defect, and asked about in the same breath:** the arrows also
+thin out in a narrow gap between conductors.  That is the arrow raster,
+not the classifier — DD-160 made it isotropic and therefore independent
+of the computational grid, so a refined region does not gain arrows.  On
+a 50 mm wide window the default `density=20` spaces them 2.6 mm apart,
+which steps over a 3 mm gap resolved by five grid planes; `density=40`
+fills it.  The `density` docstring now says so.
+
+**Gate:**
+`tests/integration/test_solve_ports.py::TestModePlot::test_wall_line_keeps_its_perpendicular_arrows`
+— raster points that resample to nothing never reach the quiver, so the
+drawn extent reaching all four window edges *is* the assertion, plus a
+check that an edge carries a real share of the peak so the test cannot
+pass on a ring of zeros.
+
+**Files:** `ports/_modal/mode_report.py`.

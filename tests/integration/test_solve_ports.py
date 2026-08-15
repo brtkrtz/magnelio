@@ -426,6 +426,41 @@ class TestModePlot:
             assert ylim[1] == pytest.approx(WR90_B * 1e3, rel=1e-9)
             plt.close(fig)
 
+    def test_wall_line_keeps_its_perpendicular_arrows(self):
+        """An electric wall zeroes the tangential half of E and leaves the
+        normal half at its maximum, so the boundary line of a port window
+        carries field even though one component vanishes there.  Deciding
+        the line's validity from that component confused *on* a conductor
+        with *in* one and dropped the outermost ring of arrows on every
+        port -- the frame of a 2D mode problem is such a wall all round.
+
+        This window is air throughout, so no raster point may be blank.
+        """
+        rep = _wr90_analysis().solve_ports()["port1"]
+        fig, ax = rep.modes[0].plot(field="E", normalize_arrows=False)
+        quiv = ax.collections[0]
+        off = np.asarray(quiv.get_offsets())
+        xlim, ylim = ax.get_xlim(), ax.get_ylim()
+        # Raster points that resample to nothing never reach the quiver,
+        # so the drawn extent is the test: arrows out to all four edges.
+        assert off[:, 0].min() == pytest.approx(xlim[0], rel=1e-9)
+        assert off[:, 0].max() == pytest.approx(xlim[1], rel=1e-9)
+        assert off[:, 1].min() == pytest.approx(ylim[0], rel=1e-9)
+        assert off[:, 1].max() == pytest.approx(ylim[1], rel=1e-9)
+
+        # ... carrying field, not a ring of zeros: at least one edge holds
+        # a real share of the peak, which is the normal component the old
+        # rule discarded.
+        mag = np.hypot(np.abs(np.asarray(quiv.U)), np.abs(np.asarray(quiv.V)))
+        rings = (
+            off[:, 0] == off[:, 0].min(),
+            off[:, 0] == off[:, 0].max(),
+            off[:, 1] == off[:, 1].min(),
+            off[:, 1] == off[:, 1].max(),
+        )
+        assert max(mag[r].max() for r in rings) > 0.1 * mag.max()
+        plt.close(fig)
+
     def test_electric_symmetry_does_not_duplicate_the_wall_line(self):
         """An electric symmetry plane sits ON the outermost grid line, so
         the boundary line the plot now reaches reflects onto itself.  The

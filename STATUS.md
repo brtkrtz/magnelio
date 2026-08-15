@@ -1,6 +1,14 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-15.*  Latest work: where two candidate ladders
+*Last updated: 2026-08-15.*  Latest work: port-mode plots draw their
+outermost ring of arrows again (DD-166).  DD-162 had grown the picture
+out to the window and then decided the added lines' validity from the
+component running *along* them — which an electric wall forces to zero,
+on every port, all the way round the frame — so the ring was dropped
+even where the perpendicular component carried the maximum (measured on
+a stripline port: 0.0 tangential against 6.05e7 normal).  Validity is
+now inherited from the interior line: *on* a conductor is not *in* one.
+Before that, where two candidate ladders
 of the conformal M_μ pairing both certify, the better-conditioned one
 now supplies the target instead of whichever axis was listed first
 (DD-165).  Agreement is tested at 1e-6 and the DTBC gate demands 1e-8,
@@ -52,8 +60,8 @@ defect — the pairing calls two ladder targets equal at 1e-6 while the
 DTBC gate demands 1e-8, and DD-165 makes the choice inside that band
 optimal without closing it.
 
-**Suite: 2147 passed / 6 skipped / 0 failed** (2026-08-15, GPU box —
-unit 1803 (+2 scikit-rf skips), integration 344 (+4 skips); GPU tests
+**Suite: 2148 passed / 6 skipped / 0 failed** (2026-08-15, GPU box —
+unit 1803 (+2 scikit-rf skips), integration 345 (+4 skips); GPU tests
 need `CUPY_ACCELERATORS=""` when the interpreter binary is called
 directly).  The DD-150 step change re-measured three fixture windows
 (interval stride, lumped-port guard, SIBC band edge) — the reasoning

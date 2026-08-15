@@ -145,7 +145,13 @@ class ModeReport:
         ax : matplotlib.axes.Axes, optional
             Target axes; a new figure is created when omitted.
         density : int, default 20
-            Target number of arrows per axis.
+            Number of arrows along the longer axis of the cross-section;
+            the shorter one gets the count that keeps the spacing equal.
+            The raster is deliberately independent of the computational
+            grid, so a locally refined region does not show up as a
+            cluster of arrows — but it also does not gain any.  Raise
+            this to read a feature that the default spacing steps over,
+            such as the field in a thin gap.
         normalize_arrows : bool, default True
             Unit-length arrows with magnitude encoded in colour
             (port-mode style).
@@ -281,11 +287,19 @@ def _extend_to_window(
     by its nearest interior value — so a boundary arrow's direction is
     exact in one component and first-order in the other.
 
-    Validity on the added lines is decided by the genuine component
-    alone: a zero there means the edge is in or on a conductor, and
-    continuing the partner outward would invent an arrow inside the
-    metal.  The window boundary of a PEC wall therefore stays blank
-    rather than gaining a row of extrapolated arrows.
+    An added line is valid exactly where the interior line it continues
+    is: what decides whether there is anything to draw out there is
+    whether the neighbourhood is metal, not how large the field happens
+    to be.  Reading the genuine component instead — blank it out where
+    it vanishes — confuses *on* a conductor with *in* one: an electric
+    wall forces the tangential half to zero and leaves the normal half
+    at its maximum, and the frame of a port's 2D mode problem is such a
+    wall all the way round, so that rule dropped the outermost ring of
+    arrows on every port.  A boundary arrow is therefore exact in its
+    tangential component (identically zero on a wall) and first-order in
+    its normal one, which draws it standing perpendicular on the wall —
+    the boundary condition made visible.  A window reaching into a
+    conductor still stays blank: there the interior line is invalid too.
     """
     nu, nv = u_cc.shape
 
@@ -311,10 +325,8 @@ def _extend_to_window(
         ve[1:-1, 0], ve[1:-1, -1] = genuine_v_edge
         ue[1:-1, 0], ue[1:-1, -1] = u_cc[:, 0], u_cc[:, -1]
         ve[0, 1:-1], ve[-1, 1:-1] = v_cc[0, :], v_cc[-1, :]
-    va[1:-1, 0] = genuine_v_edge[0] != 0.0
-    va[1:-1, -1] = genuine_v_edge[1] != 0.0
-    va[0, 1:-1] = genuine_u_edge[0] != 0.0
-    va[-1, 1:-1] = genuine_u_edge[1] != 0.0
+    va[1:-1, 0], va[1:-1, -1] = valid[:, 0], valid[:, -1]
+    va[0, 1:-1], va[-1, 1:-1] = valid[0, :], valid[-1, :]
     for arr in (ue, ve):
         arr[0, 0], arr[0, -1] = arr[1, 0], arr[1, -1]
         arr[-1, 0], arr[-1, -1] = arr[-2, 0], arr[-2, -1]
