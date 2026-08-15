@@ -3402,27 +3402,27 @@ class TestSectionAtFace:
         largest = max(abs(a) for a in signed)
         return sum(abs(a) if abs(a) == largest else -abs(a) for a in signed)
 
-    def test_plain_section_loses_material_at_a_seam(self):
-        """The behaviour that motivates the option — the seam eats area.
+    def test_the_seam_no_longer_eats_area(self):
+        """What the seam used to cost, and why it no longer does.
 
-        *How much* it eats is not a contract.  A plane lying in a face
-        makes the plain section ill-posed; historically what OCC
-        returned there moved with kernel settings (half the strip, a
-        quarter after DD-146 — implicitly closed partial chains,
-        neither the right answer).  Since the open-chain guard, such
-        chains are dropped with a warning instead of being implicitly
-        closed, so the plain path now comes back short *loudly* — and
-        that shortfall is why ``exact_at_faces`` exists.  No
-        production caller takes this path on such a plane: plotting
-        opts in (DD-137) and the mesher re-takes degenerate planes a
-        step to either side.
+        A plane lying in a face was ill-posed for the plain path, and
+        what OCC returned there moved with kernel settings: half the
+        strip, a quarter after DD-146, later dropped loudly as open
+        chains.  The cause was one step further on than it looked —
+        the seam edges branched the wire being assembled, and the
+        explorer walked one arm of the branch and stopped.  Chaining
+        the section edges on an endpoint graph keeps them all, and the
+        plain path returns the strip whole and silently.
+        ``exact_at_faces`` remains the supported way to ask about such
+        a plane; this pins that the plain path is no longer lossy on
+        this one.
         """
         from magnelio.geo._occ_backend import cross_section_polygons
 
         _occ()
-        with pytest.warns(UserWarning, match="open section chain"):
-            polys = cross_section_polygons(self._strip()._occ_shape(1.0), "z", 0.0, 1e-5)
-        assert (self._area(polys) if polys else 0.0) < 40e-6
+        polys = cross_section_polygons(self._strip()._occ_shape(1.0), "z", 0.0, 1e-5)
+        assert len(polys) == 1
+        assert self._area(polys) == pytest.approx(40e-6, rel=1e-9)
 
     def test_exact_at_faces_recovers_it(self):
         from magnelio.geo._occ_backend import cross_section_polygons
@@ -3433,25 +3433,26 @@ class TestSectionAtFace:
         )
         assert self._area(polys) == pytest.approx(40e-6, rel=1e-9)
 
-    def test_the_escape_step_is_not_the_chordal_budget(self):
-        """The retry needs a length of its own (DD-167).
+    def test_the_escape_step_is_its_own_length(self):
+        """The escape must not move with the chordal budget (DD-167).
 
-        Same seam plane, same tessellation: the escape has to land
-        inside the 35 µm strip to find a clean section.  Tied to the
-        chordal budget it steps 40 µm and lands in thin air, so the
-        retry is rejected and the material is dropped; given its own,
-        smaller step it lands at 16 µm and recovers the strip whole.
-        Neither value is more 'accurate' than the other — they answer
-        different questions, which is the whole point.
+        The seam plane used to be the demonstration: an escape tied to
+        the chord over-stepped the 35 µm strip, and the retry was
+        rejected.  Since the section edges are chained rather than
+        wired, that plane is no longer degenerate and cannot show it,
+        so what is left to pin here is the wiring — the two lengths are
+        independent, and the escape defaults to the chord only when the
+        caller declines to choose.  That the mesh passes then agree on
+        one escape is asserted in ``TestMesherEscapeReach``.
         """
         from magnelio.geo._occ_backend import cross_section_polygons
 
         _occ()
         occ_shape = self._strip()._occ_shape(1.0)
-        with pytest.warns(UserWarning, match="open section chain"):
-            cross_section_polygons(occ_shape, "z", 0.0, 1e-5, nudge=1e-5)
-        polys = cross_section_polygons(occ_shape, "z", 0.0, 1e-5, nudge=4e-6)
-        assert self._area(polys) == pytest.approx(40e-6, rel=1e-9)
+        reference = cross_section_polygons(occ_shape, "z", 0.0, 1e-5)
+        for nudge in (None, 0.0, 4e-6, 1e-5, 1e-4):
+            polys = cross_section_polygons(occ_shape, "z", 0.0, 1e-5, nudge=nudge)
+            assert self._area(polys) == pytest.approx(self._area(reference), rel=1e-9)
 
     @pytest.mark.parametrize("position", [0.0, T])
     def test_both_faces_of_the_solid(self, position):
@@ -3500,6 +3501,162 @@ class TestSectionAtFace:
         spans = [patch.get_xy()[:, 0] for patch in ax.patches]
         assert min(s.min() for s in spans) == pytest.approx(0.0, abs=1e-9)
         assert max(s.max() for s in spans) == pytest.approx(20.0, abs=1e-6)
+
+
+class TestSectionEdgeChaining:
+    """No section edge may go missing between the kernel and the polygons."""
+
+    @staticmethod
+    def _section_edges(shape, axis, position):
+        """Raw section edges, the way cross_section_polygons collects them."""
+        from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Section
+        from OCC.Core.gp import gp_Dir, gp_Pln, gp_Pnt
+        from OCC.Core.TopAbs import TopAbs_EDGE
+        from OCC.Core.TopExp import TopExp_Explorer
+        from OCC.Core.TopoDS import topods
+
+        from magnelio.geo._occ_backend import keep_operands_intact
+
+        normal = {"x": gp_Dir(1, 0, 0), "y": gp_Dir(0, 1, 0), "z": gp_Dir(0, 0, 1)}[axis]
+        origin = [0.0, 0.0, 0.0]
+        origin["xyz".index(axis)] = position
+        section = BRepAlgoAPI_Section()
+        keep_operands_intact(section)
+        section.Init1(shape)
+        section.Init2(gp_Pln(gp_Pnt(*origin), normal))
+        section.Build()
+        edges = []
+        explorer = TopExp_Explorer(section.Shape(), TopAbs_EDGE)
+        while explorer.More():
+            edges.append(topods.Edge(explorer.Current()))
+            explorer.Next()
+        return edges
+
+    def test_every_edge_lands_in_exactly_one_chain(self):
+        """The invariant the wire builder could not hold.
+
+        ``BRepBuilderAPI_MakeWire`` would accept an edge at a vertex
+        that already joined two, and ``BRepTools_WireExplorer`` then
+        walked one arm of the branch and stopped — the rest stayed in
+        the wire, untessellated and unreported.
+        """
+        from magnelio.geo import Cylinder
+        from magnelio.geo._occ_backend import _chain_section_edges
+
+        _occ()
+        shape = (
+            Cylinder(radius=3e-3, height=4e-3, axis="z", material=_air())
+            - Cylinder(radius=1e-3, height=6e-3, origin=(0, 0, -1e-3), axis="z", material=_air())
+        )._occ_shape(1.0)
+
+        for axis, position in (("z", 1e-3), ("x", 0.0), ("x", 2e-3)):
+            edges = self._section_edges(shape, axis, position)
+            assert edges, f"no section edges at {axis}={position}"
+            u_idx, v_idx = {"x": (1, 2), "y": (0, 2), "z": (0, 1)}[axis]
+            chains = _chain_section_edges(edges, u_idx, v_idx)
+            members = [id(edge) for chain in chains for edge, _ in chain]
+            assert len(members) == len(edges)
+            assert len(set(members)) == len(edges)
+
+    def test_a_seam_stub_does_not_swallow_the_contour(self):
+        """A branch is resolved by carrying straight on.
+
+        A Boolean seam that ends on a contour makes a vertex of three
+        edges.  Taking the stub there would strand the rest of the
+        contour, so the chain follows the continuation with the
+        smallest turn and the stub is left as its own chain.
+        """
+        from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
+        from OCC.Core.gp import gp_Pnt
+
+        from magnelio.geo._occ_backend import _chain_section_edges
+
+        _occ()
+
+        def edge(p0, p1):
+            return BRepBuilderAPI_MakeEdge(gp_Pnt(0.0, *p0), gp_Pnt(0.0, *p1)).Edge()
+
+        # A unit square whose bottom side is split at the origin, with a
+        # stub standing on the split point — the section's T-junction.
+        corner = ((-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0))
+        edges = [
+            edge((-1.0, -1.0), (0.0, -1.0)),
+            edge((0.0, -1.0), (1.0, -1.0)),
+            edge(corner[1], corner[2]),
+            edge(corner[2], corner[3]),
+            edge(corner[3], corner[0]),
+            edge((0.0, -1.0), (0.0, -0.4)),  # the stub
+        ]
+        chains = _chain_section_edges(edges, 1, 2)
+
+        assert sum(len(c) for c in chains) == len(edges)
+        contour = max(chains, key=len)
+        assert len(contour) == 5, "the stub broke the contour apart"
+        assert len(min(chains, key=len)) == 1
+
+    def test_an_open_chain_through_a_junction_stays_one_chain(self):
+        """Both halves grow away from the junction, meeting head to head.
+
+        Which end of a segment counts as its head is an artefact of
+        where the first pass started on it.  Two segments leaving the
+        same junction are therefore joined head to head, and looking
+        for a way in among heads alone finds none — the chain comes
+        back in single edges, one of the ways this silently loses a
+        contour.
+        """
+        from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
+        from OCC.Core.gp import gp_Pnt
+
+        from magnelio.geo._occ_backend import _chain_section_edges
+
+        _occ()
+
+        def edge(p0, p1):
+            return BRepBuilderAPI_MakeEdge(gp_Pnt(0.0, *p0), gp_Pnt(0.0, *p1)).Edge()
+
+        edges = [
+            edge((0.0, 0.0), (-1.0, 0.0)),  # both halves point away
+            edge((0.0, 0.0), (1.0, 0.0)),  # from the junction
+            edge((0.0, 0.0), (0.0, 0.6)),  # the stub
+        ]
+        chains = _chain_section_edges(edges, 1, 2)
+
+        assert sum(len(c) for c in chains) == len(edges)
+        assert sorted(len(c) for c in chains) == [1, 2], "the chain came back in pieces"
+
+    def test_two_branches_still_leave_one_contour(self):
+        """A contour split by two junctions has to be rejoined.
+
+        With one junction the contour closes on itself in the first
+        pass and never reaches the pairing.  Two junctions cut it into
+        two segments, and only the pairing puts them back together.
+        """
+        from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
+        from OCC.Core.gp import gp_Pnt
+
+        from magnelio.geo._occ_backend import _chain_section_edges
+
+        _occ()
+
+        def edge(p0, p1):
+            return BRepBuilderAPI_MakeEdge(gp_Pnt(0.0, *p0), gp_Pnt(0.0, *p1)).Edge()
+
+        # Square with its bottom side split at two points, a stub on each.
+        edges = [
+            edge((-1.0, -1.0), (-0.5, -1.0)),
+            edge((-0.5, -1.0), (0.5, -1.0)),
+            edge((0.5, -1.0), (1.0, -1.0)),
+            edge((1.0, -1.0), (1.0, 1.0)),
+            edge((1.0, 1.0), (-1.0, 1.0)),
+            edge((-1.0, 1.0), (-1.0, -1.0)),
+            edge((-0.5, -1.0), (-0.5, -0.4)),
+            edge((0.5, -1.0), (0.5, -0.4)),
+        ]
+        chains = _chain_section_edges(edges, 1, 2)
+
+        assert sum(len(c) for c in chains) == len(edges)
+        assert len(max(chains, key=len)) == 6, "the contour came back in pieces"
+        assert sorted(len(c) for c in chains) == [1, 1, 6]
 
 
 class TestMesherEscapeReach:

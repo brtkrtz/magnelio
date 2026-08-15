@@ -23,6 +23,17 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- A solid could lose half its cross-section on a mesh plane without any
+  warning at all, so parts of a conductor were meshed as if they were
+  air.  Contour assembly followed the geometry kernel's own wire
+  builder, which happily joins section curves into a branched shape
+  that is no longer a single loop; everything past the branch was then
+  silently skipped.  Cross-sections are now assembled directly from the
+  section curves, and a junction is resolved by following the curve
+  that continues smoothly.  This mostly shows up on bodies made by
+  lofting, revolving or fusing, near the outer edge of a curved face —
+  and it also fixes cutting planes that lie exactly in a flat face of a
+  fused body, which previously came back short
 - A curved solid could lose its entire cross-section on isolated mesh
   planes, warning about "open section chains" without saying which body
   or what it cost.  The plane in question grazes the solid's own curved

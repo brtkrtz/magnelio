@@ -1,6 +1,20 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-15.*  Latest work: the section retry that steps
+*Last updated: 2026-08-15.*  Latest work: cross-section contours are
+assembled by chaining the kernel's section edges on a graph of their
+endpoints instead of feeding them to a wire builder (DD-168).  That
+builder accepted an edge at a vertex already joining two, making a
+branched pseudo-wire, and the explorer then walked one arm of the
+branch and stopped — the edges past the branch were never tessellated
+and left no open chain to warn about.  Measured on a stripline
+coupler: fourteen section edges, seven reaching the polygons, half the
+electrode's cross-section absent over a 70 µm band.  Chained instead,
+the returned area falls smoothly across that band where it used to
+halve, the mesh keeps its grid but books 11737 → 11923 conformal Hx
+faces and 64904 → 64934 PEC cells, and the two-brick seam plane —
+lossy on the plain path for the same reason, which is what
+`exact_at_faces` was introduced to work around — returns its
+40.00000 mm² whole.  Before that, the section retry that steps
 off a degenerate cutting plane got a length scale of its own (DD-167).
 It had been taking its step from the tessellation deflection, so the
 conformal-area pass — which tessellates ten times finer than the cell
@@ -71,17 +85,17 @@ grouping fuses labels through PEC cell bodies (DD-156) — both found
 on the stripline-coupler worksheet — as was the escape-reach defect
 DD-167 amends DD-157 with.  **known-bugs.md has no open
 entry:** KB-018 was closed by DD-161, KB-019 by DD-164, KB-017 by
-DD-165 and KB-020 by DD-167.  Two things remain documented rather than
+DD-165, KB-020 by DD-167 and KB-021 by DD-168.  One thing remains
+documented rather than
 fixed.  From KB-017, a tolerance gap: the pairing calls two ladder
 targets equal at 1e-6 while the DTBC gate demands 1e-8, and DD-165
-makes the choice inside that band optimal without closing it.  From
-DD-167, the section operator at grazing incidence: within the last
-~70 µm before a conductor's lateral extreme it returns one of two
-rotationally symmetric slivers instead of both, silently, because the
-surviving contour closes.
+makes the choice inside that band optimal without closing it.  The
+grazing-incidence residual DD-167 recorded — one of two symmetric
+slivers returned instead of both — turned out not to be the section
+operator at all and is closed by DD-168.
 
-**Suite: 2150 passed / 6 skipped / 0 failed** (2026-08-15, GPU box —
-unit 1805 (+2 scikit-rf skips), integration 345 (+4 skips); GPU tests
+**Suite: 2154 passed / 6 skipped / 0 failed** (2026-08-15, GPU box —
+unit 1809 (+2 scikit-rf skips), integration 345 (+4 skips); GPU tests
 need `CUPY_ACCELERATORS=""` when the interpreter binary is called
 directly).  The DD-150 step change re-measured three fixture windows
 (interval stride, lumped-port guard, SIBC band edge) — the reasoning

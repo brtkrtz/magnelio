@@ -11047,25 +11047,27 @@ now identifies the solid by its material, reports how many chains were
 dropped and how far the retry searched, and says that the bulk
 classification survives while the sub-cell resolution does not.
 
-**Residual, recorded not fixed.**  Within the last ~70 µm before the
-electrode's lateral extreme the section returns one of the two
+**Residual, since closed by DD-168.**  Within the last ~70 µm before
+the electrode's lateral extreme the section returned one of the two
 rotationally symmetric slivers instead of both — silently, since the
-surviving contour closes.  Both bodies agree with each other there
-(the vacuum union carries exactly the matching hole), and planes
-0.2 mm further in return both.  This is the section operator at
-grazing incidence, the fight DD-157 already settled with "drop, never
-invent"; it is sub-cell material at the very tip of a conductor edge.
+surviving contour closed.  Read as the section operator failing at
+grazing incidence, it was nothing of the kind: the kernel produced
+every edge, and the wire builder here dropped half of them.  See
+DD-168.
 
 **Certificate:** `validation/section_nudge_reach_certificate.py` — the
 section-level A/B above, the shared-escape invariant, and the full
 coupler meshing with zero open-chain warnings and the H-face plane no
 longer a hole between its neighbours (dip 12.4 % → −1.1 %).  Gates:
-`tests/unit/test_geometry.py::TestSectionAtFace::test_the_escape_step_is_not_the_chordal_budget`
-(the seam fixture, where the constraint runs the other way: an escape
-tied to the chord over-steps the 35 µm strip into thin air and the
-retry is rejected) and
 `tests/unit/test_geometry.py::TestMesherEscapeReach` (both passes
-escape by the same distance).
+escape by the same distance, and the far end of the ladder stays
+inside one cell) and
+`tests/unit/test_geometry.py::TestSectionAtFace::test_the_escape_step_is_its_own_length`
+(the two lengths are independent; the escape falls back on the chord
+only when the caller declines to choose).  The seam fixture used to
+carry the second gate — an escape tied to the chord over-stepped the
+35 µm strip and the retry was rejected — but DD-168 made that plane
+well-posed, so it can no longer demonstrate it.
 
 **Files:** `geo/_occ_backend.py` (`cross_section_polygons`,
 `compute_face_material_areas`, `batch_cross_sections`, the section
@@ -11075,3 +11077,107 @@ the same solids on the same grid), `mesh/mesher.py`,
 `tests/unit/test_geometry.py`.  The geometry plot keeps the default —
 it sections at a user-chosen deflection with no grid to relate a step
 to, and its far coarser default already reaches ±0.8 mm.
+
+
+## DD-168 — Section edges are chained, not wired
+
+**Problem.**  DD-167 left a residual on record: over a ~70 µm band
+before a lofted electrode's lateral extreme, the section returned one
+of two rotationally symmetric slivers instead of both, silently,
+because the surviving contour closed.  It was written down as the
+section operator failing at grazing incidence — the situation DD-157
+settles with "drop, never invent".  Measuring it says otherwise.  The
+kernel produces every edge; they are lost afterwards, in this code.
+
+Contours were assembled by handing edges to `BRepBuilderAPI_MakeWire`
+one at a time and keeping whichever it accepted.  It accepts an edge
+that reaches *any* free end of the wire so far, including a vertex
+that already joins two — the result is a branched pseudo-wire, which
+is not a wire at all.  `BRepTools_WireExplorer` then walks one arm of
+the branch and stops.  The edges beyond the branch sit inside the
+wire, never tessellated, never counted: no open chain, so no warning,
+so nothing downstream can tell.
+
+Measured on the coupler's electrode union, plane by plane:
+
+| plane | raw section edges | reach tessellation | endpoint-graph valences |
+|---|---|---|---|
+| x = 6.090 mm | 12 | 12 | all 2 |
+| x = 6.110 mm | 14 | **7** | two vertices of valence 3 |
+| x = 6.130 mm | 12 | **8** | valence 1 and 2 only |
+
+At 6.110 mm eight edges went into one wire and the explorer visited
+one.  The near-tangency band is exactly where the extra short edges
+that make such a junction appear.
+
+**Decision.**  Chain the section edges here instead, on a graph of
+their endpoints.
+
+*Vertices* merge at the kernel's own tolerance
+(`BRep_Tool::Tolerance`), not an invented one.  That tolerance is what
+inflates in a tangency band — measured 5 µm away from it against
+138 µm inside — so any fixed threshold either tears clean contours
+apart or fuses distinct ones.  A first attempt clustered at 1 nm and
+split contours that had been correct for years.
+
+*Chaining* runs in two passes.  The first follows only vertices where
+exactly two edges meet: no choice, no geometry, cannot go wrong.  The
+second joins the resulting segments across branch vertices by tangent
+continuity — of the ends meeting there, the pair that continues one
+another is the pair whose inward tangents most nearly oppose, and
+anything turning by 90° or more is treated as a different feature
+touching and left for the open-chain guard.  Doing this in one greedy
+pass instead is not enough: seeded at a loose end it starts on the
+stub and swallows the contour behind it, which is what
+`test_a_seam_stub_does_not_swallow_the_contour` pins.
+
+*Direction* follows the edges' parameterisation, as the wire path did.
+The section edges' own orientation flags do not serve: measured across
+the grazing band they run opposite on two mirror-image contours of one
+solid, and honouring them makes the pair's signed areas cancel.  This
+matters because signed areas are summed per face rectangle downstream;
+it is only the `abs()` at the end of that sum, and the fact that two
+contours 11 mm apart never share a rectangle, that keeps a disagreeing
+winding from erasing material.
+
+**What it costs and buys.**  A/B over 514 section calls (six fixtures,
+two chordal budgets, planes across each): 497 identical including the
+sign of every contour area, 0 → 0 warnings, 797 → 802 contours.  The
+17 that moved are the grazing planes, where a lost contour comes back.
+Across the band the returned area now falls smoothly — 169.5, 156.5,
+143.4, 130.4, 117.4, 104.4, 91.3, 78.3 mm² at 10 µm steps — where it
+used to halve at 6.110 mm.  On the coupler mesh: same grid, no
+warnings, conformal Hx faces 11737 → 11923, cells classified PEC
+64904 → 64934, PEC area booked on Hx +3.8 mm².  Thirty cells of metal
+that were being meshed as vacuum.
+
+The wire builder also went away as a cost: it rebuilt and copied the
+whole wire for every candidate edge it tried.
+
+**Consequence for `exact_at_faces`.**  A plane lying in a face was
+lossy on the plain path for the same reason — the seam edges branched
+the wire.  With the edges chained, the two-brick seam fixture returns
+its 40.00000 mm² whole and silently on the plain path, so the test
+that pinned the shortfall now pins its absence.  The option itself is
+unchanged and remains the supported way to ask about such a plane;
+nothing here re-examines the cases that motivated it beyond that
+fixture.
+
+**Certificate:** `validation/section_chain_completeness_certificate.py`
+— edge conservation on the grazing planes, continuity of the returned
+area across the band (largest step 14.2 % where a lost contour is a
+halving), and what the coupler mesh books.  Gates:
+`tests/unit/test_geometry.py::TestSectionEdgeChaining` (every edge
+lands in exactly one chain on a real solid; a seam stub does not
+swallow the contour it stands on; a contour cut by two junctions is
+put back together; and an open chain through a junction survives it —
+its two halves are joined head to head, since which end of a segment
+is its head only records where the first pass started on it) and
+`tests/unit/test_geometry.py::TestSectionAtFace::test_the_seam_no_longer_eats_area`.
+
+**Files:** `geo/_occ_backend.py` (`_chain_section_edges`, and
+`cross_section_polygons` which now tessellates chains — the
+exact-in-face path converts its genuine wires to chains and is
+otherwise untouched), `tests/unit/test_geometry.py`,
+`validation/section_chain_completeness_certificate.py`.  Measurements:
+internal dossier `investigations/section-open-chains/`.

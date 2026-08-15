@@ -728,6 +728,227 @@ def _shape_list(shapes):
     return out
 
 
+def _chain_section_edges(edges: list, u_idx: int, v_idx: int) -> list[list[tuple]]:
+    """Group section edges into traversal chains on an endpoint graph.
+
+    ``BRepBuilderAPI_MakeWire`` accepts an edge whenever it reaches any
+    free end of the wire built so far — including a vertex that already
+    joins two edges.  What comes back is a branched pseudo-wire, and
+    ``BRepTools_WireExplorer`` then walks one arm of it and stops: the
+    remaining edges sit inside the wire and are never tessellated.  They
+    leave no open chain either, so nothing downstream can tell.  Measured
+    on a plane grazing a lofted electrode: fourteen section edges, eight
+    of them added to one wire, one visited — half the cross-section
+    silently absent, and the booked area halved against both neighbouring
+    planes.
+
+    Chaining the edges here keeps every one of them.  Endpoints are
+    merged at the kernel's own vertex tolerance rather than an invented
+    one (it is the tolerance that grows in a near-tangency band — a
+    factor 28 across the band measured above, so a fixed threshold either
+    tears clean contours apart or fuses distinct ones).  A vertex where
+    three or more edges meet ends the chain, unless one continuation
+    carries straight on: a Boolean seam meeting a contour tangentially is
+    the common case there, and of the branches the contour is the one
+    with the smallest turn.
+
+    Traversal direction follows the edges' parameterisation, which is
+    what the wire path did through ``BRepTools_WireExplorer`` and what
+    keeps the winding of separate contours agreeing.  The section edges'
+    own orientation flags do not: measured across a grazing band, they
+    run opposite on two mirror-image contours of one solid, and honouring
+    them makes the signed areas of the pair cancel.
+
+    Parameters
+    ----------
+    edges : list of TopoDS_Edge
+        Section edges, in kernel order.
+    u_idx, v_idx : int
+        Coordinate indices spanning the section plane.
+
+    Returns
+    -------
+    list of list of (TopoDS_Edge, bool)
+        One chain per contour, in traversal order.  The flag marks an
+        edge traversed against its own parameterisation — the same thing
+        ``BRepTools_WireExplorer`` expresses through edge orientation.
+    """
+    from OCC.Core.BRep import BRep_Tool  # noqa: PLC0415
+    from OCC.Core.BRepAdaptor import BRepAdaptor_Curve  # noqa: PLC0415
+    from OCC.Core.gp import gp_Pnt, gp_Vec  # noqa: PLC0415
+    from OCC.Core.TopAbs import TopAbs_VERTEX  # noqa: PLC0415
+    from OCC.Core.TopExp import TopExp_Explorer  # noqa: PLC0415
+    from OCC.Core.TopoDS import topods  # noqa: PLC0415
+
+    n_edges = len(edges)
+    if n_edges == 0:
+        return []
+
+    # Endpoint geometry.  Tangents point INTO the edge from each end, so
+    # the arrival direction at a vertex is minus the tangent of the end
+    # we leave through, and a candidate's tangent is where it would take
+    # us — the two are directly comparable.
+    pts = np.empty((2 * n_edges, 2))
+    tangents = np.empty((2 * n_edges, 2))
+    tols = np.empty(2 * n_edges)
+    for i, edge in enumerate(edges):
+        curve = BRepAdaptor_Curve(edge)
+        for k, (param, sign) in enumerate(
+            ((curve.FirstParameter(), 1.0), (curve.LastParameter(), -1.0))
+        ):
+            pnt, deriv = gp_Pnt(), gp_Vec()
+            curve.D1(param, pnt, deriv)
+            coords = (pnt.X(), pnt.Y(), pnt.Z())
+            pts[2 * i + k] = (coords[u_idx], coords[v_idx])
+            vec = np.array([deriv.Coord(u_idx + 1), deriv.Coord(v_idx + 1)]) * sign
+            norm = float(np.hypot(*vec))
+            tangents[2 * i + k] = vec / norm if norm > 0.0 else (1.0, 0.0)
+        vertex_tols = []
+        explorer = TopExp_Explorer(edge, TopAbs_VERTEX)
+        while explorer.More():
+            vertex_tols.append(BRep_Tool.Tolerance(topods.Vertex(explorer.Current())))
+            explorer.Next()
+        tols[2 * i : 2 * i + 2] = max(vertex_tols) if vertex_tols else 1e-7
+
+    # Merge coincident endpoints into vertices.  The bucket grid is sized
+    # by the largest tolerance so the 3x3 neighbourhood is exhaustive;
+    # each pair is then admitted on its own tolerance, which keeps a
+    # loose vertex from swallowing a tight one nearby.
+    cell = max(2.0 * float(tols.max()), 1e-12)
+    buckets: dict[tuple[int, int], list[int]] = {}
+    for idx, point in enumerate(pts):
+        buckets.setdefault((int(point[0] // cell), int(point[1] // cell)), []).append(idx)
+    parent = list(range(2 * n_edges))
+
+    def _find(a: int) -> int:
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    for (bu, bv), members in buckets.items():
+        neighbours = [
+            j for du in (-1, 0, 1) for dv in (-1, 0, 1) for j in buckets.get((bu + du, bv + dv), ())
+        ]
+        for a in members:
+            for b in neighbours:
+                if b <= a:
+                    continue
+                if float(np.hypot(*(pts[b] - pts[a]))) <= max(tols[a], tols[b]):
+                    ra, rb = _find(a), _find(b)
+                    if ra != rb:
+                        parent[rb] = ra
+
+    node = [_find(i) for i in range(2 * n_edges)]
+    ends = [(node[2 * i], node[2 * i + 1]) for i in range(n_edges)]
+    incident: dict[int, list[tuple[int, int]]] = {}
+    for i, (a, b) in enumerate(ends):
+        incident.setdefault(a, []).append((i, 0))
+        incident.setdefault(b, []).append((i, 1))
+
+    unused = set(range(n_edges))
+    # Pass 1: run out the unambiguous stretches.  A vertex joining
+    # exactly two edges leaves no choice, so following those needs no
+    # geometry and cannot go wrong; every branch is left for pass 2.
+    segments: list[dict] = []
+    while unused:
+        seed = min(unused)
+        unused.discard(seed)
+        run = [(seed, False)]
+        head, tail = ends[seed]
+        while len(incident[tail]) == 2:
+            nxt = [(i, e) for i, e in incident[tail] if i in unused]
+            if not nxt:
+                break
+            i, e = nxt[0]
+            unused.discard(i)
+            run.append((i, e == 1))
+            tail = ends[i][1 - e]
+            if tail == head:
+                break
+        if tail != head:
+            while len(incident[head]) == 2:
+                nxt = [(i, e) for i, e in incident[head] if i in unused]
+                if not nxt:
+                    break
+                i, e = nxt[0]
+                unused.discard(i)
+                run.insert(0, (i, e == 0))
+                head = ends[i][1 - e]
+                if head == tail:
+                    break
+        segments.append({"run": run, "head": head, "tail": tail, "closed": head == tail})
+
+    def _outward(segment: dict, side: int) -> np.ndarray:
+        """Tangent leading from the segment's *side* vertex into it."""
+        i, flipped = segment["run"][-1] if side else segment["run"][0]
+        if side:
+            return tangents[2 * i + (0 if flipped else 1)]
+        return tangents[2 * i + (1 if flipped else 0)]
+
+    # Pass 2: pair up segment ends that meet at a branch.  Two ends
+    # continue one another when the traversal leaves the first along
+    # the direction it enters the second, i.e. their inward tangents
+    # oppose; anything turning by 90 degrees or more is a different
+    # feature touching, and is left unpaired for the open-chain guard.
+    at_vertex: dict[int, list[tuple[int, int]]] = {}
+    for s, segment in enumerate(segments):
+        if segment["closed"]:
+            continue
+        at_vertex.setdefault(segment["head"], []).append((s, 0))
+        at_vertex.setdefault(segment["tail"], []).append((s, 1))
+
+    joined: dict[tuple[int, int], tuple[int, int]] = {}
+    for _vertex, entries in sorted(at_vertex.items()):
+        if len(entries) < 2:
+            continue
+        scored = []
+        for a in range(len(entries)):
+            for b in range(a + 1, len(entries)):
+                ea, eb = entries[a], entries[b]
+                if ea[0] == eb[0]:
+                    continue  # would close a segment onto itself
+                score = -float(
+                    np.dot(_outward(segments[ea[0]], ea[1]), _outward(segments[eb[0]], eb[1]))
+                )
+                if score > 0.0:
+                    scored.append((-score, ea, eb))
+        for _neg, ea, eb in sorted(scored):
+            if ea in joined or eb in joined:
+                continue
+            joined[ea] = eb
+            joined[eb] = ea
+
+    # Walk the segment graph into chains.  Enter at a free end where
+    # there is one — either end, since which of a segment's ends is its
+    # head is an artefact of where pass 1 happened to start — and only
+    # then pick up whatever is left, which is a cycle.
+    chains: list[list[tuple]] = []
+    done: set[int] = set()
+    starts = [
+        (s, side)
+        for s in range(len(segments))
+        for side in (0, 1)
+        if (s, side) not in joined and not segments[s]["closed"]
+    ]
+    for s, side in starts + [(s, 0) for s in range(len(segments))]:
+        if s in done:
+            continue
+        chain: list[tuple] = []
+        cursor: tuple[int, int] | None = (s, side)
+        while cursor is not None and cursor[0] not in done:
+            index, entry = cursor
+            done.add(index)
+            run = segments[index]["run"]
+            if entry:  # entered through the tail: traverse backwards
+                chain.extend((edges[i], not flipped) for i, flipped in reversed(run))
+            else:
+                chain.extend((edges[i], flipped) for i, flipped in run)
+            cursor = joined.get((index, 0 if entry else 1))
+        chains.append(chain)
+    return chains
+
+
 def cross_section_polygons(
     shape,
     plane_normal: str,
@@ -814,10 +1035,6 @@ def cross_section_polygons(
     try:
         from OCC.Core.BRepAdaptor import BRepAdaptor_Curve  # noqa: PLC0415
         from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Section  # noqa: PLC0415
-        from OCC.Core.BRepBuilderAPI import (  # noqa: PLC0415
-            BRepBuilderAPI_MakeWire,
-            BRepBuilderAPI_WireDone,
-        )
         from OCC.Core.BRepTools import BRepTools_WireExplorer  # noqa: PLC0415
         from OCC.Core.GCPnts import GCPnts_TangentialDeflection  # noqa: PLC0415
         from OCC.Core.gp import gp_Dir, gp_Pln, gp_Pnt  # noqa: PLC0415
@@ -842,13 +1059,23 @@ def cross_section_polygons(
 
     axis_idx = {"x": 0, "y": 1, "z": 2}[plane_normal]
 
-    def _wires_at(position: float) -> tuple[list, bool]:
-        """Section wires at *position* [scaled units]; ``(wires, from_faces)``."""
+    def _chain_of_wire(wire) -> list[tuple]:
+        """A traversal chain from a genuine wire (the exact-in-face path)."""
+        chain = []
+        we = BRepTools_WireExplorer(wire)
+        while we.More():
+            edge = topods.Edge(we.Current())
+            chain.append((edge, edge.Orientation() == TopAbs_REVERSED))
+            we.Next()
+        return chain
+
+    def _chains_at(position: float) -> tuple[list[list[tuple]], bool]:
+        """Section chains at *position* [scaled units]; ``(chains, from_faces)``."""
         origin = [0.0, 0.0, 0.0]
         origin[axis_idx] = position
         pln = gp_Pln(gp_Pnt(*origin), normal_dir)
         if exact_at_faces and _plane_lies_in_a_face(shape, axis_idx, position):
-            return _face_region_wires(shape, pln), True
+            return [_chain_of_wire(w) for w in _face_region_wires(shape, pln)], True
         # Intersect shape with plane. SetRunParallel enables OCCT's own
         # internal multi-threading for the Boolean-operation kernel — the
         # computed intersection is unaffected, only its execution strategy;
@@ -875,59 +1102,38 @@ def cross_section_polygons(
         if not edges:
             return [], False
 
-        # Group edges into separate closed wires (handles disjoint contours,
-        # e.g. outer boundary + hole from a CSG difference).
-        wires = []
-        remaining = list(range(len(edges)))
-        while remaining:
-            mw = BRepBuilderAPI_MakeWire()
-            mw.Add(edges[remaining.pop(0)])
-            changed = True
-            while changed:
-                changed = False
-                for idx in list(remaining):
-                    mw2 = BRepBuilderAPI_MakeWire(mw.Wire())
-                    mw2.Add(edges[idx])
-                    if mw2.Error() == BRepBuilderAPI_WireDone:
-                        mw = mw2
-                        remaining.remove(idx)
-                        changed = True
-                        break
-            if mw.IsDone():
-                wires.append(mw.Wire())
-        return wires, False
+        # Group edges into separate contours (handles disjoint ones, e.g.
+        # outer boundary + hole from a CSG difference).
+        return _chain_section_edges(edges, u_idx, v_idx), False
 
-    def _tessellate(wires: list) -> tuple[list[np.ndarray], int]:
+    def _tessellate(chains: list) -> tuple[list[np.ndarray], int]:
         """Tessellated closed contours [scaled units] + open-chain count.
 
-        A wire whose tessellated endpoints do not meet is an OPEN
+        A chain whose tessellated endpoints do not meet is an OPEN
         chain: on a degenerate section (a plane in the near-tangent
         band of a curved face of a tolerance-inflated Boolean solid,
-        ``BRepAlgoAPI_Section`` drops or mis-chains edges) the wire
-        builder happily returns partial chains, and implicitly closing
-        them books arbitrary coverage — measured: one 13-point chain
-        spanning both coax bores of a stripline coupler, booking the
-        complement of a bore-wall face and breaking the feed-chain
-        slab invariance behind the port.  Closedness is judged
-        against the tessellation scale and the contour perimeter, both
-        far above genuine vertex-tolerance seams.
+        ``BRepAlgoAPI_Section`` drops edges) the kernel returns
+        partial contours, and implicitly closing them books arbitrary
+        coverage — measured: one 13-point chain spanning both coax
+        bores of a stripline coupler, booking the complement of a
+        bore-wall face and breaking the feed-chain slab invariance
+        behind the port.  Closedness is judged against the
+        tessellation scale and the contour perimeter, both far above
+        genuine vertex-tolerance seams.
         """
         closed: list[np.ndarray] = []
         n_open = 0
-        for wire in wires:
+        for chain in chains:
             points: list[tuple[float, float]] = []
-            we = BRepTools_WireExplorer(wire)
-            while we.More():
-                edge = we.Current()
+            for edge, flipped in chain:
                 curve = BRepAdaptor_Curve(edge)
-                reversed_edge = edge.Orientation() == TopAbs_REVERSED
                 discretizer = GCPnts_TangentialDeflection(
                     curve,
                     math.radians(5.0),
                     deflection,
                 )
                 n_pts = discretizer.NbPoints()
-                rng = range(n_pts, 0, -1) if reversed_edge else range(1, n_pts + 1)
+                rng = range(n_pts, 0, -1) if flipped else range(1, n_pts + 1)
                 for k in rng:
                     pnt = discretizer.Value(k)
                     coords = (pnt.X(), pnt.Y(), pnt.Z())
@@ -936,7 +1142,6 @@ def cross_section_polygons(
                         abs(uv[0] - points[-1][0]) > 1e-12 or abs(uv[1] - points[-1][1]) > 1e-12
                     ):
                         points.append(uv)
-                we.Next()
 
             if len(points) < 3:
                 continue
@@ -973,8 +1178,8 @@ def cross_section_polygons(
     base_seen_material = False
     base_open = 0
     for step in (0.0, 4.0, -4.0, 8.0, -8.0):
-        wires, from_faces = _wires_at(plane_position + step * nudge_step)
-        polygons_scaled, n_open = _tessellate(wires)
+        chains, from_faces = _chains_at(plane_position + step * nudge_step)
+        polygons_scaled, n_open = _tessellate(chains)
         if step == 0.0:
             base_closed = polygons_scaled
             base_open = n_open

@@ -4,6 +4,27 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
+## KB-021: ~~Half a solid's cross-section goes missing with no warning~~ — Resolved (DD-168, 2026-08-15)
+
+Recorded as a residual of DD-167 and read as the section operator
+failing at grazing incidence.  It was not: the kernel produced every
+edge, and the wire builder in `cross_section_polygons` lost them.
+`BRepBuilderAPI_MakeWire` accepts an edge reaching *any* free end of
+the wire so far — including a vertex that already joins two — and the
+branched result is not a wire; `BRepTools_WireExplorer` walks one arm
+and stops.  Measured on a stripline-coupler electrode (internal
+record): fourteen section edges, eight added to one wire, one visited.
+No open chain remained, so nothing warned, and thirty cells of metal
+were meshed as vacuum.  Section edges are chained on an endpoint graph
+now, with branches resolved by tangent continuity.
+
+Worth remembering how the diagnosis went wrong the first time.  "The
+section operator is degenerate here" is a plausible reading of a
+halved cross-section and it survived a whole session, because both
+plausible fixes — nudging further, tessellating finer — do nothing
+against it.  What settled it was counting: edges out of the kernel
+against edges reaching the tessellation.
+
 ## KB-020: ~~A near-tangent section plane drops a solid's whole cross-section on a fine mesh~~ — Resolved (DD-167, 2026-08-15)
 
 Found on a stripline-coupler worksheet (internal record) whose mesher
