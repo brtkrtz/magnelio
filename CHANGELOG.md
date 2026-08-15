@@ -23,6 +23,13 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- A waveguide port could quietly lose its exact, reflection-free
+  termination and fall back to the first-order absorbing one when its
+  cross-section sat on a mirrored copy of a curved solid — leaving a
+  −30 dB-class reflection floor on that channel while a geometrically
+  identical, unmirrored port on the same model had none.  Impedances and
+  field results are unaffected; the reflection floor of the affected
+  channel improves
 - Material boundaries that run through a domain boundary face — a
   symmetry plane, a PEC or PMC wall, an absorbing face — are now
   resolved below the cell there, as they already were everywhere else.

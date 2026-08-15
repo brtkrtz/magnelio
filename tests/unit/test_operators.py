@@ -227,3 +227,46 @@ class TestCoupleFaceMaterialPairs:
         with warnings.catch_warnings():
             warnings.simplefilter("error", RuntimeWarning)
             couple_face_material_pairs(self._mesh())
+
+    def test_uniform_box_needs_no_override(self):
+        """Control for the ladder-choice test below.
+
+        Every ladder on a homogeneous box reproduces the bulk value, so
+        the no-op filter leaves every face alone.  If this ever stops
+        holding, the test below is measuring something else.
+        """
+        from magnelio._operators.material_matrices import couple_face_material_pairs
+
+        mesh = self._mesh()
+        couple_face_material_pairs(mesh)
+        assert not np.any(mesh.face_material.category == 2)
+
+    def test_the_better_conditioned_ladder_supplies_the_target(self, monkeypatch):
+        """A jittered partner must not outrank an exact one (KB-017).
+
+        Perturbing one ``M_eps`` entry by less than the pairing's
+        ``rtol`` leaves the ladder along that edge's own axis internally
+        inconsistent while the transverse ladder of the same face stays
+        exact.  Both pass the agreement test, so the face has two valid
+        candidates -- and the exact one is the one that reproduces the
+        bulk.  Choosing by axis order instead spread the single jittered
+        edge over every face of its ladder family; on a real coupler
+        that cost a port its exact termination.
+        """
+        import magnelio._operators.material_matrices as mmod
+
+        mesh = self._mesh()
+        original = mmod.build_M_eps
+        Nx, Ny, Nz = mesh.Nx, mesh.Ny, mesh.Nz
+        n_Ex = Nx * (Ny + 1) * (Nz + 1)
+        i, j, k = Nx // 2, Ny // 2, Nz // 2
+        ey_flat = n_Ex + (i * Ny + j) * (Nz + 1) + k
+
+        def jittered(m):
+            values = np.array(original(m), copy=True)
+            values[ey_flat] *= 1.0 + 5.0e-7  # inside the 1e-6 agreement band
+            return values
+
+        monkeypatch.setattr(mmod, "build_M_eps", jittered)
+        mmod.couple_face_material_pairs(mesh)
+        assert not np.any(mesh.face_material.category == 2)

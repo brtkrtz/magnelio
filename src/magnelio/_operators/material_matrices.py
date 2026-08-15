@@ -835,7 +835,12 @@ def couple_face_material_pairs(mesh: Mesh, rtol: float = 1e-6) -> None:
       ``ε_pair = eps_avg/f_A`` (the material average over the free
       part of the dual face).  Bulk pairs reproduce their bulk value
       exactly, so the override is a no-op away from conformal
-      contours.
+      contours.  When both agree, the one whose own two partners
+      disagree less supplies the target: agreement at ``rtol`` still
+      admits a spread of up to ``rtol``, and the better-conditioned
+      ladder is the better estimator of the same quantity.  Picking by
+      axis order instead would make the result depend on how the user
+      happened to orient the model.
     * Two valid ladders that disagree → genuinely 3D neighbourhood, no
       exact wave to preserve: the Krietenstein value stays.
 
@@ -889,7 +894,11 @@ def couple_face_material_pairs(mesh: Mesh, rtol: float = 1e-6) -> None:
     mu_face[has_mu] = fm.mu_avg[has_mu]
 
     def _ladder(face_shape, p_dim, e_off, e_shape, d_p, d_avg_p):
-        """Per-face (target, valid) for the ladder along raster dim p_dim.
+        """Per-face (target, valid, resid) for the ladder along p_dim.
+
+        ``resid`` is the ladder's own relative partner disagreement,
+        ``inf`` where invalid — the quantity the caller ranks two valid
+        ladders by.
 
         Interior faces are valid when both bounding-plane partners are
         free and agree (the local translation-invariance test).  Faces
@@ -930,12 +939,12 @@ def couple_face_material_pairs(mesh: Mesh, rtol: float = 1e-6) -> None:
             v1 = free_flat[e1] & np.isfinite(t1)
             v2 = free_flat[e2] & np.isfinite(t2)
 
-            agree = np.abs(t1 - t2) <= rtol * np.maximum(
-                np.abs(t1),
-                np.abs(t2),
-            )
+            scale = np.maximum(np.abs(t1), np.abs(t2))
+            agree = np.abs(t1 - t2) <= rtol * scale
+            resid = np.where(scale > 0.0, np.abs(t1 - t2) / scale, np.inf)
         valid = v1 & v2 & agree
         target = np.where(valid, t1, np.nan)
+        resid = np.where(valid, resid, np.inf)
 
         if n_p >= 3:
 
@@ -947,10 +956,14 @@ def couple_face_material_pairs(mesh: Mesh, rtol: float = 1e-6) -> None:
             lo, lo_in = _sl(0), _sl(1)
             valid[lo] = valid[lo_in] & v2[lo]
             target[lo] = np.where(valid[lo], t2[lo], np.nan)
+            # A boundary slab inherits its interior neighbour's target,
+            # so it inherits that neighbour's conditioning too.
+            resid[lo] = np.where(valid[lo], resid[lo_in], np.inf)
             hi, hi_in = _sl(n_p - 1), _sl(n_p - 2)
             valid[hi] = valid[hi_in] & v1[hi]
             target[hi] = np.where(valid[hi], t1[hi], np.nan)
-        return target, valid
+            resid[hi] = np.where(valid[hi], resid[hi_in], np.inf)
+        return target, valid, resid
 
     # (face_offset, face_shape, [(p_dim, e_off, e_shape, d_p, d_avg_p)]*2)
     configs = [
@@ -987,15 +1000,19 @@ def couple_face_material_pairs(mesh: Mesh, rtol: float = 1e-6) -> None:
     for f_off, f_shape, ladders in configs:
         (p_a, off_a, shape_a, dp_a, dav_a) = ladders[0]
         (p_b, off_b, shape_b, dp_b, dav_b) = ladders[1]
-        t_a, v_a = _ladder(f_shape, p_a, off_a, shape_a, dp_a, dav_a)
-        t_b, v_b = _ladder(f_shape, p_b, off_b, shape_b, dp_b, dav_b)
+        t_a, v_a, r_a = _ladder(f_shape, p_a, off_a, shape_a, dp_a, dav_a)
+        t_b, v_b, r_b = _ladder(f_shape, p_b, off_b, shape_b, dp_b, dav_b)
 
         agree_ab = np.abs(t_a - t_b) <= rtol * np.maximum(
             np.abs(t_a),
             np.abs(t_b),
         )
-        use_a = v_a & (~v_b | agree_ab)
-        use_b = v_b & ~v_a
+        # Both valid and agreeing: the better-conditioned ladder wins.
+        # Both valid and disagreeing: neither, as before — a genuinely
+        # 3D neighbourhood keeps its Krietenstein value.
+        prefer_a = r_a <= r_b
+        use_a = v_a & (~v_b | (agree_ab & prefer_a))
+        use_b = v_b & (~v_a | (agree_ab & ~prefer_a))
         target = np.where(use_a, t_a, np.where(use_b, t_b, np.nan)).ravel()
 
         flat = f_off + np.nonzero(~np.isnan(target))[0]

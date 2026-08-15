@@ -37,42 +37,27 @@ residual (~2.5°, ~7 %) is the ordinary staircase discretisation of the
 conductor contour in the 2D solve; it converges under refinement and is
 not attributed further.
 
-## KB-017: Pair-coupling tolerance band lets a 7.5e-7 conformal jitter silently push a port channel to Mur — OPEN (2026-08-14)
+## KB-017: ~~Pair-coupling tolerance band lets a 7.5e-7 conformal jitter silently push a port channel to Mur~~ — Resolved (DD-165, 2026-08-15)
 
-On the stripline coupler with its mirrored coax stub
-(`.mirrored(normal=(0,0,1))`), port2's only TEM channel falls back to
-modal Mur-1st with **no warning**: the DTBC pair-spread gate measures
-1.7e-8 against its 1e-8 tolerance while the feed chain itself is
-perfectly slab-invariant (chain-slab defect 6.6e-11).  Full causal
-chain (measured, probes in the internal dossier
-`investigations/section-open-chains/`):
+On the stripline coupler with its mirrored coax stub, port2's only TEM
+channel fell back to modal Mur-1st with no warning: the DTBC pair-spread
+gate measured 1.7e-8 against its 1e-8 tolerance, while the geometrically
+identical stub on the unmirrored side certified at 7e-15.  Fixed by
+DD-165: of two valid, agreeing ladders the one whose own partners
+disagree less now supplies the target, instead of whichever axis was
+listed first.  port2 reads 6.3e-14 and takes the exact termination.
 
-1. The sub-cell classifier marks one Ey edge next to the mirrored
-   coax bore as category 1 with ``f_A = 1 - 7.5e-7`` while its
-   ``eps_avg`` is exactly 1.0 — the two integrals over the same dual
-   face disagree by the tessellation jitter of the mirrored surface,
-   so ``eps_pair = eps_avg/f_A = 1 + 7.5e-7`` in vacuum.
-2. In ``couple_face_material_pairs`` the transverse (z) ladder of the
-   adjacent Hx face inherits that target; the ladder is internally
-   inconsistent by the same 7.5e-7 but passes the ``rtol = 1e-6``
-   agreement test using its jittered ``t1``.
-3. The fixed ladder priority (``use_a = v_a & (~v_b | agree_ab)``)
-   lets the transverse target overwrite the feed-direction target,
-   which is translation-invariant to 1.6e-16.
-4. The feed pair identity is violated by 7.5e-7 on that one edge →
-   weighted pair spread 1.7e-8 → the 1e-8 DTBC gate withholds the
-   exact termination, silently (only the chain-slab branch warns).
+The recorded root cause was wrong, and re-measuring is what showed it.
+This entry blamed the classifier for deriving ``eps_avg`` and ``f_A``
+from inconsistent integrals of one dual face; on the same model that
+identity holds on all 19 244 conformal edges to 3.9e-15, with the
+pairing error unchanged.  Both integrals share one area budget and
+cannot disagree.
 
-Structural issue: the pairing declares targets "equal" at 1e-6 while
-the DTBC gate demands 1e-8 — any jitter inside that band produces
-certified-looking masses that still fail the port.  Fix candidates,
-in root-cause order: (a) make the classifier's ``eps_avg`` and
-``f_A`` come from the same free-area integral so ``eps_pair`` is
-exactly 1 in homogeneous material; (b) when both ladders are valid,
-prefer the one with the smaller internal partner disagreement instead
-of the fixed a-before-b priority.  Until then the fallback is the
-DD-064 accepted default (−30 dB-class |S11| on that channel);
-``port_model="band"`` provides the reflection-free path.
+The structural gap the entry named does remain: the pairing calls
+targets equal at ``rtol = 1e-6`` while the DTBC gate demands 1e-8.
+DD-165 makes the choice inside that band optimal; it does not close the
+band, and two jittered ladders would still get through.
 
 ## KB-016: ~~Frozen zero-M_eps edges seed NaN Mur coefficients on live complement-absorber edges~~ — Resolved (2026-08-14)
 

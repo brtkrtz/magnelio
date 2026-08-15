@@ -1,7 +1,17 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-15.*  Latest work: the conformal classifier now
-reaches the domain boundary faces (DD-164), so a material contour
+*Last updated: 2026-08-15.*  Latest work: where two candidate ladders
+of the conformal M_μ pairing both certify, the better-conditioned one
+now supplies the target instead of whichever axis was listed first
+(DD-165).  Agreement is tested at 1e-6 and the DTBC gate demands 1e-8,
+so a jitter in between produced a mass the pairing certified and the
+port rejected — quietly: on the stripline coupler the port sitting on
+a mirrored coax stub fell to Mur at a spread of 1.7e-8 while its
+unmirrored twin certified at 7e-15.  It reads 6.3e-14 now.  The root
+cause this had been recorded under was refuted by re-measuring it: the
+classifier's two dual-face integrals share one area budget and agree to
+3.9e-15 on that model.  Before that, the conformal classifier learned to
+reach the domain boundary faces (DD-164), so a material contour
 running through a symmetry, PEC, PMC or absorbing face is resolved
 below the cell there as it already was everywhere else.  What had kept
 this open for a session was the absence of a certificate that could
@@ -35,15 +45,15 @@ pinning `dt` (DD-147/DD-149), and OCCT Booleans no longer edit their
 operand shapes (DD-146).  Post-release-prep hardening (2026-08-14):
 section contours are closed by contract (DD-157) and conductor
 grouping fuses labels through PEC cell bodies (DD-156) — both found
-on the stripline-coupler worksheet.  **One open entry in
-known-bugs.md:** KB-017 — a conformal-classification jitter inside
-the pairing's 1e-6 agreement band can silently push a port channel
-to Mur (found on the mirrored coax stub of the same worksheet;
-KB-016, the NaN complement-absorber coefficients it uncovered, is
-fixed).  KB-018 closed by DD-161, KB-019 by DD-164.
+on the stripline-coupler worksheet.  **known-bugs.md has no open
+entry:** KB-018 was closed by DD-161, KB-019 by DD-164 and KB-017 by
+DD-165.  What remains from KB-017 is a documented tolerance gap, not a
+defect — the pairing calls two ladder targets equal at 1e-6 while the
+DTBC gate demands 1e-8, and DD-165 makes the choice inside that band
+optimal without closing it.
 
-**Suite: 2145 passed / 6 skipped / 0 failed** (2026-08-15, GPU box —
-unit 1801 (+2 scikit-rf skips), integration 344 (+4 skips); GPU tests
+**Suite: 2147 passed / 6 skipped / 0 failed** (2026-08-15, GPU box —
+unit 1803 (+2 scikit-rf skips), integration 344 (+4 skips); GPU tests
 need `CUPY_ACCELERATORS=""` when the interpreter binary is called
 directly).  The DD-150 step change re-measured three fixture windows
 (interval stride, lumped-port guard, SIBC band edge) — the reasoning

@@ -10857,3 +10857,87 @@ Kernel-resolution spread: internal record
 `investigations/port-mode-plots/dtbc_floor_spread.py`.
 
 **Files:** `geo/_filling.py`, `geo/_subcell.py`.
+
+## DD-165 — Between two agreeing ladders, conditioning decides
+
+**Date:** 2026-08-15 — **Status:** shipped
+
+**Context.**  `couple_face_material_pairs` (DD-053) offers every H face
+two candidate ladders, and defines the face mass through the pair
+identity when they agree.  Agreement is a relative test at `rtol = 1e-6`
+— but the DTBC uniform-chain gate that consumes the result admits
+`1e-8`.  Anything landing in that band produces a mass that the pairing
+certifies and the port rejects, and the rejection is quiet: only the
+chain-slab branch warns.
+
+The model that surfaced it is a stripline coupler whose second coaxial
+stub is a *mirrored copy* of the first.  Mirroring inflates the tolerance
+of the unioned solid; exactly one Ey edge next to the mirrored bore
+came out `7.5e-7` off its partner, the weighted pair spread of port2's
+only TEM channel read `1.73e-8` against the `1e-8` gate, and that
+channel silently fell back to modal Mur-1st while its geometric twin on
+the unmirrored stub certified at `7e-15`.
+
+The root cause recorded when this was first measured — `eps_avg` and
+`f_A` coming from inconsistent integrals of the same dual face, so
+`eps_pair = eps_avg/f_A` misses 1 in vacuum — **is refuted**.  Measured
+today on that same model: the identity holds on all 19 244 conformal
+edges to `3.9e-15`, with no edge above `1e-12`, while the pairing error
+is unchanged.  Both integrals run the same reverse-priority area budget,
+so they cannot disagree; the inconsistency sits in the other factor of
+`t = ε0μ0·ε_pair·d·d̃ / M_ε`.
+
+**Decision.**  When both ladders are valid and agree, the one whose own
+two partners disagree less supplies the target.  Three reasons, in
+order of weight:
+
+1. Agreement at `rtol` still admits a spread of up to `rtol`.  Inside
+   that band the choice is not arbitrary — one candidate is measurably
+   the better estimator of the same quantity.
+2. The old rule was not invariant under axis permutation.  The ladder
+   list is Hx → (z, y), Hy → (z, x), Hz → (y, x), so swapping y and z
+   maps an Hx face onto an Hx face but flips its ladder order: the same
+   model, differently oriented by the user, got a different material
+   matrix.  A solver result must not depend on that.
+3. The partner residual is a direct measure of the violation of the
+   translation invariance the estimator assumes.
+
+Unchanged: two valid ladders that *disagree* still yield no override —
+a genuinely 3D neighbourhood keeps its Krietenstein value.
+
+**Measured.**  Coupler, mirrored stub (`port2`) against its unmirrored
+twin (`port1`) as the control:
+
+    port              axis order              conditioning
+    port1 (control)   7.15e-15  dtbc          7.14e-15  dtbc
+    port2 (mirrored)  1.73e-08  mur           6.29e-14  dtbc
+    port2 worst edge  3.75e-07                8.24e-13
+
+`z_line` is bit-identical on both ports across the change, and the full
+suite is unchanged at 2145 passed.  On benign geometry the rule is a
+no-op: a prism whose cross-section is mirror-symmetric about the
+diagonal `y = z`, meshed on a grid whose y lines equal its z lines,
+returns bit-identical `M_mu` either way (that fixture was built as a
+gate and rejected as one — it cannot produce diverging ladders, because
+a prism is translation-invariant along its own axis).
+
+**Not done, deliberately.**  Loosening the DTBC gate — it is the
+quantity the port's exactness rests on.  Tightening `rtol` to the gate
+instead: that would switch the pairing off wherever the jitter exceeds
+`1e-8`, restoring the Krietenstein value that DD-053 exists to replace
+on a line, and no measurement supports it.  The tolerance gap between
+the pairing and the gate therefore remains: this decision makes the
+choice inside the band optimal, it does not close the band.  If both
+ladders are jittered, nothing here helps.
+
+**Gates:**
+`tests/unit/test_operators.py::TestCoupleFaceMaterialPairs::test_the_better_conditioned_ladder_supplies_the_target`
+constructs the condition directly — one `M_eps` entry perturbed by less
+than `rtol` leaves the ladder along its own axis inconsistent and the
+transverse one exact — with
+`test_uniform_box_needs_no_override` as the control that makes the
+assertion meaningful.  Certificate on the full coupler:
+`validation/pair_ladder_choice_certificate.py`; every reduced variant of
+that model certifies either way, the same lesson as DD-157.
+
+**Files:** `_operators/material_matrices.py`.
