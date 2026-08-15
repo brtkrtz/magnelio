@@ -8,8 +8,32 @@ from __future__ import annotations
 
 import os
 import sys
+import warnings
 
 sys.path.insert(0, os.path.abspath("../src"))
+
+
+def _format_warning(message, category, filename, lineno, line=None):
+    """Render a warning as category and text, without its origin.
+
+    Sphinx-gallery writes every warning an executed tutorial raises
+    into the rendered page, through ``warnings.formatwarning``.  The
+    default form leads with the *absolute* path of the file that
+    raised and echoes its source line, so a published page ends up
+    carrying the build machine's directory layout and a fragment of
+    library internals.  Neither belongs there: these warnings are
+    about the reader's model, not about our source, and the message
+    is written to stand on its own.
+
+    This is global for the build, so a Python-level warning from an
+    extension loses its location in the build log too.  Sphinx's own
+    warnings — the ones a docs build is actually diagnosed by — go
+    through its logger and are unaffected.
+    """
+    return f"{category.__name__}: {message}\n"
+
+
+warnings.formatwarning = _format_warning
 
 project = "Magnelio"
 author = "Bernd Breitkreutz"
