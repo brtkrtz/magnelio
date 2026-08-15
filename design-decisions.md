@@ -10601,22 +10601,34 @@ Nothing outside the plot changes: the operator already converted where
 it needed to, and the profiles keep driving injection and projection
 in their FIT metric.
 
-**Residual, and where it comes from.**  After the fix the same coax
-still shows ~2.5° and ~7 % spread at the contour.  A category census
-of the mesh shows why, and it is structural rather than local: **no
-bbox face carries a single conformal E-edge**, while the layer one
-cell behind each face carries hundreds.
+**Residual.**  After the fix the same coax still shows ~2.5° and ~7 %
+spread at the contour, converging at the staircase rate.  That is the
+ordinary discretisation gap DD-048 describes for the
+operator-consistent path — the mode solve fixes its Dirichlet
+potentials on whole nodes, so the conductor *contour* is staircased
+even though the masses are not.  No further attribution is claimed;
+the candidates KB-018 listed (enlarged-cell donation bias, rim-edge
+sub-cell metric) were never separated from it.
 
-| layer | xmin | xmax | ymin | ymax | zmin | zmax |
-|---|---|---|---|---|---|---|
-| the face itself | 0 | 0 | 0 | 0 | 0 | 0 |
-| one cell in | 809 | 251 | 251 | 164 | 89 | 89 |
+A census taken while chasing this deserves recording, because it looks
+alarming and is not: **no bbox face carries a single conformal E-edge**
+(category 1 or 2), while the layer one cell behind each face carries
+hundreds — 809/251/251/164/89/89 for xmin…zmax on a mesh with 28 471
+in total.  The cause is the candidate mask in
+``geo/_filling.py``, which is only ever written on the interior index
+range of each transverse axis, so a boundary-face edge never gets a
+conformal average and cannot become category 2 either (the f_L pass is
+gated behind the same array).
 
-(conformal = category 1 or 2, on a mesh with 28 471 of them in total).
-A port plane is a bbox face, so every mode solve runs on a purely
-staircased cross-section — consistent with DD-048's framing of the
-operator-consistent path, but now quantified.  Filed as KB-019; the
-lever is the classifier's boundary-face handling, not the plot.
+It does not reach the port, because
+:func:`flatten_port_plane_mass` already overwrites the port-plane slab
+with the first interior slab — for both the mode solve and the FIT-TD
+update — exactly because those boundary values were known to be wrong.
+Measured: opening the mask changes ``build_M_eps`` on 28 port-plane
+edges by up to 28 %, and the solved mode is bit-identical
+(z_line 52.611565 Ω, profile fingerprint to nine decimals).  The
+untreated case is a symmetry / PEC / PMC / CPML face with geometry
+crossing it, which nothing flattens — filed as KB-019.
 
 **Gates:** `tests/integration/test_solve_ports.py`
 (`test_profiles_are_grid_quantities_not_field_samples` — a WR90 on a

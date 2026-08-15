@@ -24,9 +24,11 @@ known-bugs.md:** KB-017 — a conformal-classification jitter inside
 the pairing's 1e-6 agreement band can silently push a port channel
 to Mur (found on the mirrored coax stub of the same worksheet;
 KB-016, the NaN complement-absorber coefficients it uncovered, is
-fixed) — and KB-019, no bbox face carrying conformal E-edge data, so
-every port plane solves on a staircased cross-section (KB-018 closed
-by DD-161; KB-019 is its residual).
+fixed) — and KB-019, the sub-cell classifier never producing conformal
+data on a domain boundary face: root-caused, impact measured as nil on
+port planes (`flatten_port_plane_mass` already covers them) and open
+only for non-port faces that geometry crosses.  KB-018 closed by
+DD-161.
 
 **Suite: 2135 passed / 6 skipped / 0 failed** (2026-08-15, GPU box —
 unit 1801 (+2 scikit-rf skips), integration 334 (+4 skips); GPU tests

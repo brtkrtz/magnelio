@@ -4,33 +4,51 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-## KB-019: No bbox face carries conformal E-edge data, so every port plane is staircased — OPEN (2026-08-15)
+## KB-019: The classifier never produces sub-cell data on a domain boundary face — OPEN, low impact (2026-08-15)
 
-A category census of the sub-cell classifier shows the six domain
-boundary faces carrying **zero** conformal (category 1 or 2) in-plane
-E-edges, while the layer one cell behind each of them carries
-hundreds — 809 / 251 / 251 / 164 / 89 / 89 for xmin…zmax on a mesh
-with 28 471 conformal edges in total.  The pattern is the same on
-every face and independent of which body crosses it.
+Root-caused, with the impact measured and found small; recorded so the
+next reader does not re-derive it.
 
-A port plane is a bbox face, so the 2D mode problem always sees a
-purely staircased conductor contour even where the volume operator
-right behind it is conformal.  Measured consequence on a coax port at
-~14 cells per diameter: after the DD-161 metric fix the reconstructed
-TEM profile still carries ~2.5° of tangential content and ~7 % spread
-in `E_r·r` at the contour, converging only at the staircase rate.
-This is the expected order for DD-048's "staircased FIT
-approximation" framing of the operator-consistent path (z_line 47.29 Ω
-against a 50 Ω design value here) — the census makes it a specific,
-addressable cause rather than a general caveat.
+The conformal candidate mask in `geo/_filling.py` is written only on
+the interior index range of each transverse axis (`bnd_ex[:, 1:Ny,
+1:Nz] = ...` and its two siblings).  An E-edge lying **in** a bbox face
+therefore never receives a conformal average, and because the
+line-solid `f_L` pass is gated behind the same array (`dm_cand =
+~isnan(conf_eps) & pec_adj_flat`) it cannot reach category 2 either.
+Every partially filled edge on a domain face is rounded to fully free
+or fully metal.  Census on a coupler mesh — in-plane conformal
+(category 1 or 2) E-edges:
 
-Not root-caused in the classifier.  The dual face of an edge lying in
-a bbox face is truncated to the inner half cell, and the effective PEC
-solid is trimmed at exactly that plane, so both the free-area integral
-and the line-solid fraction meet a degenerate section there.  Whether
-the boundary layer is skipped deliberately or degrades silently is the
-first thing to establish.  Internal record
-`investigations/port-mode-plots/`.
+| layer | xmin | xmax | ymin | ymax | zmin | zmax |
+|---|---|---|---|---|---|---|
+| the face itself | 0 | 0 | 0 | 0 | 0 | 0 |
+| one cell in | 809 | 251 | 251 | 164 | 89 | 89 |
+
+28 471 conformal edges in the mesh overall.  On the port window of that
+mesh, 44 edges are geometrically cut by the coax contour and all 44 sit
+in category 0 or 3.
+
+**Why the impact is small.**  Port planes are already covered:
+`flatten_port_plane_mass` (and its μ counterpart) overwrite the
+port-plane slab with the first interior slab, for the mode solve and
+for the FIT-TD update alike, precisely because the boundary values were
+known to be wrong there.  A spike that opened the mask changed
+`build_M_eps` on 28 port-plane edges by up to 28 % and left the solved
+mode bit-identical — z_line 52.611565 Ω and the profile fingerprint
+agreeing to nine decimals.  The spike was therefore reverted rather
+than shipped.
+
+What stays untreated is a **non-port** boundary face that geometry
+crosses: symmetry, PEC, PMC or CPML.  Nothing flattens those, so the
+outermost layer of the volume operator sees a staircased contour.  On a
+symmetry face the correct value is recoverable for free (the geometry
+is mirror-symmetric about the wall, so the average over the truncated
+half dual face equals the full-face one) — the fix is to extend the
+mask and clamp the face extents to `[wall, first dual line]`, keeping
+`eps_avg`/`f_A` intensive so the consumer's `A_dual` needs no factor.
+Not shipped: it moves the mass matrix on every domain face of every
+model and no measurement yet shows a benefit worth that.  Internal
+record `investigations/port-mode-plots/` (`ab_boundary.py`).
 
 ## KB-018: ~~2D mode profile carries several percent of spurious transverse field at a curved conductor~~ — Resolved (2026-08-15)
 
@@ -40,7 +58,9 @@ samples, so every arrow picked up the local cell size.  Dividing by the
 edge metric removes the 17 % low reading at the contour and halves the
 spurious tangential content — see DD-161, which also records the
 measurement error in DD-160 that had pointed the other way.  The
-residual is the staircased port plane, now KB-019.
+residual (~2.5°, ~7 %) is the ordinary staircase discretisation of the
+conductor contour in the 2D solve; it converges under refinement and is
+not attributed further.
 
 ## KB-017: Pair-coupling tolerance band lets a 7.5e-7 conformal jitter silently push a port channel to Mur — OPEN (2026-08-14)
 
