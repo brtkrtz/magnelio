@@ -178,6 +178,9 @@ class ModeReport:
             v_cc = _avg_nonzero(comp_v[0][:-1, :], comp_v[0][1:, :])
             valid = _live_cells(comp_u[0], comp_v[0])
             uc, vc = comp_u[1], comp_v[2]
+            # E_u resolves the v-nodes, E_v the u-nodes.
+            u_node_axis = 1
+            u_nodes, v_nodes = comp_v[1], comp_u[2]
         elif field == "H":
             # H_u is co-located with the v-edges, H_v with the u-edges.
             prof_u, prof_v = self._field_profiles("H")
@@ -187,8 +190,23 @@ class ModeReport:
             v_cc = _avg_nonzero(comp_v[0][:, :-1], comp_v[0][:, 1:])
             valid = _live_cells(comp_v[0], comp_u[0])
             uc, vc = comp_v[1], comp_u[2]
+            u_node_axis = 0
+            u_nodes, v_nodes = comp_u[1], comp_v[2]
         else:
             raise ValueError(f"field must be 'E' or 'H'; got {field!r}")
+
+        uc, vc, u_cc, v_cc, valid = _extend_to_window(
+            uc,
+            vc,
+            u_cc,
+            v_cc,
+            valid,
+            comp_u[0],
+            comp_v[0],
+            u_node_axis,
+            (float(u_nodes[0]), float(u_nodes[-1])),
+            (float(v_nodes[0]), float(v_nodes[-1])),
+        )
 
         face = self._plane.face
         u_name = _AXIS_NAMES[face.u_axis]
@@ -234,6 +252,77 @@ class ModeReport:
             flip=flip,
             geometry=overlay,
         )
+
+
+def _extend_to_window(
+    uc: np.ndarray,
+    vc: np.ndarray,
+    u_cc: np.ndarray,
+    v_cc: np.ndarray,
+    valid: np.ndarray,
+    grid_u: np.ndarray,
+    grid_v: np.ndarray,
+    u_node_axis: int,
+    u_bounds: tuple[float, float],
+    v_bounds: tuple[float, float],
+):
+    """Grow the cell-centre picture out to the port-window boundary.
+
+    Destaggering lands both components on cell centres, so the picture
+    spans centre to centre and loses *half a cell* on each of the four
+    sides — invisible on a uniform mesh, up to a tenth of the frame
+    where the mesh is graded, and a seam in the middle of a mirrored
+    full-model plot.
+
+    Nothing is missing from the solution: each component is staggered
+    along one axis only and therefore carries a genuine value on the two
+    window boundary lines of its *other* axis.  Those go in as they are;
+    the partner component, which has no sample out there, is carried out
+    by its nearest interior value — so a boundary arrow's direction is
+    exact in one component and first-order in the other.
+
+    Validity on the added lines is decided by the genuine component
+    alone: a zero there means the edge is in or on a conductor, and
+    continuing the partner outward would invent an arrow inside the
+    metal.  The window boundary of a PEC wall therefore stays blank
+    rather than gaining a row of extrapolated arrows.
+    """
+    nu, nv = u_cc.shape
+
+    def _pad(a):
+        out = np.empty((nu + 2, nv + 2), dtype=a.dtype)
+        out[1:-1, 1:-1] = a
+        return out
+
+    ue, ve, va = _pad(u_cc), _pad(v_cc), _pad(valid)
+    # Genuine boundary lines where the component resolves the nodes,
+    # nearest-value continuation for its partner.
+    if u_node_axis == 1:
+        genuine_v_edge = (grid_u[:, 0], grid_u[:, -1])  # u-component on the v-bounds
+        genuine_u_edge = (grid_v[0, :], grid_v[-1, :])  # v-component on the u-bounds
+        ue[1:-1, 0], ue[1:-1, -1] = genuine_v_edge
+        ve[0, 1:-1], ve[-1, 1:-1] = genuine_u_edge
+        ue[0, 1:-1], ue[-1, 1:-1] = u_cc[0, :], u_cc[-1, :]
+        ve[1:-1, 0], ve[1:-1, -1] = v_cc[:, 0], v_cc[:, -1]
+    else:
+        genuine_u_edge = (grid_u[0, :], grid_u[-1, :])
+        genuine_v_edge = (grid_v[:, 0], grid_v[:, -1])
+        ue[0, 1:-1], ue[-1, 1:-1] = genuine_u_edge
+        ve[1:-1, 0], ve[1:-1, -1] = genuine_v_edge
+        ue[1:-1, 0], ue[1:-1, -1] = u_cc[:, 0], u_cc[:, -1]
+        ve[0, 1:-1], ve[-1, 1:-1] = v_cc[0, :], v_cc[-1, :]
+    va[1:-1, 0] = genuine_v_edge[0] != 0.0
+    va[1:-1, -1] = genuine_v_edge[1] != 0.0
+    va[0, 1:-1] = genuine_u_edge[0] != 0.0
+    va[-1, 1:-1] = genuine_u_edge[1] != 0.0
+    for arr in (ue, ve):
+        arr[0, 0], arr[0, -1] = arr[1, 0], arr[1, -1]
+        arr[-1, 0], arr[-1, -1] = arr[-2, 0], arr[-2, -1]
+    va[0, 0], va[0, -1] = va[0, 1] & va[1, 0], va[0, -2] & va[1, -1]
+    va[-1, 0], va[-1, -1] = va[-1, 1] & va[-2, 0], va[-1, -2] & va[-2, -1]
+    uc = np.concatenate([[u_bounds[0]], uc, [u_bounds[1]]])
+    vc = np.concatenate([[v_bounds[0]], vc, [v_bounds[1]]])
+    return uc, vc, ue, ve, va
 
 
 def _live_cells(grid_u: np.ndarray, grid_v: np.ndarray) -> np.ndarray:

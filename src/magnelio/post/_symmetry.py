@@ -98,11 +98,24 @@ def mirror_extend(
     """
     reflected = 2.0 * spec.wall - coords[::-1]
     flipped = sign * np.flip(values, axis=arr_axis)
+    # A sample sitting exactly on the wall reflects onto itself.  An
+    # electric symmetry plane is the outermost grid line, so any data
+    # that reaches the window boundary does exactly that; keeping both
+    # copies would put a zero-width interval into the coordinate vector
+    # and divide by it during resampling.
+    span = abs(float(coords[-1] - coords[0]))
+    tol = 1e-9 * span
     if spec.at_low:
+        if abs(float(reflected[-1] - coords[0])) <= tol:
+            reflected = reflected[:-1]
+            flipped = np.take(flipped, np.arange(flipped.shape[arr_axis] - 1), axis=arr_axis)
         return (
             np.concatenate([reflected, coords]),
             np.concatenate([flipped, values], axis=arr_axis),
         )
+    if abs(float(reflected[0] - coords[-1])) <= tol:
+        reflected = reflected[1:]
+        flipped = np.take(flipped, np.arange(1, flipped.shape[arr_axis]), axis=arr_axis)
     return (
         np.concatenate([coords, reflected]),
         np.concatenate([values, flipped], axis=arr_axis),

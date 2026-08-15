@@ -10638,3 +10638,59 @@ ramp in the raw DoF and flat to 1e-9 after the metric;
 
 **Files:** `ports/_modal/mode_report.py`, `ports/_modal/operator.py`,
 `ports/_modal/discrete.py`.
+
+## DD-162 — Mode-profile plots reach the port window, not the last cell centre
+
+**Date:** 2026-08-15 — **Status:** shipped
+
+**Context.**  Destaggering the edge profiles lands both transverse
+components on cell centres, and the picture spanned exactly that: from
+the first cell centre to the last.  The frame therefore stopped *half a
+cell* short of the window on each of the four sides.  On a uniform mesh
+that is invisible; on the graded mesh of a real port it is not.
+Measured on the stripline-coupler worksheet's `zmin` port (internal
+record `investigations/port-mode-plots/`):
+
+| axis | window | drawn | missing |
+|---|---|---|---|
+| u (x) | 0.732 … 25.000 mm | 1.463 … 22.949 mm | 0.73 / 2.05 mm |
+| v (y) | 0.000 … 29.000 mm | 2.983 … 28.526 mm | 2.98 / 0.47 mm |
+
+The first v-cell is 5.97 mm wide, so the strip lost at that edge is a
+tenth of the frame — which reads as a whole cell layer cropped away.
+A mirrored full-model plot got the same gap as a seam through its
+middle.
+
+Nothing was missing from the *solution*: the window covers the face it
+was asked for and every edge in it carries a DoF.
+
+**Decision.**  `ModeReport.plot` extends the picture to the window
+boundary before handing it to the renderer.  Each component is
+staggered along one axis only, so it carries a genuine sample on the
+two window boundary lines of its *other* axis; those go in unchanged.
+The partner component has no sample out there and is carried out by its
+nearest interior value, making a boundary arrow exact in one component
+and first-order in the other.
+
+Validity on the added lines is decided by the **genuine** component
+alone.  A zero there means the edge is in or on a conductor, so
+continuing the partner outward would invent an arrow inside the metal —
+which is what a first attempt did, drawing field several millimetres
+outside the beam pipe of the coupler worksheet.
+
+**Trap this exposed.**  An electric symmetry plane *is* the outermost
+grid line, so a picture that now reaches the window boundary has a
+sample sitting exactly on the mirror.  `mirror_extend` concatenated its
+reflection unconditionally, putting a duplicated coordinate — a
+zero-width interval — into the vector the plot raster interpolates
+against.  It now drops the self-image.  Cell-centre data (every monitor
+slice, and every port plot before this change) never hit it.
+
+**Gates:** `tests/integration/test_solve_ports.py`
+(`test_plot_reaches_the_window_boundary` — graded WR90, axes must match
+the guide cross-section exactly for E and H;
+`test_electric_symmetry_does_not_duplicate_the_wall_line`;
+`test_symmetry_cut_port_plots_the_full_window` tightened from "within
+10 %" to the exact guide width).
+
+**Files:** `ports/_modal/mode_report.py`, `post/_symmetry.py`.

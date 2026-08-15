@@ -23,6 +23,10 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Port-mode plots now cover the whole port window.  They used to stop
+  half a cell short on each side, which on a graded mesh could hide a
+  tenth of the cross-section and put a seam through the middle of a
+  mirrored full-model plot
 - Port-mode plots draw the field itself instead of the solver's
   internal edge quantities.  On a graded mesh the two differ by the
   local cell size, which tilted the arrows and biased their length —

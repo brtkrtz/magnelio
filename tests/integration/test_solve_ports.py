@@ -307,11 +307,11 @@ class TestModePlot:
 
         fig, ax = mode.plot(field="E")
         assert "full model" in ax.get_title()
-        # The picture spans the full guide width (cell centres, so one
-        # cell short of the walls) and is centred on the symmetry plane.
+        # The picture spans the full guide width, wall to wall, and is
+        # centred on the symmetry plane.
         xlim = ax.get_xlim()
         assert xlim[0] == pytest.approx(-xlim[1], rel=1e-9)
-        assert xlim[1] - xlim[0] > 0.9 * a * 1e3
+        assert xlim[1] - xlim[0] == pytest.approx(a * 1e3, rel=1e-9)
         # ... and it is mirror-symmetric about the wall.
         quiv = ax.collections[0]
         pos = quiv.get_offsets()
@@ -410,6 +410,54 @@ class TestModePlot:
         ratio_phys = row(m._field_profiles("H")[0]) / phys_e
         assert ratio_raw.max() / ratio_raw.min() == pytest.approx(grading, rel=1e-6)
         assert ratio_phys.max() / ratio_phys.min() == pytest.approx(1.0, abs=1e-9)
+
+    def test_plot_reaches_the_window_boundary(self):
+        """Destaggering lands on cell centres, so the picture used to stop
+        half a cell short of the window on each side — a tenth of the
+        frame where the mesh is graded.  It now spans the window."""
+        rep = _graded_wr90_analysis().solve_ports()["port1"]
+        # Port plane is x-normal: u = y (0..a), v = z (0..b, graded).
+        for field in ("E", "H"):
+            fig, ax = rep.modes[0].plot(field=field)
+            xlim, ylim = ax.get_xlim(), ax.get_ylim()
+            assert xlim[0] == pytest.approx(0.0, abs=1e-9)
+            assert xlim[1] == pytest.approx(WR90_A * 1e3, rel=1e-9)
+            assert ylim[0] == pytest.approx(0.0, abs=1e-9)
+            assert ylim[1] == pytest.approx(WR90_B * 1e3, rel=1e-9)
+            plt.close(fig)
+
+    def test_electric_symmetry_does_not_duplicate_the_wall_line(self):
+        """An electric symmetry plane sits ON the outermost grid line, so
+        the boundary line the plot now reaches reflects onto itself.  The
+        duplicate must be dropped, or the resampling divides by a
+        zero-width interval."""
+        import magnelio as mio
+        from magnelio import geo
+        from magnelio.mesh import MeshControl
+        from magnelio.ports import PortWaveguide
+
+        f_max, a, b = 12e9, 22.86e-3, 10.16e-3
+        model = mio.GeometryModel(
+            background=mio.Material.air(),
+            boundary_conditions={"ymin": "SymmetryPEC"},
+        )
+        model.add(
+            geo.Brick(origin=(0.0, -b / 2, 0.0), size=(a, b, 30e-3), material=mio.Material.air())
+        )
+        model.add_port(PortWaveguide(name="port1", plane="zmin", n_modes=1))
+        mesh = Mesh.from_geometry(model, MeshControl(), f_max=f_max)
+        mode = AnalysisScatteringTD(mesh=mesh, f_max=f_max).solve_ports()["port1"].modes[0]
+        assert [s.kind for s in mode._mirrors] == ["PEC"]
+
+        fig, ax = mode.plot(field="E")
+        quiv = ax.collections[0]
+        assert np.isfinite(np.asarray(quiv.U)).all()
+        assert np.isfinite(np.asarray(quiv.V)).all()
+        # Full guide height, centred on the wall.
+        ylim = ax.get_ylim()
+        assert ylim[0] == pytest.approx(-ylim[1], rel=1e-9)
+        assert ylim[1] - ylim[0] == pytest.approx(b * 1e3, rel=1e-9)
+        plt.close(fig)
 
     def test_analytical_families_keep_their_sampled_profiles(self):
         """Closed-form mode families sample V/m and A/m at the midpoints

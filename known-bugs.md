@@ -38,17 +38,43 @@ mode bit-identical — z_line 52.611565 Ω and the profile fingerprint
 agreeing to nine decimals.  The spike was therefore reverted rather
 than shipped.
 
-What stays untreated is a **non-port** boundary face that geometry
-crosses: symmetry, PEC, PMC or CPML.  Nothing flattens those, so the
-outermost layer of the volume operator sees a staircased contour.  On a
-symmetry face the correct value is recoverable for free (the geometry
-is mirror-symmetric about the wall, so the average over the truncated
-half dual face equals the full-face one) — the fix is to extend the
-mask and clamp the face extents to `[wall, first dual line]`, keeping
-`eps_avg`/`f_A` intensive so the consumer's `A_dual` needs no factor.
-Not shipped: it moves the mass matrix on every domain face of every
-model and no measurement yet shows a benefit worth that.  Internal
-record `investigations/port-mode-plots/` (`ab_boundary.py`).
+**Non-port faces, measured too.**  A symmetry / PEC / PMC / CPML face
+is not flattened, so the outermost layer of the volume operator does
+see a staircased contour there.  The candidate mask was extended to the
+boundary indices with the face extents clamped to `[wall, first dual
+line]` and `eps_avg` / `f_A` left intensive — the consumer's `A_dual`
+is the full boundary cell (the mirror convention of `_build_avg_d`), so
+an average over the truncated half needs no factor, and the material
+continues by mirror symmetry, by extrusion, or not at all.  The μ
+pipeline already treats its domain-boundary faces this way, so this
+removes an asymmetry between the two.
+
+It was measured and **not shipped**, because no certificate improves:
+
+* pillbox TM010, quarter model with two magnetic symmetry planes
+  cutting the cylindrical wall (`investigations/port-mode-plots/`,
+  `pillbox_symmetry.py`): the symmetry faces gain 33 (h = 1 mm) and 45
+  (h = 0.7 mm) conformal edges — and the eigenfrequency is
+  **bit-identical**, full and quarter alike.  TM010's `E_z` vanishes at
+  the wall, so the fixture is insensitive by construction; a
+  discriminating certificate for this change has not been found.
+* band-subspace DTBC floor (`test_qtem_band_dtbc_sparams::
+  test_s11_floor`): every frequency moves slightly the *wrong* way,
+  worst −120.06 → −116.92 dB against a −120 dB gate that had 0.06 dB of
+  margin.  Both figures are numerical-noise class, but the gate would
+  have to be re-baselined for a change with no demonstrated benefit.
+
+**Trap for whoever opens the mask.**  Boundary-face edges then become
+eligible enlarged-cell *recipients*, and `Mesh.with_pec_boundaries`
+masks tangential edges on a declared-PEC face **after** the classifier
+has picked donors — the borrowed mass vanishes without a trace.
+`test_pair_consistent_subcell::test_donors_are_never_masked` catches
+it.  The guard is to block every edge lying in a bbox face as a
+recipient (donating *out of* one is fine); it is not in the tree,
+because without the mask change it is unreachable code.
+
+Internal record `investigations/port-mode-plots/` (`ab_boundary.py`,
+`pillbox_symmetry.py`).
 
 ## KB-018: ~~2D mode profile carries several percent of spurious transverse field at a curved conductor~~ — Resolved (2026-08-15)
 
