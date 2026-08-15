@@ -4,35 +4,43 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-## KB-018: 2D mode profile carries several percent of spurious transverse field at a curved conductor — OPEN (2026-08-15)
+## KB-019: No bbox face carries conformal E-edge data, so every port plane is staircased — OPEN (2026-08-15)
 
-On a coax port window (r_i = 1.52 mm, r_a = 3.5 mm, ~14 cells per
-diameter) the solved TEM profile is not the clean radial field it
-should be:
+A category census of the sub-cell classifier shows the six domain
+boundary faces carrying **zero** conformal (category 1 or 2) in-plane
+E-edges, while the layer one cell behind each of them carries
+hundreds — 809 / 251 / 251 / 164 / 89 / 89 for xmin…zmax on a mesh
+with 28 471 conformal edges in total.  The pattern is the same on
+every face and independent of which body crosses it.
 
-* cells whose bounding edges are all live: ~5° median angle error
-  (|E_t/E_r| ≈ 0.09) and 13 % spread in `E_r·r`, which must be
-  constant;
-* cells touching the conductor contour: `E_r·r` reads **17 % low**
-  (median), with 14 % tangential content.
+A port plane is a bbox face, so the 2D mode problem always sees a
+purely staircased conductor contour even where the volume operator
+right behind it is conformal.  Measured consequence on a coax port at
+~14 cells per diameter: after the DD-161 metric fix the reconstructed
+TEM profile still carries ~2.5° of tangential content and ~7 % spread
+in `E_r·r` at the contour, converging only at the staircase rate.
+This is the expected order for DD-048's "staircased FIT
+approximation" framing of the operator-consistent path (z_line 47.29 Ω
+against a 50 Ω design value here) — the census makes it a specific,
+addressable cause rather than a general caveat.
 
-Refining the port region (67 → 87 annulus cells) does not reduce
-either figure.  This is a property of the solved profile, not of the
-plot: running the same destaggering on an *analytical* 1/r field
-sampled at the same edges reproduces the cell-centre values to 0.32°
-and 0.3 % on live cells, 1.6° and 2.7 % on cut cells (DD-160
-measurement, internal record `investigations/port-mode-plots/`).
+Not root-caused in the classifier.  The dual face of an edge lying in
+a bbox face is truncated to the inner half cell, and the effective PEC
+solid is trimmed at exactly that plane, so both the free-area integral
+and the line-solid fraction meet a degenerate section there.  Whether
+the boundary layer is skipped deliberately or degrades silently is the
+first thing to establish.  Internal record
+`investigations/port-mode-plots/`.
 
-Not yet root-caused.  Candidates, in order of suspicion: the
-enlarged-cell donation bias the operator already warns about
-(estimated 5.8e-3 relative on this model, parked on category-0/1
-edges); the sub-cell metric of the rim edges on cut faces (the same
-family DD-098 measured an 18 % power over-read on); and the
-staircase/conformal treatment of the 2D Laplace solve itself.
-Impact is on field *pictures* and on any per-cell field reading at a
-curved conductor; the integrated quantities (z_line 47.29 Ω against
-the 50 Ω design value here, mode power normalisation) are not
-implicated by this measurement.
+## KB-018: ~~2D mode profile carries several percent of spurious transverse field at a curved conductor~~ — Resolved (2026-08-15)
+
+Mostly a plot defect, not a solver one: the mode profiles are FIT grid
+quantities (edge and face voltages) and the picture read them as field
+samples, so every arrow picked up the local cell size.  Dividing by the
+edge metric removes the 17 % low reading at the contour and halves the
+spurious tangential content — see DD-161, which also records the
+measurement error in DD-160 that had pointed the other way.  The
+residual is the staircased port plane, now KB-019.
 
 ## KB-017: Pair-coupling tolerance band lets a 7.5e-7 conformal jitter silently push a port channel to Mur — OPEN (2026-08-14)
 

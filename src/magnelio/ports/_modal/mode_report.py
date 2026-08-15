@@ -68,6 +68,9 @@ class ModeReport:
     # In-plane symmetry planes the port window is cut by (DD-154), so
     # plot() can show the full cross-section instead of the solved half.
     _mirrors: tuple = field(default=(), repr=False)
+    # Dual edge lengths of the plane's H faces, needed to turn the H
+    # profile's dual voltages back into A/m (see _field_profiles).
+    _h_dual_lengths: tuple = field(default=(), repr=False)
 
     def z_modal(self, f: float) -> complex:
         """Power-wave reference impedance at frequency ``f`` [Hz]."""
@@ -80,6 +83,39 @@ class ModeReport:
     def gamma(self, f: float) -> complex:
         """Propagation constant ``γ = α + jβ`` at frequency ``f`` [Hz]."""
         return self._discrete.mode.gamma(2.0 * math.pi * f)
+
+    def _field_profiles(self, field: str) -> tuple[np.ndarray, np.ndarray]:
+        """Physical field at the edge midpoints, V/m or A/m.
+
+        The 2D mode solvers return FIT *grid quantities*, not field
+        samples: the primal profile is the edge voltage
+        ``ê = E · l_primal`` (the gradient behind ``ê = -∇φ`` is
+        topological), the dual profile the face voltage
+        ``ĥ = H · l_dual``.  Both scale with a per-edge length, so on a
+        graded mesh reading them as a field tilts every cell-centre
+        vector and biases its magnitude — with an extra bias wherever
+        the conductor contour forces a locally different spacing.
+
+        Analytical mode families sample their closed-form evaluator
+        directly and already carry V/m and A/m.
+        """
+        dm = self._discrete
+        raw = (dm.e_u_profile, dm.e_v_profile) if field == "E" else (dm.h_u_profile, dm.h_v_profile)
+        if dm.mode.field_evaluator is not None:
+            return np.asarray(raw[0], dtype=float), np.asarray(raw[1], dtype=float)
+        lengths = (
+            (self._plane.u_edge_lengths, self._plane.v_edge_lengths)
+            if field == "E"
+            else self._h_dual_lengths
+        )
+        if len(lengths) != 2:
+            return np.asarray(raw[0], dtype=float), np.asarray(raw[1], dtype=float)
+        out = []
+        for values, length in zip(raw, lengths):
+            values = np.asarray(values, dtype=float)
+            length = np.asarray(length, dtype=float)
+            out.append(np.divide(values, length, out=np.zeros_like(values), where=length > 0.0))
+        return out[0], out[1]
 
     def plot(
         self,
@@ -133,8 +169,9 @@ class ModeReport:
         from magnelio.post.plot_field import CrossSectionOverlay, plot_field_vector
 
         if field == "E":
-            comp_u = _edge_grid(self._discrete.e_u_profile, self._plane.u_edge_uv)
-            comp_v = _edge_grid(self._discrete.e_v_profile, self._plane.v_edge_uv)
+            prof_u, prof_v = self._field_profiles("E")
+            comp_u = _edge_grid(prof_u, self._plane.u_edge_uv)
+            comp_v = _edge_grid(prof_v, self._plane.v_edge_uv)
             # E_u lives at (u-centre, v-node): average along v.
             # E_v lives at (u-node, v-centre): average along u.
             u_cc = _avg_nonzero(comp_u[0][:, :-1], comp_u[0][:, 1:])
@@ -143,8 +180,9 @@ class ModeReport:
             uc, vc = comp_u[1], comp_v[2]
         elif field == "H":
             # H_u is co-located with the v-edges, H_v with the u-edges.
-            comp_u = _edge_grid(self._discrete.h_u_profile, self._plane.v_edge_uv)
-            comp_v = _edge_grid(self._discrete.h_v_profile, self._plane.u_edge_uv)
+            prof_u, prof_v = self._field_profiles("H")
+            comp_u = _edge_grid(prof_u, self._plane.v_edge_uv)
+            comp_v = _edge_grid(prof_v, self._plane.u_edge_uv)
             u_cc = _avg_nonzero(comp_u[0][:-1, :], comp_u[0][1:, :])
             v_cc = _avg_nonzero(comp_v[0][:, :-1], comp_v[0][:, 1:])
             valid = _live_cells(comp_v[0], comp_u[0])
@@ -391,6 +429,7 @@ class PortReport:
             # symmetry scale.
             scale = op.port_report.z_line_full_scale if op.port_report else 1.0
             mirrors = resolve_port_mirrors(op.plane, mesh) if mesh is not None else ()
+            dual_lengths = getattr(op, "h_dual_lengths", ())
             modes = tuple(
                 ModeReport(
                     port_name=op.name,
@@ -401,6 +440,7 @@ class PortReport:
                     _discrete=dm,
                     _plane=op.plane,
                     _mirrors=mirrors,
+                    _h_dual_lengths=dual_lengths,
                 )
                 for dm in op.discrete_modes
             )

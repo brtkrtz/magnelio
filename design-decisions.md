@@ -10490,6 +10490,14 @@ Weighting the destaggering average by the conformal free-area fraction
 `f_A` changed the reconstruction by nothing measurable (the port-plane
 weights are effectively binary: edges are either bulk or eliminated).
 
+> **Correction (DD-161).**  The synthetic control fed the destaggering
+> *field samples* while a solved profile carries *edge voltages*, so
+> the two branches of this comparison were not the same quantity and
+> the "reconstruction is fine" half of the conclusion does not hold.
+> Most of the 5°/17 % was the missing length metric in the plot, not
+> the mode solve.  The plot-raster, validity-mask and full-model
+> decisions below are unaffected.
+
 **Decision.**
 
 * **Plot raster, not grid samples.**  `plot_field_vector` interpolates
@@ -10533,3 +10541,88 @@ values, masked cells blank and not diluting their live neighbours);
 **Files:** `post/_symmetry.py` (new), `post/plot_field.py`,
 `ports/_modal/mode_report.py`, `monitors/base.py`,
 `analysis/scattering_td.py`.
+
+## DD-161 — Mode profiles are grid quantities; the plot divides by the edge metric
+
+**Date:** 2026-08-15 — **Status:** shipped
+
+**Context.**  KB-018 recorded a mode profile that was not the clean
+radial field a coax TEM mode must be: several degrees of spurious
+tangential content, `E_r·r` (constant for a coax) spread by 13 %, and a
+17 % low reading on the cells the conductor contour cuts.  DD-160's
+control experiment had placed the error in the solved profile rather
+than in the picture.  That control was wrong: it fed the destaggering
+an analytical field *sampled* at the edge midpoints, while a solved
+profile holds something else.
+
+**Finding.**  The 2D mode solvers return FIT **grid quantities**, not
+field samples.  `solve_tem_laplace` builds `ê = -G₂ᴅ φ` with a
+*topological* gradient, so the primal profile is the edge voltage
+`E·l_primal`; `travelling_wave_h_profiles` builds the dual voltage
+`ĥ = H·l_dual` with `l_dual = μ₀·normal_dx·l_partner/M_μ`.  The
+operator's Poynting sum undoes both conventions explicitly; the plot
+did not, and read the DoF vector as a field.  On a graded mesh the
+difference is a per-edge factor: it tilts every cell-centre vector and
+biases its magnitude, worst where the conductor contour forces a
+locally different spacing.  Only the analytical mode families
+(`Mode.field_evaluator` set) hold sampled V/m and A/m — and they never
+drive a port, they serve as the DD-048 reference value.
+
+Measured on the KB-018 coax port (r_i = 1.52 mm, r_a = 3.5 mm), the
+invariants of the reconstructed cell-centre field:
+
+| grid | quantity | spread of `E_r·r` | tangential angle, median / p90 |
+|---|---|---|---|
+| 67 annulus cells | DoF read as field | 0.188 | 5.89° / 12.05° |
+| 67 annulus cells | **divided by the metric** | **0.077** | **2.76° / 9.41°** |
+| 87 annulus cells | DoF read as field | 0.194 | 6.71° / 17.21° |
+| 87 annulus cells | **divided by the metric** | **0.074** | **2.48° / 7.36°** |
+
+The 17 % low reading on cut cells disappears (0.833 → 0.968 of the
+reference), and the residual now *converges* under refinement, which
+the raw reading did not.  The H picture, rebuilt through its own dual
+lengths, lands on the identical figures — the exact `H = ẑ × E/Z`
+relation of the travelling wave, which is a sharp check that both
+metrics are right.
+
+**Decision.**
+
+* `ModeReport._field_profiles` converts the DoF vector to V/m or A/m
+  before destaggering: primal profiles by the plane's primal edge
+  lengths, dual profiles by `PortOperatorModal.h_dual_lengths` (new
+  read-only property, the same expression the operator's power sum
+  uses).  Faces frozen inside a conductor report length `0` and are
+  skipped rather than divided by zero.
+* Analytical families pass through untouched.
+* `DiscreteMode`'s attribute docs name the convention per path; the
+  old "in V/m" wording is what invited reading the array as a field.
+
+Nothing outside the plot changes: the operator already converted where
+it needed to, and the profiles keep driving injection and projection
+in their FIT metric.
+
+**Residual, and where it comes from.**  After the fix the same coax
+still shows ~2.5° and ~7 % spread at the contour.  A category census
+of the mesh shows why, and it is structural rather than local: **no
+bbox face carries a single conformal E-edge**, while the layer one
+cell behind each face carries hundreds.
+
+| layer | xmin | xmax | ymin | ymax | zmin | zmax |
+|---|---|---|---|---|---|---|
+| the face itself | 0 | 0 | 0 | 0 | 0 | 0 |
+| one cell in | 809 | 251 | 251 | 164 | 89 | 89 |
+
+(conformal = category 1 or 2, on a mesh with 28 471 of them in total).
+A port plane is a bbox face, so every mode solve runs on a purely
+staircased cross-section — consistent with DD-048's framing of the
+operator-consistent path, but now quantified.  Filed as KB-019; the
+lever is the classifier's boundary-face handling, not the plot.
+
+**Gates:** `tests/integration/test_solve_ports.py`
+(`test_profiles_are_grid_quantities_not_field_samples` — a WR90 on a
+transversally graded grid, where TE10's uniform `E_z` is a 3.5×
+ramp in the raw DoF and flat to 1e-9 after the metric;
+`test_analytical_families_keep_their_sampled_profiles`).
+
+**Files:** `ports/_modal/mode_report.py`, `ports/_modal/operator.py`,
+`ports/_modal/discrete.py`.

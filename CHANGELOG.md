@@ -23,6 +23,11 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Port-mode plots draw the field itself instead of the solver's
+  internal edge quantities.  On a graded mesh the two differ by the
+  local cell size, which tilted the arrows and biased their length —
+  most visibly at a curved conductor, where the profile read up to
+  17 % low.  Both the E and the H picture are affected
 - Arrows are no longer drawn inside conductors, and the interpolation
   no longer averages field values across a conductor boundary
 - Saving a mirrored plot with `bbox_inches="tight"` produced a hugely

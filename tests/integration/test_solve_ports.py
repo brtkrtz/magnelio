@@ -7,6 +7,8 @@ transverse-profile plots — without running a time-domain simulation.
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import matplotlib
 
 matplotlib.use("Agg")
@@ -57,6 +59,41 @@ def _wr90_analysis() -> AnalysisScatteringTD:
             grid, boundary_conditions={f: PECBoundary(f) for f in ("ymin", "ymax", "zmin", "zmax")}
         ),
         ports=specs,
+        f_max=12.4e9,
+        f_min=8.2e9,
+        verbose=False,
+    )
+
+
+def _graded_z(n: int, ratio: float) -> np.ndarray:
+    """WR90 height in ``n`` cells, each ``ratio`` times its predecessor."""
+    d = ratio ** np.arange(n)
+    return WR90_B * np.concatenate([[0.0], np.cumsum(d)]) / d.sum()
+
+
+_GRADED_Z = _graded_z(10, 1.15)
+
+
+def _graded_wr90_analysis() -> AnalysisScatteringTD:
+    """WR90 with a transversally graded z-grid (cell sizes spread 3.5x)."""
+    grid = GridLines(
+        x=np.linspace(0.0, 30e-3, 16),
+        y=np.linspace(0.0, WR90_A, 24),
+        z=_GRADED_Z,
+    )
+    return AnalysisScatteringTD(
+        mesh=Mesh.from_grid(
+            grid, boundary_conditions={f: PECBoundary(f) for f in ("ymin", "ymax", "zmin", "zmax")}
+        ),
+        ports=[
+            PortSpecRectWG(
+                name="port1",
+                plane=BoxFace.X_MIN,
+                width_a=WR90_A,
+                height_b=WR90_B,
+                n_modes=1,
+            )
+        ],
         f_max=12.4e9,
         f_min=8.2e9,
         verbose=False,
@@ -340,3 +377,64 @@ class TestModePlot:
 
         fig, ax = m.plot(ax=plt.subplots()[1])
         plt.close(ax.get_figure())
+
+    def test_profiles_are_grid_quantities_not_field_samples(self):
+        """The 2D solvers return FIT grid quantities — the edge voltage
+        ``ê = E·l``, not a field sample.  On a graded transversal grid
+        the two differ by the local cell size: TE10's E_z is uniform
+        along z, its raw DoF ramps with dz over the full grading."""
+        rep = _graded_wr90_analysis().solve_ports()["port1"]
+        m = rep.modes[0]
+        plane = m._plane
+        # Port plane is x-normal: u = y (broad wall), v = z (graded).
+        uv = plane.v_edge_uv
+        us, vs = np.unique(uv[:, 0]), np.unique(uv[:, 1])
+        dz = np.diff(_GRADED_Z)
+        grading = dz.max() / dz.min()
+        assert grading > 3.0  # the grid actually asks the question
+
+        def row(values):
+            g = np.zeros((us.size, vs.size))
+            g[np.searchsorted(us, uv[:, 0]), np.searchsorted(vs, uv[:, 1])] = values
+            return np.abs(g[us.size // 2])
+
+        raw_e = row(m._discrete.e_v_profile)
+        phys_e = row(m._field_profiles("E")[1])
+        assert raw_e.max() / raw_e.min() == pytest.approx(grading, rel=1e-6)
+        assert phys_e.max() / phys_e.min() == pytest.approx(1.0, abs=1e-9)
+
+        # H carries the dual voltage ĥ = H·l_dual with its own per-face
+        # length.  |H_u/E_v| is spatially constant for a TE mode, which
+        # only the physical profiles reproduce.
+        ratio_raw = row(m._discrete.h_u_profile) / raw_e
+        ratio_phys = row(m._field_profiles("H")[0]) / phys_e
+        assert ratio_raw.max() / ratio_raw.min() == pytest.approx(grading, rel=1e-6)
+        assert ratio_phys.max() / ratio_phys.min() == pytest.approx(1.0, abs=1e-9)
+
+    def test_analytical_families_keep_their_sampled_profiles(self):
+        """Closed-form mode families sample V/m and A/m at the midpoints
+        already — those must pass through the metric untouched."""
+        from magnelio.ports._modal.discrete import DiscreteMode
+        from magnelio.ports._modal.mode_report import ModeReport
+
+        e_u, e_v = np.array([1.0, 2.0]), np.array([3.0])
+        report = ModeReport(
+            port_name="p",
+            name="analytic",
+            mode_type=ModeType.TEM,
+            f_cutoff=0.0,
+            z_line=50.0,
+            _discrete=DiscreteMode(
+                mode=SimpleNamespace(field_evaluator=lambda u, v: None),
+                e_u_profile=e_u,
+                e_v_profile=e_v,
+                h_u_profile=e_v,
+                h_v_profile=e_u,
+            ),
+            _plane=None,
+            _h_dual_lengths=(np.array([7.0]), np.array([7.0, 7.0])),
+        )
+        got_u, got_v = report._field_profiles("E")
+        np.testing.assert_array_equal(got_u, e_u)
+        np.testing.assert_array_equal(got_v, e_v)
+        np.testing.assert_array_equal(report._field_profiles("H")[0], e_v)

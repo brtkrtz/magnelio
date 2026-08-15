@@ -2,10 +2,11 @@
 
 *Last updated: 2026-08-15.*  Latest work: field plots draw on their own
 isotropic raster instead of the computational grid, port modes are
-shown full-model, and cells buried in a conductor stay blank (DD-160).
-The measurement behind it split reconstruction error from solution
-error and landed the residual on the mode solver, not the plot — see
-KB-018.  Current state in brief: symmetry planes
+shown full-model, and cells buried in a conductor stay blank (DD-160);
+mode-profile plots then learned that the solvers hand them FIT grid
+quantities, not field samples, and divide by the edge metric before
+drawing (DD-161) — which is where most of KB-018's "solver error"
+actually lived.  Current state in brief: symmetry planes
 are complete — boundary declaration + mesh-time domain clip (DD-154)
 and full-model power semantics on ports, recorders and flux monitors
 (DD-155), certified against the natively built half model.  The last
@@ -23,11 +24,12 @@ known-bugs.md:** KB-017 — a conformal-classification jitter inside
 the pairing's 1e-6 agreement band can silently push a port channel
 to Mur (found on the mirrored coax stub of the same worksheet;
 KB-016, the NaN complement-absorber coefficients it uncovered, is
-fixed) — and KB-018, several percent of spurious transverse field in
-the 2D mode profile at a curved conductor, not reduced by refinement.
+fixed) — and KB-019, no bbox face carrying conformal E-edge data, so
+every port plane solves on a staircased cross-section (KB-018 closed
+by DD-161; KB-019 is its residual).
 
-**Suite: 2133 passed / 6 skipped / 0 failed** (2026-08-15, GPU box —
-unit 1801 (+2 scikit-rf skips), integration 332 (+4 skips); GPU tests
+**Suite: 2135 passed / 6 skipped / 0 failed** (2026-08-15, GPU box —
+unit 1801 (+2 scikit-rf skips), integration 334 (+4 skips); GPU tests
 need `CUPY_ACCELERATORS=""` when the interpreter binary is called
 directly).  The DD-150 step change re-measured three fixture windows
 (interval stride, lumped-port guard, SIBC band edge) — the reasoning

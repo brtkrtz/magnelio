@@ -1096,6 +1096,37 @@ class PortOperatorModal:
         return self._mur_r.copy()
 
     @property
+    def h_dual_lengths(self) -> tuple[np.ndarray, np.ndarray]:
+        """Dual edge lengths of the port plane's H faces, ``(l_u, l_v)``.
+
+        The mode solvers store H as the dual voltage
+        ``ĥ = H · l_dual`` with ``l_dual = μ₀ · normal_dx · l_partner /
+        M_μ`` (the convention the Poynting sum in
+        :meth:`_calibrate_v_i` undoes).  Dividing by these lengths is
+        the only way back to A/m — on a graded transversal grid the two
+        differ per face.  ``l_u`` is co-located with the v-edges (like
+        ``h_u_profile``), ``l_v`` with the u-edges.
+
+        Faces frozen inside a conductor carry ``M_μ = 0`` and
+        ``ĥ = 0``; their entry is ``0.0`` so a consumer can mask on it
+        instead of dividing by zero.
+        """
+        scale = MU0 * float(self.plane.normal_dx)
+        l_u = np.divide(
+            scale * self.plane.v_edge_lengths,
+            self._mh_u,
+            out=np.zeros_like(self._mh_u),
+            where=self._mh_u > 0.0,
+        )
+        l_v = np.divide(
+            scale * self.plane.u_edge_lengths,
+            self._mh_v,
+            out=np.zeros_like(self._mh_v),
+            where=self._mh_v > 0.0,
+        )
+        return l_u, l_v
+
+    @property
     def dtbc_line_params(
         self,
     ) -> dict[int, tuple[float, float, float | None]]:

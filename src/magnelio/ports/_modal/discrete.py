@@ -39,14 +39,20 @@ class DiscreteMode:
         ``mode_type``, and the impedance methods ``z_modal(omega)``,
         ``z_wave(omega)``, ``gamma(omega)``.
     e_u_profile : np.ndarray, shape (N_u,)
-        ``E_u`` profile at u-edge midpoints, in V/m.  After
-        orthonormalisation the discrete field still carries no
-        physical V/m meaning — it is the basis vector in the
-        ``M_eps``-weighted Hilbert space.
+        ``E_u`` profile on the plane's u-edges.  A basis vector in the
+        ``M_eps``-weighted Hilbert space, so it carries no absolute
+        scale — and it is a FIT **grid quantity**, the edge voltage
+        ``ê = E·l_primal``, not a field sample: the numerical solvers
+        build it from a topological gradient / curl-curl pencil.  Only
+        the analytical families (``mode.field_evaluator`` set) sample
+        V/m at the midpoints.  Divide by the primal edge length to plot
+        or compare a field.
     e_v_profile : np.ndarray, shape (N_v,)
-        ``E_v`` profile at v-edge midpoints.
+        ``E_v`` profile on the plane's v-edges, same convention.
     h_u_profile : np.ndarray, shape (N_v,)
-        ``H_u`` profile at the dual edges co-located with the v-edges.
+        ``H_u`` profile at the dual edges co-located with the v-edges;
+        the dual voltage ``ĥ = H·l_dual`` with ``l_dual = μ₀·normal_dx·
+        l_partner/M_μ`` (``PortOperatorModal.h_dual_lengths``).
     h_v_profile : np.ndarray, shape (N_u,)
         ``H_v`` profile at duals co-located with the u-edges.
     """
