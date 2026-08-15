@@ -27,6 +27,7 @@ from magnelio.ports._modal.discrete import DiscreteMode
 from magnelio.ports._modal.mode import ModeType
 from magnelio.ports._modal.port_plane import PortPlane
 from magnelio.ports._modal.port_report import PortOperatorReport
+from magnelio.post._symmetry import mirror_extend, mirror_sign, mirror_spec_for_face
 
 if TYPE_CHECKING:
     import matplotlib.axes
@@ -64,6 +65,9 @@ class ModeReport:
     z_line: float | None
     _discrete: DiscreteMode = field(repr=False)
     _plane: PortPlane = field(repr=False)
+    # In-plane symmetry planes the port window is cut by (DD-154), so
+    # plot() can show the full cross-section instead of the solved half.
+    _mirrors: tuple = field(default=(), repr=False)
 
     def z_modal(self, f: float) -> complex:
         """Power-wave reference impedance at frequency ``f`` [Hz]."""
@@ -135,6 +139,7 @@ class ModeReport:
             # E_v lives at (u-node, v-centre): average along u.
             u_cc = _avg_nonzero(comp_u[0][:, :-1], comp_u[0][:, 1:])
             v_cc = _avg_nonzero(comp_v[0][:-1, :], comp_v[0][1:, :])
+            valid = _live_cells(comp_u[0], comp_v[0])
             uc, vc = comp_u[1], comp_v[2]
         elif field == "H":
             # H_u is co-located with the v-edges, H_v with the u-edges.
@@ -142,6 +147,7 @@ class ModeReport:
             comp_v = _edge_grid(self._discrete.h_v_profile, self._plane.u_edge_uv)
             u_cc = _avg_nonzero(comp_u[0][:-1, :], comp_u[0][1:, :])
             v_cc = _avg_nonzero(comp_v[0][:, :-1], comp_v[0][:, 1:])
+            valid = _live_cells(comp_v[0], comp_u[0])
             uc, vc = comp_v[1], comp_u[2]
         else:
             raise ValueError(f"field must be 'E' or 'H'; got {field!r}")
@@ -149,8 +155,13 @@ class ModeReport:
         face = self._plane.face
         u_name = _AXIS_NAMES[face.u_axis]
         v_name = _AXIS_NAMES[face.v_axis]
+        uc, vc, u_cc, v_cc, valid = _apply_mirrors(
+            self._mirrors, face, field, uc, vc, u_cc, v_cc, valid
+        )
         if title is None:
             title = f"{self.port_name}: {self.name} ({self.mode_type.value}) {field} profile"
+            if self._mirrors:
+                title += " — full model"
 
         overlay = None
         if geometry is not None:
@@ -165,6 +176,7 @@ class ModeReport:
                 normal=_AXIS_NAMES[face.normal_axis],
                 position=self._plane.coordinate + face.inward_sign * 0.5 * self._plane.normal_dx,
                 swap_axes=face.u_axis > face.v_axis,
+                mirrors=_overlay_mirrors(self._mirrors, face),
             )
 
         return plot_field_vector(
@@ -172,6 +184,7 @@ class ModeReport:
             vc,
             u_cc,
             v_cc,
+            valid=valid,
             xlabel=u_name,
             ylabel=v_name,
             title=title,
@@ -183,6 +196,101 @@ class ModeReport:
             flip=flip,
             geometry=overlay,
         )
+
+
+def _live_cells(grid_u: np.ndarray, grid_v: np.ndarray) -> np.ndarray:
+    """Cells the mode profile actually lives in.
+
+    *grid_u* is the edge grid staggered along v (one extra column),
+    *grid_v* the one staggered along u.  A cell whose four bounding
+    edges are all exact ``0.0`` is buried in a conductor: it carries no
+    solved degree of freedom, so it must not enter the plot's
+    interpolation stencil at all.  Everything else is live, including
+    the partially filled cells at the conductor contour.
+    """
+    live_u = grid_u != 0.0
+    live_v = grid_v != 0.0
+    return (live_u[:, :-1] | live_u[:, 1:]) | (live_v[:-1, :] | live_v[1:, :])
+
+
+def _overlay_mirrors(mirrors: tuple, face) -> tuple:
+    """Mirror specs in the ``CrossSectionOverlay`` (slot, wall, at_low) form.
+
+    The overlay indexes its in-plane axes in *ascending world order*,
+    not in the port plane's ``(u, v)`` order — its ``swap_axes`` flag
+    already carries the difference.
+    """
+    first = min(face.u_axis, face.v_axis)
+    return tuple((0 if m.axis == first else 1, m.wall, m.at_low) for m in mirrors)
+
+
+def _apply_mirrors(mirrors: tuple, face, field: str, uc, vc, u_cc, v_cc, valid):
+    """Extend the plotted arrays across the port window's symmetry planes.
+
+    Each plane doubles the picture along its axis; the component signs
+    follow the usual PEC/PMC continuation rules, and the live-cell mask
+    is carried along so a mirrored conductor stays blank.
+    """
+    for spec in mirrors:
+        if spec.axis not in (face.u_axis, face.v_axis):
+            continue  # normal-axis plane: does not extend a transverse profile
+        arr_axis = 0 if spec.axis == face.u_axis else 1
+        coords = uc if arr_axis == 0 else vc
+        new_c, u_cc = mirror_extend(
+            coords, u_cc, spec, arr_axis, mirror_sign(field, face.u_axis, spec.axis, spec.kind)
+        )
+        _, v_cc = mirror_extend(
+            coords, v_cc, spec, arr_axis, mirror_sign(field, face.v_axis, spec.axis, spec.kind)
+        )
+        _, mask = mirror_extend(coords, valid.astype(float), spec, arr_axis, 1.0)
+        valid = mask > 0.5
+        if arr_axis == 0:
+            uc = new_c
+        else:
+            vc = new_c
+    return uc, vc, u_cc, v_cc, valid
+
+
+def resolve_port_mirrors(plane: PortPlane, mesh) -> tuple:
+    """In-plane symmetry planes the port window is cut by (DD-154).
+
+    Only planes whose normal lies *in* the port plane extend the
+    picture — a symmetry plane parallel to the port face is the face
+    itself and mirrors the structure along the propagation direction,
+    which the transverse profile does not show.  A plane counts only
+    when the window actually reaches it; a sub-face window stopping
+    short of the wall would otherwise get a detached mirror image.
+    """
+    from magnelio.boundaries.boundary_conditions import (  # noqa: PLC0415
+        bc_type_entries,
+        symmetry_entries,
+    )
+
+    bc = getattr(mesh, "boundary_conditions", None)
+    sym = symmetry_entries(bc)
+    if not sym:
+        return ()
+    types = bc_type_entries(bc)
+    grid = mesh.grid
+    axis_nodes = (grid.x, grid.y, grid.z)
+    n_cells = (grid.Nx, grid.Ny, grid.Nz)
+    windows = {
+        plane.face.u_axis: plane.u_node_window,
+        plane.face.v_axis: plane.v_node_window,
+    }
+    out = []
+    for face_name in sorted(sym):
+        axis = _AXIS_NAMES.index(face_name[0])
+        if axis not in windows:
+            continue
+        lo, hi = windows[axis]
+        at_low = face_name.endswith("min")
+        if at_low and lo != 0:
+            continue
+        if not at_low and hi != n_cells[axis]:
+            continue
+        out.append(mirror_spec_for_face(face_name, types[face_name], axis_nodes[axis]))
+    return tuple(out)
 
 
 def _avg_nonzero(a: np.ndarray, b: np.ndarray) -> np.ndarray:
@@ -263,13 +371,18 @@ class PortReport:
         return self.report.cutoff_ref if self.report else None
 
     @classmethod
-    def from_operator(cls, op) -> "PortReport":
+    def from_operator(cls, op, mesh=None) -> "PortReport":
         """Build a report from a built port operator.
 
         Modal operators contribute one :class:`ModeReport` per
         ``discrete_modes`` entry; lumped operators (no mode solve)
         yield an empty mode tuple and a synthetic ``PortOperatorReport`` with
         ``z_line_num = Z0``.
+
+        Passing the *mesh* lets the mode plots resolve the symmetry
+        planes cutting the port window, so they show the full
+        cross-section instead of the solved half; without it they show
+        the solved window.
         """
         if hasattr(op, "discrete_modes"):
             # Publish full-model line impedances (DD-154): the Mode
@@ -277,6 +390,7 @@ class PortReport:
             # the injection/recording), the report entries carry the
             # symmetry scale.
             scale = op.port_report.z_line_full_scale if op.port_report else 1.0
+            mirrors = resolve_port_mirrors(op.plane, mesh) if mesh is not None else ()
             modes = tuple(
                 ModeReport(
                     port_name=op.name,
@@ -286,6 +400,7 @@ class PortReport:
                     z_line=(None if dm.mode.z_line is None else dm.mode.z_line * scale),
                     _discrete=dm,
                     _plane=op.plane,
+                    _mirrors=mirrors,
                 )
                 for dm in op.discrete_modes
             )

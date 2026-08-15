@@ -4,6 +4,36 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
+## KB-018: 2D mode profile carries several percent of spurious transverse field at a curved conductor — OPEN (2026-08-15)
+
+On a coax port window (r_i = 1.52 mm, r_a = 3.5 mm, ~14 cells per
+diameter) the solved TEM profile is not the clean radial field it
+should be:
+
+* cells whose bounding edges are all live: ~5° median angle error
+  (|E_t/E_r| ≈ 0.09) and 13 % spread in `E_r·r`, which must be
+  constant;
+* cells touching the conductor contour: `E_r·r` reads **17 % low**
+  (median), with 14 % tangential content.
+
+Refining the port region (67 → 87 annulus cells) does not reduce
+either figure.  This is a property of the solved profile, not of the
+plot: running the same destaggering on an *analytical* 1/r field
+sampled at the same edges reproduces the cell-centre values to 0.32°
+and 0.3 % on live cells, 1.6° and 2.7 % on cut cells (DD-160
+measurement, internal record `investigations/port-mode-plots/`).
+
+Not yet root-caused.  Candidates, in order of suspicion: the
+enlarged-cell donation bias the operator already warns about
+(estimated 5.8e-3 relative on this model, parked on category-0/1
+edges); the sub-cell metric of the rim edges on cut faces (the same
+family DD-098 measured an 18 % power over-read on); and the
+staircase/conformal treatment of the 2D Laplace solve itself.
+Impact is on field *pictures* and on any per-cell field reading at a
+curved conductor; the integrated quantities (z_line 47.29 Ω against
+the 50 Ω design value here, mode power normalisation) are not
+implicated by this measurement.
+
 ## KB-017: Pair-coupling tolerance band lets a 7.5e-7 conformal jitter silently push a port channel to Mur — OPEN (2026-08-14)
 
 On the stripline coupler with its mirrored coax stub

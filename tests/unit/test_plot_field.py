@@ -212,6 +212,92 @@ class TestPlotFieldVector:
         plt.close(fig)
 
 
+class TestArrowRaster:
+    """The arrow positions must describe the picture, not the mesh."""
+
+    @staticmethod
+    def _arrow_positions(ax):
+        quiv = ax.collections[0]
+        return quiv.get_offsets()
+
+    def test_raster_is_isotropic_on_a_graded_grid(self):
+        # A grid refined 10x in the middle of x and uniform in y: strided
+        # subsampling would cluster arrows in the refined band.
+        xc = np.concatenate(
+            [
+                np.linspace(0.0, 4e-3, 9, endpoint=False),
+                np.linspace(4e-3, 6e-3, 40, endpoint=False),
+                np.linspace(6e-3, 10e-3, 10),
+            ]
+        )
+        yc = np.linspace(0.0, 10e-3, 12)
+        u = np.ones((xc.size, yc.size))
+        v = np.zeros((xc.size, yc.size))
+        fig, ax = plot_field_vector(xc, yc, u, v, density=16, scale_mm=False)
+        pos = self._arrow_positions(ax)
+        xs = np.unique(pos[:, 0])
+        ys = np.unique(pos[:, 1])
+        assert np.allclose(np.diff(xs), np.diff(xs)[0])
+        assert np.diff(xs)[0] == pytest.approx(np.diff(ys)[0], rel=1e-9)
+        plt.close(fig)
+
+    def test_density_counts_arrows_along_the_longer_axis(self, vector_field):
+        xc = np.linspace(0.0, 10e-3, 60)
+        yc = np.linspace(0.0, 5e-3, 30)
+        u = np.ones((xc.size, yc.size))
+        v = np.zeros((xc.size, yc.size))
+        fig, ax = plot_field_vector(xc, yc, u, v, density=11, scale_mm=False)
+        pos = self._arrow_positions(ax)
+        assert np.unique(pos[:, 0]).size == 11
+        assert np.unique(pos[:, 1]).size == 6
+        plt.close(fig)
+
+    def test_values_are_interpolated_not_sampled(self):
+        # A linear ramp: an interpolated raster point between two cell
+        # centres must read the intermediate value.
+        xc = np.linspace(0.0, 1.0, 5)
+        yc = np.linspace(0.0, 1.0, 5)
+        X, _ = np.meshgrid(xc, yc, indexing="ij")
+        fig, ax = plot_field_vector(xc, yc, X.copy(), np.zeros_like(X), density=9, scale_mm=False)
+        quiv = ax.collections[0]
+        pos = quiv.get_offsets()
+        assert np.allclose(quiv.U, pos[:, 0], atol=1e-12)
+        plt.close(fig)
+
+
+class TestValidMask:
+    def test_masked_cells_stay_blank(self):
+        xc = np.linspace(0.0, 1.0, 9)
+        yc = np.linspace(0.0, 1.0, 9)
+        u = np.ones((9, 9))
+        v = np.zeros((9, 9))
+        valid = np.ones((9, 9), dtype=bool)
+        valid[:4, :] = False  # left half buried in a conductor
+        fig, ax = plot_field_vector(xc, yc, u, v, valid=valid, density=9, scale_mm=False)
+        quiv = ax.collections[0]
+        pos = quiv.get_offsets()
+        drawn = ~np.asarray(quiv.Umask)
+        assert not np.any(pos[drawn, 0] < 0.35)
+        assert np.any(drawn)
+        plt.close(fig)
+
+    def test_masked_neighbours_do_not_dilute_the_field(self):
+        # Without the mask the zeros of the dead half would be averaged
+        # into the live cells at the interface.
+        xc = np.linspace(0.0, 1.0, 9)
+        yc = np.linspace(0.0, 1.0, 9)
+        u = np.full((9, 9), 2.0)
+        u[:4, :] = 0.0
+        v = np.zeros((9, 9))
+        valid = np.ones((9, 9), dtype=bool)
+        valid[:4, :] = False
+        fig, ax = plot_field_vector(xc, yc, u, v, valid=valid, density=9, scale_mm=False)
+        quiv = ax.collections[0]
+        live = ~np.asarray(quiv.Umask)
+        assert np.allclose(np.asarray(quiv.U)[live], 2.0)
+        plt.close(fig)
+
+
 class TestPlotFieldVectorNormalComponent:
     def test_pure_normal_field_draws_markers(self, grid_2d):
         from matplotlib.collections import PathCollection

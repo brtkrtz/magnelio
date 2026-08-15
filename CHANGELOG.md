@@ -7,6 +7,27 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Changed
+
+- Vector field plots (monitor slices and port-mode profiles) draw their
+  arrows on an isotropic raster interpolated from the field instead of
+  sampling the computational grid, so a locally refined mesh no longer
+  shows up as clustered arrows.  `density` now counts arrows along the
+  longer axis of the slice; the shorter one follows at equal spacing
+- Port-mode plots of a port cut by a symmetry plane show the full
+  cross-section — field and geometry overlay mirrored — instead of the
+  simulated half, matching what the impedance and power figures already
+  reported
+
+### Fixed
+
+- Arrows are no longer drawn inside conductors, and the interpolation
+  no longer averages field values across a conductor boundary
+- Saving a mirrored plot with `bbox_inches="tight"` produced a hugely
+  oversized image that included geometry outside the plotted region
+
 ## [0.1.0] - 2026-08-14
 
 First public release.

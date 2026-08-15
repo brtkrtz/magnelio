@@ -1,6 +1,11 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-14.*  Current state in brief: symmetry planes
+*Last updated: 2026-08-15.*  Latest work: field plots draw on their own
+isotropic raster instead of the computational grid, port modes are
+shown full-model, and cells buried in a conductor stay blank (DD-160).
+The measurement behind it split reconstruction error from solution
+error and landed the residual on the mode solver, not the plot — see
+KB-018.  Current state in brief: symmetry planes
 are complete — boundary declaration + mesh-time domain clip (DD-154)
 and full-model power semantics on ports, recorders and flux monitors
 (DD-155), certified against the natively built half model.  The last
@@ -13,15 +18,16 @@ pinning `dt` (DD-147/DD-149), and OCCT Booleans no longer edit their
 operand shapes (DD-146).  Post-release-prep hardening (2026-08-14):
 section contours are closed by contract (DD-157) and conductor
 grouping fuses labels through PEC cell bodies (DD-156) — both found
-on the stripline-coupler worksheet.  **One open entry in
+on the stripline-coupler worksheet.  **Two open entries in
 known-bugs.md:** KB-017 — a conformal-classification jitter inside
 the pairing's 1e-6 agreement band can silently push a port channel
 to Mur (found on the mirrored coax stub of the same worksheet;
 KB-016, the NaN complement-absorber coefficients it uncovered, is
-fixed).
+fixed) — and KB-018, several percent of spurious transverse field in
+the 2D mode profile at a curved conductor, not reduced by refinement.
 
-**Suite: 2126 passed / 6 skipped / 0 failed** (2026-08-14, GPU box —
-unit 1796 (+2 scikit-rf skips), integration 330 (+4 skips); GPU tests
+**Suite: 2133 passed / 6 skipped / 0 failed** (2026-08-15, GPU box —
+unit 1801 (+2 scikit-rf skips), integration 332 (+4 skips); GPU tests
 need `CUPY_ACCELERATORS=""` when the interpreter binary is called
 directly).  The DD-150 step change re-measured three fixture windows
 (interval stride, lumped-port guard, SIBC band edge) — the reasoning

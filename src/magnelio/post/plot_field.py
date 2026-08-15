@@ -68,7 +68,7 @@ def _draw_cross_section_image(
     image inside its own half-space, so an asymmetric far half of a
     fully modelled geometry never shows.
     """
-    from matplotlib.patches import Rectangle  # noqa: PLC0415
+    from matplotlib.patches import Polygon  # noqa: PLC0415
     from matplotlib.transforms import Affine2D  # noqa: PLC0415
 
     eff_flip = flip != overlay.swap_axes
@@ -104,15 +104,26 @@ def _draw_cross_section_image(
                 tr = tr + Affine2D().scale(1.0, -1.0).translate(0.0, 2.0 * w)
         rng = clip_x if horizontal else clip_y
         rng[0], rng[1] = max(rng[0], lo), min(rng[1], hi)
-    clip_rect = Rectangle(
-        (clip_x[0], clip_y[0]),
-        clip_x[1] - clip_x[0],
-        clip_y[1] - clip_y[0],
+    # A Polygon, not a Rectangle: matplotlib short-circuits a rectangular
+    # clip path into the artist's *clip box*, which would replace the
+    # axes clipping — the picture still renders correctly, but the
+    # artists then report the whole off-screen geometry as their extent
+    # and a ``bbox_inches="tight"`` save blows up to that size.  The
+    # explicit clip box keeps the axes bound in place alongside the
+    # half-space path.
+    clip_poly = Polygon(
+        [
+            (clip_x[0], clip_y[0]),
+            (clip_x[1], clip_y[0]),
+            (clip_x[1], clip_y[1]),
+            (clip_x[0], clip_y[1]),
+        ],
         transform=ax.transData,
     )
     for a in new_artists:
         a.set_transform(tr + ax.transData)
-        a.set_clip_path(clip_rect)
+        a.set_clip_path(clip_poly)
+        a.set_clip_box(ax.bbox)
 
 
 def render_geometry_overlay(
@@ -321,6 +332,68 @@ def _draw_normal_markers(
     ax.legend(handles=handles, loc="upper right", fontsize=8, framealpha=0.7)
 
 
+def _arrow_grid(xc: np.ndarray, yc: np.ndarray, density: int) -> tuple[np.ndarray, np.ndarray]:
+    """Isotropic arrow raster covering the data extent.
+
+    ``density`` counts arrows along the *longer* axis; the shorter one
+    gets the count that keeps the spacing equal, so the raster stays
+    square under the plot's ``aspect="equal"`` — a graded computational
+    grid must not show through as a varying arrow density.
+    """
+    lx = float(xc[-1] - xc[0])
+    ly = float(yc[-1] - yc[0])
+    span = max(lx, ly)
+    if span <= 0.0 or density < 2:
+        return np.asarray(xc, dtype=float), np.asarray(yc, dtype=float)
+    step = span / (density - 1)
+    nx = max(2, int(round(lx / step)) + 1)
+    ny = max(2, int(round(ly / step)) + 1)
+    return np.linspace(xc[0], xc[-1], nx), np.linspace(yc[0], yc[-1], ny)
+
+
+def _resample(
+    xc: np.ndarray,
+    yc: np.ndarray,
+    xs: np.ndarray,
+    ys: np.ndarray,
+    arrays: list,
+    valid: np.ndarray | None,
+) -> tuple[list, np.ndarray]:
+    """Bilinear resampling of cell-centre data onto the arrow raster.
+
+    Invalid cells (``valid=False`` — a cell buried in a conductor, say)
+    carry no data: they are dropped from the stencil instead of being
+    read as zeros, so the interpolation never smears field into or out
+    of the metal.  A raster point whose stencil is more than half
+    invalid yields NaN, which matplotlib draws as nothing.
+    """
+    xc = np.asarray(xc, dtype=float)
+    yc = np.asarray(yc, dtype=float)
+    ix = np.clip(np.searchsorted(xc, xs, side="right") - 1, 0, xc.size - 2)
+    iy = np.clip(np.searchsorted(yc, ys, side="right") - 1, 0, yc.size - 2)
+    tx = ((xs - xc[ix]) / np.diff(xc)[ix])[:, None]
+    ty = ((ys - yc[iy]) / np.diff(yc)[iy])[None, :]
+    ix, iy = ix[:, None], iy[None, :]
+    stencil = (
+        (ix, iy, (1.0 - tx) * (1.0 - ty)),
+        (ix + 1, iy, tx * (1.0 - ty)),
+        (ix, iy + 1, (1.0 - tx) * ty),
+        (ix + 1, iy + 1, tx * ty),
+    )
+    m = np.ones((xc.size, yc.size)) if valid is None else valid.astype(float)
+    wsum = sum(m[i, j] * c for i, j, c in stencil)
+    live = wsum > 0.5
+    out = []
+    for a in arrays:
+        if a is None:
+            out.append(None)
+            continue
+        num = sum(m[i, j] * a[i, j] * c for i, j, c in stencil)
+        res = np.divide(num, wsum, out=np.full_like(num, np.nan), where=live)
+        out.append(np.where(live, res, np.nan))
+    return out, live
+
+
 def plot_field_vector(
     xc: np.ndarray,
     yc: np.ndarray,
@@ -328,6 +401,7 @@ def plot_field_vector(
     v: np.ndarray,
     *,
     w: np.ndarray | None = None,
+    valid: np.ndarray | None = None,
     xlabel: str = "u",
     ylabel: str = "v",
     wlabel: str = "n",
@@ -346,6 +420,11 @@ def plot_field_vector(
     geometry: GeometryOverlay = None,
 ) -> tuple["matplotlib.figure.Figure", "matplotlib.axes.Axes"]:
     """Quiver plot for a 2D slice of a vector field.
+
+    The data is interpolated onto an isotropic arrow raster spanning
+    the slice (see *density*): arrow positions are a property of the
+    picture, not of the computational grid, so a locally refined mesh
+    no longer shows up as clustered arrows.
 
     Arrows show the in-plane vector components.  When the out-of-plane
     component *w* is given, arrow colour encodes the full 3D magnitude,
@@ -366,6 +445,12 @@ def plot_field_vector(
     w : np.ndarray or None
         Out-of-plane (normal) component on the same grid.  Enables the
         full-magnitude colouring and the ⊙/⊗ markers.
+    valid : np.ndarray or None
+        Boolean mask of cells carrying field data, same shape as *u*.
+        False marks a cell the field does not live in (buried in a
+        conductor); it is excluded from the interpolation stencil
+        rather than read as zero, and raster points dominated by such
+        cells stay blank.  ``None`` treats every cell as valid.
     xlabel, ylabel : str
         In-plane axis labels (without unit suffix).
     wlabel : str
@@ -375,7 +460,10 @@ def plot_field_vector(
         Colour-bar label.  Default: ``"Field magnitude"`` when *w* is
         given, ``"In-plane field magnitude"`` otherwise.
     density : int
-        Target number of arrows per axis (subsamples grid).
+        Number of arrows along the longer in-plane axis.  The field is
+        interpolated onto an isotropic raster of that spacing, so the
+        arrow pattern shows the field rather than the local refinement
+        of the computational grid.
     normalize_arrows : bool
         If True, arrows have unit length and colour encodes magnitude
         (port-mode style).  If False, arrow length is proportional to
@@ -419,15 +507,12 @@ def plot_field_vector(
         u, v = v.T, u.T
         if w is not None:
             w = w.T
+        if valid is not None:
+            valid = valid.T
 
-    # --- Subsample ---
-    nx, ny = u.shape
-    sx = max(1, nx // density)
-    sy = max(1, ny // density)
-
-    xs, ys = xc[::sx], yc[::sy]
-    us, vs = u[::sx, ::sy], v[::sx, ::sy]
-    ws = w[::sx, ::sy] if w is not None else None
+    # --- Resample onto the isotropic arrow raster ---
+    xs, ys = _arrow_grid(xc, yc, density)
+    (us, vs, ws), _live = _resample(xc, yc, xs, ys, [u, v, w], valid)
     mag_in = np.sqrt(np.abs(us) ** 2 + np.abs(vs) ** 2)
     # Colour encodes the full 3D magnitude when the normal component is
     # known; arrow geometry (length, clipping, scale) always follows the
@@ -443,8 +528,10 @@ def plot_field_vector(
         mag_in = np.minimum(mag_in, vmax)
         mag = np.minimum(mag, vmax)
 
-    max_mag = float(np.max(mag)) if np.any(mag > 0) else 1.0
-    max_mag_in = float(np.max(mag_in)) if np.any(mag_in > 0) else 1.0
+    # Masked-out raster points are NaN, so every reduction over the
+    # magnitudes has to skip them or the whole colour scale goes NaN.
+    max_mag = float(np.nanmax(mag)) if np.any(mag > 0) else 1.0
+    max_mag_in = float(np.nanmax(mag_in)) if np.any(mag_in > 0) else 1.0
 
     # --- Normal-dominated points -> ⊙/⊗ markers instead of arrows ---
     # Local tilt criterion: a vector pointing more than ~72 degrees out

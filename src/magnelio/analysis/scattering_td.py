@@ -1018,6 +1018,7 @@ class AnalysisScatteringTD:
         return {
             spec.name: PortReport.from_operator(
                 self._build_operator(spec, m_eps, m_mu, dt, self.f_max),
+                mesh=self.mesh,
             )
             for spec in self.ports
         }

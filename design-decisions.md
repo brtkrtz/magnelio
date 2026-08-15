@@ -10455,3 +10455,81 @@ vocabulary.
 **Files:** `boundaries/boundary_conditions.py`,
 `boundaries/__init__.py`, `analysis/_recipe.py`, docstrings in
 `geo/__init__.py` / `mesh/mesher.py`.
+
+
+---
+
+## DD-160 — Field plots resample onto a plot raster; port modes are drawn full-model
+
+**Date:** 2026-08-15 — **Status:** shipped
+
+**Context.**  Two complaints about the port-mode pictures, plus one
+measurement that reversed a third.
+
+1. A port window cut by a declared symmetry plane was drawn as the
+   solved half.  The full-model mirroring built for monitors
+   (DD-154) was never wired into the port path, although the port
+   report already knew it was cut (`PortOperatorReport.symmetry_faces`,
+   used for the impedance scaling).
+2. `plot_field_vector` picked arrows by striding the computational
+   grid (`u[::sx, ::sy]`), with independent strides per axis.  On a
+   graded mesh the arrow density therefore *drew the refinement*, not
+   the field, and the raster was anisotropic under `aspect="equal"`.
+3. Arrows near a conductor contour looked wrong, suspected to come
+   from the conformal material averaging on cut cells.
+
+**Measurement (internal record `investigations/port-mode-plots/`).**
+Reconstruction error was separated from solution error by running the
+plot path on an *analytical* coax TEM field sampled on the same port
+plane edges.  On a half coax at 14 cells per diameter the destaggering
+is accurate to 0.32° in direction and 0.3 % in magnitude on uncut
+cells, and 1.6° / +2.7 % on cut cells — while the *solved* profile at
+those same cells carries 5° of spurious tangential field on uncut
+cells and reads 17 % low on cut ones, unchanged under refinement.
+Weighting the destaggering average by the conformal free-area fraction
+`f_A` changed the reconstruction by nothing measurable (the port-plane
+weights are effectively binary: edges are either bulk or eliminated).
+
+**Decision.**
+
+* **Plot raster, not grid samples.**  `plot_field_vector` interpolates
+  onto an isotropic raster spanning the slice; `density` counts arrows
+  along the longer axis and the shorter one follows at equal spacing.
+  Applies to every vector plot (monitor slices and port modes alike) —
+  arrow positions are a property of the picture.
+* **Validity mask.**  A new `valid=` argument marks cells the field
+  does not live in.  They are dropped from the interpolation stencil
+  instead of being read as zero, and raster points more than half
+  invalid stay blank.  The port path derives it from the profiles
+  themselves (all four bounding edges exactly `0.0` ⇒ buried in a
+  conductor), which is the same convention `_avg_nonzero` already
+  relies on.
+* **Port modes are drawn full-model**, mirroring field and geometry
+  overlay across every in-plane symmetry plane the window reaches.
+  The mirror primitives moved to `post/_symmetry.py` so the monitor
+  and port paths share one implementation of the continuation rules;
+  `monitors/base.py` re-exports them for its existing call sites.
+* **No cosmetic conformal correction.**  Neither `f_A` weighting nor a
+  wall-normal projection of the arrows is applied: the measurement
+  puts the residual error in the solved profile, not in the plot, and
+  projecting the arrows onto the local conductor contour would hide a
+  real discretisation error behind a tidy picture.  The mode-solution
+  accuracy on cut cells is a separate matter (KB-018).
+
+**Trap found on the way.**  Matplotlib short-circuits a *rectangular*
+clip path into the artist's clip **box**, replacing the axes clipping.
+The DD-154 mirror clip did exactly that, so a `bbox_inches="tight"`
+save grew to the extent of the whole off-screen geometry (the picture
+itself was always correct).  The clip is now a `Polygon` plus an
+explicit `set_clip_box(ax.bbox)`.
+
+**Gates:** `tests/unit/test_plot_field.py` (isotropic raster on a
+graded grid, `density` semantics, interpolated — not sampled —
+values, masked cells blank and not diluting their live neighbours);
+`tests/integration/test_solve_ports.py`
+(`test_symmetry_cut_port_plots_the_full_window`,
+`test_symmetry_mirrors_reach_the_geometry_overlay`).
+
+**Files:** `post/_symmetry.py` (new), `post/plot_field.py`,
+`ports/_modal/mode_report.py`, `monitors/base.py`,
+`analysis/scattering_td.py`.

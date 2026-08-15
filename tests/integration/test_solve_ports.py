@@ -237,6 +237,92 @@ class TestModePlot:
         assert pos == pytest.approx(29.5e-3)  # X_MAX at x=30 mm
         assert flip is True  # X_MAX: (u, v) = (z, y), descending
 
+    def test_symmetry_cut_port_plots_the_full_window(self):
+        """A port window cut by a declared symmetry plane is drawn whole:
+        the solved half plus its mirror image (DD-154)."""
+        import magnelio as mio
+        from magnelio import geo
+        from magnelio.mesh import MeshControl
+        from magnelio.ports import PortWaveguide
+
+        f_max = 12e9
+        a, b = 22.86e-3, 10.16e-3
+        # WR-90 halved by a magnetic wall through the TE10 field maximum:
+        # the E field is even across it, so the mirrored half must repeat
+        # the solved values with the same sign.
+        model = mio.GeometryModel(
+            background=mio.Material.air(),
+            boundary_conditions={"xmin": "SymmetryPMC"},
+        )
+        model.add(
+            geo.Brick(
+                origin=(-a / 2, 0.0, 0.0),
+                size=(a, b, 30e-3),
+                material=mio.Material.air(),
+            )
+        )
+        model.add_port(PortWaveguide(name="port1", plane="zmin", n_modes=1))
+        mesh = Mesh.from_geometry(model, MeshControl(), f_max=f_max)
+        rep = AnalysisScatteringTD(mesh=mesh, f_max=f_max).solve_ports()["port1"]
+        mode = rep.modes[0]
+        assert len(mode._mirrors) == 1
+        assert mode._mirrors[0].kind == "PMC"
+
+        fig, ax = mode.plot(field="E")
+        assert "full model" in ax.get_title()
+        # The picture spans the full guide width (cell centres, so one
+        # cell short of the walls) and is centred on the symmetry plane.
+        xlim = ax.get_xlim()
+        assert xlim[0] == pytest.approx(-xlim[1], rel=1e-9)
+        assert xlim[1] - xlim[0] > 0.9 * a * 1e3
+        # ... and it is mirror-symmetric about the wall.
+        quiv = ax.collections[0]
+        pos = quiv.get_offsets()
+        vals = np.hypot(np.asarray(quiv.U), np.asarray(quiv.V))
+        left = pos[:, 0] < -1e-9
+        right = pos[:, 0] > 1e-9
+        assert left.sum() == right.sum() > 0
+        order_l = np.lexsort((np.abs(pos[left, 0]), pos[left, 1]))
+        order_r = np.lexsort((pos[right, 0], pos[right, 1]))
+        np.testing.assert_allclose(vals[left][order_l], vals[right][order_r], rtol=1e-9)
+        plt.close(fig)
+
+    def test_symmetry_mirrors_reach_the_geometry_overlay(self):
+        """The overlay is mirrored along with the field, so conductors
+        and arrows agree on both halves."""
+        import magnelio as mio
+        from magnelio import geo
+        from magnelio.mesh import MeshControl
+        from magnelio.ports import PortWaveguide
+
+        class _RecordingModel:
+            def __init__(self):
+                self.calls = 0
+
+            def plot_cross_section(self, normal, position, **kw):
+                self.calls += 1
+
+        f_max = 12e9
+        model = mio.GeometryModel(
+            background=mio.Material.air(),
+            boundary_conditions={"xmin": "SymmetryPMC"},
+        )
+        model.add(
+            geo.Brick(
+                origin=(-11.43e-3, 0.0, 0.0),
+                size=(22.86e-3, 10.16e-3, 30e-3),
+                material=mio.Material.air(),
+            )
+        )
+        model.add_port(PortWaveguide(name="port1", plane="zmin", n_modes=1))
+        mesh = Mesh.from_geometry(model, MeshControl(), f_max=f_max)
+        rep = AnalysisScatteringTD(mesh=mesh, f_max=f_max).solve_ports()["port1"]
+        recorder = _RecordingModel()
+        fig, ax = rep.modes[0].plot(field="E", geometry=recorder)
+        # One image per half-space: the solved side and its mirror.
+        assert recorder.calls == 2
+        plt.close(fig)
+
     def test_tem_profile_points_across_gap(self):
         """Parallel-plate TEM E profile is dominated by the v (=y) component."""
         rep = _parallel_plate_analysis().solve_ports()["port1"]

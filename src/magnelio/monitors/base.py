@@ -16,6 +16,16 @@ import numpy as np
 from magnelio._fields.field_arrays import FieldState
 from magnelio.mesh.grid import GridLines
 
+# MirrorSpec / mirror_sign / mirror_extend are re-exported for the
+# monitor call sites (and the store reader) that have always imported
+# them from here; the primitives are shared with the port-mode plots.
+from magnelio.post._symmetry import (
+    MirrorSpec,
+    mirror_extend,
+    mirror_sign,
+    mirror_spec_for_face,
+)
+
 # ---------------------------------------------------------------------------
 # Cell-centre interpolation helpers
 # ---------------------------------------------------------------------------
@@ -406,33 +416,6 @@ def resolve_plane_view(region: MonitorRegion, normal: str | None, position: floa
 # ---------------------------------------------------------------------------
 
 
-@dataclass(frozen=True)
-class MirrorSpec:
-    """One symmetry plane a monitor region touches.
-
-    Attributes
-    ----------
-    axis : int
-        World axis index (0/1/2) of the mirror normal.
-    wall : float
-        Mirror-plane position [m] — the *physical* wall: on a PEC face
-        the outermost grid line, on a PMC face half the boundary cell
-        outside it (where the natural magnetic wall of the staggered
-        grid sits; after the mesher's pull-in that is exactly the
-        declared plane).
-    kind : str
-        Wall type, ``"PEC"`` or ``"PMC"``.
-    at_low : bool
-        True when the mirror sits at the low end of the axis (the
-        mirrored copy prepends).
-    """
-
-    axis: int
-    wall: float
-    kind: str
-    at_low: bool
-
-
 def resolve_mirrors(region: MonitorRegion, mesh) -> tuple[MirrorSpec, ...]:
     """Symmetry planes the monitor region reaches.
 
@@ -464,15 +447,7 @@ def resolve_mirrors(region: MonitorRegion, mesh) -> tuple[MirrorSpec, ...]:
             continue
         if not at_low and sl.stop != n_cells[axis]:
             continue
-        n = np.asarray(axis_nodes[axis], dtype=float)
-        kind = types[face]
-        if kind == "PEC":
-            wall = n[0] if at_low else n[-1]
-        elif at_low:
-            wall = n[0] - 0.5 * (n[1] - n[0])
-        else:
-            wall = n[-1] + 0.5 * (n[-1] - n[-2])
-        out.append(MirrorSpec(axis=axis, wall=float(wall), kind=kind, at_low=at_low))
+        out.append(mirror_spec_for_face(face, types[face], axis_nodes[axis]))
     return tuple(out)
 
 
@@ -499,47 +474,6 @@ def component_mirror_key(component: str) -> tuple[str, int | None]:
     if component in ("E", "H", "|E|", "|H|"):
         return component.strip("|"), None
     return component[0], _AXES.index(component[1])
-
-
-def mirror_sign(field: str, comp_axis: int | None, mirror_axis: int, kind: str) -> float:
-    """±1 continuation factor of a field component across a mirror.
-
-    Across a magnetic (PMC) symmetry plane E continues like a polar
-    vector (normal component odd, tangential even) and H like a
-    pseudovector (normal even, tangential odd); across an electric
-    (PEC) plane the roles swap.  Magnitudes (``comp_axis=None``) are
-    always even.
-    """
-    if comp_axis is None:
-        return 1.0
-    is_normal = comp_axis == mirror_axis
-    flips_normal = (kind == "PMC") if field == "E" else (kind == "PEC")
-    return -1.0 if is_normal == flips_normal else 1.0
-
-
-def mirror_extend(
-    coords: np.ndarray,
-    values: np.ndarray,
-    spec: MirrorSpec,
-    arr_axis: int,
-    sign: float,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Extend one axis of a data array across a mirror plane.
-
-    Returns the extended cell-centre coordinates and the values with
-    the sign-weighted mirrored copy prepended (``at_low``) or appended.
-    """
-    reflected = 2.0 * spec.wall - coords[::-1]
-    flipped = sign * np.flip(values, axis=arr_axis)
-    if spec.at_low:
-        return (
-            np.concatenate([reflected, coords]),
-            np.concatenate([flipped, values], axis=arr_axis),
-        )
-    return (
-        np.concatenate([coords, reflected]),
-        np.concatenate([values, flipped], axis=arr_axis),
-    )
 
 
 def mirror_plane_arrays(
