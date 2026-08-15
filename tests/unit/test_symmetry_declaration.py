@@ -674,8 +674,10 @@ class TestParaViewSymmetry:
             F_MAX,
         )
         (entry,) = _symmetry_config(SimpleNamespace(mesh=mesh))
-        axis, wall, at_low = entry
-        assert (axis, at_low) == ("x", True)
+        axis, wall, at_low, kind = entry
+        # The wall type travels with the plane: it decides the sign every
+        # field component picks up across it (DD-169).
+        assert (axis, at_low, kind) == ("x", True, "PMC")
         assert wall == pytest.approx(0.0, abs=1e-15)
         assert _symmetry_config(SimpleNamespace(mesh=None)) == []
 
@@ -688,13 +690,21 @@ class TestParaViewSymmetry:
                 "geometry": None,
                 "materials": [],
                 "monitors": [],
-                "symmetry": [["x", 0.0, True]],
+                "symmetry": [["x", 0.0, True, "PMC"]],
             },
         )
         text = script.read_text(encoding="utf-8")
         compile(text, str(script), "exec")  # the generated file must parse
         assert "simple.Reflect" in text
         assert '"symmetry"' in text or "symmetry" in text
+        # Both property sets of the reflection filter must stay in the
+        # script: renderers disagree on which one they expose, and the
+        # session showed half a model for want of the newer names
+        # (DD-169).
+        for prop in ("PlaneMode", "ReflectionPlane", "Plane", "Center"):
+            assert prop in text
+        for flag in ("ReflectAllInputArrays", "FlipAllInputArrays"):
+            assert flag in text
 
 
 class TestStoreRoundTrip:

@@ -33,6 +33,7 @@ import json
 import re
 import shutil
 import subprocess
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -65,6 +66,14 @@ _VOLUME_THRESHOLD_FRACTION = 0.02
 _ARROWS_PER_SECTION = 2000
 _RESAMPLE_VOLUME_POINTS = 8000
 _RESAMPLE_MAX_PER_AXIS = 300
+
+#: Component axis behind a field-array suffix (``Ey`` -> 1).
+_COMP_AXES = {"x": 0, "y": 1, "z": 2}
+
+#: Printed by the session script when it cannot place a mirror plane, and
+#: recognised by :func:`bake_pvsm` — the one channel that reaches a
+#: caller who never opens ParaView interactively.
+_SYMMETRY_MARKER = "MAGNELIO_SYMMETRY_UNAVAILABLE"
 
 
 def _sanitize(name: str) -> str:
@@ -302,6 +311,89 @@ def _pick_vector(components) -> tuple[str, list[str]] | None:
     return None
 
 
+def _mirror_signature(array_name: str) -> tuple[str, int | None] | None:
+    """``(field, component axis)`` of an exported field array, or ``None``.
+
+    ``Ex`` and ``Hz_im`` name a single component, ``E`` and ``E_re`` the
+    3-component vector (component ``None``).  Magnitudes and anything
+    unrecognised give ``None``: they are even across every mirror and
+    need no correction.
+    """
+    stem = array_name
+    for suffix in ("_re", "_im"):
+        if stem.endswith(suffix):
+            stem = stem[: -len(suffix)]
+            break
+    if stem in ("E", "H"):
+        return stem, None
+    if len(stem) == 2 and stem[0] in ("E", "H") and stem[1] in _COMP_AXES:
+        return stem[0], _COMP_AXES[stem[1]]
+    return None
+
+
+def _mirror_factor(field: str, comp: int | None, mirror_axis: int, kind: str) -> float:
+    """Sign the renderer's reflection filter still owes a field array.
+
+    The filter transforms every 3-component array as a polar vector: it
+    negates the component along the mirror axis and leaves the other two.
+    That is the entire continuation exactly when the normal component is
+    the odd one — for the other pairing every component is off by a
+    global minus, which is what a vector gets back here.  Single
+    components the filter never touches, so they carry their
+    continuation factor in full.
+    """
+    from magnelio.post._symmetry import mirror_sign  # noqa: PLC0415
+
+    if comp is None:
+        return -mirror_sign(field, mirror_axis, mirror_axis, kind)
+    return mirror_sign(field, comp, mirror_axis, kind)
+
+
+def _mirror_fixes(array_names, mirrors) -> list[list]:
+    """Per mirror plane, the ``[name, factor]`` pairs needing correction.
+
+    Arrays the filter already continues correctly are left out, so a
+    plane that needs nothing produces an empty list and stays a single
+    reflection rather than a reflect/negate/join branch.
+    """
+    fixes = []
+    for axis, _wall, _at_low, kind in mirrors:
+        mirror_axis = _COMP_AXES[axis]
+        plane = []
+        for name in array_names:
+            signature = _mirror_signature(name)
+            if signature is None:
+                continue
+            factor = _mirror_factor(signature[0], signature[1], mirror_axis, kind)
+            if factor < 0.0:
+                plane.append([name, factor])
+        fixes.append(plane)
+    return fixes
+
+
+def _prepare_mirroring(monitors, mirrors) -> None:
+    """Resolve each monitor spec against the declared mirror planes.
+
+    Two edits, both in place.  The sign corrections replace the raw array
+    listing, and a monitor collapsed onto a mirrored axis gets its second
+    sampling layer: mirroring turns its single cell layer into two, and a
+    lattice of one would sample the seam between them instead.
+
+    The lattice is deliberately *not* widened otherwise.  Its spacing is
+    sized for a target arrow count in the displayed picture, and the
+    displayed picture is the mirrored one — keeping the dimensions puts
+    that target on the full model rather than on each half.
+    """
+    for spec in monitors:
+        spec["mirror_fix"] = _mirror_fixes(spec.pop("field_arrays", []), mirrors)
+        for axis, _wall, _at_low, _kind in mirrors:
+            index = _COMP_AXES[axis]
+            for key in ("resample_dims", "resample_dims_volume"):
+                dims = spec.get(key)
+                if dims and dims[index] == 1:
+                    dims[index] = 2
+
+
 def _sample_steps(n: int, k: int = _CAP_TIME_SAMPLES) -> list[int]:
     return sorted(set(np.linspace(0, n - 1, min(k, n)).astype(int).tolist()))
 
@@ -442,7 +534,7 @@ def _export_time_monitor(run_dir: Path, pv_dir: Path, name: str, percentile: flo
     """Per-monitor XDMF (over ``results.h5``) + pipeline spec, or ``None``."""
     import h5py  # noqa: PLC0415
 
-    from magnelio.io.xdmf import write_run_xdmf  # noqa: PLC0415
+    from magnelio.io.xdmf import _vector_groups, write_run_xdmf  # noqa: PLC0415
 
     with h5py.File(run_dir / "results.h5", "r", swmr=True) as f:
         mg = f["monitors"][name]
@@ -488,6 +580,7 @@ def _export_time_monitor(run_dir: Path, pv_dir: Path, name: str, percentile: flo
             "data": f"paraview/{safe}.xdmf",
             "reader": "xdmf",
             "glyph": None,
+            "field_arrays": list(components) + [n for n, _ds in _vector_groups(components)],
         }
     )
     if vec is not None and cap > 0.0:
@@ -605,6 +698,9 @@ def _export_freq_monitor(run_dir: Path, pv_dir: Path, name: str, grid, percentil
     pvd_lines += ["  </Collection>", "</VTKFile>", ""]
     (pv_dir / f"{safe}.pvd").write_text("\n".join(pvd_lines), encoding="utf-8")
 
+    field_arrays = [f"{c}_{part}" for c in components for part in ("re", "im")]
+    if vec is not None:
+        field_arrays += [f"{vec[0]}_re", f"{vec[0]}_im"]
     spec = _monitor_geometry(node_x, node_y, node_z)
     spec.update(
         {
@@ -613,6 +709,7 @@ def _export_freq_monitor(run_dir: Path, pv_dir: Path, name: str, grid, percentil
             "data": f"paraview/{safe}.pvd",
             "reader": "pvd",
             "glyph": None,
+            "field_arrays": field_arrays,
         }
     )
     if vec is not None:
@@ -759,6 +856,7 @@ def _export_eigenmodes(project_path: Path, pv_dir: Path, grid, percentile: float
             "data": "paraview/eigenmodes.pvd",
             "reader": "pvd",
             "glyph": None,
+            "field_arrays": [*comps, "E", "H"],
         }
     )
     sl = _spatial_stride(cell_fields[0]["Ex"].shape)
@@ -831,42 +929,141 @@ def build():
         except Exception:
             pass
 
-    def reflected(inp, label, clip_first=False):
-        # Symmetry planes: half-model data on disk, full model in the
-        # renderer — one Reflect per declared plane.  clip_first drops
-        # the far half of a fully modelled geometry so only the
-        # simulated half is mirrored (the display shows what the solver
-        # saw).  FlipAllInputArrays mirrors vector arrays like polar
-        # vectors (exact for E; an H pseudovector keeps its magnitude,
-        # only the mirrored-half arrow sign is off).  Best-effort: on
-        # any failure the unmirrored source is used.
-        head = inp
+    unmirrored = []
+    array_types = {10: "Float", 11: "Double"}
+
+    def cell_array_types(source):
+        # Element types of the cell arrays, by name.  The corrected copy
+        # has to keep the precision of the original: a double array
+        # meeting its float twin where the halves are joined makes the
+        # array vanish from the joined dataset without a word — and that
+        # array is the one carrying the field.  Reading the type off the
+        # data cannot guess wrong, which is why it is worth the one
+        # pipeline pass it costs.
+        out = {}
         try:
-            for i, (axis, wall, at_low) in enumerate(CONFIG.get("symmetry") or []):
-                if clip_first:
-                    cl = simple.Clip(
-                        registrationName="%s_symclip_%d" % (label, i), Input=head
-                    )
-                    cl.ClipType = "Plane"
-                    origin = [0.0, 0.0, 0.0]
-                    origin["xyz".index(axis)] = wall
-                    cl.ClipType.Origin = origin
-                    cl.ClipType.Normal = normals[axis]
-                    cl.Invert = 0 if at_low else 1
-                    head = cl
-                r = simple.Reflect(
-                    registrationName="%s_mirror_%d" % (label, i), Input=head
-                )
+            source.UpdatePipeline()
+            info = source.GetDataInformation().GetCellDataInformation()
+            for i in range(info.GetNumberOfArrays()):
+                a = info.GetArrayInformation(i)
+                out[a.GetName()] = array_types.get(a.GetDataType(), "Double")
+        except Exception:
+            pass
+        return out
+
+    def mirror_plane(r, axis, wall):
+        # Place a reflection filter on an arbitrary axis-aligned plane.
+        # ParaView 6 renamed every property involved and dropped the free
+        # axis entry from the mode list, so an arbitrary plane now goes
+        # through a plane sub-proxy; older builds keep the flat
+        # Plane/Center pair.  Returns False when neither shape fits, and
+        # the caller must then not pretend a half model is a whole one.
+        props = r.ListProperties()
+        origin = [0.0, 0.0, 0.0]
+        origin["xyz".index(axis)] = wall
+        try:
+            if "PlaneMode" in props:
+                r.PlaneMode = "Interactive"
+                r.ReflectionPlane.Origin = origin
+                r.ReflectionPlane.Normal = normals[axis]
+            else:
                 r.Plane = axis.upper()
                 r.Center = wall
-                r.CopyInput = 1
+        except Exception:
+            return False
+        # Without this the filter continues only arrays flagged as
+        # vectors, and the sign corrections below assume it ran.
+        for flag in ("ReflectAllInputArrays", "FlipAllInputArrays"):
+            if flag in props:
                 try:
-                    r.FlipAllInputArrays = 1
+                    setattr(r, flag, 1)
+                    return True
                 except Exception:
                     pass
-                head = r
-        except Exception:
-            return inp
+        return False
+
+    def reflected(inp, label, fixes=None, clip_first=False, merge=False):
+        # Symmetry planes: half-model data on disk, full model in the
+        # renderer — one reflection per declared plane.  clip_first drops
+        # the far half of a fully modelled geometry so only the simulated
+        # half is mirrored (the display shows what the solver saw).
+        #
+        # The filter continues every 3-component array as a polar vector.
+        # That is the exact continuation for one pairing of field and
+        # wall type only; *fixes* lists, per plane, the arrays left with
+        # the wrong sign — including the single components, which the
+        # filter does not touch at all.  Those planes reflect without the
+        # input copy, so the mirrored branch stands alone and its
+        # correction is a constant factor needing no coordinate test,
+        # and the two halves are rejoined afterwards.
+        #
+        # *merge* flattens the dataset around every reflection, and field
+        # data needs it twice over.  Reflecting a composite dataset
+        # assigns the continued vector to different cells than the
+        # untouched single components, so colour and arrows would come
+        # from different places; and joining two halves leaves cell-to-
+        # point averaging blind to the seam, which puts a non-zero
+        # tangential field on an electric wall.  Geometry has neither
+        # problem and keeps its blocks, which carry the body names.
+        head = inp
+        grouped = False
+        for i, plane in enumerate(CONFIG.get("symmetry") or []):
+            axis, wall, at_low = plane[0], plane[1], plane[2]
+            before, built = head, []
+            if clip_first:
+                cl = simple.Clip(
+                    registrationName="%s_symclip_%d" % (label, i), Input=head
+                )
+                cl.ClipType = "Plane"
+                origin = [0.0, 0.0, 0.0]
+                origin["xyz".index(axis)] = wall
+                cl.ClipType.Origin = origin
+                cl.ClipType.Normal = normals[axis]
+                cl.Invert = 0 if at_low else 1
+                head = cl
+                built.append(cl)
+            if merge:
+                head = simple.MergeBlocks(
+                    registrationName="%s_flat_%d" % (label, i), Input=head
+                )
+                built.append(head)
+            r = simple.Reflect(
+                registrationName="%s_mirror_%d" % (label, i), Input=head
+            )
+            built.append(r)
+            if not mirror_plane(r, axis, wall):
+                # Half-built filters left hanging in the pipeline are
+                # exactly what makes this failure read as a feature.
+                for proxy in reversed(built):
+                    simple.Delete(proxy)
+                unmirrored.append(label)
+                return before
+            fix = fixes[i] if fixes and i < len(fixes) else []
+            if not fix:
+                r.CopyInput = 1
+                head, grouped = r, False
+                continue
+            r.CopyInput = 0
+            types = cell_array_types(r)
+            branch = r
+            for name, factor in fix:
+                calc = simple.Calculator(
+                    registrationName="%s_sign_%d_%s" % (label, i, name), Input=branch
+                )
+                calc.AttributeType = "Cell Data"
+                calc.ResultArrayName = name
+                calc.Function = '%g*"%s"' % (factor, name)
+                try:
+                    calc.ResultArrayType = types.get(name, "Double")
+                except Exception:
+                    pass
+                branch = calc
+            head = simple.GroupDatasets(
+                registrationName="%s_joined_%d" % (label, i), Input=[head, branch]
+            )
+            grouped = True
+        if merge and grouped:
+            head = simple.MergeBlocks(registrationName="%s_full" % label, Input=head)
         return head
 
     # -- geometry: coloured per material via categorical LUT -----------
@@ -905,7 +1102,7 @@ def build():
             src = simple.XDMFReader(registrationName=mon["name"], FileNames=[path])
         else:
             src = simple.PVDReader(registrationName=mon["name"], FileName=path)
-        src = reflected(src, mon["name"])
+        src = reflected(src, mon["name"], mon.get("mirror_fix"), merge=True)
         pts = simple.CellDatatoPointData(registrationName=mon["name"] + "_points", Input=src)
 
         glyph = mon.get("glyph")
@@ -1073,6 +1270,21 @@ def build():
                     show_coloured(gly, arr)
                 shown_any = True
 
+    if unmirrored:
+        # Announced in the view itself, not only on stdout: the failure
+        # shows a half model that looks like a whole one, and nothing
+        # else in the picture says so.
+        print(SYMMETRY_MARKER + " " + ",".join(sorted(set(unmirrored))))
+        try:
+            note = simple.Text(registrationName="symmetry_note")
+            note.Text = (
+                "Symmetry mirroring is not available in this ParaView build.\\n"
+                "Showing the simulated part of the model only."
+            )
+            simple.Show(note, view).Color = [1.0, 0.35, 0.25]
+        except Exception:
+            pass
+
     try:
         simple.GetAnimationScene().UpdateAnimationUsingDataTimeSteps()
     except Exception:
@@ -1098,7 +1310,10 @@ def write_paraview_script(script_path: str | Path, config: dict) -> Path:
     script_path = Path(script_path)
     payload = json.dumps(config)
     script_path.write_text(
-        _SCRIPT_HEADER + f"CONFIG = json.loads({payload!r})\n" + _SCRIPT_BODY,
+        _SCRIPT_HEADER
+        + f"CONFIG = json.loads({payload!r})\n"
+        + f"SYMMETRY_MARKER = {_SYMMETRY_MARKER!r}\n"
+        + _SCRIPT_BODY,
         encoding="utf-8",
     )
     return script_path
@@ -1132,6 +1347,14 @@ def bake_pvsm(script_path: str | Path, pvsm_path: str | Path, timeout: float = 3
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, check=False)
     except (OSError, subprocess.TimeoutExpired):
         return False
+    if _SYMMETRY_MARKER in (proc.stdout or ""):
+        warnings.warn(
+            "ParaView could not place the symmetry mirror planes, so the session "
+            "shows only the simulated part of the model. The reflection filter of "
+            "this ParaView build exposes none of the property sets magnelio knows.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
     return proc.returncode == 0 and pvsm_path.exists()
 
 
@@ -1157,12 +1380,14 @@ def _geometry_config(project_path: Path, rel: str) -> tuple[str | None, list[dic
 
 
 def _symmetry_config(project) -> list:
-    """Declared symmetry planes as ``[[axis, wall_m, at_low], ...]`` (DD-154).
+    """Declared symmetry planes as ``[[axis, wall_m, at_low, kind], ...]``.
 
-    Read from the stored mesh; the wall coordinate reuses the monitor
-    mirror resolution (PEC on the outermost grid line, PMC half the
-    boundary cell outside — the physical mirror plane).  Empty when the
-    project stores no mesh or the mesh declares no symmetry.
+    Read from the stored mesh (DD-154); the wall coordinate reuses the
+    monitor mirror resolution (PEC on the outermost grid line, PMC half
+    the boundary cell outside — the physical mirror plane).  The wall
+    *kind* travels with it because it decides the sign every field
+    component picks up across the plane.  Empty when the project stores
+    no mesh or the mesh declares no symmetry.
     """
     from magnelio.monitors.base import resolve_mirrors, resolve_region  # noqa: PLC0415
 
@@ -1173,7 +1398,7 @@ def _symmetry_config(project) -> list:
     if mesh is None:
         return []
     mirrors = resolve_mirrors(resolve_region(None, mesh.grid), mesh)
-    return [["xyz"[m.axis], m.wall, m.at_low] for m in mirrors]
+    return [["xyz"[m.axis], m.wall, m.at_low, m.kind] for m in mirrors]
 
 
 def export_eigenmode_visualization(
@@ -1225,11 +1450,13 @@ def export_eigenmode_visualization(
         return {}
 
     geometry_rel, materials = _geometry_config(project.path, "geometry.vtm")
+    mirrors = _symmetry_config(project)
+    _prepare_mirroring([spec], mirrors)
     config = {
         "geometry": geometry_rel,
         "materials": materials,
         "monitors": [spec],
-        "symmetry": _symmetry_config(project),
+        "symmetry": mirrors,
     }
     script = write_paraview_script(project.path / "paraview_open.py", config)
     state = project.path / "paraview.pvsm"
@@ -1310,11 +1537,13 @@ def export_run_visualization(
     if not monitors and geometry_rel is None:
         return {}
 
+    mirrors = _symmetry_config(project)
+    _prepare_mirroring(monitors, mirrors)
     config = {
         "geometry": geometry_rel,
         "materials": materials,
         "monitors": monitors,
-        "symmetry": _symmetry_config(project),
+        "symmetry": mirrors,
     }
     script = write_paraview_script(run_dir / "paraview_open.py", config)
     state = run_dir / "paraview.pvsm"

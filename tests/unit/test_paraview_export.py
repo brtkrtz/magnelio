@@ -24,12 +24,24 @@ from magnelio.io.paraview import (
     _length_exponent,
     _magnitude_stats,
     _material_table,
+    _mirror_factor,
+    _mirror_fixes,
+    _mirror_signature,
     _monitor_geometry,
     _pick_vector,
+    _prepare_mirroring,
     _sanitize,
     bake_pvsm,
     write_paraview_script,
 )
+
+
+def _config_of(script_path):
+    """The config literal embedded in a generated session script."""
+    text = script_path.read_text(encoding="utf-8")
+    ns: dict = {}
+    exec(text[: text.index("def build")], ns)  # noqa: S102 — our own generated file
+    return ns["CONFIG"]
 
 
 def test_sanitize():
@@ -207,6 +219,26 @@ def test_bake_disabled_by_env(tmp_path, monkeypatch):
     assert bake_pvsm(script, tmp_path / "s.pvsm") is False
 
 
+def test_a_session_that_cannot_mirror_says_so(tmp_path, monkeypatch):
+    """A renderer without a usable reflection filter must not pass quietly.
+
+    Showing half a model as though it were whole is worse than showing
+    nothing, and the caller who only ever runs the export has no other
+    way to find out (DD-169).
+    """
+    import shutil
+
+    from magnelio.io.paraview import _SYMMETRY_MARKER
+
+    if shutil.which("pvpython") is None:
+        pytest.skip("pvpython not available")
+    monkeypatch.setenv("MAGNELIO_PVSM_BAKE", "1")
+    script = tmp_path / "s.py"
+    script.write_text(f"print({_SYMMETRY_MARKER!r} + ' Et')\n")
+    with pytest.warns(RuntimeWarning, match="symmetry mirror planes"):
+        bake_pvsm(script, tmp_path / "s.pvsm")
+
+
 def test_export_vtm_blocks_names_materials(tmp_path):
     pytest.importorskip("OCC.Core.BRepPrimAPI")
     vtk = pytest.importorskip("vtk")
@@ -371,3 +403,125 @@ class TestEigenmodeExport:
         mesh = Mesh.from_geometry(model, MeshControl(min_nodes_per_wavelength=6), f_max=10e9)
         store = ProjectStore.create(tmp_path / "empty", mesh, setup={"analysis": "none"})
         assert export_eigenmode_visualization(store.path) == {}
+
+
+class TestMirrorSigns:
+    """A reflected half must carry the continuation the monitors use.
+
+    The renderer's reflection filter transforms every 3-component array
+    as a polar vector and leaves single components alone.  Neither is the
+    physical continuation on its own, and which correction is missing
+    depends on the field and on the wall type — so the export resolves
+    both against :func:`~magnelio.post._symmetry.mirror_sign`, the same
+    function the monitor plots continue their data with.
+    """
+
+    def test_array_names_resolve_to_field_and_component(self):
+        assert _mirror_signature("Ex") == ("E", 0)
+        assert _mirror_signature("Hz_im") == ("H", 2)
+        assert _mirror_signature("Ey_re") == ("E", 1)
+        # The vectors carry no single component.
+        assert _mirror_signature("E") == ("E", None)
+        assert _mirror_signature("H_re") == ("H", None)
+        # Magnitudes are even across every mirror, and so is anything
+        # that is not a field at all.
+        assert _mirror_signature("|E|") is None
+        assert _mirror_signature("MaterialIndex") is None
+
+    def test_a_vector_is_corrected_exactly_when_the_filter_guessed_wrong(self):
+        # The filter negates the component along the mirror axis, which
+        # is the continuation of E across a magnetic wall and of H
+        # across an electric one.  The two opposite pairings are off by
+        # a global minus.
+        assert _mirror_factor("E", None, 0, "PMC") == 1.0
+        assert _mirror_factor("H", None, 0, "PEC") == 1.0
+        assert _mirror_factor("E", None, 0, "PEC") == -1.0
+        assert _mirror_factor("H", None, 0, "PMC") == -1.0
+
+    def test_single_components_carry_their_full_continuation(self):
+        from magnelio.post._symmetry import mirror_sign
+
+        for field in ("E", "H"):
+            for kind in ("PEC", "PMC"):
+                for comp in range(3):
+                    assert _mirror_factor(field, comp, 1, kind) == mirror_sign(field, comp, 1, kind)
+
+    def test_only_the_wrong_signed_arrays_reach_the_fix_list(self):
+        arrays = ["Ex", "Ey", "Ez", "E", "|E|"]
+        mirrors = [["y", 0.0, True, "PEC"]]
+        (plane,) = _mirror_fixes(arrays, mirrors)
+        # Across an electric wall E continues with its normal component
+        # even and both tangential ones odd; the filter did the reverse
+        # for the vector and nothing for the components.
+        assert plane == [["Ex", -1.0], ["Ez", -1.0], ["E", -1.0]]
+
+    def test_the_two_wall_types_disagree_on_every_entry(self):
+        arrays = ["Ex", "Ey", "Ez", "E"]
+        pec, pmc = _mirror_fixes(arrays, [["x", 0.0, True, "PEC"], ["x", 0.0, True, "PMC"]])
+        assert pec == [["Ey", -1.0], ["Ez", -1.0], ["E", -1.0]]
+        assert pmc == [["Ex", -1.0]]
+
+    def test_a_monitor_collapsed_onto_a_mirrored_axis_gains_a_layer(self):
+        # Mirroring turns its single cell layer into two, and a lattice
+        # of one would sample the seam between them.
+        spec = {
+            "field_arrays": ["Ey"],
+            "resample_dims": [1, 40, 40],
+            "resample_dims_volume": None,
+        }
+        _prepare_mirroring([spec], [["x", 0.0, True, "PEC"]])
+        assert spec["resample_dims"] == [2, 40, 40]
+        # Every other axis keeps its spacing: the arrow count is a
+        # target for the displayed picture, which is the mirrored one.
+        _prepare_mirroring([spec], [["y", 0.0, True, "PEC"]])
+        assert spec["resample_dims"] == [2, 40, 40]
+
+    def test_the_raw_array_listing_does_not_reach_the_session(self):
+        spec = {"field_arrays": ["Ex", "E"], "resample_dims": [4, 4, 4]}
+        _prepare_mirroring([spec], [["z", 0.0, True, "PEC"]])
+        assert "field_arrays" not in spec
+        assert spec["mirror_fix"] == [[["Ex", -1.0], ["E", -1.0]]]
+
+    def test_without_symmetry_nothing_is_corrected(self):
+        spec = {"field_arrays": ["Ex", "E"], "resample_dims": [4, 4, 4]}
+        _prepare_mirroring([spec], [])
+        assert spec["mirror_fix"] == []
+
+
+class TestSymmetryReachesTheSession:
+    """The declared planes travel into the generated script (DD-169)."""
+
+    def test_the_wall_type_travels_with_the_plane(self, tmp_path):
+        pytest.importorskip("OCC.Core.BRepPrimAPI")
+        pytest.importorskip("vtk")
+
+        from magnelio import GeometryModel, Mesh, MeshControl
+        from magnelio.analysis.eigenmode import AnalysisEigenmode
+        from magnelio.boundaries.boundary_conditions import BoundaryConditions
+        from magnelio.geo import Brick
+
+        model = GeometryModel()
+        model.add(Brick(origin=(0, 0, 0), size=(30e-3, 20e-3, 15e-3), material=Material.air()))
+        model.boundary_conditions = BoundaryConditions(
+            xmin="ForceSymmetryPMC", ymin="ForceSymmetryPEC"
+        )
+        mesh = Mesh.from_geometry(model, MeshControl(min_nodes_per_wavelength=6), f_max=12e9)
+        project = AnalysisEigenmode(
+            mesh=mesh,
+            n_modes=2,
+            verbose=False,
+            project=str(tmp_path / "half"),
+            geometry=model,
+        ).run()
+        project.export_paraview_eigenmodes(bake_state=False)
+
+        config = _config_of(project.path / "paraview_open.py")
+        planes = {p[0]: p[3] for p in config["symmetry"]}
+        assert planes == {"x": "PMC", "y": "PEC"}
+        # Two planes of opposite type put opposite corrections on the
+        # same field: the vector needs one on the electric wall only.
+        fixes = config["monitors"][0]["mirror_fix"]
+        assert ["E", -1.0] not in fixes[0]
+        assert ["E", -1.0] in fixes[1]
+        assert ["H", -1.0] in fixes[0]
+        assert ["H", -1.0] not in fixes[1]

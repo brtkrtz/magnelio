@@ -1,6 +1,24 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-15.*  Latest work: cross-section contours are
+*Last updated: 2026-08-15.*  Latest work: a ParaView session mirrors
+its declared symmetry planes again, and mirrors the field rather than
+something that looks like it (DD-169).  The renderer's reflection
+filter had every one of its properties renamed under it, so placing a
+plane raised, a broad `except` returned the unmirrored source, and the
+session showed half a model as if it were whole — with the half-built
+filter still visible in the pipeline browser.  Beyond the renaming, the
+filter's polar transformation is not the physical continuation: against
+`mirror_sign` it is right for E across a magnetic wall and H across an
+electric one and off by a global minus for the other two, and it never
+touches the single components at all.  The signs now come from
+`mirror_sign` itself, resolved per plane at export time, so a model
+carrying one plane of each type gets both halves right.  Two flattening
+steps go with it, each for a measured reason: reflecting a composite
+dataset put the continued vector on different cells than the untouched
+components (agreeing to the last bit at the reader, 2.2e3 V/m apart
+after), and joining two halves hid the seam from cell-to-point
+averaging, leaving 2.0 % of the peak as tangential field on an electric
+wall.  Both are zero now.  Before that, cross-section contours are
 assembled by chaining the kernel's section edges on a graph of their
 endpoints instead of feeding them to a wire builder (DD-168).  That
 builder accepted an edge at a vertex already joining two, making a
@@ -94,8 +112,8 @@ grazing-incidence residual DD-167 recorded — one of two symmetric
 slivers returned instead of both — turned out not to be the section
 operator at all and is closed by DD-168.
 
-**Suite: 2154 passed / 6 skipped / 0 failed** (2026-08-15, GPU box —
-unit 1809 (+2 scikit-rf skips), integration 345 (+4 skips); GPU tests
+**Suite: 2164 passed / 6 skipped / 0 failed** (2026-08-15, GPU box —
+unit 1819 (+2 scikit-rf skips), integration 345 (+4 skips); GPU tests
 need `CUPY_ACCELERATORS=""` when the interpreter binary is called
 directly).  The DD-150 step change re-measured three fixture windows
 (interval stride, lumped-port guard, SIBC band edge) — the reasoning

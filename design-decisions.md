@@ -11181,3 +11181,130 @@ exact-in-face path converts its genuine wires to chains and is
 otherwise untouched), `tests/unit/test_geometry.py`,
 `validation/section_chain_completeness_certificate.py`.  Measurements:
 internal dossier `investigations/section-open-chains/`.
+
+---
+
+## DD-169 — The mirrored half carries the field, not a look-alike
+
+**Problem.**  DD-155 made a declared symmetry plane visible: half-model
+data on disk, full model in the renderer, one reflection filter per
+plane.  Opened in ParaView 6 the session shows the simulated half only,
+with a half-built `<monitor>_mirror_0` hanging in the pipeline browser
+with nothing downstream of it.  Two separate defects, and the second
+one is the reason the first one matters.
+
+*The filter's property set was renamed, wholesale.*  Every name the
+generator used is gone, and the free axis value it relied on went with
+them:
+
+| what the session set | ParaView 6 |
+|---|---|
+| `Plane = "X"` | `PlaneMode`, whose values are only `Interactive` and the six bounding-box faces |
+| `Center = wall` | `ReflectionPlane`, a plane sub-proxy with `Origin`/`Normal` |
+| `FlipAllInputArrays` | `ReflectAllInputArrays` |
+
+The first assignment raises, a `try/except` around the whole loop
+returns the *unreflected* input, and every consumer stays attached to
+it.  Measured on a two-plane coupler run: `Et_points <- Et` and
+`geometry_cut_Et_x <- geometry`, with `Et_mirror_0` present but fed to
+nothing and `Et_mirror_1` never created at all.  The fallback was meant
+as a courtesy — better unmirrored than nothing — and instead turned a
+dead API into a silent misstatement about what is being displayed.
+
+*The filter is not the physical continuation.*  It transforms every
+3-component array as a polar vector, negating the component along the
+mirror axis, and does not touch single components at all.  Against
+`mirror_sign`, which is what the monitor plots continue their data
+with, that is right for exactly two of the eight combinations:
+
+| | E across PEC | E across PMC | H across PEC | H across PMC |
+|---|---|---|---|---|
+| vector array | global −1 | correct | correct | global −1 |
+| single components | all three wrong | normal wrong | normal wrong | two tangential wrong |
+
+A model with one plane of each type — the coupler has `xmin` magnetic
+and `ymin` electric — therefore gets one mirrored half right and one
+backwards, in a picture that looks symmetric either way and from which
+an even mode reads as odd.
+
+**Decision.**  Place the plane against whichever property set the build
+exposes, and correct the sign in the pipeline rather than hope for it.
+
+*Placement* tries `PlaneMode`/`ReflectionPlane` first and the flat
+`Plane`/`Center` pair second, and treats the array-continuation flag as
+mandatory rather than optional: the corrections below assume the filter
+ran it.  Failing all of that is no longer a quiet return.  The
+half-built filter is deleted so the pipeline does not advertise a
+feature that is not there, a note appears in the render view, and the
+script prints a marker that `bake_pvsm` turns into a `RuntimeWarning` —
+the one channel that reaches a caller who never opens ParaView.
+
+*Signs* come from `mirror_sign` itself, resolved at export time into a
+per-plane list of `[array, factor]` pairs.  A vector's factor is
+`-mirror_sign(field, axis, axis, kind)` — the wanted sign divided by
+what the filter already did — and a single component's is the full
+continuation factor.  Deriving the rule a second time next to the one
+under test is precisely the mistake that cost a probe run here: the
+first version of the certificate's probe re-derived it and got H
+inverted, because `flips_normal` depends on the field and the copy did
+not.
+
+*Planes needing no correction* stay a single reflection with the input
+copied.  The others reflect *without* the copy, so the mirrored branch
+stands alone and its correction is a constant factor per array with no
+coordinate test anywhere, and the halves are rejoined afterwards.
+
+*Two flattening steps* are not decoration.  Reflecting a composite
+dataset assigns the continued vector to different cells than the
+untouched single components — measured, on the coupler: scalars and
+vector components agreed to the last bit at the reader and disagreed by
+2.2e3 V/m after a composite reflection, which would colour a glyph from
+one place and aim it from another.  And joining two halves leaves
+cell-to-point averaging blind to the seam, which left 2.0 % of the peak
+as a tangential field sitting on an electric wall.  Flattening before
+each reflection and once after the last join removes both; geometry has
+neither problem and keeps its blocks, which carry the body names.
+
+*The corrected copy keeps its input's element type.*  A `Calculator`
+promotes its result to double, and a double array meeting its float
+twin at the join drops out of the joined dataset entirely — no error,
+no empty array, just a name that is no longer there.  On the coupler
+this took `E`, `Ex` and `Ez` out and left `Ey`, which is to say it took
+the field out and left something that still renders.
+
+*The lattice keeps its dimensions.*  Its spacing is sized for a target
+arrow count in the displayed picture, and the displayed picture is the
+mirrored one, so keeping the count puts the target on the full model
+instead of on each half.  The one exception is a monitor collapsed onto
+a mirrored axis: mirroring turns its single cell layer into two, and a
+lattice of one would sample the seam between them.
+
+**What it costs and buys.**  Per plane, one flattening step plus a
+reflection, and — only where a sign is wrong — one `Calculator` per
+affected array and a join.  On the coupler's field monitor that is 4
+corrections across two planes.  The slice planes still open where they
+did; the plane of the default view is the centre of the *simulated*
+region rather than of the full model, which is left alone deliberately,
+since the centre of a mirrored axis is the symmetry plane itself and a
+cut there shows a tangential field of zero.
+
+The magnetic wall sits half a boundary cell outside the grid, so the
+mirrored halves meet across a gap one cell wide.  Measured on the
+coupler: gap 0.43 mm against a lattice spacing of 4.55 mm, and not one
+of the 25 344 lattice points falls in it.
+
+**Certificate:** `validation/paraview_symmetry_certificate.py` — on a
+quarter cavity behind one plane of each type: every declared plane
+becomes a reflection and the displayed branch hangs off the last of
+them; single components still equal the vector's components (0.0);
+and every component reproduces the sign `mirror_sign` prescribes across
+every plane (worst 1.1e-15 of peak).  Gates:
+`tests/unit/test_paraview_export.py::TestMirrorSigns` and
+`::TestSymmetryReachesTheSession`, which pins that two planes of
+opposite type put opposite corrections on the same field.
+
+**Files:** `io/paraview.py` (`_mirror_signature`, `_mirror_factor`,
+`_mirror_fixes`, `_prepare_mirroring`, `_symmetry_config` now carrying
+the wall type, the `reflected`/`mirror_plane` pair in the generated
+script, and `bake_pvsm`), `tests/unit/test_paraview_export.py`,
+`validation/paraview_symmetry_certificate.py`.

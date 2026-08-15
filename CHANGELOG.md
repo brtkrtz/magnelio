@@ -23,6 +23,21 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- ParaView sessions show the full model across declared symmetry planes
+  again.  Recent ParaView releases renamed the properties of their
+  reflection filter, and the export fell back to the unmirrored data
+  without saying so — leaving an unused mirror entry in the pipeline
+  browser and a picture of half the model.  If a build exposes no
+  usable reflection filter at all, the session now says so in the
+  render view and the export raises a warning instead of quietly
+  showing half
+- Mirrored field data carries the correct sign.  Reflection alone
+  continues a field the way it behaves across a magnetic wall, which is
+  the opposite of what an electric wall requires, so on a model with
+  planes of both kinds one mirrored half had every arrow reversed —
+  visible as an even mode where the mode is odd.  Single components
+  (`Ex`, `Hz_im`, …) were left uncorrected on every plane, and could
+  disagree with the vector they belong to
 - A solid could lose half its cross-section on a mesh plane without any
   warning at all, so parts of a conductor were meshed as if they were
   air.  Contour assembly followed the geometry kernel's own wire
