@@ -186,27 +186,43 @@ def compute_conformal_eps(
     zm = 0.5 * (z[:-1] + z[1:])  # shape (Nz,)
     xm = 0.5 * (x[:-1] + x[1:])  # shape (Nx,)
 
-    # Boundary-edge masks (vectorised)
-    bnd_ex = np.zeros((Nx, Ny + 1, Nz + 1), dtype=bool)
-    bnd_ex[:, 1:Ny, 1:Nz] = (
-        boundary[:, : Ny - 1, : Nz - 1]
-        | boundary[:, 1:Ny, : Nz - 1]
-        | boundary[:, : Ny - 1, 1:Nz]
-        | boundary[:, 1:Ny, 1:Nz]
+    # Dual-face extents including the two domain walls: an edge lying in
+    # a bbox face owns the truncated dual face between the wall and the
+    # first dual line.  ``eps_avg`` and ``f_A`` stay intensive — the
+    # consumer's ``A_dual`` is the full boundary cell (the mirror
+    # convention of ``_build_avg_d``), so an average taken over the
+    # truncated half needs no factor, and the material continues by
+    # mirror symmetry, by extrusion, or not at all.
+    xe = np.concatenate(([x[0]], xm, [x[-1]]))  # shape (Nx + 2,)
+    ye = np.concatenate(([y[0]], ym, [y[-1]]))  # shape (Ny + 2,)
+    ze = np.concatenate(([z[0]], zm, [z[-1]]))  # shape (Nz + 2,)
+
+    # Boundary-edge masks (vectorised).  Padding the cell mask lets the
+    # four-cell OR run over the boundary indices too: outside the domain
+    # there is no cell, so the pad contributes nothing.
+    bpad = np.zeros((Nx + 2, Ny + 2, Nz + 2), dtype=bool)
+    bpad[1:-1, 1:-1, 1:-1] = boundary
+
+    b = bpad[1:-1, :, :]
+    bnd_ex = (
+        b[:, 0 : Ny + 1, 0 : Nz + 1]
+        | b[:, 1 : Ny + 2, 0 : Nz + 1]
+        | b[:, 0 : Ny + 1, 1 : Nz + 2]
+        | b[:, 1 : Ny + 2, 1 : Nz + 2]
     )
-    bnd_ey = np.zeros((Nx + 1, Ny, Nz + 1), dtype=bool)
-    bnd_ey[1:Nx, :, 1:Nz] = (
-        boundary[: Nx - 1, :, : Nz - 1]
-        | boundary[1:Nx, :, : Nz - 1]
-        | boundary[: Nx - 1, :, 1:Nz]
-        | boundary[1:Nx, :, 1:Nz]
+    b = bpad[:, 1:-1, :]
+    bnd_ey = (
+        b[0 : Nx + 1, :, 0 : Nz + 1]
+        | b[1 : Nx + 2, :, 0 : Nz + 1]
+        | b[0 : Nx + 1, :, 1 : Nz + 2]
+        | b[1 : Nx + 2, :, 1 : Nz + 2]
     )
-    bnd_ez = np.zeros((Nx + 1, Ny + 1, Nz), dtype=bool)
-    bnd_ez[1:Nx, 1:Ny, :] = (
-        boundary[: Nx - 1, : Ny - 1, :]
-        | boundary[1:Nx, : Ny - 1, :]
-        | boundary[: Nx - 1, 1:Ny, :]
-        | boundary[1:Nx, 1:Ny, :]
+    b = bpad[:, :, 1:-1]
+    bnd_ez = (
+        b[0 : Nx + 1, 0 : Ny + 1, :]
+        | b[1 : Nx + 2, 0 : Ny + 1, :]
+        | b[0 : Nx + 1, 1 : Ny + 2, :]
+        | b[1 : Nx + 2, 1 : Ny + 2, :]
     )
 
     # Collect all boundary face specifications and their flat indices
@@ -214,30 +230,27 @@ def compute_conformal_eps(
     face_axes_list: list[int] = []
     flat_indices: list[int] = []
 
-    # Ex edges: dual face at x=xm[i], extent [ym[j-1]..ym[j]] x [zm[k-1]..zm[k]]
-    ex_ijk = np.argwhere(bnd_ex[:, 1:Ny, 1:Nz])
+    # Ex edges: dual face at x=xm[i], extent [ye[j]..ye[j+1]] x [ze[k]..ze[k+1]]
+    ex_ijk = np.argwhere(bnd_ex)
     for row in ex_ijk:
-        i, jj, kk = int(row[0]), int(row[1]), int(row[2])
-        j, k = jj + 1, kk + 1
-        face_specs_list.append((xm[i], ym[j - 1], zm[k - 1], ym[j], zm[k]))
+        i, j, k = int(row[0]), int(row[1]), int(row[2])
+        face_specs_list.append((xm[i], ye[j], ze[k], ye[j + 1], ze[k + 1]))
         face_axes_list.append(0)
         flat_indices.append(i * (Ny + 1) * (Nz + 1) + j * (Nz + 1) + k)
 
-    # Ey edges: dual face at y=ym[j], extent [xm[i-1]..xm[i]] x [zm[k-1]..zm[k]]
-    ey_ijk = np.argwhere(bnd_ey[1:Nx, :, 1:Nz])
+    # Ey edges: dual face at y=ym[j], extent [xe[i]..xe[i+1]] x [ze[k]..ze[k+1]]
+    ey_ijk = np.argwhere(bnd_ey)
     for row in ey_ijk:
-        ii, j, kk = int(row[0]), int(row[1]), int(row[2])
-        i, k = ii + 1, kk + 1
-        face_specs_list.append((ym[j], xm[i - 1], zm[k - 1], xm[i], zm[k]))
+        i, j, k = int(row[0]), int(row[1]), int(row[2])
+        face_specs_list.append((ym[j], xe[i], ze[k], xe[i + 1], ze[k + 1]))
         face_axes_list.append(1)
         flat_indices.append(n_Ex + i * Ny * (Nz + 1) + j * (Nz + 1) + k)
 
-    # Ez edges: dual face at z=zm[k], extent [xm[i-1]..xm[i]] x [ym[j-1]..ym[j]]
-    ez_ijk = np.argwhere(bnd_ez[1:Nx, 1:Ny, :])
+    # Ez edges: dual face at z=zm[k], extent [xe[i]..xe[i+1]] x [ye[j]..ye[j+1]]
+    ez_ijk = np.argwhere(bnd_ez)
     for row in ez_ijk:
-        ii, jj, k = int(row[0]), int(row[1]), int(row[2])
-        i, j = ii + 1, jj + 1
-        face_specs_list.append((zm[k], xm[i - 1], ym[j - 1], xm[i], ym[j]))
+        i, j, k = int(row[0]), int(row[1]), int(row[2])
+        face_specs_list.append((zm[k], xe[i], ye[j], xe[i + 1], ye[j + 1]))
         face_axes_list.append(2)
         flat_indices.append(n_Ex + n_Ey + i * (Ny + 1) * Nz + j * Nz + k)
 

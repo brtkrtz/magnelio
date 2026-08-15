@@ -4,77 +4,26 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-## KB-019: The classifier never produces sub-cell data on a domain boundary face — OPEN, low impact (2026-08-15)
+## KB-019: ~~The classifier never produces sub-cell data on a domain boundary face~~ — Resolved (2026-08-15)
 
-Root-caused, with the impact measured and found small; recorded so the
-next reader does not re-derive it.
+The conformal candidate mask in `geo/_filling.py` was written only on
+the interior index range of each transverse axis, so every partially
+filled E-edge lying *in* a bbox face was rounded to fully free or fully
+metal.  It is now written on the boundary indices too, with each
+boundary edge's dual face clamped to `[wall, first dual line]` — see
+DD-164.
 
-The conformal candidate mask in `geo/_filling.py` is written only on
-the interior index range of each transverse axis (`bnd_ex[:, 1:Ny,
-1:Nz] = ...` and its two siblings).  An E-edge lying **in** a bbox face
-therefore never receives a conformal average, and because the
-line-solid `f_L` pass is gated behind the same array (`dm_cand =
-~isnan(conf_eps) & pec_adj_flat`) it cannot reach category 2 either.
-Every partially filled edge on a domain face is rounded to fully free
-or fully metal.  Census on a coupler mesh — in-plane conformal
-(category 1 or 2) E-edges:
-
-| layer | xmin | xmax | ymin | ymax | zmin | zmax |
-|---|---|---|---|---|---|---|
-| the face itself | 0 | 0 | 0 | 0 | 0 | 0 |
-| one cell in | 809 | 251 | 251 | 164 | 89 | 89 |
-
-28 471 conformal edges in the mesh overall.  On the port window of that
-mesh, 44 edges are geometrically cut by the coax contour and all 44 sit
-in category 0 or 3.
-
-**Why the impact is small.**  Port planes are already covered:
-`flatten_port_plane_mass` (and its μ counterpart) overwrite the
-port-plane slab with the first interior slab, for the mode solve and
-for the FIT-TD update alike, precisely because the boundary values were
-known to be wrong there.  A spike that opened the mask changed
-`build_M_eps` on 28 port-plane edges by up to 28 % and left the solved
-mode bit-identical — z_line 52.611565 Ω and the profile fingerprint
-agreeing to nine decimals.  The spike was therefore reverted rather
-than shipped.
-
-**Non-port faces, measured too.**  A symmetry / PEC / PMC / CPML face
-is not flattened, so the outermost layer of the volume operator does
-see a staircased contour there.  The candidate mask was extended to the
-boundary indices with the face extents clamped to `[wall, first dual
-line]` and `eps_avg` / `f_A` left intensive — the consumer's `A_dual`
-is the full boundary cell (the mirror convention of `_build_avg_d`), so
-an average over the truncated half needs no factor, and the material
-continues by mirror symmetry, by extrusion, or not at all.  The μ
-pipeline already treats its domain-boundary faces this way, so this
-removes an asymmetry between the two.
-
-It was measured and **not shipped**, because no certificate improves:
-
-* pillbox TM010, quarter model with two magnetic symmetry planes
-  cutting the cylindrical wall (`investigations/port-mode-plots/`,
-  `pillbox_symmetry.py`): the symmetry faces gain 33 (h = 1 mm) and 45
-  (h = 0.7 mm) conformal edges — and the eigenfrequency is
-  **bit-identical**, full and quarter alike.  TM010's `E_z` vanishes at
-  the wall, so the fixture is insensitive by construction; a
-  discriminating certificate for this change has not been found.
-* band-subspace DTBC floor (`test_qtem_band_dtbc_sparams::
-  test_s11_floor`): every frequency moves slightly the *wrong* way,
-  worst −120.06 → −116.92 dB against a −120 dB gate that had 0.06 dB of
-  margin.  Both figures are numerical-noise class, but the gate would
-  have to be re-baselined for a change with no demonstrated benefit.
-
-**Trap for whoever opens the mask.**  Boundary-face edges then become
-eligible enlarged-cell *recipients*, and `Mesh.with_pec_boundaries`
-masks tangential edges on a declared-PEC face **after** the classifier
-has picked donors — the borrowed mass vanishes without a trace.
-`test_pair_consistent_subcell::test_donors_are_never_masked` catches
-it.  The guard is to block every edge lying in a bbox face as a
-recipient (donating *out of* one is fine); it is not in the tree,
-because without the mask change it is unreachable code.
-
-Internal record `investigations/port-mode-plots/` (`ab_boundary.py`,
-`pillbox_symmetry.py`).
+The bug stayed open one session longer than the diagnosis, because the
+fix had been written and measured and *no certificate improved*: the
+pillbox quarter model is blind by construction (TM010's `E_z` vanishes
+at the cylindrical wall it cuts), and the band-DTBC floor moved the
+wrong way.  What closed it was a certificate with an exact identity and
+a known target — a magnetic half model must reproduce its full model to
+machine precision — on a fixture whose dielectric contour crosses the
+symmetry plane where the mode's tangential E is maximal.  It read
+-2.3e-03 and now reads 4.7e-15.  The DTBC floor turned out to be a
+kernel-fit residual whose own spread under the fit's resolution is 30 to
+52 dB, three to five times the ratio it was being asked to judge.
 
 ## KB-018: ~~2D mode profile carries several percent of spurious transverse field at a curved conductor~~ — Resolved (2026-08-15)
 

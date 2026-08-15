@@ -1,7 +1,17 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-15.*  Latest work: the port-power conformality
-patch now sees enlarged-cell donations parked on staircase edges
+*Last updated: 2026-08-15.*  Latest work: the conformal classifier now
+reaches the domain boundary faces (DD-164), so a material contour
+running through a symmetry, PEC, PMC or absorbing face is resolved
+below the cell there as it already was everywhere else.  What had kept
+this open for a session was the absence of a certificate that could
+judge it; the one built for it is a magnetic half model against its
+full model on a matched grid, an exact identity with a known target,
+and it reads −2.3e-03 before and 4.7e-15 after.  The single gate that
+moved the other way, a band-DTBC floor, turned out to be a kernel-fit
+residual whose own spread under the fit's resolution is 30–52 dB.
+Before that, the port-power conformality
+patch learned to see enlarged-cell donations parked on staircase edges
 (DD-163) — DD-095's last documented blind spot, which had started
 warning on ordinary coaxial ports instead of correcting itself;
 mixed-pair reciprocity goes from 0.013 dB to 0.000005 dB.  Before
@@ -25,19 +35,15 @@ pinning `dt` (DD-147/DD-149), and OCCT Booleans no longer edit their
 operand shapes (DD-146).  Post-release-prep hardening (2026-08-14):
 section contours are closed by contract (DD-157) and conductor
 grouping fuses labels through PEC cell bodies (DD-156) — both found
-on the stripline-coupler worksheet.  **Two open entries in
+on the stripline-coupler worksheet.  **One open entry in
 known-bugs.md:** KB-017 — a conformal-classification jitter inside
 the pairing's 1e-6 agreement band can silently push a port channel
 to Mur (found on the mirrored coax stub of the same worksheet;
 KB-016, the NaN complement-absorber coefficients it uncovered, is
-fixed) — and KB-019, the sub-cell classifier never producing conformal
-data on a domain boundary face: root-caused, and the fix written and
-measured on both port and non-port faces without a single certificate
-improving, so it is documented rather than shipped.  KB-018 closed by
-DD-161.
+fixed).  KB-018 closed by DD-161, KB-019 by DD-164.
 
-**Suite: 2140 passed / 6 skipped / 0 failed** (2026-08-15, GPU box —
-unit 1801 (+2 scikit-rf skips), integration 339 (+4 skips); GPU tests
+**Suite: 2145 passed / 6 skipped / 0 failed** (2026-08-15, GPU box —
+unit 1801 (+2 scikit-rf skips), integration 344 (+4 skips); GPU tests
 need `CUPY_ACCELERATORS=""` when the interpreter binary is called
 directly).  The DD-150 step change re-measured three fixture windows
 (interval stride, lumped-port guard, SIBC band edge) — the reasoning

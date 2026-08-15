@@ -10764,3 +10764,96 @@ user-visible half: `solve_ports` on a plain conformal coax is silent.
 has to catch, a factor 1000 above the measurement.
 
 **Files:** `ports/_modal/operator.py`.
+
+## DD-164 — The conformal classifier reaches the domain boundary faces
+
+**Date:** 2026-08-15 — **Status:** shipped
+
+**Context.**  The conformal candidate mask in `geo/_filling.py` was
+written only on the interior index range of each transverse axis
+(`bnd_ex[:, 1:Ny, 1:Nz] = ...` and its two siblings), so an E-edge lying
+*in* a bbox face never received a conformal average, and the line-solid
+`f_L` pass — gated behind the same array — could not reach category 2
+there either.  Every partially filled edge on a domain face was rounded
+to fully free or fully metal.  Port planes were unaffected
+(`flatten_port_plane_mass` substitutes the first interior slab for the
+port-plane slab precisely because the boundary values were known to be
+wrong), but a symmetry / PEC / PMC / CPML face is not flattened, and its
+outermost operator layer carried a staircased contour.  It was found and
+measured in an earlier session and *not* shipped, for a defensible
+reason: no certificate improved.  The pillbox quarter model gained 33–45
+conformal edges on its symmetry faces and returned a bit-identical
+eigenfrequency — TM010's `E_z` vanishes at the cylindrical wall, so that
+fixture is blind by construction — and the only gate that moved was a
+band-DTBC floor, in the wrong direction.
+
+**Decision.**  Extend the mask to the boundary indices, with each
+boundary edge's dual face clamped to `[wall, first dual line]` and
+`eps_avg` / `f_A` left intensive: the consumer's `A_dual` is the full
+boundary cell (the mirror convention of `_build_avg_d`), so an average
+taken over the truncated half needs no factor, and the material
+continues by mirror symmetry, by extrusion, or not at all.  The μ
+pipeline already treats its domain-boundary faces this way; this removes
+the asymmetry between the two.
+
+An edge lying in a bbox face is additionally blocked as an
+*enlarged-cell receiver*.  A face later closed with PEC has its
+tangential edges masked by `Mesh.with_pec_boundaries`, i.e. after the
+donors are picked, and the borrowed mass would vanish without a trace
+(`test_pair_consistent_subcell::test_donors_are_never_masked` is the
+existing gate for that failure mode).  Donating *out of* such an edge
+stays allowed — `blocked` is consulted only for the receiver.
+
+**The certificate.**  A half model closed with a magnetic symmetry wall
+is the discrete restriction of its full model, so for a symmetric mode
+the two eigenfrequencies agree to machine precision — an exact identity
+with a known target, which is what the earlier attempt lacked.  Making
+it exact takes one grid observation: the magnetic wall sits half a
+boundary cell *outside* the outermost primal line, realised by moving
+the clipped line at the plane to `h/3`, so a half grid is never the
+restriction of a *uniform* full grid.  Forcing that same `h/3` line into
+the full model's ladder makes the two grids agree on `x >= 0` line for
+line, which the certificate asserts rather than assumes.
+
+Four fixtures, one PEC box cavity carrying its TE101-like mode, whose
+`E_y` is maximal *on* the symmetry plane:
+
+| fixture | what lies in the plane | before | after |
+|---|---|---|---|
+| `empty` | nothing | 0 | 0 |
+| `offset` | nothing (mirrored dielectric pair, two cells clear) | 2.2e-15 | 1.8e-15 |
+| `brick` | a grid-aligned dielectric contour | **+2.0e-04** | 4.2e-15 |
+| `cylinder` | a curved dielectric contour | **−2.3e-03** | 4.7e-15 |
+
+The two unloaded fixtures are the floor and they stay put, which is what
+separates a grid or wall-convention error from a classification error.
+The loaded pair moves by ten to twelve orders of magnitude.  Note that
+`brick` is affected at all: category 1 is an average over the *dual
+face*, so a perfectly grid-aligned material interface running through
+the plane needs it too — the defect was never confined to curved
+boundaries.
+
+**The one gate that moves the other way.**
+`test_qtem_band_dtbc_sparams::test_s11_floor` reads −120.06 → −116.92 dB
+against a −120 dB bound.  That bound cannot decide this: the quantity is
+a kernel-fit residual, and its own sensitivity to the fit's resolution —
+a knob that changes no physics — is far larger than the effect.  On the
+unchanged code, raising `n_grid` from 9 to 11 and 13 moves the worst
+point to −138.86 and −150.79 dB and individual frequency points by up to
+52 dB.  The fixture was therefore defending 0.06 dB of margin on an
+under-resolved fit.  Resolving it (`n_grid` 9 → 13, the bound untouched)
+restores 29 dB of margin and brings the CI fixture in line with the
+full-size benchmark's below-−155 dB; the classifier change costs a
+consistent 1.7–3.1 dB at every resolution, one order of magnitude below
+what the knob itself is worth.
+
+**Gates:** `tests/integration/test_symmetry_boundary_face.py` (the
+`cylinder` fixture plus the `offset` control, the grid-agreement
+assertion that makes the comparison meaningful, and a guard that the cut
+fixture still classifies its symmetry face — without it the certificate
+would pass while testing nothing).  Full certificate with all four
+fixtures: `validation/symmetry_boundary_face_certificate.py`.
+Kernel-resolution spread: internal record
+`investigations/port-mode-plots/dtbc_floor_spread.py`.
+
+**Files:** `geo/_filling.py`, `geo/_subcell.py`.

@@ -23,6 +23,14 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Material boundaries that run through a domain boundary face — a
+  symmetry plane, a PEC or PMC wall, an absorbing face — are now
+  resolved below the cell there, as they already were everywhere else.
+  The outermost layer used to round every partially filled edge to
+  fully dielectric or fully metal, which cost a half model up to a few
+  parts per thousand against the full model it is meant to reproduce
+  exactly.  A symmetric structure solved on half the mesh now returns
+  the full model's answer to machine precision
 - Waveguide ports on curved conductors no longer warn about a residual
   bias in their power scale — the bias is corrected instead.  Where a
   sub-cell conductor edge hands its share to a neighbour, the port's

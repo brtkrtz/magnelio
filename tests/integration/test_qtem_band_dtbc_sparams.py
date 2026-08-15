@@ -8,7 +8,8 @@ production chain (``build_band_dtbc_port`` ->
 per-frequency true-mode |S11| across the measurement span.  The
 benchmark (``validation/qtem_band_dtbc_port_floors.py``)
 measures below -155 dB on the full-size lines; the bounds here are
-generous.
+generous, and the kernel grid is resolved well enough that they
+actually are -- see the ``n_grid`` note below.
 """
 
 from __future__ import annotations
@@ -84,7 +85,15 @@ def band_run():
                 m_mu,
                 dt=dt,
                 f_band=(0.3e9, 8.3e9),
-                n_grid=9,
+                # The floor this fixture asserts is a kernel-fit
+                # residual, and the fit's resolution dominates it: at
+                # n_grid=9 the worst point read -120.06 dB against the
+                # -120 dB bound, at 11 it reads -138.9 and at 13
+                # -150.8, with individual frequency points moving up to
+                # 52 dB.  Nine points left the gate defending 0.06 dB
+                # of margin on an under-resolved fit rather than on the
+                # port's accuracy.
+                n_grid=13,
                 n_kernel_init=4096,
             )
         )

@@ -362,6 +362,32 @@ def _masked_component_labels(
     return labels
 
 
+def _bbox_face_edges(grid: GridLines, n_Ex: int, n_Ey: int, n_Ez: int) -> np.ndarray:
+    """Flat mask of E-edges lying in one of the six bbox faces.
+
+    An edge lies in a face when it is *tangential* to it; the two
+    indices transverse to the edge axis are the ones that can reach a
+    wall.
+    """
+    Nx, Ny, Nz = grid.Nx, grid.Ny, grid.Nz
+    mask = np.zeros(n_Ex + n_Ey + n_Ez, dtype=bool)
+
+    ex = np.zeros((Nx, Ny + 1, Nz + 1), dtype=bool)
+    ex[:, (0, Ny), :] = True
+    ex[:, :, (0, Nz)] = True
+    ey = np.zeros((Nx + 1, Ny, Nz + 1), dtype=bool)
+    ey[(0, Nx), :, :] = True
+    ey[:, :, (0, Nz)] = True
+    ez = np.zeros((Nx + 1, Ny + 1, Nz), dtype=bool)
+    ez[(0, Nx), :, :] = True
+    ez[:, (0, Ny), :] = True
+
+    mask[:n_Ex] = ex.ravel()
+    mask[n_Ex : n_Ex + n_Ey] = ey.ravel()
+    mask[n_Ex + n_Ey :] = ez.ravel()
+    return mask
+
+
 def _enlarged_cell(
     f_L: np.ndarray,
     A_free: np.ndarray,
@@ -1041,6 +1067,12 @@ def compute_subcell_data(
             A_dual * np.nan_to_num(f_L, nan=0.0),
             0.0,
         )
+        # An edge lying IN a bbox face must never *receive* a donation:
+        # a face later closed with PEC has its tangential edges masked
+        # by ``Mesh.with_pec_boundaries``, i.e. after the donors are
+        # picked, and the borrowed mass would vanish without a trace.
+        # Donating *out of* such an edge stays allowed — ``blocked`` is
+        # consulted only for the receiver.
         donor, borrowed = _enlarged_cell(
             f_L,
             tmp_A_free,
@@ -1050,7 +1082,7 @@ def compute_subcell_data(
             n_Ey,
             n_Ez,
             eta,
-            blocked=masked_flat,
+            blocked=masked_flat | _bbox_face_edges(grid, n_Ex, n_Ey, n_Ez),
         )
 
     return EdgeMaterialData(
