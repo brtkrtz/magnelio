@@ -815,18 +815,27 @@ class Mesh:
 
             # Compute cross-sections at cell-centre planes.  Purely
             # h-relative (DD-120, the old 1e-4 m cap is gone).  The
-            # factor is deliberately coarser than the conformal-area
-            # sites' h_min/100: cell-centre classification only needs
-            # point-in-polygon fidelity to a fraction of a cell, while
-            # the area integration feeds material matrices and needs an
-            # order finer.
+            # chordal factor is deliberately coarser than the
+            # conformal-area sites': cell-centre classification only
+            # needs point-in-polygon fidelity to a fraction of a cell,
+            # while the area integration feeds material matrices and
+            # needs an order finer.  The degeneracy-escape step is
+            # shared with those sites, so the two passes cannot end up
+            # with different opinions about where the material is.
+            from magnelio.geo._filling import (  # noqa: PLC0415
+                CLASSIFY_DEFLECTION_FRACTION,
+                SECTION_NUDGE_FRACTION,
+            )
+
             h_min = min(grid.dx.min(), grid.dy.min(), grid.dz.min())
-            deflection = h_min * 0.1
+            deflection = h_min * CLASSIFY_DEFLECTION_FRACTION
             _cross_section_cache = batch_cross_sections(
                 shapes_with_material,
                 {"x": xc},
                 deflection=deflection,
                 scale=geo_scale,
+                nudge=h_min * SECTION_NUDGE_FRACTION,
+                material_library=material_library,
             )
 
             # Classify cells using x-plane cross-sections

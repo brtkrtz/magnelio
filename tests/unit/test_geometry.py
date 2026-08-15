@@ -3433,6 +3433,26 @@ class TestSectionAtFace:
         )
         assert self._area(polys) == pytest.approx(40e-6, rel=1e-9)
 
+    def test_the_escape_step_is_not_the_chordal_budget(self):
+        """The retry needs a length of its own (DD-167).
+
+        Same seam plane, same tessellation: the escape has to land
+        inside the 35 µm strip to find a clean section.  Tied to the
+        chordal budget it steps 40 µm and lands in thin air, so the
+        retry is rejected and the material is dropped; given its own,
+        smaller step it lands at 16 µm and recovers the strip whole.
+        Neither value is more 'accurate' than the other — they answer
+        different questions, which is the whole point.
+        """
+        from magnelio.geo._occ_backend import cross_section_polygons
+
+        _occ()
+        occ_shape = self._strip()._occ_shape(1.0)
+        with pytest.warns(UserWarning, match="open section chain"):
+            cross_section_polygons(occ_shape, "z", 0.0, 1e-5, nudge=1e-5)
+        polys = cross_section_polygons(occ_shape, "z", 0.0, 1e-5, nudge=4e-6)
+        assert self._area(polys) == pytest.approx(40e-6, rel=1e-9)
+
     @pytest.mark.parametrize("position", [0.0, T])
     def test_both_faces_of_the_solid(self, position):
         from magnelio.geo._occ_backend import cross_section_polygons
@@ -3480,3 +3500,44 @@ class TestSectionAtFace:
         spans = [patch.get_xy()[:, 0] for patch in ax.patches]
         assert min(s.min() for s in spans) == pytest.approx(0.0, abs=1e-9)
         assert max(s.max() for s in spans) == pytest.approx(20.0, abs=1e-6)
+
+
+class TestMesherEscapeReach:
+    """Both mesh passes must step off a degenerate plane equally far."""
+
+    def test_classification_and_conformal_areas_share_the_escape(self, monkeypatch):
+        """The regression this guards is a silent disagreement (DD-167).
+
+        The two passes tessellate at deliberately different chordal
+        budgets, and while the escape hung off that budget the finer
+        pass could not leave bands the coarser one cleared — cells
+        classified as conductor whose material matrices saw nothing
+        there.  The escape is one number now, and this asserts it.
+        """
+        from magnelio.geo import Cylinder, GeometryModel
+        from magnelio.geo import _occ_backend as ob
+        from magnelio.geo._filling import SECTION_NUDGE_FRACTION
+        from magnelio.mesh.mesher import Mesh, MeshControl
+
+        _occ()
+        seen: list[float | None] = []
+        original = ob.cross_section_polygons
+
+        def recording(*args, **kwargs):
+            seen.append(kwargs.get("nudge"))
+            return original(*args, **kwargs)
+
+        monkeypatch.setattr(ob, "cross_section_polygons", recording)
+
+        model = GeometryModel()
+        model.add(Cylinder(radius=2e-3, height=4e-3, axis="z", material=_air()))
+        mesh = Mesh.from_geometry(
+            model, MeshControl(min_nodes_per_wavelength=4, max_cell_size=1e-3), f_max=10e9
+        )
+
+        h_min = min(mesh.grid.dx.min(), mesh.grid.dy.min(), mesh.grid.dz.min())
+        assert seen, "a curved solid must reach the section operator"
+        assert all(n == pytest.approx(h_min * SECTION_NUDGE_FRACTION) for n in seen)
+        # The far end of the ladder must stay inside one cell, or the
+        # section answers about a plane nobody asked about.
+        assert 8.0 * h_min * SECTION_NUDGE_FRACTION < h_min

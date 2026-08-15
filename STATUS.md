@@ -1,7 +1,22 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-15.*  Latest work: port-mode plots draw their
-outermost ring of arrows again (DD-166).  DD-162 had grown the picture
+*Last updated: 2026-08-15.*  Latest work: the section retry that steps
+off a degenerate cutting plane got a length scale of its own (DD-167).
+It had been taking its step from the tessellation deflection, so the
+conformal-area pass — which tessellates ten times finer than the cell
+classification on purpose — inherited a ten times shorter reach and
+could no longer leave near-tangency bands the classification pass
+cleared easily.  The two then disagreed about where the material is:
+cells classified conductor whose material matrices saw nothing there.
+The mesher makes such planes itself, by anchoring a grid line on a
+feature's lateral extreme so that the neighbouring cell-centre plane
+grazes it — and refining moves that plane *closer* to the tangency.
+On a stripline coupler the conductor's whole cross-section was dropped
+on two planes; it now sections cleanly, the conformal H-face count on
+the worst plane goes 378 → 942, and the warning, which named neither
+body nor amount nor consequence, now names all three.  Before that,
+port-mode plots draw their outermost ring of arrows again (DD-166).
+DD-162 had grown the picture
 out to the window and then decided the added lines' validity from the
 component running *along* them — which an electric wall forces to zero,
 on every port, all the way round the frame — so the ring was dropped
@@ -53,15 +68,20 @@ pinning `dt` (DD-147/DD-149), and OCCT Booleans no longer edit their
 operand shapes (DD-146).  Post-release-prep hardening (2026-08-14):
 section contours are closed by contract (DD-157) and conductor
 grouping fuses labels through PEC cell bodies (DD-156) — both found
-on the stripline-coupler worksheet.  **known-bugs.md has no open
-entry:** KB-018 was closed by DD-161, KB-019 by DD-164 and KB-017 by
-DD-165.  What remains from KB-017 is a documented tolerance gap, not a
-defect — the pairing calls two ladder targets equal at 1e-6 while the
-DTBC gate demands 1e-8, and DD-165 makes the choice inside that band
-optimal without closing it.
+on the stripline-coupler worksheet — as was the escape-reach defect
+DD-167 amends DD-157 with.  **known-bugs.md has no open
+entry:** KB-018 was closed by DD-161, KB-019 by DD-164, KB-017 by
+DD-165 and KB-020 by DD-167.  Two things remain documented rather than
+fixed.  From KB-017, a tolerance gap: the pairing calls two ladder
+targets equal at 1e-6 while the DTBC gate demands 1e-8, and DD-165
+makes the choice inside that band optimal without closing it.  From
+DD-167, the section operator at grazing incidence: within the last
+~70 µm before a conductor's lateral extreme it returns one of two
+rotationally symmetric slivers instead of both, silently, because the
+surviving contour closes.
 
-**Suite: 2148 passed / 6 skipped / 0 failed** (2026-08-15, GPU box —
-unit 1803 (+2 scikit-rf skips), integration 345 (+4 skips); GPU tests
+**Suite: 2150 passed / 6 skipped / 0 failed** (2026-08-15, GPU box —
+unit 1805 (+2 scikit-rf skips), integration 345 (+4 skips); GPU tests
 need `CUPY_ACCELERATORS=""` when the interpreter binary is called
 directly).  The DD-150 step change re-measured three fixture windows
 (interval stride, lumped-port guard, SIBC band edge) — the reasoning

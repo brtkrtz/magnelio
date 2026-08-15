@@ -23,6 +23,27 @@ from magnelio.mesh.grid import GridLines
 # {(axis, plane_idx): [(material_id, [polygons]), ...]}
 CrossSectionCache = dict[tuple[str, int], list[tuple[int, list[np.ndarray]]]]
 
+# Section length scales, each a fraction of the smallest cell.
+#
+# Two different questions, historically answered by one number.  The
+# CHORDAL budget says how faithfully a curve is tessellated: the
+# conformal-area sites integrate over the polygon and need it an order
+# finer than a cell-centre point-in-polygon classification does.  The
+# ESCAPE step says how far a degenerate plane may be re-taken to find a
+# clean section, and it has to clear a near-tangency band whose width
+# comes from the geometry — a solid's own lateral extreme sits at a grid
+# anchor, so the neighbouring cell-centre plane grazes it by
+# construction, and the band is routinely wider than a tessellation
+# chord.  Tying the escape to the chord shrank the reach by the same
+# factor that bought the extra chordal accuracy, until the conformal
+# pass could no longer step out of bands the classification pass cleared
+# easily.  The two then disagreed about where material is: the cells
+# said conductor, the material matrices saw nothing there.  Both passes
+# now escape by the same distance, and it is the coarser one.
+SECTION_DEFLECTION_FRACTION = 1e-2
+CLASSIFY_DEFLECTION_FRACTION = 1e-1
+SECTION_NUDGE_FRACTION = 1e-1
+
 
 # ---------------------------------------------------------------------------
 # Cell classification (replaces point_in_shape loop)
@@ -270,7 +291,8 @@ def compute_conformal_eps(
     # 1e-7 m floor) made the tessellation error larger than the cell
     # below ~10 um cells; the OCC robustness floor now lives in
     # scaled units inside cross_section_polygons.
-    deflection = h_min * 1e-2
+    deflection = h_min * SECTION_DEFLECTION_FRACTION
+    nudge = h_min * SECTION_NUDGE_FRACTION
 
     # Share section_cache between the eps and sigma calls (same face_specs).
     # If the caller didn't pass one, create a local cache for this pair.
@@ -289,6 +311,7 @@ def compute_conformal_eps(
         face_axes,
         prop="epsilon",
         deflection=deflection,
+        nudge=nudge,
         section_cache=section_cache,
         pec_area_out=pec_areas,
         material_fraction_mids=fraction_mids,
@@ -302,6 +325,7 @@ def compute_conformal_eps(
         face_axes,
         prop="sigma",
         deflection=deflection,
+        nudge=nudge,
         section_cache=section_cache,
         scale=scale,
     )
@@ -549,7 +573,8 @@ def compute_conformal_mu(
     # 1e-7 m floor) made the tessellation error larger than the cell
     # below ~10 um cells; the OCC robustness floor now lives in
     # scaled units inside cross_section_polygons.
-    deflection = h_min * 1e-2
+    deflection = h_min * SECTION_DEFLECTION_FRACTION
+    nudge = h_min * SECTION_NUDGE_FRACTION
     # DD-106: planes on the domain hull are evaluated one-sided
     # (interior) for the matrix channel — see compute_face_material_areas.
     domain_bounds = (
@@ -581,6 +606,7 @@ def compute_conformal_mu(
             face_axes,
             prop="mu",
             deflection=deflection,
+            nudge=nudge,
             section_cache=section_cache,
             pec_area_out=pec_areas,
             pec_area_geom_out=pec_areas_geom,
@@ -645,6 +671,7 @@ def compute_conformal_mu(
             g_axes,
             prop="mu",
             deflection=deflection,
+            nudge=nudge,
             section_cache=section_cache,
             pec_area_out=g_pec,
             pec_area_geom_out=g_geom,

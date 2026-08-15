@@ -4,6 +4,28 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
+## KB-020: ~~A near-tangent section plane drops a solid's whole cross-section on a fine mesh~~ — Resolved (DD-167, 2026-08-15)
+
+Found on a stripline-coupler worksheet (internal record) whose mesher
+printed two open-chain warnings with nothing a user could act on.  The
+DD-157
+retry that steps off a degenerate section plane took its step length
+from the tessellation deflection, so the conformal-area pass — which
+tessellates ten times finer than the cell classification on purpose —
+inherited a ten times shorter reach and could no longer leave
+near-tangency bands the classification pass cleared easily.  The two
+passes then disagreed: cells classified conductor whose material
+matrices saw nothing there.  The escape is now its own length, shared
+by both passes.
+
+The warning was the actionable part of the failure and it was not
+actionable: it named no body, no amount, and no consequence.  It does
+now.  Worth remembering that the natural reading — "the mesh is fine,
+so the boundary should be nearly planar in every cell" — is exactly
+inverted here: the mesher anchors a grid line on a feature's extreme,
+so refining moves the neighbouring cell-centre plane *closer* to the
+tangency, not away from it.
+
 ## KB-019: ~~The classifier never produces sub-cell data on a domain boundary face~~ — Resolved (2026-08-15)
 
 The conformal candidate mask in `geo/_filling.py` was written only on

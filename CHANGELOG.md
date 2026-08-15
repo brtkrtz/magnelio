@@ -23,6 +23,21 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- A curved solid could lose its entire cross-section on isolated mesh
+  planes, warning about "open section chains" without saying which body
+  or what it cost.  The plane in question grazes the solid's own curved
+  face, and the mesher's recovery step — which re-takes such a plane
+  slightly to one side — was too short to get clear of it on a fine
+  mesh, so the material bookkeeping and the cell classification could
+  end up disagreeing about where the conductor is.  The recovery step no
+  longer shrinks with the mesh, and the two now always agree.  Affected
+  regions lost their sub-cell resolution and fell back to a staircase
+  approximation; conductor edges near the boundary of a lofted or
+  revolved body regain it.  The warning, if it still appears, now names
+  the body by its material, says how much was dropped and how far the
+  recovery searched, and states that the bulk material distribution is
+  unaffected — plus the remedy, which is to change the cell size near
+  that plane
 - Port-mode plots draw the outermost ring of arrows again.  It was
   blanked wherever the field component running *along* the window
   boundary vanished — which an electric wall forces it to do, on every

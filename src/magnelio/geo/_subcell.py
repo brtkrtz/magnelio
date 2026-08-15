@@ -587,6 +587,10 @@ def _apply_longitudinal_eps(
     them.  Mutates ``conf_eps`` / ``conf_sigma`` / ``conf_f_area``
     in place.
     """
+    from magnelio.geo._filling import (  # noqa: PLC0415
+        SECTION_DEFLECTION_FRACTION,
+        SECTION_NUDGE_FRACTION,
+    )
     from magnelio.geo._occ_backend import (  # noqa: PLC0415
         compute_face_material_areas,
     )
@@ -605,8 +609,12 @@ def _apply_longitudinal_eps(
     # cell at ANY model scale.  The old absolute clamps (1e-4 m cap,
     # 1e-7 m floor) made the tessellation error larger than the cell
     # below ~10 um cells; the OCC robustness floor now lives in
-    # scaled units inside cross_section_polygons.
-    deflection = h_min * 1e-2
+    # scaled units inside cross_section_polygons.  The escape step is
+    # the shared one (DD-167) — this pass sections the same solids on
+    # the same grid as the other two and must not clear a different set
+    # of degenerate planes.
+    deflection = h_min * SECTION_DEFLECTION_FRACTION
+    nudge = h_min * SECTION_NUDGE_FRACTION
 
     # Collect (flat_edge, segment) face specs across all axes, batch
     # the OCC sectioning once.
@@ -688,6 +696,7 @@ def _apply_longitudinal_eps(
         face_axes,
         prop="epsilon",
         deflection=deflection,
+        nudge=nudge,
         section_cache=section_cache,
         scale=scale,
     )
@@ -698,6 +707,7 @@ def _apply_longitudinal_eps(
         face_axes,
         prop="sigma",
         deflection=deflection,
+        nudge=nudge,
         section_cache=section_cache,
         scale=scale,
     )

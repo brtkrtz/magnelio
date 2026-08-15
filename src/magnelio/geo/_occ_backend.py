@@ -735,6 +735,8 @@ def cross_section_polygons(
     deflection: float = 1e-4,
     scale: float = 1.0,
     exact_at_faces: bool = False,
+    nudge: float | None = None,
+    context: str = "",
 ) -> list[np.ndarray]:
     """Compute 2D polygon boundaries of a solid intersected with a plane.
 
@@ -768,6 +770,22 @@ def cross_section_polygons(
         a face-face Boolean instead.  Off by default: the check plus the
         heavier Boolean are wasted work for callers that never sample a
         plane on a face, such as the mesher's cell-centre planes.
+    nudge : float, optional
+        Step length of the degeneracy-escape ladder [m] — how far the
+        plane may be re-taken when the section comes back with an open
+        chain (see the closedness contract below).  Defaults to
+        *deflection*, which is only sound while the two happen to be
+        comparable.  They are not: *deflection* is a chordal-accuracy
+        budget and shrinks as far as the caller wants its tessellation
+        to be faithful, whereas the escape distance has to clear a
+        near-tangency band whose width is set by the geometry.  A
+        caller sampling a grid should pass a fraction of its cell size
+        — the position shift stays negligible against the cell it books
+        into, and the ladder keeps the reach it needs.
+    context : str
+        Caller-supplied identification of *shape*, quoted in the
+        open-chain warning so the user can tell which body of a scene
+        is affected.
 
     Returns
     -------
@@ -790,6 +808,7 @@ def cross_section_polygons(
         implicitly closed (see ``_tessellate`` below).
     """
     plane_position = plane_position * scale
+    nudge_step = (deflection if nudge is None else nudge) * scale
     deflection = max(deflection * scale, 1e-7)
 
     try:
@@ -936,9 +955,15 @@ def cross_section_polygons(
         return closed, n_open
 
     # Nudge-retry: an open chain marks the section itself as degenerate
-    # at this position — re-take it a few tessellation lengths away
-    # (deterministic sequence, well below any cell size) rather than
-    # booking a fantasy contour.  A nudge that comes back EMPTY where
+    # at this position — re-take it a few *nudge steps* away
+    # (deterministic sequence, reaching 8 steps out) rather than booking
+    # a fantasy contour.  The step is the caller's to choose, and the
+    # reach it buys is the whole point: too short and a near-tangency
+    # band cannot be left at all, too long and the section answers about
+    # a plane the caller never asked about.  A grid caller wants the
+    # far end of the ladder to stay inside one cell.
+    #
+    # A nudge that comes back EMPTY where
     # the un-nudged section saw material is rejected too: it stepped
     # clear off a feature thinner than the nudge (a sub-tessellation
     # sliver), which would silently erase it.  The exact-in-face path
@@ -946,11 +971,13 @@ def cross_section_polygons(
     polygons_scaled: list[np.ndarray] = []
     base_closed: list[np.ndarray] = []
     base_seen_material = False
-    for nudge in (0.0, 4.0, -4.0, 8.0, -8.0):
-        wires, from_faces = _wires_at(plane_position + nudge * deflection)
+    base_open = 0
+    for step in (0.0, 4.0, -4.0, 8.0, -8.0):
+        wires, from_faces = _wires_at(plane_position + step * nudge_step)
         polygons_scaled, n_open = _tessellate(wires)
-        if nudge == 0.0:
+        if step == 0.0:
             base_closed = polygons_scaled
+            base_open = n_open
             base_seen_material = bool(polygons_scaled) or n_open > 0
         if from_faces:
             break
@@ -958,11 +985,17 @@ def cross_section_polygons(
             break
     else:
         warnings.warn(
-            f"cross-section at {plane_normal}={plane_position / scale:.6g} m: "
-            f"open section chain(s) persisted through nudge retries; "
-            f"the open chains are dropped (the section is degenerate "
-            f"here — typically a plane in the near-tangent band of a "
-            f"curved face on a Boolean solid).",
+            f"cross-section of {context or 'a solid'} at "
+            f"{plane_normal}={plane_position / scale:.6g} m: {base_open} open "
+            f"section chain(s) survived every retry out to "
+            f"{8.0 * nudge_step / scale:.3g} m either side, and are dropped "
+            f"rather than closed by guesswork — so that solid's coverage on "
+            f"this one plane is incomplete ({len(base_closed)} closed contour(s) "
+            f"kept). The plane is degenerate here: it grazes a curved face of a "
+            f"Boolean solid, and such a near-tangency band is often wider than "
+            f"the retry reach. A material boundary falling in the band keeps its "
+            f"bulk classification but loses its sub-cell resolution there. "
+            f"Changing the cell size near this plane moves it clear of the band.",
             UserWarning,
             stacklevel=2,
         )
@@ -970,9 +1003,9 @@ def cross_section_polygons(
         n_open = 0
     if n_open and from_faces:
         warnings.warn(
-            f"cross-section at {plane_normal}={plane_position / scale:.6g} m: "
-            f"{n_open} open face-region chain(s) dropped on the "
-            f"exact-in-face path.",
+            f"cross-section of {context or 'a solid'} at "
+            f"{plane_normal}={plane_position / scale:.6g} m: {n_open} open "
+            f"face-region chain(s) dropped on the exact-in-face path.",
             UserWarning,
             stacklevel=2,
         )
@@ -1294,6 +1327,8 @@ def batch_cross_sections(
     plane_positions: dict[str, np.ndarray],
     deflection: float = 1e-4,
     scale: float = 1.0,
+    nudge: float | None = None,
+    material_library: dict | None = None,
 ) -> dict[tuple[str, int], list[tuple[int, list[np.ndarray]]]]:
     """Pre-compute cross-section polygons for multiple shapes at grid planes.
 
@@ -1311,6 +1346,12 @@ def batch_cross_sections(
         ``{'x': np.ndarray, 'y': ..., 'z': ...}`` — plane positions per axis.
     deflection : float
         Chordal deflection for polygon tessellation [m].
+    nudge : float or None, default None
+        Degeneracy-escape step handed to
+        :func:`cross_section_polygons`; ``None`` leaves it tied to
+        *deflection*.
+    material_library : dict or None, default None
+        Used only to name the solid in an open-chain warning.
 
     Returns
     -------
@@ -1324,6 +1365,8 @@ def batch_cross_sections(
 
     for shape_obj, mat_id in shapes_with_material:
         occ_shape = shape_obj._occ_shape(scale)
+        name = getattr((material_library or {}).get(mat_id), "name", mat_id)
+        context = f"the {name!r} solid"
         engine = _PlanarSectionEngine(occ_shape, scale=scale)
         (xmin, ymin, zmin), (xmax, ymax, zmax) = shape_obj.bounding_box(scale)
         bbox_flat = (xmin, ymin, zmin, xmax, ymax, zmax)
@@ -1345,6 +1388,8 @@ def batch_cross_sections(
                         float(pos),
                         deflection=deflection,
                         scale=scale,
+                        nudge=nudge,
+                        context=context,
                     )
                 if polys:
                     key = (axis, idx)
@@ -2074,9 +2119,9 @@ def _section_worker_init(shape_blobs: list[tuple[int, bytes]]) -> None:
 
 
 def _section_worker(
-    task: tuple[str, float, int, float, float],
+    task: tuple[str, float, int, float, float, float, str],
 ) -> list[np.ndarray]:
-    axis_letter, plane_pos, si, deflection, scale = task
+    axis_letter, plane_pos, si, deflection, scale, nudge, context = task
     # The broadcast shape blob was serialised at *scale*; passing the
     # same scale here keeps the worker's meter-in/meter-out contract
     # identical to the sequential path.
@@ -2086,6 +2131,8 @@ def _section_worker(
         plane_pos,
         deflection=deflection,
         scale=scale,
+        nudge=nudge,
+        context=context,
     )
 
 
@@ -2141,6 +2188,8 @@ def _sample_and_admit(
     annotate,
     scale: float,
     n_workers: int,
+    nudge: float | None = None,
+    contexts: list[str] | None = None,
 ) -> list[tuple[int, float, int]]:
     """Time a sample of *queries*; return what is left worth pooling.
 
@@ -2174,6 +2223,8 @@ def _sample_and_admit(
             pos,
             deflection=deflection,
             scale=scale,
+            nudge=nudge,
+            context=contexts[si] if contexts else "",
         )
         section_cache[(axis, pos, si)] = [annotate(p) for p in polys]
     elapsed = time.perf_counter() - t0
@@ -2196,6 +2247,8 @@ def _parallel_section_prefill(
     section_cache: dict,
     annotate,
     scale: float = 1.0,
+    nudge: float | None = None,
+    contexts: list[str] | None = None,
 ) -> None:
     """Fill ``section_cache`` for ``queries`` using a process pool.
 
@@ -2217,6 +2270,8 @@ def _parallel_section_prefill(
     n_workers = _section_worker_count()
     if n_workers <= 1:
         return
+    if contexts is None:
+        contexts = [""] * len(shapes_with_material)
     import multiprocessing  # noqa: PLC0415
 
     # Already inside somebody else's worker (a user-level parameter
@@ -2254,6 +2309,8 @@ def _parallel_section_prefill(
             annotate,
             scale,
             n_workers,
+            nudge,
+            contexts,
         )
         if not queries:
             return
@@ -2264,7 +2321,10 @@ def _parallel_section_prefill(
             for si in needed
         ]
         axis_letter = {0: "x", 1: "y", 2: "z"}
-        tasks = [(axis_letter[axis], pos, si, deflection, scale) for (axis, pos, si) in queries]
+        tasks = [
+            (axis_letter[axis], pos, si, deflection, scale, nudge, contexts[si])
+            for (axis, pos, si) in queries
+        ]
         ctx = multiprocessing.get_context("spawn")
         # The hide window has to span the whole pool lifetime, not just
         # its construction: ProcessPoolExecutor spawns its workers
@@ -2313,6 +2373,7 @@ def compute_face_material_areas(
     domain_bounds: tuple[tuple[float, float], tuple[float, float], tuple[float, float]]
     | None = None,
     scale: float = 1.0,
+    nudge: float | None = None,
 ) -> np.ndarray:
     """Compute area-weighted material property on rectangular faces.
 
@@ -2370,6 +2431,12 @@ def compute_face_material_areas(
         Smaller values → more accurate curved-boundary areas at the cost
         of more polygon vertices.  ``1e-4`` (≈ 0.1 mm) is suitable for
         typical microwave geometries.
+    nudge : float or None, default None
+        Degeneracy-escape step handed to
+        :func:`cross_section_polygons`; ``None`` leaves it tied to
+        *deflection*.  A grid caller should pass a fraction of its cell
+        size — see that function's parameter list for why the two must
+        not share one knob.
     section_cache : dict or None, default None
         Optional shared cache, keyed by ``(axis, plane_pos, shape_index)``,
         of cross-section polygon lists.  When the same caller invokes
@@ -2503,6 +2570,13 @@ def compute_face_material_areas(
     is_mu = prop == "mu"
     pec_ids = {mid for mid, mat in material_library.items() if mat.is_pec}
     axis_letter = {0: "x", 1: "y", 2: "z"}
+    # A scene's solids reach this layer as anonymous OCC shapes; the
+    # material name is the one label that survives and it is enough to
+    # tell a warning about the conductor from one about the vacuum.
+    contexts = [
+        f"the {getattr(material_library.get(mid), 'name', mid)!r} solid"
+        for _, mid in shapes_with_material
+    ]
 
     # Per-shape bounding boxes for fast plane-vs-shape rejection.
     # All bookkeeping below runs in meters: the section leaves
@@ -2533,6 +2607,8 @@ def compute_face_material_areas(
                 pos,
                 deflection=deflection,
                 scale=scale,
+                nudge=nudge,
+                context=contexts[si],
             )
         return polys
 
@@ -2668,6 +2744,8 @@ def compute_face_material_areas(
             section_cache,
             _annotate,
             scale=scale,
+            nudge=nudge,
+            contexts=contexts,
         )
 
     def _sections_at(axis: int, pos: float) -> list:

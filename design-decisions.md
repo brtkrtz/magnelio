@@ -10984,3 +10984,94 @@ check that an edge carries a real share of the peak so the test cannot
 pass on a ring of zeros.
 
 **Files:** `ports/_modal/mode_report.py`.
+
+## DD-167 — The degeneracy escape gets a length of its own
+
+**Date:** 2026-08-15
+**Status:** Accepted — implemented, tested.  Amends DD-157.
+
+**Problem.**  DD-157 re-takes a section that comes back with an open
+chain at deterministic offsets `±4, ±8` steps away, and made the step
+the tessellation `deflection`.  That ties an *escape distance* to a
+*chordal-accuracy budget*.  The two are unrelated: the chord says how
+faithfully a curve is drawn, the escape has to clear a near-tangency
+band whose width comes from the geometry.  The mesher tessellates its
+two passes an order apart on purpose — cell classification needs
+point-in-polygon fidelity (`h/10`), the conformal-area sites integrate
+over the polygon and take `h/100` — so the finer pass silently
+inherited a ten times shorter reach.
+
+Measured on the stripline coupler (internal record:
+`investigations/section-open-chains/MEASUREMENTS.md`).  The mesher
+anchors a grid line on the electrode's lateral extreme
+(`x = 26 mm · sin 13.751° = 6.1804 mm`); the neighbouring cell-centre
+plane then sits `h/2 = 0.168 mm` inside it, inside the 0.238 mm band
+where the section plane grazes the electrode's own side face.  The
+collision is structural, and **refining the mesh moves the cell centre
+closer to the anchor, i.e. deeper into the band**.  With the escape at
+`h/100` the ladder reached 20 µm and every retry stayed inside the
+band; the classification pass, escaping 200 µm from the identical
+plane, left it without trouble.  The control experiment is one call
+with one parameter changed:
+
+| plane | escape | conductor union |
+|---|---|---|
+| x = 6.0124 mm | chord (20 µm) | 0 contours, warning |
+| x = 6.0124 mm | h/10 (200 µm) | 43.81 mm² |
+| y = 25.303 mm | chord (20 µm) | 0 contours, warning |
+| y = 25.303 mm | h/10 (200 µm) | 1744.02 mm² |
+
+The consequence was worse than the shortfall itself: **the two passes
+disagreed about where the material is.**  The cells were classified
+conductor (that pass escaped) while the material matrices saw nothing
+there (this one did not).  On the offending H-face plane the conformal
+face count collapsed to 378 against 1165 and 654 either side, and
+`A_face_pec` dipped 12.4 % below the mean of its neighbours on a
+geometry whose cross-section varies smoothly.  Cell classification and
+interior-PEC edges were untouched, so no metal disappeared — the
+affected edges fell back from conformal to staircase.
+
+**Decision.**  `cross_section_polygons` takes the escape step as its
+own parameter, defaulting to `deflection` for callers with no grid to
+relate it to.  All three mesher passes pass `h_min/10`, one constant
+(`SECTION_NUDGE_FRACTION` in `geo/_filling.py`, beside the two chordal
+fractions), so they cannot end up with different opinions again.  The
+ladder's far end stays inside one cell (`8 · h/10 = 0.8 h`), which is
+the upper bound on the step: the escape answers about a plane the
+caller did not ask about, and that displacement has to stay small
+against the cell it is booked into.
+
+The warning also became actionable.  It named neither the body nor the
+amount nor what happens next, so a user could do nothing with it; it
+now identifies the solid by its material, reports how many chains were
+dropped and how far the retry searched, and says that the bulk
+classification survives while the sub-cell resolution does not.
+
+**Residual, recorded not fixed.**  Within the last ~70 µm before the
+electrode's lateral extreme the section returns one of the two
+rotationally symmetric slivers instead of both — silently, since the
+surviving contour closes.  Both bodies agree with each other there
+(the vacuum union carries exactly the matching hole), and planes
+0.2 mm further in return both.  This is the section operator at
+grazing incidence, the fight DD-157 already settled with "drop, never
+invent"; it is sub-cell material at the very tip of a conductor edge.
+
+**Certificate:** `validation/section_nudge_reach_certificate.py` — the
+section-level A/B above, the shared-escape invariant, and the full
+coupler meshing with zero open-chain warnings and the H-face plane no
+longer a hole between its neighbours (dip 12.4 % → −1.1 %).  Gates:
+`tests/unit/test_geometry.py::TestSectionAtFace::test_the_escape_step_is_not_the_chordal_budget`
+(the seam fixture, where the constraint runs the other way: an escape
+tied to the chord over-steps the 35 µm strip into thin air and the
+retry is rejected) and
+`tests/unit/test_geometry.py::TestMesherEscapeReach` (both passes
+escape by the same distance).
+
+**Files:** `geo/_occ_backend.py` (`cross_section_polygons`,
+`compute_face_material_areas`, `batch_cross_sections`, the section
+worker), `geo/_filling.py` (the three length fractions),
+`geo/_subcell.py` (the wall-plane pass, the third caller sectioning
+the same solids on the same grid), `mesh/mesher.py`,
+`tests/unit/test_geometry.py`.  The geometry plot keeps the default —
+it sections at a user-chosen deflection with no grid to relate a step
+to, and its far coarser default already reaches ±0.8 mm.
