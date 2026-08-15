@@ -10,8 +10,14 @@ power gates; internal dossier investigations/port_power/DERIVATION.md).
 
 Two gates:
 
-* reciprocity: |S12| - |S21| within 0.05 dB across the band
-  (post-fix measurement: -0.0001 dB, spread 0.003 dB);
+* reciprocity: |S12| - |S21| within 0.005 dB across the band.  The
+  gate was 0.05 dB while the conformality patch stayed blind to
+  enlarged-cell donations parked on category-0/1 edges; that blind
+  spot cost this fixture 0.0129 dB.  With DD-163 folding the donation
+  into chi the measurement is 0.000005 dB — the two ports' power
+  scales agree to machine precision — so the gate sits a factor 2.6
+  below the defect it has to catch and a factor 1000 above the
+  measurement;
 * absolute power: the energy recorded at the output port equals the
   discrete Poynting energy through a mid-line flux plane (the DD-095
   reference definition) to the flux-gate floor.  Separate
@@ -88,10 +94,11 @@ class TestMixedPortPower:
         s12 = res.S("round", "square")
         d_db = 20.0 * np.log10(np.abs(s12) / np.abs(s21))
         assert np.all(np.isfinite(d_db))
-        assert np.max(np.abs(d_db)) < 0.05, (
+        assert np.max(np.abs(d_db)) < 0.005, (
             f"mixed-pair reciprocity violated: S12-S21 in "
             f"[{d_db.min():+.4f}, {d_db.max():+.4f}] dB "
-            f"(pre-DD-095 defect: +0.54 dB)"
+            f"(pre-DD-095 defect: +0.54 dB; donation blind spot "
+            f"before DD-163: -0.013 dB)"
         )
 
     def test_port_power_equals_flux(self):

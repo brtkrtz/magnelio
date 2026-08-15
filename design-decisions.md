@@ -10694,3 +10694,73 @@ the guide cross-section exactly for E and H;
 10 %" to the exact guide width).
 
 **Files:** `ports/_modal/mode_report.py`, `post/_symmetry.py`.
+
+---
+## DD-163 — The conformality patch sees enlarged-cell donations
+
+**Date:** 2026-08-15 — **Status:** shipped
+
+**Context.**  [[DD-095]] corrects the port-power patch at conformal cut
+edges with χ = M_ε·l / (ε₀·eps_pair·A_geo), and leaves every
+category-0/1 edge at χ = 1 so that dielectric staircase planes stay
+untouched.  Its dossier (§5c, internal dossier
+`investigations/port_power/DERIVATION.md`) recorded one edge class that
+the invariant gets wrong: the **receiver of an enlarged-cell
+donation**.  A short curved-PEC edge is masked and hands its dual-face
+mass to a neighbour; when that neighbour is category 0/1 its M_ε
+exceeds the staircase value, so the patch transports the masked edge's
+share without booking it.  Session 124 could not close it — the round
+coax it froze the spec on had only category-2 receivers — and shipped a
+Δχ estimator that *warned* above 1e-3 instead.
+
+That warning fires on ordinary work: the tutorial-02 polyethylene coax
+reports 1.0e-2, the DD-095 fixture's own round port 3.5e-3, and four
+tutorials carry it into the published documentation.  A user meeting it
+on a plain coaxial port has no action to take.
+
+**Decision.**  Fold the donation into χ.  The receiver's own staircase
+mass is recovered by subtracting the donation back out of its M_ε, and
+the patch is the ratio of the two:
+
+    χ_d = (M_ε,d·l_d/ε₀) / (M_ε,d·l_d/ε₀ − Σ_s borrowed_s)
+
+This is the dossier's own second recipe.  It needs no assumption about
+the two edges' materials — the receiver's permittivity cancels — and it
+is exactly 1 without a donation, so the conformality-only invariant
+survives unchanged.  Category-2 receivers need nothing: their M_ε ratio
+already carries the donation.  The Δχ arrays and the warning are gone.
+
+**Measurements** (internal record
+`investigations/port_power/donor_receiver_gate.py`):
+
+| gate | before | after |
+|---|---|---|
+| mixed round→square reciprocity | 0.012923 dB | **0.000005 dB** |
+| conformal round coax, port/flux | 1.004550 | 1.006045 |
+| square coax (staircase), port/flux | 1.004734 | 1.004734 |
+| plate TEM (staircase), port/flux | 1.002783 | 1.002783 |
+| WR-90 TE10 (staircase), port/flux | 1.001000 | 1.001000 |
+
+Reciprocity is the discriminating gate and it is now satisfied to
+machine precision: |S12| = |S21| is an exact identity of the reciprocal
+structure, all common-mode error cancels between the two ports of one
+run, and the conformal port's power scale is thereby pinned to the
+staircase port's.  The absolute port-versus-flux-monitor gate cannot
+resolve the change — it scatters over 1.0010…1.0047 across fixtures
+whose every edge is staircase and whose true value is therefore 1.
+Reading the conformal coax's +0.15 % as a degradation would mean
+trusting that gate well beyond its own 0.37 % spread; the dossier
+put its floor at 0.5 %.
+
+Staircase planes stay bit-identical, as DD-095 §5b(2) requires.
+
+**Gates:** `tests/integration/test_port_flux_patch.py` — the trigger
+fixture DD-095's WP-P2 asked for and never got (a coax whose port plane
+carries category-0/1 receivers; 8 per component here, χ = 1.039…1.056),
+plus the assertion that no other category-0/1 edge moves, plus the
+user-visible half: `solve_ports` on a plain conformal coax is silent.
+`tests/integration/test_port_power_reciprocity.py` tightened from
+0.05 dB to 0.005 dB — a factor 2.6 below the 0.0129 dB defect it now
+has to catch, a factor 1000 above the measurement.
+
+**Files:** `ports/_modal/operator.py`.

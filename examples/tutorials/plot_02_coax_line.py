@@ -186,9 +186,7 @@ print(f"z_line reference : {z_ref:7.2f} Ohm")
 # percent here and approaches the reference as the mesh is refined
 # (not monotonically — the staircase reshapes at every resolution).
 # The gap between the two is an honest measure of how well the mesh
-# captures this cross-section.  You may also see a warning estimating
-# a ~1 % port power-scale bias from conformal cells: same message,
-# quantified — refine the mesh to push it down.
+# captures this cross-section.
 #
 # The transverse mode profile shows the expected radial TEM field,
 # strongest at the inner conductor.  Passing the geometry model

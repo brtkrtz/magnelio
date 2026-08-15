@@ -1,9 +1,14 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-15.*  Latest work: field plots draw on their own
-isotropic raster instead of the computational grid, port modes are
-shown full-model, and cells buried in a conductor stay blank (DD-160);
-mode-profile plots then learned that the solvers hand them FIT grid
+*Last updated: 2026-08-15.*  Latest work: the port-power conformality
+patch now sees enlarged-cell donations parked on staircase edges
+(DD-163) — DD-095's last documented blind spot, which had started
+warning on ordinary coaxial ports instead of correcting itself;
+mixed-pair reciprocity goes from 0.013 dB to 0.000005 dB.  Before
+that, field plots learned to draw on their own isotropic raster
+instead of the computational grid, port modes are shown full-model,
+and cells buried in a conductor stay blank (DD-160); mode-profile
+plots then learned that the solvers hand them FIT grid
 quantities, not field samples, and divide by the edge metric before
 drawing (DD-161) — which is where most of KB-018's "solver error"
 actually lived — and now reach the port window instead of stopping at
@@ -31,8 +36,8 @@ measured on both port and non-port faces without a single certificate
 improving, so it is documented rather than shipped.  KB-018 closed by
 DD-161.
 
-**Suite: 2137 passed / 6 skipped / 0 failed** (2026-08-15, GPU box —
-unit 1801 (+2 scikit-rf skips), integration 336 (+4 skips); GPU tests
+**Suite: 2140 passed / 6 skipped / 0 failed** (2026-08-15, GPU box —
+unit 1801 (+2 scikit-rf skips), integration 339 (+4 skips); GPU tests
 need `CUPY_ACCELERATORS=""` when the interpreter binary is called
 directly).  The DD-150 step change re-measured three fixture windows
 (interval stride, lumped-port guard, SIBC band edge) — the reasoning

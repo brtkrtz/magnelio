@@ -303,7 +303,7 @@ def conformal_flux_patch_scale(
     plane: PortPlane,
     mesh,
     m_eps_flat: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray] | None:
+) -> tuple[np.ndarray, np.ndarray] | None:
     """Per-edge conformality factor χ for the flux surrogate (DD-095).
 
     The physical-power calibration (``_calibrate_v_i``: ``p_one`` and
@@ -327,15 +327,22 @@ def conformal_flux_patch_scale(
     borrowing): the correction is conformality-only, layered dielectric
     staircase planes are untouched (χ ≡ 1).
 
-    Returns ``(χ_u, χ_v, Δχ_u, Δχ_v)`` aligned with
-    ``plane.e_u/v_indices``, or ``None`` when the mesh carries no
-    sub-cell edge classification.  ``Δχ_u/v`` estimate the known blind
-    spot (dossier §5c): a category-0/1 slab edge that receives an
-    enlarged-cell donation carries extra mass invisible to its χ = 1;
-    the per-edge estimate ``Δχ_d = borrowed_s / (eps_pair_s ·
-    A_geo,d)`` (the parked mass expressed in the short edge's own
-    free-part permittivity) lets the calibration warn when the
-    profile-weighted bias is non-negligible.
+    One category-0/1 edge does move: the receiver of an enlarged-cell
+    donation.  Its M_ε carries the parked mass of a short curved-PEC
+    neighbour whose own edge is masked and therefore contributes no
+    flux at all, so the patch has to transport that neighbour's share
+    as well.  The ratio is taken against the edge's *own* staircase
+    mass, recovered by subtracting the donation back out,
+
+    ``χ_d = (M_ε,d·l_d/ε₀) / (M_ε,d·l_d/ε₀ − Σ_s borrowed_s)``,
+
+    which needs no assumption about the two edges' materials and is
+    exactly 1 without a donation — the conformality-only invariant
+    survives.  (Category-2 receivers need no separate treatment: their
+    M_ε ratio already carries the donation.)
+
+    Returns ``(χ_u, χ_v)`` aligned with ``plane.e_u/v_indices``, or
+    ``None`` when the mesh carries no sub-cell edge classification.
     """
     em = getattr(mesh, "edge_material", None)
     if em is None:
@@ -384,23 +391,26 @@ def conformal_flux_patch_scale(
 
     donor = em.enlarged_cell_donor
     shorts = np.nonzero(donor >= 0)[0]
-    delta_u = np.zeros(idx_u.size, dtype=float)
-    delta_v = np.zeros(idx_v.size, dtype=float)
     if shorts.size:
-        for idx, cat, d_t, delta in (
-            (idx_u, cat_u, dv_dual, delta_u),
-            (idx_v, cat_v, du_dual, delta_v),
+        for idx, cat, chi, me, lens in (
+            (idx_u, cat_u, chi_u, me_u, plane.u_edge_lengths),
+            (idx_v, cat_v, chi_v, me_v, plane.v_edge_lengths),
         ):
             pos = {int(e): i for i, e in enumerate(idx)}
+            borrowed = np.zeros(idx.size, dtype=float)
             for s in shorts:
                 p = pos.get(int(donor[s]))
                 if p is None or cat[p] not in (0, 1):
                     continue
-                f_a = em.f_A[s]
-                eps_pair_s = em.eps_avg[s] / f_a if np.isfinite(f_a) and f_a > 0.0 else 1.0
-                a_geo = d_t[p] * dn
-                delta[p] += em.enlarged_cell_area[s] / (eps_pair_s * a_geo)
-    return chi_u, chi_v, delta_u, delta_v
+                borrowed[p] += em.enlarged_cell_area[s]
+            recv = np.nonzero(borrowed > 0.0)[0]
+            if recv.size:
+                # ε·A of the receiver, donation included, from its M_ε.
+                total = me[recv] * lens[recv] / EPS0
+                base = total - borrowed[recv]
+                val = np.divide(total, base, out=np.ones_like(total), where=base > 0.0)
+                chi[recv] = np.where(np.isfinite(val) & (val > 0.0), val, 1.0)
+    return chi_u, chi_v
 
 
 class PortOperatorModal:
@@ -466,14 +476,11 @@ class PortOperatorModal:
         finding).  ``None`` skips the check (spec-level callers that
         build operators without the factory).
     flux_patch : tuple of np.ndarray or None, default None
-        DD-095 conformality factors ``(χ_u, χ_v[, Δχ_u, Δχ_v])`` for
+        DD-095 conformality factors ``(χ_u, χ_v)`` for
         the physical-power patches of ``_calibrate_v_i``, from
         :func:`conformal_flux_patch_scale`.  ``None`` means identity
         (staircase planes, meshes without sub-cell classification,
-        direct construction in tests).  The optional Δχ arrays
-        estimate the χ-blind borrow-receiver bias per edge;
-        calibration warns when the profile-weighted estimate is
-        non-negligible.
+        direct construction in tests).
     """
 
     def __init__(
@@ -549,17 +556,9 @@ class PortOperatorModal:
         if flux_patch is not None:
             self._flux_chi_u = np.asarray(flux_patch[0], dtype=float)
             self._flux_chi_v = np.asarray(flux_patch[1], dtype=float)
-            if len(flux_patch) > 2:
-                self._flux_delta_u = np.asarray(flux_patch[2], dtype=float)
-                self._flux_delta_v = np.asarray(flux_patch[3], dtype=float)
-            else:
-                self._flux_delta_u = None
-                self._flux_delta_v = None
         else:
             self._flux_chi_u = np.ones_like(self._me_u_port)
             self._flux_chi_v = np.ones_like(self._me_v_port)
-            self._flux_delta_u = None
-            self._flux_delta_v = None
         # Physical √W amplitude scales (DD-078, module docstring).
         # Defaults (identity) apply to uncalibrated operators (CW
         # true-mode ports) and are overwritten by _calibrate_v_i.
@@ -809,7 +808,6 @@ class PortOperatorModal:
         dv_dual, du_dual = _patch_duals(plane, self._magnetic_patch_ends)
         area_u = u_lens * dv_dual * self._flux_chi_u
         area_v = v_lens * du_dual * self._flux_chi_v
-        blind_frac_max = 0.0
 
         out: list[DiscreteMode] = []
         for m_idx, dm in enumerate(self.discrete_modes):
@@ -868,20 +866,6 @@ class PortOperatorModal:
             p_one = float(np.dot(dm.e_u_profile * h_v_phys, area_u)) - float(
                 np.dot(dm.e_v_profile * h_u_phys, area_v)
             )
-
-            # DD-095 blind-spot check (dossier 5c): borrow-receiving
-            # cat-0/1 edges carry mass the χ patch cannot see — flag
-            # modes whose profile-weighted Δχ bias is non-negligible.
-            if self._flux_delta_u is not None:
-                w_u = dm.e_u_profile**2 * area_u
-                w_v = dm.e_v_profile**2 * area_v
-                w_tot = float(w_u.sum() + w_v.sum())
-                if w_tot > 0.0:
-                    frac = (
-                        float(np.dot(w_u, self._flux_delta_u) + np.dot(w_v, self._flux_delta_v))
-                        / w_tot
-                    )
-                    blind_frac_max = max(blind_frac_max, frac)
 
             calibrated = False
             gamma = 0.0
@@ -954,19 +938,6 @@ class PortOperatorModal:
             if not calibrated:
                 out.append(dm)
 
-        if blind_frac_max > 1e-3:
-            import warnings
-
-            # Port-power conformality patch: DD-095.
-            warnings.warn(
-                f"port {self.name!r}: enlarged-cell donations parked "
-                f"on category-0/1 edges bias a mode's power patch by "
-                f"an estimated {blind_frac_max:.1e} (relative) that "
-                f"the conformality patch cannot see — the port "
-                f"power scale may carry a residual bias of that order.",
-                UserWarning,
-                stacklevel=2,
-            )
         return out
 
     def initialize_state(self, e: np.ndarray) -> None:

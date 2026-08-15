@@ -23,6 +23,13 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Waveguide ports on curved conductors no longer warn about a residual
+  bias in their power scale — the bias is corrected instead.  Where a
+  sub-cell conductor edge hands its share to a neighbour, the port's
+  power bookkeeping now accounts for it; on a mixed conformal/staircase
+  port pair the reciprocity residual drops from 0.013 dB to below
+  0.00001 dB.  Absolute S-parameter magnitudes at ports cut by curved
+  conductors change by a few parts in a thousand
 - Port-mode plots now cover the whole port window.  They used to stop
   half a cell short on each side, which on a graded mesh could hide a
   tenth of the cross-section and put a seam through the middle of a
