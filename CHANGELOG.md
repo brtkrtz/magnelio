@@ -11,6 +11,13 @@ major version is 0, minor releases may change the public API.
 
 ### Changed
 
+- The online documentation is published in two versions.  Opening the
+  documentation now lands on the docs for the newest release; the
+  development docs, built from the current state of the repository, are
+  one entry away in the version menu in the navigation bar and mark
+  themselves with a banner on every page.  Previously the site always
+  showed the development state, so it could describe features that were
+  not yet in any released version
 - **Breaking:** `MonitorFieldFrequency.data` is now always in fields per
   1 W of incident CW power — E in V/m, H in A/m, per square root of a
   watt.  A run divides its own excitation spectrum out of the recorded

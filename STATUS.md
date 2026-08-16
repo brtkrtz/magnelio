@@ -475,6 +475,17 @@ maintainers' internal records (internal record:
 `reference_docs/provenance-ledger.md`); public docs and BibTeX carry
 no verification labels or notes.
 
+**Two published documentation channels (DD-171):** the site serves
+`/stable/` (built from a `v*` tag) and `/dev/` (built from main), with
+the root redirecting to stable, a version switcher in the navbar fed by
+one shared `switcher.json` at the site root, and a banner on every dev
+page.  Pages is served from the `gh-pages` branch — a file store the
+Docs workflow clones shallow, writes its own channel into and pushes,
+so a main push leaves the release docs untouched; the `.nojekyll`
+marker there is load-bearing (Jekyll would hide `_static/`).  A build
+knows its channel from `MAGNELIO_DOCS_CHANNEL`; unset — every local
+build — is dev.
+
 **Planned-run pre-registration (DD-070 follow-up):** multi-excitation
 analyses pre-register every planned run as ``pending`` in the run
 index (`ProjectStore.register_planned_runs`), so the project status

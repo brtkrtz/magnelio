@@ -96,5 +96,28 @@ templates_path = []
 html_static_path = ["_static"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
+# The published site carries two channels, each a full build in its own
+# directory (see .github/workflows/docs.yml): "stable" from the newest
+# release tag, "dev" from main.  The build learns which one it is from
+# the environment; anything unset — a local build, a fork's CI — is dev.
+docs_channel = os.environ.get("MAGNELIO_DOCS_CHANNEL", "dev")
+docs_base_url = "https://brtkrtz.github.io/magnelio"
+
 html_theme = "pydata_sphinx_theme"
 html_title = "Magnelio Documentation"
+html_baseurl = f"{docs_base_url}/{docs_channel}/"
+html_theme_options = {
+    "switcher": {
+        # Absolute, and served from the site *root* rather than from a
+        # channel's own _static: a released build is frozen the day it
+        # is published, so a switcher shipped inside it would forever
+        # list the channels that existed back then.  Reading one shared
+        # file keeps every published page's menu current.
+        "json_url": f"{docs_base_url}/switcher.json",
+        "version_match": docs_channel,
+    },
+    "navbar_end": ["version-switcher", "theme-switcher", "navbar-icon-links"],
+    # Banner on every page that is not the preferred channel, i.e. the
+    # dev build tells the reader it documents unreleased code.
+    "show_version_warning_banner": True,
+}

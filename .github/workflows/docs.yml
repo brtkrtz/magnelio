@@ -1,22 +1,74 @@
 name: Docs
 
 # Build the Sphinx documentation (sphinx-gallery executes all
-# tutorials, CPU-only: allow ~1 h) and deploy it to GitHub Pages.
-# Deployment on push is gated by the repository variable
-# DEPLOY_DOCS == 'true' so docs go live deliberately, not with the
-# first push; workflow_dispatch always runs.
+# tutorials, CPU-only: allow ~1 h) and publish it into the gh-pages
+# branch, which is the Pages source ("Deploy from a branch").
+#
+# The site carries two channels, each a complete build in its own
+# directory:
+#
+#   /stable/  the newest release — built from a v* tag, and where the
+#             site root redirects to
+#   /dev/     the current main branch
+#
+# A channel is only rebuilt when its own source moves, because a build
+# costs an hour; the other channel and the shared root files survive a
+# publish untouched.  Deployment on push is gated by the repository
+# variable DEPLOY_DOCS == 'true'; workflow_dispatch always runs.
 
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "Ref to build (blank: the ref this run was started from)"
+        required: false
+        default: ""
+      channel:
+        description: "Channel to publish into (auto: tags to stable, anything else to dev)"
+        type: choice
+        options: [auto, dev, stable]
+        default: auto
+
+# The branch is written by this workflow, not uploaded as a Pages
+# artifact, so the token needs write access to repository contents.
+permissions:
+  contents: write
+
+# Two publishes racing would push conflicting trees to gh-pages.  Queue
+# them instead of cancelling: a cancelled run wastes an hour of build.
+concurrency:
+  group: docs-publish
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || vars.DEPLOY_DOCS == 'true'
     steps:
+      - name: Resolve ref and channel
+        id: target
+        env:
+          IN_REF: ${{ inputs.ref }}
+          IN_CHANNEL: ${{ inputs.channel }}
+        run: |
+          REF="${IN_REF:-$GITHUB_REF}"
+          CHANNEL="${IN_CHANNEL:-auto}"
+          if [ "$CHANNEL" = auto ]; then
+            case "$REF" in
+              refs/tags/v*) CHANNEL=stable ;;
+              *)            CHANNEL=dev ;;
+            esac
+          fi
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+          echo "building $REF into /$CHANNEL/"
+
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.target.outputs.ref }}
       # environment.yml (not pip): the geometry tutorials need
       # pythonocc-core, which exists only on conda-forge.
       - uses: mamba-org/setup-micromamba@v2
@@ -26,19 +78,65 @@ jobs:
           cache-environment: true
       - run: sphinx-build -b html docs docs/_build/html
         shell: bash -el {0}
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs/_build/html
+        env:
+          MAGNELIO_DOCS_CHANNEL: ${{ steps.target.outputs.channel }}
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Publish into the gh-pages branch
+        env:
+          CHANNEL: ${{ steps.target.outputs.channel }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          REPO="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          # Shallow, single-branch: the published site accumulates a few
+          # megabytes of gallery images per build, and none of that
+          # history is needed to add one directory to the tip.
+          if ! git clone --branch gh-pages --single-branch --depth 1 "$REPO" site; then
+            mkdir site
+            git -C site init -q
+            git -C site remote add origin "$REPO"
+            git -C site checkout -q --orphan gh-pages
+          fi
+
+          rm -rf "site/${CHANNEL}"
+          mkdir -p "site/${CHANNEL}"
+          cp -a docs/_build/html/. "site/${CHANNEL}/"
+
+          # One shared switcher list at the site root, so a frozen
+          # release build reads the current set of channels rather than
+          # the one it was built with.
+          cp docs/switcher.json site/switcher.json
+
+          # Pages runs Jekyll on a branch source, and Jekyll hides every
+          # path starting with an underscore — without this marker the
+          # site loads without _static/ and renders unstyled.
+          touch site/.nojekyll
+
+          # Land readers on the release docs; fall back to dev until a
+          # tag has been published once.
+          LANDING=stable
+          [ -d site/stable ] || LANDING=dev
+          cat > site/index.html <<EOF
+          <!doctype html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8">
+              <title>Magnelio Documentation</title>
+              <meta http-equiv="refresh" content="0; url=./${LANDING}/">
+              <link rel="canonical" href="./${LANDING}/">
+            </head>
+            <body>
+              <p>Redirecting to the <a href="./${LANDING}/">Magnelio documentation</a>.</p>
+            </body>
+          </html>
+          EOF
+
+          cd site
+          git add -A
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -q -m "docs: publish ${CHANNEL} from ${GITHUB_SHA}" \
+            || { echo "no change to publish"; exit 0; }
+          git push -q origin gh-pages \
+            || { git pull --rebase -q origin gh-pages && git push -q origin gh-pages; }

@@ -11402,3 +11402,58 @@ over different spans.
 `tests/integration/test_paraview_session.py`,
 `docs/methods/sources-monitors.md`,
 `examples/tutorials/plot_06_field_monitors.py`.
+
+---
+
+## DD-171 — The published docs carry two channels, stable is the front door
+
+**Problem.**  DD-116 put the documentation portal on GitHub Pages with
+`actions/upload-pages-artifact`, which replaces the entire site on
+every deployment.  There is therefore exactly one published build, and
+since `docs.yml` triggers on pushes to main, that build documents
+unreleased code.  A reader who installs the newest release and opens
+the docs reads about API that is not in their install — and nothing on
+the page says so.  The failure is silent in the direction that costs
+the reader most: features described but absent, defaults quoted that
+have since moved.
+
+The obvious fix — build every version on every deployment — does not
+survive the build cost.  sphinx-gallery executes all fourteen
+tutorials, roughly an hour of CPU, so a build is something a channel
+earns once and then keeps.
+
+**Decision.**  The site holds two independent builds, and Pages serves
+them from a branch rather than from a single artifact.
+
+- *Channels.*  `/stable/` is built from a `v*` tag, `/dev/` from main;
+  the site root is a redirect to `/stable/`, falling back to `/dev/`
+  until a tag has published once.  Each channel is rebuilt only when
+  its own source moves, so a main push never disturbs the release docs.
+- *Storage.*  The `gh-pages` branch is the Pages source and a plain
+  file store: a publish clones it shallow, replaces its own directory,
+  and pushes.  A `.nojekyll` marker is mandatory there — Jekyll runs on
+  a branch source and hides every path beginning with an underscore,
+  which would drop `_static/` and serve the site unstyled.
+- *Switcher.*  `pydata_sphinx_theme`'s version switcher reads
+  `switcher.json` from the site **root**, not from the channel's own
+  `_static/`.  A release build is frozen the day it ships; a switcher
+  shipped inside it would forever offer the channels that existed at
+  build time.  One shared file keeps every published page's menu
+  current.  `conf.py` learns its own channel from
+  `MAGNELIO_DOCS_CHANNEL` (unset — a local build — is `dev`), which
+  feeds `version_match` and, through `show_version_warning_banner`,
+  puts a banner on every dev page.
+
+**Cost.**  The Pages source must be switched from "GitHub Actions" to
+"Deploy from a branch: gh-pages / root" in the repository settings; the
+OIDC `github-pages` environment is no longer used and the workflow
+needs `contents: write` instead.  The branch accumulates a build's
+worth of gallery images per publish, in a history that clones of the
+source pull down by default — squash it to an orphan commit if it ever
+grows uncomfortable.  Concurrency is serialised (`docs-publish`,
+`cancel-in-progress: false`) because two publishes racing would push
+conflicting trees, and cancelling one would throw away an hour.
+
+**Files:** `.github/workflows/docs.yml`, `docs/conf.py`
+(`docs_channel`, `html_theme_options["switcher"]`,
+`html_baseurl`), `docs/switcher.json`.
