@@ -1,0 +1,593 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Tutorials &#8212; Magnelio Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/index';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/dev/tutorials/index.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Your first simulation: a parallel-plate line" href="plot_01_parallel_plate.html" />
+    <link rel="prev" title="Magnelio" href="../index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Magnelio Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../methods/index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../methods/index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="plot_01_parallel_plate.html">Your first simulation: a parallel-plate line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_02_coax_line.html">A coaxial line: solids, booleans, and a coax port</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_03_coax_smatrix.html">Exciting both ports: the full S-matrix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_04_higher_modes.html">Higher-order modes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_05_eigenmode_sphere.html">Eigenmode analysis: a spherical cavity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_06_field_monitors.html">Field monitors: watching a magic tee work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_07_project_store.html">Using disk storage: monitors at scale, resume, ParaView</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_08_open_boundary.html">Open boundaries: a monopole antenna</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_09_microstrip_line.html">Microstrip lines: quasi-TEM ports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_10_lumped_elements.html">Lumped elements: a Wilkinson power divider</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_11_losses.html">Conductor and dielectric losses</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_12_sweep_optimize.html">Parameter sweeps and optimisation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_13_dielectric_filter.html">Capstone: a two-pole dielectric resonator filter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_14_profile_geometry.html">Profiles: shapes the primitives do not cover</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Tutorials</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="tutorials">
+<h1>Tutorials<a class="headerlink" href="#tutorials" title="Link to this heading">#</a></h1>
+<p>Executable walkthroughs of the Magnelio public API, ordered from the
+first simulation to advanced workflows.  Every page is generated from
+the runnable script in <code class="docutils literal notranslate"><span class="pre">examples/tutorials/</span></code> and can be downloaded
+as a <code class="docutils literal notranslate"><span class="pre">.py</span></code> script or a <code class="docutils literal notranslate"><span class="pre">.ipynb</span></code> notebook.</p>
+<div id='sg-tag-list' class='sphx-glr-tag-list'></div><div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="This tutorial walks through one complete Magnelio workflow — geometry, materials, boundary conditions, mesh, waveguide ports, time-domain run, broadband S-parameters — on the simplest structure that has all of these ingredients: a short section of parallel-plate transmission line."><img alt="" src="../_images/sphx_glr_plot_01_parallel_plate_thumb.png" />
+<p><a class="reference internal" href="plot_01_parallel_plate.html"><span class="doc">Your first simulation: a parallel-plate line</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Your first simulation: a parallel-plate line</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="The first tutorial &lt;plot_01_parallel_plate&gt; needed no geometry at all — one air brick, and every conductor was a boundary face.  This one builds a real three-dimensional structure: a short piece of RG-58 class coaxial cable, modelled from solid primitives and a boolean operation.  Along the way it introduces the second way of declaring a port — by naming the analytical family of its cross-section — and the habit of reading a port report that carries both a numerical and a reference impedance."><img alt="" src="../_images/sphx_glr_plot_02_coax_line_thumb.png" />
+<p><a class="reference internal" href="plot_02_coax_line.html"><span class="doc">A coaxial line: solids, booleans, and a coax port</span></a></p>
+  <div class="sphx-glr-thumbnail-title">A coaxial line: solids, booleans, and a coax port</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="The lines simulated so far were uniform and matched, so a single excitation told the whole story.  This tutorial puts a real discontinuity into the coaxial line of the previous tutorial &lt;plot_02_coax_line&gt; — a short air gap in the dielectric — and asks the questions that need the complete scattering matrix: how much reflects from each side, and is the device symmetric and reciprocal?  One run call with both ports excited delivers the full matrix; a three-section transmission-line cascade provides the closed-form reference."><img alt="" src="../_images/sphx_glr_plot_03_coax_smatrix_thumb.png" />
+<p><a class="reference internal" href="plot_03_coax_smatrix.html"><span class="doc">Exciting both ports: the full S-matrix</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Exciting both ports: the full S-matrix</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="Every tutorial so far stayed safely below the first higher-order cut-off, so &quot;the&quot; mode of the line was unambiguous.  This one takes the familiar RG-58 class coax and raises the band edge to 50 GHz — past the cut-off of the TE11 mode pair near 34 GHz.  Above that frequency the line carries three modes at once, and the S-matrix gains a mode index on top of the port index.  The page walks through the mode ladder, the degenerate TE11 pair, mode-resolved S-parameters, and two analytical anchors: the TE11 cut-off and the waveguide dispersion of its transmission phase."><img alt="" src="../_images/sphx_glr_plot_04_higher_modes_thumb.png" />
+<p><a class="reference internal" href="plot_04_higher_modes.html"><span class="doc">Higher-order modes</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Higher-order modes</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="All previous tutorials solved driven problems: a port launches a wave, the solver computes what scatters where.  This one introduces the second analysis type.  A closed cavity has no ports and no excitation — it has eigenmodes: the discrete set of field patterns and resonant frequencies the geometry supports on its own. AnalysisEigenmode computes them directly."><img alt="" src="../_images/sphx_glr_plot_05_eigenmode_sphere_thumb.png" />
+<p><a class="reference internal" href="plot_05_eigenmode_sphere.html"><span class="doc">Eigenmode analysis: a spherical cavity</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Eigenmode analysis: a spherical cavity</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="Every tutorial so far judged a device from the outside, by its S-parameters.  This one goes inside.  Field monitors record the electromagnetic field during a driven simulation — as snapshots in time or as phasors at chosen frequencies, on a point, a line, a plane or a volume — and turn a scattering matrix entry into something you can see."><img alt="" src="../_images/sphx_glr_plot_06_field_monitors_thumb.png" />
+<p><a class="reference internal" href="plot_06_field_monitors.html"><span class="doc">Field monitors: watching a magic tee work</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Field monitors: watching a magic tee work</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="Everything so far lived in RAM: results and monitor data existed as long as the Python session and vanished with it — and a monitor held only the run it had just witnessed.  This tutorial gives a simulation a project directory instead.  The model, every run&#x27;s port signals, every monitor&#x27;s data and a resumable checkpoint all stream to disk while the solver marches; evaluation becomes a separate step that can happen in another script, on another day — or in ParaView."><img alt="" src="../_images/sphx_glr_plot_07_project_store_thumb.png" />
+<p><a class="reference internal" href="plot_07_project_store.html"><span class="doc">Using disk storage: monitors at scale, resume, ParaView</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Using disk storage: monitors at scale, resume, ParaView</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="Every structure so far lived inside metal: coaxial shields, waveguide walls, a cavity — the domain boundary was always a physical conductor. An antenna breaks that pattern.  Its whole purpose is to launch a wave that leaves, so the simulation domain must end in something that absorbs outgoing radiation as if free space continued forever.  That something is the CPML — a convolutional perfectly matched layer, declared per face exactly like the PEC and PMC walls of the earlier tutorials."><img alt="" src="../_images/sphx_glr_plot_08_open_boundary_thumb.png" />
+<p><a class="reference internal" href="plot_08_open_boundary.html"><span class="doc">Open boundaries: a monopole antenna</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Open boundaries: a monopole antenna</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="The tutorials so far split into two worlds: closed metal pipes (waveguides, tutorial 06/07) and ideal two-conductor lines (coax, tutorials 02–04).  This one opens the third and — for most RF work — most important world: printed transmission lines.  A microstrip is a flat conductor trace on a dielectric substrate over a ground plane, and its cross-section is inhomogeneous: part of the field travels in the dielectric, part in the air above.  That single fact changes the character of the fundamental mode, and this tutorial is about understanding — and measuring — exactly how."><img alt="" src="../_images/sphx_glr_plot_09_microstrip_line_thumb.png" />
+<p><a class="reference internal" href="plot_09_microstrip_line.html"><span class="doc">Microstrip lines: quasi-TEM ports</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Microstrip lines: quasi-TEM ports</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="A classic result of network theory says: a three-port that is lossless and reciprocal cannot be matched at all three ports at once. Every corporate feed network runs into this — a plain T-junction splits power fine, but its outputs are badly matched and anything reflected at one output leaks straight into the other."><img alt="" src="../_images/sphx_glr_plot_10_lumped_elements_thumb.png" />
+<p><a class="reference internal" href="plot_10_lumped_elements.html"><span class="doc">Lumped elements: a Wilkinson power divider</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Lumped elements: a Wilkinson power divider</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="Every structure in this series so far was lossless: perfect metal, perfect dielectrics.  That is the right starting point — S-parameters of well-matched devices are dominated by geometry — but real answers to real questions need dissipation: how many dB does this cable eat, how hot does this filter run, what is the Q of this cavity?"><img alt="" src="../_images/sphx_glr_plot_11_losses_thumb.png" />
+<p><a class="reference internal" href="plot_11_losses.html"><span class="doc">Conductor and dielectric losses</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Conductor and dielectric losses</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="Every tutorial so far simulated one fixed design.  Real work rarely looks like that: a dimension is unknown, a match is too poor, and the question is not &quot;what does this structure do&quot; but &quot;which structure does what I want&quot;."><img alt="" src="../_images/sphx_glr_plot_12_sweep_optimize_thumb.png" />
+<p><a class="reference internal" href="plot_12_sweep_optimize.html"><span class="doc">Parameter sweeps and optimisation</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Parameter sweeps and optimisation</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="The tutorials so far each isolated one capability.  This one is a design job of the kind the rest were preparation for: a narrowband bandpass filter built from ceramic resonators, dimensioned from a specification and verified against it."><img alt="" src="../_images/sphx_glr_plot_13_dielectric_filter_thumb.png" />
+<p><a class="reference internal" href="plot_13_dielectric_filter.html"><span class="doc">Capstone: a two-pole dielectric resonator filter</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Capstone: a two-pole dielectric resonator filter</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="Bricks, cylinders, cones and spheres carry most models, and Boolean operations carry most of the rest.  Sooner or later a part resists both: a curved electrode that is a slice of a tube, a pad with one rounded end, a track that follows a route, a taper between two different cross-sections.  Cutting those out of primitives means inventing tool bodies whose only purpose is to be subtracted, and getting their dimensions right by hand."><img alt="" src="../_images/sphx_glr_plot_14_profile_geometry_thumb.png" />
+<p><a class="reference internal" href="plot_14_profile_geometry.html"><span class="doc">Profiles: shapes the primitives do not cover</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Profiles: shapes the primitives do not cover</div>
+</div></div><div class="toctree-wrapper compound">
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Magnelio</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="plot_01_parallel_plate.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Your first simulation: a parallel-plate line</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/tutorials/index.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Bernd Breitkreutz.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

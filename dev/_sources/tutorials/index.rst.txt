@@ -1,0 +1,292 @@
+:orphan:
+
+Tutorials
+=========
+
+Executable walkthroughs of the Magnelio public API, ordered from the
+first simulation to advanced workflows.  Every page is generated from
+the runnable script in ``examples/tutorials/`` and can be downloaded
+as a ``.py`` script or a ``.ipynb`` notebook.
+
+
+.. raw:: html
+
+  <div id='sg-tag-list' class='sphx-glr-tag-list'></div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This tutorial walks through one complete Magnelio workflow — geometry, materials, boundary conditions, mesh, waveguide ports, time-domain run, broadband S-parameters — on the simplest structure that has all of these ingredients: a short section of parallel-plate transmission line.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_01_parallel_plate_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_01_parallel_plate`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Your first simulation: a parallel-plate line</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="The first tutorial &lt;plot_01_parallel_plate&gt; needed no geometry at all — one air brick, and every conductor was a boundary face.  This one builds a real three-dimensional structure: a short piece of RG-58 class coaxial cable, modelled from solid primitives and a boolean operation.  Along the way it introduces the second way of declaring a port — by naming the analytical family of its cross-section — and the habit of reading a port report that carries both a numerical and a reference impedance.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_02_coax_line_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_02_coax_line`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">A coaxial line: solids, booleans, and a coax port</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="The lines simulated so far were uniform and matched, so a single excitation told the whole story.  This tutorial puts a real discontinuity into the coaxial line of the previous tutorial &lt;plot_02_coax_line&gt; — a short air gap in the dielectric — and asks the questions that need the complete scattering matrix: how much reflects from each side, and is the device symmetric and reciprocal?  One run call with both ports excited delivers the full matrix; a three-section transmission-line cascade provides the closed-form reference.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_03_coax_smatrix_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_03_coax_smatrix`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Exciting both ports: the full S-matrix</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Every tutorial so far stayed safely below the first higher-order cut-off, so &quot;the&quot; mode of the line was unambiguous.  This one takes the familiar RG-58 class coax and raises the band edge to 50 GHz — past the cut-off of the TE11 mode pair near 34 GHz.  Above that frequency the line carries three modes at once, and the S-matrix gains a mode index on top of the port index.  The page walks through the mode ladder, the degenerate TE11 pair, mode-resolved S-parameters, and two analytical anchors: the TE11 cut-off and the waveguide dispersion of its transmission phase.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_04_higher_modes_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_04_higher_modes`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Higher-order modes</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="All previous tutorials solved driven problems: a port launches a wave, the solver computes what scatters where.  This one introduces the second analysis type.  A closed cavity has no ports and no excitation — it has eigenmodes: the discrete set of field patterns and resonant frequencies the geometry supports on its own. AnalysisEigenmode computes them directly.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_05_eigenmode_sphere_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_05_eigenmode_sphere`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Eigenmode analysis: a spherical cavity</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Every tutorial so far judged a device from the outside, by its S-parameters.  This one goes inside.  Field monitors record the electromagnetic field during a driven simulation — as snapshots in time or as phasors at chosen frequencies, on a point, a line, a plane or a volume — and turn a scattering matrix entry into something you can see.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_06_field_monitors_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_06_field_monitors`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Field monitors: watching a magic tee work</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Everything so far lived in RAM: results and monitor data existed as long as the Python session and vanished with it — and a monitor held only the run it had just witnessed.  This tutorial gives a simulation a project directory instead.  The model, every run&#x27;s port signals, every monitor&#x27;s data and a resumable checkpoint all stream to disk while the solver marches; evaluation becomes a separate step that can happen in another script, on another day — or in ParaView.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_07_project_store_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_07_project_store`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Using disk storage: monitors at scale, resume, ParaView</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Every structure so far lived inside metal: coaxial shields, waveguide walls, a cavity — the domain boundary was always a physical conductor. An antenna breaks that pattern.  Its whole purpose is to launch a wave that leaves, so the simulation domain must end in something that absorbs outgoing radiation as if free space continued forever.  That something is the CPML — a convolutional perfectly matched layer, declared per face exactly like the PEC and PMC walls of the earlier tutorials.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_08_open_boundary_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_08_open_boundary`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Open boundaries: a monopole antenna</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="The tutorials so far split into two worlds: closed metal pipes (waveguides, tutorial 06/07) and ideal two-conductor lines (coax, tutorials 02–04).  This one opens the third and — for most RF work — most important world: printed transmission lines.  A microstrip is a flat conductor trace on a dielectric substrate over a ground plane, and its cross-section is inhomogeneous: part of the field travels in the dielectric, part in the air above.  That single fact changes the character of the fundamental mode, and this tutorial is about understanding — and measuring — exactly how.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_09_microstrip_line_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_09_microstrip_line`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Microstrip lines: quasi-TEM ports</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="A classic result of network theory says: a three-port that is lossless and reciprocal cannot be matched at all three ports at once. Every corporate feed network runs into this — a plain T-junction splits power fine, but its outputs are badly matched and anything reflected at one output leaks straight into the other.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_10_lumped_elements_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_10_lumped_elements`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Lumped elements: a Wilkinson power divider</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Every structure in this series so far was lossless: perfect metal, perfect dielectrics.  That is the right starting point — S-parameters of well-matched devices are dominated by geometry — but real answers to real questions need dissipation: how many dB does this cable eat, how hot does this filter run, what is the Q of this cavity?">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_11_losses_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_11_losses`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Conductor and dielectric losses</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Every tutorial so far simulated one fixed design.  Real work rarely looks like that: a dimension is unknown, a match is too poor, and the question is not &quot;what does this structure do&quot; but &quot;which structure does what I want&quot;.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_12_sweep_optimize_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_12_sweep_optimize`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Parameter sweeps and optimisation</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="The tutorials so far each isolated one capability.  This one is a design job of the kind the rest were preparation for: a narrowband bandpass filter built from ceramic resonators, dimensioned from a specification and verified against it.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_13_dielectric_filter_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_13_dielectric_filter`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Capstone: a two-pole dielectric resonator filter</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Bricks, cylinders, cones and spheres carry most models, and Boolean operations carry most of the rest.  Sooner or later a part resists both: a curved electrode that is a slice of a tube, a pad with one rounded end, a track that follows a route, a taper between two different cross-sections.  Cutting those out of primitives means inventing tool bodies whose only purpose is to be subtracted, and getting their dimensions right by hand.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_14_profile_geometry_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_14_profile_geometry`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Profiles: shapes the primitives do not cover</div>
+    </div>
+
+
+.. thumbnail-parent-div-close
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /tutorials/plot_01_parallel_plate
+   /tutorials/plot_02_coax_line
+   /tutorials/plot_03_coax_smatrix
+   /tutorials/plot_04_higher_modes
+   /tutorials/plot_05_eigenmode_sphere
+   /tutorials/plot_06_field_monitors
+   /tutorials/plot_07_project_store
+   /tutorials/plot_08_open_boundary
+   /tutorials/plot_09_microstrip_line
+   /tutorials/plot_10_lumped_elements
+   /tutorials/plot_11_losses
+   /tutorials/plot_12_sweep_optimize
+   /tutorials/plot_13_dielectric_filter
+   /tutorials/plot_14_profile_geometry
+
+
+
+.. only:: html
+
+ .. rst-class:: sphx-glr-signature
+
+    `Gallery generated by Sphinx-Gallery <https://sphinx-gallery.github.io>`_

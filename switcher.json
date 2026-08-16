@@ -1,0 +1,13 @@
+[
+  {
+    "name": "stable",
+    "version": "stable",
+    "url": "https://brtkrtz.github.io/magnelio/stable/",
+    "preferred": true
+  },
+  {
+    "name": "dev (main)",
+    "version": "dev",
+    "url": "https://brtkrtz.github.io/magnelio/dev/"
+  }
+]
