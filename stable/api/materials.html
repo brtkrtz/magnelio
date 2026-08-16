@@ -1,0 +1,1037 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>magnelio.materials &#8212; Magnelio Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+
+    <script src="../_static/documentation_options.js?v=938c9ccc"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/materials';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/stable/api/materials.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="magnelio.mesh" href="mesh.html" />
+    <link rel="prev" title="magnelio.geo" href="geo.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Magnelio Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../methods/index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../methods/index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="core.html">Core (<code class="docutils literal notranslate"><span class="pre">magnelio</span></code>)</a></li>
+</ul>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="geo.html"><code class="docutils literal notranslate"><span class="pre">magnelio.geo</span></code></a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">magnelio.materials</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="mesh.html"><code class="docutils literal notranslate"><span class="pre">magnelio.mesh</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="boundaries.html"><code class="docutils literal notranslate"><span class="pre">magnelio.boundaries</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="ports.html"><code class="docutils literal notranslate"><span class="pre">magnelio.ports</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="sources.html"><code class="docutils literal notranslate"><span class="pre">magnelio.sources</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="monitors.html"><code class="docutils literal notranslate"><span class="pre">magnelio.monitors</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="circuit.html"><code class="docutils literal notranslate"><span class="pre">magnelio.circuit</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="signals.html"><code class="docutils literal notranslate"><span class="pre">magnelio.signals</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="solver.html"><code class="docutils literal notranslate"><span class="pre">magnelio.solver</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="analysis.html"><code class="docutils literal notranslate"><span class="pre">magnelio.analysis</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="post.html"><code class="docutils literal notranslate"><span class="pre">magnelio.post</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="plots.html"><code class="docutils literal notranslate"><span class="pre">magnelio.plots</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="io.html"><code class="docutils literal notranslate"><span class="pre">magnelio.io</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="constants.html"><code class="docutils literal notranslate"><span class="pre">magnelio.constants</span></code></a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">API reference</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><code class="docutils literal notranslate"><span class="pre">magnelio.materials</span></code></span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="module-magnelio.materials">
+<span id="magnelio-materials"></span><h1><code class="docutils literal notranslate"><span class="pre">magnelio.materials</span></code><a class="headerlink" href="#module-magnelio.materials" title="Link to this heading">#</a></h1>
+<p>Material components — dispersion, roughness and surface-impedance fits.
+<code class="docutils literal notranslate"><span class="pre">Material</span></code> itself lives in the core <code class="docutils literal notranslate"><span class="pre">magnelio</span></code> namespace.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.materials.DispersionModel">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.materials.</span></span><span class="sig-name descname"><span class="pre">DispersionModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eps_inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_band</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.DispersionModel" title="Link to this definition">#</a></dt>
+<dd><p>Pole-residue permittivity model <code class="docutils literal notranslate"><span class="pre">eps_inf</span> <span class="pre">+</span> <span class="pre">sum</span> <span class="pre">r_p/(j*omega</span> <span class="pre">-</span> <span class="pre">a_p)</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>eps_inf</strong> (<em>float</em>) – Relative permittivity in the high-frequency limit.  This is the
+value the host <code class="xref py py-class docutils literal notranslate"><span class="pre">Material</span></code> must carry in <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> — it
+drives the mass matrix and the CFL limit.</p></li>
+<li><p><strong>poles</strong> (<em>tuple</em><em> of </em><em>(</em><em>complex</em><em>, </em><em>complex</em><em>)</em>) – <code class="docutils literal notranslate"><span class="pre">(a_p,</span> <span class="pre">r_p)</span></code> pairs in rad/s.  A pole with <code class="docutils literal notranslate"><span class="pre">Im(a_p)</span> <span class="pre">!=</span> <span class="pre">0</span></code>
+represents a complex-conjugate <em>pair</em> stored once (poles with
+<code class="docutils literal notranslate"><span class="pre">Im(a_p)</span> <span class="pre">&lt;</span> <span class="pre">0</span></code> are conjugated on input so the stored member has
+<code class="docutils literal notranslate"><span class="pre">Im(a_p)</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>); a real pole must carry a real residue.</p></li>
+<li><p><strong>f_band</strong> (<em>tuple</em><em> of </em><em>(</em><em>float</em><em>, </em><em>float</em><em>)</em>) – Declared validity band <code class="docutils literal notranslate"><span class="pre">(f_min,</span> <span class="pre">f_max)</span></code> in Hz.  Passivity
+(<code class="docutils literal notranslate"><span class="pre">eps''</span> <span class="pre">&gt;=</span> <span class="pre">0</span></code>) is enforced on log-spaced samples across this
+band at construction.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If any pole is unstable (<code class="docutils literal notranslate"><span class="pre">Re(a_p)</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>), marginally stable but
+    oscillatory (<code class="docutils literal notranslate"><span class="pre">Re(a_p)</span> <span class="pre">=</span> <span class="pre">0</span></code> with <code class="docutils literal notranslate"><span class="pre">Im(a_p)</span> <span class="pre">!=</span> <span class="pre">0</span></code>), a real pole
+    carries a complex residue, the DC pole (<code class="docutils literal notranslate"><span class="pre">a_p</span> <span class="pre">=</span> <span class="pre">0</span></code>) has a
+    non-positive residue, or <code class="docutils literal notranslate"><span class="pre">eps''(omega)</span> <span class="pre">&lt;</span> <span class="pre">0</span></code> anywhere on the
+    sampled band.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.materials.DispersionModel.debye">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">debye</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eps_inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_eps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tau</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.DispersionModel.debye" title="Link to this definition">#</a></dt>
+<dd><p>Multi-term Debye relaxation <code class="docutils literal notranslate"><span class="pre">sum</span> <span class="pre">delta_eps_k</span> <span class="pre">/</span> <span class="pre">(1</span> <span class="pre">+</span> <span class="pre">j*omega*tau_k)</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>eps_inf</strong> (<em>float</em>) – High-frequency relative permittivity.</p></li>
+<li><p><strong>delta_eps</strong> (<em>float</em><em> or </em><em>sequence</em><em> of </em><em>float</em>) – Relaxation strength per term (<code class="docutils literal notranslate"><span class="pre">eps_s</span> <span class="pre">-</span> <span class="pre">eps_inf</span></code> for one term).</p></li>
+<li><p><strong>tau</strong> (<em>float</em><em> or </em><em>sequence</em><em> of </em><em>float</em>) – Relaxation time per term [s]; same length as <em>delta_eps</em>.</p></li>
+<li><p><strong>f_band</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – Validity band [Hz].  Default: two decades around the
+relaxation frequencies <code class="docutils literal notranslate"><span class="pre">1/(2</span> <span class="pre">pi</span> <span class="pre">tau)</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.materials.DispersionModel" title="magnelio.materials.dispersion.DispersionModel"><em>DispersionModel</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.materials.DispersionModel.djordjevic_sarkar">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">djordjevic_sarkar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eps_r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tan_delta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000000000.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.DispersionModel.djordjevic_sarkar" title="Link to this definition">#</a></dt>
+<dd><p>Causal wideband constant-loss-tangent substrate model.</p>
+<p>The Djordjevic–Sarkar continuum (log-uniform Debye distribution
+between <code class="docutils literal notranslate"><span class="pre">f1</span></code> and <code class="docutils literal notranslate"><span class="pre">f2</span></code>) is discretised at two poles per decade
+— enough that the comb ripple is negligible against the model’s
+<em>inherent</em> tan-delta slope (eps’’ is near-constant while eps’
+falls logarithmically, so tan delta drifts ~5 % per 1.5 decades
+from f_ref at eps_r=4.3/tan_delta=0.02; that drift IS the causal
+Kramers–Kronig behaviour, not a discretisation artefact).
+<code class="docutils literal notranslate"><span class="pre">eps_inf</span></code> and the total relaxation strength are solved so the
+model reproduces exactly <code class="docutils literal notranslate"><span class="pre">eps'</span> <span class="pre">=</span> <span class="pre">eps_r</span></code> and
+<code class="docutils literal notranslate"><span class="pre">eps''/eps'</span> <span class="pre">=</span> <span class="pre">tan_delta</span></code> at <code class="docutils literal notranslate"><span class="pre">f_ref</span></code>.  A truly constant
+tan delta over all frequencies violates Kramers–Kronig — this is
+the standard causal approximation every time-domain solver uses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>eps_r</strong> (<em>float</em>) – Real relative permittivity at <em>f_ref</em>.</p></li>
+<li><p><strong>tan_delta</strong> (<em>float</em>) – Loss tangent at <em>f_ref</em> (&gt;= 0; 0 returns a pole-free model).</p></li>
+<li><p><strong>f_ref</strong> (<em>float</em>) – Reference frequency [Hz]; must lie inside <code class="docutils literal notranslate"><span class="pre">(f1,</span> <span class="pre">f2)</span></code>.</p></li>
+<li><p><strong>f1</strong> (<em>float</em><em>, </em><em>optional</em>) – Debye-distribution corner frequencies [Hz] — also the
+declared validity band.  Defaults 1 kHz / 1 THz.</p></li>
+<li><p><strong>f2</strong> (<em>float</em><em>, </em><em>optional</em>) – Debye-distribution corner frequencies [Hz] — also the
+declared validity band.  Defaults 1 kHz / 1 THz.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.materials.DispersionModel" title="magnelio.materials.dispersion.DispersionModel"><em>DispersionModel</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.materials.DispersionModel.drude">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">drude</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eps_inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega_p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.DispersionModel.drude" title="Link to this definition">#</a></dt>
+<dd><p>Drude free-carrier model <code class="docutils literal notranslate"><span class="pre">eps_inf</span> <span class="pre">-</span> <span class="pre">omega_p^2</span> <span class="pre">/</span> <span class="pre">(omega^2</span> <span class="pre">-</span> <span class="pre">j*omega*gamma)</span></code>.</p>
+<p>Partial fractions give one real relaxation pole at <code class="docutils literal notranslate"><span class="pre">-gamma</span></code> and
+the real DC pole at 0 whose trapezoidal update is exactly the
+semi-implicit conductor with <code class="docutils literal notranslate"><span class="pre">sigma</span> <span class="pre">=</span> <span class="pre">eps0</span> <span class="pre">*</span> <span class="pre">omega_p^2</span> <span class="pre">/</span> <span class="pre">gamma</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>eps_inf</strong> (<em>float</em>) – High-frequency relative permittivity.</p></li>
+<li><p><strong>omega_p</strong> (<em>float</em>) – Plasma angular frequency [rad/s].</p></li>
+<li><p><strong>gamma</strong> (<em>float</em>) – Collision rate [rad/s] (must be &gt; 0).</p></li>
+<li><p><strong>f_band</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – Validity band [Hz].  Default: two decades around
+<code class="docutils literal notranslate"><span class="pre">omega_p</span> <span class="pre">/</span> <span class="pre">(2</span> <span class="pre">pi)</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.materials.DispersionModel" title="magnelio.materials.dispersion.DispersionModel"><em>DispersionModel</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.materials.DispersionModel.from_table">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_poles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_poles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.DispersionModel.from_table" title="Link to this definition">#</a></dt>
+<dd><p>Fit a tabulated permittivity onto the pole-residue form.</p>
+<p>In-repo Gustavsen/Semlyen vector fitting
+(<code class="xref py py-mod docutils literal notranslate"><span class="pre">magnelio.materials.vector_fit</span></code>); the fit enforces pole
+stability, and the <a class="reference internal" href="#magnelio.materials.DispersionModel" title="magnelio.materials.DispersionModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">DispersionModel</span></code></a> constructor acts as
+the mandatory passivity acceptance filter — a fit that violates
+it raises with the offending frequency, an active material is
+never silently shipped.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>f</strong> (<em>array_like</em>) – Table frequencies [Hz], ascending, &gt; 0 (&gt;= 4 points).</p></li>
+<li><p><strong>eps</strong> (<em>array_like</em><em> or </em><em>(</em><em>array_like</em><em>, </em><em>array_like</em><em>)</em>) – Complex relative permittivity <code class="docutils literal notranslate"><span class="pre">eps'</span> <span class="pre">-</span> <span class="pre">j*eps''</span></code> per table
+point, or a <code class="docutils literal notranslate"><span class="pre">(eps_prime,</span> <span class="pre">tan_delta)</span></code> pair of real arrays.</p></li>
+<li><p><strong>n_poles</strong> (<em>int</em><em>, </em><em>optional</em>) – Model order (conjugate partners counted individually).
+Default <code class="docutils literal notranslate"><span class="pre">None</span></code>: automatic — the order grows until the
+maximum relative fit error over the table beats <em>tol</em> and
+the result passes the passivity filter, capped at
+<em>max_poles</em> with a clear error.  With an explicit order the
+fit is accepted at whatever error it reaches (noisy
+measured tables) — only passivity is enforced.</p></li>
+<li><p><strong>f_band</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – Declared validity band [Hz].  Default: the table span.</p></li>
+<li><p><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Automatic-order acceptance threshold on
+<code class="docutils literal notranslate"><span class="pre">max</span> <span class="pre">|fit</span> <span class="pre">-</span> <span class="pre">table|</span> <span class="pre">/</span> <span class="pre">max</span> <span class="pre">|table|</span></code> (default 1e-3).</p></li>
+<li><p><strong>max_poles</strong> (<em>int</em><em>, </em><em>optional</em>) – Automatic-order cap (default 30).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the table itself is non-passive (<code class="docutils literal notranslate"><span class="pre">eps''</span> <span class="pre">&lt;</span> <span class="pre">0</span></code>), the
+    automatic order search hits <em>max_poles</em> without an
+    acceptable passive fit, or the fitted model violates the
+    passivity/stability rules.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#magnelio.materials.DispersionModel" title="magnelio.materials.dispersion.DispersionModel"><em>DispersionModel</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.materials.DispersionModel.lorentz">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">lorentz</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eps_inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_eps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.DispersionModel.lorentz" title="Link to this definition">#</a></dt>
+<dd><p>Lorentz resonance <code class="docutils literal notranslate"><span class="pre">delta_eps</span> <span class="pre">*</span> <span class="pre">omega0^2</span> <span class="pre">/</span> <span class="pre">(omega0^2</span> <span class="pre">+</span> <span class="pre">2j*omega*delta</span> <span class="pre">-</span> <span class="pre">omega^2)</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>eps_inf</strong> (<em>float</em>) – High-frequency relative permittivity.</p></li>
+<li><p><strong>delta_eps</strong> (<em>float</em>) – Resonance strength (<code class="docutils literal notranslate"><span class="pre">eps_s</span> <span class="pre">-</span> <span class="pre">eps_inf</span></code>).</p></li>
+<li><p><strong>omega0</strong> (<em>float</em>) – Resonance angular frequency [rad/s].</p></li>
+<li><p><strong>delta</strong> (<em>float</em>) – Damping rate [rad/s] (must be &gt; 0 and != omega0; the
+critically damped double pole is not representable in the
+simple-pole form — perturb delta instead).</p></li>
+<li><p><strong>f_band</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – Validity band [Hz].  Default: two decades around
+<code class="docutils literal notranslate"><span class="pre">omega0</span> <span class="pre">/</span> <span class="pre">(2</span> <span class="pre">pi)</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.materials.DispersionModel" title="magnelio.materials.dispersion.DispersionModel"><em>DispersionModel</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.materials.DispersionModel.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">omega</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.DispersionModel.evaluate" title="Link to this definition">#</a></dt>
+<dd><p>Complex relative permittivity at angular frequency <em>omega</em> [rad/s].</p>
+<p>Conjugate pairs contribute both members; the result follows the
+engineering <code class="docutils literal notranslate"><span class="pre">e^{+j</span> <span class="pre">omega</span> <span class="pre">t}</span></code> convention (<code class="docutils literal notranslate"><span class="pre">eps</span> <span class="pre">=</span> <span class="pre">eps'</span> <span class="pre">-</span> <span class="pre">j</span> <span class="pre">eps''</span></code>
+with <code class="docutils literal notranslate"><span class="pre">eps''</span> <span class="pre">&gt;=</span> <span class="pre">0</span></code> for a passive material).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.materials.Hammerstad">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.materials.</span></span><span class="sig-name descname"><span class="pre">Hammerstad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rms_height</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.Hammerstad" title="Link to this definition">#</a></dt>
+<dd><p>Hammerstad-Jensen roughness correction (the classical curve fit).</p>
+<p><code class="docutils literal notranslate"><span class="pre">K(f)</span> <span class="pre">=</span> <span class="pre">1</span> <span class="pre">+</span> <span class="pre">(2/pi)</span> <span class="pre">*</span> <span class="pre">arctan(1.4</span> <span class="pre">*</span> <span class="pre">(Rq/delta(f))^2)</span></code></p>
+<p>Fitted to measured microstrip loss, and adequate for low to moderate
+roughness.  Its ceiling is structural, not a fit artefact: the
+arctan saturates, so <code class="docutils literal notranslate"><span class="pre">K</span> <span class="pre">-&gt;</span> <span class="pre">2</span></code> however rough the profile gets.
+Strongly roughened foils exceed that ceiling in reality — use
+<a class="reference internal" href="#magnelio.materials.Huray" title="magnelio.materials.Huray"><code class="xref py py-class docutils literal notranslate"><span class="pre">Huray</span></code></a> there.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rms_height</strong> (<em>float</em>) – RMS roughness Rq [m] of the profile.  <code class="docutils literal notranslate"><span class="pre">0</span></code> is the smooth limit
+(<code class="docutils literal notranslate"><span class="pre">K</span> <span class="pre">==</span> <span class="pre">1</span></code> at every frequency).</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.materials.Hammerstad.factor">
+<span class="sig-name descname"><span class="pre">factor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.Hammerstad.factor" title="Link to this definition">#</a></dt>
+<dd><p>Roughness correction factor <code class="docutils literal notranslate"><span class="pre">K(f)</span> <span class="pre">&gt;=</span> <span class="pre">1</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>f</strong> (<em>float</em><em> or </em><em>array_like</em>) – Frequency [Hz].</p></li>
+<li><p><strong>sigma</strong> (<em>float</em>) – Conductivity [S/m] of the metal (enters through the skin
+depth — the roughness scale only matters relative to it).</p></li>
+<li><p><strong>mu</strong> (<em>float</em><em>, </em><em>optional</em>) – Relative permeability of the metal (default 1).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">K</span></code> at each frequency.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.materials.Huray">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.materials.</span></span><span class="sig-name descname"><span class="pre">Huray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">radius</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coverage</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.Huray" title="Link to this definition">#</a></dt>
+<dd><p>Huray “snowball” roughness correction (physics-based).</p>
+<p>A tile of flat base area <code class="docutils literal notranslate"><span class="pre">A_flat</span></code> carries a cluster of conducting
+spheres of radius <code class="docutils literal notranslate"><span class="pre">a</span></code>.  Superposing the analytic loss of a single
+sphere in a uniform tangential field over the cluster gives
+[Bracken 2012, eq. (5)]</p>
+<blockquote>
+<div><dl class="simple">
+<dt>K(f) = base_ratio + (3/2) * coverage</dt><dd><p>/ (1 + delta/a + delta^2/(2*a^2))</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>with <code class="docutils literal notranslate"><span class="pre">coverage</span> <span class="pre">=</span> <span class="pre">N*4*pi*a^2</span> <span class="pre">/</span> <span class="pre">A_flat</span></code> the total sphere surface per
+unit tile area.  The asymptotes are the model’s physical content:
+at low frequency <code class="docutils literal notranslate"><span class="pre">delta</span> <span class="pre">&gt;&gt;</span> <span class="pre">a</span></code> the field does not resolve the
+spheres and <code class="docutils literal notranslate"><span class="pre">K</span> <span class="pre">-&gt;</span> <span class="pre">base_ratio</span></code>; at high frequency <code class="docutils literal notranslate"><span class="pre">delta</span> <span class="pre">&lt;&lt;</span> <span class="pre">a</span></code>
+every sphere contributes its full surface and <code class="docutils literal notranslate"><span class="pre">K</span> <span class="pre">-&gt;</span> <span class="pre">base_ratio</span> <span class="pre">+</span>
+<span class="pre">1.5*coverage</span></code>.  Unlike <a class="reference internal" href="#magnelio.materials.Hammerstad" title="magnelio.materials.Hammerstad"><code class="xref py py-class docutils literal notranslate"><span class="pre">Hammerstad</span></code></a> that ceiling follows
+the actual profile instead of saturating at 2.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>radius</strong> (<em>float</em>) – Sphere (“snowball”) radius a [m].  Must be &gt; 0.</p></li>
+<li><p><strong>coverage</strong> (<em>float</em>) – Total sphere surface area per unit flat tile area,
+<code class="docutils literal notranslate"><span class="pre">N*4*pi*a^2/A_flat</span></code> (dimensionless).  <code class="docutils literal notranslate"><span class="pre">0</span></code> is the smooth
+limit.</p></li>
+<li><p><strong>base_ratio</strong> (<em>float</em><em>, </em><em>optional</em>) – Area of the matte base relative to a flat surface,
+<code class="docutils literal notranslate"><span class="pre">A_matte/A_flat</span></code> (default 1 — a flat base, the Cannonball
+assumption).  It scales the base plate’s own loss.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Multiple sphere classes (radii <code class="docutils literal notranslate"><span class="pre">a_i</span></code> with coverages <code class="docutils literal notranslate"><span class="pre">c_i</span></code>) are
+additive in the original model; sum the <code class="docutils literal notranslate"><span class="pre">factor</span></code> contributions of
+one <a class="reference internal" href="#magnelio.materials.Huray" title="magnelio.materials.Huray"><code class="xref py py-class docutils literal notranslate"><span class="pre">Huray</span></code></a> per class and subtract the duplicated
+<code class="docutils literal notranslate"><span class="pre">base_ratio</span></code> terms, or use the single-class fit that the
+<a class="reference internal" href="#magnelio.materials.Huray.cannonball" title="magnelio.materials.Huray.cannonball"><code class="xref py py-meth docutils literal notranslate"><span class="pre">cannonball()</span></code></a> parameter set provides.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.materials.Huray.cannonball">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">cannonball</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rz</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.Huray.cannonball" title="Link to this definition">#</a></dt>
+<dd><p>Huray parameters from the datasheet Rz via the Cannonball stack.</p>
+<p>Foil datasheets publish the 10-point mean roughness Rz, not the
+sphere radius and tile area the Huray model wants.  The
+Cannonball model closes that gap with a fixed geometry: 14 equal
+spheres stacked 9 + 4 + 1 on a square tile of side <code class="docutils literal notranslate"><span class="pre">6a</span></code>, the
+stack height identified with Rz, giving <code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">=</span> <span class="pre">Rz/16.73</span></code> and
+<code class="docutils literal notranslate"><span class="pre">coverage</span> <span class="pre">=</span> <span class="pre">14*4*pi*a^2/(6a)^2</span> <span class="pre">=</span> <span class="pre">56*pi/36</span></code>.  The coverage is
+therefore a pure constant — Rz sets the radius alone.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rz</strong> (<em>float</em>) – 10-point mean roughness Rz [m] from the foil datasheet.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.materials.Huray" title="magnelio.materials.Huray">Huray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.materials.Huray.factor">
+<span class="sig-name descname"><span class="pre">factor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.Huray.factor" title="Link to this definition">#</a></dt>
+<dd><p>Roughness correction factor <code class="docutils literal notranslate"><span class="pre">K(f)</span> <span class="pre">&gt;=</span> <span class="pre">1</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>f</strong> (<em>float</em><em> or </em><em>array_like</em>) – Frequency [Hz].</p></li>
+<li><p><strong>sigma</strong> (<em>float</em>) – Conductivity [S/m] of the metal (enters through the skin
+depth — the roughness scale only matters relative to it).</p></li>
+<li><p><strong>mu</strong> (<em>float</em><em>, </em><em>optional</em>) – Relative permeability of the metal (default 1).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">K</span></code> at each frequency.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.materials.SurfaceImpedanceFit">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.materials.</span></span><span class="sig-name descname"><span class="pre">SurfaceImpedanceFit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roughness</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_lo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_hi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">branches</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_err_re</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_err_cplx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.SurfaceImpedanceFit" title="Link to this definition">#</a></dt>
+<dd><p>Passive rational surface impedance <code class="docutils literal notranslate"><span class="pre">c0</span> <span class="pre">+</span> <span class="pre">sum</span> <span class="pre">c_p</span> <span class="pre">s/(s+b_p)</span></code>.</p>
+<p>Frozen (joins <code class="docutils literal notranslate"><span class="pre">Material</span></code> equality and the store the way the
+roughness models do); built by <a class="reference internal" href="#magnelio.materials.fit_surface_impedance" title="magnelio.materials.fit_surface_impedance"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_surface_impedance()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sigma</strong> (<em>float</em>) – Conductivity [S/m] of the fitted conductor.</p></li>
+<li><p><strong>mu</strong> (<em>float</em>) – Relative permeability.</p></li>
+<li><p><strong>roughness</strong> (<a class="reference internal" href="#magnelio.materials.SurfaceRoughness" title="magnelio.materials.SurfaceRoughness"><em>SurfaceRoughness</em></a><em> or </em><em>None</em>) – Roughness model whose causal completion this fit carries.</p></li>
+<li><p><strong>f_lo</strong> (<em>float</em>) – Working band [Hz]; accuracy statements hold on this band.</p></li>
+<li><p><strong>f_hi</strong> (<em>float</em>) – Working band [Hz]; accuracy statements hold on this band.</p></li>
+<li><p><strong>c0</strong> (<em>float</em>) – Instantaneous (high-frequency) resistance term [Ohm].</p></li>
+<li><p><strong>branches</strong> (<em>tuple</em><em> of </em><em>(</em><em>float</em><em>, </em><em>float</em><em>)</em>) – <code class="docutils literal notranslate"><span class="pre">(b_p</span> <span class="pre">[rad/s],</span> <span class="pre">c_p</span> <span class="pre">[Ohm])</span></code> ladder branches, all positive.</p></li>
+<li><p><strong>rel_err_re</strong> (<em>float</em>) – Achieved max relative deviation of <code class="docutils literal notranslate"><span class="pre">Re</span> <span class="pre">Z</span></code> from the target
+surface resistance over the band.</p></li>
+<li><p><strong>rel_err_cplx</strong> (<em>float</em>) – Achieved max relative deviation of the complex fit from the
+(causally completed) target over the band.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.materials.SurfaceImpedanceFit.impedance">
+<span class="sig-name descname"><span class="pre">impedance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.SurfaceImpedanceFit.impedance" title="Link to this definition">#</a></dt>
+<dd><p>Evaluate the rational <code class="docutils literal notranslate"><span class="pre">Z(j</span> <span class="pre">2</span> <span class="pre">pi</span> <span class="pre">f)</span></code> [Ohm].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.materials.SurfaceImpedanceFit.r_instantaneous">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">r_instantaneous</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#magnelio.materials.SurfaceImpedanceFit.r_instantaneous" title="Link to this definition">#</a></dt>
+<dd><p>High-frequency limit <code class="docutils literal notranslate"><span class="pre">Z(inf)</span> <span class="pre">=</span> <span class="pre">c0</span> <span class="pre">+</span> <span class="pre">sum</span> <span class="pre">c_p</span></code> [Ohm].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.materials.SurfaceRoughness">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.materials.</span></span><span class="sig-name descname"><span class="pre">SurfaceRoughness</span></span><a class="headerlink" href="#magnelio.materials.SurfaceRoughness" title="Link to this definition">#</a></dt>
+<dd><p>Frequency-dependent multiplier on a conductor’s surface resistance.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.materials.SurfaceRoughness.factor">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">factor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.SurfaceRoughness.factor" title="Link to this definition">#</a></dt>
+<dd><p>Roughness correction factor <code class="docutils literal notranslate"><span class="pre">K(f)</span> <span class="pre">&gt;=</span> <span class="pre">1</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>f</strong> (<em>float</em><em> or </em><em>array_like</em>) – Frequency [Hz].</p></li>
+<li><p><strong>sigma</strong> (<em>float</em>) – Conductivity [S/m] of the metal (enters through the skin
+depth — the roughness scale only matters relative to it).</p></li>
+<li><p><strong>mu</strong> (<em>float</em><em>, </em><em>optional</em>) – Relative permeability of the metal (default 1).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">K</span></code> at each frequency.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="magnelio.materials.fit_surface_impedance">
+<span class="sig-prename descclassname"><span class="pre">magnelio.materials.</span></span><span class="sig-name descname"><span class="pre">fit_surface_impedance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roughness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_lo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_hi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_branches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.fit_surface_impedance" title="Link to this definition">#</a></dt>
+<dd><p>Fit a passive Foster ladder to a conductor’s surface impedance.</p>
+<p>The branch count is chosen by an acceptance loop: the smallest
+ladder whose <code class="docutils literal notranslate"><span class="pre">Re</span> <span class="pre">Z</span></code> matches the target surface resistance within
+<code class="docutils literal notranslate"><span class="pre">tol</span></code> (max relative, on a denser check grid than the fit grid)
+is returned; failure to reach <code class="docutils literal notranslate"><span class="pre">tol</span></code> at <code class="docutils literal notranslate"><span class="pre">max_branches</span></code> raises.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sigma</strong> (<em>float</em>) – Conductivity [S/m].</p></li>
+<li><p><strong>mu</strong> (<em>float</em><em>, </em><em>optional</em>) – Relative permeability of the conductor.</p></li>
+<li><p><strong>roughness</strong> (<a class="reference internal" href="#magnelio.materials.SurfaceRoughness" title="magnelio.materials.SurfaceRoughness"><em>SurfaceRoughness</em></a><em>, </em><em>optional</em>) – Roughness model; its real factor <code class="docutils literal notranslate"><span class="pre">K(f)</span></code> is causally completed
+via <code class="xref py py-func docutils literal notranslate"><span class="pre">kk_reactance()</span></code> on the roughness excess.</p></li>
+<li><p><strong>f_lo</strong> (<em>float</em><em>, </em><em>optional</em>) – Working band [Hz].</p></li>
+<li><p><strong>f_hi</strong> (<em>float</em><em>, </em><em>optional</em>) – Working band [Hz].</p></li>
+<li><p><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Acceptance bound on the band’s <code class="docutils literal notranslate"><span class="pre">Re</span> <span class="pre">Z</span></code> relative error.</p></li>
+<li><p><strong>guard</strong> (<em>float</em><em>, </em><em>optional</em>) – Pole-placement guard factor beyond the band (measured default;
+the top branches need room above the band to carry the sqrt
+growth).</p></li>
+<li><p><strong>max_branches</strong> (<em>int</em><em>, </em><em>optional</em>) – Acceptance-loop cap.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.materials.SurfaceImpedanceFit" title="magnelio.materials.SurfaceImpedanceFit">SurfaceImpedanceFit</a></p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">tol</span></code> is not reached at <code class="docutils literal notranslate"><span class="pre">max_branches</span></code> branches.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="magnelio.materials.fit_wall_impedances">
+<span class="sig-prename descclassname"><span class="pre">magnelio.materials.</span></span><span class="sig-name descname"><span class="pre">fit_wall_impedances</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resolved</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_lo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_hi</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_branches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.materials.fit_wall_impedances" title="Link to this definition">#</a></dt>
+<dd><p>Fit one surface impedance per wall tag, sharing identical fits.</p>
+<p>Completes the wall-tag resolution: takes the conductor properties
+of <code class="docutils literal notranslate"><span class="pre">mesh.surfaces.resolve_wall_conductors</span></code> and returns
+<code class="docutils literal notranslate"><span class="pre">tag</span> <span class="pre">-&gt;</span> <span class="pre">SurfaceImpedanceFit</span></code> over the caller band.  Tags with
+identical <code class="docutils literal notranslate"><span class="pre">(sigma,</span> <span class="pre">mu,</span> <span class="pre">roughness)</span></code> — the common case of many
+walls in one metal — share ONE fit object (the roughness models are
+frozen/hashable, so the triple is a dict key), so the NNLS
+acceptance loop runs once per distinct conductor, not once per tag.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>resolved</strong> (<em>dict</em>) – <code class="docutils literal notranslate"><span class="pre">tag</span> <span class="pre">-&gt;</span> <span class="pre">(sigma,</span> <span class="pre">mu,</span> <span class="pre">roughness)</span></code> per
+<code class="docutils literal notranslate"><span class="pre">resolve_wall_conductors</span></code>.</p></li>
+<li><p><strong>f_lo</strong> (<em>float</em>) – Working band [Hz] passed to <a class="reference internal" href="#magnelio.materials.fit_surface_impedance" title="magnelio.materials.fit_surface_impedance"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_surface_impedance()</span></code></a>.</p></li>
+<li><p><strong>f_hi</strong> (<em>float</em>) – Working band [Hz] passed to <a class="reference internal" href="#magnelio.materials.fit_surface_impedance" title="magnelio.materials.fit_surface_impedance"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_surface_impedance()</span></code></a>.</p></li>
+<li><p><strong>tol</strong> (<em>optional</em>) – Forwarded to <a class="reference internal" href="#magnelio.materials.fit_surface_impedance" title="magnelio.materials.fit_surface_impedance"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_surface_impedance()</span></code></a>.</p></li>
+<li><p><strong>guard</strong> (<em>optional</em>) – Forwarded to <a class="reference internal" href="#magnelio.materials.fit_surface_impedance" title="magnelio.materials.fit_surface_impedance"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_surface_impedance()</span></code></a>.</p></li>
+<li><p><strong>max_branches</strong> (<em>optional</em>) – Forwarded to <a class="reference internal" href="#magnelio.materials.fit_surface_impedance" title="magnelio.materials.fit_surface_impedance"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_surface_impedance()</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">tag</span> <span class="pre">-&gt;</span> <span class="pre">SurfaceImpedanceFit</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="geo.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><code class="docutils literal notranslate"><span class="pre">magnelio.geo</span></code></p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="mesh.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><code class="docutils literal notranslate"><span class="pre">magnelio.mesh</span></code></p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.materials.DispersionModel"><code class="docutils literal notranslate"><span class="pre">DispersionModel</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.materials.DispersionModel.debye"><code class="docutils literal notranslate"><span class="pre">DispersionModel.debye()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.materials.DispersionModel.djordjevic_sarkar"><code class="docutils literal notranslate"><span class="pre">DispersionModel.djordjevic_sarkar()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.materials.DispersionModel.drude"><code class="docutils literal notranslate"><span class="pre">DispersionModel.drude()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.materials.DispersionModel.from_table"><code class="docutils literal notranslate"><span class="pre">DispersionModel.from_table()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.materials.DispersionModel.lorentz"><code class="docutils literal notranslate"><span class="pre">DispersionModel.lorentz()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.materials.DispersionModel.evaluate"><code class="docutils literal notranslate"><span class="pre">DispersionModel.evaluate()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.materials.Hammerstad"><code class="docutils literal notranslate"><span class="pre">Hammerstad</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.materials.Hammerstad.factor"><code class="docutils literal notranslate"><span class="pre">Hammerstad.factor()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.materials.Huray"><code class="docutils literal notranslate"><span class="pre">Huray</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.materials.Huray.cannonball"><code class="docutils literal notranslate"><span class="pre">Huray.cannonball()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.materials.Huray.factor"><code class="docutils literal notranslate"><span class="pre">Huray.factor()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.materials.SurfaceImpedanceFit"><code class="docutils literal notranslate"><span class="pre">SurfaceImpedanceFit</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.materials.SurfaceImpedanceFit.impedance"><code class="docutils literal notranslate"><span class="pre">SurfaceImpedanceFit.impedance()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.materials.SurfaceImpedanceFit.r_instantaneous"><code class="docutils literal notranslate"><span class="pre">SurfaceImpedanceFit.r_instantaneous</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.materials.SurfaceRoughness"><code class="docutils literal notranslate"><span class="pre">SurfaceRoughness</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.materials.SurfaceRoughness.factor"><code class="docutils literal notranslate"><span class="pre">SurfaceRoughness.factor()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.materials.fit_surface_impedance"><code class="docutils literal notranslate"><span class="pre">fit_surface_impedance()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.materials.fit_wall_impedances"><code class="docutils literal notranslate"><span class="pre">fit_wall_impedances()</span></code></a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/api/materials.md.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Bernd Breitkreutz.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

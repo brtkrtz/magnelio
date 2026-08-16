@@ -1,0 +1,675 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Spatial discretisation and time integration &#8212; Magnelio Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+
+    <script src="../_static/documentation_options.js?v=938c9ccc"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'methods/fit-discretization';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/stable/methods/fit-discretization.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Mesh generation and conformal geometry" href="meshing-conformal.html" />
+    <link rel="prev" title="Numerical methods" href="index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Magnelio Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Spatial discretisation and time integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="meshing-conformal.html">Mesh generation and conformal geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="boundaries.html">Boundary conditions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ports.html">Waveguide ports and S-parameter extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lumped-elements.html">Discrete ports and lumped circuit elements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dispersive-materials.html">Dispersive and lossy materials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conductor-losses.html">Conductor losses</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Numerical methods</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Spatial discretisation and time integration</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="spatial-discretisation-and-time-integration">
+<h1>Spatial discretisation and time integration<a class="headerlink" href="#spatial-discretisation-and-time-integration" title="Link to this heading">#</a></h1>
+<section id="finite-integration-technique-fit">
+<h2>Finite Integration Technique (FIT)<a class="headerlink" href="#finite-integration-technique-fit" title="Link to this heading">#</a></h2>
+<p>Magnelio discretises Maxwell’s equations with the Finite Integration
+Technique on a pair of staggered, axis-aligned Cartesian grids (primal
+grid for electric grid voltages <span class="math notranslate nohighlight">\(\hat e = \int \mathbf E \cdot
+\mathrm d\mathbf l\)</span>, dual grid for magnetic grid voltages <span class="math notranslate nohighlight">\(\hat h\)</span>).
+FIT is the integral-form reformulation of Maxwell’s equations
+introduced by Weiland <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id3" title="Thomas Weiland. Eine methode zur lösung der Maxwellschen gleichungen für sechskomponentige felder auf diskreter basis (A discretization method for the solution of Maxwell's equations for six-component fields). Archiv für Elektronik und Übertragungstechnik (AEÜ), 31(3):116–120, 1977.">1</a>]</span>;
+the mature
+formulation with the discrete topological operators (curl matrix
+<span class="math notranslate nohighlight">\(\mathbf C\)</span>, exact <span class="math notranslate nohighlight">\(\mathbf S \mathbf C = 0\)</span> identities) and diagonal
+material mass matrices is summarised in <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id4" title="Thomas Weiland. Time domain electromagnetic field computation with finite difference methods. International Journal of Numerical Modelling: Electronic Networks, Devices and Fields, 9(4):295–319, 1996. doi:10.1002/(SICI)1099-1204(199607)9:4&lt;295::AID-JNM240&gt;3.0.CO;2-8.">2</a>]</span>
+and <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id5" title="Markus Clemens and Thomas Weiland. Discrete electromagnetism with the finite integration technique. Progress In Electromagnetics Research (PIER), 32:65–87, 2001. doi:10.2528/PIER00080103.">3</a>]</span>.</p>
+<p>On a Cartesian dual-orthogonal grid the FIT time-domain update is
+algebraically identical to the finite-difference time-domain (FDTD)
+scheme of Yee <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id2" title="Kane S. Yee. Numerical solution of initial boundary value problems involving Maxwell's equations in isotropic media. IEEE Transactions on Antennas and Propagation, 14(3):302–307, 1966. doi:10.1109/TAP.1966.1138693.">4</a>]</span> — the source
+code refers
+to the staggered grid as the “Yee grid” throughout.  Magnelio keeps
+the FIT viewpoint because the material matrices, sub-cell conformal
+corrections and port-mode restrictions are all expressed as
+modifications of the diagonal mass matrices
+<span class="math notranslate nohighlight">\(\mathbf M_\varepsilon, \mathbf M_\mu, \mathbf M_\sigma\)</span> rather than
+of the stencil.</p>
+<p>Implementation: <code class="docutils literal notranslate"><span class="pre">operators/curl.py</span></code> (sparse primal curl <span class="math notranslate nohighlight">\(\mathbf C\)</span>;
+the dual curl is <span class="math notranslate nohighlight">\(\mathbf C^{\mathsf T}\)</span>), <code class="docutils literal notranslate"><span class="pre">operators/material_matrices.py</span></code>
+(diagonal mass matrices <span class="math notranslate nohighlight">\(M_\varepsilon = \varepsilon_0\varepsilon_r
+A_{\text{dual}}/l_{\text{primal}}\)</span>, <span class="math notranslate nohighlight">\(M_\mu = \mu_0\mu_r
+A_{\text{primal}}/l_{\text{dual}}\)</span>, plus <span class="math notranslate nohighlight">\(M_\sigma\)</span> and the magnetic
+<span class="math notranslate nohighlight">\(M_{\sigma^*}\)</span>), <code class="docutils literal notranslate"><span class="pre">fields/field_arrays.py</span></code> (structure-of-arrays field
+storage, DD-002).</p>
+</section>
+<section id="leapfrog-time-integration">
+<h2>Leapfrog time integration<a class="headerlink" href="#leapfrog-time-integration" title="Link to this heading">#</a></h2>
+<p>The time-domain solver (<code class="docutils literal notranslate"><span class="pre">solver/fit_td.py</span></code>) marches the fields with
+the standard second-order leapfrog scheme, staggered by half a time
+step:</p>
+<div class="math notranslate nohighlight">
+\[
+\hat e^{n+1} = \alpha_E\,\hat e^{n}
+             + \beta_E\, \mathbf C^{\mathsf T} \hat h^{n+1/2},
+\qquad
+\hat h^{n+3/2} = \alpha_H\,\hat h^{n+1/2}
+              - \beta_H\, \mathbf C\, \hat e^{n+1}.
+\]</div>
+<p>Ohmic loss (<span class="math notranslate nohighlight">\(\sigma\)</span>, and the magnetic <span class="math notranslate nohighlight">\(\sigma^*\)</span> on the H side) is
+folded into <span class="math notranslate nohighlight">\(\alpha,\beta\)</span> with the <strong>semi-implicit (time-averaged)
+conductor update</strong>, the standard exponential-free treatment of lossy
+media in FDTD/FIT; the scheme and its properties are textbook material
+<span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id6" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.  The leapfrog scheme
+itself goes back to Yee <span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id2" title="Kane S. Yee. Numerical solution of initial boundary value problems involving Maxwell's equations in isotropic media. IEEE Transactions on Antennas and Propagation, 14(3):302–307, 1966. doi:10.1109/TAP.1966.1138693.">4</a>]</span>.</p>
+</section>
+<section id="stability-cfl-condition">
+<h2>Stability (CFL condition)<a class="headerlink" href="#stability-cfl-condition" title="Link to this heading">#</a></h2>
+<p>The explicit leapfrog scheme is conditionally stable under the
+Courant–Friedrichs–Lewy criterion
+<span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id7" title="Richard Courant, Kurt Friedrichs, and Hans Lewy. Über die partiellen differenzengleichungen der mathematischen physik. Mathematische Annalen, 100:32–74, 1928. doi:10.1007/BF01448839.">6</a>]</span>, in the FDTD form</p>
+<div class="math notranslate nohighlight">
+\[
+\Delta t \le \frac{s}{c_{\max}\sqrt{\Delta x_{\min}^{-2}
+ + \Delta y_{\min}^{-2} + \Delta z_{\min}^{-2}}},
+\qquad s &lt; 1,
+\]</div>
+<p>(<code class="docutils literal notranslate"><span class="pre">solver/stability.py</span></code>, safety factors 0.90/0.95/0.99).  The FDTD form
+of the criterion is standard <span class="bibtex-citation" id="id8">[<a class="reference internal" href="../bibliography.html#id6" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>, but as a
+worst-case product over per-axis minima it is loose on conformal
+meshes, where partially filled sub-cells reduce the local mass-matrix
+entries.  The production time step is therefore taken from the sharp
+algebraic criterion instead: the leapfrog is stable iff</p>
+<div class="math notranslate nohighlight">
+\[
+\Delta t \le \frac{2}{\sqrt{\lambda_{\max}
+ \left(M_\varepsilon^{-1} C^{\mathsf T} M_\mu^{-1} C\right)}},
+\]</div>
+<p>with the spectral radius measured at solver setup by a matrix-free
+Lanczos iteration on the symmetrised operator (restricted to the
+degrees of freedom the update actually advances) and cached on the
+mesh.  If the iteration does not converge, a row-sum (Gershgorin)
+upper bound on the same operator — strictly safe, typically within
+20 % — takes its place.  Partially filled cells therefore cannot
+destabilise the run, and they no longer throttle it either: the
+worst-case product under-estimates the stable step by an order of
+magnitude and more on curved conformal walls, while the measured
+limit stays near the geometric value.</p>
+<p>Sub-cell corrections that scale <span class="math notranslate nohighlight">\(M_\varepsilon\)</span> and <span class="math notranslate nohighlight">\(M_\mu\)</span> in
+opposite directions (the thin-wire pair correction, the LC-consistent
+conformal coupling) are constructed to leave the pair product — and
+with it the local wave speed entering the CFL bound — unchanged; see
+the <a class="reference internal" href="meshing-conformal.html"><span class="std std-doc">conformal geometry chapter</span></a>.</p>
+</section>
+<section id="selectable-precision">
+<h2>Selectable precision<a class="headerlink" href="#selectable-precision" title="Link to this heading">#</a></h2>
+<p>The whole time-loop state (fields, update coefficients, CPML and
+auxiliary ADE/SIBC states) can run in IEEE-754 single precision
+(<code class="docutils literal notranslate"><span class="pre">precision=&quot;single&quot;</span></code>, the production default) or double precision
+(DD-094).  Accumulating quantities (energy reduction, DFT
+accumulators, port arithmetic, geometry and mode solves) always stay
+in double precision.  This mixed-precision layout is engineering
+practice in production FDTD/FIT codes, not a research method; the
+observed error floor (<span class="math notranslate nohighlight">\(\sim 10^{-6}\)</span> relative on S-parameters)
+corresponds to float32 rounding.  Stability of the reduced-precision
+auxiliary recursions follows from their contractive form
+(<span class="math notranslate nohighlight">\(|k| &lt; 1\)</span> for every decaying IIR branch); this is analysed per
+operator in the repository (DD-094), not taken from the literature.</p>
+</section>
+<section id="simulation-duration-and-energy-stopping">
+<h2>Simulation duration and energy stopping<a class="headerlink" href="#simulation-duration-and-energy-stopping" title="Link to this heading">#</a></h2>
+<p>Runs are terminated either after a fixed number of steps or by an
+energy criterion: the total discrete field energy
+<span class="math notranslate nohighlight">\(\tfrac12(\hat e^{\mathsf T} \mathbf M_\varepsilon \hat e + \hat
+h^{\mathsf T} \mathbf M_\mu \hat h)\)</span> must decay a configurable number
+of dB below its peak (DD-019).  Energy-based stopping is common
+engineering practice in time-domain S-parameter extraction; no
+specific publication is claimed.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Numerical methods</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="meshing-conformal.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Mesh generation and conformal geometry</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#finite-integration-technique-fit">Finite Integration Technique (FIT)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#leapfrog-time-integration">Leapfrog time integration</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stability-cfl-condition">Stability (CFL condition)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#selectable-precision">Selectable precision</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#simulation-duration-and-energy-stopping">Simulation duration and energy stopping</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/methods/fit-discretization.md.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Bernd Breitkreutz.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

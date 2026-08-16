@@ -1,0 +1,641 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Conductor losses &#8212; Magnelio Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+
+    <script src="../_static/documentation_options.js?v=938c9ccc"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'methods/conductor-losses';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/stable/methods/conductor-losses.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Sources, monitors and post-processing" href="sources-monitors.html" />
+    <link rel="prev" title="Dispersive and lossy materials" href="dispersive-materials.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Magnelio Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="fit-discretization.html">Spatial discretisation and time integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="meshing-conformal.html">Mesh generation and conformal geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="boundaries.html">Boundary conditions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ports.html">Waveguide ports and S-parameter extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lumped-elements.html">Discrete ports and lumped circuit elements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dispersive-materials.html">Dispersive and lossy materials</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Conductor losses</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Numerical methods</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Conductor losses</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="conductor-losses">
+<h1>Conductor losses<a class="headerlink" href="#conductor-losses" title="Link to this heading">#</a></h1>
+<p>Magnelio offers two routes for wall losses on good conductors: a
+perturbative post-processing route (default) and a broadband
+time-domain surface-impedance boundary (opt-in).</p>
+<section id="perturbative-wall-losses-post-processing">
+<h2>Perturbative wall losses (post-processing)<a class="headerlink" href="#perturbative-wall-losses-post-processing" title="Link to this heading">#</a></h2>
+<p>With lossless PEC walls in the field solve, the dissipated power is
+evaluated perturbatively from the tangential magnetic field,</p>
+<div class="math notranslate nohighlight">
+\[
+P_{\text{loss}}(f) = \tfrac12\, R_s(f) \sum_{\text{wall}}
+ w\,|H_{\tan}|^2, \qquad R_s = \sqrt{\pi f \mu / \sigma},
+\]</div>
+<p>(<code class="docutils literal notranslate"><span class="pre">monitors/wall_loss.py</span></code>, <code class="docutils literal notranslate"><span class="pre">postprocessing/wall_loss.py</span></code>, DD-082).
+This is the classical power-loss perturbation method of microwave
+engineering <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id26" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>, <a class="reference internal" href="../bibliography.html#id52" title="John David Jackson. Classical Electrodynamics. Wiley, 3rd edition, 1999.">38</a>]</span>.  Two
+accuracy refinements are in-house (DD-087): exact conformal
+wall areas on curved conductors (removing the <span class="math notranslate nohighlight">\(4/\pi\)</span> staircase
+over-count) and a conformal tangential-H sampling rule
+(uncut-face booking with a normal-direction walk).</p>
+</section>
+<section id="surface-roughness">
+<h2>Surface roughness<a class="headerlink" href="#surface-roughness" title="Link to this heading">#</a></h2>
+<p>Roughness enters the perturbative chain as one real,
+frequency-dependent multiplier <span class="math notranslate nohighlight">\(K(f)\)</span> on the surface resistance,
+<span class="math notranslate nohighlight">\(R_{s,\text{rough}} = K(f)\,R_{s,\text{smooth}}\)</span>
+(<code class="docutils literal notranslate"><span class="pre">materials/roughness.py</span></code>, DD-088).  Implemented models:</p>
+<ul class="simple">
+<li><p><strong>Hammerstad</strong> — the classical RMS-height curve fit of Hammerstad
+and Jensen <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id48" title="Erik Hammerstad and Øyvind Jensen. Accurate models for microstrip computer-aided design. In IEEE MTT-S International Microwave Symposium Digest, 407–409. 1980. doi:10.1109/MWSYM.1980.1124303.">39</a>]</span>.</p></li>
+<li><p><strong>Huray “snowball”</strong> — the physics-based sphere-cluster model of
+Huray et al. <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id49" title="Paul G. Huray, Stephen Hall, Steven Pytel, Femi Oluwafemi, Richard Mellitz, Daniel Hua, and Peng Ye. Fundamentals of a 3-D “snowball” model for surface roughness power losses. In IEEE Workshop on Signal Propagation on Interconnects (SPI). 2007. doi:10.1109/SPI.2007.4512227.">40</a>]</span>; the
+loss-factor form implemented is Bracken’s eq. (5)
+<span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id50" title="J. Eric Bracken. A causal Huray model for surface roughness. In DesignCon 2012. 2012.">41</a>]</span>.</p></li>
+<li><p><strong>Cannonball-Huray parameterisation</strong> — sphere radius and coverage
+from a single <span class="math notranslate nohighlight">\(R_z\)</span> datasheet number via close packing,
+after Simonovich <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id51" title="Lambert (Bert) Simonovich. Practical method for modeling conductor surface roughness using close packing of equal spheres. In DesignCon. 2015.">42</a>]</span>.</p></li>
+</ul>
+<p>A real <span class="math notranslate nohighlight">\(K(f)\)</span> is non-causal as a time-domain impedance (noted by
+Bracken <span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id50" title="J. Eric Bracken. A causal Huray model for surface roughness. In DesignCon 2012. 2012.">41</a>]</span>); this is admissible here
+because the perturbative chain evaluates power per frequency bin and
+never forms a time-domain impedance.</p>
+</section>
+<section id="broadband-time-domain-sibc">
+<h2>Broadband time-domain SIBC<a class="headerlink" href="#broadband-time-domain-sibc" title="Link to this heading">#</a></h2>
+<p>SIBC is currently an opt-in: <code class="docutils literal notranslate"><span class="pre">wall_model=&quot;sibc&quot;</span></code>.
+The surface-impedance boundary condition realises the <strong>Leontovich
+condition</strong> <span class="math notranslate nohighlight">\(E_{\tan} = Z_s(\omega)\,(\hat n \times \mathbf H)\)</span>
+<span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id39" title="Mikhail A. Leontovich. Approximate boundary conditions for the electromagnetic field on the surface of a good conductor. In Investigations on Radiowave Propagation, Part II. Academy of Sciences USSR, Moscow, 1948.">43</a>, <a class="reference internal" href="../bibliography.html#id40" title="Thomas B. A. Senior. Impedance boundary conditions for imperfectly conducting surfaces. Applied Scientific Research, Section B, 8:418–436, 1960. doi:10.1007/BF02920074.">44</a>]</span> directly in the
+leapfrog update (<code class="docutils literal notranslate"><span class="pre">solver/sibc.py</span></code>, DD-091):</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(Z_s(\omega)\)</span> — smooth-metal <span class="math notranslate nohighlight">\(\sqrt{j\omega\mu/\sigma}\)</span> or the
+causally completed rough impedance — is fitted as a
+<strong>Foster/Stieltjes ladder</strong> <span class="math notranslate nohighlight">\(c_0 + \sum_p c_p s/(s+b_p)\)</span> with
+non-negative coefficients by <strong>NNLS</strong> on fixed log-spaced poles
+(<code class="docutils literal notranslate"><span class="pre">materials/surface_impedance.py</span></code>).  Foster’s canonical positive-
+real ladder form is classical network synthesis
+<span class="bibtex-citation" id="id8">[<a class="reference internal" href="../bibliography.html#id41" title="Ronald M. Foster. A reactance theorem. Bell System Technical Journal, 3(2):259–267, 1924. doi:10.1002/j.1538-7305.1924.tb01358.x.">45</a>]</span>; NNLS is Lawson and
+Hanson <span class="bibtex-citation" id="id9">[<a class="reference internal" href="../bibliography.html#id42" title="Charles L. Lawson and Richard J. Hanson. Solving Least Squares Problems. Prentice-Hall, 1974. NNLS algorithm (ch. 23); reprinted as SIAM Classics in Applied Mathematics 15, 1995.">46</a>]</span>.  Because
+every branch is
+elementarily passive, the time-domain recursion is dissipative by
+construction — stability is unconditional at the unchanged lossless
+CFL, independent of fit accuracy — an in-house result (internal derivation
+dossier <code class="docutils literal notranslate"><span class="pre">investigations/sibc/DERIVATION.md</span></code>, kept outside the public
+repository).</p></li>
+<li><p>The causal reactance of a rough surface is completed from the real
+roughness excess <span class="math notranslate nohighlight">\((K-1)R_s\)</span> by a subtracted <strong>Kramers–Kronig</strong>
+quadrature <span class="bibtex-citation" id="id10">[<a class="reference internal" href="../bibliography.html#id43" title="Ralph de Laer Kronig. On the theory of dispersion of X-rays. Journal of the Optical Society of America, 12(6):547–557, 1926. doi:10.1364/JOSA.12.000547.">47</a>, <a class="reference internal" href="../bibliography.html#id44" title="Hendrik A. Kramers. La diffusion de la lumière par les atomes. In Atti del Congresso Internazionale dei Fisici, Como, volume 2, 545–557. 1927.">48</a>]</span>.</p></li>
+<li><p>The per-branch states are advanced with the trapezoidal rule and
+folded into the H update like a magnetic surface conductivity.</p></li>
+</ul>
+<p>Approximating a surface impedance by a low-order rational function
+and convolving it recursively in FDTD is an established technique:
+Maloney and Smith <span class="bibtex-citation" id="id11">[<a class="reference internal" href="../bibliography.html#id45" title="James G. Maloney and Glenn S. Smith. The use of surface impedance concepts in the finite-difference time-domain method. IEEE Transactions on Antennas and Propagation, 40(1):38–48, 1992. doi:10.1109/8.123351.">49</a>]</span>, Beggs,
+Luebbers, Yee and Kunz <span class="bibtex-citation" id="id12">[<a class="reference internal" href="../bibliography.html#id46" title="John H. Beggs, Raymond J. Luebbers, Kane S. Yee, and Karl S. Kunz. Finite-difference time-domain implementation of surface impedance boundary conditions. IEEE Transactions on Antennas and Propagation, 40(1):49–56, 1992. doi:10.1109/8.123352.">50</a>]</span>, and the
+first-order-section approach of Oh and Schutt-Ainé
+<span class="bibtex-citation" id="id13">[<a class="reference internal" href="../bibliography.html#id47" title="Kyung Suk Oh and José E. Schutt-Ainé. An efficient implementation of surface impedance boundary conditions for the finite-difference time-domain method. IEEE Transactions on Antennas and Propagation, 43(7):660–666, 1995. doi:10.1109/8.391136.">51</a>]</span> are the closest published
+antecedents; Magnelio’s specific NNLS-Foster construction with its
+unconditional dissipation identity is in-house.</p>
+<p>The conformal booking of SIBC faces (which faces carry the damping
+term and with which geometric weight <span class="math notranslate nohighlight">\(G_f = A_f/l^2_{\text{dual}}\)</span>)
+reuses the DD-087 conformal wall-area machinery.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="dispersive-materials.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Dispersive and lossy materials</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="sources-monitors.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Sources, monitors and post-processing</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#perturbative-wall-losses-post-processing">Perturbative wall losses (post-processing)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#surface-roughness">Surface roughness</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#broadband-time-domain-sibc">Broadband time-domain SIBC</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/methods/conductor-losses.md.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Bernd Breitkreutz.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
