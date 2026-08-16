@@ -455,7 +455,13 @@ convention: public docstrings, API pages and error messages carry no
 DD references (developer breadcrumbs live in code comments and
 design-decisions.md), and Magnelio is described as a *library* for
 full-wave 3D EM simulation — never as a "suite", never identified
-with FIT.  Pillars: Tutorials (generated from
+with FIT.  A user-visible feature counts as finished only once the
+prose documents it: docstrings reach the reader who already knows the
+feature exists, not the one who would have to discover it.  Symmetry
+planes were the case that established the rule — four DDs of
+implementation with zero occurrences in `docs/` or `examples/`, now a
+section in the boundary-conditions chapter and the standing practice
+in tutorial 09.  Pillars: Tutorials (generated from
 `examples/tutorials/*.py`, tutorials 01–14 shipped and given a
 reader-perspective polish pass — full gallery build ~8:40, clean;
 tutorial 13, the DR-filter capstone, is deliberately the most
