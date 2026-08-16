@@ -633,11 +633,32 @@ def _flat_cells(a: np.ndarray) -> np.ndarray:
     return np.ascontiguousarray(a.transpose(2, 1, 0)).ravel()
 
 
+def _run_source_spectrum(run_dir: Path, freqs: np.ndarray):
+    """The run's excitation transformed at *freqs*, or ``None`` if absent.
+
+    Reads through the store's own run reader rather than reaching into
+    ``results.h5``: that reader truncates every stream to their common
+    prefix, so a run cut short yields the same waveform here as it does
+    through :class:`~magnelio.io.project.Project` — and therefore the
+    same spectrum, to the last bit.
+    """
+    from magnelio.io.project import _read_run_results  # noqa: PLC0415
+    from magnelio.monitors._dft import source_spectrum  # noqa: PLC0415
+
+    try:
+        sig = _read_run_results(run_dir)["reference"]
+    except (OSError, KeyError):
+        return None
+    return source_spectrum(sig.values, sig.dt, freqs)
+
+
 def _export_freq_monitor(run_dir: Path, pv_dir: Path, name: str, grid, percentile: float):
     """``.vtr``-per-frequency series + ``.pvd`` collection + pipeline spec."""
     import h5py  # noqa: PLC0415
     import vtk  # noqa: PLC0415
     from vtk.util import numpy_support as ns  # noqa: PLC0415
+
+    from magnelio.monitors._dft import divide_by_spectrum  # noqa: PLC0415
 
     with h5py.File(run_dir / "fields_freq.h5", "r") as f:
         g = f[name]
@@ -647,6 +668,13 @@ def _export_freq_monitor(run_dir: Path, pv_dir: Path, name: str, grid, percentil
         bins = {c: g["bins"][c][()] for c in components}
     if freqs.size == 0 or not components:
         return None
+    # Ship the same quantity the monitor's own ``.data`` reports — fields
+    # per 1 W CW — so a value read off the renderer means what a value
+    # read in Python means.  A run without a stored excitation (none in
+    # practice) exports the raw bins rather than nothing.
+    spectrum = _run_source_spectrum(run_dir, freqs)
+    if spectrum is not None:
+        bins = {c: divide_by_spectrum(v, spectrum) for c, v in bins.items()}
 
     node_x, node_y, node_z = _freq_region_nodes(corners, grid)
     first = bins[components[0]]

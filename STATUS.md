@@ -1,6 +1,24 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-15.*  Latest work: a ParaView session mirrors
+*Last updated: 2026-08-16.*  Latest work: a frequency monitor's `data`
+states a unit or refuses to answer (DD-170).  Its DFT bins are the
+transient folded with the excitation spectrum, and dividing that out —
+the step that makes them fields per 1 W CW — was a call the caller had
+to remember, mentioned nowhere in `docs/` or `examples/`.  Forgotten,
+`data` returned the raw bins under the same name, so one property
+carried two different units depending on a state nothing exposed; and
+the pair `data`/`data_raw` promised a distinction that, in the store,
+did not exist at all (`data_raw = data`, the same object).  Measured on
+a kicker worksheet: transverse shunt impedance off by 5e18, with the
+excitation's own spectral shape read as the device's frequency
+response.  Every run path now divides by its own excitation — modal,
+band, streamed, resume — as does the store reader and the ParaView
+export, which reads the stored bins directly and would otherwise have
+shipped a second channel disagreeing with the first by nine decades.
+Without a reference, `data` raises and names both ways out; `data_raw`
+keeps returning the undivided bins.  The division itself lives once, in
+`monitors/_dft.py`, so no two callers can cancel the excitation in
+subtly different conventions.  Before that, a ParaView session mirrors
 its declared symmetry planes again, and mirrors the field rather than
 something that looks like it (DD-169).  The renderer's reflection
 filter had every one of its properties renamed under it, so placing a
@@ -112,8 +130,8 @@ grazing-incidence residual DD-167 recorded — one of two symmetric
 slivers returned instead of both — turned out not to be the section
 operator at all and is closed by DD-168.
 
-**Suite: 2164 passed / 6 skipped / 0 failed** (2026-08-15, GPU box —
-unit 1819 (+2 scikit-rf skips), integration 345 (+4 skips); GPU tests
+**Suite: 2171 passed / 6 skipped / 0 failed** (2026-08-16, GPU box —
+unit 1825 (+2 scikit-rf skips), integration 346 (+4 skips); GPU tests
 need `CUPY_ACCELERATORS=""` when the interpreter binary is called
 directly).  The DD-150 step change re-measured three fixture windows
 (interval stride, lumped-port guard, SIBC band edge) — the reasoning

@@ -1738,21 +1738,26 @@ class _LoadedFreqMonitor:
     The DFT result lives in the run's ``fields_freq.h5`` (its own whole-file
     result, overwritten at each checkpoint — during a run it is a converging
     *partial* DFT, exactly like the streaming S-parameters).  Metadata loads
-    eagerly, each component's complex bins on demand; ``.data`` /
-    ``.data_raw`` / ``.component`` match the in-RAM monitor's **raw**
-    (un-renormalised) output, and ``.plot()`` hydrates a real
-    :class:`MonitorFieldFrequency` to reuse its plotting machinery.  Call
-    ``.renormalize(signal)`` on the hydrated monitor for 1 W scaling, exactly
-    as in RAM.
+    eagerly, each component's complex bins on demand.
+
+    ``.data`` / ``.component`` divide by the spectrum of the run's stored
+    excitation and are therefore fields per 1 W CW, matching the in-RAM
+    monitor; ``.data_raw`` returns the undivided bins.  ``.plot()``
+    hydrates a real :class:`MonitorFieldFrequency`, reference included, to
+    reuse its plotting machinery.
     """
 
-    def __init__(self, run_dir: Path, name: str) -> None:
+    def __init__(self, run_dir: Path, name: str, reference=None) -> None:
         import h5py  # noqa: PLC0415
 
         from magnelio.monitors.base import _corners_from_array  # noqa: PLC0415
 
         self._run_dir = Path(run_dir)
         self.name = name
+        # Signal1D, or a callable returning one — the reader stays lazy so
+        # listing a project's monitors costs no run-results read.
+        self._reference = reference
+        self._spectrum = None
         with h5py.File(self._run_dir / "fields_freq.h5", "r") as f:
             g = f[name]
             self._components = json.loads(g.attrs["components"])
@@ -1786,24 +1791,51 @@ class _LoadedFreqMonitor:
         squeeze = tuple(ax for ax in range(1, arr.ndim) if arr.shape[ax] == 1)
         return np.squeeze(arr, axis=squeeze) if squeeze else arr
 
-    def component(self, comp: str) -> np.ndarray:
-        """Raw DFT bins for one component, shape ``(n_freqs, <spatial>)``."""
+    def _source_spectrum(self) -> np.ndarray | None:
+        """Spectrum of the run's excitation, in the accumulator convention.
+
+        Sampled lazily from the run's stored reference waveform (the read
+        is cached for a finished run) and memoised here, so a caller who
+        only wants ``data_raw`` never pays for it.
+        """
+        from magnelio.monitors._dft import source_spectrum  # noqa: PLC0415
+
+        if self._spectrum is None and self._reference is not None:
+            sig = self._reference() if callable(self._reference) else self._reference
+            if sig is not None:
+                self._spectrum = source_spectrum(sig.values, sig.dt, self.freqs)
+        return self._spectrum
+
+    def _read_bins(self, comp: str) -> np.ndarray:
         import h5py  # noqa: PLC0415
 
         if comp not in self._components:
             raise KeyError(f"component {comp!r} not recorded; available: {self._components}")
         with h5py.File(self._run_dir / "fields_freq.h5", "r") as f:
-            arr = f[self.name]["bins"][comp][()]
-        return self._squeeze_spatial(arr)
+            return f[self.name]["bins"][comp][()]
+
+    def component(self, comp: str) -> np.ndarray:
+        """One component per 1 W CW, shape ``(n_freqs, <spatial>)``."""
+        from magnelio.monitors._dft import divide_by_spectrum  # noqa: PLC0415
+
+        src = self._source_spectrum()
+        if src is None:
+            raise RuntimeError(
+                f"monitor {self.name!r}: this run stores no excitation "
+                f"reference, so its DFT bins cannot be expressed as fields "
+                f"per 1 W CW.  Read .data_raw for the raw bins."
+            )
+        return self._squeeze_spatial(divide_by_spectrum(self._read_bins(comp), src))
 
     @property
     def data(self) -> dict:
-        """Raw DFT results for all components (un-renormalised)."""
+        """Recorded fields per 1 W incident CW power (E in V/m, H in A/m)."""
         return {c: self.component(c) for c in self._components}
 
-    # No renormalisation is applied by the store, so raw == data (the in-RAM
-    # monitor is un-renormalised until the user calls renormalize()).
-    data_raw = data
+    @property
+    def data_raw(self) -> dict:
+        """Raw DFT bins, in field units x seconds (undivided)."""
+        return {c: self._squeeze_spatial(self._read_bins(c)) for c in self._components}
 
     def _hydrate(self):
         """Build an in-RAM :class:`MonitorFieldFrequency` for plotting reuse."""
@@ -1841,6 +1873,9 @@ class _LoadedFreqMonitor:
                 acc._bins[...] = bg[comp][()]
                 mon._accumulators[comp] = acc
         mon._mirrors = self._mirrors
+        # Carry the run's reference across, or the hydrated monitor would
+        # refuse to hand out data it cannot put a unit on.
+        mon._source_spectrum = self._source_spectrum()
         return mon
 
     def plot(self, *args, **kwargs):
@@ -2787,7 +2822,11 @@ class Project(ScatteringResultMixin):
         for name in _list_run_flux(run_dir):
             out[name] = _LoadedFluxMonitor(run_dir, name)
         for name in _list_run_freq(run_dir):
-            out[name] = _LoadedFreqMonitor(run_dir, name)
+            out[name] = _LoadedFreqMonitor(
+                run_dir,
+                name,
+                reference=lambda rn=run_name: self._load_run(rn)["reference"],
+            )
         for name in _list_run_wall_loss(run_dir):
             out[name] = _LoadedMonitorWallLoss(run_dir, name)
         return out

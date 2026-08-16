@@ -94,12 +94,19 @@ def _tem_analysis(project):
 
 
 @pytest.fixture(scope="module")
-def session_project(tmp_path_factory):
+def session_run(tmp_path_factory):
+    """One streamed run, kept with the analysis whose monitors fed it."""
     pytest.importorskip("OCC.Core.BRepPrimAPI")
     pytest.importorskip("vtk")
     p = tmp_path_factory.mktemp("pv") / "pp"
-    _tem_analysis(p).run(excited=[("port1", 0)], energy_stop_db=None, total_time_steps=N_TOTAL)
-    return p
+    analysis = _tem_analysis(p)
+    analysis.run(excited=[("port1", 0)], energy_stop_db=None, total_time_steps=N_TOTAL)
+    return p, analysis
+
+
+@pytest.fixture(scope="module")
+def session_project(session_run):
+    return session_run[0]
 
 
 def _config_from_script(script_path):
@@ -157,16 +164,46 @@ def test_script_config(session_project):
         assert 0.0 < glyph["threshold"] < glyph["cap"]
 
 
-def test_freq_vtr_matches_h5(session_project):
-    import h5py  # noqa: PLC0415
+def test_store_and_ram_monitor_agree(session_run):
+    """Both sides divide out the excitation on their own, so both must
+    land on the same numbers — neither having been asked to (DD-170).
+
+    The absolute scale is gated against analytic physics elsewhere
+    (``test_port_units``); what this pins is that the two channels
+    cannot drift apart, which they would the moment one of them sampled
+    the reference waveform over a different span than the other.
+    """
+    path, analysis = session_run
+    live = next(m for m in analysis.monitors if m.name == "Efreq")
+    stored = open_project(path).monitors["Efreq"]
+
+    assert live.is_renormalized, "the streamed run must renormalise the caller's monitor"
+    for comp in ("Ex", "Ey", "Ez"):
+        np.testing.assert_allclose(stored.component(comp), live.data[comp], rtol=1e-12)
+
+
+def test_freq_vtr_matches_the_monitor(session_project):
+    """The renderer and ``.data`` must report the same quantity (DD-170).
+
+    Gated against the monitor rather than against the raw HDF5 bins: the
+    export divides by the run's excitation spectrum exactly as the
+    monitor does, so a value read in ParaView means what the same value
+    means in a script.  A drift between the two channels shows up here as
+    the excitation spectrum itself, orders of magnitude wide.
+    """
     import vtk  # noqa: PLC0415
     from vtk.util import numpy_support as ns  # noqa: PLC0415
 
     run_dir = session_project / "runs" / "port1_mode0"
-    with h5py.File(run_dir / "fields_freq.h5", "r") as f:
-        bins = {c: f["Efreq"]["bins"][c][()] for c in ("Ex", "Ey", "Ez")}
-        freqs = f["Efreq"]["freqs"][()]
-    assert freqs == pytest.approx(list(FREQS))
+    mon = open_project(session_project).monitors["Efreq"]
+    bins = {c: mon.component(c) for c in ("Ex", "Ey", "Ez")}
+    assert np.asarray(mon.freqs) == pytest.approx(list(FREQS))
+
+    # Cell ordering: monitor-native (nx, ny[, nz]) -> VTK x-fastest, which
+    # is the full axis reversal either way (the monitor squeezes the
+    # collapsed axis, the raw bins keep it).
+    def cells(a):
+        return np.ascontiguousarray(a.T).ravel()
 
     for fi in range(len(FREQS)):
         reader = vtk.vtkXMLRectilinearGridReader()
@@ -174,9 +211,8 @@ def test_freq_vtr_matches_h5(session_project):
         reader.Update()
         grid = reader.GetOutput()
         cd = grid.GetCellData()
-        # Cell ordering: monitor-native (nx, ny, nz) -> VTK x-fastest.
         for comp in ("Ex", "Ey", "Ez"):
-            expect = np.ascontiguousarray(bins[comp][fi].transpose(2, 1, 0)).ravel()
+            expect = cells(bins[comp][fi])
             got_re = ns.vtk_to_numpy(cd.GetArray(f"{comp}_re"))
             got_im = ns.vtk_to_numpy(cd.GetArray(f"{comp}_im"))
             np.testing.assert_array_equal(got_re, expect.real)
@@ -185,13 +221,7 @@ def test_freq_vtr_matches_h5(session_project):
         e_re = ns.vtk_to_numpy(cd.GetArray("E_re"))
         assert e_re.shape[1] == 3
         mag = ns.vtk_to_numpy(cd.GetArray("|E|"))
-        stack = np.stack(
-            [
-                np.ascontiguousarray(bins[c][fi].transpose(2, 1, 0)).ravel()
-                for c in ("Ex", "Ey", "Ez")
-            ],
-            axis=-1,
-        )
+        stack = np.stack([cells(bins[c][fi]) for c in ("Ex", "Ey", "Ez")], axis=-1)
         np.testing.assert_allclose(mag, np.sqrt(np.sum(np.abs(stack) ** 2, axis=-1)), rtol=1e-12)
 
 

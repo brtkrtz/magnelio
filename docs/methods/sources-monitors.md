@@ -40,6 +40,17 @@ excitation spectrum (standard practice
 lock-in phasor extraction over an integer number of periods after
 settling (`cw_lockin_phasors`) — standard signal processing.
 
+A frequency monitor is divided by the same spectrum, and for the same
+reason.  Its running sum $\sum_n F(t_n)\,e^{+j\omega t_n}\,\Delta t$ is
+the transient folded with the excitation, so it carries an extra factor
+of time and the pulse's own spectral shape.  Since the excitation
+waveform *is* the incident power-wave amplitude $a(t)$ in $\sqrt{\rm W}$
+(DD-078), dividing it out leaves the field of a **1 W CW excitation** at
+each monitor frequency — E in V/m, H in A/m, per $\sqrt{\rm W}$ of
+incident power.  A run performs that division on its own monitors, so
+`.data` is in those units from the moment the run returns; `.data_raw`
+exposes the undivided bins for callers who want the transient itself.
+
 ## Project store, checkpointing, resume
 
 Runs stream results append-only into an HDF5-based on-disk project

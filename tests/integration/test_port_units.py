@@ -148,12 +148,14 @@ def test_mixed_lumped_modal_s21_commensurate():
 
 
 def test_frequency_monitor_fields_per_1w_cw():
-    """Gate 4 (work item ii): renormalised freq-monitor = fields at 1 W CW.
+    """Gate 4 (work item ii): freq-monitor ``.data`` = fields at 1 W CW.
 
     With DD-078 the reference waveform is a(t) in √W, so dividing the
-    accumulated DFT by its spectrum (``MonitorFieldFrequency.renormalize``)
-    yields the field of a 1 W CW excitation: |E_y| = √(z_line·1 W)/gap for
-    the forward TEM wave on the plate.
+    accumulated DFT by its spectrum yields the field of a 1 W CW
+    excitation: |E_y| = √(z_line·1 W)/gap for the forward TEM wave on the
+    plate.  The run does that division itself (DD-170), so this also gates
+    that the monitor comes back from ``run()`` already answerable — no
+    ``renormalize`` call here on purpose.
     """
     from magnelio.monitors.field_frequency import MonitorFieldFrequency
 
@@ -175,7 +177,8 @@ def test_frequency_monitor_fields_per_1w_cw():
     zline = ana.solve_ports()["m1"].z_line_num
     res = ana.run(f_axis=freqs, excited=["m1"], total_time_steps=20000, energy_stop_db=None)
 
-    mon.renormalize(res.reference_signal)
+    assert mon.is_renormalized, "the run must hand its excitation to the monitor"
+    assert res.reference_signal is not None
     ey = np.abs(mon.data["Ey"].reshape(len(freqs), -1)[:, 0])
     e_expect = np.sqrt(zline * 1.0) / GAP
     assert np.all(np.abs(ey / e_expect - 1.0) < 1e-3), (

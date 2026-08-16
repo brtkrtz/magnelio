@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from magnelio.monitors._dft import DFTAccumulator
+from magnelio.monitors._dft import DFTAccumulator, divide_by_spectrum, source_spectrum
 from magnelio.monitors.base import (
     _AXES,
     MonitorRegion,
@@ -348,6 +348,11 @@ class MonitorFieldFrequency:
     def renormalize(self, source_signal) -> None:
         """Normalize DFT data to 1 W incident CW power.
 
+        A monitor that took part in a scattering run is renormalised
+        for you when the run ends, and so is one read back from a
+        project store — call this only for a monitor filled by hand, or
+        to divide by a reference other than the run's own excitation.
+
         Divides each DFT frequency bin by the source-waveform spectrum.
         The excitation waveform *is* the incident power-wave
         amplitude ``a(t)`` in √W, so the renormalised fields are exactly
@@ -359,18 +364,20 @@ class MonitorFieldFrequency:
         as the internal DFT accumulator (``exp(+jωt)`` with ``dt``
         integration weight), so the division is consistent.
 
+        Repeating the call is harmless: the accumulated bins are never
+        modified, so this only replaces the divisor.
+
         Parameters
         ----------
         source_signal : Signal1D
             Excitation waveform of the run — pass
             ``result.reference_signal``.
         """
-        dt = source_signal.dt
-        t = np.arange(len(source_signal.values)) * dt
-        omega = 2.0 * np.pi * self.freqs
-        # DFT accumulator convention: Σ v[n] exp(+jω t_n) dt
-        phase = np.exp(1j * omega[:, np.newaxis] * t[np.newaxis, :]) * dt
-        self._source_spectrum = phase @ source_signal.values
+        self._source_spectrum = source_spectrum(
+            source_signal.values,
+            source_signal.dt,
+            self.freqs,
+        )
 
     @property
     def is_renormalized(self) -> bool:
@@ -393,23 +400,35 @@ class MonitorFieldFrequency:
 
     def _apply_renorm(self, arr: np.ndarray) -> np.ndarray:
         """Divide *arr* (freq axis 0) by the source spectrum."""
-        src = self._source_spectrum
-        src_bc = src.reshape(-1, *([1] * (arr.ndim - 1)))
-        denom = np.where(np.abs(src_bc) > 1e-300, src_bc, 1.0 + 0j)
-        return np.where(np.abs(src_bc) > 1e-300, arr / denom, 0.0 + 0j)
+        return divide_by_spectrum(arr, self._source_spectrum)
 
     @property
     def f(self) -> np.ndarray:
         """Frequency array [Hz]."""
         return self.freqs
 
+    def _require_source(self) -> None:
+        """Refuse to hand out raw bins under the name of physical fields."""
+        if self._source_spectrum is None:
+            raise RuntimeError(
+                f"monitor {self.name!r}: .data needs a source reference.  "
+                f"Without one the accumulated bins are the raw DFT of the "
+                f"transient — the field folded with the excitation spectrum, "
+                f"in field units x seconds — not fields per 1 W CW.  A monitor "
+                f"that took part in a scattering run is renormalised "
+                f"automatically; if this one was filled by hand, call "
+                f".renormalize(result.reference_signal).  Read .data_raw for "
+                f"the raw bins themselves."
+            )
+
     @property
     def data(self) -> dict[str, np.ndarray]:
-        """DFT results for all recorded components.
+        """Recorded fields per 1 W incident CW power.
 
-        If :meth:`renormalize` has been called, the returned arrays are
-        divided by the source spectrum (1 W normalisation).  Use
-        :attr:`data_raw` for the unnormalised DFT.
+        Each bin is divided by the spectrum of the run's excitation, so
+        E is in V/m and H in A/m, both per √W of incident power.  Raises
+        if no source reference is available (see :meth:`renormalize`);
+        :attr:`data_raw` returns the undivided bins instead.
 
         Returns
         -------
@@ -419,23 +438,23 @@ class MonitorFieldFrequency:
             For a 0D monitor the spatial dims are squeezed away,
             giving shape ``(n_freqs,)``.
         """
+        self._require_source()
         out = {}
         for comp in self._components:
             acc = self._accumulators.get(comp)
             if acc is not None:
-                arr = acc.result  # shape (Nf, nx, ny, nz)
-                if self._source_spectrum is not None:
-                    arr = self._apply_renorm(arr)
-                arr = self._squeeze_spatial(arr)
-                out[comp] = arr
+                arr = self._apply_renorm(acc.result)  # shape (Nf, nx, ny, nz)
+                out[comp] = self._squeeze_spatial(arr)
         return out
 
     @property
     def data_raw(self) -> dict[str, np.ndarray]:
-        """Unnormalised DFT results (before 1 W renormalization).
+        """Raw DFT bins, in field units x seconds.
 
-        Always returns the raw DFT accumulator output, regardless of
-        whether :meth:`renormalize` has been called.
+        The running sum ``Σ field(t_n)·exp(+jω t_n)·dt`` as accumulated,
+        i.e. the field folded with the spectrum of the excitation
+        waveform.  Always returns these, whether or not a source
+        reference is set — :attr:`data` is the physical counterpart.
 
         Returns
         -------
@@ -975,3 +994,17 @@ class MonitorFieldFrequency:
             f"n_freqs={len(self.freqs)}, "
             f"region={shape})"
         )
+
+
+def renormalize_all(monitors, source_signal) -> None:
+    """Hand *source_signal* to every frequency monitor in *monitors*.
+
+    A run knows its own excitation; its monitors would otherwise hold
+    bins that no caller can interpret.  Applied once per run, at the
+    point where the reference waveform is sampled, so that ``.data``
+    speaks physical units from the moment the run returns.  Monitors of
+    other kinds are ignored.
+    """
+    for mon in monitors or ():
+        if isinstance(mon, MonitorFieldFrequency):
+            mon.renormalize(source_signal)

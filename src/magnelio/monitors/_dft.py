@@ -59,3 +59,28 @@ class DFTAccumulator:
     @property
     def freqs(self) -> np.ndarray:
         return self._freqs
+
+
+def source_spectrum(values, dt: float, freqs) -> np.ndarray:
+    """Transform a source waveform in the accumulator's own convention.
+
+    ``Σ v[n] exp(+jω t_n) dt`` — the same sum :meth:`DFTAccumulator.
+    accumulate` forms, so dividing recorded bins by this cancels the
+    excitation exactly rather than approximately.
+    """
+    values = np.asarray(values, dtype=float)
+    t = np.arange(len(values)) * dt
+    omega = 2.0 * np.pi * np.asarray(freqs, dtype=float)
+    return (np.exp(1j * omega[:, np.newaxis] * t[np.newaxis, :]) * dt) @ values
+
+
+def divide_by_spectrum(arr: np.ndarray, spectrum: np.ndarray) -> np.ndarray:
+    """Divide bins (frequency axis 0) by *spectrum*, broadcasting spatially.
+
+    Bins whose source amplitude underflows carry no information about
+    the structure, only about the pulse's own null — they are returned
+    as zero rather than as a quotient of two vanishing numbers.
+    """
+    src = np.asarray(spectrum).reshape(-1, *([1] * (arr.ndim - 1)))
+    live = np.abs(src) > 1e-300
+    return np.where(live, arr / np.where(live, src, 1.0 + 0j), 0.0 + 0j)

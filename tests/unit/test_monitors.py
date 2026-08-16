@@ -51,6 +51,20 @@ def _make_fields(grid):
     )
 
 
+def _unit_reference(mon, dt=1e-12):
+    """Give *mon* a reference whose spectrum is exactly 1 at every bin.
+
+    A single sample of height ``1/dt`` integrates to one, so ``.data``
+    equals ``.data_raw`` — the monitor is answerable about its units
+    without any value moving.  For tests about DFT mechanics or plotting,
+    where the excitation is beside the point.
+    """
+    from magnelio.signals.signal_1d import Signal1D
+
+    mon.renormalize(Signal1D(t=np.array([0.0]), values=np.array([1.0 / dt]), dt=dt))
+    return mon
+
+
 # -- base tests ------------------------------------------------------------
 
 
@@ -387,7 +401,7 @@ class TestMonitorFieldFrequency:
             fields.Ez[:] = np.sin(omega * t)
             mon.record(fields, n, t, dt)
 
-        data = mon.data
+        data = mon.data_raw
         assert "Ez" in data
         # DFT of sin(wt) at f0: |F| ≈ T/2 where T = n_steps * dt
         # T = 2000 * 1e-12 = 2e-9 s, so |F| ≈ 1e-9
@@ -411,7 +425,7 @@ class TestMonitorFieldFrequency:
         fields = _make_fields(grid)
         mon.record(fields, 0, 0.0, 1e-12)
 
-        data = mon.data
+        data = mon.data_raw
         assert "Ez" in data
         # Shape: (2 freqs, Nx, Ny) — squeezed from (2, 4, 5, 1)
         assert data["Ez"].shape == (2, 4, 5)
@@ -432,6 +446,7 @@ class TestMonitorFieldFrequency:
         )
         mon.attach(mesh)
         mon.record(_make_fields(grid), 0, 0.0, 1e-12)
+        _unit_reference(mon)
 
         # single component: instantaneous line at the given phase
         fig, ax = mon.plot(component="Ez", f=1e9)
@@ -484,8 +499,8 @@ class TestFreqMonitorInterval:
         ref = self._accumulate(None)
         sub = self._accumulate(10e-12)
         assert sub._step_stride == 10
-        got = complex(np.asarray(sub.data["Ez"]).ravel()[0])
-        want = complex(np.asarray(ref.data["Ez"]).ravel()[0])
+        got = complex(np.asarray(sub.data_raw["Ez"]).ravel()[0])
+        want = complex(np.asarray(ref.data_raw["Ez"]).ravel()[0])
         assert got == pytest.approx(want, rel=1e-3)
 
     def test_interval_rounds_down_never_coarser_than_asked(self):
@@ -533,9 +548,9 @@ class TestFreqMonitorInterval:
         for n in range(200, 260):
             fields = FieldState.zeros(2, 2, 2)
             fields.Ez[:] = 1.0
-            before = complex(np.asarray(mon.data["Ez"]).ravel()[0])
+            before = complex(np.asarray(mon.data_raw["Ez"]).ravel()[0])
             mon.record(fields, n, n * 1e-12, 1e-12)
-            if complex(np.asarray(mon.data["Ez"]).ravel()[0]) != before:
+            if complex(np.asarray(mon.data_raw["Ez"]).ravel()[0]) != before:
                 seen.append(n)
         assert all(n % 5 == 0 for n in seen)
         assert seen[0] == 200
@@ -676,6 +691,69 @@ class TestFreqMonitorRenormalize:
 
         data = mon.data
         assert data["Ez"].shape == (2, 4, 5)  # (n_freqs, Nx, Ny)
+
+
+class TestDataStatesItsUnit:
+    """``.data`` is fields per 1 W CW or it is nothing — never raw bins
+    wearing the same name."""
+
+    @staticmethod
+    def _recorded():
+        grid = _make_grid(4, 5, 6)
+        mon = MonitorFieldFrequency(freqs=[1e9], fields=["Ez"], name="units")
+        mon.attach(_FakeMesh(grid))
+        mon.record(_make_fields(grid), 0, 0.0, 1e-12)
+        return mon
+
+    def test_data_refuses_without_a_reference(self):
+        mon = self._recorded()
+        with pytest.raises(RuntimeError, match="source reference"):
+            _ = mon.data
+
+    def test_the_refusal_names_both_ways_out(self):
+        mon = self._recorded()
+        with pytest.raises(RuntimeError) as excinfo:
+            _ = mon.data
+        message = str(excinfo.value)
+        assert ".data_raw" in message
+        assert ".renormalize(" in message
+
+    def test_component_refuses_too(self):
+        mon = self._recorded()
+        with pytest.raises(RuntimeError, match="source reference"):
+            mon.component("Ez")
+
+    def test_raw_bins_stay_reachable_without_a_reference(self):
+        mon = self._recorded()
+        assert mon.data_raw["Ez"].shape == (1, 4, 5, 6)
+
+    def test_the_bins_survive_renormalization(self):
+        """The divisor is stored, never applied to the accumulator — so a
+        repeated call cannot stack, and raw stays raw."""
+        mon = self._recorded()
+        before = mon.data_raw["Ez"].copy()
+        _unit_reference(mon)
+        _unit_reference(mon)
+        np.testing.assert_array_equal(mon.data_raw["Ez"], before)
+        np.testing.assert_allclose(mon.data["Ez"], before)
+
+    def test_renormalize_all_skips_other_monitor_kinds(self):
+        from magnelio.monitors.field_frequency import renormalize_all
+        from magnelio.signals.signal_1d import Signal1D
+
+        grid = _make_grid(4, 5, 6)
+        freq = self._recorded()
+        time = MonitorFieldTime(times=np.array([0.0]), fields=["E"], name="t")
+        time.attach(_FakeMesh(grid))
+        time.record(_make_fields(grid), 0, 0.0, 1e-12)
+
+        dt = 1e-12
+        renormalize_all(
+            [time, freq],
+            Signal1D(t=np.array([0.0]), values=np.array([1.0 / dt]), dt=dt),
+        )
+        assert freq.is_renormalized
+        assert not hasattr(time, "is_renormalized")
 
 
 # -- DFTAccumulator tests -------------------------------------------------
@@ -834,6 +912,7 @@ class TestMonitor3DPlotting:
         for n in range(4):
             mon.record(fields, n, n * dt, dt)
         mon.finalize()
+        _unit_reference(mon, dt)
         fig, ax = mon.plot(component="E", normal="x", position=0.004, plot_type="color")
         assert "x=" in ax.get_title()
         fig2, ax2 = mon.plot(component="E", normal="x", position=0.004, plot_type="vector")

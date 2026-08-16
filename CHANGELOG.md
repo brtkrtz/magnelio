@@ -11,6 +11,22 @@ major version is 0, minor releases may change the public API.
 
 ### Changed
 
+- **Breaking:** `MonitorFieldFrequency.data` is now always in fields per
+  1 W of incident CW power — E in V/m, H in A/m, per square root of a
+  watt.  A run divides its own excitation spectrum out of the recorded
+  transform, and so does a monitor read back from a project store, so
+  the step no longer has to be remembered.  Where no excitation
+  reference is available, `data` raises instead of quietly handing back
+  the raw transform; `data_raw` returns that transform unchanged, in
+  field units times seconds.  Scripts that read `data` without calling
+  `renormalize` were off by the excitation spectrum — often by many
+  orders of magnitude — and will now either be correct or say so.
+  Calling `renormalize` yourself remains supported and cannot
+  double-apply
+- Frequency-monitor fields exported to ParaView carry the same units as
+  the monitor in Python (fields per 1 W CW).  They were previously
+  written as the raw transform, so a value read off the renderer and
+  the same value read in a script disagreed
 - Vector field plots (monitor slices and port-mode profiles) draw their
   arrows on an isotropic raster interpolated from the field instead of
   sampling the computational grid, so a locally refined mesh no longer

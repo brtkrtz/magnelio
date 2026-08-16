@@ -11308,3 +11308,97 @@ opposite type put opposite corrections on the same field.
 the wall type, the `reflected`/`mirror_plane` pair in the generated
 script, and `bake_pvsm`), `tests/unit/test_paraview_export.py`,
 `validation/paraview_symmetry_certificate.py`.
+
+---
+
+## DD-170 — A monitor's `data` states a unit or refuses
+
+**Problem.**  `MonitorFieldFrequency` accumulates
+`Σ F(t_n)·exp(+jω t_n)·Δt` — the transient folded with the excitation
+spectrum, carrying an extra factor of time.  Dividing that spectrum out
+turns it into the field of a 1 W CW excitation (DD-078 pinned the
+waveform as `a(t)` in √W), and `renormalize` has done exactly that
+since before DD-078 named the units.  It was never called for the
+caller: DD-078 closed its work item "with zero new machinery", so the
+division stayed a user step, and the store reader inherited the
+convention verbatim ("renormalising to 1 W stays a reader/user step").
+
+Two consequences compounded.  First, `data` fell back to the raw bins
+when no reference was set, so the *same* property returned two
+physically different quantities — field·s or field per √W — with no
+signal which.  Second, the pair `data` / `data_raw` asserts that one of
+them is processed; a reader who sees both concludes `data` is the
+prepared one.  In the store the two were literally the same object
+(`data_raw = data`), so looking for the difference found none.
+
+Neither `docs/` nor `examples/` mentioned `renormalize` — it appeared
+only in tests and certificates.  The failure mode is silent by
+construction: a field *pattern* is invariant against a constant complex
+factor, so plots look right and only absolute numbers are wrong.
+Measured on a stripline-kicker worksheet (internal record,
+`userscripts/stripline_coupler.ipynb`): transverse shunt impedance off
+by 5e18, the excitation's own spectral shape mistaken for the device's
+frequency response.
+
+**Decision.**  A run renormalises its own frequency monitors, and
+`data` refuses to answer when it cannot.
+
+- *Who divides.*  Every path that samples a run's reference waveform
+  hands it to that run's frequency monitors: `_run_one_excitation`,
+  `_run_band`, the streamed path, and resume (`_actual_steps` counts
+  from step zero, so the sampled waveform spans the whole run, not the
+  appended tail).  `attach` rebuilds the accumulators per run, so a
+  multi-excitation sweep pairs each monitor state with its own
+  excitation.  On the store side the reader divides by the run's
+  persisted reference, sampled lazily and memoised, so listing a
+  project's monitors still costs no results read.
+- *No silent fallback.*  Without a reference, `data` and `component`
+  raise and name both ways out (`data_raw`, `renormalize`); `data_raw`
+  always returns the undivided bins.  `data` therefore has one unit:
+  E in V/m, H in A/m, per √W.
+- *Idempotent by construction.*  `renormalize` stores the divisor and
+  never touches the accumulated bins, so the automatic call and an
+  explicit one cannot stack.  This is what makes the change safe for
+  existing scripts and certificates that call it themselves.
+- *Not `None`.*  A `None` return travels to the caller's next
+  subscript and fails there, explaining nothing; the exception carries
+  the diagnosis at the point of the mistake.
+- *Every output channel, not just Python.*  The ParaView export reads
+  the stored bins directly rather than through `.data`, so it was
+  untouched by the above and would have shipped a second channel whose
+  numbers disagree with the first by nine decades.  It divides by the
+  same spectrum now.  The division itself lives once, in
+  `monitors/_dft.py` (`source_spectrum`, `divide_by_spectrum`), and the
+  three call sites share it — a spectrum computed in a different
+  convention than the accumulator's would cancel only approximately.
+
+**Cost.**  A behaviour break at the public API: scripts that read
+`data` without renormalising used to receive raw bins silently and now
+raise.  That is the point of the change — those numbers were wrong by
+the excitation spectrum — but it is a break, taken deliberately while
+MAJOR is 0.
+
+**Certificate.**  `tests/integration/test_port_units.py::
+test_frequency_monitor_fields_per_1w_cw` now asserts the absolute TEM
+value `√(z_line·1 W)/gap` **without** calling `renormalize`, so it
+gates the automatic path against analytic physics rather than against
+itself.  `tests/unit/test_monitors.py::TestDataStatesItsUnit` pins the
+refusal, its wording, that raw bins stay reachable, and that repeated
+renormalisation cannot stack.  Two channel-agreement gates sit in
+`tests/integration/test_paraview_session.py`: the streamed run's
+in-RAM monitor against the same monitor read back from the store
+(1e-12), and the exported `.vtr` against the monitor bit for bit —
+either would break the moment two sites sampled the reference waveform
+over different spans.
+
+**Files:** `monitors/_dft.py` (`source_spectrum`,
+`divide_by_spectrum`), `monitors/field_frequency.py`
+(`_require_source`, `data`, `data_raw`, `renormalize_all`),
+`analysis/scattering_td.py` (`_sampled_excitation`,
+`_renormalize_freq_monitors`, four call sites), `io/project.py`
+(`_LoadedFreqMonitor`), `io/paraview.py` (`_run_source_spectrum`,
+`_export_freq_monitor`), `tests/unit/test_monitors.py`,
+`tests/integration/test_port_units.py`,
+`tests/integration/test_paraview_session.py`,
+`docs/methods/sources-monitors.md`,
+`examples/tutorials/plot_06_field_monitors.py`.

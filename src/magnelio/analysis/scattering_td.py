@@ -189,6 +189,30 @@ def _excitation_scale(op) -> float:
     return 1.0 / report.power_wave_full_scale
 
 
+def _sampled_excitation(waveform_fn, n_steps: int, dt: float) -> Signal1D:
+    """The run's excitation waveform sampled on its own step axis."""
+    t_axis = np.arange(n_steps) * dt
+    return Signal1D(
+        t=t_axis,
+        values=np.array([waveform_fn(float(t)) for t in t_axis], dtype=float),
+        dt=dt,
+        label="excitation",
+    )
+
+
+def _renormalize_freq_monitors(monitors, reference_signal) -> None:
+    """Give a finished run's excitation to its frequency monitors.
+
+    Their DFT bins are the field folded with that waveform's spectrum;
+    dividing it out is what turns them into fields per 1 W CW.  Doing it
+    here, once per run, is what lets ``MonitorFieldFrequency.data`` state
+    a unit instead of depending on whether the caller remembered.
+    """
+    from magnelio.monitors.field_frequency import renormalize_all  # noqa: PLC0415
+
+    renormalize_all(monitors, reference_signal)
+
+
 @dataclass(frozen=True)
 class _LumpedModeStub:
     """Mode-shaped stub for ``PortOperatorLumped`` in compute_s_parameters.
@@ -1525,17 +1549,8 @@ class AnalysisScatteringTD:
         n_actual = solver._actual_steps or n_steps_estimate
         signals = recorder.finalize(n_steps_actual=n_actual)
 
-        t_axis = np.arange(n_actual) * dt
-        ref_values = np.array(
-            [waveform_fn(float(t)) for t in t_axis],
-            dtype=float,
-        )
-        reference_signal = Signal1D(
-            t=t_axis,
-            values=ref_values,
-            dt=dt,
-            label="excitation",
-        )
+        reference_signal = _sampled_excitation(waveform_fn, n_actual, dt)
+        _renormalize_freq_monitors(self.monitors, reference_signal)
 
         s_dict = compute_s_parameters(
             recorder_signals=signals,
@@ -1736,6 +1751,12 @@ class AnalysisScatteringTD:
             )
             sink.enable_checkpoints(solver.state_dict, ckpt_interval)
             self._drive_streamed_solver(solver, sink, excited_chan, path)
+            # The caller keeps these monitor objects (the sink drained
+            # copies to disk), so they get the run's excitation too.
+            _renormalize_freq_monitors(
+                run_monitors,
+                _sampled_excitation(waveform_fn, solver._actual_steps or solver_steps, dt),
+            )
 
         if self.verbose:
             print(
@@ -2152,6 +2173,7 @@ class AnalysisScatteringTD:
                 dt=dt,
                 label="excitation",
             )
+            _renormalize_freq_monitors(self.monitors, reference_signal)
             per_excitation.append(
                 (s_params, signals, reference_signal, n_steps),
             )
@@ -2905,4 +2927,10 @@ def _resume_scattering(
             f"port_signal_stop_db={port_signal_stop_db})",
         )
     analysis._drive_streamed_solver(solver, sink, excited_chan, proj.path)
+    # ``_actual_steps`` counts from step zero across the resume, so the
+    # sampled waveform spans the whole run, not just the appended tail.
+    _renormalize_freq_monitors(
+        run_monitors,
+        _sampled_excitation(waveform_fn, solver._actual_steps or target, dt),
+    )
     return open_project(proj.path)
