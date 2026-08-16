@@ -38,6 +38,37 @@ subject.
 # top of the line's behaviour.  The band below stays under the first
 # one — for this cross-section the lowest box mode comes in near
 # 17 GHz, and we stop at 15.
+#
+# Half the model is enough
+# ------------------------
+#
+# The cross-section is mirror-symmetric about the vertical plane
+# through the trace centre, and so is the mode we want: the field
+# pushes straight down from trace to ground, so the transverse field
+# component *across* that plane vanishes on it, and the magnetic field
+# threads through it at right angles.  That is exactly a **magnetic
+# wall**, and declaring one on the ``xmin`` face lets the mesher stop
+# at the plane and simulate the right half only:
+#
+# .. code-block:: python
+#
+#     mio.GeometryModel(boundary_conditions={"xmin": "SymmetryPMC"})
+#
+# The geometry stays as it is — full bricks, centred on the plane.
+# The declaration alone decides how much of it gets meshed, so
+# switching the symmetry off later means deleting one argument, not
+# rebuilding the model.  Half the cells means half the memory and
+# roughly half the run time, and it costs nothing in accuracy — if
+# anything the opposite, because the domain now ends exactly at the
+# trace centre, so the discretisation is symmetric about it by
+# construction rather than by luck.
+#
+# What symmetry does cost is *modes*.  A magnetic wall keeps only the
+# fields that are symmetric about it, so any resonance of the box that
+# happens to be antisymmetric is filtered out of the model entirely —
+# convenient here, where such a mode could only be spurious clutter,
+# but worth remembering whenever a symmetry plane is declared: the
+# structure and the excitation must both respect it.
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -63,7 +94,7 @@ substrate = geo.Brick(origin=(-W_box / 2, 0.0, 0.0), size=(W_box, h_sub, L), mat
 air_cap = geo.Brick(origin=(-W_box / 2, h_sub, 0.0), size=(W_box, H_box - h_sub, L), material=air)
 strip = geo.Brick(origin=(-w_strip / 2, h_sub, 0.0), size=(w_strip, t_strip, L), material=pec)
 
-model = mio.GeometryModel()
+model = mio.GeometryModel(boundary_conditions={"xmin": "SymmetryPMC"})
 model.add(substrate)
 model.add(geo.Difference(air_cap, strip))
 model.add(strip)
@@ -85,7 +116,9 @@ fig, ax = model.plot_cross_section("z", L / 2, mesh=mesh, title="microstrip cros
 # 0.8 mm substrate and the 0.2 mm trace anchor grid planes at their
 # material boundaries, so the y-cells grade from fine around the
 # trace to coarse in the air above.  Nobody meshed this by hand — the
-# geometry *is* the meshing instruction.
+# geometry *is* the meshing instruction.  It also shows the symmetry
+# plane doing its work: the drawn structure still spans the full
+# width, but the grid covers only the right half of it.
 #
 # The quasi-TEM mode
 # ------------------
@@ -110,17 +143,28 @@ print(f"eps_eff (quasi-static): {eps_eff_static:.3f}")
 
 # %%
 # Two numbers to hold on to.  The line impedance comes out at
-# **50.3 Ω** — and the trace width was tuned to make it so.  The
-# classic Hammerstad hand formula (open microstrip, infinitely thin
-# trace) predicts about 58 Ω for this width; the shield lid pushes
-# the impedance down and so does the very real 0.2 mm trace
-# thickness.  Closed formulas stop where real cross-sections begin —
-# which is precisely why the port runs a numerical mode solver.
+# **51.5 Ω** — the trace width was picked to land near 50 Ω, and it
+# does so within 3 %.  The classic Hammerstad hand formula (open
+# microstrip, infinitely thin trace) predicts about 58 Ω for this
+# width; the shield lid pushes the impedance down and so does the very
+# real 0.2 mm trace thickness.  Closed formulas stop where real
+# cross-sections begin — which is precisely why the port runs a
+# numerical mode solver.
 #
-# And the effective permittivity is **3.02**: between air (1) and
+# Note what the report says above the numbers: the port window is cut
+# by the symmetry plane, and the impedance is reported for the *full*
+# model.  On the meshed half the mode solver actually measures twice
+# that value, since half a trace over half a ground plane holds half
+# the capacitance; the two halves sit in parallel, and the port does
+# that bookkeeping so the number on screen is the one the physical
+# line has.
+#
+# And the effective permittivity is **2.99**: between air (1) and
 # substrate (4.3), the exact weighting of the field's split residence.
 # The mode profile shows that split directly — the field crowds into
-# the substrate under the trace, with a fringing skirt in the air:
+# the substrate under the trace, with a fringing skirt in the air.
+# It is drawn across the full width: only half of it was solved, and
+# the mirror image is filled in for the picture.
 
 fig, ax = qtem.plot(geometry=model)
 ax.set_title("quasi-TEM mode, transverse E")
@@ -184,7 +228,7 @@ for f_probe in (5e9, 10e9, 15e9):
 
 # %%
 # The curve starts at the quasi-static value and rises to ≈ 3.3 at
-# 15 GHz — a 9 % walk toward εᵣ across the band, right in the range
+# 15 GHz — a 10 % walk toward εᵣ across the band, right in the range
 # classical dispersion models of the Getsinger family predict for
 # this geometry.  This is the practical reason quasi-static design
 # formulas come with frequency disclaimers, and why a broadband
@@ -195,9 +239,10 @@ for f_probe in (5e9, 10e9, 15e9):
 # ----------------
 #
 # New in this tutorial: an inhomogeneous cross-section built from two
-# dielectrics plus a trace, the quasi-TEM port with its numerically
-# solved impedance and mode profile, the honest reading of a
-# quasi-TEM termination floor, and dispersion extracted from the S21
-# phase.  The next tutorial bends this line around corners and builds
-# a real component out of it — a Wilkinson power divider, including
-# its lumped isolation resistor.
+# dielectrics plus a trace, a symmetry plane that halves the model for
+# free, the quasi-TEM port with its numerically solved impedance and
+# mode profile, the honest reading of a quasi-TEM termination floor,
+# and dispersion extracted from the S21 phase.  The next tutorial
+# bends this line around corners and builds a real component out of
+# it — a Wilkinson power divider, including its lumped isolation
+# resistor.
