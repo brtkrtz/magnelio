@@ -11450,7 +11450,11 @@ OIDC `github-pages` environment is no longer used and the workflow
 needs `contents: write` instead.  The branch accumulates a build's
 worth of gallery images per publish, in a history that clones of the
 source pull down by default — squash it to an orphan commit if it ever
-grows uncomfortable.  Concurrency is serialised (`docs-publish`,
+grows uncomfortable.  The build passes `-d` for exactly this reason:
+Sphinx puts its doctree cache inside the HTML output unless told
+otherwise, which measured 96.3 MB of the first publish's 109.5 MB — a
+browser never asks for it, and pickles change wholesale from build to
+build, so it would have been the branch's dominant growth term.  Concurrency is serialised (`docs-publish`,
 `cancel-in-progress: false`) because two publishes racing would push
 conflicting trees, and cancelling one would throw away an hour.
 

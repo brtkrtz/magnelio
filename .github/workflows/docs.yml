@@ -76,7 +76,12 @@ jobs:
           environment-file: environment.yml
           init-shell: bash
           cache-environment: true
-      - run: sphinx-build -b html docs docs/_build/html
+      # -d keeps Sphinx's doctree cache out of the HTML output.  Its
+      # default location is <outdir>/.doctrees, which is 96 MB of
+      # pickles per build — nothing a browser ever asks for, but the
+      # publish below would commit all of it, and pickles change
+      # wholesale from build to build.
+      - run: sphinx-build -b html -d docs/_build/doctrees docs docs/_build/html
         shell: bash -el {0}
         env:
           MAGNELIO_DOCS_CHANNEL: ${{ steps.target.outputs.channel }}
