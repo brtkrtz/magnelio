@@ -41,6 +41,55 @@ Gedney's {cite}`gedney1996`.
   variant implemented).  Standard practice
   {cite}`taflovehagness2005`.
 
+## Symmetry planes
+
+A face may be declared a **symmetry plane**
+(`boundaries/boundary_conditions.py`, DD-154): physically one of the
+walls above, plus the statement that the mirror image of the model
+exists beyond it.  Which wall applies follows from the field, not from
+the geometry — on an electric wall the electric field stands
+perpendicular to the plane and the magnetic field lies in it, on a
+magnetic wall it is the other way round.  A structure that is
+mirror-symmetric under an excitation that is *not* leaves no symmetry
+to exploit.
+
+Two spellings, differing only in what the mesher does with the
+geometry:
+
+```python
+GeometryModel(boundary_conditions={"xmin": "SymmetryPMC"})           # clip at x = 0
+GeometryModel(boundary_conditions={"xmin": ("SymmetryPMC", 1.5e-3)}) # clip at x = 1.5 mm
+GeometryModel(boundary_conditions={"xmin": "ForceSymmetryPMC"})      # geometry already halved
+```
+
+The `Symmetry…` forms let the full geometry stand and simply never
+mesh the discarded half; `ForceSymmetry…` takes the domain as built.
+At most one plane per axis — two parallel mirrors would describe an
+infinite image chain rather than a finite full model.
+
+Everything the declaration implies is derived from it, so a half model
+reports full-model quantities throughout:
+
+- A port window cut by the plane is solved on its half.  A magnetic
+  wall halves the window capacitance and puts the two halves in
+  parallel ($z_\text{full} = z_\text{half}/2$), an electric wall puts
+  them in series ($z_\text{full} = 2 z_\text{half}$).  The modes are
+  power-normalised on the half window, so full-model wave amplitudes
+  carry $\sqrt2$ per cutting plane and excitations $1/\sqrt2$ — a
+  declared injected power stays a full-model watt (DD-155).
+- Registered wall losses and flux integrals are scaled by the mirrored
+  share in the same way.
+- Field monitors and port-mode plots are mirrored back across the
+  plane before display, so the pictures show the full cross-section
+  while only half of it was solved.
+
+The cost is spectral: a symmetry wall admits only the field
+distributions of matching parity, so every mode of the opposite parity
+is absent from the model.  For a driven problem whose excitation
+respects the plane those modes carry no energy anyway; for eigenmode
+work the omission is the point of the exercise, but it has to be
+intended.
+
 ## Boundary-condition interaction with ports
 
 Waveguide ports are not PML-backed (a PML-terminated port was
