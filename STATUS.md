@@ -142,15 +142,19 @@ rotate; the convergence residual does — and is closed by DD-142
 (30/30 green after).  Per-DD gate accounting lives in the
 `design-decisions.md` entries.
 
-**v0.1.0 published (2026-08-14):** tag `v0.1.0` on
+**v0.2.0 published (2026-08-16):** tag `v0.2.0` on
 github.com/brtkrtz/magnelio (public, CI + docs green), released on
 PyPI via the tag-triggered trusted-publishing workflow (sdist +
 noarch wheel, verified installable in a clean venv without
-pythonocc-core).  **conda-forge as the primary distribution
+pythonocc-core); v0.1.0 (2026-08-14) was the first public release.
+The documentation site serves this tag as `/stable/` and main as
+`/dev/` (DD-171).  **conda-forge as the primary distribution
 channel** (the CAD geometry stack needs pythonocc-core, which exists
-only on conda-forge) is in flight: staged-recipes PR prepared on
-branch `brtkrtz/staged-recipes:magnelio` (v1 recipe, pythonocc-core
->=7.9), awaiting submission/review.  PyPI stays the secondary,
+only on conda-forge) is still in flight: staged-recipes PR #34534
+(v1 recipe, pythonocc-core >=7.9) open since 2026-08-14, linter and
+build checks green on linux/osx/win, waiting for a reviewer from
+`@conda-forge/help-python`.  Once merged, the feedstock's autotick
+bot follows PyPI releases on its own.  PyPI stays the secondary,
 geometry-less install path.  CI (`.github/workflows/ci.yml`, lint +
 unit suite) is live.  The repo is ruff-clean: rule set `E`/`F`/`I` pinned in
 `pyproject.toml`, enforced by workflow rule, pre-commit and CI.

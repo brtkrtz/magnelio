@@ -7,7 +7,16 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
-## [Unreleased]
+## [0.2.0] - 2026-08-16
+
+### Added
+
+- The method chapters cover symmetry planes: what declaring one does to
+  the model, which fields each kind of plane preserves, how to pick
+  between them, and how ports, power and losses are reported when the
+  simulation runs on half the structure.  Tutorial 09 now uses a
+  symmetry plane as standard practice.  The feature had been usable for
+  several releases but appeared nowhere outside the API reference
 
 ### Changed
 
