@@ -109,7 +109,13 @@ def build_geometry(L: float, case: str) -> GeometryModel:
     """Coax line; the middle half carries the case's fill material."""
     end_mat, mid_mat = _materials(case)
     pec = Material.pec()
-    model = GeometryModel(background=pec)
+    # Boundaries are declared on the model, not on the analysis; a closed
+    # PEC box is the default but stays explicit here so the profiled
+    # configuration is readable from the benchmark alone.
+    model = GeometryModel(
+        background=pec,
+        boundary_conditions={f"{ax}{end}": "PEC" for ax in "xyz" for end in ("min", "max")},
+    )
 
     inner = Brick(origin=(-a / 2, -a / 2, 0.0), size=(a, a, L), material=pec)
     z_cuts = (0.0, L / 4, 3 * L / 4, L)
@@ -154,14 +160,6 @@ def run_case(
             PortWaveguide(name="port1", plane="zmin"),
             PortWaveguide(name="port2", plane="zmax"),
         ],
-        boundary_conditions={
-            "xmin": "PEC",
-            "xmax": "PEC",
-            "ymin": "PEC",
-            "ymax": "PEC",
-            "zmin": "PEC",
-            "zmax": "PEC",
-        },
         f_max=f_max,
         n_freq=n_freq,
         verbose=False,
