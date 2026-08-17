@@ -119,13 +119,14 @@ operand shapes (DD-146).  Post-release-prep hardening (2026-08-14):
 section contours are closed by contract (DD-157) and conductor
 grouping fuses labels through PEC cell bodies (DD-156) — both found
 on the stripline-coupler worksheet — as was the escape-reach defect
-DD-167 amends DD-157 with.  **known-bugs.md has no open
-entry:** KB-018 was closed by DD-161, KB-019 by DD-164, KB-017 by
-DD-165, KB-020 by DD-167 and KB-021 by DD-168.  One thing remains
-documented rather than
-fixed.  From KB-017, a tolerance gap: the pairing calls two ladder
-targets equal at 1e-6 while the DTBC gate demands 1e-8, and DD-165
-makes the choice inside that band optimal without closing it.  The
+DD-167 amends DD-157 with.  **known-bugs.md holds one open
+entry, KB-022:** the pairing calls two ladder targets equal at 1e-6
+while the DTBC gate demands 1e-8, and DD-165 makes the choice inside
+that band optimal without closing it — split out of KB-017 on
+2026-08-17 so the limitation stands on its own instead of trailing a
+resolved entry.  Everything else is closed: KB-018 by DD-161, KB-019
+by DD-164, KB-017 by DD-165, KB-020 by DD-167 and KB-021 by DD-168.
+The
 grazing-incidence residual DD-167 recorded — one of two symmetric
 slivers returned instead of both — turned out not to be the section
 operator at all and is closed by DD-168.

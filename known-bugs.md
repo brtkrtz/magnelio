@@ -4,13 +4,40 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**No entry is open as of v0.2.1 (2026-08-17)** — every KB below is
-struck through.  One item is documented rather than fixed and has no
-entry of its own: pair coupling calls two ladder targets equal at a
-relative 1e-6 while the transparent-boundary gate demands 1e-8, so a
-port whose two candidates differ inside that band is decided by
-conditioning rather than by agreement.  DD-165 makes that choice
-optimal without closing the gap; KB-017 holds the measurement.
+**One entry is open as of v0.2.1 (2026-08-17): KB-022.**  Everything
+below it is struck through and resolved.
+
+## KB-022: Pair coupling accepts ladder candidates 100x looser than the transparent-boundary gate — Open (2026-08-17)
+
+Split out of KB-017, which DD-165 closed for the case that produced it.
+The pairing calls two ladder targets equal at a relative `rtol = 1e-6`,
+while the DTBC pair-spread gate certifies at 1e-8.  A port whose two
+candidates differ anywhere inside that band reaches the gate with a
+target that agreement did not pin down.  DD-165 resolves the choice by
+conditioning — of two agreeing ladders, the one whose own partners
+disagree less supplies the target — which is optimal but not a
+guarantee: two jittered ladders would still pass the pairing and fail
+the gate.  The failure mode is what makes it worth an entry: the
+channel falls back to modal Mur-1st **silently**, trading a 1e-14
+termination for a −30 dB-class reflection floor on that port alone,
+while a geometrically identical port on the same model keeps the exact
+one.
+
+Measured on the stripline coupler (internal record): before DD-165 the
+mirrored stub's port2 spread was 1.7e-8 against the 1e-8 tolerance,
+where its unmirrored twin certified at 7e-15; after DD-165 the same
+port reads 6.3e-14.  The conformal identity KB-017 originally blamed is
+not involved — `eps_avg` and `f_A` agree to 3.9e-15 across all 19 244
+conformal edges, since both integrals share one area budget.  The
+jitter enters through the pairing tolerance.
+
+Closing it means either tightening the pairing tolerance toward the
+gate — at the risk of rejecting ladders that are merely coarse rather
+than wrong — or making the target's provenance explicit, so that a
+disagreement inside the band is reported instead of silently resolved.
+Neither has been attempted: no model has been observed to fail this way
+since DD-165, so the entry stands as a documented limitation rather
+than a reproducible defect.
 
 ## KB-021: ~~Half a solid's cross-section goes missing with no warning~~ — Resolved (DD-168, 2026-08-15)
 
