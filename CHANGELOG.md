@@ -7,6 +7,17 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [0.2.1] - 2026-08-17
+
+### Fixed
+
+- The near-field figure in the open-boundary tutorial showed a single
+  flat block of colour instead of the radiation pattern.  Its colour
+  scale was pinned to an absolute value picked before frequency-monitor
+  data changed units in 0.2.0, so every point of the pattern sat above
+  the top of the scale.  The scale now follows the pattern's own peak.
+  Documentation only — the library is unchanged from 0.2.0
+
 ## [0.2.0] - 2026-08-16
 
 ### Added
