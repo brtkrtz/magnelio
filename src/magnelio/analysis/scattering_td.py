@@ -178,10 +178,11 @@ def _scattering_run_name(excited_chan: tuple[str, int]) -> str:
 def _excitation_scale(op) -> float:
     """Injection amplitude scale for full-model power semantics (DD-155).
 
-    ``1/√2`` per symmetry plane cutting the port window, so a declared
-    excitation of 1 √W injects one full-model watt (half of it into the
-    meshed half-space).  Ports without a report (lumped) and ports away
-    from every symmetry plane return 1.0.
+    ``1/√2`` per symmetry plane cutting the port window (modal) or the
+    lumped edge chain, so a declared excitation of 1 √W injects one
+    full-model watt (half of it into the meshed half-space).  Ports
+    without a report and ports away from every symmetry plane
+    return 1.0.
     """
     report = getattr(op, "port_report", None)
     if report is None:

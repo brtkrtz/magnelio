@@ -515,10 +515,13 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
 
 ## Open construction sites
 
-* **Symmetry planes — known limitations (DD-154/DD-155 complete).**
-  Lumped ports at a symmetry plane stay uncorrected; ParaView's
-  FlipAllInputArrays mirrors H like a polar vector (magnitude right,
-  mirrored-half arrow sign inverted).
+* **Symmetry planes — known limitations (DD-154/DD-155/DD-172).**
+  Lumped ports/elements on a symmetry plane are corrected since
+  DD-172 (full-model declaration, internal half-device scaling, exact
+  restriction certified); ParaView's FlipAllInputArrays mirrors H
+  like a polar vector (magnitude right, mirrored-half arrow sign
+  inverted).  CPML min/max faces are not mirror images (KB-023) —
+  full-vs-half parity of resonant open structures floors at ~1e-2.
 * **Mesh-build speed.**  DD-101 (`compute_edge_pec_fractions`:
   face-bbox slab prefilter + cached intersectors) and DD-102
   (`compute_face_material_areas`: exact planar section engine, OCC

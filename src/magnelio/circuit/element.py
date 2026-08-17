@@ -28,10 +28,15 @@ class LumpedElement:
         of the model it is added to.
     start, end : tuple of float
         Endpoints in metres; must differ along exactly one Cartesian
-        axis after grid snapping.
+        axis after grid snapping.  Under a clipping symmetry
+        declaration the endpoints stay in full-model coordinates — an
+        element whose chain crosses an electric symmetry plane is
+        clipped to the meshed half automatically.
     element : SeriesRLC or ParallelRLC
         Trapezoidal companion model providing the terminal relation,
         e.g. ``SeriesRLC(R=100.0)`` for an ideal 100 Ω resistor.
+        Always the full-model values: under symmetry the solver
+        internally scales the companion to the meshed half.
 
     Examples
     --------

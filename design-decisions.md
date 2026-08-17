@@ -11461,3 +11461,83 @@ conflicting trees, and cancelling one would throw away an hour.
 **Files:** `.github/workflows/docs.yml`, `docs/conf.py`
 (`docs_channel`, `html_theme_options["switcher"]`,
 `html_baseurl`), `docs/switcher.json`.
+
+## DD-172 — A lumped element on a symmetry plane is half a device
+
+**Problem.**  DD-154/155 wired full-model power semantics for modal
+ports and excluded lumped ports as a documented limitation.  The gap
+was worse than "uncorrected": `_snap_edge_chain` resolves endpoints by
+nearest-node on the *clipped* grid, so a dipole feed declared across a
+symmetry plane silently became a half-gap chain hanging on the wall
+node — no warning, no scaling, and the reported input impedance was
+the half-model value (the classic ~36 Ω monopole reading for a ~73 Ω
+dipole).  Passive `LumpedElement` loads had the same failure.
+
+**Decision.**  The user always declares the full-model device —
+endpoints in full-model coordinates (tutorial-09 rule: the geometry
+stays full, only the meshing changes), `Z0` and companion values as
+the full element.  The builder relates the chain to every declared
+symmetry plane and either books, clips, errors, or warns:
+
+- *Electric crossing* (chain along the plane normal, plane strictly
+  between the endpoints): allowed iff mirror-symmetric about the plane
+  within half a boundary cell; the outside terminal is clipped onto
+  the wall node.  This is the series cut — the meshed half carries
+  **half** the device (`Z0/2`; `R/2, L/2, 2C` for both companion
+  topologies).
+- *Magnetic crossing*: error — a current normal to a magnetic plane
+  mirrors anti-parallel (`test_t5_pmc_end_is_ideal_open`), no
+  full-model element corresponds.
+- *Magnetic containment* (chain lying in the plane): the parallel cut
+  — the meshed half is one of two parallel branches and carries the
+  **doubled** device (`2·Z0`; `2R, 2L, C/2`).  The declared on-plane
+  coordinate snaps to the pulled-in outermost line (`plane + d/3`,
+  DD-154 stage B); the half-boundary-cell tolerance covers exactly
+  that offset.
+- *Electric containment*: error — tangential edges inside an electric
+  wall are shorted.
+- *Endpoint in the discarded half* without being a crossing: error
+  (was the silent clamp).
+- *Terminal exactly on a clip-declared plane*: error with guidance —
+  under full-model coordinates that declaration is a mirror-twin pair
+  sharing a node, which is almost certainly a mis-declared crossing.
+  Under `ForceSymmetry*` (as-built, halved geometry) the same shape
+  *is* the crossing declaration and is booked without clipping.
+- *Chain away from every plane*: the DD-155 mirror-twin warning,
+  reworded for elements.
+
+The internal scaling is what makes the rest free: with the half-model
+device inside the operator, the Thévenin split yields exactly the
+modal convention `power_wave_full_scale = √2` per cutting plane for
+*both* cut kinds (series: half the voltage; parallel: half the
+current — either way `a → a/√2`).  A frozen `LumpedPortReport`
+(`symmetry_faces` as `(face, kind, relation)` triples plus the scale
+properties) rides the operator's `port_report` attribute, and the two
+existing consumers pick it up unchanged: `_excitation_scale` injects
+`1/√(2^k)` and `PortSignalRecorder` records `×√(2^k)` — zero new
+plumbing, and a report-less operator keeps the recorder's `None`
+fast path (non-symmetric runs stay bit-identical).  The
+`_LumpedModeStub` carries the operator's internal (scaled) Z0, which
+is precisely what makes the recorded power waves full-model: S11 and
+`Z_in = Z0·(1+S11)/(1−S11)` with the user's full-model Z0 come out
+right with no publication-layer correction.  The raw V/I signal
+*ratio* stays half-model-shaped (same as modal ports, where
+`z_line_full_scale` fixes it at publication) — a passive load's
+measured `−V/I` under a parallel cut reads the doubled device, which
+the methods chapter states explicitly.
+
+**Measured** (`validation/lumped_symmetry_parity_certificate.py`):
+gate A, all-PEC cavity, double precision, pinned dt — the half model
+is the *exact discrete restriction* of the full model, V/I restriction
+defect 4.5e-16 / 7.9e-16.  Gate B, CPML boundaries — full-vs-half S11
+parity 2.15e-2, floored not by DD-172 but by the CPML min/max mirror
+asymmetry the gate uncovered (KB-023); an unscaled feed sits at
+O(0.3).  Gate C — a passive load in a magnetic plane presents the
+doubled trapezoidal impedance to 1.0e-7.
+
+**Files:** `src/magnelio/ports/_lumped/port_report.py` (new),
+`ports/_lumped/factory.py` (`_resolve_symmetry`, `_scaled_element`),
+`ports/_lumped/operator.py` (`port_report` field),
+`tests/unit/test_lumped_symmetry.py`,
+`tests/integration/test_lumped_symmetry_parity.py`,
+`validation/lumped_symmetry_parity_certificate.py`.

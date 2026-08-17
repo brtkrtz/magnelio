@@ -283,13 +283,18 @@ class PortLumped:
         Unique port name.
     start, end : tuple of float
         Endpoints in metres; must differ along exactly one Cartesian
-        axis after grid snapping.
+        axis after grid snapping.  Under a clipping symmetry
+        declaration the endpoints stay in full-model coordinates — a
+        port whose chain crosses an electric symmetry plane is clipped
+        to the meshed half automatically.
     Z0 : float, default 50.0
         Power-wave reference impedance [Ω]; without *element* also the
-        internal Thévenin impedance.
+        internal Thévenin impedance.  Always the full-model value:
+        under symmetry the solver internally halves or doubles it, and
+        every reported quantity stays full-model.
     element : SeriesRLC or ParallelRLC, optional
         Companion element replacing the pure resistor as the port's
-        internal impedance.
+        internal impedance.  Also declared with full-model values.
     """
 
     name: str

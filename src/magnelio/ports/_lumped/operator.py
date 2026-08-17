@@ -78,6 +78,11 @@ class LumpedElementOperator:
         Orientation sign per edge (±1, EdgePath convention).
     beta_E : np.ndarray
         Lossless update coefficient ``dt / M_eps`` per edge.
+    port_report : LumpedPortReport, optional
+        Symmetry planes cutting the chain.  ``Z0`` and ``element``
+        then hold the internally scaled half-model device; the
+        recorder and the injection read the report's full-model scales
+        through the shared ``port_report`` plumbing.
     """
 
     name: str
@@ -89,6 +94,7 @@ class LumpedElementOperator:
     edge_components: list[int]
     edge_signs: list[float]
     beta_E: np.ndarray = field(repr=False)
+    port_report: object | None = field(default=None, repr=False)
 
     # Derived in __post_init__
     _beta_sum: float = field(default=0.0, repr=False, init=False)
@@ -238,6 +244,7 @@ class PortOperatorLumped(LumpedElementOperator):
         dl_list: list[float],
         beta_E: np.ndarray,
         element: SeriesRLC | ParallelRLC | None = None,
+        port_report=None,
     ) -> None:
         component = _COMPONENT_OF_DIRECTION[direction]
         n = len(flat_edge_indices)
@@ -251,6 +258,7 @@ class PortOperatorLumped(LumpedElementOperator):
             edge_components=[component] * n,
             edge_signs=[1.0] * n,
             beta_E=beta_E,
+            port_report=port_report,
         )
         self.direction = direction
 

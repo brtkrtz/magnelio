@@ -79,6 +79,9 @@ reports full-model quantities throughout:
   declared injected power stays a full-model watt (DD-155).
 - Registered wall losses and flux integrals are scaled by the mirrored
   share in the same way.
+- A lumped port or element cut by the plane is declared as the full
+  device and internally halved or doubled to the meshed branch — see
+  the lumped-elements chapter for the case rules.
 - Field monitors and port-mode plots are mirrored back across the
   plane before display, so the pictures show the full cross-section
   while only half of it was solved.
