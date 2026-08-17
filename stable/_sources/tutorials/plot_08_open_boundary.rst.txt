@@ -376,10 +376,16 @@ criss-crossed by standing-wave fringes — and the S11 curve above
 would ripple with the resonances of the box instead of showing one
 clean antenna dip.
 
-.. GENERATED FROM PYTHON SOURCE LINES 222-239
+.. GENERATED FROM PYTHON SOURCE LINES 222-247
 
 .. code-block:: Python
 
+
+    # The saturation level is taken from the data rather than written out
+    # as a number: ``data`` is in V/m per √W of incident power, and a scale
+    # tied to the pattern's own peak keeps this plot honest no matter what
+    # the drive level or the structure is.
+    e_peak = np.sqrt(sum(np.abs(v) ** 2 for v in nearfield.data.values())).max()
 
     fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.6))
     nearfield.plot(
@@ -392,7 +398,9 @@ clean antenna dip.
         threshold=0.004,
         density=26,
     )
-    nearfield.plot(component="E", f=f0, plot_type="color", geometry=model, ax=axes[1], vmax=1.5e-7)
+    nearfield.plot(
+        component="E", f=f0, plot_type="color", geometry=model, ax=axes[1], vmax=0.15 * e_peak
+    )
     axes[0].set_title("E direction at 2.45 GHz")
     axes[1].set_title("|E| at 2.45 GHz (saturated scale)")
     fig.tight_layout()
@@ -409,7 +417,7 @@ clean antenna dip.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 240-253
+.. GENERATED FROM PYTHON SOURCE LINES 248-261
 
 Where to go next
 ----------------
@@ -428,7 +436,7 @@ circuits: microstrip lines and the components built from them.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 9.404 seconds)
+   **Total running time of the script:** (0 minutes 9.409 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_08_open_boundary.py:
