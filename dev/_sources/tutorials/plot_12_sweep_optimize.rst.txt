@@ -637,7 +637,7 @@ above lets you estimate before you commit to it.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (3 minutes 16.715 seconds)
+   **Total running time of the script:** (3 minutes 22.537 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_12_sweep_optimize.py:
