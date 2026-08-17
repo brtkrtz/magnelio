@@ -1,0 +1,455 @@
+"""MonitorFarField — running surface DFT on a closed Huygens box.
+
+The monitor places an axis-aligned box a few cells inside the physical
+domain, accumulates the DFT of the tangential E and H on its faces
+during the time loop, and hands the frequency-domain surface fields to
+the near-to-far-field transform on demand.  Domain faces the box
+cannot cross — a PEC/PMC boundary (ground plane) or a declared
+symmetry plane — are omitted from the surface and booked as image
+planes for the transform.
+
+Sampling: each face lies on a grid-node plane; the tangential fields
+are taken from the sanctioned cell-centre interpolation of the two
+adjacent cell layers and linearly combined onto the node plane.  That
+keeps the surface exactly closed (faces meet at box edges without
+gaps or overhangs) and second-order accurate on graded grids.
+"""
+
+# Design: DD-173 (far-field monitor and NTFF transform).
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Optional
+
+import numpy as np
+
+from magnelio.monitors._dft import DFTAccumulator, divide_by_spectrum, source_spectrum
+from magnelio.monitors.base import _cell_centres, _interp_to_cell_centres
+from magnelio.post._symmetry import mirror_spec_for_face
+from magnelio.post.far_field import (
+    FarFieldResult,
+    ImagePlane,
+    SurfacePatchSet,
+    ntff_transform,
+)
+
+_AXES = "xyz"
+_FACE_NAMES = ("xmin", "xmax", "ymin", "ymax", "zmin", "zmax")
+# Tangential (E, H) component names per face axis.
+_TANGENTIALS = {
+    0: ("Ey", "Ez", "Hy", "Hz"),
+    1: ("Ex", "Ez", "Hx", "Hz"),
+    2: ("Ex", "Ey", "Hx", "Hy"),
+}
+
+
+@dataclass
+class _BoxFace:
+    """One sampled face of the Huygens box (internal)."""
+
+    name: str
+    axis: int
+    sign: float  # outward normal component (±1)
+    plane: float  # node-plane coordinate [m]
+    slab: tuple  # (ix, iy, iz) slices, 2 cells thick along axis
+    weight: float  # linear weight of the inner->outer layer pair
+    tangent_axes: tuple  # (t1, t2)
+    c1: np.ndarray  # patch centres along t1 [m]
+    c2: np.ndarray
+    w1: np.ndarray  # patch widths along t1 [m]
+    w2: np.ndarray
+
+
+@dataclass
+class MonitorFarField:
+    """Far-field (antenna pattern) monitor on an automatic Huygens box.
+
+    Records the surface DFT of the tangential fields on a closed box
+    placed ``margin_cells`` inside the physical domain (the absorber
+    layers are excluded automatically).  After a scattering run,
+    :meth:`result` returns the far-field pattern at one of the
+    requested frequencies.
+
+    Domain faces closed with PEC or PMC — a ground plane — and
+    declared symmetry planes are handled by image theory: the box is
+    left open there and the mirror images of the recorded surface
+    complete it.  For a plain PEC/PMC boundary the pattern is masked
+    to the physical half-space; a symmetry plane keeps the full
+    sphere.
+
+    Parameters
+    ----------
+    freqs : array_like
+        Frequencies [Hz] to record.
+    name : str
+        Monitor name (store key).
+    margin_cells : int, default 3
+        Clearance in grid cells between the box and the absorber (or
+        domain edge).  At least 1, so the two-layer node-plane
+        sampling never reads absorber cells.
+
+    Examples
+    --------
+    >>> from magnelio import monitors
+    >>> ff = monitors.MonitorFarField(freqs=[2.45e9], name="pattern")
+    """
+
+    freqs: np.ndarray
+    name: str = "far_field"
+    margin_cells: int = 3
+
+    _grid: object = field(default=None, repr=False, init=False)
+    _faces: list = field(default_factory=list, repr=False, init=False)
+    _image_planes: list = field(default_factory=list, repr=False, init=False)
+    _acc: dict = field(default_factory=dict, repr=False, init=False)
+    _source_spectrum: Optional[np.ndarray] = field(default=None, repr=False, init=False)
+    _accepted_power: Optional[np.ndarray] = field(default=None, repr=False, init=False)
+
+    def __post_init__(self) -> None:
+        self.freqs = np.atleast_1d(np.asarray(self.freqs, dtype=float))
+        if self.freqs.size == 0:
+            raise ValueError("freqs must contain at least one frequency")
+        if self.margin_cells < 1:
+            raise ValueError(
+                "margin_cells must be at least 1: the node-plane sampling "
+                "reads one cell outside each box face."
+            )
+
+    # ------------------------------------------------------------------
+    # Monitor protocol
+    # ------------------------------------------------------------------
+
+    def attach(self, mesh) -> None:
+        """Place the box on *mesh* and allocate fresh DFT accumulators."""
+        from magnelio.boundaries.boundary_conditions import (  # noqa: PLC0415
+            bc_type_entries,
+            cpml_thickness_of,
+            symmetry_entries,
+        )
+
+        grid = mesh.grid
+        self._grid = grid
+        bc = mesh.boundary_conditions
+        types = bc_type_entries(bc)
+        sym = symmetry_entries(bc)
+        pml = getattr(mesh, "pml_cells", None) or {}
+
+        nodes = (grid.x, grid.y, grid.z)
+        n_cells = (grid.Nx, grid.Ny, grid.Nz)
+
+        lo_n = [0, 0, 0]
+        hi_n = list(n_cells)
+        open_faces: list[str] = []
+        self._image_planes = []
+        for face in _FACE_NAMES:
+            axis = _AXES.index(face[0])
+            at_low = face.endswith("min")
+            kind = types[face]
+            if kind == "CPML":
+                # Absorber depth: mesher-extended cells, or the declared
+                # in-domain thickness on a hand-built grid.
+                n_abs = pml.get(face) or cpml_thickness_of(bc)
+                idx = n_abs + self.margin_cells
+                if at_low:
+                    lo_n[axis] = idx
+                else:
+                    hi_n[axis] = n_cells[axis] - idx
+                open_faces.append(face)
+            elif kind in ("PEC", "PMC"):
+                spec = mirror_spec_for_face(face, kind, nodes[axis])
+                self._image_planes.append(
+                    ImagePlane(
+                        axis=axis,
+                        position=spec.wall,
+                        kind=kind,
+                        at_low=at_low,
+                        physical_halfspace=face not in sym,
+                    )
+                )
+            else:
+                raise ValueError(
+                    f"far-field monitor {self.name!r}: face {face!r} is "
+                    f"{kind!r} — the radiated field of a periodic model "
+                    f"is not defined by a Huygens box."
+                )
+
+        if not open_faces:
+            raise ValueError(
+                f"far-field monitor {self.name!r}: every domain face is a "
+                f"wall; a closed cavity has no radiated field."
+            )
+        for axis in range(3):
+            if hi_n[axis] - lo_n[axis] < 2:
+                raise ValueError(
+                    f"far-field monitor {self.name!r}: after excluding the "
+                    f"absorber and {self.margin_cells} margin cell(s), only "
+                    f"{hi_n[axis] - lo_n[axis]} cell(s) remain along "
+                    f"{_AXES[axis]} — the model needs more physical volume "
+                    f"around the radiator."
+                )
+
+        centres = [_cell_centres(nodes[a]) for a in range(3)]
+        widths = [np.asarray(d, dtype=float) for d in (grid.dx, grid.dy, grid.dz)]
+
+        self._faces = []
+        for face in open_faces:
+            axis = _AXES.index(face[0])
+            at_low = face.endswith("min")
+            nn = lo_n[axis] if at_low else hi_n[axis]
+            t1, t2 = [a for a in range(3) if a != axis]
+            slices = [None, None, None]
+            slices[axis] = slice(nn - 1, nn + 1)
+            slices[t1] = slice(lo_n[t1], hi_n[t1])
+            slices[t2] = slice(lo_n[t2], hi_n[t2])
+            cc = centres[axis]
+            w = float((nodes[axis][nn] - cc[nn - 1]) / (cc[nn] - cc[nn - 1]))
+            self._faces.append(
+                _BoxFace(
+                    name=face,
+                    axis=axis,
+                    sign=-1.0 if at_low else 1.0,
+                    plane=float(nodes[axis][nn]),
+                    slab=tuple(slices),
+                    weight=w,
+                    tangent_axes=(t1, t2),
+                    c1=centres[t1][lo_n[t1] : hi_n[t1]].copy(),
+                    c2=centres[t2][lo_n[t2] : hi_n[t2]].copy(),
+                    w1=widths[t1][lo_n[t1] : hi_n[t1]].copy(),
+                    w2=widths[t2][lo_n[t2] : hi_n[t2]].copy(),
+                )
+            )
+
+        self._acc = {}
+        for bf in self._faces:
+            shape = (bf.c1.size, bf.c2.size)
+            self._acc[bf.name] = {
+                comp: DFTAccumulator(self.freqs, shape) for comp in _TANGENTIALS[bf.axis]
+            }
+
+    def record(self, fields, n: int, t: float, dt: float) -> None:
+        """Accumulate this step's surface DFT contribution.
+
+        E samples are at time ``t``, H samples at ``t + dt/2`` (the
+        leapfrog stagger); each goes into its accumulator with its own
+        time stamp.
+        """
+        del n
+        if self._grid is None:
+            raise RuntimeError("Monitor not attached. Call attach() first.")
+        for bf in self._faces:
+            comps = list(_TANGENTIALS[bf.axis])
+            ix, iy, iz = bf.slab
+            slab = _interp_to_cell_centres(fields, comps, ix, iy, iz, self._grid)
+            for comp in comps:
+                arr = np.moveaxis(slab[comp], bf.axis, 0)
+                vals = (1.0 - bf.weight) * arr[0] + bf.weight * arr[1]
+                t_comp = t + 0.5 * dt if comp.startswith("H") else t
+                self._acc[bf.name][comp].accumulate(vals, t_comp, dt)
+
+    def finalize(self) -> None:
+        pass
+
+    # ------------------------------------------------------------------
+    # Normalisation (wired by the analysis after each run)
+    # ------------------------------------------------------------------
+
+    def renormalize(self, source_signal) -> None:
+        """Normalize the surface DFT to 1 W incident CW power.
+
+        Called for you at the end of a scattering run; call directly
+        only for hand-driven solver runs.  Stores the excitation
+        spectrum as the divisor — the accumulated bins stay untouched,
+        so repeating the call just replaces the reference.
+        """
+        self._source_spectrum = source_spectrum(
+            source_signal.values,
+            source_signal.dt,
+            self.freqs,
+        )
+
+    @property
+    def is_renormalized(self) -> bool:
+        """Whether the 1 W renormalization has been applied."""
+        return self._source_spectrum is not None
+
+    def _set_accepted_power(self, f_axis, accepted) -> None:
+        # Runtime wiring by the analysis (not part of the recipe): the
+        # run's accepted-power curve, interpolated onto the monitor
+        # frequencies, feeds FarFieldResult.gain.
+        self._accepted_power = np.interp(
+            self.freqs, np.asarray(f_axis, dtype=float), np.asarray(accepted, dtype=float)
+        )
+
+    # ------------------------------------------------------------------
+    # Results
+    # ------------------------------------------------------------------
+
+    @property
+    def f(self) -> np.ndarray:
+        """Frequency axis [Hz]."""
+        return self.freqs
+
+    def _freq_index(self, f: Optional[float], f_index: Optional[int]) -> int:
+        if f_index is not None:
+            return int(f_index)
+        if f is None:
+            if self.freqs.size == 1:
+                return 0
+            raise ValueError(
+                f"this monitor recorded {self.freqs.size} frequencies; "
+                f"pass f= or f_index= to pick one."
+            )
+        idx = int(np.argmin(np.abs(self.freqs - f)))
+        if abs(self.freqs[idx] - f) > 1e-6 * max(abs(f), 1.0):
+            raise ValueError(
+                f"frequency {f:.6g} Hz was not recorded; available: "
+                f"{np.array2string(self.freqs, precision=6)}"
+            )
+        return idx
+
+    def _patch_sets(self, idx: int) -> list[SurfacePatchSet]:
+        if self._source_spectrum is None:
+            raise ValueError(
+                "far-field data is only meaningful per watt of incident "
+                "power; run the monitor through a scattering analysis, or "
+                "call renormalize(reference_signal) for a hand-driven run."
+            )
+        spectrum = self._source_spectrum[idx : idx + 1]
+        sets = []
+        for bf in self._faces:
+            comps = _TANGENTIALS[bf.axis]
+            vals = {
+                c: divide_by_spectrum(self._acc[bf.name][c].result[idx : idx + 1], spectrum)[0]
+                for c in comps
+            }
+            g1, g2 = np.meshgrid(bf.c1, bf.c2, indexing="ij")
+            n_p = g1.size
+            centers = np.zeros((n_p, 3))
+            centers[:, bf.axis] = bf.plane
+            centers[:, bf.tangent_axes[0]] = g1.ravel()
+            centers[:, bf.tangent_axes[1]] = g2.ravel()
+            normals = np.zeros((n_p, 3))
+            normals[:, bf.axis] = bf.sign
+            areas = np.outer(bf.w1, bf.w2).ravel()
+            E = np.zeros((n_p, 3), dtype=complex)
+            H = np.zeros((n_p, 3), dtype=complex)
+            E[:, bf.tangent_axes[0]] = vals[comps[0]].ravel()
+            E[:, bf.tangent_axes[1]] = vals[comps[1]].ravel()
+            H[:, bf.tangent_axes[0]] = vals[comps[2]].ravel()
+            H[:, bf.tangent_axes[1]] = vals[comps[3]].ravel()
+            sets.append(SurfacePatchSet(centers=centers, normals=normals, areas=areas, E=E, H=H))
+        return sets
+
+    def result(
+        self,
+        f: Optional[float] = None,
+        *,
+        f_index: Optional[int] = None,
+        theta: Optional[np.ndarray] = None,
+        phi: Optional[np.ndarray] = None,
+    ) -> FarFieldResult:
+        """The far-field pattern at one recorded frequency.
+
+        Parameters
+        ----------
+        f : float, optional
+            Frequency [Hz]; must be one of :attr:`freqs` (omit for a
+            single-frequency monitor).
+        f_index : int, optional
+            Index into :attr:`freqs`, alternative to *f*.
+        theta, phi : array_like, optional
+            Spherical evaluation grids [rad]; defaults to 2° over the
+            full sphere.
+
+        Returns
+        -------
+        FarFieldResult
+        """
+        idx = self._freq_index(f, f_index)
+        accepted = None
+        if self._accepted_power is not None:
+            accepted = float(self._accepted_power[idx])
+        return ntff_transform(
+            self._patch_sets(idx),
+            self._image_planes,
+            float(self.freqs[idx]),
+            theta=theta,
+            phi=phi,
+            accepted_power=accepted,
+        )
+
+    # ------------------------------------------------------------------
+    # Persistence (the MonitorWallLoss result_dump pattern)
+    # ------------------------------------------------------------------
+
+    def result_dump(self) -> dict:
+        """The accumulators plus the box geometry, for store and resume.
+
+        The face geometry and image planes travel with the bins so a
+        reader can rebuild the transform inputs without the mesh —
+        reader == monitor by construction.
+        """
+        if self._grid is None:
+            raise RuntimeError("monitor not attached; nothing to dump")
+        faces = []
+        for bf in self._faces:
+            faces.append(
+                {
+                    "name": bf.name,
+                    "axis": int(bf.axis),
+                    "sign": float(bf.sign),
+                    "plane": float(bf.plane),
+                    "c1": np.asarray(bf.c1),
+                    "c2": np.asarray(bf.c2),
+                    "w1": np.asarray(bf.w1),
+                    "w2": np.asarray(bf.w2),
+                    "bins": {
+                        comp: np.asarray(self._acc[bf.name][comp].result)
+                        for comp in _TANGENTIALS[bf.axis]
+                    },
+                }
+            )
+        planes = [
+            {
+                "axis": int(p.axis),
+                "position": float(p.position),
+                "kind": p.kind,
+                "at_low": bool(p.at_low),
+                "physical_halfspace": bool(p.physical_halfspace),
+            }
+            for p in self._image_planes
+        ]
+        dump = {
+            "freqs": np.asarray(self.freqs, dtype=float),
+            "margin_cells": int(self.margin_cells),
+            "faces": faces,
+            "image_planes": planes,
+        }
+        if self._source_spectrum is not None:
+            dump["source_spectrum"] = np.asarray(self._source_spectrum)
+        if self._accepted_power is not None:
+            dump["accepted_power"] = np.asarray(self._accepted_power)
+        return dump
+
+    def load_result_dump(self, dump: dict) -> None:
+        """Restore accumulators written by :meth:`result_dump` (resume).
+
+        The monitor must already be attached to the same mesh, so the
+        fresh accumulators have the dumped shapes.
+        """
+        for saved in dump["faces"]:
+            acc = self._acc[str(saved["name"])]
+            for comp, bins in saved["bins"].items():
+                acc[comp].result[...] = np.asarray(bins)
+        if "source_spectrum" in dump:
+            self._source_spectrum = np.asarray(dump["source_spectrum"])
+        if "accepted_power" in dump:
+            self._accepted_power = np.asarray(dump["accepted_power"])
+
+    def __repr__(self) -> str:
+        n_freqs = self.freqs.size
+        return (
+            f"MonitorFarField(name={self.name!r}, n_freqs={n_freqs}, "
+            f"margin_cells={self.margin_cells})"
+        )

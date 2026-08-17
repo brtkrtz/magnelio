@@ -11541,3 +11541,93 @@ doubled trapezoidal impedance to 1.0e-7.
 `tests/unit/test_lumped_symmetry.py`,
 `tests/integration/test_lumped_symmetry_parity.py`,
 `validation/lumped_symmetry_parity_certificate.py`.
+
+## DD-173 — Far field from a Huygens box: monitor + transform, image theory included
+
+**Problem.**  No far-field post-processing existed: tutorial 08 ends
+on the statement that gain and patterns need a near-to-far-field
+transform the library does not provide, and STATUS listed it as the
+missing antenna feature.  The reference topology (a monopole on a PEC
+ground) also rules out the naive implementation — a closed surface
+cannot be drawn inside a domain whose floor is an electric wall.
+
+**Decision.**  Two layers, split exactly like S-parameters:
+
+- ``post.ntff_transform`` + ``post.FarFieldResult`` — the pure
+  frequency-domain surface-equivalence transform (J = n̂×H,
+  M = −n̂×E, radiation vectors, Taflove/Balanis) over arbitrary
+  ``SurfacePatchSet``s, plus ``ImagePlane``s: every patch is mirrored
+  across each such plane with the component signs of
+  ``post._symmetry.mirror_sign`` — the plot-mirroring table *is* the
+  image-current table, so there is no second sign table to maintain.
+  A plane is either a real boundary (``physical_halfspace=True``, a
+  ground plane: pattern masked beyond it) or a symmetry plane (full
+  sphere physical).  Spherical convention: ISO physics, θ from +z,
+  φ from +x, fixed to the global axes in v1.
+- ``monitors.MonitorFarField(freqs, margin_cells=3)`` — an automatic
+  closed Huygens box ``margin_cells`` inside the physical domain
+  (absorber depth from the DD-172-era ``Mesh.pml_cells`` accessor,
+  falling back to the declared CPML thickness on hand-built grids).
+  Per face it runs a ``DFTAccumulator`` over the tangential E/H with
+  the H bins stamped at ``t + dt/2`` (the MonitorWallLoss stagger
+  treatment).  PEC/PMC domain faces and declared symmetry faces are
+  omitted from the surface and booked as image planes; Periodic faces
+  are rejected.  Renormalisation joins the DD-170 path
+  (``renormalize_all`` dispatches it), and the analysis wires the
+  run's accepted power ``1 − Σ|S|²`` into the monitor after each
+  in-RAM run, which is what feeds ``gain`` and
+  ``radiation_efficiency`` (``realized_gain`` and ``directivity``
+  need no wiring).
+
+Three deliberate subtleties, each pinned by a test:
+
+- *Time convention.*  The accumulator convention
+  ``Σ F·e^{+jωt}·dt`` produces phasors of the ``e^{−jωt}`` world;
+  the textbook NTFF algebra is ``e^{+jωt}``.  The transform
+  conjugates once at the entrance and once at the exit, so the
+  public pattern is a phasor like every other frequency-domain
+  quantity.  The analytic Hertzian dipole pins the sign of
+  ``E_theta``.
+- *Effective amplitudes.*  The per-1-W-CW normalisation of DD-170
+  makes every renormalised phasor an effective (RMS) amplitude
+  (``|V| = √(zP)``, port-units gate), so the radiation intensity is
+  ``|E|²/η`` with **no** peak-phasor ½ — the first integration run
+  showed exactly the factor 2 in the power closure before this was
+  written down.
+- *Node-plane sampling.*  Each box face lies on a grid-node plane;
+  the tangential fields come from ``_interp_to_cell_centres`` on the
+  two adjacent cell layers, linearly combined onto the plane.  The
+  surface is therefore exactly closed (no half-cell fins at box
+  edges) and second-order on graded grids.  Radiated power
+  integrates the smooth unmasked sphere and scales by the physical
+  solid-angle fraction (images make the pattern mirror-symmetric, so
+  this is exact) instead of paying the half-cell bias of a hard mask
+  edge.
+
+Under symmetry no extra factor exists anywhere: the 1/√2-per-plane
+injection (DD-155/DD-172) plus the 2^k image expansion already
+reconstruct the full-model 1 W pattern — a flux-monitor-style ×2
+would double-count.  The PMC pull-in leaves a ~d/3 gap between a
+mirrored patch pair; second-order, absorbed by the parity gates.
+Limitation: the accepted-power wiring covers the in-RAM path; a
+store-streamed run serves ``realized_gain``/``directivity`` and gets
+``gain`` when the reader wires accepted power (DD-070 follow-up).
+
+**Measured** (`validation/farfield_dipole_certificate.py`,
+`tests/integration/test_far_field_antenna.py`): thin-wire λ/2 dipole
+D = 2.15 dBi ± 0.15 dB with lossless closure |P_rad − (1−|S11|²)| <
+3 %; monopole on PEC ground: masked half space, horizon directivity
+= 2× the dipole's within 5 %; SymmetryPEC half model with the
+DD-172 lumped feed on the plane reproduces the full-model pattern
+within 8 % and P_rad within 5 % (floored by KB-023, not by this
+machinery — the analytic image-composition gates in
+`tests/unit/test_ntff_transform.py` are machine-exact at 1e-10).
+
+**Files:** `src/magnelio/post/far_field.py` (new),
+`src/magnelio/monitors/far_field.py` (new), `monitors/__init__.py`,
+`monitors/field_frequency.py` (`renormalize_all`),
+`analysis/scattering_td.py` (`_wire_far_field_monitors`),
+`tests/unit/test_ntff_transform.py`,
+`tests/unit/test_monitor_far_field.py`,
+`tests/integration/test_far_field_antenna.py`,
+`validation/farfield_dipole_certificate.py`.

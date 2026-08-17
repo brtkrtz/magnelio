@@ -1568,6 +1568,7 @@ class AnalysisScatteringTD:
             excited_chan,
             f_axis,
         )
+        self._wire_far_field_monitors(s_dict, f_axis)
         energy_trace = getattr(solver, "_energy_trace", None)
         return (
             s_params,
@@ -2473,6 +2474,25 @@ class AnalysisScatteringTD:
                 fits=fits,
             )
         return self._sibc_spec_cache
+
+    def _wire_far_field_monitors(self, s_dict, f_axis) -> None:
+        """Hand the run's accepted-power curve to far-field monitors.
+
+        ``1 − Σ|S|²`` over every recorded channel of the excited run —
+        the reference behind ``FarFieldResult.gain`` and
+        ``radiation_efficiency``.  Runtime wiring like the wall-loss
+        accounting: not part of the recipe, refreshed per run.
+        """
+        from magnelio.monitors.far_field import MonitorFarField  # noqa: PLC0415
+
+        ff = [m for m in self.monitors if isinstance(m, MonitorFarField)]
+        if not ff:
+            return
+        accepted = np.ones(len(f_axis))
+        for s in s_dict.values():
+            accepted = accepted - np.abs(np.asarray(s)) ** 2
+        for mon in ff:
+            mon._set_accepted_power(f_axis, accepted)
 
     def _wire_wall_monitors(self) -> None:
         """Point every MonitorWallLoss at the SIBC accounting (WP-D5).

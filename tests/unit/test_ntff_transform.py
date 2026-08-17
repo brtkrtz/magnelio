@@ -51,7 +51,10 @@ def hertzian_fields(pts: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     p_hat = np.stack([-np.sin(phi), np.cos(phi), np.zeros_like(phi)], axis=1)
     E = E_r[:, None] * r_hat + E_t[:, None] * t_hat
     H = H_p[:, None] * p_hat
-    return np.conj(E), np.conj(H)
+    # Balanis writes peak phasors; the library's frequency-domain
+    # quantities are effective (RMS) amplitudes — scale by 1/sqrt(2) so
+    # the FarFieldResult power properties return the true average power.
+    return np.conj(E) / np.sqrt(2.0), np.conj(H) / np.sqrt(2.0)
 
 
 _FACES = {
@@ -132,10 +135,11 @@ class TestFreeDipole:
         assert free_dipole.P_rad == pytest.approx(P_ANALYTIC, rel=5e-3)
 
     def test_phase_convention_is_pinned(self, free_dipole):
-        # Library convention (e^{-jωt}): A_theta = -j η k I dl sinθ/(4π).
+        # Library convention (e^{-jωt}, effective amplitudes):
+        # A_theta = -j η k I dl sinθ/(4π√2) for a peak current I.
         res = free_dipole
         i_eq = np.argmin(np.abs(res.theta - np.pi / 2))
-        expected = -1j * ETA0 * K0 * IDL / (4.0 * np.pi)
+        expected = -1j * ETA0 * K0 * IDL / (4.0 * np.pi * np.sqrt(2.0))
         assert res.E_theta[i_eq, 0] == pytest.approx(expected, rel=1e-2)
 
     def test_e_phi_vanishes(self, free_dipole):

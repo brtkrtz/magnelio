@@ -1005,6 +1005,8 @@ def renormalize_all(monitors, source_signal) -> None:
     speaks physical units from the moment the run returns.  Monitors of
     other kinds are ignored.
     """
+    from magnelio.monitors.far_field import MonitorFarField  # noqa: PLC0415
+
     for mon in monitors or ():
-        if isinstance(mon, MonitorFieldFrequency):
+        if isinstance(mon, (MonitorFieldFrequency, MonitorFarField)):
             mon.renormalize(source_signal)

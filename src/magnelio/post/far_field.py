@@ -271,10 +271,11 @@ class FarFieldResult:
 
     The complex patterns are the r-independent far-zone amplitudes:
     the physical field at distance r is
-    ``E(r) = (E_theta θ̂ + E_phi φ̂) · e^{-jkr} / r``.  When produced
-    from a solver run the fields are normalised per √W of incident
-    power, which makes ``realized_gain`` the directly measured
-    quantity.
+    ``E(r) = (E_theta θ̂ + E_phi φ̂) · e^{-jkr} / r``.  Like every
+    frequency-domain field of the library they are effective (RMS)
+    phasors per √W of incident CW power, which makes
+    ``realized_gain`` the directly measured quantity and keeps the
+    intensity free of a peak-phasor ½.
 
     Attributes
     ----------
@@ -310,7 +311,10 @@ class FarFieldResult:
 
     @property
     def _U_unmasked(self) -> np.ndarray:
-        return (np.abs(self.E_theta) ** 2 + np.abs(self.E_phi) ** 2) / (2.0 * _ETA0)
+        # Library phasors are effective (RMS) amplitudes — the per-1-W-CW
+        # normalisation makes P = |V|²/Z without a ½ (see the port-units
+        # gate) — so the intensity carries no extra factor either.
+        return (np.abs(self.E_theta) ** 2 + np.abs(self.E_phi) ** 2) / _ETA0
 
     @property
     def U(self) -> np.ndarray:
