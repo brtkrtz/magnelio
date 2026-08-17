@@ -441,8 +441,8 @@ the two curves that carry the actual splitting into one line.
 
  .. code-block:: none
 
-    max |S13 - S23| (equal split):   1.1e-08
-    max |S43| (E-arm isolation):    -158.6 dB
+    max |S13 - S23| (equal split):   1.5e-08
+    max |S43| (E-arm isolation):    -163.6 dB
 
 
 
@@ -517,8 +517,8 @@ counterpart of the H-arm's symmetric one:
 
  .. code-block:: none
 
-    max |S14 + S24| (anti-phase split): 1.0e-08
-    max |S34| (H-arm isolation):       -160.5 dB
+    max |S14 + S24| (anti-phase split): 1.6e-08
+    max |S34| (H-arm isolation):       -167.7 dB
 
 
 
@@ -552,7 +552,7 @@ results reopen after a restart, and the fields go to ParaView.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 17.969 seconds)
+   **Total running time of the script:** (0 minutes 17.864 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_06_field_monitors.py:
