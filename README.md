@@ -8,6 +8,13 @@ simulation.  Its standard workflow is broadband S-parameter extraction
 over waveguide ports on arbitrary 3D geometry; the workhorse solver is
 a time-domain Finite Integration Technique (FIT-TD) engine.
 
+![Electric field vectors in a two-pole dielectric resonator filter: two ceramic pucks stand in a metal housing, separated by a wall with a coupling window, with a probe pin at each end](https://raw.githubusercontent.com/brtkrtz/magnelio/main/docs/_static/hero_dielectric_filter.png)
+
+*The end of the [capstone tutorial](https://brtkrtz.github.io/magnelio/stable/tutorials/plot_13_dielectric_filter.html):
+a narrowband ceramic bandpass filter, dimensioned from a specification
+and then verified against it. The arrows are the electric field; the
+two resonators are oscillating in antiphase.*
+
 ## Features
 
 - FIT time-domain leapfrog solver on a structured non-uniform
