@@ -890,6 +890,27 @@ class TestPMLExtension:
         dz = mesh_pml.grid.dz
         np.testing.assert_allclose(dz[:n_pml], dz[n_pml], rtol=1e-9)
 
+    def test_public_pml_cells_accessor(self):
+        self._occ()
+        mesh_pml = self._mesh(["zmin", "xmax"])
+        cells = mesh_pml.pml_cells
+        assert cells == mesh_pml._pml_cells
+        assert set(cells) == {"zmin", "xmax"}
+        assert all(n >= 8 for n in cells.values())
+        # A fresh copy on every access, never the private dict itself.
+        cells["zmin"] = 0
+        assert mesh_pml.pml_cells["zmin"] >= 8
+        # No absorbers declared -> empty mapping.
+        assert self._mesh(None).pml_cells == {}
+
+    def test_pml_cells_empty_without_from_geometry(self):
+        from magnelio.mesh.grid import GridLines
+        from magnelio.mesh.mesher import Mesh
+
+        ax = np.linspace(0.0, 1e-3, 5)
+        mesh = Mesh.from_grid(GridLines(ax, ax, ax))
+        assert mesh.pml_cells == {}
+
 
 class TestDegenerateAxis:
     """N = 1 cells along an axis must produce a valid mesh."""

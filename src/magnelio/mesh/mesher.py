@@ -1336,6 +1336,23 @@ class Mesh:
     def Nz(self) -> int:
         return self.grid.Nz
 
+    @property
+    def pml_cells(self) -> dict[str, int]:
+        """Number of absorber grid cells per domain face.
+
+        Maps face names (``"xmin"`` … ``"zmax"``) to the number of grid
+        cells the mesher appended *outside* the declared domain for that
+        face's CPML layer.  Faces without an absorbing layer are absent.
+        A mesh built without :meth:`from_geometry` reports an empty
+        mapping.
+
+        Returns
+        -------
+        dict of str to int
+            Absorber cell count per face; a fresh copy on every access.
+        """
+        return dict(getattr(self, "_pml_cells", {}))
+
     def __repr__(self) -> str:
         return f"Mesh(grid={self.grid!r}, n_materials={len(self.material_library)})"
 
