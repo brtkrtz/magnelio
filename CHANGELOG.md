@@ -7,6 +7,38 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Added
+
+- Far-field computation: `monitors.MonitorFarField` records a closed
+  Huygens surface during a run and returns antenna patterns —
+  directivity, gain, realized gain, radiated power — at the requested
+  frequencies.  Ground planes (PEC/PMC boundary faces) and symmetry
+  planes are handled by image theory; the monitor streams to the
+  project store and survives a resume.
+- Far-field pattern plots: `plots.plot_pattern_cut` (polar cuts in
+  the antenna convention) and `plots.plot_pattern_3d` (3D radiation
+  surface), also available as `.plot_cut()` / `.plot_3d()` on the
+  far-field result and monitor.
+- `post.ntff_transform` and `post.FarFieldResult` for custom
+  near-to-far-field pipelines.
+- Lumped ports and elements on symmetry planes: declare the
+  full-model device (endpoints, `Z0`, R/L/C values) and the solver
+  derives the half model — a dipole fed across an electric symmetry
+  plane now reports the full-model impedance instead of the monopole
+  reading.  Invalid placements raise a clear error instead of
+  silently snapping to the domain boundary.
+- `Mesh.pml_cells`: public per-face absorber cell counts.
+- Tutorial 15 (dipole as a symmetry half model, full-sphere far
+  field); tutorial 08 now closes with the monopole's gain figures.
+
+### Changed
+
+- A thin wire lying entirely in the half-space removed by a symmetry
+  declaration is skipped at mesh time (like a solid there) instead of
+  failing to rasterise.
+
 ## [0.2.1] - 2026-08-17
 
 ### Fixed

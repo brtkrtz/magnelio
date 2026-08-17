@@ -1,6 +1,42 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-16.*  Latest work: a frequency monitor's `data`
+*Last updated: 2026-08-18.*  Latest work (branch
+`feat/antenna-farfield`): the antenna chain is closed — far field,
+pattern plots, and lumped devices on symmetry planes (DD-172/173/174).
+A `monitors.MonitorFarField` places a closed Huygens box a few cells
+inside the physical domain by itself, accumulates the surface DFT of
+the tangential fields on grid-node planes (two adjacent cell-centre
+layers combined onto the plane, so the surface closes exactly), and
+`result(f)` runs the frequency-domain surface-equivalence transform.
+Faces the box cannot cross — a monopole's PEC ground, a declared
+symmetry plane — are booked as image planes with the signs of
+`mirror_sign`, which *is* the image-current table; a real boundary
+masks the pattern to its half space, a symmetry plane keeps the full
+sphere.  Two conventions had to be written down on the way: the
+codebase DFT (`Σ F·e^{+jωt}·dt`) is the conjugate of the textbook
+NTFF algebra (conjugate in, conjugate out, pinned by the analytic
+Hertzian dipole), and renormalised phasors are effective amplitudes,
+so the intensity is |E|²/η with no peak-phasor ½ — the missing factor
+2 showed up in the first power closure.  Certified: λ/2 thin-wire
+dipole at 2.15 dBi with `P_rad = 1 − |S11|²` to 2 %, monopole on
+ground at +3 dB with the lower half masked.  Lumped ports/elements on
+a symmetry plane went from silently-clamped-and-unscaled to full
+parity with modal ports: the user declares the full-model device, the
+builder clips a crossing chain and internally halves (series cut) or
+doubles (parallel cut) it, and a `LumpedPortReport` rides the
+existing √2-per-plane recorder/injection plumbing unchanged — the
+half model is the *exact discrete restriction* of the full one
+(5e-16 in a PEC cavity).  Invalid placements (magnetic crossing,
+electric containment, discarded-half endpoints) now raise.  The
+open-boundary parity gate uncovered that the CPML min/max faces are
+not mirror images (profiles sampled at cell centres for both E and H
+registers) — booked as KB-023, flooring resonant full-vs-half
+comparisons at ~1e-2 in S11.  Pattern plots: polar cuts in the
+antenna convention and a dB-radius 3D surface (`plots.
+plot_pattern_cut`/`plot_pattern_3d`); tutorial 08 now closes with the
+monopole's gain figures, and the new tutorial 15 combines symmetry,
+the on-plane feed and the full-sphere pattern on a dipole.  Before
+that: a frequency monitor's `data`
 states a unit or refuses to answer (DD-170).  Its DFT bins are the
 transient folded with the excitation spectrum, and dividing that out —
 the step that makes them fields per 1 W CW — was a call the caller had
@@ -185,6 +221,9 @@ changed, do not append.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-174** (2026-08-18) — pattern plots: `plots.plot_pattern_cut` (polar, antenna convention, dB floor) and `plots.plot_pattern_3d` (dB-radius surface); `FarFieldResult`/`MonitorFarField`/store reader delegate.
+* **DD-173** (2026-08-18) — far field from a Huygens box: `monitors.MonitorFarField` (auto-placed node-plane surface DFT) + `post.ntff_transform`/`FarFieldResult`; PEC/PMC/symmetry faces via image theory (`mirror_sign` is the image-current table); effective-amplitude intensity |E|²/η; certificate: dipole 2.15 dBi, monopole +3 dB, P_rad closure 2 %.
+* **DD-172** (2026-08-18) — a lumped element on a symmetry plane is half a device: full-model declaration, builder clips/scales internally (series cut Z/2, parallel cut 2Z), `LumpedPortReport` rides the existing √2-per-plane plumbing; invalid placements raise instead of clamping; certificate: exact restriction 5e-16.
 * **DD-159** (2026-08-14) — string/tuple symmetry vocabulary: bare `"SymmetryPEC"`/`"SymmetryPMC"` clip at plane 0.0, `("SymmetryPEC", position)` clips elsewhere, `"ForceSymmetry*"` declares an as-built half model; the `Symmetry` class is removed.
 * **DD-158** (2026-08-14) — unregistered-wall warning only for scenes with lossy conductors (declared at mesh time, or via the σ-fallback at `resolve_wall_conductors` time); registration stays unconditional.
 * **DD-157** (2026-08-14) — section contours are closed or the plane is re-taken (nudge retry, loud drop); open chains on tangent-band planes of Boolean solids booked fantasy coverage and sent coax ports to Mur; closes KB-015.
@@ -402,7 +441,8 @@ Public API (thin core + domain namespaces; DD-117, refines DD-108):
   trio, ``PortSpec*`` family, conductor specs, ``Mode``/``ModeType``,
   reports), ``magnelio.sources``, ``magnelio.monitors``
   (``MonitorFieldTime``, ``MonitorFieldFrequency``,
-  ``MonitorFluxTime``, ``MonitorWallLoss``), ``magnelio.circuit``
+  ``MonitorFluxTime``, ``MonitorWallLoss``, ``MonitorFarField``),
+  ``magnelio.circuit``
   (``SeriesRLC``/``ParallelRLC``, ``EdgePath``, curve rasteriser),
   ``magnelio.signals``, ``magnelio.solver``, ``magnelio.analysis``
   (result types), ``magnelio.post``, ``magnelio.plots``,
@@ -617,6 +657,8 @@ so the question "was this ever a problem?" has a cheap answer):
 * **Off-Yee field-monitor interpolation** — monitors sample on the Yee
   positions; arbitrary observation points would need interpolation
   that preserves the DD-085 physical units.
-* **No far-field / antenna-pattern post-processing** — tutorial 08
-  reads S11, input impedance and near fields only; a far-field
-  transform is a missing feature, not a tutorial gap.
+* **Far-field accepted-power wiring on the streamed path** — DD-173
+  wires ``1 − Σ|S|²`` into ``MonitorFarField`` after each in-RAM run;
+  a store-streamed run serves ``realized_gain``/``directivity`` but
+  ``gain`` raises until the reader wires accepted power (DD-070
+  follow-up).

@@ -11506,6 +11506,14 @@ symmetry plane and either books, clips, errors, or warns:
 - *Chain away from every plane*: the DD-155 mirror-twin warning,
   reworded for elements.
 
+The same full-model rule extends to thin wires: a ``ThinWire`` whose
+curve lies entirely in the discarded half-space is skipped at mesh
+time (``mask_thin_wires`` books a ``None`` path) — like a solid
+there, it is represented by its mirror image.  Before this, the
+rasteriser died on the clamped single-node curve, which forced
+exactly the hand-halved declarations the full-model rule exists to
+avoid (found by the dipole tutorial).
+
 The internal scaling is what makes the rest free: with the half-model
 device inside the operator, the Thévenin split yields exactly the
 modal convention `power_wave_full_scale = √2` per cutting plane for
