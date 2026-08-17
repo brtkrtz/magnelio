@@ -1650,13 +1650,19 @@ class AnalysisScatteringTD:
         # another kind is present, so its absence from the reader is not a
         # silent surprise (test control monitors are not magnelio monitors, so
         # they do not trip this).
+        from magnelio.monitors.far_field import MonitorFarField  # noqa: PLC0415
         from magnelio.monitors.field_frequency import (  # noqa: PLC0415
             MonitorFieldFrequency,
         )
         from magnelio.monitors.field_time import MonitorFieldTime  # noqa: PLC0415
         from magnelio.monitors.flux import MonitorFluxTime  # noqa: PLC0415
 
-        _streamed = (MonitorFieldTime, MonitorFluxTime, MonitorFieldFrequency)
+        _streamed = (
+            MonitorFieldTime,
+            MonitorFluxTime,
+            MonitorFieldFrequency,
+            MonitorFarField,
+        )
         not_streamed = sorted(
             {
                 type(m).__name__
@@ -2733,6 +2739,43 @@ def _load_wall_loss_accumulators(project_path, run_name, monitors, n_completed):
             )
 
 
+def _load_far_field_accumulators(project_path, run_name, monitors, n_completed):
+    """Restore MonitorFarField accumulators from far_field.h5 (resume).
+
+    Same contract as the frequency and wall-loss dumps: reloaded only
+    when the file's step matches the checkpoint's ``n_completed``.  A
+    no-op when the run carries no far-field monitors.
+    """
+    from pathlib import Path  # noqa: PLC0415
+
+    from magnelio.io.project import _read_far_field_dump  # noqa: PLC0415
+    from magnelio.monitors.far_field import MonitorFarField  # noqa: PLC0415
+
+    ff_mons = [m for m in monitors if isinstance(m, MonitorFarField)]
+    if not ff_mons:
+        return
+    ff = Path(project_path) / "runs" / run_name / "far_field.h5"
+    if not ff.exists():
+        raise ValueError(
+            f"resume needs {ff} for far-field monitor(s) "
+            f"{[m.name for m in ff_mons]}, but it is missing",
+        )
+    import h5py  # noqa: PLC0415
+
+    with h5py.File(ff, "r") as f:
+        ff_step = int(f.attrs["n_completed"])
+        if ff_step != int(n_completed):
+            raise ValueError(
+                f"far_field.h5 is at step {ff_step} but the checkpoint is at "
+                f"{n_completed} — likely a hard crash during a checkpoint "
+                f"dump.  The far-field accumulator cannot be resumed "
+                f"consistently; restart the run or drop the monitor.",
+            )
+    run_dir = Path(project_path) / "runs" / run_name
+    for mon in ff_mons:
+        mon.load_result_dump(_read_far_field_dump(run_dir, mon.name))
+
+
 def _resume_scattering(
     proj,
     excited=None,
@@ -2937,6 +2980,8 @@ def _resume_scattering(
     _load_freq_accumulators(proj.path, run_name, run_monitors, n_completed)
     # Wall-loss monitors: same contract, own result file (DD-082 addendum).
     _load_wall_loss_accumulators(proj.path, run_name, run_monitors, n_completed)
+    # Far-field monitors: same contract, own result file (DD-173).
+    _load_far_field_accumulators(proj.path, run_name, run_monitors, n_completed)
     sink.enable_checkpoints(solver.state_dict, ckpt_interval)
 
     if verbose:

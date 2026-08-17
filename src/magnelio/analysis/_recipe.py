@@ -386,13 +386,22 @@ def _monitor_to_dict(mon) -> dict:
             "bc_faces": list(mon.bc_faces),
             "name": mon.name,
         }
+    from magnelio.monitors.far_field import MonitorFarField  # noqa: PLC0415
+
+    if isinstance(mon, MonitorFarField):
+        return {
+            "type": "MonitorFarField",
+            "freqs": [float(fr) for fr in mon.freqs],
+            "margin_cells": int(mon.margin_cells),
+            "name": mon.name,
+        }
     # Project-store monitor streaming: DD-070.
     raise NotImplementedError(
         f"resume cannot serialise monitor type {type(mon).__name__}; "
-        f"only MonitorFieldTime, MonitorFluxTime, MonitorFieldFrequency and "
-        f"MonitorWallLoss are streamed to the project store.  Run "
-        f"without project= to keep it in RAM, or drop it for the streamed "
-        f"run.",
+        f"only MonitorFieldTime, MonitorFluxTime, MonitorFieldFrequency, "
+        f"MonitorWallLoss and MonitorFarField are streamed to the project "
+        f"store.  Run without project= to keep it in RAM, or drop it for "
+        f"the streamed run.",
     )
 
 
@@ -438,6 +447,14 @@ def _monitor_from_dict(d: dict):
             mu=float(d["mu"]),
             roughness=_roughness_from_dict(d.get("roughness")),
             bc_faces=tuple(d["bc_faces"]),
+            name=d["name"],
+        )
+    if d["type"] == "MonitorFarField":
+        from magnelio.monitors.far_field import MonitorFarField  # noqa: PLC0415
+
+        return MonitorFarField(
+            freqs=[float(fr) for fr in d["freqs"]],
+            margin_cells=int(d.get("margin_cells", 3)),
             name=d["name"],
         )
     raise TypeError(f"unknown monitor type {d['type']!r} in recipe")
@@ -504,6 +521,7 @@ def _serialisable_monitors(monitors) -> list:
     abort).  The cost is that a new persisted monitor kind has to be
     added here as well, or it is silently dropped from the rebuilt run.
     """
+    from magnelio.monitors.far_field import MonitorFarField  # noqa: PLC0415
     from magnelio.monitors.field_frequency import (  # noqa: PLC0415
         MonitorFieldFrequency,
     )
@@ -516,7 +534,13 @@ def _serialisable_monitors(monitors) -> list:
         for m in monitors
         if isinstance(
             m,
-            (MonitorFieldTime, MonitorFluxTime, MonitorFieldFrequency, MonitorWallLoss),
+            (
+                MonitorFieldTime,
+                MonitorFluxTime,
+                MonitorFieldFrequency,
+                MonitorWallLoss,
+                MonitorFarField,
+            ),
         )
     ]
 

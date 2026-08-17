@@ -421,6 +421,7 @@ class MonitorFarField:
             for p in self._image_planes
         ]
         dump = {
+            "name": self.name,
             "freqs": np.asarray(self.freqs, dtype=float),
             "margin_cells": int(self.margin_cells),
             "faces": faces,
@@ -431,6 +432,62 @@ class MonitorFarField:
         if self._accepted_power is not None:
             dump["accepted_power"] = np.asarray(self._accepted_power)
         return dump
+
+    @classmethod
+    def from_result_dump(cls, dump: dict) -> "MonitorFarField":
+        """Rebuild a result-serving monitor from a :meth:`result_dump`.
+
+        The store reader's path: the dump carries the box geometry and
+        image planes, so no mesh is needed — the rebuilt monitor
+        answers :meth:`result` but cannot :meth:`record` (it is not
+        attached to a grid).
+        """
+        mon = cls(
+            freqs=np.asarray(dump["freqs"], dtype=float),
+            name=str(dump.get("name", "far_field")),
+            margin_cells=int(dump.get("margin_cells", 3)),
+        )
+        mon._faces = []
+        mon._acc = {}
+        for saved in dump["faces"]:
+            axis = int(saved["axis"])
+            name = str(saved["name"])
+            c1 = np.asarray(saved["c1"], dtype=float)
+            c2 = np.asarray(saved["c2"], dtype=float)
+            bf = _BoxFace(
+                name=name,
+                axis=axis,
+                sign=float(saved["sign"]),
+                plane=float(saved["plane"]),
+                slab=(None, None, None),  # reader: result-only, no record
+                weight=0.0,
+                tangent_axes=tuple(a for a in range(3) if a != axis),
+                c1=c1,
+                c2=c2,
+                w1=np.asarray(saved["w1"], dtype=float),
+                w2=np.asarray(saved["w2"], dtype=float),
+            )
+            mon._faces.append(bf)
+            mon._acc[name] = {}
+            for comp, bins in saved["bins"].items():
+                acc = DFTAccumulator(mon.freqs, (c1.size, c2.size))
+                acc.result[...] = np.asarray(bins)
+                mon._acc[name][comp] = acc
+        mon._image_planes = [
+            ImagePlane(
+                axis=int(p["axis"]),
+                position=float(p["position"]),
+                kind=str(p["kind"]),
+                at_low=bool(p["at_low"]),
+                physical_halfspace=bool(p["physical_halfspace"]),
+            )
+            for p in dump["image_planes"]
+        ]
+        if "source_spectrum" in dump:
+            mon._source_spectrum = np.asarray(dump["source_spectrum"])
+        if "accepted_power" in dump:
+            mon._accepted_power = np.asarray(dump["accepted_power"])
+        return mon
 
     def load_result_dump(self, dump: dict) -> None:
         """Restore accumulators written by :meth:`result_dump` (resume).

@@ -1142,6 +1142,7 @@ class _ScatteringRunSink:
         flux_monitors=(),
         freq_monitors=(),
         wall_loss_monitors=(),
+        far_field_monitors=(),
         grid=None,
     ) -> None:
         self._writer = writer
@@ -1162,6 +1163,8 @@ class _ScatteringRunSink:
         # Wall-loss monitors dump the same way (DD-082 addendum): running
         # DFT accumulators, whole-file overwrite, own result file.
         self._wall_loss_monitors = list(wall_loss_monitors)
+        # Far-field monitors: same fixed-size running-DFT shape (DD-173).
+        self._far_field_monitors = list(far_field_monitors)
         self._grid = grid
         # Global-time origin of the fresh recorder (DD-070, WP-S8): on a
         # resume the recorder restarts at local index 0 but corresponds to
@@ -1177,6 +1180,9 @@ class _ScatteringRunSink:
         )
         self._wall_loss_path = (
             checkpoint_path.parent / "wall_loss.h5" if checkpoint_path is not None else None
+        )
+        self._far_field_path = (
+            checkpoint_path.parent / "far_field.h5" if checkpoint_path is not None else None
         )
         self._checkpoint_fn = None
         self._checkpoint_interval = 1
@@ -1309,6 +1315,14 @@ class _ScatteringRunSink:
             dumps = {m.name: m.result_dump() for m in self._wall_loss_monitors}
             _write_wall_loss_h5(
                 self._wall_loss_path,
+                dumps,
+                int(state["n_completed"]),
+            )
+        # Far-field results: same ordering as the dumps above.
+        if self._far_field_monitors and self._far_field_path is not None:
+            dumps = {m.name: m.result_dump() for m in self._far_field_monitors}
+            _write_far_field_h5(
+                self._far_field_path,
                 dumps,
                 int(state["n_completed"]),
             )
@@ -1517,6 +1531,15 @@ def _freq_monitors(monitors) -> list:
     )
 
     return [m for m in monitors if isinstance(m, MonitorFieldFrequency)]
+
+
+def _far_field_monitors(monitors) -> list:
+    """The ``MonitorFarField`` subset of a list (DD-173)."""
+    if not monitors:
+        return []
+    from magnelio.monitors.far_field import MonitorFarField  # noqa: PLC0415
+
+    return [m for m in monitors if isinstance(m, MonitorFarField)]
 
 
 def _wall_loss_monitors(monitors) -> list:
@@ -2128,6 +2151,141 @@ class _LoadedMonitorWallLoss:
 
 
 # ═════════════════════════════════════════════════════════════════════
+# Far-field monitors  <->  runs/<name>/far_field.h5  (DD-173)
+# ═════════════════════════════════════════════════════════════════════
+#
+# Same fixed-size running-DFT shape as the frequency and wall-loss
+# dumps.  The file carries the surface bins PLUS the box geometry and
+# image planes, so the reader rebuilds the transform inputs without the
+# mesh — reader == monitor by construction.
+
+
+def _write_far_field_h5(path, dumps: dict, n_completed: int) -> None:
+    """Atomically write MonitorFarField results to *path*.
+
+    ``dumps`` maps monitor name -> :meth:`MonitorFarField.result_dump`.
+    Written to ``<path>.tmp`` then ``os.replace``-d; ``n_completed``
+    ties the accumulators to ``checkpoint.h5`` for the resume check.
+    """
+    import h5py  # noqa: PLC0415
+
+    path = Path(path)
+    tmp = path.with_name(path.name + ".tmp")
+    with h5py.File(tmp, "w") as f:
+        f.attrs["schema_version"] = SCHEMA_VERSION
+        f.attrs["n_completed"] = int(n_completed)
+        for name, dump in dumps.items():
+            g = f.create_group(name)
+            g.attrs["margin_cells"] = int(dump["margin_cells"])
+            g.attrs["image_planes"] = json.dumps(dump["image_planes"])
+            g.create_dataset("freqs", data=np.asarray(dump["freqs"]))
+            for key in ("source_spectrum", "accepted_power"):
+                if key in dump:
+                    g.create_dataset(key, data=np.asarray(dump[key]))
+            fg = g.create_group("faces")
+            for face in dump["faces"]:
+                sg = fg.create_group(str(face["name"]))
+                sg.attrs["axis"] = int(face["axis"])
+                sg.attrs["sign"] = float(face["sign"])
+                sg.attrs["plane"] = float(face["plane"])
+                for key in ("c1", "c2", "w1", "w2"):
+                    sg.create_dataset(key, data=np.asarray(face[key]))
+                bg = sg.create_group("bins")
+                for comp, arr in face["bins"].items():
+                    bg.create_dataset(comp, data=np.asarray(arr))
+    os.replace(tmp, path)
+
+
+def _read_far_field_dump(run_dir: Path, name: str) -> dict:
+    """Read one monitor's dump back into the ``result_dump`` shape."""
+    import h5py  # noqa: PLC0415
+
+    with h5py.File(Path(run_dir) / "far_field.h5", "r") as f:
+        g = f[name]
+        dump = {
+            "name": name,
+            "freqs": g["freqs"][()],
+            "margin_cells": int(g.attrs["margin_cells"]),
+            "image_planes": json.loads(g.attrs["image_planes"]),
+            "faces": [],
+        }
+        for key in ("source_spectrum", "accepted_power"):
+            if key in g:
+                dump[key] = g[key][()]
+        for face_name, sg in g["faces"].items():
+            dump["faces"].append(
+                {
+                    "name": face_name,
+                    "axis": int(sg.attrs["axis"]),
+                    "sign": float(sg.attrs["sign"]),
+                    "plane": float(sg.attrs["plane"]),
+                    "c1": sg["c1"][()],
+                    "c2": sg["c2"][()],
+                    "w1": sg["w1"][()],
+                    "w2": sg["w2"][()],
+                    "bins": {comp: sg["bins"][comp][()] for comp in sg["bins"]},
+                }
+            )
+    return dump
+
+
+def _list_run_far_field(run_dir: Path) -> list[str]:
+    """Names of the far-field monitors persisted for a run, or ``[]``."""
+    import h5py  # noqa: PLC0415
+
+    ff = run_dir / "far_field.h5"
+    if not ff.exists():
+        return []
+    with h5py.File(ff, "r") as f:
+        return [name for name in f if isinstance(f[name], h5py.Group)]
+
+
+class _LoadedFarFieldMonitor:
+    """Lazy reader over one persisted ``MonitorFarField`` (DD-173).
+
+    Hydrates the dump into a result-serving monitor on first access and
+    delegates, so the reader serves exactly the in-RAM API —
+    :attr:`f`, :meth:`result` and the pattern plots.
+    """
+
+    def __init__(self, run_dir: Path, name: str, reference=None):
+        self._run_dir = Path(run_dir)
+        self.name = name
+        self._reference = reference
+        self._monitor = None
+
+    def _hydrate(self):
+        if self._monitor is None:
+            from magnelio.monitors.far_field import MonitorFarField  # noqa: PLC0415
+
+            dump = _read_far_field_dump(self._run_dir, self.name)
+            self._monitor = MonitorFarField.from_result_dump(dump)
+            if not self._monitor.is_renormalized and self._reference is not None:
+                # The streamed run renormalises after its final flush, so
+                # the file carries raw bins; the run's reference waveform
+                # supplies the divisor on read (the _LoadedFreqMonitor
+                # pattern).
+                self._monitor.renormalize(self._reference())
+        return self._monitor
+
+    @property
+    def f(self) -> np.ndarray:
+        """Frequency axis [Hz]."""
+        return self._hydrate().f
+
+    @property
+    def freqs(self) -> np.ndarray:
+        """Alias of :attr:`f` (the in-RAM monitor's attribute name)."""
+        return self._hydrate().freqs
+
+    def result(self, *args, **kwargs):
+        return self._hydrate().result(*args, **kwargs)
+
+    def __repr__(self) -> str:
+        return f"_LoadedFarFieldMonitor(name={self.name!r})"
+
+
+# ═════════════════════════════════════════════════════════════════════
 # Eigenmodes  <->  eigenmodes.h5
 # ═════════════════════════════════════════════════════════════════════
 
@@ -2434,6 +2592,7 @@ class ProjectStore:
             flux_monitors=_flux_monitors(monitors),
             freq_monitors=_freq_monitors(monitors),
             wall_loss_monitors=_wall_loss_monitors(monitors),
+            far_field_monitors=_far_field_monitors(monitors),
             grid=grid,
         )
 
@@ -2489,6 +2648,7 @@ class ProjectStore:
             flux_monitors=_flux_monitors(monitors),
             freq_monitors=_freq_monitors(monitors),
             wall_loss_monitors=_wall_loss_monitors(monitors),
+            far_field_monitors=_far_field_monitors(monitors),
             grid=grid,
         )
 
@@ -2829,6 +2989,12 @@ class Project(ScatteringResultMixin):
             )
         for name in _list_run_wall_loss(run_dir):
             out[name] = _LoadedMonitorWallLoss(run_dir, name)
+        for name in _list_run_far_field(run_dir):
+            out[name] = _LoadedFarFieldMonitor(
+                run_dir,
+                name,
+                reference=lambda rn=run_name: self._load_run(rn)["reference"],
+            )
         return out
 
     @property
