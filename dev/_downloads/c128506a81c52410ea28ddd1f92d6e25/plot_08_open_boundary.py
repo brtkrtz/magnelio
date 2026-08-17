@@ -220,6 +220,12 @@ fig.tight_layout()
 # would ripple with the resonances of the box instead of showing one
 # clean antenna dip.
 
+# The saturation level is taken from the data rather than written out
+# as a number: ``data`` is in V/m per √W of incident power, and a scale
+# tied to the pattern's own peak keeps this plot honest no matter what
+# the drive level or the structure is.
+e_peak = np.sqrt(sum(np.abs(v) ** 2 for v in nearfield.data.values())).max()
+
 fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.6))
 nearfield.plot(
     component="E",
@@ -231,7 +237,9 @@ nearfield.plot(
     threshold=0.004,
     density=26,
 )
-nearfield.plot(component="E", f=f0, plot_type="color", geometry=model, ax=axes[1], vmax=1.5e-7)
+nearfield.plot(
+    component="E", f=f0, plot_type="color", geometry=model, ax=axes[1], vmax=0.15 * e_peak
+)
 axes[0].set_title("E direction at 2.45 GHz")
 axes[1].set_title("|E| at 2.45 GHz (saturated scale)")
 fig.tight_layout()
