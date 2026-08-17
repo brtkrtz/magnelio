@@ -422,3 +422,43 @@ class FarFieldResult:
         angles = np.concatenate([self.theta, 2.0 * np.pi - self.theta[-2::-1]])
         trace = np.concatenate([values[:, j_front], values[-2::-1, j_back]])
         return angles, trace
+
+    def plot_cut(
+        self,
+        *,
+        plane: str = "phi",
+        angle: float = 0.0,
+        quantity: str = "realized_gain",
+        **kwargs,
+    ):
+        """Polar plot of one pattern cut (see :meth:`cut`).
+
+        Extra keyword arguments go to
+        :func:`magnelio.plots.plot_pattern_cut` (``db=``, ``floor_db=``,
+        ``ax=``, ``label=``, ``title=``).
+
+        Returns
+        -------
+        fig : matplotlib.figure.Figure
+        ax : matplotlib.projections.polar.PolarAxes
+        """
+        from magnelio.post.plot_pattern import plot_pattern_cut  # noqa: PLC0415
+
+        angles, trace = self.cut(plane=plane, angle=angle, quantity=quantity)
+        return plot_pattern_cut(angles, trace, **kwargs)
+
+    def plot_3d(self, *, quantity: str = "realized_gain", **kwargs):
+        """3D radiation surface of the pattern.
+
+        Extra keyword arguments go to
+        :func:`magnelio.plots.plot_pattern_3d` (``db=``, ``floor_db=``,
+        ``ax=``, ``cmap=``, ``title=``).
+
+        Returns
+        -------
+        fig : matplotlib.figure.Figure
+        ax : mpl_toolkits.mplot3d.axes3d.Axes3D
+        """
+        from magnelio.post.plot_pattern import plot_pattern_3d  # noqa: PLC0415
+
+        return plot_pattern_3d(self.theta, self.phi, self._quantity(quantity), **kwargs)

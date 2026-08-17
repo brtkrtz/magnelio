@@ -379,6 +379,23 @@ class MonitorFarField:
             accepted_power=accepted,
         )
 
+    def plot_cut(self, f: Optional[float] = None, *, f_index: Optional[int] = None, **kwargs):
+        """Polar cut of the pattern at one recorded frequency.
+
+        Keyword arguments beyond *f*/*f_index* go to
+        :meth:`FarFieldResult.plot_cut` (``plane=``, ``angle=``,
+        ``quantity=`` and the drawing options).
+        """
+        return self.result(f, f_index=f_index).plot_cut(**kwargs)
+
+    def plot_3d(self, f: Optional[float] = None, *, f_index: Optional[int] = None, **kwargs):
+        """3D radiation surface at one recorded frequency.
+
+        Keyword arguments beyond *f*/*f_index* go to
+        :meth:`FarFieldResult.plot_3d`.
+        """
+        return self.result(f, f_index=f_index).plot_3d(**kwargs)
+
     # ------------------------------------------------------------------
     # Persistence (the MonitorWallLoss result_dump pattern)
     # ------------------------------------------------------------------

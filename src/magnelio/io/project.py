@@ -2281,6 +2281,12 @@ class _LoadedFarFieldMonitor:
     def result(self, *args, **kwargs):
         return self._hydrate().result(*args, **kwargs)
 
+    def plot_cut(self, *args, **kwargs):
+        return self._hydrate().plot_cut(*args, **kwargs)
+
+    def plot_3d(self, *args, **kwargs):
+        return self._hydrate().plot_3d(*args, **kwargs)
+
     def __repr__(self) -> str:
         return f"_LoadedFarFieldMonitor(name={self.name!r})"
 

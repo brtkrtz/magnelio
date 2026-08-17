@@ -11631,3 +11631,36 @@ machinery — the analytic image-composition gates in
 `tests/unit/test_monitor_far_field.py`,
 `tests/integration/test_far_field_antenna.py`,
 `validation/farfield_dipole_certificate.py`.
+
+## DD-174 — Pattern plots: polar cuts and the 3D radiation surface
+
+**Problem.**  The far field of DD-173 had no picture.  Nothing in the
+plot layer draws polar or 3D axes — every existing function targets
+rectangular field maps and line plots — and antenna work without a
+polar cut and a pattern surface is not presentable.
+
+**Decision.**  Two computation-free drawing functions in
+`post/plot_pattern.py`, re-exported as `plots.plot_pattern_cut` and
+`plots.plot_pattern_3d` (the two-tier rule: `FarFieldResult` computes
+the quantity and delegates via `.plot_cut()` / `.plot_3d()`;
+`MonitorFarField` and the store reader delegate through `result(f)`).
+House conventions carried over: `(fig, ax)` return, lazy matplotlib
+import, `db=` + `floor_db=` like `plot_s` (antenna default −40 dB, not
+the S-parameter −200), keyword-only options, a caller-made Axes is
+accepted — with a projection check, since a polar trace on a
+rectangular Axes fails silently ugly rather than loudly.
+
+Drawing choices worth recording: the polar cut uses the antenna
+convention (zero angle up, clockwise), so a θ-cut has the zenith on
+top; a φ-plane cut folds the back half through the opposite azimuth so
+the trace closes over 0…2π.  The 3D surface maps radius to
+``value_dB − floor_dB`` clipped at zero — the floor collapses to the
+origin and nulls stay visible as indentations — with radius-shaded
+face colors and hidden axes (the numbers live in the cuts, the surface
+is for shape).
+
+**Files:** `src/magnelio/post/plot_pattern.py` (new),
+`plots/__init__.py`, `post/far_field.py` (`plot_cut`, `plot_3d`),
+`monitors/far_field.py`, `io/project.py`
+(`_LoadedFarFieldMonitor` delegation),
+`tests/unit/test_plot_pattern.py`.

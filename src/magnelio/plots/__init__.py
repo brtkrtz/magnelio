@@ -14,10 +14,16 @@ from magnelio.post.plot_geometry import (
     plot_cross_section,
     show_geometry,
 )
+from magnelio.post.plot_pattern import (
+    plot_pattern_3d,
+    plot_pattern_cut,
+)
 
 __all__ = [
     "plot_cross_section",
     "show_geometry",
     "plot_field_scalar",
     "plot_field_vector",
+    "plot_pattern_cut",
+    "plot_pattern_3d",
 ]
