@@ -142,20 +142,26 @@ rotate; the convergence residual does — and is closed by DD-142
 (30/30 green after).  Per-DD gate accounting lives in the
 `design-decisions.md` entries.
 
-**v0.2.0 published (2026-08-16):** tag `v0.2.0` on
-github.com/brtkrtz/magnelio (public, CI + docs green), released on
-PyPI via the tag-triggered trusted-publishing workflow (sdist +
-noarch wheel, verified installable in a clean venv without
+**v0.2.1 published (2026-08-17):** tags `v0.2.0` (2026-08-16) and
+`v0.2.1` on github.com/brtkrtz/magnelio (public, CI + docs green),
+released on PyPI via the tag-triggered trusted-publishing workflow
+(sdist + noarch wheel, verified installable in a clean venv without
 pythonocc-core); v0.1.0 (2026-08-14) was the first public release.
-The documentation site serves this tag as `/stable/` and main as
-`/dev/` (DD-171).  **conda-forge as the primary distribution
-channel** (the CAD geometry stack needs pythonocc-core, which exists
-only on conda-forge) is still in flight: staged-recipes PR #34534
-(v1 recipe, pythonocc-core >=7.9) open since 2026-08-14, linter and
-build checks green on linux/osx/win, waiting for a reviewer from
-`@conda-forge/help-python`.  Once merged, the feedstock's autotick
-bot follows PyPI releases on its own.  PyPI stays the secondary,
-geometry-less install path.  CI (`.github/workflows/ci.yml`, lint +
+v0.2.0 carries the release's substance — frequency-monitor units,
+sub-cell resolution on boundary faces, port-power and section-contour
+fixes; v0.2.1 is a documentation-only patch over an identical library,
+cut so the published `/stable/` docs show a corrected figure.  The
+documentation site serves the newest tag as `/stable/` and main as
+`/dev/` (DD-171).  **conda-forge as the primary distribution channel**
+(the CAD geometry stack needs pythonocc-core, which exists only on
+conda-forge) is still in flight: staged-recipes PR #34534 (v1 recipe,
+pythonocc-core >=7.9) open since 2026-08-14, all checks green on
+linux/osx/win.  Review 2026-08-17 asked for `${{ PYTHON }}` in the
+build script — the form the conda-forge pure-python v1 template uses,
+though *not* the one in the repository's own `example-v1` recipe —
+which is applied.  The recipe deliberately still pins 0.1.0: once
+merged, the feedstock's autotick bot follows PyPI releases on its own.
+PyPI stays the secondary, geometry-less install path.  CI (`.github/workflows/ci.yml`, lint +
 unit suite) is live.  The repo is ruff-clean: rule set `E`/`F`/`I` pinned in
 `pyproject.toml`, enforced by workflow rule, pre-commit and CI.
 License LGPL-3.0-or-later in place (`COPYING`, `pyproject.toml`,
@@ -465,7 +471,16 @@ feature exists, not the one who would have to discover it.  Symmetry
 planes were the case that established the rule — four DDs of
 implementation with zero occurrences in `docs/` or `examples/`, now a
 section in the boundary-conditions chapter and the standing practice
-in tutorial 09.  Pillars: Tutorials (generated from
+in tutorial 09.  A second convention came out of v0.2.1: **a tutorial
+derives plot scales from the data, never from an absolute constant.**
+The open-boundary tutorial pinned `vmax` to a number chosen when
+monitor data was still field·seconds, so the 0.2.0 unit change put
+every point above the ceiling and the panel rendered as one flat
+colour block.  Relative parameters (`threshold`, `density`) came
+through the same change untouched.  It surfaced only in CI, because
+sphinx-gallery re-executes a tutorial when *its script* changes, not
+when the library under it does — a local build without
+`build_docs.sh --clean` shows cached figures from an older library.  Pillars: Tutorials (generated from
 `examples/tutorials/*.py`, tutorials 01–14 shipped and given a
 reader-perspective polish pass — full gallery build ~8:40, clean;
 tutorial 13, the DR-filter capstone, is deliberately the most

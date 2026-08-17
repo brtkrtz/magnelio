@@ -4,6 +4,14 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
+**No entry is open as of v0.2.1 (2026-08-17)** — every KB below is
+struck through.  One item is documented rather than fixed and has no
+entry of its own: pair coupling calls two ladder targets equal at a
+relative 1e-6 while the transparent-boundary gate demands 1e-8, so a
+port whose two candidates differ inside that band is decided by
+conditioning rather than by agreement.  DD-165 makes that choice
+optimal without closing the gap; KB-017 holds the measurement.
+
 ## KB-021: ~~Half a solid's cross-section goes missing with no warning~~ — Resolved (DD-168, 2026-08-15)
 
 Recorded as a residual of DD-167 and read as the section operator
