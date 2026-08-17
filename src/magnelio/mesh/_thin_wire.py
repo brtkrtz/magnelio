@@ -407,8 +407,12 @@ def mask_thin_wires(mesh, wires, *, samples_per_cell: int = 4, scale: float = 1.
     Runs before ``couple_face_material_pairs`` so the DD-053 pass never
     certifies a ladder through a wire edge.  Returns the rasterised
     ``EdgePath`` per wire (consumed by
-    :func:`correct_thin_wire_materials` after that pass).
+    :func:`correct_thin_wire_materials` after that pass); a wire whose
+    curve lies entirely in the half-space a symmetry declaration
+    removed is skipped with a ``None`` placeholder — like a solid
+    there, it is represented by its mirror image and never meshed.
     """
+    from magnelio.boundaries.boundary_conditions import symmetry_entries  # noqa: PLC0415
     from magnelio.circuit.rasterize import rasterize_curve  # noqa: PLC0415
     from magnelio.geo._occ_backend import sample_wire  # noqa: PLC0415
 
@@ -417,10 +421,27 @@ def mask_thin_wires(mesh, wires, *, samples_per_cell: int = 4, scale: float = 1.
     n_Ex = Nx * (Ny + 1) * (Nz + 1)
     n_Ey = (Nx + 1) * Ny * (Nz + 1)
     min_cell = min(grid.dx_min, grid.dy_min, grid.dz_min)
+    clip_planes = [
+        ("xyz".index(face[0]), face.endswith("min"), pos)
+        for face, pos in symmetry_entries(mesh.boundary_conditions).items()
+        if pos is not None
+    ]
 
     paths = []
     for wire in wires:
         label = f"ThinWire {wire.name!r}" if wire.name else "ThinWire"
+        pts = np.asarray(
+            sample_wire(wire.curve._occ_shape(scale), min_cell / samples_per_cell, scale=scale)
+        )
+        discarded = False
+        for axis, at_low, wall in clip_planes:
+            inward = pts[:, axis] - wall if at_low else wall - pts[:, axis]
+            if np.all(inward < -0.5 * min_cell):
+                discarded = True
+                break
+        if discarded:
+            paths.append(None)
+            continue
         path = rasterize_curve(wire.curve, grid, samples_per_cell=samples_per_cell, scale=scale)
         _validate_radius(
             radius=wire.radius, d_min=_min_transverse_extent(path, grid), name=wire.name
@@ -431,7 +452,6 @@ def mask_thin_wires(mesh, wires, *, samples_per_cell: int = 4, scale: float = 1.
         # connections).  Interior samples of a deliberately oblique
         # curve sit between nodes by construction (the staircase
         # carries them), so they are not checked.
-        pts = sample_wire(wire.curve._occ_shape(scale), min_cell / samples_per_cell, scale=scale)
         off = 0.0
         for p in (pts[0], pts[-1]):
             off = max(
@@ -479,6 +499,10 @@ def correct_thin_wire_materials(mesh, wires, paths) -> None:
     face_owner: dict[int, int] = {}
     n_shared = 0
     for idx, (wire, path) in enumerate(zip(wires, paths)):
+        if path is None:
+            # Skipped by mask_thin_wires: the curve lies in the
+            # symmetry-discarded half-space.
+            continue
         f_m, e_m = _collect_requests(path, wire.radius, mesh.grid, name=wire.name)
         for face, m in f_m.items():
             if face in face_m:

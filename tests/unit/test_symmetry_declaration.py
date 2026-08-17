@@ -130,6 +130,38 @@ class TestDomainClip:
         assert np.array_equal(mesh_full.material_id, mesh_half.material_id)
         assert np.array_equal(mesh_full.pec_mask_edges, mesh_half.pec_mask_edges)
 
+    def test_thin_wire_in_the_discarded_half_is_skipped(self):
+        # DD-172 full-model rule: the mirror-half wire is never meshed,
+        # like a solid there — instead of dying in the rasteriser.
+        from magnelio.geo import Curve, ThinWire
+
+        full = _layered_model(-4e-3, {"xmin": "SymmetryPEC"})
+        full.add(
+            ThinWire(
+                Curve.polyline([(2e-3, 2e-3, 1e-3), (2e-3, 2e-3, 3e-3)]),
+                radius=0.05e-3,
+                name="kept",
+            )
+        )
+        full.add(
+            ThinWire(
+                Curve.polyline([(-2e-3, 2e-3, 1e-3), (-2e-3, 2e-3, 3e-3)]),
+                radius=0.05e-3,
+                name="mirrored",
+            )
+        )
+        half = _layered_model(0.0, {"xmin": "ForceSymmetryPEC"})
+        half.add(
+            ThinWire(
+                Curve.polyline([(2e-3, 2e-3, 1e-3), (2e-3, 2e-3, 3e-3)]),
+                radius=0.05e-3,
+                name="kept",
+            )
+        )
+        mesh_full = Mesh.from_geometry(full, CONTROL, F_MAX)
+        mesh_half = Mesh.from_geometry(half, CONTROL, F_MAX)
+        assert np.array_equal(mesh_full.pec_mask_edges, mesh_half.pec_mask_edges)
+
     def test_pmc_pull_in_lands_the_wall_on_the_plane(self):
         model = _layered_model(-4e-3, {"xmin": "SymmetryPMC"})
         mesh = Mesh.from_geometry(model, CONTROL, F_MAX)
