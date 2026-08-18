@@ -5,13 +5,8 @@ simulation. Its standard workflow is broadband S-parameter extraction
 over waveguide ports on arbitrary 3D geometry; the workhorse solver is
 a time-domain Finite Integration Technique (FIT-TD) engine.
 
-```{figure} _static/hero_dielectric_filter.png
+```{image} _static/hero_dielectric_filter.png
 :alt: Electric field vectors in a two-pole dielectric resonator filter, where two ceramic pucks stand in a metal housing, separated by a wall with a coupling window, with a probe pin at each end.
-
-The end of the {doc}`capstone tutorial <tutorials/plot_13_dielectric_filter>`:
-a narrowband ceramic bandpass filter, dimensioned from a specification
-and then verified against it. The arrows are the electric field; the two
-resonators are oscillating in antiphase.
 ```
 
 This documentation has four pillars:

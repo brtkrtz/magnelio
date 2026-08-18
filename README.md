@@ -10,10 +10,13 @@ a time-domain Finite Integration Technique (FIT-TD) engine.
 
 ![Electric field vectors in a two-pole dielectric resonator filter: two ceramic pucks stand in a metal housing, separated by a wall with a coupling window, with a probe pin at each end](https://raw.githubusercontent.com/brtkrtz/magnelio/main/docs/_static/hero_dielectric_filter.png)
 
-*The end of the [capstone tutorial](https://brtkrtz.github.io/magnelio/stable/tutorials/plot_13_dielectric_filter.html):
-a narrowband ceramic bandpass filter, dimensioned from a specification
-and then verified against it. The arrows are the electric field; the
-two resonators are oscillating in antiphase.*
+Performance is a design goal, not an afterthought: no field update ever
+loops over cells in Python.  The time-stepping kernels are fused and
+fully vectorised on three tiers — custom CUDA kernels on the GPU,
+Numba-compiled multi-threaded kernels on the CPU, and pure array
+stencils as the portable fallback — so a step runs at compiled-C speed,
+and models with hundreds of geometric primitives and correspondingly
+large grids stay tractable.
 
 ## Features
 
@@ -37,6 +40,10 @@ two resonators are oscillating in antiphase.*
   lumped RLC networks
 - Field monitors (time/frequency domain, flux, wall loss), plane-wave
   source (TF/SF), 3D eigenmode solver
+- Antennas: near-to-far-field transform recorded on a Huygens box the
+  monitor places by itself, with image theory for ground planes and
+  symmetry planes — directivity, gain, realized gain, radiated power
+  and efficiency, drawn as polar cuts or a 3D pattern surface
 - Project store on disk: streamed results, bit-exact resume,
   post-processing on the stored data (HDF5 + ParaView/XDMF); every run
   generates a ready-to-open ParaView session (coloured per-solid
