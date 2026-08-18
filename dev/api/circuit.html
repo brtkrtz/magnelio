@@ -487,11 +487,19 @@ consumers.</p>
 <li><p><strong>name</strong> (<em>str</em>) – Unique identifier; shares one namespace with the port names
 of the model it is added to.</p></li>
 <li><p><strong>start</strong> (<em>tuple</em><em> of </em><em>float</em>) – Endpoints in metres; must differ along exactly one Cartesian
-axis after grid snapping.</p></li>
+axis after grid snapping.  Under a clipping symmetry
+declaration the endpoints stay in full-model coordinates — an
+element whose chain crosses an electric symmetry plane is
+clipped to the meshed half automatically.</p></li>
 <li><p><strong>end</strong> (<em>tuple</em><em> of </em><em>float</em>) – Endpoints in metres; must differ along exactly one Cartesian
-axis after grid snapping.</p></li>
+axis after grid snapping.  Under a clipping symmetry
+declaration the endpoints stay in full-model coordinates — an
+element whose chain crosses an electric symmetry plane is
+clipped to the meshed half automatically.</p></li>
 <li><p><strong>element</strong> (<a class="reference internal" href="#magnelio.circuit.SeriesRLC" title="magnelio.circuit.SeriesRLC"><em>SeriesRLC</em></a><em> or </em><a class="reference internal" href="#magnelio.circuit.ParallelRLC" title="magnelio.circuit.ParallelRLC"><em>ParallelRLC</em></a>) – Trapezoidal companion model providing the terminal relation,
-e.g. <code class="docutils literal notranslate"><span class="pre">SeriesRLC(R=100.0)</span></code> for an ideal 100 Ω resistor.</p></li>
+e.g. <code class="docutils literal notranslate"><span class="pre">SeriesRLC(R=100.0)</span></code> for an ideal 100 Ω resistor.
+Always the full-model values: under symmetry the solver
+internally scales the companion to the meshed half.</p></li>
 </ul>
 </dd>
 </dl>

@@ -112,10 +112,14 @@ fig, ax = plots.plot_cross_section(model, "y", 0.0, title="vertical cut (y = 0)"
 # Mesh, monitor, and the run
 # --------------------------
 #
-# The excitation band spans 1–4 GHz around the target resonance.  One
-# frequency monitor accumulates the complex field pattern at
-# 2.45 GHz on the vertical cut through the wire — the picture that
-# will show the antenna radiating.
+# The excitation band spans 1–4 GHz around the target resonance.  Two
+# monitors ride the run: a frequency monitor accumulates the complex
+# field pattern at 2.45 GHz on the vertical cut through the wire — the
+# picture that will show the antenna radiating — and a
+# :class:`~magnelio.monitors.MonitorFarField` records the surfaces a
+# far-field computation needs.  The latter takes no geometry at all:
+# it places a closed recording box inside the free-space region by
+# itself, and the ground plane is handled for it (more below).
 
 f_min, f_max = 1.0e9, 4.0e9
 f0 = 2.45e9
@@ -133,12 +137,13 @@ nearfield = monitors.MonitorFieldFrequency(
     fields=["E"],
     name="nearfield",
 )
+farfield = monitors.MonitorFarField(freqs=[f0], name="farfield")
 
 analysis = mio.AnalysisScatteringTD(
     mesh=mesh,
     f_min=f_min,
     f_max=f_max,
-    monitors=(nearfield,),
+    monitors=(nearfield, farfield),
     verbose=False,
 )
 f_axis = np.linspace(f_min, f_max, 301)
@@ -245,6 +250,50 @@ axes[1].set_title("|E| at 2.45 GHz (saturated scale)")
 fig.tight_layout()
 
 # %%
+# The far field: how much power goes where
+# ----------------------------------------
+#
+# The near-field picture says the wave leaves; the far field says
+# *where it goes*.  The far-field monitor recorded the tangential
+# fields on a closed surface around the antenna during the run —
+# except at the ground plane, where no closed surface fits.  There it
+# relies on the same image theory the feed already uses: the PEC floor
+# mirrors the recorded surface, and in return the result knows that
+# only the upper half space is physical.
+#
+# ``result`` performs the near-to-far-field transform and returns the
+# pattern; the elevation cut below is the monopole's textbook shape —
+# maximum along the ground plane, a null straight up, nothing below
+# the horizon.
+
+pattern = farfield.result(f0)
+
+fig, ax = pattern.plot_cut(plane="phi", angle=0.0, title="elevation cut at 2.45 GHz")
+
+# %%
+# The numbers behind the plot come as the standard antenna quantities,
+# all referenced to the half-space problem the ground plane defines.
+# ``realized_gain`` is the directly measured one — radiated intensity
+# per watt *incident* at the feed, mismatch included; ``gain`` divides
+# by the accepted power instead, and directivity by the radiated
+# power.  For this lossless model gain and directivity agree to
+# within the discretisation, and the peak sits at the monopole's
+# textbook ~5.2 dBi (the half-wave dipole's 2.15 dBi plus 3 dB from
+# radiating into half the space).
+
+d_peak = pattern.directivity.max()
+g_peak = pattern.gain.max()
+print(f"peak directivity:   {10 * np.log10(d_peak):.2f} dBi")
+print(f"peak gain:          {10 * np.log10(g_peak):.2f} dBi")
+print(f"peak realized gain: {10 * np.log10(pattern.realized_gain.max()):.2f} dBi")
+print(f"radiated power:     {pattern.P_rad:.3f} W per incident W")
+
+# %%
+# The last line doubles as a sanity check on the whole simulation: for
+# a lossless antenna, the power radiated through the far-field surface
+# must equal what the feed accepted, :math:`1 - |S_{11}|^2` — two
+# completely independent measurements of the same watt.
+#
 # Where to go next
 # ----------------
 #
@@ -252,9 +301,10 @@ fig.tight_layout()
 # :class:`~magnelio.GeometryModel` for open problems, the clearance
 # rule between radiator and absorber, a sub-cell
 # :class:`~magnelio.geo.ThinWire` conductor, a discrete
-# :class:`~magnelio.ports.PortLumped` feed, and reading an antenna's
-# S11 and input impedance.  The natural questions from here — how much
-# power ends up in which direction, gain, patterns — need a
-# near-to-far-field transform, which Magnelio does not provide yet.
-# The next tutorials leave the wire world and move to printed
-# circuits: microstrip lines and the components built from them.
+# :class:`~magnelio.ports.PortLumped` feed, reading an antenna's S11
+# and input impedance, and the far field with its gain figures from a
+# :class:`~magnelio.monitors.MonitorFarField`.  A later tutorial
+# returns to antennas with a dipole computed as a half model on a
+# symmetry plane, 3D pattern included.  The next tutorials leave the
+# wire world and move to printed circuits: microstrip lines and the
+# components built from them.

@@ -922,13 +922,21 @@ element.  Resolved into a
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Unique port name.</p></li>
 <li><p><strong>start</strong> (<em>tuple</em><em> of </em><em>float</em>) – Endpoints in metres; must differ along exactly one Cartesian
-axis after grid snapping.</p></li>
+axis after grid snapping.  Under a clipping symmetry
+declaration the endpoints stay in full-model coordinates — a
+port whose chain crosses an electric symmetry plane is clipped
+to the meshed half automatically.</p></li>
 <li><p><strong>end</strong> (<em>tuple</em><em> of </em><em>float</em>) – Endpoints in metres; must differ along exactly one Cartesian
-axis after grid snapping.</p></li>
+axis after grid snapping.  Under a clipping symmetry
+declaration the endpoints stay in full-model coordinates — a
+port whose chain crosses an electric symmetry plane is clipped
+to the meshed half automatically.</p></li>
 <li><p><strong>Z0</strong> (<em>float</em><em>, </em><em>default 50.0</em>) – Power-wave reference impedance [Ω]; without <em>element</em> also the
-internal Thévenin impedance.</p></li>
+internal Thévenin impedance.  Always the full-model value:
+under symmetry the solver internally halves or doubles it, and
+every reported quantity stays full-model.</p></li>
 <li><p><strong>element</strong> (<a class="reference internal" href="circuit.html#magnelio.circuit.SeriesRLC" title="magnelio.circuit.SeriesRLC"><em>SeriesRLC</em></a><em> or </em><a class="reference internal" href="circuit.html#magnelio.circuit.ParallelRLC" title="magnelio.circuit.ParallelRLC"><em>ParallelRLC</em></a><em>, </em><em>optional</em>) – Companion element replacing the pure resistor as the port’s
-internal impedance.</p></li>
+internal impedance.  Also declared with full-model values.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1087,9 +1095,15 @@ absorber-only modal Mur-1st port.</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Unique port identifier (used as recorder channel key).</p></li>
 <li><p><strong>start</strong> (<em>tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>]</em>) – Endpoints in metres.  The two points must differ along exactly
-one Cartesian axis after grid snapping.</p></li>
+one Cartesian axis after grid snapping.  Under a clipping
+symmetry declaration they stay in full-model coordinates;
+<code class="docutils literal notranslate"><span class="pre">Z0</span></code> / <code class="docutils literal notranslate"><span class="pre">element</span></code> are full-model values throughout, and the
+builder derives the internally scaled half-model device.</p></li>
 <li><p><strong>end</strong> (<em>tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>]</em>) – Endpoints in metres.  The two points must differ along exactly
-one Cartesian axis after grid snapping.</p></li>
+one Cartesian axis after grid snapping.  Under a clipping
+symmetry declaration they stay in full-model coordinates;
+<code class="docutils literal notranslate"><span class="pre">Z0</span></code> / <code class="docutils literal notranslate"><span class="pre">element</span></code> are full-model values throughout, and the
+builder derives the internally scaled half-model device.</p></li>
 <li><p><strong>Z0</strong> (<em>float</em>) – Power-wave reference impedance [Ω] (default 50 Ω).  Without an
 <code class="docutils literal notranslate"><span class="pre">element</span></code> it is also the internal Thévenin impedance — the
 classic discrete port.</p></li>

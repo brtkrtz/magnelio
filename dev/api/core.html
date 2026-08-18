@@ -1971,6 +1971,25 @@ backstop for faces that were never buffered.</p>
 <span class="sig-name descname"><span class="pre">pec_surface</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">PECSurfaceData</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#magnelio.Mesh.pec_surface" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.Mesh.pml_cells">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">pml_cells</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#magnelio.Mesh.pml_cells" title="Link to this definition">#</a></dt>
+<dd><p>Number of absorber grid cells per domain face.</p>
+<p>Maps face names (<code class="docutils literal notranslate"><span class="pre">&quot;xmin&quot;</span></code> … <code class="docutils literal notranslate"><span class="pre">&quot;zmax&quot;</span></code>) to the number of grid
+cells the mesher appended <em>outside</em> the declared domain for that
+face’s CPML layer.  Faces without an absorbing layer are absent.
+A mesh built without <a class="reference internal" href="#magnelio.Mesh.from_geometry" title="magnelio.Mesh.from_geometry"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_geometry()</span></code></a> reports an empty
+mapping.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Absorber cell count per face; a fresh copy on every access.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict of str to int</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="magnelio.Mesh.ports">
 <span class="sig-name descname"><span class="pre">ports</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#magnelio.Mesh.ports" title="Link to this definition">#</a></dt>
@@ -2312,6 +2331,7 @@ watchdog.  Not inherited — each segment gets its own.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Mesh.material_library"><code class="docutils literal notranslate"><span class="pre">Mesh.material_library</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Mesh.pec_mask_edges"><code class="docutils literal notranslate"><span class="pre">Mesh.pec_mask_edges</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Mesh.pec_surface"><code class="docutils literal notranslate"><span class="pre">Mesh.pec_surface</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Mesh.pml_cells"><code class="docutils literal notranslate"><span class="pre">Mesh.pml_cells</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Mesh.ports"><code class="docutils literal notranslate"><span class="pre">Mesh.ports</span></code></a></li>
 </ul>
 </li>

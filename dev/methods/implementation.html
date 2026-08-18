@@ -369,6 +369,7 @@
 <li class="toctree-l1"><a class="reference internal" href="dispersive-materials.html">Dispersive and lossy materials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="conductor-losses.html">Conductor losses</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Implementation engineering (non-method)</a></li>
 </ul>
@@ -439,8 +440,8 @@ citation apparatus of the previous chapters.</p>
 <section id="kernel-dispatch-and-backends">
 <h2>Kernel dispatch and backends<a class="headerlink" href="#kernel-dispatch-and-backends" title="Link to this heading">#</a></h2>
 <p>Three-tier kernel dispatch (DD-032): NumPy reference kernels,
-Numba-JIT CPU stencil kernels <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id60" title="Siu Kwan Lam, Antoine Pitrou, and Stanley Seibert. Numba: a LLVM-based Python JIT compiler. In Proceedings of the Second Workshop on the LLVM Compiler Infrastructure in HPC (LLVM '15). 2015. doi:10.1145/2833157.2833162.">59</a>]</span>, and
-CUDA kernels via CuPy <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id61" title="Ryosuke Okuta, Yuya Unno, Daisuke Nishino, Shohei Hido, and Crissman Loomis. CuPy: a NumPy-compatible library for NVIDIA GPU calculations. In Proceedings of the Workshop on Machine Learning Systems (LearningSys) at NIPS 2017. 2017.">60</a>]</span> with
+Numba-JIT CPU stencil kernels <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id61" title="Siu Kwan Lam, Antoine Pitrou, and Stanley Seibert. Numba: a LLVM-based Python JIT compiler. In Proceedings of the Second Workshop on the LLVM Compiler Infrastructure in HPC (LLVM '15). 2015. doi:10.1145/2833157.2833162.">60</a>]</span>, and
+CUDA kernels via CuPy <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id62" title="Ryosuke Okuta, Yuya Unno, Daisuke Nishino, Shohei Hido, and Crissman Loomis. CuPy: a NumPy-compatible library for NVIDIA GPU calculations. In Proceedings of the Workshop on Machine Learning Systems (LearningSys) at NIPS 2017. 2017.">61</a>]</span> with
 <code class="docutils literal notranslate"><span class="pre">backend=&quot;auto&quot;</span></code> GPU selection (DD-090).  GPU step orchestration
 (device-resident recorder staging, fused port-plane transfers, CUDA
 graph capture of the device phases, DD-092) is performance

@@ -194,17 +194,21 @@ anything but an empty box of air.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 112-119
+.. GENERATED FROM PYTHON SOURCE LINES 112-123
 
 Mesh, monitor, and the run
 --------------------------
 
-The excitation band spans 1–4 GHz around the target resonance.  One
-frequency monitor accumulates the complex field pattern at
-2.45 GHz on the vertical cut through the wire — the picture that
-will show the antenna radiating.
+The excitation band spans 1–4 GHz around the target resonance.  Two
+monitors ride the run: a frequency monitor accumulates the complex
+field pattern at 2.45 GHz on the vertical cut through the wire — the
+picture that will show the antenna radiating — and a
+:class:`~magnelio.monitors.MonitorFarField` records the surfaces a
+far-field computation needs.  The latter takes no geometry at all:
+it places a closed recording box inside the free-space region by
+itself, and the ground plane is handled for it (more below).
 
-.. GENERATED FROM PYTHON SOURCE LINES 119-147
+.. GENERATED FROM PYTHON SOURCE LINES 123-152
 
 .. code-block:: Python
 
@@ -225,12 +229,13 @@ will show the antenna radiating.
         fields=["E"],
         name="nearfield",
     )
+    farfield = monitors.MonitorFarField(freqs=[f0], name="farfield")
 
     analysis = mio.AnalysisScatteringTD(
         mesh=mesh,
         f_min=f_min,
         f_max=f_max,
-        monitors=(nearfield,),
+        monitors=(nearfield, farfield),
         verbose=False,
     )
     f_axis = np.linspace(f_min, f_max, 301)
@@ -249,7 +254,7 @@ will show the antenna radiating.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 148-155
+.. GENERATED FROM PYTHON SOURCE LINES 153-160
 
 Reading S11 of an antenna
 -------------------------
@@ -259,7 +264,7 @@ A one-port device has a single S-parameter, and for an antenna it
 goes somewhere other than back — and with no walls and no losses,
 "somewhere" can only be radiation.
 
-.. GENERATED FROM PYTHON SOURCE LINES 155-165
+.. GENERATED FROM PYTHON SOURCE LINES 160-170
 
 .. code-block:: Python
 
@@ -292,7 +297,7 @@ goes somewhere other than back — and with no walls and no losses,
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 166-171
+.. GENERATED FROM PYTHON SOURCE LINES 171-176
 
 Note what the dip is *not*: it is not −40 dB.  A well-built antenna
 is not automatically a well-matched one, and this dip bottoms out
@@ -300,7 +305,7 @@ near −18 dB because the monopole's feed resistance is ~37 Ω, not the
 50 Ω of the source.  The input impedance, computed from S11 the way
 a network analyzer would, makes that quantitative:
 
-.. GENERATED FROM PYTHON SOURCE LINES 171-193
+.. GENERATED FROM PYTHON SOURCE LINES 176-198
 
 .. code-block:: Python
 
@@ -345,7 +350,7 @@ a network analyzer would, makes that quantitative:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 194-222
+.. GENERATED FROM PYTHON SOURCE LINES 199-227
 
 The curve reads like the antenna-theory chapter: capacitive
 (:math:`X < 0`) below resonance, a zero crossing where the wire is
@@ -376,7 +381,7 @@ criss-crossed by standing-wave fringes — and the S11 curve above
 would ripple with the resonances of the box instead of showing one
 clean antenna dip.
 
-.. GENERATED FROM PYTHON SOURCE LINES 222-247
+.. GENERATED FROM PYTHON SOURCE LINES 227-252
 
 .. code-block:: Python
 
@@ -417,7 +422,91 @@ clean antenna dip.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 248-261
+.. GENERATED FROM PYTHON SOURCE LINES 253-268
+
+The far field: how much power goes where
+----------------------------------------
+
+The near-field picture says the wave leaves; the far field says
+*where it goes*.  The far-field monitor recorded the tangential
+fields on a closed surface around the antenna during the run —
+except at the ground plane, where no closed surface fits.  There it
+relies on the same image theory the feed already uses: the PEC floor
+mirrors the recorded surface, and in return the result knows that
+only the upper half space is physical.
+
+``result`` performs the near-to-far-field transform and returns the
+pattern; the elevation cut below is the monopole's textbook shape —
+maximum along the ground plane, a null straight up, nothing below
+the horizon.
+
+.. GENERATED FROM PYTHON SOURCE LINES 268-273
+
+.. code-block:: Python
+
+
+    pattern = farfield.result(f0)
+
+    fig, ax = pattern.plot_cut(plane="phi", angle=0.0, title="elevation cut at 2.45 GHz")
+
+
+
+
+.. image-sg:: /tutorials/images/sphx_glr_plot_08_open_boundary_005.png
+   :alt: elevation cut at 2.45 GHz
+   :srcset: /tutorials/images/sphx_glr_plot_08_open_boundary_005.png
+   :class: sphx-glr-single-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 274-283
+
+The numbers behind the plot come as the standard antenna quantities,
+all referenced to the half-space problem the ground plane defines.
+``realized_gain`` is the directly measured one — radiated intensity
+per watt *incident* at the feed, mismatch included; ``gain`` divides
+by the accepted power instead, and directivity by the radiated
+power.  For this lossless model gain and directivity agree to
+within the discretisation, and the peak sits at the monopole's
+textbook ~5.2 dBi (the half-wave dipole's 2.15 dBi plus 3 dB from
+radiating into half the space).
+
+.. GENERATED FROM PYTHON SOURCE LINES 283-291
+
+.. code-block:: Python
+
+
+    d_peak = pattern.directivity.max()
+    g_peak = pattern.gain.max()
+    print(f"peak directivity:   {10 * np.log10(d_peak):.2f} dBi")
+    print(f"peak gain:          {10 * np.log10(g_peak):.2f} dBi")
+    print(f"peak realized gain: {10 * np.log10(pattern.realized_gain.max()):.2f} dBi")
+    print(f"radiated power:     {pattern.P_rad:.3f} W per incident W")
+
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    peak directivity:   5.16 dBi
+    peak gain:          5.08 dBi
+    peak realized gain: 4.99 dBi
+    radiated power:     0.963 W per incident W
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 292-311
+
+The last line doubles as a sanity check on the whole simulation: for
+a lossless antenna, the power radiated through the far-field surface
+must equal what the feed accepted, :math:`1 - |S_{11}|^2` — two
+completely independent measurements of the same watt.
 
 Where to go next
 ----------------
@@ -426,17 +515,18 @@ New in this tutorial: CPML faces declared on the
 :class:`~magnelio.GeometryModel` for open problems, the clearance
 rule between radiator and absorber, a sub-cell
 :class:`~magnelio.geo.ThinWire` conductor, a discrete
-:class:`~magnelio.ports.PortLumped` feed, and reading an antenna's
-S11 and input impedance.  The natural questions from here — how much
-power ends up in which direction, gain, patterns — need a
-near-to-far-field transform, which Magnelio does not provide yet.
-The next tutorials leave the wire world and move to printed
-circuits: microstrip lines and the components built from them.
+:class:`~magnelio.ports.PortLumped` feed, reading an antenna's S11
+and input impedance, and the far field with its gain figures from a
+:class:`~magnelio.monitors.MonitorFarField`.  A later tutorial
+returns to antennas with a dipole computed as a half model on a
+symmetry plane, 3D pattern included.  The next tutorials leave the
+wire world and move to printed circuits: microstrip lines and the
+components built from them.
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 10.141 seconds)
+   **Total running time of the script:** (0 minutes 14.816 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_08_open_boundary.py:
