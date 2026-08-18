@@ -39,6 +39,15 @@ major version is 0, minor releases may change the public API.
   declaration is skipped at mesh time (like a solid there) instead of
   failing to rasterise.
 
+### Fixed
+
+- Thin wires, discrete ports and lumped elements were missing from
+  field plots: a field plane is sampled at cell centres, so those
+  features sat half a cell off the drawn plane and fell outside its
+  tolerance — a wire antenna's field picture showed an empty air box.
+  Field and eigenmode plots now pass the thickness of the cell layer
+  they display, and `plots.plot_cross_section` accepts it as `slab=`.
+
 ## [0.2.1] - 2026-08-17
 
 ### Fixed

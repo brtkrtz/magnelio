@@ -183,6 +183,28 @@ class TestVolumelessFeatures:
         assert len(ax.lines) == 0
         assert len(ax.texts) == 0
 
+    def test_a_plane_beside_the_features_shows_them_only_with_a_slab(self):
+        # A field plot samples cell centres, so the plane it stands for
+        # sits half a cell off the grid nodes the wire and the port were
+        # declared on.  On a mathematical plane they are simply absent;
+        # told how thick the displayed layer is, the picture regains
+        # exactly the features that live inside it.
+        model = self._monopole_model()
+
+        _, plane = model.plot_cross_section("y", 1.0e-3)
+        assert len(plane.lines) == 0
+
+        _, layer = model.plot_cross_section("y", 1.0e-3, slab=1.5e-3)
+        assert len(layer.lines) == 3
+        assert {t.get_text() for t in layer.texts} == {"monopole", "feed", "R1"}
+
+    def test_a_slab_never_narrows_the_wire_tolerance(self):
+        # The wire's own radius stays the floor: slab widens, never
+        # tightens.
+        model = self._monopole_model()
+        _, ax = model.plot_cross_section("y", 0.15e-3, slab=0.0)
+        assert len(ax.lines) == 1  # the wire, within one radius
+
     def test_features_can_be_switched_off(self):
         _, ax = self._monopole_model().plot_cross_section(
             "y", 0.0, show_wires=False, show_ports=False

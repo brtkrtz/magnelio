@@ -1678,6 +1678,7 @@ class _LoadedFieldMonitor:
         ]
         if self._grid is not None:
             mon._region = resolve_region(self.corners, self._grid)
+            mon._grid = self._grid
         mon._mirrors = self._mirrors
         return mon
 
@@ -1770,13 +1771,17 @@ class _LoadedFreqMonitor:
     reuse its plotting machinery.
     """
 
-    def __init__(self, run_dir: Path, name: str, reference=None) -> None:
+    def __init__(self, run_dir: Path, name: str, reference=None, grid=None) -> None:
         import h5py  # noqa: PLC0415
 
         from magnelio.monitors.base import _corners_from_array  # noqa: PLC0415
 
         self._run_dir = Path(run_dir)
         self.name = name
+        # Only for plotting: the cell layer a field plane stands for, so
+        # wires and discrete ports show up in a loaded plot as they do
+        # in a live one.
+        self._grid = grid
         # Signal1D, or a callable returning one — the reader stays lazy so
         # listing a project's monitors costs no run-results read.
         self._reference = reference
@@ -1896,6 +1901,7 @@ class _LoadedFreqMonitor:
                 acc._bins[...] = bg[comp][()]
                 mon._accumulators[comp] = acc
         mon._mirrors = self._mirrors
+        mon._grid = self._grid
         # Carry the run's reference across, or the hydrated monitor would
         # refuse to hand out data it cannot put a unit on.
         mon._source_spectrum = self._source_spectrum()
@@ -2992,6 +2998,7 @@ class Project(ScatteringResultMixin):
                 run_dir,
                 name,
                 reference=lambda rn=run_name: self._load_run(rn)["reference"],
+                grid=self.grid,
             )
         for name in _list_run_wall_loss(run_dir):
             out[name] = _LoadedMonitorWallLoss(run_dir, name)

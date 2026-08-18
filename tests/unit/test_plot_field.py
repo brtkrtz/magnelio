@@ -383,3 +383,45 @@ class TestRenderGeometryOverlay:
         )
         render_geometry_overlay(overlay, ax=ax)
         plt.close(fig)
+
+    def test_slab_reaches_the_cross_section(self):
+        # The layer thickness is the overlay's whole reason to know
+        # about the grid: it must arrive at the geometry call, or wires
+        # and discrete ports drop out of every field picture.
+        seen = {}
+
+        class _Recorder:
+            def plot_cross_section(self, normal, position, **kwargs):
+                seen.update(kwargs)
+
+        fig, ax = plt.subplots()
+        overlay = CrossSectionOverlay(
+            geometry=_Recorder(),
+            normal="y",
+            position=1.786e-3,
+            slab=1.786e-3,
+        )
+        render_geometry_overlay(overlay, ax=ax)
+        assert seen["slab"] == pytest.approx(1.786e-3)
+        plt.close(fig)
+
+
+class TestPlaneSlabHalfwidth:
+    def test_half_the_local_cell_on_a_graded_grid(self):
+        from types import SimpleNamespace
+
+        from magnelio.monitors.base import plane_slab_halfwidth
+
+        # Cells 1 mm, 1 mm, 4 mm: centres at 0.5, 1.5, 4.0 mm.
+        grid = SimpleNamespace(
+            x=np.array([0.0, 1e-3, 2e-3, 6e-3]),
+            y=np.array([0.0, 1.0]),
+            z=np.array([0.0, 1.0]),
+        )
+        assert plane_slab_halfwidth(grid, 0, 0.5e-3) == pytest.approx(0.5e-3)
+        assert plane_slab_halfwidth(grid, 0, 4.0e-3) == pytest.approx(2.0e-3)
+
+    def test_no_grid_keeps_the_plane_exact(self):
+        from magnelio.monitors.base import plane_slab_halfwidth
+
+        assert plane_slab_halfwidth(None, 1, 0.0) == 0.0

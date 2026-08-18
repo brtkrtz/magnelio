@@ -11672,3 +11672,47 @@ is for shape).
 `monitors/far_field.py`, `io/project.py`
 (`_LoadedFarFieldMonitor` delegation),
 `tests/unit/test_plot_pattern.py`.
+
+## DD-175 — A field picture stands for a cell layer, not a plane
+
+**Problem.**  The antenna tutorial's field plot showed an empty air box:
+the monopole wire and its feed port were missing from the very picture
+they explain, although the same model drew both in its cross-section.
+Measured on that model (grid 3.57 mm, monitor declared at `y = 0`): the
+displayed plane resolves to the cell-centre coordinate `y = 1.786 mm`,
+while wire and port are declared on the node plane `y = 0`.  The
+geometry overlay draws volume-free features within a *numerical*
+tolerance of the cut — 1e-9 relative for a two-point feature, one
+radius for a wire — so at half a cell's distance both dropped out.
+Volumes survive (a solid still intersects the shifted plane), which is
+why the picture looked plausible rather than broken.
+
+**Decision.**  The overlay states the thickness of the layer it stands
+for.  `post.plot_geometry.plot_cross_section` gains `slab=0.0` [m], a
+half-thickness that raises — never lowers — the in-plane tolerance of
+every volume-free feature (`max(existing, slab)`); `slab=0` keeps the
+plane-exact behaviour, so a hand-drawn cross-section is unchanged.
+`CrossSectionOverlay` carries the value, and the plotting monitors fill
+it from their own grid via `monitors.base.plane_slab_halfwidth`: half
+the local cell in the normal direction, taken at the displayed cell
+centre, hence correct on graded grids.  A missing grid yields 0.0.
+
+**Why the layer, not the declared position.**  Snapping the overlay
+back to the user's requested coordinate would fix this one case and
+lie about the general one: a 3D monitor sliced anywhere shows the cells
+it hits, and a wire 1 mm into that layer belongs in the picture just as
+much as one on its boundary.  The layer thickness is the physically
+honest statement of what a field pixel covers.
+
+**Consequences.**  `_LoadedFreqMonitor` now takes the store's grid
+(the time-monitor reader already did) and passes it to the hydrated
+monitor, so a plot from disk carries the same features as the live
+one.  Port mode plots keep plane-exact overlays: a port plane is a
+declared surface, not a sampled layer.
+
+**Files:** `src/magnelio/post/plot_geometry.py`,
+`src/magnelio/post/plot_field.py`, `src/magnelio/monitors/base.py`
+(`plane_slab_halfwidth`), `monitors/field_frequency.py`,
+`monitors/field_time.py`, `solver/eigenmode_result.py`,
+`io/project.py`, `tests/unit/test_plot_geometry.py`,
+`tests/unit/test_plot_field.py`.

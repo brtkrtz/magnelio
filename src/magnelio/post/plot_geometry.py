@@ -154,6 +154,8 @@ def _draw_path(ax, points, *, n_axis, position, tol, u_axis, v_axis, scale, flip
     flush()
 
     if drawn and label:
+        import matplotlib.patheffects as patheffects  # noqa: PLC0415
+
         # Anchor on the path's midpoint: it is inside the drawn extent
         # for a line and on the feature itself for a ring, where an
         # end-anchored label would float off into the background.
@@ -167,6 +169,13 @@ def _draw_path(ax, points, *, n_axis, position, tol, u_axis, v_axis, scale, flip
             color=color,
             fontsize=7,
             zorder=3.1,
+            # Same under-stroke as the dashed outlines: these labels sit
+            # on the field colour map in a field plot, where a thin
+            # coloured glyph on a saturated patch is unreadable.
+            path_effects=[
+                patheffects.Stroke(linewidth=2.0, foreground="white", alpha=0.85),
+                patheffects.Normal(),
+            ],
         )
     return drawn
 
@@ -252,6 +261,7 @@ def plot_cross_section(
     outline_transparent: bool = True,
     show_wires: bool = True,
     show_ports: bool = True,
+    slab: float = 0.0,
 ) -> tuple["matplotlib.figure.Figure", "matplotlib.axes.Axes"]:
     """Plot a 2D cross-section of 3D geometry at an axis-aligned plane.
 
@@ -307,6 +317,14 @@ def plot_cross_section(
         Draw the model's declared ports and lumped elements (default
         True), labelled.  A port declared on a bbox face parallel to
         the cut is not drawn: it would cover the entire section.
+    slab : float, optional
+        Half-thickness of the layer the picture stands for [m], zero by
+        default (a mathematical plane).  Volume-free features — thin
+        wires, discrete ports, lumped elements — are drawn when they
+        fall within this distance of the plane.  Field plots pass the
+        half-height of the cell layer they display, so a wire on a grid
+        node still appears in a picture whose field samples sit half a
+        cell off it.
 
     Returns
     -------
@@ -431,7 +449,7 @@ def plot_cross_section(
             _draw_path(
                 ax,
                 pts,
-                tol=_WIRE_HIT_RADII * wire.radius,
+                tol=max(_WIRE_HIT_RADII * wire.radius, slab),
                 color=_WIRE_COLOR,
                 label=wire.name,
                 **common,
@@ -446,8 +464,9 @@ def plot_cross_section(
                     [port.start, port.end],
                     # A discrete port bridges one edge; it is a line in
                     # the cut only when the cut contains it, so the
-                    # tolerance is numerical, not physical.
-                    tol=_edge_tol(port.start, port.end),
+                    # tolerance is numerical — unless the caller states
+                    # the layer thickness the picture stands for.
+                    tol=max(_edge_tol(port.start, port.end), slab),
                     color=_PORT_COLOR,
                     label=getattr(port, "name", None),
                     **common,
@@ -465,7 +484,7 @@ def plot_cross_section(
             _draw_path(
                 ax,
                 [element.start, element.end],
-                tol=_edge_tol(element.start, element.end),
+                tol=max(_edge_tol(element.start, element.end), slab),
                 color=_ELEMENT_COLOR,
                 label=getattr(element, "name", None),
                 **common,

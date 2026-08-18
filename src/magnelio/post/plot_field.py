@@ -41,6 +41,13 @@ class CrossSectionOverlay:
     artist transform: the display always shows what the solver saw —
     the simulated half plus its mirror — for full and half-modelled
     geometry alike.
+
+    ``slab`` is the half-height of the cell layer the host plot shows
+    [m].  A field plane is sampled at cell centres, so a wire or a
+    discrete port declared on the neighbouring grid node lies half a
+    cell off the drawn plane; without the layer thickness, the very
+    features that make an antenna model recognisable would be the ones
+    missing from its field picture.
     """
 
     geometry: object  # list of CSG shapes / GeometryModel
@@ -48,6 +55,7 @@ class CrossSectionOverlay:
     position: float  # position along the normal axis [m]
     swap_axes: bool = False
     mirrors: tuple = ()  # Design: DD-154 (symmetry-plane mirroring)
+    slab: float = 0.0
 
 
 GeometryOverlay = CrossSectionOverlay | None
@@ -83,6 +91,7 @@ def _draw_cross_section_image(
         scale_mm=scale_mm,
         flip=eff_flip,
         ax=ax,
+        slab=overlay.slab,
     )
     if not overlay.mirrors:
         return

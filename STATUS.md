@@ -167,8 +167,8 @@ grazing-incidence residual DD-167 recorded — one of two symmetric
 slivers returned instead of both — turned out not to be the section
 operator at all and is closed by DD-168.
 
-**Suite: 2171 passed / 6 skipped / 0 failed** (2026-08-16, GPU box —
-unit 1825 (+2 scikit-rf skips), integration 346 (+4 skips); GPU tests
+**Suite: 2240 passed / 6 skipped / 0 failed** (2026-08-18, GPU box —
+unit 1886 (+2 scikit-rf skips), integration 360 (+4 skips); GPU tests
 need `CUPY_ACCELERATORS=""` when the interpreter binary is called
 directly).  The DD-150 step change re-measured three fixture windows
 (interval stride, lumped-port guard, SIBC band edge) — the reasoning
@@ -221,6 +221,7 @@ changed, do not append.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-175** (2026-08-18) — a field picture stands for a cell layer: `plot_cross_section(slab=)` raises the in-plane tolerance of volume-free features to half the displayed cell, filled by the plotting monitors from their grid; wires and discrete ports were absent from every field plot (measured: plane snapped 1.79 mm off the node they sit on).
 * **DD-174** (2026-08-18) — pattern plots: `plots.plot_pattern_cut` (polar, antenna convention, dB floor) and `plots.plot_pattern_3d` (dB-radius surface); `FarFieldResult`/`MonitorFarField`/store reader delegate.
 * **DD-173** (2026-08-18) — far field from a Huygens box: `monitors.MonitorFarField` (auto-placed node-plane surface DFT) + `post.ntff_transform`/`FarFieldResult`; PEC/PMC/symmetry faces via image theory (`mirror_sign` is the image-current table); effective-amplitude intensity |E|²/η; certificate: dipole 2.15 dBi, monopole +3 dB, P_rad closure 2 %.
 * **DD-172** (2026-08-18) — a lumped element on a symmetry plane is half a device: full-model declaration, builder clips/scales internally (series cut Z/2, parallel cut 2Z), `LumpedPortReport` rides the existing √2-per-plane plumbing; invalid placements raise instead of clamping; certificate: exact restriction 5e-16.

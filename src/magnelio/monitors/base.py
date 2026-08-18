@@ -330,6 +330,24 @@ def resolve_region(corners, grid: GridLines) -> MonitorRegion:
     )
 
 
+def plane_slab_halfwidth(grid, normal_idx: int, position: float) -> float:
+    """Half-thickness of the cell layer a plot plane stands for [m].
+
+    A monitor plane carries the field of one layer of cells, sampled at
+    their centres; the geometry that belongs in the picture is whatever
+    lies inside that layer, not only what the mathematical plane
+    touches.  Returns 0.0 when no grid is available, which restores the
+    plane-exact behaviour.
+    """
+    if grid is None:
+        return 0.0
+    nodes = np.asarray((grid.x, grid.y, grid.z)[normal_idx], dtype=float)
+    if nodes.size < 2:
+        return 0.0
+    k = int(np.argmin(np.abs(_cell_centres(nodes) - position)))
+    return 0.5 * float(nodes[k + 1] - nodes[k])
+
+
 @dataclass
 class PlaneView:
     """A 2D plotting plane resolved from a 2D or 3D monitor region.

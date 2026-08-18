@@ -116,6 +116,7 @@ class EigenmodeResult:
             _AXES,
             _interp_to_cell_centres,
             _resolve_component,
+            plane_slab_halfwidth,
             resolve_plane_view,
             resolve_region,
         )
@@ -155,6 +156,7 @@ class EigenmodeResult:
                 geometry=geometry,
                 normal=_AXES[pv.normal_idx],
                 position=pv.normal_pos,
+                slab=plane_slab_halfwidth(grid, pv.normal_idx, pv.normal_pos),
             )
 
         pos_txt = (

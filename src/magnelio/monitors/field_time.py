@@ -23,6 +23,7 @@ from magnelio.monitors.base import (
     mirror_extend,
     mirror_plane_arrays,
     mirror_sign,
+    plane_slab_halfwidth,
     resolve_mirrors,
     resolve_plane_view,
     resolve_region,
@@ -354,6 +355,7 @@ class MonitorFieldTime:
                 for m in self._mirrors
                 if m.axis in (i0, i1)
             ),
+            slab=plane_slab_halfwidth(getattr(self, "_grid", None), pv.normal_idx, pv.normal_pos),
         )
 
     @staticmethod

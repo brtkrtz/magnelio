@@ -31,6 +31,14 @@ in-house calibration (DD-085).
 All monitors return physical SI units; the calibration (C = 1 pinned
 at the excitation source) is in-house bookkeeping (DD-085).
 
+A plotted field plane is one *layer* of cells, sampled at their
+centres, not a mathematical plane — the plane coordinate printed in the
+title is the cell-centre coordinate the request snapped to.  Geometry
+overlays follow the same rule: thin wires, discrete ports and lumped
+elements are drawn when they lie inside the displayed layer, so a wire
+declared on the grid nodes half a cell away still appears in the
+picture of the field around it (DD-175).
+
 ## Signal processing
 
 Excitation waveforms are Gaussian-family pulses with prescribed
