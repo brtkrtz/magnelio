@@ -467,6 +467,13 @@ DD-085).</p></li>
 </ul>
 <p>All monitors return physical SI units; the calibration (C = 1 pinned
 at the excitation source) is in-house bookkeeping (DD-085).</p>
+<p>A plotted field plane is one <em>layer</em> of cells, sampled at their
+centres, not a mathematical plane — the plane coordinate printed in the
+title is the cell-centre coordinate the request snapped to.  Geometry
+overlays follow the same rule: thin wires, discrete ports and lumped
+elements are drawn when they lie inside the displayed layer, so a wire
+declared on the grid nodes half a cell away still appears in the
+picture of the field around it (DD-175).</p>
 </section>
 <section id="signal-processing">
 <h2>Signal processing<a class="headerlink" href="#signal-processing" title="Link to this heading">#</a></h2>

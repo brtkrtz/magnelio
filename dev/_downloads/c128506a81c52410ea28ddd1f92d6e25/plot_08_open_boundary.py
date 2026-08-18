@@ -214,16 +214,17 @@ fig.tight_layout()
 # *direction* field, and the colour scale saturates near the wire so
 # the radiated field remains visible.
 #
-# The directions tell the antenna story: vertical along the wire,
-# arcing down to the ground plane, and organised into detached phase
-# fronts above the tip — the wave has left the antenna.  The magnitude
-# panel shows the monopole's signature: radiation is strongest *along*
-# the ground plane and weak straight up.  Everything decays smoothly
-# and simply ends at the dashed domain edge, where the CPML absorbs
-# it.  If that layer were a PEC wall instead, this picture would be
-# criss-crossed by standing-wave fringes — and the S11 curve above
-# would ripple with the resonances of the box instead of showing one
-# clean antenna dip.
+# The directions tell the antenna story: vertical along the wire —
+# drawn into the picture along with its feed, so the field can be read
+# against the structure that produced it — arcing down to the ground
+# plane, and organised into detached phase fronts above the tip: the
+# wave has left the antenna.  The magnitude panel shows the monopole's
+# signature: radiation is strongest *along* the ground plane and weak
+# straight up.  Everything decays smoothly and simply ends at the
+# dashed domain edge, where the CPML absorbs it.  If that layer were a
+# PEC wall instead, this picture would be criss-crossed by
+# standing-wave fringes — and the S11 curve above would ripple with the
+# resonances of the box instead of showing one clean antenna dip.
 
 # The saturation level is taken from the data rather than written out
 # as a number: ``data`` is in V/m per √W of incident power, and a scale
