@@ -13,7 +13,31 @@ from dataclasses import dataclass
 
 from magnelio.geo._cache import cached_occ_shape
 from magnelio.geo._sheet import PlanarSheet
+from magnelio.geo._validate import finite, nonzero, point3, positive, vector3
 from magnelio.geo.shape import Shape
+
+
+def _check_edge_selector(verb, near, face_near, edges):
+    """Reject an edge selection that names zero or several modes.
+
+    The kernel-side selector checks this too, but only when the solid is
+    finally built — long after the call that got it wrong, and typically
+    inside a plot or a mesh build.
+    """
+    modes = sum(x is not None for x in (near, face_near, edges))
+    if modes != 1:
+        given = [
+            name
+            for name, value in (("near", near), ("face_near", face_near), ("edges", edges))
+            if value is not None
+        ]
+        got = f"got {', '.join(given)}" if given else "got none of them"
+        raise ValueError(
+            f"{verb}() takes exactly one of near=, face_near= or edges= to "
+            f"select the edges to work on; {got}."
+        )
+    if edges is not None and edges != "all":
+        raise ValueError(f"{verb}(edges=...) takes only 'all'; got {edges!r}.")
 
 
 def chamfer(shape, *, near=None, face_near=None, edges=None, distance):
@@ -21,6 +45,16 @@ def chamfer(shape, *, near=None, face_near=None, edges=None, distance):
 
     Exactly one of *near*, *face_near* or *edges* must be specified.
     """
+    _check_edge_selector("chamfered", near, face_near, edges)
+    if isinstance(distance, (tuple, list)):
+        if len(distance) != 2:
+            raise ValueError(
+                f"chamfered(distance=...) takes a single value or a "
+                f"(d1, d2) pair; got {len(distance)} values."
+            )
+        distance = tuple(positive(d, "chamfered(distance)") for d in distance)
+    else:
+        distance = positive(distance, "chamfered(distance)")
     return _ChamferedShape(shape, near, face_near, edges, distance)
 
 
@@ -29,6 +63,8 @@ def fillet(shape, *, near=None, face_near=None, edges=None, radius):
 
     Exactly one of *near*, *face_near* or *edges* must be specified.
     """
+    _check_edge_selector("filleted", near, face_near, edges)
+    radius = positive(radius, "filleted(radius)")
     return _FilletedShape(shape, near, face_near, edges, radius)
 
 
@@ -80,6 +116,7 @@ def extrude(shape, *, vector, face_near=None, material=None):
             "extrude() on a solid requires face_near= to select the face "
             "to extrude (only a standalone planar sheet may omit it)."
         )
+    vector = vector3(vector, "extruded(vector)", nonzero=True)
     return _ExtrudedFaceShape(shape, face_near, vector, material)
 
 
@@ -122,10 +159,8 @@ def trace(curve, *, width, thickness, caps="round", normal=None, material=None, 
 
     Offsets the centreline within its plane, then extrudes the outline.
     """
-    if width <= 0.0:
-        raise ValueError(f"Trace width must be positive; got {width}.")
-    if thickness == 0.0:
-        raise ValueError("Trace thickness must not be zero.")
+    width = positive(width, "traced(width)")
+    thickness = nonzero(thickness, "traced(thickness)")
     if caps not in ("round", "flat"):
         raise ValueError(f"caps must be 'round' or 'flat'; got {caps!r}")
     return _TracedCurveShape(curve, width, thickness, caps, normal, material, name)
@@ -229,6 +264,7 @@ def revolve(profile, *, axis, angle_deg=360.0, origin=(0.0, 0.0, 0.0), material=
 
     Uses ``BRepPrimAPI_MakeRevol``.
     """
+    from magnelio.geo._axes import normalize_axis  # noqa: PLC0415
     from magnelio.geo._sheet import PlanarSheet  # noqa: PLC0415
 
     if isinstance(profile, PlanarSheet) and material is None and profile.material is None:
@@ -236,6 +272,14 @@ def revolve(profile, *, axis, angle_deg=360.0, origin=(0.0, 0.0, 0.0), material=
             "Revolving a construction profile (material=None) requires an "
             "explicit material= for the resulting solid."
         )
+    normalize_axis(axis, "revolved(axis)")
+    angle_deg = finite(angle_deg, "revolved(angle_deg)")
+    if not -360.0 <= angle_deg <= 360.0 or angle_deg == 0.0:
+        raise ValueError(
+            f"revolved(angle_deg=...) must be a non-zero sweep of at most a "
+            f"full turn; got {angle_deg}."
+        )
+    origin = point3(origin, "revolved(origin)")
     return _RevolvedShape(profile, axis, angle_deg, origin, material)
 
 
@@ -249,8 +293,7 @@ def shell(shape, *, thickness, opening_face_near=None):
             "shelled() hollows a solid, but this is a planar sheet. To "
             "grow a sheet into a solid slab use thickened()."
         )
-    if thickness <= 0.0:
-        raise ValueError(f"Shell thickness must be positive; got {thickness}.")
+    thickness = positive(thickness, "shelled(thickness)")
     return _ShelledShape(shape, thickness, opening_face_near)
 
 
@@ -264,8 +307,7 @@ def thicken(sheet, *, thickness, direction="forward", material=None):
             f"thickened() grows a planar sheet into a solid, but this is a "
             f"{type(sheet).__name__}. To hollow a solid use shelled()."
         )
-    if thickness <= 0.0:
-        raise ValueError(f"Thickness must be positive; got {thickness}.")
+    thickness = positive(thickness, "thickened(thickness)")
     if direction not in ("forward", "backward", "symmetric"):
         raise ValueError(
             f"direction must be 'forward', 'backward' or 'symmetric'; got {direction!r}"
@@ -346,10 +388,18 @@ def sweep(profile, spine, *, material=None):
     Uses ``BRepOffsetAPI_MakePipe``, orienting the result by the pipe
     trihedron.
     """
+    from magnelio.geo.curves import Curve  # noqa: PLC0415
+
     if material is None and getattr(profile, "material", None) is None:
         raise ValueError(
             "Sweeping a construction profile (material=None) requires an "
             "explicit material= for the resulting solid."
+        )
+    if not isinstance(spine, Curve):
+        raise TypeError(
+            f"swept() needs a Curve as its spine, but got a "
+            f"{type(spine).__name__}. Build the path with Curve.polyline / "
+            f"Curve.arc / Curve.spline / Curve.helix, or draw it with Path."
         )
     return _SweptShape(profile, spine, material)
 

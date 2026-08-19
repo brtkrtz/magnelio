@@ -12,6 +12,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 
+from magnelio.geo._validate import point3
 from magnelio.geo.curves import _JOIN_RTOL, Curve
 
 
@@ -94,9 +95,7 @@ class Path:
     _segments: tuple = field(default_factory=tuple)
 
     def __post_init__(self):
-        object.__setattr__(self, "start", tuple(float(c) for c in self.start))
-        if len(self.start) != 3:
-            raise ValueError(f"Path start must be a 3D point; got {len(self.start)} coordinates.")
+        object.__setattr__(self, "start", point3(self.start, "Path(start)"))
 
     @property
     def current(self) -> tuple:
@@ -123,7 +122,7 @@ class Path:
         Path
             A new Path ending at *point*.
         """
-        return self._extended(Curve.polyline([self.current, tuple(point)]))
+        return self._extended(Curve.polyline([self.current, point3(point, "line_to(point)")]))
 
     def arc_to(self, end, *, via=None, center=None, normal=None, major=False) -> "Path":
         """Append a circular arc ending at *end*.
@@ -188,11 +187,11 @@ class Path:
             raise ValueError("arc_to() takes exactly one of via= or center=.")
         if normal is not None and center is None:
             raise ValueError("arc_to(normal=...) only applies together with center=.")
-        p_start, p_end = self.current, tuple(float(c) for c in end)
+        p_start, p_end = self.current, point3(end, "arc_to(end)")
         if via is not None:
-            return self._extended(Curve.arc(p_start, tuple(via), p_end))
+            return self._extended(Curve.arc(p_start, point3(via, "arc_to(via)"), p_end))
 
-        c = tuple(float(x) for x in center)
+        c = point3(center, "arc_to(center)")
         r_start, r_end = math.dist(c, p_start), math.dist(c, p_end)
         r_max = max(r_start, r_end)
         if r_max <= 0.0:
@@ -242,7 +241,8 @@ class Path:
         """
         if not points:
             raise ValueError("spline_to() needs at least one point.")
-        return self._extended(Curve.spline([self.current, *[tuple(p) for p in points]]))
+        via = [point3(pt, f"spline_to() point {i}") for i, pt in enumerate(points)]
+        return self._extended(Curve.spline([self.current, *via]))
 
     # ── terminals ─────────────────────────────────────────────────────
 

@@ -16,7 +16,7 @@ _AXIS_LETTERS = {
 }
 
 
-def normalize_axis(axis) -> tuple[float, float, float]:
+def normalize_axis(axis, what: str = "axis") -> tuple[float, float, float]:
     """Return the unit direction for an axis letter or 3-vector.
 
     Parameters
@@ -24,6 +24,9 @@ def normalize_axis(axis) -> tuple[float, float, float]:
     axis : str or sequence of float
         ``"x"``/``"y"``/``"z"`` (case-insensitive) or any non-zero
         3-vector; the vector's length is ignored.
+    what : str
+        How to name the argument in an error message — the field or
+        parameter it came from, e.g. ``"Cylinder.axis"``.
 
     Returns
     -------
@@ -34,14 +37,16 @@ def normalize_axis(axis) -> tuple[float, float, float]:
         try:
             return _AXIS_LETTERS[axis.lower()]
         except KeyError:
-            raise ValueError(f"axis must be 'x', 'y', 'z' or a 3-vector; got {axis!r}") from None
+            raise ValueError(f"{what} must be 'x', 'y', 'z' or a 3-vector; got {axis!r}") from None
     try:
         dx, dy, dz = (float(c) for c in axis)
     except (TypeError, ValueError):
-        raise ValueError(f"axis must be 'x', 'y', 'z' or a 3-vector; got {axis!r}") from None
+        raise ValueError(f"{what} must be 'x', 'y', 'z' or a 3-vector; got {axis!r}") from None
+    if not all(math.isfinite(c) for c in (dx, dy, dz)):
+        raise ValueError(f"{what} must be finite; got {axis!r}")
     norm = math.sqrt(dx * dx + dy * dy + dz * dz)
     if norm == 0.0:
-        raise ValueError("axis vector must be non-zero")
+        raise ValueError(f"{what} vector must be non-zero")
     return (dx / norm, dy / norm, dz / norm)
 
 

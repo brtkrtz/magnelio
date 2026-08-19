@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from magnelio.geo._cache import cached_occ_shape
+from magnelio.geo._validate import count, finite, nonzero, point3, vector3
 from magnelio.geo.shape import Shape
 
 
@@ -40,6 +41,7 @@ def _apply_repeat(shape, make_one, repeat, copy, unite, group=False):
     """
     if unite and group:
         raise ValueError("Pass either unite=True or group=True, not both.")
+    repeat = count(repeat, "repeat", minimum=1)
 
     if repeat == 1 and not copy:
         return make_one(1)
@@ -99,6 +101,7 @@ def translate(
     """
     from magnelio.geo.operations import Group  # noqa: PLC0415
 
+    vector = vector3(vector, "translated(vector)")
     if isinstance(shape, Group):
 
         def make_one(i):
@@ -133,7 +136,9 @@ def rotate(
     from magnelio.geo._axes import normalize_axis  # noqa: PLC0415
     from magnelio.geo.operations import Group  # noqa: PLC0415
 
-    axis = normalize_axis(axis)
+    axis = normalize_axis(axis, "rotated(axis)")
+    angle_deg = finite(angle_deg, "rotated(angle_deg)")
+    origin = point3(origin, "rotated(origin)")
     if isinstance(shape, Group):
 
         def make_one(i):
@@ -155,6 +160,8 @@ def scale(shape, factor: float, center=(0.0, 0.0, 0.0)):
     """
     from magnelio.geo.operations import Group  # noqa: PLC0415
 
+    factor = nonzero(factor, "scaled(factor)")
+    center = point3(center, "scaled(center)")
     if isinstance(shape, Group):
         return _distribute(shape, lambda m: scale(m, factor, center))
     return _ScaledShape(shape, factor, center)
@@ -177,8 +184,8 @@ def mirror(
     from magnelio.geo._axes import normalize_axis  # noqa: PLC0415
     from magnelio.geo.operations import Group  # noqa: PLC0415
 
-    normal = normalize_axis(normal)
-    position = float(position)
+    normal = normalize_axis(normal, "mirrored(normal)")
+    position = finite(position, "mirrored(position)")
     if (unite or group) and not copy:
         # DD-126: mirror has no repeat, so without copy there is a
         # single shape to bundle.  Silently honouring unite/group would

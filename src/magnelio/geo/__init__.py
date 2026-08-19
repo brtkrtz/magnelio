@@ -27,6 +27,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from magnelio.geo._validate import operand
 from magnelio.geo.curves import Curve
 from magnelio.geo.modifications import Loft
 from magnelio.geo.operations import Difference, Group, Intersection, Union
@@ -150,6 +151,12 @@ class GeometryModel:
         from magnelio.materials.material import Material  # noqa: PLC0415
 
         self.shapes: list = []
+        if background is not None and not isinstance(background, Material):
+            raise TypeError(
+                f"GeometryModel(background=...) takes a Material, not a "
+                f"{type(background).__name__}. Build one with "
+                f"Material.air() / Material.pec() / Material.from_isotropic(...)."
+            )
         self.background: Material = background if background is not None else Material.air()
         self.boundary_conditions = resolve_boundary_conditions(
             boundary_conditions,
@@ -189,6 +196,7 @@ class GeometryModel:
             for s in shape.members():
                 self.add(s)
         else:
+            operand(shape, "The object added to a GeometryModel")
             _require_material(shape)
             self.shapes.append(shape)
         return self

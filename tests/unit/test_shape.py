@@ -313,7 +313,7 @@ class TestMirror:
         assert m.bounding_box()[0][0] == pytest.approx(6.0)
 
     def test_invalid_normal_raises(self):
-        with pytest.raises(ValueError, match="axis"):
+        with pytest.raises(ValueError, match=r"mirrored\(normal\)"):
             _chiral().mirrored(normal="q")
 
 

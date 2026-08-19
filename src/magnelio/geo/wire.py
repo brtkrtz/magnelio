@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from magnelio.geo._validate import positive
 from magnelio.geo.curves import Curve
 from magnelio.materials.material import Material
 
@@ -52,8 +53,7 @@ class ThinWire:
     def __post_init__(self) -> None:
         if not isinstance(self.curve, Curve):
             raise TypeError(f"ThinWire.curve must be a Curve, got {type(self.curve).__name__}.")
-        if self.radius <= 0.0:
-            raise ValueError(f"ThinWire radius must be positive, got {self.radius!r}.")
+        self.radius = positive(self.radius, "ThinWire.radius")
 
     @property
     def material(self) -> Material:

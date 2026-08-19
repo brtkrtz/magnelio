@@ -20,6 +20,7 @@ import math
 from dataclasses import dataclass, field
 
 from magnelio.geo._cache import cached_occ_shape
+from magnelio.geo._validate import point3, point_list, positive
 
 # Seam tolerance of :meth:`Curve.joined`, relative to the chain's own
 # bounding-box diagonal.  Relative on purpose (DD-120): a micrometre-sized
@@ -325,9 +326,7 @@ class Curve:
         name : str, optional
             Optional label.
         """
-        pts = [tuple(p) for p in points]
-        if len(pts) < 2:
-            raise ValueError(f"A polyline needs at least 2 points; got {len(pts)}.")
+        pts = point_list(points, "Curve.polyline(points)", dim=3, minimum=2)
 
         def build(scale):
             from magnelio.geo._occ_backend import make_polyline  # noqa: PLC0415
@@ -350,7 +349,9 @@ class Curve:
         name : str, optional
             Optional label.
         """
-        p_start, p_through, p_end = tuple(start), tuple(through), tuple(end)
+        p_start = point3(start, "Curve.arc(start)")
+        p_through = point3(through, "Curve.arc(through)")
+        p_end = point3(end, "Curve.arc(end)")
 
         def build(scale):
             from magnelio.geo._occ_backend import make_arc  # noqa: PLC0415
@@ -386,9 +387,7 @@ class Curve:
         name : str, optional
             Optional label.
         """
-        pts = [tuple(p) for p in points]
-        if len(pts) < 2:
-            raise ValueError(f"A spline needs at least 2 points; got {len(pts)}.")
+        pts = point_list(points, "Curve.spline(points)", dim=3, minimum=2)
 
         def build(scale):
             from magnelio.geo._occ_backend import make_spline  # noqa: PLC0415
@@ -435,15 +434,15 @@ class Curve:
         """
         if axis not in ("x", "y", "z"):
             raise ValueError(f"Helix axis must be 'x', 'y', or 'z'; got {axis!r}")
-        if pitch <= 0:
-            raise ValueError(f"Helix pitch must be positive; got {pitch}.")
-        if turns <= 0:
-            raise ValueError(f"Helix turns must be positive; got {turns}.")
+        radius = positive(radius, "Curve.helix(radius)")
+        pitch = positive(pitch, "Curve.helix(pitch)")
+        turns = positive(turns, "Curve.helix(turns)")
+        origin = point3(origin, "Curve.helix(origin)")
         params = dict(
             radius=radius,
             pitch=pitch,
             turns=turns,
-            origin=tuple(origin),
+            origin=origin,
             axis=axis,
             right_handed=right_handed,
         )
@@ -460,7 +459,7 @@ class Curve:
         # overshoot the true cylinder radially by a fraction of a
         # percent — pad the exact bounds accordingly.
         bounds = pad_box(
-            axis_segment_box(tuple(origin), normalize_axis(axis), pitch * turns, radius),
+            axis_segment_box(origin, normalize_axis(axis), pitch * turns, radius),
             0.1 * radius,
         )
         return cls(_build=build, name=name, _bounds=bounds)

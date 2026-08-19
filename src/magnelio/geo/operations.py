@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 
 
 from magnelio.geo._cache import cached_occ_shape
+from magnelio.geo._validate import operand
 from magnelio.geo.shape import Shape
 
 
@@ -43,6 +44,24 @@ def _reject_group(operands, op_name: str) -> None:
             )
 
 
+def _check_operands(operands, op_name: str, *, minimum: int) -> None:
+    """Reject a wrong operand count, a Group, or a non-geometry operand.
+
+    Runs before anything reads ``.material`` off an operand, so passing
+    a list of shapes where the shapes themselves belong — the natural
+    misreading of the ``*shapes`` signature — is named for what it is
+    instead of failing as a missing attribute.
+    """
+    if len(operands) < minimum:
+        raise ValueError(
+            f"{op_name} needs at least {minimum} operand"
+            f"{'s' if minimum > 1 else ''}; got {len(operands)}."
+        )
+    _reject_group(operands, op_name)
+    for index, s in enumerate(operands):
+        operand(s, f"{op_name} operand {index}")
+
+
 @dataclass
 class Union(Shape):
     """Boolean union of two or more shapes.
@@ -59,7 +78,7 @@ class Union(Shape):
     name: str | None = None
 
     def __init__(self, *shapes, material=None, name=None):
-        _reject_group(shapes, "Union")
+        _check_operands(shapes, "Union", minimum=1)
         self.shapes = shapes
         self.material = material if material is not None else shapes[0].material
         self.name = name
@@ -93,7 +112,7 @@ class Intersection(Shape):
     name: str | None = None
 
     def __post_init__(self):
-        _reject_group((self.shape_a, self.shape_b), "Intersection")
+        _check_operands((self.shape_a, self.shape_b), "Intersection", minimum=2)
         if self.material is None:
             self.material = self.shape_a.material
 
@@ -133,7 +152,7 @@ class Difference(Shape):
     name: str | None = None
 
     def __init__(self, base, *tools, material=None, name=None):
-        _reject_group((base, *tools), "Difference")
+        _check_operands((base, *tools), "Difference", minimum=2)
         self.base = base
         self.tools = tools
         self.material = material if material is not None else base.material
@@ -196,6 +215,9 @@ class Group(Shape):
     name: str | None = None
 
     def __init__(self, *shapes, name=None):
+        for index, s in enumerate(shapes):
+            if not isinstance(s, Group):
+                operand(s, f"Group member {index}")
         self.shapes = shapes
         self.name = name
 

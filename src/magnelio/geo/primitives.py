@@ -18,6 +18,15 @@ if TYPE_CHECKING:
 
 from magnelio.geo._cache import cached_occ_shape
 from magnelio.geo._sheet import PlanarSheet
+from magnelio.geo._validate import (
+    finite,
+    nonnegative,
+    nonzero,
+    point3,
+    point_list,
+    positive,
+    vector3,
+)
 from magnelio.geo.shape import Shape
 
 
@@ -72,7 +81,9 @@ class Brick(_BaseShape):
     origin : tuple of float
         ``(x, y, z)`` of the minimum-coordinate corner [meters].
     size : tuple of float
-        ``(dx, dy, dz)`` — extents in each direction [meters].
+        ``(dx, dy, dz)`` — extents in each direction [meters], each
+        positive.  To give two opposite corners in any order instead,
+        use :meth:`from_corners`.
     material : Material, optional
         Material filling this volume.  Omit it for a construction solid
         used only as a Boolean operand.
@@ -82,6 +93,18 @@ class Brick(_BaseShape):
 
     origin: tuple[float, float, float] = (0.0, 0.0, 0.0)
     size: tuple[float, float, float] = (1.0, 1.0, 1.0)
+
+    def __post_init__(self):
+        self.origin = point3(self.origin, "Brick.origin")
+        size = vector3(self.size, "Brick.size")
+        if any(s <= 0.0 for s in size):
+            raise ValueError(
+                f"Brick.size must be positive in every direction; got {size}. "
+                f"origin is the minimum-coordinate corner and size the extent "
+                f"from it. To give the two corners in any order instead, use "
+                f"Brick.from_corners(p1, p2)."
+            )
+        self.size = size
 
     @classmethod
     def from_corners(cls, p1, p2, *, material=None, name=None) -> "Brick":
@@ -114,6 +137,8 @@ class Brick(_BaseShape):
         >>> Brick.from_corners((3e-3, 0, 2e-3), (0, 4e-3, 0), material=pec)
         Brick(origin=(0.0, 0.0, 0.0), size=(3e-3, 4e-3, 2e-3), ...)
         """
+        p1 = point3(p1, "Brick.from_corners(p1)")
+        p2 = point3(p2, "Brick.from_corners(p2)")
         lo = tuple(min(a, b) for a, b in zip(p1, p2))
         hi = tuple(max(a, b) for a, b in zip(p1, p2))
         size = tuple(h - l for l, h in zip(lo, hi))
@@ -220,7 +245,7 @@ class Sphere(_BaseShape):
     center : tuple of float
         ``(x, y, z)`` center position [meters].
     radius : float
-        Radius [meters].
+        Radius [meters], positive.
     material : Material, optional
         Material filling this volume.  Omit it for a construction solid
         used only as a Boolean operand.
@@ -230,6 +255,10 @@ class Sphere(_BaseShape):
 
     center: tuple[float, float, float] = (0.0, 0.0, 0.0)
     radius: float = 1.0
+
+    def __post_init__(self):
+        self.center = point3(self.center, "Sphere.center")
+        self.radius = positive(self.radius, "Sphere.radius")
 
     @cached_occ_shape
     def _occ_shape(self, scale=1.0):
@@ -301,10 +330,13 @@ class Cylinder(_BaseShape):
     angle_deg: "float | tuple[float, float] | None" = None
 
     def __post_init__(self):
-        if self.inner_radius < 0.0:
-            raise ValueError(
-                f"Cylinder inner_radius must not be negative; got {self.inner_radius}."
-            )
+        from magnelio.geo._axes import normalize_axis
+
+        self.origin = point3(self.origin, "Cylinder.origin")
+        self.radius = positive(self.radius, "Cylinder.radius")
+        self.height = nonzero(self.height, "Cylinder.height")
+        self.inner_radius = nonnegative(self.inner_radius, "Cylinder.inner_radius")
+        normalize_axis(self.axis, "Cylinder.axis")
         if self.inner_radius >= self.radius:
             raise ValueError(
                 f"Cylinder inner_radius ({self.inner_radius}) must be smaller "
@@ -375,7 +407,8 @@ class Cone(_BaseShape):
     bottom_radius : float
         Bottom radius [meters].
     top_radius : float
-        Top radius [meters].  Use 0 for a full cone.
+        Top radius [meters].  Use 0 for a full cone; the two radii may
+        not both be 0.
     height : float
         Height [meters].  A negative height extrudes along ``-axis``
         from the origin.
@@ -393,6 +426,20 @@ class Cone(_BaseShape):
     top_radius: float = 0.0
     height: float = 1.0
     axis: "str | tuple[float, float, float]" = "z"
+
+    def __post_init__(self):
+        from magnelio.geo._axes import normalize_axis
+
+        self.origin = point3(self.origin, "Cone.origin")
+        self.bottom_radius = nonnegative(self.bottom_radius, "Cone.bottom_radius")
+        self.top_radius = nonnegative(self.top_radius, "Cone.top_radius")
+        self.height = nonzero(self.height, "Cone.height")
+        normalize_axis(self.axis, "Cone.axis")
+        if self.bottom_radius == 0.0 and self.top_radius == 0.0:
+            raise ValueError(
+                "Cone needs a non-zero radius at one end; both bottom_radius "
+                "and top_radius are 0, which is a line rather than a solid."
+            )
 
     @cached_occ_shape
     def _occ_shape(self, scale=1.0):
@@ -459,8 +506,8 @@ class Face(PlanarSheet):
     def __post_init__(self):
         if self.normal not in ("x", "y", "z"):
             raise ValueError(f"Face.normal must be 'x', 'y', or 'z'; got {self.normal!r}")
-        if len(self.points) < 3:
-            raise ValueError(f"A Face needs at least 3 points; got {len(self.points)}.")
+        self.points = point_list(self.points, "Face.points", dim=2, minimum=3)
+        self.position = finite(self.position, "Face.position")
 
     @cached_occ_shape
     def _occ_shape(self, scale=1.0):
@@ -494,7 +541,9 @@ class Torus(_BaseShape):
     major_radius : float
         Major radius (center of tube to center of torus) [meters].
     minor_radius : float
-        Minor radius (tube radius) [meters].
+        Minor radius (tube radius) [meters].  Must stay below
+        *major_radius*: a tube reaching the symmetry axis would pass
+        through itself.
     axis : str or tuple of float
         Symmetry axis: ``'x'``/``'y'``/``'z'`` or any 3-vector.
     material : Material, optional
@@ -508,6 +557,21 @@ class Torus(_BaseShape):
     major_radius: float = 1.0
     minor_radius: float = 0.25
     axis: "str | tuple[float, float, float]" = "z"
+
+    def __post_init__(self):
+        from magnelio.geo._axes import normalize_axis
+
+        self.center = point3(self.center, "Torus.center")
+        self.major_radius = positive(self.major_radius, "Torus.major_radius")
+        self.minor_radius = positive(self.minor_radius, "Torus.minor_radius")
+        normalize_axis(self.axis, "Torus.axis")
+        if self.minor_radius >= self.major_radius:
+            raise ValueError(
+                f"Torus.minor_radius ({self.minor_radius}) must be smaller "
+                f"than major_radius ({self.major_radius}) — the tube would "
+                f"otherwise pass through the symmetry axis and intersect "
+                f"itself."
+            )
 
     @cached_occ_shape
     def _occ_shape(self, scale=1.0):
