@@ -190,8 +190,8 @@ grazing-incidence residual DD-167 recorded — one of two symmetric
 slivers returned instead of both — turned out not to be the section
 operator at all and is closed by DD-168.
 
-**Suite: 2299 passed / 6 skipped / 0 failed** (2026-08-19, GPU box —
-unit 1937 (+2 scikit-rf skips), integration 362 (+4 skips); GPU tests
+**Suite: 2303 passed / 6 skipped / 0 failed** (2026-08-19, GPU box —
+unit 1941 (+2 scikit-rf skips), integration 362 (+4 skips); GPU tests
 need `CUPY_ACCELERATORS=""` when the interpreter binary is called
 directly — without it four of them fail on the mixed-dtype reduction
 and read as a regression).  The DD-150 step change re-measured three fixture windows
