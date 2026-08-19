@@ -132,7 +132,12 @@ def resolve_feature_gap(control: MeshControl, shapes) -> float:
     for s in shapes:
         try:
             boxes.append(analytic_bbox(s))
-        except Exception:  # noqa: BLE001 — OCC-less / exotic shape
+        except ImportError:
+            # Not an exotic shape but a missing pythonocc-core: raise the
+            # backend's message instead of falling through to a default
+            # gap and failing later on an empty grid (KB-024).
+            raise
+        except Exception:  # noqa: BLE001 — exotic shape
             continue
     if not boxes:
         return 1e-6

@@ -7,6 +7,17 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Fixed
+
+- Installing without pythonocc-core (the pip route) failed at the first
+  mesh with a message about grid line arrays instead of naming the
+  missing dependency: the mesher's per-shape guards, written to skip a
+  shape the CAD kernel cannot handle, swallowed the import failure for
+  every shape and left the grid empty.  The dependency error now
+  reaches the caller, and says how to install it.
+
 ## [0.3.1] - 2026-08-19
 
 ### Fixed

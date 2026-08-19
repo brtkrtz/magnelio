@@ -3698,3 +3698,64 @@ class TestMesherEscapeReach:
         # The far end of the ladder must stay inside one cell, or the
         # section answers about a plane nobody asked about.
         assert 8.0 * h_min * SECTION_NUDGE_FRACTION < h_min
+
+
+# ── A missing dependency must not read as a shape without geometry ───────────
+
+
+class _ShapeRaising:
+    """Stand-in whose OCC queries fail with a chosen exception."""
+
+    def __init__(self, exc):
+        self._exc = exc
+
+    def bounding_box(self, scale=1.0):
+        raise self._exc
+
+    def _occ_shape(self, scale=1.0):
+        raise self._exc
+
+
+class TestMissingOccSurfaces:
+    """A missing pythonocc-core must name itself, not degrade silently.
+
+    The per-shape guards skip a shape OCC cannot handle so that an
+    exotic solid does not abort a mesh.  With the dependency absent the
+    same guard used to swallow the ImportError for *every* shape, which
+    left each axis without a critical plane and surfaced two layers
+    later as a complaint about grid line arrays (KB-024).
+    """
+
+    def test_import_error_propagates_from_plane_extraction(self):
+        from magnelio.geo._occ_backend import extract_critical_planes_per_shape  # noqa: PLC0415
+
+        shape = _ShapeRaising(ImportError("pythonocc-core is required"))
+        with pytest.raises(ImportError, match="pythonocc-core"):
+            extract_critical_planes_per_shape([shape])
+
+    def test_other_failures_still_skip_the_shape(self):
+        from magnelio.geo._occ_backend import extract_critical_planes_per_shape  # noqa: PLC0415
+
+        shape = _ShapeRaising(RuntimeError("exotic surface"))
+        assert extract_critical_planes_per_shape([shape]) == []
+
+    def test_import_error_propagates_from_the_feature_gap(self, monkeypatch):
+        from magnelio.geo import _scaling  # noqa: PLC0415
+        from magnelio.mesh.mesher import MeshControl, resolve_feature_gap  # noqa: PLC0415
+
+        def _missing(shape):
+            raise ImportError("pythonocc-core is required")
+
+        monkeypatch.setattr(_scaling, "analytic_bbox", _missing)
+        with pytest.raises(ImportError, match="pythonocc-core"):
+            resolve_feature_gap(MeshControl(), [object()])
+
+    def test_exotic_shape_still_falls_back_to_the_default_gap(self, monkeypatch):
+        from magnelio.geo import _scaling  # noqa: PLC0415
+        from magnelio.mesh.mesher import MeshControl, resolve_feature_gap  # noqa: PLC0415
+
+        def _exotic(shape):
+            raise RuntimeError("no analytic bounding box")
+
+        monkeypatch.setattr(_scaling, "analytic_bbox", _exotic)
+        assert resolve_feature_gap(MeshControl(), [object()]) == 1e-6

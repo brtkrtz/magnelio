@@ -16,10 +16,10 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Three entries are open as of 2026-08-19: KB-022, KB-023 and
-KB-024.**  Everything below them is struck through and resolved.
+**Two entries are open as of 2026-08-19: KB-022 and KB-023.**
+Everything else is struck through and resolved.
 
-## KB-024: A missing pythonocc-core reads as an empty mesh, not as a missing dependency — Open (2026-08-19)
+## KB-024: ~~A missing pythonocc-core reads as an empty mesh, not as a missing dependency~~ — Resolved (2026-08-19)
 
 The geometry backend raises a clear `ImportError` when pythonocc-core is
 absent ("pythonocc-core is required for geometry operations.  Install
@@ -46,10 +46,21 @@ a user can give is "meshing fails with an array error".  This is the
 first thing a fresh install does, and the pip route is the only one
 where the dependency can be absent — the conda-forge package pulls it in.
 
-Closing it means separating the two causes the guard collects: catch
-`ImportError` ahead of the broad `except` and let the backend's message
-through, or resolve the dependency once before the plane extraction
-runs.  Neither changes anything on a working install.
+Fixed by separating the two causes the guards collect: `except
+ImportError: raise` now stands ahead of the broad `except` at all three
+sites (the bounding box and face queries in
+`extract_critical_planes_per_shape`, and the analytic box in
+`resolve_feature_gap`), so the backend's message reaches the caller
+while an exotic shape is still skipped.  The same run now ends with
+
+```
+ImportError: pythonocc-core is required for geometry operations.
+Install via: conda install -c conda-forge pythonocc-core
+```
+
+Regression cover in `tests/unit/test_geometry.py::TestMissingOccSurfaces`:
+each site raises on `ImportError` and still skips on any other failure.
+Nothing changes on an install that has the dependency.
 
 ## KB-023: CPML min and max faces are not mirror images — Open (2026-08-18)
 

@@ -421,8 +421,15 @@ def extract_critical_planes_per_shape(
         # the whole shape, covers tilted/free-form faces conservatively.
         try:
             (xmin, ymin, zmin), (xmax, ymax, zmax) = shape.bounding_box(scale)
+        except ImportError:
+            # pythonocc-core is missing altogether.  Skipping here would
+            # leave every axis without a critical plane and the failure
+            # would surface as an empty grid — let the backend say what
+            # is actually wrong (KB-024).
+            raise
         except Exception:
-            # OCC unavailable — skip; the mesher uses domain bounds only.
+            # An exotic shape OCC cannot bound — skip it; the mesher
+            # falls back to domain bounds.
             continue
         critical["x"].extend([(xmin, False), (xmax, False)])
         critical["y"].extend([(ymin, False), (ymax, False)])
@@ -430,6 +437,8 @@ def extract_critical_planes_per_shape(
 
         try:
             planes = _face_critical_planes(shape._occ_shape(scale))
+        except ImportError:
+            raise
         except Exception:
             result.append((shape, critical))
             continue
