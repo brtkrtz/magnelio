@@ -1,10 +1,24 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-19.*  Latest work: geometry arguments are
-checked in the constructor that receives them (DD-176) — the shape of a
-point, the sign of an extent, the type of an operand, the edge selector
-of a chamfer, each naming the argument instead of failing later in a
-plot or the CAD kernel.  Before that, the antenna chain was closed — far field,
+*Last updated: 2026-08-19.*  Latest work: the TF/SF plane-wave
+correction is a precomputed coefficient table instead of a Python loop
+over box boundary cells (DD-177).  All twelve face corrections have the
+form `field[face] += beta · metric · A · f(t − k·r/c₀)` and only `t`
+moves between steps, so `attach()` folds the coefficient once per face
+and keeps the retardation apart, where it collapses to a scalar or a
+1-D array for axis-aligned propagation.  Measured on a 2.54 M-cell lens
+model with the box around the whole domain (75 200 boundary cells):
+245.7 → 31.8 ms/step on the CPU and 2024.8 → 16.1 ms/step on the GPU,
+where every element assignment had been its own kernel launch.
+Injection is no longer measurable against the source-free baseline, so
+box size is a question of scattered-field accuracy again and not of
+runtime.  Field states agree with the previous implementation to 3e-16
+in double across all six propagation axes, both polarisations and three
+box placements.  Alongside it, geometry arguments are checked in the
+constructor that receives them (DD-176) — the shape of a point, the
+sign of an extent, the type of an operand, the edge selector of a
+chamfer, each naming the argument instead of failing later in a plot or
+the CAD kernel.  Before that, the antenna chain was closed — far field,
 pattern plots, and lumped devices on symmetry planes (DD-172/173/174).
 A `monitors.MonitorFarField` places a closed Huygens box a few cells
 inside the physical domain by itself, accumulates the surface DFT of
@@ -225,6 +239,7 @@ changed, do not append.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-177** (2026-08-19) — the TF/SF correction is a coefficient table: `attach()` folds beta·metric·amplitude per box face and keeps the retardation separate (scalar or 1-D for axis-aligned k), so the time loop runs one array expression per face; 245.7 → 31.8 ms/step (CPU) and 2024.8 → 16.1 ms/step (GPU) at 75 200 boundary cells, injection no longer measurable against the source-free baseline; behaviour preserved to 3e-16 (double).
 * **DD-176** (2026-08-19) — geometry arguments are checked where they are written: `geo/_validate.py` guards every constructor and verb (point/vector shape, sign and finiteness, operand type, edge selector), each message naming the argument; a scalar `Sphere(center=)` used to surface as `'float' object is not iterable` inside `pad_box` during `model.plot()`.
 * **DD-175** (2026-08-18) — a field picture stands for a cell layer: `plot_cross_section(slab=)` raises the in-plane tolerance of volume-free features to half the displayed cell, filled by the plotting monitors from their grid; wires and discrete ports were absent from every field plot (measured: plane snapped 1.79 mm off the node they sit on).
 * **DD-174** (2026-08-18) — pattern plots: `plots.plot_pattern_cut` (polar, antenna convention, dB floor) and `plots.plot_pattern_3d` (dB-radius surface); `FarFieldResult`/`MonitorFarField`/store reader delegate.

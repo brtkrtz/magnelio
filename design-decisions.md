@@ -11775,3 +11775,66 @@ caller actually wrote.
 `geo/modifications.py`, `geo/curves.py`, `geo/path.py`, `geo/wire.py`,
 `geo/__init__.py`, `tests/unit/test_geometry_arguments.py` (new),
 `tests/unit/test_shape.py`.
+## DD-177 — The TF/SF correction is a coefficient table, not a loop over boundary cells
+
+**Problem.**  `PlaneWaveSource` corrected the six faces of its
+total-field box element by element, in twelve pairs of nested Python
+loops per half step.  The cost follows the box *surface*, so it grew
+with the model rather than with the physics, and on a card it grew
+worst: every element assignment was its own kernel launch.  Measured on
+a 2.54 M-cell model (spherical lens, CPML on all faces, 40 steps),
+against the same run without a source (milliseconds per time step):
+
+| TF/SF box | boundary cells | CPU loops | CPU table | GPU loops | GPU table |
+|---|---|---|---|---|---|
+| none      |     — |  33.5 ms |     — |   23.6 ms |     — |
+| a tenth   |   800 |  33.8 ms |  31.3 ms |   37.8 ms |  16.0 ms |
+| half      | 18304 |  85.8 ms |  31.5 ms |  525.4 ms |  16.4 ms |
+| full      | 75200 | 245.7 ms |  31.8 ms | 2024.8 ms |  16.1 ms |
+
+The per-cell figures say the same thing more sharply: the loops cost
+2.8 us per boundary cell on the CPU and 27 us on the GPU, which is why
+a plane wave wrapped around the whole model — the ordinary case for a
+scattering problem — ran an order of magnitude *slower* on the card
+than on the processor, and why the excitation cost more than the field
+solver it feeds.
+
+**Decision.**  Every face correction has the same form,
+
+    field[face] += beta * metric * A * f(t - k.r/c0)
+
+and only `t` changes between steps.  `attach()` therefore folds
+`beta * metric * A` into one coefficient array per face and stores the
+retardation `k.r/c0` alongside it; the time loop is left with a single
+array expression per face.  `_beta_views` reshapes the flat `_beta_E` /
+`_beta_H` blocks onto their Yee component grids — views, so no copy and
+no host transfer, and the coefficients stay on whichever device the
+solver put them.  A face the incident field cannot excite yields no
+record at all, which replaces the old per-component amplitude guards.
+
+**Why the retardation stays separate.**  Folding it into the
+coefficient would force a full-face waveform array every step.  Kept
+apart, `k.r` is summed only over the axes with `k != 0`, so for
+axis-aligned propagation it collapses on its own: a scalar on the two
+faces normal to k, a 1-D array on the other four.  The waveform is
+evaluated on a handful of values per step instead of on the face, and
+the same expression stays correct if oblique incidence is added later —
+it simply stops collapsing.
+
+**Consequences.**  Injection is no longer measurable against the
+source-free baseline on either backend, so TF/SF box size is once again
+a question of scattered-field accuracy alone, not of runtime.  The
+recommendation to run large-box plane waves on `backend="numpy"` is
+withdrawn.  The rewrite is behaviour-preserving: field states agree
+with the loop implementation to 3e-16 relative in double and 1.6e-7 in
+single (one float32 ulp) across all six propagation axes, both
+polarisations and three box placements, and a 60-step run agrees to
+2e-16.  Two loose ends were closed on the way — the H-side corrections
+at the upper box faces now carry the same "no scattered-field layer
+beyond a flush face" guard the x-max and y-max cases already had, and
+`excitation` accepts arrays, which is what lets a whole face be filled
+in one call.
+
+**Files:** `src/magnelio/sources/plane_wave.py`,
+`tests/integration/test_plane_wave.py` (amplitude and leakage on all
+six axes), `benchmarks/bench_plane_wave_tfsf.py` (the table above).
