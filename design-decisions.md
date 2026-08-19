@@ -11441,8 +11441,19 @@ them from a branch rather than from a single artifact.
   build time.  One shared file keeps every published page's menu
   current.  `conf.py` learns its own channel from
   `MAGNELIO_DOCS_CHANNEL` (unset — a local build — is `dev`), which
-  feeds `version_match` and, through `show_version_warning_banner`,
-  puts a banner on every dev page.
+  feeds `version_match`.
+- *Warning banner.*  Raised from the channel, not from the switcher.
+  The theme decides it by comparing the build's own `release` against
+  the `version` of the entry marked preferred, and only when **both**
+  parse as release numbers; channel names never do, so the comparison —
+  and with it the early return for "this is the preferred version" —
+  never runs.  Left to the theme the banner therefore appeared on every
+  page of *both* channels, and on `/stable/`, which the site root
+  redirects to, its "switch to stable version" button linked to the page
+  it was already on.  The dev build additionally carries a `+dev` local
+  version segment, because main keeps the last release's number until
+  the next bump and the theme reads the word out of that string to word
+  the banner as a development version rather than as a release.
 
 **Cost.**  The Pages source must be switched from "GitHub Actions" to
 "Deploy from a branch: gh-pages / root" in the repository settings; the
