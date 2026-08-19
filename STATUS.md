@@ -197,26 +197,27 @@ rotate; the convergence residual does — and is closed by DD-142
 (30/30 green after).  Per-DD gate accounting lives in the
 `design-decisions.md` entries.
 
-**v0.2.1 published (2026-08-17):** tags `v0.2.0` (2026-08-16) and
-`v0.2.1` on github.com/brtkrtz/magnelio (public, CI + docs green),
-released on PyPI via the tag-triggered trusted-publishing workflow
-(sdist + noarch wheel, verified installable in a clean venv without
-pythonocc-core); v0.1.0 (2026-08-14) was the first public release.
-v0.2.0 carries the release's substance — frequency-monitor units,
-sub-cell resolution on boundary faces, port-power and section-contour
-fixes; v0.2.1 is a documentation-only patch over an identical library,
-cut so the published `/stable/` docs show a corrected figure.  The
-documentation site serves the newest tag as `/stable/` and main as
-`/dev/` (DD-171).  **conda-forge as the primary distribution channel**
-(the CAD geometry stack needs pythonocc-core, which exists only on
-conda-forge) is still in flight: staged-recipes PR #34534 (v1 recipe,
-pythonocc-core >=7.9) open since 2026-08-14, all checks green on
-linux/osx/win.  Review 2026-08-17 asked for `${{ PYTHON }}` in the
-build script — the form the conda-forge pure-python v1 template uses,
-though *not* the one in the repository's own `example-v1` recipe —
-which is applied.  The recipe deliberately still pins 0.1.0: once
-merged, the feedstock's autotick bot follows PyPI releases on its own.
-PyPI stays the secondary, geometry-less install path.  CI (`.github/workflows/ci.yml`, lint +
+**v0.3.0 published (2026-08-19):** tags `v0.1.0` (2026-08-14, first
+public release), `v0.2.0`/`v0.2.1` (2026-08-16/17) and `v0.3.0` on
+github.com/brtkrtz/magnelio (public, CI + docs green), released on PyPI
+via the tag-triggered trusted-publishing workflow (sdist + noarch
+wheel, verified installable in a clean venv without pythonocc-core).
+v0.2.0 carried frequency-monitor units, sub-cell resolution on boundary
+faces, port-power and section-contour fixes; v0.2.1 was a
+documentation-only patch over an identical library.  v0.3.0 is the
+antenna release: far-field monitor and pattern plots, lumped devices on
+symmetry planes, geometry argument checking, and plane-wave injection
+at no measurable runtime cost.  The documentation site serves the
+newest tag as `/stable/` and main as `/dev/` (DD-171).  **conda-forge
+is now live as the primary distribution channel** (the CAD geometry
+stack needs pythonocc-core, which exists only on conda-forge):
+staged-recipes PR #34534 merged 2026-08-19, feedstock
+conda-forge/magnelio-feedstock built and published
+`magnelio-0.1.0-pyhc364b38_0.conda` (noarch) the same day.  The
+feedstock recipe follows PyPI from there — the autotick bot opens a
+version-bump pull request per release, which the maintainer merges
+after checking the sha256 and the dependency list.  PyPI stays the
+secondary, geometry-less install path.  CI (`.github/workflows/ci.yml`, lint +
 unit suite) is live.  The repo is ruff-clean: rule set `E`/`F`/`I` pinned in
 `pyproject.toml`, enforced by workflow rule, pre-commit and CI.
 License LGPL-3.0-or-later in place (`COPYING`, `pyproject.toml`,

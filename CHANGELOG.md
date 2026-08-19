@@ -7,18 +7,7 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
-## [Unreleased]
-
-### Changed
-
-- Geometry constructors and verbs now check their arguments where they
-  are written instead of failing later in a plot, a mesh build or the
-  CAD kernel.  A coordinate given as a single number, a point with two
-  components, a negative radius, an axis that names no direction, a
-  list passed where the shapes themselves belong, or a `chamfered()`
-  without an edge selector each raise immediately, naming the argument
-  and what it expects.  Coordinates accept NumPy arrays and are stored
-  as plain float tuples.
+## [0.3.0] - 2026-08-19
 
 ### Added
 
@@ -46,6 +35,23 @@ major version is 0, minor releases may change the public API.
 
 ### Changed
 
+- Plane-wave illumination no longer costs measurable runtime.  Every
+  correction on the TF/SF box has the form
+  `field += coefficient · waveform(t - delay)`, and only the time moves
+  between steps, so the coefficients are folded once when the source is
+  attached instead of being applied cell by cell at every step.  On a
+  2.5 M-cell model with the box spanning the whole domain the march
+  went from 246 to 32 ms per step on the CPU and from 2025 to 16 ms per
+  step on the GPU; the box can now be sized for scattered-field
+  accuracy rather than for speed.
+- Geometry constructors and verbs now check their arguments where they
+  are written instead of failing later in a plot, a mesh build or the
+  CAD kernel.  A coordinate given as a single number, a point with two
+  components, a negative radius, an axis that names no direction, a
+  list passed where the shapes themselves belong, or a `chamfered()`
+  without an edge selector each raise immediately, naming the argument
+  and what it expects.  Coordinates accept NumPy arrays and are stored
+  as plain float tuples.
 - A thin wire lying entirely in the half-space removed by a symmetry
   declaration is skipped at mesh time (like a solid there) instead of
   failing to rasterise.
