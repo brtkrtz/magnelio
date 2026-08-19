@@ -7,7 +7,7 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
-## [Unreleased]
+## [0.3.1] - 2026-08-19
 
 ### Fixed
 

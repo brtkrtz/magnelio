@@ -197,8 +197,8 @@ rotate; the convergence residual does — and is closed by DD-142
 (30/30 green after).  Per-DD gate accounting lives in the
 `design-decisions.md` entries.
 
-**v0.3.0 published (2026-08-19):** tags `v0.1.0` (2026-08-14, first
-public release), `v0.2.0`/`v0.2.1` (2026-08-16/17) and `v0.3.0` on
+**v0.3.1 published (2026-08-19):** tags `v0.1.0` (2026-08-14, first
+public release), `v0.2.0`/`v0.2.1` (2026-08-16/17) and `v0.3.0`/`v0.3.1` on
 github.com/brtkrtz/magnelio (public, CI + docs green), released on PyPI
 via the tag-triggered trusted-publishing workflow (sdist + noarch
 wheel, verified installable in a clean venv without pythonocc-core).
@@ -207,8 +207,14 @@ faces, port-power and section-contour fixes; v0.2.1 was a
 documentation-only patch over an identical library.  v0.3.0 is the
 antenna release: far-field monitor and pattern plots, lumped devices on
 symmetry planes, geometry argument checking, and plane-wave injection
-at no measurable runtime cost.  The documentation site serves the
-newest tag as `/stable/` and main as `/dev/` (DD-171).  **conda-forge
+at no measurable runtime cost; v0.3.1 is a documentation-only patch
+over an identical library.  The documentation site serves the newest
+tag as `/stable/` and main as `/dev/` (DD-171).  Which of the two
+warns the reader that it documents unreleased code is decided by the
+channel, not by comparing version strings — the theme only compares
+them when *both* the build's release and the preferred switcher entry
+parse as release numbers, and channel names never do, so every page of
+both channels used to carry the warning.  **conda-forge
 is now live as the primary distribution channel** (the CAD geometry
 stack needs pythonocc-core, which exists only on conda-forge):
 staged-recipes PR #34534 merged 2026-08-19, feedstock
