@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=37f418d5"></script>
+    <script src="../_static/documentation_options.js?v=e259d695"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -371,6 +371,7 @@
 <li class="toctree-l1"><a class="reference internal" href="dispersive-materials.html">Dispersive and lossy materials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="conductor-losses.html">Conductor losses</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
 </ul>
@@ -511,6 +512,9 @@ carry <span class="math notranslate nohighlight">\(\sqrt2\)</span> per cutting p
 declared injected power stays a full-model watt (DD-155).</p></li>
 <li><p>Registered wall losses and flux integrals are scaled by the mirrored
 share in the same way.</p></li>
+<li><p>A lumped port or element cut by the plane is declared as the full
+device and internally halved or doubled to the meshed branch — see
+the lumped-elements chapter for the case rules.</p></li>
 <li><p>Field monitors and port-mode plots are mirrored back across the
 plane before display, so the pictures show the full cross-section
 while only half of it was solved.</p></li>

@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=37f418d5"></script>
+    <script src="../_static/documentation_options.js?v=e259d695"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -444,6 +444,220 @@
 <p>Post-processing components — S-parameter computation helpers.
 The result objects themselves come back from the analyses; this
 component holds the free functions and containers for custom pipelines.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.post.FarFieldResult">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.post.</span></span><span class="sig-name descname"><span class="pre">FarFieldResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E_theta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E_phi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted_power</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">physical_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">physical_sphere_fraction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.post.FarFieldResult" title="Link to this definition">#</a></dt>
+<dd><p>Far-field pattern of one frequency.</p>
+<p>The complex patterns are the r-independent far-zone amplitudes:
+the physical field at distance r is
+<code class="docutils literal notranslate"><span class="pre">E(r)</span> <span class="pre">=</span> <span class="pre">(E_theta</span> <span class="pre">θ̂</span> <span class="pre">+</span> <span class="pre">E_phi</span> <span class="pre">φ̂)</span> <span class="pre">·</span> <span class="pre">e^{-jkr}</span> <span class="pre">/</span> <span class="pre">r</span></code>.  Like every
+frequency-domain field of the library they are effective (RMS)
+phasors per √W of incident CW power, which makes
+<code class="docutils literal notranslate"><span class="pre">realized_gain</span></code> the directly measured quantity and keeps the
+intensity free of a peak-phasor ½.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>f</strong> (<em>float</em>)</p></li>
+<li><p><strong>theta</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a>)</p></li>
+<li><p><strong>phi</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a>)</p></li>
+<li><p><strong>E_theta</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a>)</p></li>
+<li><p><strong>E_phi</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a>)</p></li>
+<li><p><strong>accepted_power</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>physical_mask</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>physical_sphere_fraction</strong> (<em>float</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.post.FarFieldResult.f">
+<span class="sig-name descname"><span class="pre">f</span></span><a class="headerlink" href="#magnelio.post.FarFieldResult.f" title="Link to this definition">#</a></dt>
+<dd><p>Frequency [Hz].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">theta,</span> <span class="pre">phi</span></span></dt>
+<dd><p>Evaluation angles [rad]; θ from +z (ISO convention), φ from +x.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">E_theta,</span> <span class="pre">E_phi</span></span></dt>
+<dd><p>Far-zone amplitudes [V].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(n_theta, n_phi) complex ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.post.FarFieldResult.accepted_power">
+<span class="sig-name descname"><span class="pre">accepted_power</span></span><a class="headerlink" href="#magnelio.post.FarFieldResult.accepted_power" title="Link to this definition">#</a></dt>
+<dd><p>Accepted input power [W] behind <a class="reference internal" href="#magnelio.post.FarFieldResult.gain" title="magnelio.post.FarFieldResult.gain"><code class="xref py py-attr docutils literal notranslate"><span class="pre">gain</span></code></a>; <code class="docutils literal notranslate"><span class="pre">None</span></code> until
+wired by the analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.post.FarFieldResult.physical_mask">
+<span class="sig-name descname"><span class="pre">physical_mask</span></span><a class="headerlink" href="#magnelio.post.FarFieldResult.physical_mask" title="Link to this definition">#</a></dt>
+<dd><p>False in directions behind an infinite ground plane; <code class="docutils literal notranslate"><span class="pre">None</span></code>
+when the whole sphere is physical.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(n_theta, n_phi) bool ndarray or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.post.FarFieldResult.physical_sphere_fraction">
+<span class="sig-name descname"><span class="pre">physical_sphere_fraction</span></span><a class="headerlink" href="#magnelio.post.FarFieldResult.physical_sphere_fraction" title="Link to this definition">#</a></dt>
+<dd><p>Solid-angle share of the physical region (0.5 per ground
+plane).  The image expansion makes the pattern mirror-symmetric
+about every such plane, so the physical-region power integral
+is exactly this fraction of the smooth full-sphere integral —
+which avoids the half-cell quadrature bias a hard mask edge
+would cost.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.post.FarFieldResult.cut">
+<span class="sig-name descname"><span class="pre">cut</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">plane</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'phi'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'realized_gain'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.post.FarFieldResult.cut" title="Link to this definition">#</a></dt>
+<dd><p>One pattern cut for polar plotting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>plane</strong> (<em>{&quot;phi&quot;</em><em>, </em><em>&quot;theta&quot;}</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;phi&quot;</span></code> fixes the azimuth: the cut runs over θ at the
+azimuth <em>angle</em> (and continues over the back half at
+<em>angle</em> + π, giving the full 0…2π polar trace).
+<code class="docutils literal notranslate"><span class="pre">&quot;theta&quot;</span></code> fixes the polar angle and runs over φ.</p></li>
+<li><p><strong>angle</strong> (<em>float</em>) – The fixed angle [rad].</p></li>
+<li><p><strong>quantity</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;realized_gain&quot;</span></code> (default), <code class="docutils literal notranslate"><span class="pre">&quot;gain&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&quot;directivity&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;U&quot;</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>angles, values</strong> – Cut angles [rad] and the (linear) quantity along the cut.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.post.FarFieldResult.plot_3d">
+<span class="sig-name descname"><span class="pre">plot_3d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'realized_gain'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.post.FarFieldResult.plot_3d" title="Link to this definition">#</a></dt>
+<dd><p>3D radiation surface of the pattern.</p>
+<p>Extra keyword arguments go to
+<a class="reference internal" href="plots.html#magnelio.plots.plot_pattern_3d" title="magnelio.plots.plot_pattern_3d"><code class="xref py py-func docutils literal notranslate"><span class="pre">magnelio.plots.plot_pattern_3d()</span></code></a> (<code class="docutils literal notranslate"><span class="pre">db=</span></code>, <code class="docutils literal notranslate"><span class="pre">floor_db=</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ax=</span></code>, <code class="docutils literal notranslate"><span class="pre">cmap=</span></code>, <code class="docutils literal notranslate"><span class="pre">title=</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>fig</strong> (<em>matplotlib.figure.Figure</em>)</p></li>
+<li><p><strong>ax</strong> (<em>mpl_toolkits.mplot3d.axes3d.Axes3D</em>)</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>quantity</strong> (<em>str</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.post.FarFieldResult.plot_cut">
+<span class="sig-name descname"><span class="pre">plot_cut</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">plane</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'phi'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'realized_gain'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.post.FarFieldResult.plot_cut" title="Link to this definition">#</a></dt>
+<dd><p>Polar plot of one pattern cut (see <a class="reference internal" href="#magnelio.post.FarFieldResult.cut" title="magnelio.post.FarFieldResult.cut"><code class="xref py py-meth docutils literal notranslate"><span class="pre">cut()</span></code></a>).</p>
+<p>Extra keyword arguments go to
+<a class="reference internal" href="plots.html#magnelio.plots.plot_pattern_cut" title="magnelio.plots.plot_pattern_cut"><code class="xref py py-func docutils literal notranslate"><span class="pre">magnelio.plots.plot_pattern_cut()</span></code></a> (<code class="docutils literal notranslate"><span class="pre">db=</span></code>, <code class="docutils literal notranslate"><span class="pre">floor_db=</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ax=</span></code>, <code class="docutils literal notranslate"><span class="pre">label=</span></code>, <code class="docutils literal notranslate"><span class="pre">title=</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>fig</strong> (<em>matplotlib.figure.Figure</em>)</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib.projections.polar.PolarAxes</em>)</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>plane</strong> (<em>str</em>)</p></li>
+<li><p><strong>angle</strong> (<em>float</em>)</p></li>
+<li><p><strong>quantity</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.post.FarFieldResult.P_rad">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">P_rad</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#magnelio.post.FarFieldResult.P_rad" title="Link to this definition">#</a></dt>
+<dd><p>∮ U dΩ over the physical sphere.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Total radiated power [W]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.post.FarFieldResult.U">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">U</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span><a class="headerlink" href="#magnelio.post.FarFieldResult.U" title="Link to this definition">#</a></dt>
+<dd><p>Radiation intensity [W/sr], zero behind a ground plane.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.post.FarFieldResult.directivity">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">directivity</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span><a class="headerlink" href="#magnelio.post.FarFieldResult.directivity" title="Link to this definition">#</a></dt>
+<dd><p>Directivity 4π U / P_rad (linear).</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.post.FarFieldResult.gain">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">gain</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span><a class="headerlink" href="#magnelio.post.FarFieldResult.gain" title="Link to this definition">#</a></dt>
+<dd><p>IEEE gain 4π U / P_accepted (linear).</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.post.FarFieldResult.radiation_efficiency">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">radiation_efficiency</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#magnelio.post.FarFieldResult.radiation_efficiency" title="Link to this definition">#</a></dt>
+<dd><p>P_rad / P_accepted — 1.0 for a lossless model.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.post.FarFieldResult.realized_gain">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">realized_gain</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span><a class="headerlink" href="#magnelio.post.FarFieldResult.realized_gain" title="Link to this definition">#</a></dt>
+<dd><p>Realized gain 4π U / P_incident (linear).</p>
+<p>The pattern of a solver run is per √W of incident power, so
+the reference is exactly 1 W and mismatch loss is included.</p>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.post.SParameterResult">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.post.</span></span><span class="sig-name descname"><span class="pre">SParameterResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excitations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matrix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.post.SParameterResult" title="Link to this definition">#</a></dt>
@@ -874,6 +1088,33 @@ basis-independent for a symmetric discretisation.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="magnelio.post.ntff_transform">
+<span class="sig-prename descclassname"><span class="pre">magnelio.post.</span></span><span class="sig-name descname"><span class="pre">ntff_transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patches</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_planes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accepted_power</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.post.ntff_transform" title="Link to this definition">#</a></dt>
+<dd><p>Far-field pattern from tangential surface fields at one frequency.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>patches</strong> (<em>sequence</em><em> of </em><em>SurfacePatchSet</em>) – The Huygens surface, in as many pieces as convenient.</p></li>
+<li><p><strong>image_planes</strong> (<em>sequence</em><em> of </em><em>ImagePlane</em>) – Boundary planes the surface does not cross; each doubles the
+patch set with its mirror image.</p></li>
+<li><p><strong>f</strong> (<em>float</em>) – Frequency [Hz].</p></li>
+<li><p><strong>theta</strong> (<em>array_like</em><em>, </em><em>optional</em>) – Spherical evaluation angles [rad]; θ from the +z axis, φ from
+the +x axis in the xy-plane.  Default: 2° grids over the full
+sphere.</p></li>
+<li><p><strong>phi</strong> (<em>array_like</em><em>, </em><em>optional</em>) – Spherical evaluation angles [rad]; θ from the +z axis, φ from
+the +x axis in the xy-plane.  Default: 2° grids over the full
+sphere.</p></li>
+<li><p><strong>accepted_power</strong> (<em>float</em><em>, </em><em>optional</em>) – Accepted input power [W] for the gain normalisation; usually
+wired by the analysis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.post.FarFieldResult" title="magnelio.post.FarFieldResult">FarFieldResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="magnelio.post.wall_loss_Q">
 <span class="sig-prename descclassname"><span class="pre">magnelio.post.</span></span><span class="sig-name descname"><span class="pre">wall_loss_Q</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roughness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.post.wall_loss_Q" title="Link to this definition">#</a></dt>
 <dd><p>Wall-loss Q factor of an eigenmode (perturbative power-loss).</p>
@@ -948,6 +1189,22 @@ applies to; lossy-metal solids always use their own.  <code class="docutils lite
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.FarFieldResult"><code class="docutils literal notranslate"><span class="pre">FarFieldResult</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.FarFieldResult.f"><code class="docutils literal notranslate"><span class="pre">FarFieldResult.f</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.FarFieldResult.accepted_power"><code class="docutils literal notranslate"><span class="pre">FarFieldResult.accepted_power</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.FarFieldResult.physical_mask"><code class="docutils literal notranslate"><span class="pre">FarFieldResult.physical_mask</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.FarFieldResult.physical_sphere_fraction"><code class="docutils literal notranslate"><span class="pre">FarFieldResult.physical_sphere_fraction</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.FarFieldResult.cut"><code class="docutils literal notranslate"><span class="pre">FarFieldResult.cut()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.FarFieldResult.plot_3d"><code class="docutils literal notranslate"><span class="pre">FarFieldResult.plot_3d()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.FarFieldResult.plot_cut"><code class="docutils literal notranslate"><span class="pre">FarFieldResult.plot_cut()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.FarFieldResult.P_rad"><code class="docutils literal notranslate"><span class="pre">FarFieldResult.P_rad</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.FarFieldResult.U"><code class="docutils literal notranslate"><span class="pre">FarFieldResult.U</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.FarFieldResult.directivity"><code class="docutils literal notranslate"><span class="pre">FarFieldResult.directivity</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.FarFieldResult.gain"><code class="docutils literal notranslate"><span class="pre">FarFieldResult.gain</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.FarFieldResult.radiation_efficiency"><code class="docutils literal notranslate"><span class="pre">FarFieldResult.radiation_efficiency</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.FarFieldResult.realized_gain"><code class="docutils literal notranslate"><span class="pre">FarFieldResult.realized_gain</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.SParameterResult"><code class="docutils literal notranslate"><span class="pre">SParameterResult</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.SParameterResult.f_axis"><code class="docutils literal notranslate"><span class="pre">SParameterResult.f_axis</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.SParameterResult.channels"><code class="docutils literal notranslate"><span class="pre">SParameterResult.channels</span></code></a></li>
@@ -968,6 +1225,7 @@ applies to; lossy-metal solids always use their own.  <code class="docutils lite
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.compute_band_s_parameters"><code class="docutils literal notranslate"><span class="pre">compute_band_s_parameters()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.compute_s_parameters"><code class="docutils literal notranslate"><span class="pre">compute_s_parameters()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.ntff_transform"><code class="docutils literal notranslate"><span class="pre">ntff_transform()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.wall_loss_Q"><code class="docutils literal notranslate"><span class="pre">wall_loss_Q()</span></code></a></li>
 </ul>
   </nav></div>

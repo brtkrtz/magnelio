@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=37f418d5"></script>
+    <script src="../_static/documentation_options.js?v=e259d695"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -61,7 +61,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Implementation engineering (non-method)" href="implementation.html" />
-    <link rel="prev" title="Sources, monitors and post-processing" href="sources-monitors.html" />
+    <link rel="prev" title="Far-field computation" href="far-field.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -371,6 +371,7 @@
 <li class="toctree-l1"><a class="reference internal" href="dispersive-materials.html">Dispersive and lossy materials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="conductor-losses.html">Conductor losses</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Eigenmode analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
 </ul>
@@ -452,7 +453,7 @@ natural boundary condition (DD-065).</p>
 <p>The default backend is <strong>ARPACK shift-invert Lanczos</strong>
 (<code class="docutils literal notranslate"><span class="pre">scipy.sparse.linalg.eigsh</span></code> with a SuperLU factorisation of
 <span class="math notranslate nohighlight">\(A - \sigma B\)</span>; DD-007), i.e. the implicitly restarted Arnoldi/Lanczos
-method of Lehoucq, Sorensen and Yang <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id55" title="Richard B. Lehoucq, Danny C. Sorensen, and Chao Yang. ARPACK Users' Guide: Solution of Large-Scale Eigenvalue Problems with Implicitly Restarted Arnoldi Methods. SIAM, 1998. doi:10.1137/1.9780898719628.">54</a>]</span>.
+method of Lehoucq, Sorensen and Yang <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id56" title="Richard B. Lehoucq, Danny C. Sorensen, and Chao Yang. ARPACK Users' Guide: Solution of Large-Scale Eigenvalue Problems with Implicitly Restarted Arnoldi Methods. SIAM, 1998. doi:10.1137/1.9780898719628.">55</a>]</span>.
 The shift <span class="math notranslate nohighlight">\(\sigma\)</span> is auto-estimated
 boundary-condition-aware, an in-house heuristic (DD-010).</p>
 <p>Two experimental backends exist (DD-033):</p>
@@ -460,10 +461,10 @@ boundary-condition-aware, an in-house heuristic (DD-010).</p>
 <li><p>a CHOLMOD Cholesky path with <strong>tree-cotree gauging</strong> to eliminate
 the gradient null space; tree-cotree/spanning-tree gauging of
 curl-curl systems is established FEM practice, e.g. Albanese and
-Rubinacci <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id56" title="Raffaele Albanese and Guglielmo Rubinacci. Magnetostatic field computations in terms of two-component vector potentials. International Journal for Numerical Methods in Engineering, 29(3):515–532, 1990. doi:10.1002/nme.1620290305.">55</a>]</span> and Manges
-and Cendes <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id57" title="John B. Manges and Zoltan J. Cendes. A generalized tree-cotree gauge for magnetic field computation. IEEE Transactions on Magnetics, 31(3):1342–1347, 1995. doi:10.1109/20.376275.">56</a>]</span>; CHOLMOD is
-<span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id58" title="Yanqing Chen, Timothy A. Davis, William W. Hager, and Sivasankaran Rajamanickam. Algorithm 887: CHOLMOD, supernodal sparse Cholesky factorization and update/downdate. ACM Transactions on Mathematical Software, 35(3):1–14, 2008. doi:10.1145/1391989.1391995.">57</a>]</span>;</p></li>
-<li><p>an AMG-preconditioned path via pyamg <span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id59" title="Nathan Bell, Luke N. Olson, Jacob Schroder, and Ben Southworth. PyAMG: algebraic multigrid solvers in Python. Journal of Open Source Software, 8(87):5495, 2023. doi:10.21105/joss.05495.">58</a>]</span>,
+Rubinacci <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id57" title="Raffaele Albanese and Guglielmo Rubinacci. Magnetostatic field computations in terms of two-component vector potentials. International Journal for Numerical Methods in Engineering, 29(3):515–532, 1990. doi:10.1002/nme.1620290305.">56</a>]</span> and Manges
+and Cendes <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id58" title="John B. Manges and Zoltan J. Cendes. A generalized tree-cotree gauge for magnetic field computation. IEEE Transactions on Magnetics, 31(3):1342–1347, 1995. doi:10.1109/20.376275.">57</a>]</span>; CHOLMOD is
+<span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id59" title="Yanqing Chen, Timothy A. Davis, William W. Hager, and Sivasankaran Rajamanickam. Algorithm 887: CHOLMOD, supernodal sparse Cholesky factorization and update/downdate. ACM Transactions on Mathematical Software, 35(3):1–14, 2008. doi:10.1145/1391989.1391995.">58</a>]</span>;</p></li>
+<li><p>an AMG-preconditioned path via pyamg <span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id60" title="Nathan Bell, Luke N. Olson, Jacob Schroder, and Ben Southworth. PyAMG: algebraic multigrid solvers in Python. Journal of Open Source Software, 8(87):5495, 2023. doi:10.21105/joss.05495.">59</a>]</span>,
 documented as not recommended (scalar
 smoothed-aggregation AMG does not achieve mesh-independent
 convergence on the vector curl-curl operator — a known limitation
@@ -492,12 +493,12 @@ matrices and the ARPACK backend with the 3D solver.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="sources-monitors.html"
+       href="far-field.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Sources, monitors and post-processing</p>
+        <p class="prev-next-title">Far-field computation</p>
       </div>
     </a>
     <a class="right-next"

@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=37f418d5"></script>
+    <script src="../_static/documentation_options.js?v=e259d695"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -371,6 +371,7 @@
 <li class="toctree-l1"><a class="reference internal" href="dispersive-materials.html">Dispersive and lossy materials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="conductor-losses.html">Conductor losses</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
 </ul>
@@ -436,8 +437,8 @@
 into Magnelio, in the order a simulation passes through them: spatial
 discretisation, mesh generation and conformal geometry, boundary
 conditions, port models, lumped circuit elements, dispersive
-materials, conductor losses, sources and monitors, and the eigenmode
-solver.  A final chapter covers implementation-level engineering
+materials, conductor losses, sources and monitors, far-field
+computation, and the eigenmode solver.  A final chapter covers implementation-level engineering
 (backends, precision) that is not itself a research method.</p>
 <p>Every method that originates in published research carries a citation;
 in-house derivations are marked as such in the text.</p>
@@ -477,6 +478,7 @@ in-house derivations are marked as such in the text.</p>
 <li class="toctree-l1"><a class="reference internal" href="lumped-elements.html">Discrete ports and lumped circuit elements</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="lumped-elements.html#semi-implicit-thevenin-discrete-port">Semi-implicit Thévenin discrete port</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lumped-elements.html#trapezoidal-rlc-companion-models">Trapezoidal RLC companion models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lumped-elements.html#lumped-devices-on-symmetry-planes">Lumped devices on symmetry planes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lumped-elements.html#edge-path-rasterisation">Edge-path rasterisation</a></li>
 </ul>
 </li>
@@ -498,6 +500,13 @@ in-house derivations are marked as such in the text.</p>
 <li class="toctree-l2"><a class="reference internal" href="sources-monitors.html#field-flux-and-frequency-monitors">Field, flux and frequency monitors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sources-monitors.html#signal-processing">Signal processing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sources-monitors.html#project-store-checkpointing-resume">Project store, checkpointing, resume</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="far-field.html#surface-equivalence-on-a-huygens-box">Surface equivalence on a Huygens box</a></li>
+<li class="toctree-l2"><a class="reference internal" href="far-field.html#ground-planes-walls-and-symmetry-planes">Ground planes, walls and symmetry planes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="far-field.html#normalisation-gain-and-radiated-power">Normalisation, gain and radiated power</a></li>
+<li class="toctree-l2"><a class="reference internal" href="far-field.html#plots">Plots</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a><ul>

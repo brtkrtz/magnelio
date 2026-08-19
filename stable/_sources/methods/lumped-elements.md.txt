@@ -52,6 +52,40 @@ $\sqrt{\mathrm W}$ is realised as $v_{\text{src}} = 2\sqrt{Z_0}\,a(t)$
 (DD-078), consistent with Kurokawa power waves
 {cite}`kurokawa1965`.
 
+## Lumped devices on symmetry planes
+
+A lumped port or passive element is always declared as the
+**full-model device** — endpoints in full-model coordinates, `Z0` and
+R/L/C values of the whole element — even when a symmetry plane cuts
+it.  The builder relates the edge chain to every declared plane and
+derives the half model itself:
+
+- A chain **crossing an electric symmetry plane** along the plane
+  normal (a dipole feed on the mirror plane) must be mirror-symmetric
+  about it; it is clipped to the meshed half, which carries half the
+  device in series ($Z_0/2$, $R/2$, $L/2$, $2C$).  A chain crossing a
+  *magnetic* plane is rejected: the mirrored current is anti-parallel,
+  so no physical full-model element corresponds.
+- A chain **lying in a magnetic symmetry plane** is one of two
+  parallel branches; the meshed half carries the doubled device
+  ($2Z_0$, $2R$, $2L$, $C/2$).  A chain lying in an electric wall is
+  rejected — its edges would be shorted.
+- With the as-built `ForceSymmetry…` spelling the geometry is
+  declared halved, so a chain ending on the plane *is* the crossing
+  declaration; with the clipping spellings a terminal exactly on the
+  plane is rejected with guidance, since the full-model reading of
+  that shape is a mirror-twin pair sharing a node.
+
+With the internally scaled device, recorded power waves and the
+excitation pick up the same $\sqrt2$-per-plane convention as modal
+ports, so S-parameters — and the input impedance
+$Z_0(1+S_{11})/(1-S_{11})$ computed with the declared full-model
+$Z_0$ — come out as full-model quantities with no further correction.
+One caveat mirrors the modal ports: the *ratio* of the raw recorded
+terminal signals stays a half-model quantity, so a directly measured
+$-V/I$ of a passive load in a magnetic plane reads the doubled
+device.
+
 ## Edge-path rasterisation
 
 Lumped elements and thin wires ride on a canonical curve rasteriser

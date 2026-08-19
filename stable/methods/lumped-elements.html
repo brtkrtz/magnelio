@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=37f418d5"></script>
+    <script src="../_static/documentation_options.js?v=e259d695"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -371,6 +371,7 @@
 <li class="toctree-l1"><a class="reference internal" href="dispersive-materials.html">Dispersive and lossy materials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="conductor-losses.html">Conductor losses</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
 </ul>
@@ -483,6 +484,40 @@ construction).</p>
 (DD-078), consistent with Kurokawa power waves
 <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id18" title="Kaneyuki Kurokawa. Power waves and the scattering matrix. IEEE Transactions on Microwave Theory and Techniques, 13(2):194–202, 1965. doi:10.1109/TMTT.1965.1125964.">26</a>]</span>.</p>
 </section>
+<section id="lumped-devices-on-symmetry-planes">
+<h2>Lumped devices on symmetry planes<a class="headerlink" href="#lumped-devices-on-symmetry-planes" title="Link to this heading">#</a></h2>
+<p>A lumped port or passive element is always declared as the
+<strong>full-model device</strong> — endpoints in full-model coordinates, <code class="docutils literal notranslate"><span class="pre">Z0</span></code> and
+R/L/C values of the whole element — even when a symmetry plane cuts
+it.  The builder relates the edge chain to every declared plane and
+derives the half model itself:</p>
+<ul class="simple">
+<li><p>A chain <strong>crossing an electric symmetry plane</strong> along the plane
+normal (a dipole feed on the mirror plane) must be mirror-symmetric
+about it; it is clipped to the meshed half, which carries half the
+device in series (<span class="math notranslate nohighlight">\(Z_0/2\)</span>, <span class="math notranslate nohighlight">\(R/2\)</span>, <span class="math notranslate nohighlight">\(L/2\)</span>, <span class="math notranslate nohighlight">\(2C\)</span>).  A chain crossing a
+<em>magnetic</em> plane is rejected: the mirrored current is anti-parallel,
+so no physical full-model element corresponds.</p></li>
+<li><p>A chain <strong>lying in a magnetic symmetry plane</strong> is one of two
+parallel branches; the meshed half carries the doubled device
+(<span class="math notranslate nohighlight">\(2Z_0\)</span>, <span class="math notranslate nohighlight">\(2R\)</span>, <span class="math notranslate nohighlight">\(2L\)</span>, <span class="math notranslate nohighlight">\(C/2\)</span>).  A chain lying in an electric wall is
+rejected — its edges would be shorted.</p></li>
+<li><p>With the as-built <code class="docutils literal notranslate"><span class="pre">ForceSymmetry…</span></code> spelling the geometry is
+declared halved, so a chain ending on the plane <em>is</em> the crossing
+declaration; with the clipping spellings a terminal exactly on the
+plane is rejected with guidance, since the full-model reading of
+that shape is a mirror-twin pair sharing a node.</p></li>
+</ul>
+<p>With the internally scaled device, recorded power waves and the
+excitation pick up the same <span class="math notranslate nohighlight">\(\sqrt2\)</span>-per-plane convention as modal
+ports, so S-parameters — and the input impedance
+<span class="math notranslate nohighlight">\(Z_0(1+S_{11})/(1-S_{11})\)</span> computed with the declared full-model
+<span class="math notranslate nohighlight">\(Z_0\)</span> — come out as full-model quantities with no further correction.
+One caveat mirrors the modal ports: the <em>ratio</em> of the raw recorded
+terminal signals stays a half-model quantity, so a directly measured
+<span class="math notranslate nohighlight">\(-V/I\)</span> of a passive load in a magnetic plane reads the doubled
+device.</p>
+</section>
 <section id="edge-path-rasterisation">
 <h2>Edge-path rasterisation<a class="headerlink" href="#edge-path-rasterisation" title="Link to this heading">#</a></h2>
 <p>Lumped elements and thin wires ride on a canonical curve rasteriser
@@ -542,6 +577,7 @@ staircase of grid edges with per-edge orientation signs
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#semi-implicit-thevenin-discrete-port">Semi-implicit Thévenin discrete port</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trapezoidal-rlc-companion-models">Trapezoidal RLC companion models</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#lumped-devices-on-symmetry-planes">Lumped devices on symmetry planes</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#edge-path-rasterisation">Edge-path rasterisation</a></li>
 </ul>
   </nav></div>

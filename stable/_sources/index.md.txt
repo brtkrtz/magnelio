@@ -5,6 +5,10 @@ simulation. Its standard workflow is broadband S-parameter extraction
 over waveguide ports on arbitrary 3D geometry; the workhorse solver is
 a time-domain Finite Integration Technique (FIT-TD) engine.
 
+```{image} _static/hero_dielectric_filter.png
+:alt: Electric field vectors in a two-pole dielectric resonator filter, where two ceramic pucks stand in a metal housing, separated by a wall with a coupling window, with a probe pin at each end.
+```
+
 This documentation has four pillars:
 
 1. **Tutorials.** Executable walkthroughs of the public API. Every

@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=37f418d5"></script>
+    <script src="../_static/documentation_options.js?v=e259d695"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -448,7 +448,7 @@
 home for direct use on objects you assembled yourself.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="magnelio.plots.plot_cross_section">
-<span class="sig-prename descclassname"><span class="pre">magnelio.plots.</span></span><span class="sig-name descname"><span class="pre">plot_cross_section</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">geometry</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deflection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outline_transparent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_wires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_ports</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.plots.plot_cross_section" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">magnelio.plots.</span></span><span class="sig-name descname"><span class="pre">plot_cross_section</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">geometry</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deflection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outline_transparent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_wires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_ports</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.plots.plot_cross_section" title="Link to this definition">#</a></dt>
 <dd><p>Plot a 2D cross-section of 3D geometry at an axis-aligned plane.</p>
 <p>Intersects every shape in <em>geometry</em> with the specified plane and
 renders the resulting polygons as matplotlib patches, coloured by
@@ -489,6 +489,13 @@ one radius of it.</p></li>
 <li><p><strong>show_ports</strong> (<em>bool</em><em>, </em><em>optional</em>) – Draw the model’s declared ports and lumped elements (default
 True), labelled.  A port declared on a bbox face parallel to
 the cut is not drawn: it would cover the entire section.</p></li>
+<li><p><strong>slab</strong> (<em>float</em><em>, </em><em>optional</em>) – Half-thickness of the layer the picture stands for [m], zero by
+default (a mathematical plane).  Volume-free features — thin
+wires, discrete ports, lumped elements — are drawn when they
+fall within this distance of the plane.  Field plots pass the
+half-height of the cell layer they display, so a wire on a grid
+node still appears in a picture whose field samples sit half a
+cell off it.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -618,6 +625,66 @@ fixed-scale animations).  Overrides <em>auto_scale</em>.</p></li>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="magnelio.plots.plot_pattern_3d">
+<span class="sig-prename descclassname"><span class="pre">magnelio.plots.</span></span><span class="sig-name descname"><span class="pre">plot_pattern_3d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">floor_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-40.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.plots.plot_pattern_3d" title="Link to this definition">#</a></dt>
+<dd><p>3D radiation surface: radius proportional to the pattern.</p>
+<p>In dB mode the radius is <code class="docutils literal notranslate"><span class="pre">value_dB</span> <span class="pre">−</span> <span class="pre">floor_dB</span></code> clipped at zero,
+so the floor collapses to the origin and nulls stay visible as
+indentations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>theta</strong> (<em>array_like</em>) – Spherical angle grids [rad]; θ from +z, φ from +x.</p></li>
+<li><p><strong>phi</strong> (<em>array_like</em>) – Spherical angle grids [rad]; θ from +z, φ from +x.</p></li>
+<li><p><strong>values</strong> (<em>array_like</em>) – Pattern quantity on the (θ, φ) grid (linear), shape
+<code class="docutils literal notranslate"><span class="pre">(len(theta),</span> <span class="pre">len(phi))</span></code>.</p></li>
+<li><p><strong>db</strong> (<em>bool</em><em>, </em><em>default True</em>) – Radius from the dB value (with <em>floor_db</em>) instead of linear.</p></li>
+<li><p><strong>floor_db</strong> (<em>float</em><em>, </em><em>default -40.0</em>) – Radius origin for the dB display.</p></li>
+<li><p><strong>cmap</strong> (<em>str</em><em>, </em><em>optional</em>) – Colormap for the radius shading (default <code class="docutils literal notranslate"><span class="pre">&quot;viridis&quot;</span></code>).</p></li>
+<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/toolkits/mplot3d/axes3d.html#mpl_toolkits.mplot3d.axes3d.Axes3D" title="(in Matplotlib v3.11.1)"><em>mpl_toolkits.mplot3d.axes3d.Axes3D</em></a><em>, </em><em>optional</em>) – 3D axes to draw into; a new figure is created otherwise.</p></li>
+<li><p><strong>title</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>fig</strong> (<em>matplotlib.figure.Figure</em>)</p></li>
+<li><p><strong>ax</strong> (<em>mpl_toolkits.mplot3d.axes3d.Axes3D</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="magnelio.plots.plot_pattern_cut">
+<span class="sig-prename descclassname"><span class="pre">magnelio.plots.</span></span><span class="sig-name descname"><span class="pre">plot_pattern_cut</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">angles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">floor_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-40.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.plots.plot_pattern_cut" title="Link to this definition">#</a></dt>
+<dd><p>Polar plot of one pattern cut.</p>
+<p>Follows the antenna-plot convention: the zero angle points up and
+angles run clockwise, so a θ-cut shows the zenith at the top.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>angles</strong> (<em>array_like</em>) – Cut angles [rad].</p></li>
+<li><p><strong>values</strong> (<em>array_like</em>) – Pattern quantity along the cut (linear, e.g. gain or
+directivity).</p></li>
+<li><p><strong>db</strong> (<em>bool</em><em>, </em><em>default True</em>) – Radial axis in dB (with <em>floor_db</em>) instead of linear.</p></li>
+<li><p><strong>floor_db</strong> (<em>float</em><em>, </em><em>default -40.0</em>) – Clip floor and radial-axis minimum for the dB display.</p></li>
+<li><p><strong>label</strong> (<em>str</em><em>, </em><em>optional</em>) – Legend label for this trace.</p></li>
+<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/projections/polar.html#matplotlib.projections.polar.PolarAxes" title="(in Matplotlib v3.11.1)"><em>matplotlib.projections.polar.PolarAxes</em></a><em>, </em><em>optional</em>) – Polar axes to draw into; a new figure is created otherwise.</p></li>
+<li><p><strong>title</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>fig</strong> (<em>matplotlib.figure.Figure</em>)</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib.projections.polar.PolarAxes</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="magnelio.plots.show_geometry">
 <span class="sig-prename descclassname"><span class="pre">magnelio.plots.</span></span><span class="sig-name descname"><span class="pre">show_geometry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">geometry</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(800,</span> <span class="pre">500)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">render_edges</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'#202020'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.plots.show_geometry" title="Link to this definition">#</a></dt>
 <dd><p>Interactive 3D view of a <a class="reference internal" href="core.html#magnelio.GeometryModel" title="magnelio.geo.GeometryModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeometryModel</span></code></a>.</p>
@@ -692,6 +759,8 @@ via <code class="docutils literal notranslate"><span class="pre">IPython.display
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.plots.plot_cross_section"><code class="docutils literal notranslate"><span class="pre">plot_cross_section()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.plots.plot_field_scalar"><code class="docutils literal notranslate"><span class="pre">plot_field_scalar()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.plots.plot_field_vector"><code class="docutils literal notranslate"><span class="pre">plot_field_vector()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.plots.plot_pattern_3d"><code class="docutils literal notranslate"><span class="pre">plot_pattern_3d()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.plots.plot_pattern_cut"><code class="docutils literal notranslate"><span class="pre">plot_pattern_cut()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.plots.show_geometry"><code class="docutils literal notranslate"><span class="pre">show_geometry()</span></code></a></li>
 </ul>
   </nav></div>
