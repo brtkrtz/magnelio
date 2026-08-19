@@ -16,8 +16,40 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Two entries are open as of 2026-08-18: KB-022 and KB-023.**
-Everything below them is struck through and resolved.
+**Three entries are open as of 2026-08-19: KB-022, KB-023 and
+KB-024.**  Everything below them is struck through and resolved.
+
+## KB-024: A missing pythonocc-core reads as an empty mesh, not as a missing dependency — Open (2026-08-19)
+
+The geometry backend raises a clear `ImportError` when pythonocc-core is
+absent ("pythonocc-core is required for geometry operations.  Install
+via: conda install -c conda-forge pythonocc-core"), but the mesher never
+lets it through.  `extract_critical_planes_per_shape` wraps each shape
+in a broad `except Exception` and skips it — a guard meant for OCC-less
+and exotic shapes.  With the dependency missing, *every* shape is
+skipped, the per-axis critical-plane lists stay empty, and the failure
+surfaces two layers later as a complaint about grid line arrays.
+
+Measured 2026-08-19 on the README's WR-90 quick-start model, with OCC
+blocked by the `sys.meta_path` hook `release.yml` uses for its smoke
+test:
+
+```
+import ok: 0.3.1
+geo.Brick ok
+Mesh.from_geometry FAILS: ValueError
+  GridLines.x must be a 1D array with at least 2 elements
+```
+
+Importing the package and declaring geometry both succeed, so the report
+a user can give is "meshing fails with an array error".  This is the
+first thing a fresh install does, and the pip route is the only one
+where the dependency can be absent — the conda-forge package pulls it in.
+
+Closing it means separating the two causes the guard collects: catch
+`ImportError` ahead of the broad `except` and let the backend's message
+through, or resolve the dependency once before the plane extraction
+runs.  Neither changes anything on a working install.
 
 ## KB-023: CPML min and max faces are not mirror images — Open (2026-08-18)
 
