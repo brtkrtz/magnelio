@@ -9,6 +9,17 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+### Changed
+
+- Geometry constructors and verbs now check their arguments where they
+  are written instead of failing later in a plot, a mesh build or the
+  CAD kernel.  A coordinate given as a single number, a point with two
+  components, a negative radius, an axis that names no direction, a
+  list passed where the shapes themselves belong, or a `chamfered()`
+  without an edge selector each raise immediately, naming the argument
+  and what it expects.  Coordinates accept NumPy arrays and are stored
+  as plain float tuples.
+
 ### Added
 
 - Far-field computation: `monitors.MonitorFarField` records a closed

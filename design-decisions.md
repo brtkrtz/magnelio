@@ -11716,3 +11716,62 @@ declared surface, not a sampled layer.
 `monitors/field_time.py`, `solver/eigenmode_result.py`,
 `io/project.py`, `tests/unit/test_plot_geometry.py`,
 `tests/unit/test_plot_field.py`.
+
+---
+
+## DD-176 — Geometry arguments are checked where they are written
+
+**Problem.**  Geometry objects are dataclasses, so their type
+annotations document but never enforce.  `Sphere(center=R - d/2, ...)`
+— a scalar where a point belongs, the natural slip when placing a
+sphere on one axis — was accepted, stored, and surfaced four frames
+later as `TypeError: 'float' object is not iterable` inside
+`_scaling.pad_box`, raised by a `model.plot()` that has nothing to do
+with the mistake.  The same shape of failure ran through the whole
+subsystem: a two-component translation vector reached the CAD kernel, a
+negative `Brick.size` came back as a complaint about OCC precision, and
+`chamfered()` without a selector was only rejected once the solid was
+finally built — the selector check lives in `resolve_edges`, which runs
+at `_occ_shape()` time.
+
+**Decision.**  Every geometry constructor and verb checks its arguments
+at the call.  `geo/_validate.py` holds the shared checks — `point3`,
+`vector3`, `point_list`, `positive`, `nonzero`, `nonnegative`, `count`,
+`operand` — each taking the name of the field it guards, so the message
+names the argument rather than the internal that tripped over it.
+`_axes.normalize_axis` gained the same `what` parameter, which moves
+axis validation into the constructors of `Cylinder`, `Cone` and `Torus`
+instead of leaving it to the kernel call.
+
+**The dividing line.**  A constructor checks what it can see without
+the kernel: the shape of an argument, the sign and finiteness of a
+number, the type of an operand.  Anything needing geometry —
+self-intersection, a chamfer wider than its edge, a feature below the
+model's OCC precision — stays where the kernel builds the shape.  The
+two layers do not overlap: `_check_dimensions` still owns the
+scale-relative precision floor, which no constructor can evaluate
+because the model scale is not known until every shape is in.
+
+**Type versus value.**  Following the convention already set by
+`ThinWire.curve` and `Loft`: a wrong *type* raises `TypeError` (a
+scalar where a point belongs, a list where an operand belongs), a
+wrong *value* raises `ValueError` (two coordinates instead of three, a
+negative radius).  Coordinates are normalised to `float` tuples on the
+way in, so a NumPy array reaches the store and the kernel as a plain
+tuple.
+
+**Consequences.**  `Union` accepts a single operand (an existing
+idiom — the union of one shape is that shape); `Difference` requires a
+tool, and an empty operand list is rejected outright instead of dying
+on `shapes[0]`.  `Brick.size` must now be positive in every direction,
+which the kernel enforced all along through the precision floor, only
+with a message about OCC precision rather than about the box.  One
+message changed wording enough to move a test: `mirrored(normal="q")`
+now names `mirrored(normal)` instead of "axis", the parameter the
+caller actually wrote.
+
+**Files:** `src/magnelio/geo/_validate.py` (new), `geo/_axes.py`,
+`geo/primitives.py`, `geo/operations.py`, `geo/transforms.py`,
+`geo/modifications.py`, `geo/curves.py`, `geo/path.py`, `geo/wire.py`,
+`geo/__init__.py`, `tests/unit/test_geometry_arguments.py` (new),
+`tests/unit/test_shape.py`.

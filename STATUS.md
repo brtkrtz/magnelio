@@ -1,7 +1,10 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-18.*  Latest work (branch
-`feat/antenna-farfield`): the antenna chain is closed — far field,
+*Last updated: 2026-08-19.*  Latest work: geometry arguments are
+checked in the constructor that receives them (DD-176) — the shape of a
+point, the sign of an extent, the type of an operand, the edge selector
+of a chamfer, each naming the argument instead of failing later in a
+plot or the CAD kernel.  Before that, the antenna chain was closed — far field,
 pattern plots, and lumped devices on symmetry planes (DD-172/173/174).
 A `monitors.MonitorFarField` places a closed Huygens box a few cells
 inside the physical domain by itself, accumulates the surface DFT of
@@ -167,10 +170,11 @@ grazing-incidence residual DD-167 recorded — one of two symmetric
 slivers returned instead of both — turned out not to be the section
 operator at all and is closed by DD-168.
 
-**Suite: 2240 passed / 6 skipped / 0 failed** (2026-08-18, GPU box —
-unit 1886 (+2 scikit-rf skips), integration 360 (+4 skips); GPU tests
+**Suite: 2293 passed / 6 skipped / 0 failed** (2026-08-19, GPU box —
+unit 1939 (+2 scikit-rf skips), integration 360 (+4 skips); GPU tests
 need `CUPY_ACCELERATORS=""` when the interpreter binary is called
-directly).  The DD-150 step change re-measured three fixture windows
+directly — without it four of them fail on the mixed-dtype reduction
+and read as a regression).  The DD-150 step change re-measured three fixture windows
 (interval stride, lumped-port guard, SIBC band edge) — the reasoning
 is in the DD entry, not a physics regression.  The long-standing
 caveat is gone: `test_coax_tem_vs_te_tm` reproduced on 2026-08-12,
@@ -221,6 +225,7 @@ changed, do not append.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-176** (2026-08-19) — geometry arguments are checked where they are written: `geo/_validate.py` guards every constructor and verb (point/vector shape, sign and finiteness, operand type, edge selector), each message naming the argument; a scalar `Sphere(center=)` used to surface as `'float' object is not iterable` inside `pad_box` during `model.plot()`.
 * **DD-175** (2026-08-18) — a field picture stands for a cell layer: `plot_cross_section(slab=)` raises the in-plane tolerance of volume-free features to half the displayed cell, filled by the plotting monitors from their grid; wires and discrete ports were absent from every field plot (measured: plane snapped 1.79 mm off the node they sit on).
 * **DD-174** (2026-08-18) — pattern plots: `plots.plot_pattern_cut` (polar, antenna convention, dB floor) and `plots.plot_pattern_3d` (dB-radius surface); `FarFieldResult`/`MonitorFarField`/store reader delegate.
 * **DD-173** (2026-08-18) — far field from a Huygens box: `monitors.MonitorFarField` (auto-placed node-plane surface DFT) + `post.ntff_transform`/`FarFieldResult`; PEC/PMC/symmetry faces via image theory (`mirror_sign` is the image-current table); effective-amplitude intensity |E|²/η; certificate: dipole 2.15 dBi, monopole +3 dB, P_rad closure 2 %.
