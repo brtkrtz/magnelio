@@ -499,15 +499,9 @@ the constructor.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.sources.PlaneWaveSource.excitation">
 <span class="sig-name descname"><span class="pre">excitation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.PlaneWaveSource.excitation" title="Link to this definition">#</a></dt>
-<dd><p>Scalar waveform value at time <em>t</em> [s].</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>t</strong> (<em>float</em>)</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>float</p>
-</dd>
-</dl>
+<dd><p>Waveform value at time <em>t</em> [s].</p>
+<p>Accepts a scalar or an array of times and follows the input: the
+TF/SF injection evaluates a whole box face in one call.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -549,8 +543,8 @@ the constructor.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.sources.PlaneWaveSource.inject_E">
 <span class="sig-name descname"><span class="pre">inject_E</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_E</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.PlaneWaveSource.inject_E" title="Link to this definition">#</a></dt>
-<dd><p>Apply TF/SF E-field corrections after E update.</p>
-<p>Uses H_inc at t = t_E − dt/2 (half-step behind E).</p>
+<dd><p>Apply TF/SF E-field corrections after the E update.</p>
+<p>Uses H_inc at t = t_E - dt/2 (half a step behind E).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>t_E</strong> (<em>float</em>)</p>
@@ -564,8 +558,8 @@ the constructor.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.sources.PlaneWaveSource.inject_H">
 <span class="sig-name descname"><span class="pre">inject_H</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_H</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.PlaneWaveSource.inject_H" title="Link to this definition">#</a></dt>
-<dd><p>Apply TF/SF H-field corrections after H update.</p>
-<p>Uses E_inc at t = t_H − dt/2 (the E time level just computed).</p>
+<dd><p>Apply TF/SF H-field corrections after the H update.</p>
+<p>Uses E_inc at t = t_H - dt/2 (the E time level just computed).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>t_H</strong> (<em>float</em>)</p>

@@ -485,7 +485,9 @@ other geometry name is public here.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>origin</strong> (<em>tuple</em><em> of </em><em>float</em>) – <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y,</span> <span class="pre">z)</span></code> of the minimum-coordinate corner [meters].</p></li>
-<li><p><strong>size</strong> (<em>tuple</em><em> of </em><em>float</em>) – <code class="docutils literal notranslate"><span class="pre">(dx,</span> <span class="pre">dy,</span> <span class="pre">dz)</span></code> — extents in each direction [meters].</p></li>
+<li><p><strong>size</strong> (<em>tuple</em><em> of </em><em>float</em>) – <code class="docutils literal notranslate"><span class="pre">(dx,</span> <span class="pre">dy,</span> <span class="pre">dz)</span></code> — extents in each direction [meters], each
+positive.  To give two opposite corners in any order instead,
+use <a class="reference internal" href="#magnelio.geo.Brick.from_corners" title="magnelio.geo.Brick.from_corners"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_corners()</span></code></a>.</p></li>
 <li><p><strong>material</strong> (<a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material"><em>Material</em></a><em>, </em><em>optional</em>) – Material filling this volume.  Omit it for a construction solid
 used only as a Boolean operand.</p></li>
 <li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – Optional label.</p></li>
@@ -597,7 +599,8 @@ solid used only as a Boolean operand.</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>origin</strong> (<em>tuple</em><em> of </em><em>float</em>) – <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y,</span> <span class="pre">z)</span></code> center of the bottom face [meters].</p></li>
 <li><p><strong>bottom_radius</strong> (<em>float</em>) – Bottom radius [meters].</p></li>
-<li><p><strong>top_radius</strong> (<em>float</em>) – Top radius [meters].  Use 0 for a full cone.</p></li>
+<li><p><strong>top_radius</strong> (<em>float</em>) – Top radius [meters].  Use 0 for a full cone; the two radii may
+not both be 0.</p></li>
 <li><p><strong>height</strong> (<em>float</em>) – Height [meters].  A negative height extrudes along <code class="docutils literal notranslate"><span class="pre">-axis</span></code>
 from the origin.</p></li>
 <li><p><strong>axis</strong> (<em>str</em><em> or </em><em>tuple</em><em> of </em><em>float</em>) – Axis direction: <code class="docutils literal notranslate"><span class="pre">'x'</span></code>/<code class="docutils literal notranslate"><span class="pre">'y'</span></code>/<code class="docutils literal notranslate"><span class="pre">'z'</span></code> or any 3-vector.</p></li>
@@ -1831,7 +1834,7 @@ zero.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>center</strong> (<em>tuple</em><em> of </em><em>float</em>) – <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y,</span> <span class="pre">z)</span></code> center position [meters].</p></li>
-<li><p><strong>radius</strong> (<em>float</em>) – Radius [meters].</p></li>
+<li><p><strong>radius</strong> (<em>float</em>) – Radius [meters], positive.</p></li>
 <li><p><strong>material</strong> (<a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material"><em>Material</em></a><em>, </em><em>optional</em>) – Material filling this volume.  Omit it for a construction solid
 used only as a Boolean operand.</p></li>
 <li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – Optional label.</p></li>
@@ -1897,7 +1900,9 @@ fine cell size.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>center</strong> (<em>tuple</em><em> of </em><em>float</em>) – <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y,</span> <span class="pre">z)</span></code> center of the torus [meters].</p></li>
 <li><p><strong>major_radius</strong> (<em>float</em>) – Major radius (center of tube to center of torus) [meters].</p></li>
-<li><p><strong>minor_radius</strong> (<em>float</em>) – Minor radius (tube radius) [meters].</p></li>
+<li><p><strong>minor_radius</strong> (<em>float</em>) – Minor radius (tube radius) [meters].  Must stay below
+<em>major_radius</em>: a tube reaching the symmetry axis would pass
+through itself.</p></li>
 <li><p><strong>axis</strong> (<em>str</em><em> or </em><em>tuple</em><em> of </em><em>float</em>) – Symmetry axis: <code class="docutils literal notranslate"><span class="pre">'x'</span></code>/<code class="docutils literal notranslate"><span class="pre">'y'</span></code>/<code class="docutils literal notranslate"><span class="pre">'z'</span></code> or any 3-vector.</p></li>
 <li><p><strong>material</strong> (<a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material"><em>Material</em></a><em>, </em><em>optional</em>) – Material filling this volume.  Omit it for a construction solid
 used only as a Boolean operand.</p></li>
