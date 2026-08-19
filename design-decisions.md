@@ -11467,13 +11467,16 @@ otherwise, which measured 96.3 MB of the first publish's 109.5 MB — a
 browser never asks for it, and pickles change wholesale from build to
 build, so it would have been the branch's dominant growth term.  Concurrency is serialised (`docs-publish`,
 `cancel-in-progress: false`) because two publishes racing would push
-conflicting trees, and cancelling one would throw away an hour.  That
-setting protects the *running* build only: a concurrency group holds a
-single queued run, so a third arrival cancels the one already waiting.
-Pushing to main while a tag build is queued therefore drops the tag
-build — silently, since every remaining run reports success and only
-`/stable/` stays behind.  Space a tag push from the pushes around it,
-and after one check that the `/stable/` build actually ran.
+conflicting trees, and cancelling one would throw away an hour.  The lock sits
+on the publish job rather than on the workflow, and the job publishes an
+uploaded artifact instead of its own working tree.  `cancel-in-progress:
+false` protects the *running* member of a group, but a group holds only
+one *queued* run and a third arrival cancels the one already waiting.
+With the whole workflow in the group, that window spanned the full build:
+a push landing while a tag built dropped the tag's publish — silently,
+since every remaining run reported success and only `/stable/` stayed
+behind (measured 2026-08-19, on the v0.3.1 publish).  Confined to the
+publish job the window is the few seconds the branch push takes.
 
 **Files:** `.github/workflows/docs.yml`, `docs/conf.py`
 (`docs_channel`, `html_theme_options["switcher"]`,

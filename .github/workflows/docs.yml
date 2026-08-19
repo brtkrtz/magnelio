@@ -32,21 +32,17 @@ on:
         options: [auto, dev, stable]
         default: auto
 
-# The branch is written by this workflow, not uploaded as a Pages
-# artifact, so the token needs write access to repository contents.
+# Only the publish job writes to the branch; building needs no more
+# than read access.
 permissions:
-  contents: write
-
-# Two publishes racing would push conflicting trees to gh-pages.  Queue
-# them instead of cancelling: a cancelled run wastes an hour of build.
-concurrency:
-  group: docs-publish
-  cancel-in-progress: false
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || vars.DEPLOY_DOCS == 'true'
+    outputs:
+      channel: ${{ steps.target.outputs.channel }}
     steps:
       - name: Resolve ref and channel
         id: target
@@ -86,9 +82,44 @@ jobs:
         env:
           MAGNELIO_DOCS_CHANNEL: ${{ steps.target.outputs.channel }}
 
+      # Everything the publish needs, and nothing else: the built HTML
+      # and the switcher list that goes to the site root.
+      - name: Collect the publishable tree
+        run: |
+          set -euo pipefail
+          mkdir -p publish
+          cp -a docs/_build/html publish/html
+          cp docs/switcher.json publish/switcher.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docs-${{ steps.target.outputs.channel }}
+          path: publish
+          retention-days: 1
+
+  # The gh-pages branch is a single writable tree, so publishes are
+  # serialised.  The lock sits on this job rather than on the workflow:
+  # a concurrency group holds only one queued run, and a third arrival
+  # cancels the one already waiting — with the whole workflow in the
+  # group, that window spanned the full build and a tag's publish could
+  # be dropped by a push that landed while it built.  Here the window is
+  # the few seconds this job takes.
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: docs-publish
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: docs-${{ needs.build.outputs.channel }}
+          path: publish
+
       - name: Publish into the gh-pages branch
         env:
-          CHANNEL: ${{ steps.target.outputs.channel }}
+          CHANNEL: ${{ needs.build.outputs.channel }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -106,12 +137,12 @@ jobs:
 
           rm -rf "site/${CHANNEL}"
           mkdir -p "site/${CHANNEL}"
-          cp -a docs/_build/html/. "site/${CHANNEL}/"
+          cp -a publish/html/. "site/${CHANNEL}/"
 
           # One shared switcher list at the site root, so a frozen
           # release build reads the current set of channels rather than
           # the one it was built with.
-          cp docs/switcher.json site/switcher.json
+          cp publish/switcher.json site/switcher.json
 
           # Pages runs Jekyll on a branch source, and Jekyll hides every
           # path starting with an underscore — without this marker the
