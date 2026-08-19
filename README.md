@@ -52,21 +52,33 @@ large grids stay tractable.
 
 ## Installation
 
-Due to the dependency on pythonocc-core (Python bindings to
-OpenCASCADE Technology), installation uses conda-forge; the most
-convenient way is [miniforge3](https://github.com/conda-forge/miniforge).
+From conda-forge, which is the route to take:
 
-In the magnelio directory, run:
 ```bash
-mamba env create -f environment.yml
-mamba activate mio
-pip install -e .
+conda install -c conda-forge magnelio
 ```
 
-A conda-forge package is planned as the primary channel, plus a
-pip-only PyPI package covering everything except the CAD geometry
-stack (the `geo` primitives and Boolean operators need pythonocc-core,
-which exists only on conda-forge).
+New to conda-forge?  [miniforge3](https://github.com/conda-forge/miniforge)
+is the smallest way in; the Anaconda distribution works too.
+
+There is a PyPI package as well:
+
+```bash
+pip install magnelio
+```
+
+It installs and imports, but it cannot build a mesh from geometry: that
+needs pythonocc-core (the Python bindings to Open CASCADE Technology),
+which is published on conda-forge only.  Since a model normally starts
+with geometry, pip is the fallback for environments where conda is not
+an option, not the way to run simulations.
+
+The CUDA backend is optional on either route: install a `cupy` matching
+your CUDA version and `backend="auto"` picks the GPU up.  Without it the
+solver runs on the CPU.
+
+Working from a source checkout is described in
+[`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Quick Start
 
