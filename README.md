@@ -118,6 +118,18 @@ pip install -e .[docs]
 sphinx-build -b html docs docs/_build/html
 ```
 
+## Reporting bugs
+
+Wrong results, crashes and refused valid input belong in the
+[issue tracker](https://github.com/brtkrtz/magnelio/issues).  The bug
+form asks for the version, the backend and a short script — a script
+that reproduces the behaviour is what turns a report into a test case.
+
+`known-bugs.md` is a different thing and not the place to file: it is
+the developer's record of investigated defects, with the measurements
+that pin them down, kept in the repository so a code comment can point
+at an entry.
+
 ## Development
 
 Magnelio is being built in an AI-assisted workflow ("vibe coding"):

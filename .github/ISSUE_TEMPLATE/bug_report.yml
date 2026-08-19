@@ -1,0 +1,80 @@
+name: Bug report
+description: A wrong result, a crash, or valid input being refused
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A short script that reproduces the behaviour is worth more than
+        any description — it turns a report into a test case.
+
+  - type: textarea
+    id: observed
+    attributes:
+      label: What happens
+      description: What you observed, and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproducer
+    attributes:
+      label: Minimal script
+      description: >
+        The shortest script that shows it, using the public API only.
+        Paste the output or traceback it produces underneath.
+      render: python
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Magnelio version
+      description: 'python -c "import magnelio; print(magnelio.__version__)"'
+      placeholder: "0.3.1"
+    validations:
+      required: true
+
+  - type: input
+    id: install
+    attributes:
+      label: Install and platform
+      description: How Magnelio was installed, plus operating system and Python version.
+      placeholder: "conda-forge, Linux, Python 3.12"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Backend
+      description: The `backend=` the run used.
+      options:
+        - '"auto" (the default)'
+        - '"numpy" — CPU'
+        - '"cupy" — CUDA GPU'
+        - "not sure"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: precision
+    attributes:
+      label: Precision
+      description: >
+        Single precision is the default.  If the result looks wrong rather
+        than broken, trying `precision="double"` separates a numerical
+        floor from a real defect.
+      options:
+        - '"single" (the default)'
+        - '"double"'
+        - "not sure"
+        - "does not apply"
+
+  - type: input
+    id: mesh
+    attributes:
+      label: Mesh size
+      description: The cell count the run reported, if a mesh is involved.
+      placeholder: "2.5 M cells"

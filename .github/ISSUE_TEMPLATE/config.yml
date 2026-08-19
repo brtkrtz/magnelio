@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://brtkrtz.github.io/magnelio/stable/
+    about: Tutorials, method chapters and the API reference.

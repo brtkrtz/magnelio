@@ -1,5 +1,20 @@
 # Contributing to Magnelio
 
+## Reporting a bug
+
+File it in the [issue tracker](https://github.com/brtkrtz/magnelio/issues);
+the bug form asks for version, backend and a minimal script.  Issues are
+the inbound channel — where a report arrives, gets its reproduction
+questions answered, and closes when the fix lands.
+
+`known-bugs.md` is the other half and serves a different purpose: the
+numbered `KB-` record of investigated defects, with the measurements
+that characterise them and the reason an open one stays open.  Its
+numbers are stable anchors that code comments and design decisions point
+at, and resolved entries stay as struck-through tombstones rather than
+disappearing.  A report that turns out to be a structural defect earns a
+`KB-` entry, and the issue links to it; routine reports do not need one.
+
 ## Development setup
 
 The geometry stack needs pythonocc-core, which exists only on
@@ -40,7 +55,8 @@ python validation/tools/check_api_surface.py     # public surface unchanged
   recorded in `design-decisions.md` as numbered `DD-` entries — read
   the relevant entries before changing an area, and record new
   decisions there.  DD numbers are stable anchors; never renumber.
-  Current state lives in `STATUS.md`, open bugs in `known-bugs.md`.
+  Current state lives in `STATUS.md`, investigated defects in
+  `known-bugs.md` (`KB-` numbers, equally stable).
 - **Commits.**  Conventional Commits (`feat:`, `fix:`, `refactor:`,
   `docs:`, `test:`, …).
 - **Docstrings.**  NumPy style for the public API; public docstrings

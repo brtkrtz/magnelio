@@ -1,5 +1,17 @@
 # Known Bugs and Limitations
 
+This file is the record of *investigated* defects: what was measured,
+what characterises the defect, and why an open one stays open.  The
+`KB-` numbers are stable anchors that code comments and design decisions
+point at, so resolved entries stay as struck-through tombstones instead
+of disappearing.
+
+It is not where a bug gets reported.  That is the
+[issue tracker](https://github.com/brtkrtz/magnelio/issues) — the
+inbound channel, where a report arrives and its reproduction is settled.
+A report that turns out to be a structural defect earns an entry here
+and the issue links to it; most do not need one.
+
 Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
