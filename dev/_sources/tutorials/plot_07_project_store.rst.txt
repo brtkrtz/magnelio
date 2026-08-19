@@ -209,13 +209,13 @@ everything went (sizes in kB):
     runs/port3_mode0/paraview_open.py                               18.9
     runs/port3_mode0/results.h5                                    633.1
     runs/port3_mode0/paraview/volume_pattern.pvd                     0.2
-    runs/port3_mode0/paraview/volume_pattern/f_0000.vtr           1316.4
+    runs/port3_mode0/paraview/volume_pattern/f_0000.vtr           1316.0
     runs/port4_mode0/checkpoint.h5                                1493.6
     runs/port4_mode0/fields_freq.h5                               3553.3
     runs/port4_mode0/paraview_open.py                               18.9
     runs/port4_mode0/results.h5                                    633.1
     runs/port4_mode0/paraview/volume_pattern.pvd                     0.2
-    runs/port4_mode0/paraview/volume_pattern/f_0000.vtr           1315.1
+    runs/port4_mode0/paraview/volume_pattern/f_0000.vtr           1314.0
 
 
 
@@ -483,7 +483,7 @@ them the first antenna.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 29.052 seconds)
+   **Total running time of the script:** (0 minutes 29.359 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_07_project_store.py:
