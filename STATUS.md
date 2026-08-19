@@ -217,13 +217,20 @@ parse as release numbers, and channel names never do, so every page of
 both channels used to carry the warning.  **conda-forge
 is now live as the primary distribution channel** (the CAD geometry
 stack needs pythonocc-core, which exists only on conda-forge):
-staged-recipes PR #34534 merged 2026-08-19, feedstock
-conda-forge/magnelio-feedstock built and published
-`magnelio-0.1.0-pyhc364b38_0.conda` (noarch) the same day.  The
-feedstock recipe follows PyPI from there — the autotick bot opens a
-version-bump pull request per release, which the maintainer merges
-after checking the sha256 and the dependency list.  PyPI stays the
-secondary, geometry-less install path.  CI (`.github/workflows/ci.yml`, lint +
+staged-recipes PR #34534 merged 2026-08-19, and the feedstock
+conda-forge/magnelio-feedstock published
+`magnelio-0.3.1-pyhc364b38_0.conda` (noarch) the same day — the channel
+went 0.1.0 → 0.3.1, since the bot's version-bump pull request arrived
+naming 0.3.0 and was taken to 0.3.1 rather than building a release that
+was already superseded.  The recipe follows PyPI from here: the autotick
+bot opens a pull request per release, which the maintainer merges after
+checking the sha256 against the PyPI JSON API and the run requirements
+against `pyproject.toml`.  PyPI stays the secondary, geometry-less
+install path.  Bug reports arrive through the GitHub issue tracker (a
+bug form asks for version, install, backend, precision and a minimal
+script); `known-bugs.md` is the other half of that pair and stays what
+it is — the investigated record whose `KB-` numbers code comments point
+at, not a place to file.  CI (`.github/workflows/ci.yml`, lint +
 unit suite) is live.  The repo is ruff-clean: rule set `E`/`F`/`I` pinned in
 `pyproject.toml`, enforced by workflow rule, pre-commit and CI.
 License LGPL-3.0-or-later in place (`COPYING`, `pyproject.toml`,
