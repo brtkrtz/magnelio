@@ -7,6 +7,18 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Fixed
+
+- The released documentation carried a red banner announcing that it was
+  *not* the released documentation, and the banner's "switch to stable
+  version" button reloaded the page it was already on.  Whether a build
+  warns is now decided by the channel it is published into, and the
+  development channel names itself as such instead of borrowing the last
+  release's version number.  Documentation only — the library is
+  unchanged from 0.3.0.
+
 ## [0.3.0] - 2026-08-19
 
 ### Added

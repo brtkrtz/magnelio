@@ -39,10 +39,24 @@ project = "Magnelio"
 author = "Bernd Breitkreutz"
 copyright = "2026, Bernd Breitkreutz"
 
+# The published site carries two channels, each a full build in its own
+# directory (see .github/workflows/docs.yml): "stable" from the newest
+# release tag, "dev" from main.  The build learns which one it is from
+# the environment; anything unset — a local build, a fork's CI — is dev.
+docs_channel = os.environ.get("MAGNELIO_DOCS_CHANNEL", "dev")
+docs_base_url = "https://brtkrtz.github.io/magnelio"
+
 try:
     from magnelio._version import __version__ as release
 except Exception:
     release = "0.0.0"
+
+# main keeps the version of the last release until the next bump, so the
+# dev build would otherwise present itself as that release.  The local
+# version segment says what it is, and the theme reads the word "dev"
+# out of this string to word its warning banner.
+if docs_channel != "stable":
+    release = f"{release}+dev"
 
 extensions = [
     "myst_parser",
@@ -96,13 +110,6 @@ templates_path = []
 html_static_path = ["_static"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
-# The published site carries two channels, each a full build in its own
-# directory (see .github/workflows/docs.yml): "stable" from the newest
-# release tag, "dev" from main.  The build learns which one it is from
-# the environment; anything unset — a local build, a fork's CI — is dev.
-docs_channel = os.environ.get("MAGNELIO_DOCS_CHANNEL", "dev")
-docs_base_url = "https://brtkrtz.github.io/magnelio"
-
 html_theme = "pydata_sphinx_theme"
 html_title = "Magnelio Documentation"
 html_baseurl = f"{docs_base_url}/{docs_channel}/"
@@ -117,7 +124,13 @@ html_theme_options = {
         "version_match": docs_channel,
     },
     "navbar_end": ["version-switcher", "theme-switcher", "navbar-icon-links"],
-    # Banner on every page that is not the preferred channel, i.e. the
-    # dev build tells the reader it documents unreleased code.
-    "show_version_warning_banner": True,
+    # The banner is meant for the dev channel, to tell the reader it
+    # documents unreleased code.  It cannot decide that by itself: the
+    # theme compares this build's ``release`` against the ``version``
+    # field of the switcher entry marked preferred, and only when *both*
+    # parse as release numbers.  Ours are channel names, so the
+    # comparison never runs and the banner would appear on every page of
+    # every channel — including the released one, where its "switch to
+    # stable" button links to the page it is already on.  Decide here.
+    "show_version_warning_banner": docs_channel != "stable",
 }
