@@ -32,6 +32,13 @@ compound — 2.9 s against 0.11 s for 3600 pads raised one at a time.
 What the data cannot say is not invented: a substrate with no stated
 permittivity arrives without a material, and a loss tangent is reported
 rather than modelled, because it carries no reference frequency.
+Tutorial 17 walks the path end to end and `docs/methods/pcb-import.md`
+carries the full treatment; both import tutorials lead their gallery
+entry with the geometry rather than an S-parameter curve, which needed
+a zoom onto the trace — 35 µm of copper is invisible in a picture of
+the whole domain — and an explicit material colour on the connector's
+insulator, since a file colour outranks the automatic palette and CAD
+systems paint PTFE off-white, leaving three greys in one picture.
 Before that: geometry can come from a CAD
 file (DD-178).  `magnelio.io.import_step` reads a STEP file through
 XCAF — solids, their names, their display colours and, decisively, the
@@ -630,12 +637,13 @@ through the same change untouched.  It surfaced only in CI, because
 sphinx-gallery re-executes a tutorial when *its script* changes, not
 when the library under it does — a local build without
 `build_docs.sh --clean` shows cached figures from an older library.  Pillars: Tutorials (generated from
-`examples/tutorials/*.py`, tutorials 01–16 shipped and given a
-reader-perspective polish pass — full gallery build ~8:40, clean;
+`examples/tutorials/*.py`, tutorials 01–17 shipped and given a
+reader-perspective polish pass — full gallery build ~8:40, clean, of
+which the board tutorial is 2.4 s;
 tutorial 13, the DR-filter capstone, is deliberately the most
 expensive page at ~5.5 min since the design path is the content),
 API reference (high-level page + one page per component namespace),
-Numerical methods (eleven chapters, every method with citations,
+Numerical methods (thirteen chapters, every method with citations,
 in-house derivations marked in prose), Bibliography.
 `docs/references.bib` holds 60 entries with bibliographic data only —
 the citation-confidence bookkeeping lives exclusively in the
