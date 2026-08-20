@@ -1,0 +1,95 @@
+{
+  "case": "pcb_import",
+  "date": "2026-08-20T19:21:00.649813+00:00",
+  "note": "Stage timings of a board import. 'isolated_pads' is an n x n grid of pads (one cluster each, so the merge is skipped); 'one_cluster' is a serpentine track plus a ground zone, all connected, so the whole layer enters one N-ary fuse. Times in seconds, single run, CPU.",
+  "rows": [
+    {
+      "objects": 100,
+      "clusters": 100,
+      "parse": 0.0006012879894115031,
+      "faces": 0.057070331007707864,
+      "fuse": 0.0016239859978668392,
+      "prism": 0.08676115400157869,
+      "whole": 0.022353584005031735,
+      "case": "isolated_pads",
+      "n": 10
+    },
+    {
+      "objects": 400,
+      "clusters": 400,
+      "parse": 0.0013578759972006083,
+      "faces": 0.035996674007037655,
+      "fuse": 0.0027655620069708675,
+      "prism": 0.01358841999899596,
+      "whole": 0.08345496401307173,
+      "case": "isolated_pads",
+      "n": 20
+    },
+    {
+      "objects": 1600,
+      "clusters": 1600,
+      "parse": 0.005187385017052293,
+      "faces": 0.14115677401423454,
+      "fuse": 0.012670193013036624,
+      "prism": 0.05584666499635205,
+      "whole": 0.29291326701059006,
+      "case": "isolated_pads",
+      "n": 40
+    },
+    {
+      "objects": 3600,
+      "clusters": 3600,
+      "parse": 0.008928513998398557,
+      "faces": 0.2450775280012749,
+      "fuse": 0.024613207002403215,
+      "prism": 0.10099164201528765,
+      "whole": 0.6771939140162431,
+      "case": "isolated_pads",
+      "n": 60
+    },
+    {
+      "objects": 21,
+      "clusters": 1,
+      "parse": 0.00015145898214541376,
+      "faces": 0.005915252986596897,
+      "fuse": 0.029706571978749707,
+      "prism": 0.0013263059954624623,
+      "whole": 0.037397098989458755,
+      "case": "one_cluster",
+      "n": 10
+    },
+    {
+      "objects": 41,
+      "clusters": 1,
+      "parse": 0.000202108989469707,
+      "faces": 0.006022301997290924,
+      "fuse": 0.03902555498643778,
+      "prism": 0.0019770939834415913,
+      "whole": 0.058264207997126505,
+      "case": "one_cluster",
+      "n": 20
+    },
+    {
+      "objects": 81,
+      "clusters": 1,
+      "parse": 0.00032887898851186037,
+      "faces": 0.011649076011963189,
+      "fuse": 0.07381496200105175,
+      "prism": 0.004670886002713814,
+      "whole": 0.11978486698353663,
+      "case": "one_cluster",
+      "n": 40
+    },
+    {
+      "objects": 121,
+      "clusters": 1,
+      "parse": 0.0005451479810290039,
+      "faces": 0.02193396500661038,
+      "fuse": 0.12022210599388927,
+      "prism": 0.007039139018161222,
+      "whole": 0.19612621198757552,
+      "case": "one_cluster",
+      "n": 60
+    }
+  ]
+}

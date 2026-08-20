@@ -12,3 +12,19 @@ exporters, and a kernel-written file cannot expose that.
 
 The test skips when the file is absent, so the suite runs without it.
 Drop in any small export (a few solids, named parts) to enable it.
+
+## `kicad_board/` (optional)
+
+A complete fabrication export written by a real layout tool — Gerber
+copper and outline layers, Excellon drill files and the `.gbrjob` job
+file — used by `tests/integration/test_import_pcb_pipeline.py` to check
+the board import against a set the suite did not write itself.  Real
+exports differ from hand-written fixtures in the parts that are easiest
+to get wrong: aperture macros for rounded and custom pads, zones
+fractured into single contours, the exact spelling of the drill file's
+attributes.
+
+The test skips when the folder is absent, so the suite runs without it.
+Drop in any small two- or four-layer export (in KiCad: *File → Fabrication
+Outputs → Gerbers*, with "Include job file" enabled, plus *Drill Files*)
+to enable it.

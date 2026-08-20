@@ -6,10 +6,12 @@ The one-shot save_project/load_project (io/hdf5.py) was removed;
 the store supersedes it.
 
 ``import_step`` / ``import_brep`` read geometry drawn in a CAD
-system into the geometry API.
+system into the geometry API; ``import_pcb`` reads a printed circuit
+board from the fabrication data its layout tool writes.
 """
 
 from magnelio.io.cad import import_brep, import_step
+from magnelio.io.pcb import import_pcb
 from magnelio.io.project import (
     LoadedGeometry,
     Project,
@@ -27,4 +29,5 @@ __all__ = [
     "write_brep",
     "import_step",
     "import_brep",
+    "import_pcb",
 ]
