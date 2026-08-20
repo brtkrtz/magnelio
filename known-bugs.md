@@ -16,8 +16,61 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Two entries are open as of 2026-08-19: KB-022 and KB-023.**
+**Two entries are open as of 2026-08-20: KB-022 and KB-023.**
 Everything else is struck through and resolved.
+
+## KB-025: ~~A cross-section paints its holes shut~~ — Resolved (2026-08-20)
+
+`plot_cross_section` drew every contour `cross_section_polygons`
+returned as its own filled polygon.  That function returns "outer
+boundaries and holes mixed together" with no winding convention, and
+says so: the region is the set of points enclosed an *odd* number of
+times, and consumers are to apply the even-odd rule.  Filling each
+contour on its own applies no rule at all — a bore is painted in the
+same colour as the material around it.
+
+The consequence is not a cosmetic tint.  An opaque shape with a hole
+covers everything that sits inside the hole, and shapes are drawn in
+insertion order, so the visible picture depends on which body happens
+to be added last.  Measured 2026-08-20 on a coaxial line (PEC pin,
+PTFE dielectric, PEC shield, added in that order), sampling the
+rendered image:
+
+```
+r = 0.0 mm (pin)         (166, 166, 166)
+r = 1.4 mm (dielectric)  (166, 166, 166)
+r = 2.8 mm (shield)      (166, 166, 166)
+```
+
+— one flat disc in the shield's colour.  It went unnoticed because the
+coaxial tutorials add the inner conductor *last*, which paints it back
+on top of the dielectric that had covered it; only a model whose
+outermost body comes last shows the full effect.
+
+Fixed in `post/plot_geometry.py`: the contours of one shape become a
+single compound path, and each contour's direction is set from its
+nesting depth — enclosed by an even number of others it bounds
+material and runs counter-clockwise, by an odd number it is a hole and
+runs the other way.  Matplotlib fills by the nonzero winding rule, so
+that turns the odd-enclosure region into the filled one.  The outline
+form air is drawn in stays contour by contour: the wall of a hole is a
+wall too.
+
+One trap sits inside the fix.  Matplotlib's `Path(vertices,
+closed=True)` *drops* the last vertex to make room for its CLOSEPOLY
+code, and section contours arrive without a repeated first point — so
+it eats a real corner.  On a tessellated circle that is one chord out
+of seventy and invisible; on the four-vertex contour of a rectangle it
+leaves a triangle.  The closing segment is therefore written out
+explicitly.
+
+Regression cover in `tests/unit/test_plot_geometry.py`, sampled in the
+rasterised image because the patch is one compound path either way and
+only the renderer answers the question:
+`test_a_hole_stays_open` (an annulus) and
+`test_nested_contours_alternate` (a rectangular block with a bore and a
+free-standing island in it — two contours deep, and rectangular, so it
+catches the dropped corner the annulus cannot see).
 
 ## KB-024: ~~A missing pythonocc-core reads as an empty mesh, not as a missing dependency~~ — Resolved (2026-08-19)
 

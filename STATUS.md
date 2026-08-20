@@ -1,6 +1,36 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-19.*  Latest work: the TF/SF plane-wave
+*Last updated: 2026-08-20.*  Latest work: geometry can come from a CAD
+file (DD-178).  `magnelio.io.import_step` reads a STEP file through
+XCAF — solids, their names, their display colours and, decisively, the
+file's own length unit, normalised to meters around the read
+(`xstep.cascade.unit` is process-global, so it is saved and restored).
+Assemblies are flattened into a `Group` with every component placement
+baked into the leaf; materials are assigned on import, keyed on the
+solid names, because names are what survives a re-export and nothing
+else in the file does.  The mapping rules are built to make a stale
+mapping loud: literal beats wildcard, two wildcards disagreeing over
+one solid is an error, a key matching no solid is an error listing the
+names that exist, and an unmapped solid arrives as a construction body
+(DD-127) instead of silently as vacuum.  `import_brep` is the second
+path and demands `unit=`, since BREP states none.  The store's private
+`_LoadedShape` became the public `geo.ImportedSolid`, a real `Shape`
+subclass, so imported geometry has the verbs and the Boolean
+operators and loaded project geometry gained them with it.  File
+colours ride on the shape and take the *hue* only — opacity stays with
+the material, where it says what a body is.  Certified against the CSG
+API: a STEP box and the equivalent `Brick` produce identical grid
+lines and material fill, and the imported 50 Ω feed-through of tutorial
+16 matches transmission-line theory to 0.002 rad in ∠S21 with S11
+below −143 dB.  The tutorial's picture exposed a defect of its own,
+KB-025: a cross-section filled every section contour separately, so a
+solid with a hole was painted shut and covered whatever sat inside it
+— visible or not depending on the order the bodies were added in,
+which is why the coaxial tutorials (inner conductor added last) never
+showed it.  Contours of one shape are now one compound path whose
+directions follow their nesting depth, which is what turns the
+odd-enclosure region the section operator describes into the filled
+one.  Before that: the TF/SF plane-wave
 correction is a precomputed coefficient table instead of a Python loop
 over box boundary cells (DD-177).  All twelve face corrections have the
 form `field[face] += beta · metric · A · f(t − k·r/c₀)` and only `t`
@@ -190,8 +220,8 @@ grazing-incidence residual DD-167 recorded — one of two symmetric
 slivers returned instead of both — turned out not to be the section
 operator at all and is closed by DD-168.
 
-**Suite: 2303 passed / 6 skipped / 0 failed** (2026-08-19, GPU box —
-unit 1941 (+2 scikit-rf skips), integration 362 (+4 skips); GPU tests
+**Suite: 2347 passed / 6 skipped / 0 failed** (2026-08-20, GPU box —
+unit 1981 (+2 scikit-rf skips), integration 366 (+4 skips); GPU tests
 need `CUPY_ACCELERATORS=""` when the interpreter binary is called
 directly — without it four of them fail on the mixed-dtype reduction
 and read as a regression).  The DD-150 step change re-measured three fixture windows
@@ -259,6 +289,7 @@ changed, do not append.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-178** (2026-08-20) — CAD import: `io.import_step` (XCAF names, colours, file unit normalised to meters with the process-global setting restored; assemblies flattened into a `Group` with placements baked in) and `io.import_brep` (`unit=` mandatory); materials assigned by solid name with literal-beats-wildcard, errors on conflicting patterns and on keys matching nothing, unmapped solids stay construction bodies; `_LoadedShape` became the public `geo.ImportedSolid`; file colour is hue-only, opacity stays with the material; gate: STEP box meshes identically to the equivalent `Brick`.
 * **DD-177** (2026-08-19) — the TF/SF correction is a coefficient table: `attach()` folds beta·metric·amplitude per box face and keeps the retardation separate (scalar or 1-D for axis-aligned k), so the time loop runs one array expression per face; 245.7 → 31.8 ms/step (CPU) and 2024.8 → 16.1 ms/step (GPU) at 75 200 boundary cells, injection no longer measurable against the source-free baseline; behaviour preserved to 3e-16 (double).
 * **DD-176** (2026-08-19) — geometry arguments are checked where they are written: `geo/_validate.py` guards every constructor and verb (point/vector shape, sign and finiteness, operand type, edge selector), each message naming the argument; a scalar `Sphere(center=)` used to surface as `'float' object is not iterable` inside `pad_box` during `model.plot()`.
 * **DD-175** (2026-08-18) — a field picture stands for a cell layer: `plot_cross_section(slab=)` raises the in-plane tolerance of volume-free features to half the displayed cell, filled by the plotting monitors from their grid; wires and discrete ports were absent from every field plot (measured: plane snapped 1.79 mm off the node they sit on).
@@ -360,7 +391,7 @@ Older decisions: `design-decisions.md`.
 ## Script directories
 
 `examples/` is the public-API surface — `examples/tutorials/` holds
-the 14 gallery tutorials, no internal imports.  All run to completion
+the 16 gallery tutorials, no internal imports.  All run to completion
 on the GPU box on pure defaults: the DD-096 port-signal criterion is
 on by default (DD-114) because the energy criterion alone never fires
 on the TM-cut-off plateau of a shielded lossless structure.
@@ -563,12 +594,12 @@ through the same change untouched.  It surfaced only in CI, because
 sphinx-gallery re-executes a tutorial when *its script* changes, not
 when the library under it does — a local build without
 `build_docs.sh --clean` shows cached figures from an older library.  Pillars: Tutorials (generated from
-`examples/tutorials/*.py`, tutorials 01–14 shipped and given a
+`examples/tutorials/*.py`, tutorials 01–16 shipped and given a
 reader-perspective polish pass — full gallery build ~8:40, clean;
 tutorial 13, the DR-filter capstone, is deliberately the most
 expensive page at ~5.5 min since the design path is the content),
 API reference (high-level page + one page per component namespace),
-Numerical methods (ten chapters, every method with citations,
+Numerical methods (eleven chapters, every method with citations,
 in-house derivations marked in prose), Bibliography.
 `docs/references.bib` holds 60 entries with bibliographic data only —
 the citation-confidence bookkeeping lives exclusively in the

@@ -27,6 +27,11 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- A cross-section drew solids with a hole as if they were solid: the
+  bore of a tube, the gap of an annulus and the bore of a coaxial line
+  were filled in the surrounding material's colour, hiding whatever sat
+  inside them.  Which body won depended on the order shapes were added
+  in, so the same model could look right or wrong.  Holes now stay open.
 - Installing without pythonocc-core (the pip route) failed at the first
   mesh with a message about grid line arrays instead of naming the
   missing dependency: the mesher's per-shape guards, written to skip a

@@ -8,15 +8,21 @@ import matplotlib
 
 matplotlib.use("Agg")
 
-from magnelio.geo import Brick, GeometryModel
+from magnelio.geo import Brick, Cylinder, GeometryModel
 from magnelio.materials.material import Material
 
 
 def _count_patches(ax):
-    """Count Polygon patches on an axes (excluding non-Polygon artists)."""
+    """Count the shape patches on an axes (excluding other artists).
+
+    One patch per shape: a filled section is a single compound path so
+    that holes stay open, an outlined one (air) is a Polygon per
+    contour.
+    """
+    from matplotlib.patches import PathPatch
     from matplotlib.patches import Polygon as MplPolygon
 
-    return sum(1 for p in ax.patches if isinstance(p, MplPolygon))
+    return sum(1 for p in ax.patches if isinstance(p, (MplPolygon, PathPatch)))
 
 
 class TestPlotCrossSection:
@@ -79,6 +85,65 @@ class TestPlotCrossSection:
 
         fig, ax = model.plot_cross_section("z", 0.5e-3)
         assert _count_patches(ax) == 2
+
+    def test_a_hole_stays_open(self):
+        """An annulus is drawn as a ring, not as a filled disc.
+
+        Section contours come back as outer boundaries and holes mixed
+        together, and the region they describe is the odd-enclosure one.
+        Filling each contour on its own paints the bore shut — which
+        hides whatever it contains, so a coaxial line rendered as a
+        single disc of its outermost part.  Only the rasterised image
+        can answer this: the patch is one compound path either way.
+        """
+        import numpy as np
+
+        model = GeometryModel()
+        model.add(Cylinder(radius=3e-3, inner_radius=1e-3, height=4e-3, material=Material.pec()))
+        fig, ax = model.plot_cross_section("z", 2e-3)
+        fig.canvas.draw()
+        image = np.asarray(fig.canvas.buffer_rgba())
+
+        def pixel(u_mm, v_mm):
+            x, y = ax.transData.transform((u_mm, v_mm))
+            return tuple(image[image.shape[0] - int(round(y)), int(round(x))][:3])
+
+        white = (255, 255, 255)
+        assert pixel(0.0, 0.0) == white  # the bore
+        assert pixel(2.0, 0.0) != white  # the metal ring
+        assert pixel(4.0, 0.0) == white  # outside
+
+    def test_nested_contours_alternate(self):
+        """A bore with an island in it: material, hole, material again.
+
+        Two things break here that a single annulus cannot show.  The
+        island sits two contours deep, so a rule that only knows
+        "outer" and "hole" fills it wrong.  And the block's contour is
+        a rectangle — four vertices — where losing one to the closing
+        segment turns it into a triangle, which a tessellated circle
+        hides completely.
+        """
+        import numpy as np
+
+        pec = Material.pec()
+        block = Brick(origin=(-5e-3, -5e-3, 0.0), size=(10e-3, 10e-3, 4e-3), material=pec)
+        bore = Cylinder(origin=(0, 0, -1e-3), radius=3e-3, height=6e-3)
+        island = Cylinder(origin=(0, 0, 0.0), radius=1e-3, height=4e-3, material=pec)
+        model = GeometryModel().add((block - bore) + island)
+
+        fig, ax = model.plot_cross_section("z", 2e-3)
+        fig.canvas.draw()
+        image = np.asarray(fig.canvas.buffer_rgba())
+
+        def pixel(u_mm):
+            x, y = ax.transData.transform((u_mm, 0.0))
+            return tuple(image[image.shape[0] - int(round(y)), int(round(x))][:3])
+
+        white = (255, 255, 255)
+        assert pixel(0.0) != white  # the island
+        assert pixel(2.0) == white  # the bore around it
+        assert pixel(4.0) != white  # the block, past the bore
+        assert pixel(6.0) == white  # outside
 
     def test_air_drawn_as_outline(self):
         """Air material (transparent) is drawn as an unfilled dashed outline."""

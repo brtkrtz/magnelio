@@ -247,6 +247,62 @@ def _draw_face_port(ax, port, bbox, *, n_axis, position, u_axis, v_axis, scale, 
     return True
 
 
+def _encloses(outer, inner) -> bool:
+    """Does contour *outer* contain contour *inner*?
+
+    Section contours nest but do not cross, so any vertex of *inner*
+    answers it.  Several are sampled and the majority decides: on a
+    degenerate tangency band the two contours share vertices, and a
+    single one of those lies *on* the other rather than inside it.
+    """
+    from magnelio.geo._polygon_clip import point_in_polygon  # noqa: PLC0415
+
+    step = max(1, len(inner) // 7)
+    samples = inner[::step]
+    hits = sum(1 for point in samples if point_in_polygon((point[0], point[1]), outer))
+    return 2 * hits > len(samples)
+
+
+def _region_path(contours):
+    """One path for a shape's section, with its holes cut out.
+
+    ``cross_section_polygons`` returns outer boundaries and holes mixed
+    together and carries no winding convention: the region is the set of
+    points enclosed an *odd* number of times.  Matplotlib fills by the
+    nonzero winding rule instead, so each contour is turned to match its
+    nesting depth — enclosed by an even number of others it bounds
+    material and runs counter-clockwise, by an odd number it is a hole
+    and runs the other way.
+
+    Filling every contour on its own paints the holes shut, which hides
+    whatever an annulus, a pipe or a bore contains: a coaxial line
+    reduced to a single disc of its outermost part.
+    """
+    import numpy as np  # noqa: PLC0415
+    from matplotlib.path import Path  # noqa: PLC0415
+
+    from magnelio.geo._polygon_clip import polygon_area  # noqa: PLC0415
+
+    subpaths = []
+    for index, verts in enumerate(contours):
+        depth = sum(
+            1
+            for other, other_verts in enumerate(contours)
+            if other != index and _encloses(other_verts, verts)
+        )
+        if (polygon_area(verts) > 0.0) != (depth % 2 == 0):
+            verts = verts[::-1]
+        # The closing segment is written out rather than left to
+        # ``Path(closed=True)``, which *drops* the last vertex to make
+        # room for its CLOSEPOLY: the contours arrive without a repeated
+        # first point, so that would eat a real corner — invisible on a
+        # tessellated circle, and a triangle where a rectangle was.
+        codes = np.full(len(verts) + 1, Path.LINETO, dtype=np.uint8)
+        codes[0], codes[-1] = Path.MOVETO, Path.CLOSEPOLY
+        subpaths.append(Path(np.vstack([verts, verts[:1]]), codes))
+    return Path.make_compound_path(*subpaths)
+
+
 def plot_cross_section(
     geometry: "GeometryModel",
     normal: str,
@@ -333,6 +389,7 @@ def plot_cross_section(
     """
     import matplotlib.patheffects as patheffects  # noqa: PLC0415
     import matplotlib.pyplot as plt  # noqa: PLC0415
+    from matplotlib.patches import PathPatch  # noqa: PLC0415
     from matplotlib.patches import Polygon as MplPolygon  # noqa: PLC0415
 
     from magnelio.geo._occ_backend import cross_section_polygons  # noqa: PLC0415
@@ -393,16 +450,15 @@ def plot_cross_section(
             exact_at_faces=True,
         )
 
-        for poly_verts in polygons:
-            if flip:
-                poly_verts = poly_verts[:, ::-1]
-            scaled = poly_verts * scale
-            if transparent:
-                # Boundary of an air/vacuum region (e.g. a cavity wall):
-                # dashed outline with a white under-stroke so it reads on
-                # any field colour map underneath.
+        contours = [(p[:, ::-1] if flip else p) * scale for p in polygons]
+        if transparent:
+            # Boundary of an air/vacuum region (e.g. a cavity wall):
+            # dashed outline with a white under-stroke so it reads on
+            # any field colour map underneath.  Drawn contour by
+            # contour — the wall of a hole is a wall too.
+            for verts in contours:
                 patch = MplPolygon(
-                    scaled,
+                    verts,
                     closed=True,
                     facecolor="none",
                     edgecolor="black",
@@ -415,16 +471,17 @@ def plot_cross_section(
                         patheffects.Normal(),
                     ]
                 )
-            else:
-                patch = MplPolygon(
-                    scaled,
-                    closed=True,
+                ax.add_patch(patch)
+        elif contours:
+            ax.add_patch(
+                PathPatch(
+                    _region_path(contours),
                     facecolor=rgba[:3],
                     alpha=rgba[3],
                     edgecolor=(0.3, 0.3, 0.3, 0.5),
                     linewidth=0.6,
                 )
-            ax.add_patch(patch)
+            )
 
     # -- thin wires, ports and lumped elements ------------------------------
     n_axis = _AXIS_INDEX[normal]
