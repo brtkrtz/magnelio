@@ -11953,8 +11953,8 @@ exporting again, which is what the name-keyed material mapping is
 built to survive.
 
 **Deferred:** sheet bodies and sewing shells into solids; IGES and
-mesh formats; Gerber/PCB import (a separate track: stackup, drill
-data, 2-D union per layer before extrusion).
+mesh formats.  Gerber/PCB import was the separate track named here and
+is now [[DD-179]].
 
 **Files:** `src/magnelio/io/cad.py`, `src/magnelio/geo/imported.py`,
 `src/magnelio/io/project.py` (rehydration, `colors`),
@@ -11963,3 +11963,151 @@ data, 2-D union per layer before extrusion).
 `tests/integration/test_import_step_pipeline.py`,
 `docs/methods/cad-import.md`,
 `examples/tutorials/plot_16_cad_import.py`.
+
+## DD-179 — Board import: the fabrication set is the contract, and no Boolean is 3-D
+
+**Date:** 2026-08-20 (phase 2 of the import track opened by [[DD-178]]).
+**Status:** Accepted — implemented, gated.
+
+**Problem.**  A printed circuit board could only be modelled by
+redrawing it with primitives.  For the boards Magnelio is aimed at —
+filters, antenna feeds, connector launches — the layout already exists,
+and a hand-rebuilt copy is both work and a discrepancy between what is
+simulated and what is manufactured.  Nothing in the geometry API
+addresses the two properties that make a board different from a
+machined part: it is a *stack* of layers whose thicknesses live outside
+the drawing, and its metal is two decades thinner than any affordable
+cell.
+
+**Decision.**  `magnelio.io.import_pcb(path, materials, *, copper,
+name)` reads a fabrication export — Gerber X2 copper and profile
+layers, Excellon drill files, and the `.gbrjob` job file — and returns
+a `geo.Group` of `geo.ImportedSolid`, one per stackup layer plus one
+per plated barrel.  Six choices are worth recording.
+
+*The fabrication set, not a project file.*  Gerber/Excellon is what
+every layout tool writes and every board house reads, so the import is
+not tied to one vendor's format or release cycle.  Parsing
+`.kicad_pcb` would have bound Magnelio to one tool and to a format
+with no stability contract.  The job file is **required**, not
+optional: it is the only member of the set that carries layer
+thicknesses and the dielectric, and a board without them has no shape.
+A `stackup=` escape hatch for job-less sets is deferred — inventing a
+stackup is exactly the silent error the requirement prevents.  The job
+file's layer assignment is cross-checked against the `TF.FileFunction`
+each Gerber carries: a disagreement means a hand-assembled set, and
+building it anyway would stack the layers in the wrong order, which is
+a plausible model of a different board.
+
+*Own reader, written from the specification.*  `gerbonara` exists and
+is permissively licensed (there is no rule against copyleft
+dependencies — Magnelio is LGPL itself; the standing rules are only
+never to vendor pythonocc and never to copy vector-fitting reference
+code).  It is not in the environment, its conda-forge availability is
+unclear, and the format's usable subset is a few hundred lines.  The
+readers (`io/_gerber.py`, `io/_excellon.py`, `io/_gbrjob.py`) are
+written against the Ucamco specification, hold no kernel dependency,
+and are therefore testable against hand-written files without OCC.
+What they cannot express they **refuse**, naming file and line —
+step-and-repeat, negative images, the deprecated image transformations,
+G74, rectangular-aperture draws, moiré and thermal macro primitives.  A
+missing pad in a board is not something a caller can be expected to
+notice, so silence was never an option.
+
+*The stackup is taken literally, and no Boolean is three-dimensional.*
+Each layer is assembled as a **2-D face set** at z = 0 — apertures,
+tracks and regions merged, clipped to the profile, drill circles cut —
+and extruded once.  Extruding every pad into a 35 µm slab and fusing
+the slabs would hand OCC thousands of sliver-prone operands; in the
+plane the operands are coplanar by construction, which is the case
+Booleans handle best.  Layer heights come straight from the stackup, so
+adjacent layers meet on coincident faces with no fitting.  The origin
+is the **top face of the topmost dielectric** and the stack grows
+downwards, so adding an outer layer does not move the board.
+
+*A plated hole is a solid barrel that exactly fills its cut.*  The same
+circle is removed from every layer the hole crosses and the barrel is
+built to it, so barrel and pad are face-coincident with no overlap —
+the model's overlap check confirms it, and the integration gate asserts
+that the union of all solids has exactly the sum of their volumes.
+Solid rather than a plated wall around a void: the wall is a closed
+conductor and encloses no field either way, and the void would add two
+surfaces for nothing.
+
+*Thin copper is the mesher's existing thin-sheet path, not a new one.*
+Copper arrives at its real thickness because [[DD-059]]/[[DD-124]]
+already resolve a PEC layer below the cell — one grid plane on the
+substrate side, thickness in the sub-cell fractions.  The condition is
+`is_pec` and a `MeshControl.min_cell_size` above the metal thickness,
+and it holds here for a reason worth stating: a copper layer is **one**
+solid spanning the whole board, so what is compared against the floor
+is its thickness and never an individual track width.  A consequence
+accepted rather than fixed: between the copper of an inner layer, where
+a real board has prepreg, the model has background.  Filling it would
+mean a 35 µm dielectric slab beside the copper, which forces the grid
+to resolve exactly what the thin-sheet path exists to avoid.
+
+*Names are the interface, and dielectrics are numbered.*  Copper layers
+keep their stackup names (`F.Cu`, `In1.Cu`); barrels are `via_n` in
+coordinate order.  Dielectrics are `dielectric_n` **regardless** of the
+name the job file gives them, because layout tools name every core and
+prepreg after its material and two layers called `FR4` would make a
+material mapping ambiguous.  A loss tangent is reported and never
+modelled: it is one number at a frequency the job file does not record,
+and a frequency-independent tan δ violates Kramers–Kronig — the warning
+names `DispersionModel.djordjevic_sarkar` as the route once the caller
+supplies the frequency.  A dielectric with no stated permittivity
+arrives as a construction body ([[DD-127]]), never as vacuum.
+
+**Mechanics.**  Construction runs at a private power-of-two scale
+(`_scaling.fine_detail_scale`): [[DD-120]]'s identity band assumes
+features within about three decades of the model size, and a board
+misses that by two, landing its Booleans three decades from
+`Precision::Confusion()`.  The result is scaled back to meters exactly.
+Coplanar faces are merged per **bounding-box cluster** (sweep over x
+with union-find), so the isolated pads that make up most of a layer
+skip the Boolean entirely; polarity is folded in runs of equal
+polarity, because a clear object removes what was drawn before it and
+nothing after.  Hole orientation in a face is decided by
+`ShapeFix_Face::FixOrientation()` from containment rather than assumed
+from winding — a hole added with the wrong winding yields a face whose
+area is the *sum* of its boundaries, and nothing about the shape looks
+wrong.  A profile layer is a line, so the board area is recovered by
+chaining its segments through an endpoint graph at the file's own
+coordinate resolution; a node not met by exactly two segments is an
+error, applying [[DD-168]]'s lesson that a wire builder walks one
+branch of a fork in silence.
+
+Measured (`benchmarks/bench_pcb_import.py`, results archived): the
+kernel's prism builder is superlinear in the face count of a compound —
+2.9 s for 3600 pad faces handed over in one compound against 0.11 s for
+the same faces raised one at a time — so `extrude` raises each face
+separately.  With that, a 3600-pad board imports in 0.7 s end to end,
+and the layer merge is not the dominant stage anywhere: 25 ms for those
+pads (which skip it, being their own clusters) and 120 ms for the
+all-connected serpentine-plus-zone case.
+
+**Consequences.**  A board is ordinary geometry: it meshes, stores and
+runs like anything drawn with primitives, and the integration gate
+carries an imported microstrip through the mesher and asserts that its
+copper was recognised as a thin sheet.  Solder mask and silkscreen are
+outside the model by decision, not by omission.
+
+**Deferred:** step-and-repeat, thermal and moiré macro primitives,
+rectangular-aperture draws, arc-routed slots; `stackup=` without a job
+file; per-net chunking of the layer fuse via the `TO.N` attribute (read
+and discarded today); a sheet-preserving public `Union` of coplanar
+`PlanarSheet`s, which would let this drop its private face helpers.
+
+**Files:** `src/magnelio/io/pcb.py`, `src/magnelio/io/_gerber.py`,
+`src/magnelio/io/_excellon.py`, `src/magnelio/io/_gbrjob.py`,
+`src/magnelio/io/_pcb_geom.py`,
+`src/magnelio/geo/_occ_backend.py` (`make_face_with_holes`,
+`boolean_difference_many`, `unify_same_domain`),
+`src/magnelio/geo/_scaling.py` (`fine_detail_scale`),
+`tests/unit/test_pcb_jobfile.py`, `tests/unit/test_pcb_gerber.py`,
+`tests/unit/test_pcb_excellon.py`, `tests/unit/test_pcb_geometry.py`,
+`tests/unit/test_import_pcb.py`,
+`tests/integration/test_import_pcb_pipeline.py`,
+`benchmarks/bench_pcb_import.py`, `docs/methods/pcb-import.md`,
+`examples/tutorials/plot_17_pcb_import.py`.

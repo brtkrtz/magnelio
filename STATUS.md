@@ -1,6 +1,38 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-20.*  Latest work: geometry can come from a CAD
+*Last updated: 2026-08-20.*  Latest work: a printed circuit board can
+come from its fabrication data (DD-179).  `magnelio.io.import_pcb`
+reads the set a board house is sent — Gerber X2 copper and outline
+layers, Excellon drill files and the `.gbrjob` job file — and returns
+the board as solids, one per stackup layer plus one per plated barrel.
+The readers are written from the Ucamco specification, hold no kernel
+dependency and refuse what they cannot turn into copper by file and
+line rather than dropping it; the job file is required, because it is
+the only member of the set that carries layer thicknesses and the
+dielectric.  The load-bearing choice is that **no Boolean is
+three-dimensional**: a layer is assembled as a 2-D face set at z = 0 —
+apertures, tracks and regions merged per bounding-box cluster, clipped
+to the profile, drill circles cut — and extruded once, so the operands
+are coplanar by construction instead of 35 µm slivers.  Layer heights
+come straight from the stackup, so adjacent layers meet on coincident
+faces and a plated barrel exactly fills the circles cut for it; the
+integration gate asserts that the union of all solids has exactly the
+sum of their volumes.  Copper arrives at its real 35 µm because
+DD-059/DD-124 already resolve a PEC layer below the cell, and it works
+here for a specific reason: a copper layer is *one* solid spanning the
+board, so what is compared against `min_cell_size` is its thickness and
+never an individual track width.  Construction runs at a private
+power-of-two scale (`fine_detail_scale`), since DD-120's identity band
+assumes features within three decades of the model size and a board
+misses that by two.  Two traps surfaced and are now gated: a hole wire
+added with the file's own winding gives a face whose area is the *sum*
+of its boundaries (fixed by deciding orientation from containment), and
+the kernel's prism builder is superlinear in the face count of a
+compound — 2.9 s against 0.11 s for 3600 pads raised one at a time.
+What the data cannot say is not invented: a substrate with no stated
+permittivity arrives without a material, and a loss tangent is reported
+rather than modelled, because it carries no reference frequency.
+Before that: geometry can come from a CAD
 file (DD-178).  `magnelio.io.import_step` reads a STEP file through
 XCAF — solids, their names, their display colours and, decisively, the
 file's own length unit, normalised to meters around the read
@@ -220,11 +252,14 @@ grazing-incidence residual DD-167 recorded — one of two symmetric
 slivers returned instead of both — turned out not to be the section
 operator at all and is closed by DD-168.
 
-**Suite: 2347 passed / 6 skipped / 0 failed** (2026-08-20, GPU box —
-unit 1981 (+2 scikit-rf skips), integration 366 (+4 skips); GPU tests
+**Suite: 2482 passed / 7 skipped / 0 failed** (2026-08-20, GPU box —
+unit 2110 (+2 scikit-rf skips), integration 372 (+5 skips, one of them
+the optional layout-tool fabrication fixture); GPU tests
 need `CUPY_ACCELERATORS=""` when the interpreter binary is called
 directly — without it four of them fail on the mixed-dtype reduction
-and read as a regression).  The DD-150 step change re-measured three fixture windows
+and read as a regression).  The board import contributes 129 unit gates
+across the three readers and the geometry engine, plus 7 integration
+gates (one of which needs the optional fixture).  The DD-150 step change re-measured three fixture windows
 (interval stride, lumped-port guard, SIBC band edge) — the reasoning
 is in the DD entry, not a physics regression.  The long-standing
 caveat is gone: `test_coax_tem_vs_te_tm` reproduced on 2026-08-12,
@@ -289,6 +324,7 @@ changed, do not append.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-179** (2026-08-20) — Board import: `io.import_pcb` reads a Gerber/Excellon/`.gbrjob` fabrication set into one `ImportedSolid` per stackup layer plus one per plated barrel; own readers written from the Ucamco spec (no kernel dependency, unsupported constructs refused by file and line); 2-D face set per layer then a single extrusion, so no Boolean is three-dimensional; barrels fill their cuts exactly (union volume = sum of volumes); copper at its real thickness rides the DD-059/DD-124 thin-sheet path because a layer is one board-spanning solid; construction at a private `fine_detail_scale` power of two; dielectrics numbered `dielectric_n` because layout tools name every core after its material; loss tangent reported, never modelled.
 * **DD-178** (2026-08-20) — CAD import: `io.import_step` (XCAF names, colours, file unit normalised to meters with the process-global setting restored; assemblies flattened into a `Group` with placements baked in) and `io.import_brep` (`unit=` mandatory); materials assigned by solid name with literal-beats-wildcard, errors on conflicting patterns and on keys matching nothing, unmapped solids stay construction bodies; `_LoadedShape` became the public `geo.ImportedSolid`; file colour is hue-only, opacity stays with the material; gate: STEP box meshes identically to the equivalent `Brick`.
 * **DD-177** (2026-08-19) — the TF/SF correction is a coefficient table: `attach()` folds beta·metric·amplitude per box face and keeps the retardation separate (scalar or 1-D for axis-aligned k), so the time loop runs one array expression per face; 245.7 → 31.8 ms/step (CPU) and 2024.8 → 16.1 ms/step (GPU) at 75 200 boundary cells, injection no longer measurable against the source-free baseline; behaviour preserved to 3e-16 (double).
 * **DD-176** (2026-08-19) — geometry arguments are checked where they are written: `geo/_validate.py` guards every constructor and verb (point/vector shape, sign and finiteness, operand type, edge selector), each message naming the argument; a scalar `Sphere(center=)` used to surface as `'float' object is not iterable` inside `pad_box` during `model.plot()`.

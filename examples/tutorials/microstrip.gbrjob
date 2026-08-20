@@ -1,0 +1,58 @@
+{
+ "Header": {
+  "GenerationSoftware": {
+   "Vendor": "Magnelio",
+   "Application": "tutorial"
+  },
+  "CreationDate": "2026-08-20T00:00:00+00:00"
+ },
+ "GeneralSpecs": {
+  "ProjectId": {
+   "Name": "microstrip",
+   "Revision": "1"
+  },
+  "Size": {
+   "X": 20.0,
+   "Y": 8.0
+  },
+  "LayerNumber": 2,
+  "BoardThickness": 0.87
+ },
+ "FilesAttributes": [
+  {
+   "Path": "microstrip-F_Cu.gbr",
+   "FileFunction": "Copper,L1,Top",
+   "FilePolarity": "Positive"
+  },
+  {
+   "Path": "microstrip-B_Cu.gbr",
+   "FileFunction": "Copper,L2,Bot",
+   "FilePolarity": "Positive"
+  },
+  {
+   "Path": "microstrip-Edge_Cuts.gbr",
+   "FileFunction": "Profile,NP",
+   "FilePolarity": "Positive"
+  }
+ ],
+ "MaterialStackup": [
+  {
+   "Type": "Copper",
+   "Thickness": 0.035,
+   "Name": "F.Cu"
+  },
+  {
+   "Type": "Dielectric",
+   "Thickness": 0.8,
+   "Material": "FR4",
+   "DielectricConstant": "4.3",
+   "LossTangent": "0.02",
+   "Name": "F.Cu/B.Cu"
+  },
+  {
+   "Type": "Copper",
+   "Thickness": 0.035,
+   "Name": "B.Cu"
+  }
+ ]
+}

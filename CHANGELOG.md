@@ -24,6 +24,24 @@ major version is 0, minor releases may change the public API.
   project store return.  It is a full `Shape` — Boolean operators, the
   chainable verbs, `volume()` — and carries the name and display colour
   its source file gave it.
+- Circuit board import: `magnelio.io.import_pcb` reads a fabrication
+  export — Gerber copper and outline layers, Excellon drill files and
+  the `.gbrjob` job file that records the stackup — and returns the
+  board as solids.  Each copper and dielectric layer arrives at its real
+  thickness and height, plated holes as copper barrels that join the
+  layers their drill file declares (through, blind or buried), unplated
+  holes and slots as cut-outs.  Materials are assigned by layer name as
+  for CAD import; copper defaults to a perfect conductor and the
+  substrate takes the permittivity the job file states.  Copper 35 µm
+  thick does not have to be resolved by the grid — set
+  `MeshControl(min_cell_size=...)` above the metal thickness and the
+  mesher carries it below the cell.  A stated loss tangent is reported
+  rather than modelled (it carries no reference frequency), and a
+  dielectric with no stated permittivity arrives without a material
+  instead of silently as vacuum.  Solder mask and silkscreen are
+  ignored.  Anything the readers cannot turn into copper — step and
+  repeat, negative images, thermal aperture macros — is refused with the
+  file and line that asked for it, never dropped in silence.
 
 ### Fixed
 

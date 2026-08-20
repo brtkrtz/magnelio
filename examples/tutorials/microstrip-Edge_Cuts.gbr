@@ -1,0 +1,16 @@
+%TF.GenerationSoftware,Magnelio,tutorial*%
+%FSLAX46Y46*%
+%MOMM*%
+G01*
+G75*
+%TF.FileFunction,Profile,NP*%
+%TF.FilePolarity,Positive*%
+G04 Board outline, 20 x 8 mm*
+%ADD10C,0.050000*%
+D10*
+X0Y0D02*
+X20000000Y0D01*
+X20000000Y8000000D01*
+X0Y8000000D01*
+X0Y0D01*
+M02*

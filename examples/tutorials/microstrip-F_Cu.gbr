@@ -1,0 +1,15 @@
+%TF.GenerationSoftware,Magnelio,tutorial*%
+%FSLAX46Y46*%
+%MOMM*%
+G01*
+G75*
+%TF.FileFunction,Copper,L1,Top*%
+%TF.FilePolarity,Positive*%
+G04 50 ohm through line, 1.2 mm wide*
+%ADD10C,1.200000*%
+D10*
+%TO.N,SIG*%
+X0Y4000000D02*
+X20000000Y4000000D01*
+%TD*%
+M02*
