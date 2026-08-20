@@ -56,6 +56,25 @@ def choose_scale(lo: tuple[float, float, float], hi: tuple[float, float, float])
     return 2.0 ** round(math.log2(_TARGET_DIAG / diag))
 
 
+def fine_detail_scale(lo: tuple[float, float, float], hi: tuple[float, float, float]) -> float:
+    """Power-of-two scale for a model whose features are far below its size.
+
+    :func:`choose_scale` leaves models in the identity band alone, on
+    the assumption that their smallest features are within about three
+    decades of their overall size.  A printed circuit board breaks that
+    assumption by two decades — 35 µm of copper and 100 µm gaps on a
+    100 mm board — and lands its Boolean operations three decades from
+    the kernel's confusion tolerance, where fusing coplanar faces starts
+    to drop slivers.  Scaling the diagonal to the same target the
+    band-external case aims for restores the headroom; the factor is a
+    power of two, so scaling back to meters afterwards is exact.
+    """
+    diag = math.dist(lo, hi)
+    if not math.isfinite(diag) or diag <= 0.0:
+        return 1.0
+    return 2.0 ** round(math.log2(_TARGET_DIAG / diag))
+
+
 def analytic_bbox(shape) -> Box:
     """Conservative OCC-free axis-aligned bounding box of *shape* [m].
 

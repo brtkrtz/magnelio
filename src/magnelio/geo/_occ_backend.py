@@ -317,6 +317,35 @@ def boolean_difference(base, tool):
     return _run_bop(occ["Cut"], [base], [tool])
 
 
+def boolean_difference_many(base, tools: list):
+    """Subtract every shape in *tools* from *base* in one Boolean pass.
+
+    Cutting a thousand drill holes out of a board one at a time
+    re-processes the growing result each time; N-ary is the same
+    argument as in :func:`boolean_union`.
+    """
+    occ = _require_occ()
+    if not tools:
+        return base
+    return _run_bop(occ["Cut"], [base], tools)
+
+
+def unify_same_domain(shape, *, edges: bool = True, faces: bool = True):
+    """Merge adjacent faces and edges that lie on the same surface.
+
+    A Boolean leaves the seams of its operands behind: fusing a hundred
+    pads into one plane gives one face per pad, all coplanar, separated
+    by edges that describe nothing.  Removing them is what keeps a
+    fused layer from carrying its construction history into the mesher.
+    """
+    from OCC.Core.ShapeUpgrade import ShapeUpgrade_UnifySameDomain  # noqa: PLC0415
+
+    unifier = ShapeUpgrade_UnifySameDomain(shape, edges, faces, False)
+    unifier.Build()
+    merged = unifier.Shape()
+    return shape if merged.IsNull() else merged
+
+
 # ---------------------------------------------------------------------------
 # Bounding box
 # ---------------------------------------------------------------------------
@@ -4472,6 +4501,50 @@ def make_wire_face(wire):
             "OCC could not build a face from this curve — is the boundary self-intersecting?"
         )
     return mkface.Face()
+
+
+def make_face_with_holes(outer, inners):
+    """Planar face bounded by *outer*, with *inners* cut out of it.
+
+    What makes a boundary bound a hole rather than a second face is its
+    orientation relative to the outer one, and a wire built from
+    coordinates read out of a file has whichever winding the file
+    happened to use.  The orientations are therefore sorted out
+    afterwards, from the containment of the wires, rather than assumed:
+    a hole added with the wrong winding produces a face whose area is
+    the sum of the two boundaries instead of their difference, and
+    nothing about the resulting shape looks wrong.
+
+    Parameters
+    ----------
+    outer : TopoDS_Wire
+        Closed outer boundary.
+    inners : sequence of TopoDS_Wire
+        Closed boundaries of the holes; may be empty.
+
+    Returns
+    -------
+    TopoDS_Face
+    """
+    from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace  # noqa: PLC0415
+
+    mkface = BRepBuilderAPI_MakeFace(outer, True)  # True = planar only
+    if not mkface.IsDone():
+        raise ValueError("OCC could not build a planar face from the outer boundary.")
+    inners = list(inners)
+    if not inners:
+        return mkface.Face()
+    for inner in inners:
+        mkface.Add(inner)
+    if not mkface.IsDone():
+        raise ValueError("OCC could not cut the holes out of the face.")
+
+    from OCC.Core.ShapeFix import ShapeFix_Face  # noqa: PLC0415
+
+    fixer = ShapeFix_Face(mkface.Face())
+    fixer.FixOrientation()
+    fixed = fixer.Face()
+    return mkface.Face() if fixed.IsNull() else fixed
 
 
 def _shape_wires(shape):
