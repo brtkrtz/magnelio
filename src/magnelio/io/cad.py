@@ -369,7 +369,7 @@ def import_step(
         parts = import_step(
             "connector.step",
             {"pin": Material.pec(), "shell": Material.pec(),
-             "insulator": Material(name="PTFE", epsilon=2.1)},
+             "insulator": Material(name="PTFE", epsilon=(2.1,) * 3)},
         )
         model = GeometryModel().add(parts)
 
