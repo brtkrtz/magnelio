@@ -445,11 +445,13 @@
 satisfies <a class="reference internal" href="analysis.html#magnelio.analysis.ScatteringResult" title="magnelio.analysis.ScatteringResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScatteringResult</span></code></a>, so <code class="docutils literal notranslate"><span class="pre">S</span></code>, <code class="docutils literal notranslate"><span class="pre">db</span></code>,
 <code class="docutils literal notranslate"><span class="pre">phase</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_s</span></code> and the Touchstone / scikit-rf exports work on it
 exactly as on the in-RAM result.</p>
-<p id="module-magnelio.io">Project-store components.
-<code class="docutils literal notranslate"><span class="pre">open_project</span></code> lives in the core <code class="docutils literal notranslate"><span class="pre">magnelio</span></code> namespace; this
+<p id="module-magnelio.io">Project store and CAD file import.</p>
+<p><code class="docutils literal notranslate"><span class="pre">open_project</span></code> lives in the core <code class="docutils literal notranslate"><span class="pre">magnelio</span></code> namespace; this
 component holds the reader/writer classes and geometry file I/O.
 The one-shot save_project/load_project (io/hdf5.py) was removed;
 the store supersedes it.</p>
+<p><code class="docutils literal notranslate"><span class="pre">import_step</span></code> / <code class="docutils literal notranslate"><span class="pre">import_brep</span></code> read geometry drawn in a CAD
+system into the geometry API.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.io.LoadedGeometry">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.io.</span></span><span class="sig-name descname"><span class="pre">LoadedGeometry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shapes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.LoadedGeometry" title="Link to this definition">#</a></dt>
@@ -1035,6 +1037,129 @@ one-shot result rather than a streamable/resumable run.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="magnelio.io.import_brep">
+<span class="sig-prename descclassname"><span class="pre">magnelio.io.</span></span><span class="sig-name descname"><span class="pre">import_brep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.import_brep" title="Link to this definition">#</a></dt>
+<dd><p>Import the solids of a BREP file.</p>
+<p>BREP is the geometry kernel’s native dump: exact, but it records
+nothing but the geometry — no length unit, no names, no colours.
+The unit therefore has to be stated, and it has to be right: a file
+drawn in millimetres and read as meters is a thousand times too
+big, and nothing in the file says so.  Prefer
+<a class="reference internal" href="#magnelio.io.import_step" title="magnelio.io.import_step"><code class="xref py py-func docutils literal notranslate"><span class="pre">import_step()</span></code></a> whenever the CAD system can write STEP.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>str</em><em> or </em><a class="reference internal" href="geo.html#magnelio.geo.Path" title="magnelio.geo.Path"><em>Path</em></a>) – The <code class="docutils literal notranslate"><span class="pre">.brep</span></code> file to read.</p></li>
+<li><p><strong>unit</strong> (<em>str</em><em> or </em><em>float</em>) – Length unit the file is written in: <code class="docutils literal notranslate"><span class="pre">&quot;m&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;cm&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&quot;mm&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;um&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;nm&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;in&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;mil&quot;</span></code> — or a number
+giving the length of one unit in meters.</p></li>
+<li><p><strong>material</strong> (<a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material"><em>Material</em></a><em>, </em><em>optional</em>) – Material for every solid in the file.  Omitted, the solids come
+back as construction bodies (see <a class="reference internal" href="#magnelio.io.import_step" title="magnelio.io.import_step"><code class="xref py py-func docutils literal notranslate"><span class="pre">import_step()</span></code></a>).</p></li>
+<li><p><strong>heal</strong> (<em>bool</em>) – Repair each solid on import.  Off by default: a BREP file comes
+from the same kernel and is normally already clean.</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – Name for the returned Group and the base name of its solids.
+Defaults to the file name.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The imported solids as <a class="reference internal" href="geo.html#magnelio.geo.ImportedSolid" title="magnelio.geo.ImportedSolid"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImportedSolid</span></code></a>
+members, named <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> for a single solid and <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_1</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_2</span></code>, … for several.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="geo.html#magnelio.geo.Group" title="magnelio.geo.Group">Group</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>FileNotFoundError</strong> – If <em>path</em> does not exist.</p></li>
+<li><p><strong>ValueError</strong> – If the file cannot be read, or contains no solid.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">Material</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_brep</span>
+
+<span class="n">horn</span> <span class="o">=</span> <span class="n">import_brep</span><span class="p">(</span><span class="s2">&quot;horn.brep&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;mm&quot;</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">())</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="magnelio.io.import_step">
+<span class="sig-prename descclassname"><span class="pre">magnelio.io.</span></span><span class="sig-name descname"><span class="pre">import_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">materials</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">heal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.import_step" title="Link to this definition">#</a></dt>
+<dd><p>Import the solids of a STEP file.</p>
+<p>The file’s length unit is read from the file itself, so a model
+drawn in millimetres arrives at its true size in meters and no
+conversion is needed on the caller’s side.  Assemblies are
+flattened: every solid comes back where it sits in the assembly,
+as a member of one <a class="reference internal" href="geo.html#magnelio.geo.Group" title="magnelio.geo.Group"><code class="xref py py-class docutils literal notranslate"><span class="pre">Group</span></code></a>.</p>
+<p>STEP carries no material physics — only names — so materials are
+assigned here, against the name each solid carries in the file.
+Names survive a re-export of the same CAD model, so the same call
+keeps working after the drawing changes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>str</em><em> or </em><a class="reference internal" href="geo.html#magnelio.geo.Path" title="magnelio.geo.Path"><em>Path</em></a>) – The <code class="docutils literal notranslate"><span class="pre">.step</span></code> / <code class="docutils literal notranslate"><span class="pre">.stp</span></code> file to read.</p></li>
+<li><p><strong>materials</strong> (<a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material"><em>Material</em></a><em> or </em><em>dict</em><em>, </em><em>optional</em>) – A single <a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material"><code class="xref py py-class docutils literal notranslate"><span class="pre">Material</span></code></a> is given to every solid.
+A dict maps solid names to materials; keys may use shell
+wildcards (<code class="docutils literal notranslate"><span class="pre">&quot;shield_*&quot;</span></code>), a literal name beats a wildcard,
+and <code class="docutils literal notranslate"><span class="pre">&quot;*&quot;</span></code> acts as a catch-all.  Every key must match at least
+one solid, so a typo is reported instead of silently doing
+nothing.  Solids left unmatched (and every solid if <em>materials</em>
+is omitted) come back as construction bodies — usable as
+Boolean operands, rejected by
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">add()</span></code> until they are given a
+material.</p></li>
+<li><p><strong>heal</strong> (<em>bool</em>) – Repair each solid on import (tolerances, orientation, small
+topological defects).  Cheap and harmless on a clean file;
+turn it off only to inspect a file exactly as written.</p></li>
+<li><p><strong>unify</strong> (<em>bool</em>) – Additionally merge adjacent faces that lie on the same surface.
+CAD kernels often split one planar face into many; merging them
+simplifies the solid, at the price of editing its topology.
+Off by default.</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – Name for the returned Group.  Defaults to the file name.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The imported solids, each an
+<a class="reference internal" href="geo.html#magnelio.geo.ImportedSolid" title="magnelio.geo.ImportedSolid"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImportedSolid</span></code></a> carrying its name, colour
+and assigned material.  Add it to a model like any other
+shape — a Group is flattened into its members on insertion.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="geo.html#magnelio.geo.Group" title="magnelio.geo.Group">Group</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>FileNotFoundError</strong> – If <em>path</em> does not exist.</p></li>
+<li><p><strong>ValueError</strong> – If the file cannot be read, contains no solid, or a <em>materials</em>
+    key matches no solid.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Assign materials by the names the parts carry in the CAD model:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">GeometryModel</span><span class="p">,</span> <span class="n">Material</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_step</span>
+
+<span class="n">parts</span> <span class="o">=</span> <span class="n">import_step</span><span class="p">(</span>
+    <span class="s2">&quot;connector.step&quot;</span><span class="p">,</span>
+    <span class="p">{</span><span class="s2">&quot;pin&quot;</span><span class="p">:</span> <span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">(),</span> <span class="s2">&quot;shell&quot;</span><span class="p">:</span> <span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">(),</span>
+     <span class="s2">&quot;insulator&quot;</span><span class="p">:</span> <span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;PTFE&quot;</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">2.1</span><span class="p">)},</span>
+<span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">GeometryModel</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Import first, inspect the names, assign afterwards:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">parts</span> <span class="o">=</span> <span class="n">import_step</span><span class="p">(</span><span class="s2">&quot;connector.step&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">parts</span><span class="o">.</span><span class="n">members</span><span class="p">()])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="magnelio.io.read_brep">
 <span class="sig-prename descclassname"><span class="pre">magnelio.io.</span></span><span class="sig-name descname"><span class="pre">read_brep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.read_brep" title="Link to this definition">#</a></dt>
 <dd><p>Read a BREP compound file back into an ordered list of shapes.</p>
@@ -1166,6 +1291,8 @@ recovered verbatim by <a class="reference internal" href="#magnelio.io.read_brep
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.ProjectStore.write_eigenmodes"><code class="docutils literal notranslate"><span class="pre">ProjectStore.write_eigenmodes()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.import_brep"><code class="docutils literal notranslate"><span class="pre">import_brep()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.import_step"><code class="docutils literal notranslate"><span class="pre">import_step()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.read_brep"><code class="docutils literal notranslate"><span class="pre">read_brep()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.write_brep"><code class="docutils literal notranslate"><span class="pre">write_brep()</span></code></a></li>
 </ul>

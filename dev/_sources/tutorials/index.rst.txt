@@ -275,6 +275,23 @@ as a ``.py`` script or a ``.ipynb`` notebook.
     </div>
 
 
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Not every model is drawn in Magnelio.  A connector, a housing, a machined part — anything with a mechanical drawing behind it — already exists in a CAD system, and rebuilding it with primitives is both work and a source of discrepancies between the simulated and the manufactured part.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_16_cad_import_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_16_cad_import`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Importing a CAD model</div>
+    </div>
+
+
 .. thumbnail-parent-div-close
 
 .. raw:: html
@@ -300,6 +317,7 @@ as a ``.py`` script or a ``.ipynb`` notebook.
    /tutorials/plot_13_dielectric_filter
    /tutorials/plot_14_profile_geometry
    /tutorials/plot_15_dipole_farfield
+   /tutorials/plot_16_cad_import
 
 
 
