@@ -15,7 +15,7 @@ against the closed form.  The file ``connector.step`` sits next to this
 script.
 """
 
-# sphinx_gallery_thumbnail_number = 2
+# sphinx_gallery_thumbnail_number = 1
 
 from pathlib import Path
 
@@ -66,7 +66,7 @@ for solid in parts.members():
 # after the drawing changes; positions and face counts do not.
 
 pec = mio.Material.pec()
-ptfe = mio.Material.from_isotropic(name="PTFE", epsilon=2.1)
+ptfe = mio.Material(name="PTFE", epsilon=(2.1,) * 3, color=(0.45, 0.68, 0.84), alpha=0.6)
 
 connector = import_step(
     STEP_FILE,
@@ -104,10 +104,18 @@ model.add(connector)
 fig, ax = plots.plot_cross_section(model, "z", 6e-3, title="feed-through, cut across the axis")
 
 # %%
-# The cross-section is drawn in the colours the CAD system painted the
-# parts with; STEP carries those too.  They are decoration only — the
-# physics comes from the materials assigned above — and a material with
-# an explicit colour of its own keeps it.
+# The brass of the pin and the steel of the shell are the colours the
+# CAD system painted those parts with: STEP carries them, and the
+# import hands them on.  They are decoration only — the physics comes
+# from the materials assigned above.
+#
+# The insulator shows the other half of the rule, and why a material
+# may want a colour of its own.  CAD systems paint PTFE off-white, and
+# an off-white ring between two greys is a picture that says nothing
+# about what the parts *are*.  A ``color`` on the material overrules
+# the file, so the dielectric above was given the tint Magnelio would
+# have chosen for it anyway, and reads as a dielectric again.  Neither
+# ``color`` nor ``alpha`` touches the field solve.
 
 # %%
 # Running the imported part

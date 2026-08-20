@@ -18,7 +18,7 @@ The fabrication set (``microstrip.gbrjob`` and the Gerber files it
 names) sits next to this script.
 """
 
-# sphinx_gallery_thumbnail_number = 2
+# sphinx_gallery_thumbnail_number = 1
 
 from pathlib import Path
 
@@ -144,14 +144,19 @@ print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 print(f"smallest cell: {min(np.diff(mesh.grid.z)) * 1e6:.0f} um, copper: 35 um")
 
 fig, ax = model.plot_cross_section("x", L / 2, mesh=mesh, title="board cross-section")
+ax.set_xlim(2.6, 5.4)  # mm — the trace, not the whole 8 mm width
+ax.set_ylim(-1.05, 0.95)
 
 # %%
-# The cross-section shows the payoff.  The substrate boundaries anchor
-# grid planes and the cells grade from fine near the trace to coarse in
-# the air, exactly as in tutorial 09 — but the smallest cell printed
-# above is hundreds of micrometres, many times the copper it carries,
-# and the whole board fits in a grid of some twenty thousand cells.
-# The metal is there in the physics without being there in the grid.
+# The cross-section shows the payoff — zoomed onto the trace, with
+# three more millimetres of air above the frame.  The substrate
+# boundaries anchor grid planes and the cells are finest inside the
+# substrate and coarsen into the air, exactly as in tutorial 09, but
+# the smallest cell printed above is hundreds of micrometres, many
+# times the copper it carries, and the whole board fits in a grid of
+# some twenty thousand cells.  Trace and ground plane are drawn at
+# their true 35 µm, and neither costs a layer of cells: the metal is
+# there in the physics without being there in the grid.
 #
 # The quasi-TEM mode, from a drawn trace
 # --------------------------------------
