@@ -60,7 +60,7 @@
     <link rel="canonical" href="https://brtkrtz.github.io/magnelio/dev/tutorials/plot_16_cad_import.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="API reference" href="../api/index.html" />
+    <link rel="next" title="Importing a circuit board" href="plot_17_pcb_import.html" />
     <link rel="prev" title="Antenna symmetry: a half-wave dipole as a half model" href="plot_15_dipole_farfield.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -379,6 +379,7 @@
 <li class="toctree-l1"><a class="reference internal" href="plot_14_profile_geometry.html">Profiles: shapes the primitives do not cover</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_15_dipole_farfield.html">Antenna symmetry: a half-wave dipole as a half model</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Importing a CAD model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_17_pcb_import.html">Importing a circuit board</a></li>
 </ul>
 </div>
 </nav></div>
@@ -505,7 +506,7 @@ keyed by the solid names just printed.</p>
 <p>Names are what a re-export preserves, so this mapping keeps working
 after the drawing changes; positions and face counts do not.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">pec</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">()</span>
-<span class="n">ptfe</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Material</span><span class="o">.</span><span class="n">from_isotropic</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;PTFE&quot;</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">2.1</span><span class="p">)</span>
+<span class="n">ptfe</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;PTFE&quot;</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">2.1</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mf">0.45</span><span class="p">,</span> <span class="mf">0.68</span><span class="p">,</span> <span class="mf">0.84</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">)</span>
 
 <span class="n">connector</span> <span class="o">=</span> <span class="n">import_step</span><span class="p">(</span>
     <span class="n">STEP_FILE</span><span class="p">,</span>
@@ -540,10 +541,17 @@ closes the coaxial line off at the outside.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">plots</span><span class="o">.</span><span class="n">plot_cross_section</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="mf">6e-3</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;feed-through, cut across the axis&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_16_cad_import_001.png" srcset="../_images/sphx_glr_plot_16_cad_import_001.png" alt="feed-through, cut across the axis" class = "sphx-glr-single-img"/><p>The cross-section is drawn in the colours the CAD system painted the
-parts with; STEP carries those too.  They are decoration only — the
-physics comes from the materials assigned above — and a material with
-an explicit colour of its own keeps it.</p>
+<img src="../_images/sphx_glr_plot_16_cad_import_001.png" srcset="../_images/sphx_glr_plot_16_cad_import_001.png" alt="feed-through, cut across the axis" class = "sphx-glr-single-img"/><p>The brass of the pin and the steel of the shell are the colours the
+CAD system painted those parts with: STEP carries them, and the
+import hands them on.  They are decoration only — the physics comes
+from the materials assigned above.</p>
+<p>The insulator shows the other half of the rule, and why a material
+may want a colour of its own.  CAD systems paint PTFE off-white, and
+an off-white ring between two greys is a picture that says nothing
+about what the parts <em>are</em>.  A <code class="docutils literal notranslate"><span class="pre">color</span></code> on the material overrules
+the file, so the dielectric above was given the tint Magnelio would
+have chosen for it anyway, and reads as a dielectric again.  Neither
+<code class="docutils literal notranslate"><span class="pre">color</span></code> nor <code class="docutils literal notranslate"><span class="pre">alpha</span></code> touches the field solve.</p>
 </section>
 <section id="running-the-imported-part">
 <h2>Running the imported part<a class="headerlink" href="#running-the-imported-part" title="Link to this heading">#</a></h2>
@@ -618,7 +626,7 @@ neighbouring faces that exporters like to split a plane into.</p>
 <p><strong>Only solids are imported.</strong>  A material fills a volume, so surface
 bodies are reported and skipped — stitch them into solids in the CAD
 system first.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 5.529 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 5.489 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-16-cad-import-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/25be568afb36e8bf28b9d90558f78b7c/plot_16_cad_import.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_16_cad_import.ipynb</span></code></a></p>
@@ -654,11 +662,11 @@ system first.</p>
       </div>
     </a>
     <a class="right-next"
-       href="../api/index.html"
+       href="plot_17_pcb_import.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">API reference</p>
+        <p class="prev-next-title">Importing a circuit board</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

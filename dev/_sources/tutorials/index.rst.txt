@@ -292,6 +292,23 @@ as a ``.py`` script or a ``.ipynb`` notebook.
     </div>
 
 
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Tutorial 09 built a microstrip line out of three bricks.  That works for a line, and stops working the moment the board has more than one trace on it: a real layout is drawn in a layout tool, and redrawing it with primitives is both work and a fresh source of discrepancies between what was simulated and what was manufactured.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_17_pcb_import_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_17_pcb_import`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Importing a circuit board</div>
+    </div>
+
+
 .. thumbnail-parent-div-close
 
 .. raw:: html
@@ -318,6 +335,7 @@ as a ``.py`` script or a ``.ipynb`` notebook.
    /tutorials/plot_14_profile_geometry
    /tutorials/plot_15_dipole_farfield
    /tutorials/plot_16_cad_import
+   /tutorials/plot_17_pcb_import
 
 
 

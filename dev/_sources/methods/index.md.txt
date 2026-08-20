@@ -2,7 +2,7 @@
 
 The chapters below inventory every numerical method currently built
 into Magnelio, in the order a simulation passes through them: spatial
-discretisation, geometry input, mesh generation and conformal
+discretisation, geometry and board input, mesh generation and conformal
 geometry, boundary conditions, port models, lumped circuit elements, dispersive
 materials, conductor losses, sources and monitors, far-field
 computation, and the eigenmode solver.  A final chapter covers implementation-level engineering
@@ -16,6 +16,7 @@ in-house derivations are marked as such in the text.
 
 fit-discretization
 cad-import
+pcb-import
 meshing-conformal
 boundaries
 ports

@@ -451,7 +451,8 @@ component holds the reader/writer classes and geometry file I/O.
 The one-shot save_project/load_project (io/hdf5.py) was removed;
 the store supersedes it.</p>
 <p><code class="docutils literal notranslate"><span class="pre">import_step</span></code> / <code class="docutils literal notranslate"><span class="pre">import_brep</span></code> read geometry drawn in a CAD
-system into the geometry API.</p>
+system into the geometry API; <code class="docutils literal notranslate"><span class="pre">import_pcb</span></code> reads a printed circuit
+board from the fabrication data its layout tool writes.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.io.LoadedGeometry">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.io.</span></span><span class="sig-name descname"><span class="pre">LoadedGeometry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shapes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.LoadedGeometry" title="Link to this definition">#</a></dt>
@@ -1086,6 +1087,94 @@ members, named <code class="docutils literal notranslate"><span class="pre">&lt;
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="magnelio.io.import_pcb">
+<span class="sig-prename descclassname"><span class="pre">magnelio.io.</span></span><span class="sig-name descname"><span class="pre">import_pcb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">materials</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">copper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.import_pcb" title="Link to this definition">#</a></dt>
+<dd><p>Import a printed circuit board from its fabrication data.</p>
+<p>The set is the one a layout tool writes for a board house: Gerber
+files for the copper layers and the board outline, Excellon drill
+files, and the <code class="docutils literal notranslate"><span class="pre">.gbrjob</span></code> job file that records the stackup.  The
+job file is required — the Gerber files are flat drawings and say
+nothing about layer thicknesses or the dielectric, so without it
+there is no third dimension to build.</p>
+<p>Each layer of the stackup arrives as one solid: a copper layer with
+its real thickness, a dielectric filling the board outline.  Plated
+holes arrive as solid copper barrels joining the layers they run
+between; unplated holes and slots are cut out of everything they
+pass through.  Solder mask and silkscreen are ignored.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>str</em><em> or </em><a class="reference internal" href="geo.html#magnelio.geo.Path" title="magnelio.geo.Path"><em>Path</em></a>) – The <code class="docutils literal notranslate"><span class="pre">.gbrjob</span></code> job file, or the folder holding the fabrication
+set (which must contain exactly one job file).</p></li>
+<li><p><strong>materials</strong> (<a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material"><em>Material</em></a><em> or </em><em>dict</em><em>, </em><em>optional</em>) – A single <a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material"><code class="xref py py-class docutils literal notranslate"><span class="pre">Material</span></code></a> is given to every solid.
+A dict maps solid names to materials; keys may use shell
+wildcards (<code class="docutils literal notranslate"><span class="pre">&quot;via_*&quot;</span></code>), a literal name beats a wildcard, and
+every key must match at least one solid, so a typo is reported
+instead of silently doing nothing.  The names are the layer
+names of the stackup (<code class="docutils literal notranslate"><span class="pre">&quot;F.Cu&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;dielectric_1&quot;</span></code>) and
+<code class="docutils literal notranslate"><span class="pre">&quot;via_1&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;via_2&quot;</span></code>, … for the barrels.</p></li>
+<li><p><strong>copper</strong> (<a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material"><em>Material</em></a><em>, </em><em>optional</em>) – Material for every copper layer and every plated barrel.
+Defaults to a perfect electric conductor.  A copper layer is
+thin against any usable cell size, which the mesher resolves
+below the cell only for a perfect conductor — give a finite
+conductivity here only with a mesh fine enough to hold the
+metal thickness.</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – Name for the returned Group.  Defaults to the project name in
+the job file, or the job file’s name.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The layers and barrels, each an
+<a class="reference internal" href="geo.html#magnelio.geo.ImportedSolid" title="magnelio.geo.ImportedSolid"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImportedSolid</span></code></a> carrying its name and
+material.  Add it to a model like any other shape.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="geo.html#magnelio.geo.Group" title="magnelio.geo.Group">Group</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>FileNotFoundError</strong> – If the job file, or a file it names, is missing.</p></li>
+<li><p><strong>ValueError</strong> – If the fabrication data is malformed, states no layer
+    thicknesses, or a <em>materials</em> key matches no solid.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Warns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>UserWarning</strong> – If the stackup states a loss tangent (which is reported, never
+modelled), or omits a dielectric constant.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Copper is placed where the stackup puts it, so the top of the
+topmost dielectric is at <code class="docutils literal notranslate"><span class="pre">z</span> <span class="pre">=</span> <span class="pre">0</span></code>, the top copper occupies
+<code class="docutils literal notranslate"><span class="pre">0</span></code> to its thickness, and the stack grows downwards.</p>
+<p>A plated hole is modelled as a solid cylinder rather than as a
+plated wall around a void.  The wall is a closed conductor, so the
+space it encloses carries no field either way.</p>
+<p>A copper layer is thin against any usable cell size.  The mesher
+resolves it below the cell — one grid plane, thickness carried in
+the sub-cell material fractions — for a perfect conductor and only
+when <a class="reference internal" href="core.html#magnelio.MeshControl" title="magnelio.MeshControl"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeshControl</span></code></a> carries a <code class="docutils literal notranslate"><span class="pre">min_cell_size</span></code>
+larger than the metal thickness.</p>
+<p class="rubric">Examples</p>
+<p>Import a board and give the substrate a material of its own:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">GeometryModel</span><span class="p">,</span> <span class="n">Material</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_pcb</span>
+
+<span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span>
+    <span class="s2">&quot;fabrication/&quot;</span><span class="p">,</span>
+    <span class="p">{</span><span class="s2">&quot;dielectric_1&quot;</span><span class="p">:</span> <span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;RO4350B&quot;</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">3.66</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)},</span>
+<span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">GeometryModel</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Inspect the names before assigning anything:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span><span class="s2">&quot;fabrication/&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">([</span><span class="n">solid</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">solid</span> <span class="ow">in</span> <span class="n">board</span><span class="o">.</span><span class="n">members</span><span class="p">()])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="magnelio.io.import_step">
 <span class="sig-prename descclassname"><span class="pre">magnelio.io.</span></span><span class="sig-name descname"><span class="pre">import_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">materials</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">heal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.import_step" title="Link to this definition">#</a></dt>
 <dd><p>Import the solids of a STEP file.</p>
@@ -1147,7 +1236,7 @@ shape — a Group is flattened into its members on insertion.</p>
 <span class="n">parts</span> <span class="o">=</span> <span class="n">import_step</span><span class="p">(</span>
     <span class="s2">&quot;connector.step&quot;</span><span class="p">,</span>
     <span class="p">{</span><span class="s2">&quot;pin&quot;</span><span class="p">:</span> <span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">(),</span> <span class="s2">&quot;shell&quot;</span><span class="p">:</span> <span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">(),</span>
-     <span class="s2">&quot;insulator&quot;</span><span class="p">:</span> <span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;PTFE&quot;</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">2.1</span><span class="p">)},</span>
+     <span class="s2">&quot;insulator&quot;</span><span class="p">:</span> <span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;PTFE&quot;</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">2.1</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)},</span>
 <span class="p">)</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">GeometryModel</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
 </pre></div>
@@ -1292,6 +1381,7 @@ recovered verbatim by <a class="reference internal" href="#magnelio.io.read_brep
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.import_brep"><code class="docutils literal notranslate"><span class="pre">import_brep()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.import_pcb"><code class="docutils literal notranslate"><span class="pre">import_pcb()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.import_step"><code class="docutils literal notranslate"><span class="pre">import_step()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.read_brep"><code class="docutils literal notranslate"><span class="pre">read_brep()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.write_brep"><code class="docutils literal notranslate"><span class="pre">write_brep()</span></code></a></li>

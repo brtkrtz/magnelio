@@ -1,0 +1,793 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Board import &#8212; Magnelio Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+
+    <script src="../_static/documentation_options.js?v=5d43cf28"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'methods/pcb-import';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/dev/methods/pcb-import.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Mesh generation and conformal geometry" href="meshing-conformal.html" />
+    <link rel="prev" title="CAD import" href="cad-import.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Magnelio Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="fit-discretization.html">Spatial discretisation and time integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cad-import.html">CAD import</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Board import</a></li>
+<li class="toctree-l1"><a class="reference internal" href="meshing-conformal.html">Mesh generation and conformal geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="boundaries.html">Boundary conditions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ports.html">Waveguide ports and S-parameter extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lumped-elements.html">Discrete ports and lumped circuit elements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dispersive-materials.html">Dispersive and lossy materials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conductor-losses.html">Conductor losses</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Numerical methods</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Board import</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="board-import">
+<h1>Board import<a class="headerlink" href="#board-import" title="Link to this heading">#</a></h1>
+<p>A printed circuit board is drawn in a layout tool, not in a field
+solver, and it leaves that tool as <em>fabrication data</em>: the set of files
+a board house is sent.  <a class="reference internal" href="../api/io.html#magnelio.io.import_pcb" title="magnelio.io.import_pcb"><code class="xref py py-func docutils literal notranslate"><span class="pre">import_pcb()</span></code></a> reads that set
+and returns ordinary geometry — one solid per layer of the stackup,
+one per plated hole, each carrying a name and a material
+(<code class="docutils literal notranslate"><span class="pre">io/pcb.py</span></code>, DD-179).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">GeometryModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_pcb</span>
+
+<span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span><span class="s2">&quot;fabrication/&quot;</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">GeometryModel</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="what-a-fabrication-export-carries">
+<h2>What a fabrication export carries<a class="headerlink" href="#what-a-fabrication-export-carries" title="Link to this heading">#</a></h2>
+<p>The set is deliberately the fabrication output rather than any one
+tool’s project file: Gerber and Excellon are what every layout tool
+writes and what every board house reads, so the import is not tied to
+the tool the board was drawn in.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>File</p></th>
+<th class="head"><p>What it carries</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">*.gbr</span></code> per copper layer</p></td>
+<td><p>where the copper is, in two dimensions</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">*.gbr</span></code> profile layer</p></td>
+<td><p>the board edge, as a line</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">*.drl</span></code> drill files</p></td>
+<td><p>hole positions, diameters, plating, layer span</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">*.gbrjob</span></code> job file</p></td>
+<td><p>the stackup: layer order, thicknesses, dielectric</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The job file is required.  Gerber files are flat drawings: nothing in
+them says how thick a copper layer is, how far apart two layers sit, or
+what the dielectric between them is made of.  Without the job file
+there is no third dimension to build, and the import says so rather
+than inventing one.  In a layout tool the job file is part of the
+Gerber export; the stackup it records has to be filled in first (in
+KiCad, <em>Board Setup → Physical Stackup</em>), because a stackup without
+thicknesses is refused for the same reason.</p>
+<p>Solder mask and silkscreen are ignored.  They are thin coatings whose
+effect on a board’s fields is below the accuracy of everything else in
+the model.</p>
+</section>
+<section id="the-stackup-is-taken-literally">
+<h2>The stackup is taken literally<a class="headerlink" href="#the-stackup-is-taken-literally" title="Link to this heading">#</a></h2>
+<p>Each copper and dielectric layer of the stackup becomes one solid at
+its own height.  A layer is built as an <em>area</em> in a plane first — pads,
+tracks and filled zones merged where they overlap, clipped to the board
+outline, with the drilled circles removed — and raised into a slab
+once, at the end.  Nothing is extruded and then fused, which is what
+keeps a Boolean operation from having to resolve thousands of
+35 µm-thin fragments against each other.</p>
+<p>The origin sits on the <strong>top face of the topmost dielectric</strong>, and the
+stack grows downwards:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Layer</p></th>
+<th class="head"><p>z range</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">F.Cu</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0</span></code> … <code class="docutils literal notranslate"><span class="pre">+35</span> <span class="pre">µm</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dielectric_1</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">−1.53</span> <span class="pre">mm</span></code> … <code class="docutils literal notranslate"><span class="pre">0</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">B.Cu</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">−1.565</span> <span class="pre">mm</span></code> … <code class="docutils literal notranslate"><span class="pre">−1.53</span> <span class="pre">mm</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Fixing the origin to the substrate rather than to the outermost copper
+keeps the reference plane where the fields are: adding a layer to the
+stack does not move the rest of the board.</p>
+<section id="what-the-layers-are-named">
+<h3>What the layers are named<a class="headerlink" href="#what-the-layers-are-named" title="Link to this heading">#</a></h3>
+<p>Names are the key materials are assigned against, so they have to be
+unique and to survive a re-export.  Copper layers keep the name the
+stackup gives them (<code class="docutils literal notranslate"><span class="pre">F.Cu</span></code>, <code class="docutils literal notranslate"><span class="pre">In1.Cu</span></code>, <code class="docutils literal notranslate"><span class="pre">B.Cu</span></code>).  Dielectrics are named
+by their position — <code class="docutils literal notranslate"><span class="pre">dielectric_1</span></code>, <code class="docutils literal notranslate"><span class="pre">dielectric_2</span></code>, … — because layout
+tools name every core and prepreg after its material, and two layers
+called <code class="docutils literal notranslate"><span class="pre">FR4</span></code> would make the assignment ambiguous.  Plated barrels are
+<code class="docutils literal notranslate"><span class="pre">via_1</span></code>, <code class="docutils literal notranslate"><span class="pre">via_2</span></code>, … numbered in coordinate order.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span><span class="s2">&quot;fabrication/&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">([</span><span class="n">solid</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">solid</span> <span class="ow">in</span> <span class="n">board</span><span class="o">.</span><span class="n">members</span><span class="p">()])</span>
+</pre></div>
+</div>
+</section>
+<section id="holes-and-vias">
+<h3>Holes and vias<a class="headerlink" href="#holes-and-vias" title="Link to this heading">#</a></h3>
+<p>A plated hole becomes a solid copper cylinder running between the
+copper layers its drill file declares — the whole board for a through
+hole, two adjacent layers for a blind or buried via.  The same circle
+is removed from every layer the hole passes through, so the barrel
+fills the void exactly: barrel and pad meet on coincident faces, with
+no overlap for the mesher to resolve and no gap between them.</p>
+<p>The barrel is solid metal rather than a plated wall around a void.  The
+wall is a closed conductor and the space it encloses carries no field,
+so the two are the same model with one fewer surface.</p>
+<p>Unplated holes and slots are removed from everything they pass through
+and leave no solid behind.</p>
+</section>
+<section id="where-the-model-is-not-the-board">
+<h3>Where the model is not the board<a class="headerlink" href="#where-the-model-is-not-the-board" title="Link to this heading">#</a></h3>
+<p>Between the copper features of an inner layer, a real board has
+prepreg that flowed into the gaps during lamination.  Here those gaps
+fall to the model background instead, because filling them would mean a
+35 µm-thin dielectric slab beside the copper — and a slab that thin
+forces the grid to resolve it, which is exactly what the thin-sheet
+treatment below exists to avoid.  The difference is a 35 µm sliver of
+substrate against air, at the height of an inner layer.</p>
+</section>
+</section>
+<section id="meshing-a-board">
+<h2>Meshing a board<a class="headerlink" href="#meshing-a-board" title="Link to this heading">#</a></h2>
+<p>Copper is thin.  At 35 µm it is two decades below any cell size a board
+simulation can afford, and a grid that resolved it would be unusable.
+The mesher does not have to: a <strong>perfectly conducting</strong> layer thinner
+than the cell-size floor is given a single grid plane on its substrate
+side, and its thickness enters through the sub-cell material fractions
+of the neighbouring cells instead of through a layer of cells of its
+own (see <a class="reference internal" href="meshing-conformal.html"><span class="doc">Mesh generation and conformal geometry</span></a>).</p>
+<p>Two conditions have to hold, and both are the caller’s to arrange:</p>
+<ol class="arabic simple">
+<li><p><strong>The cell-size floor has to be set.</strong>  The mechanism runs only when
+<a class="reference internal" href="../api/core.html#magnelio.MeshControl" title="magnelio.MeshControl"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeshControl</span></code></a> carries a <code class="docutils literal notranslate"><span class="pre">min_cell_size</span></code>; the floor
+is what “thin” is measured against, and without it the layer is
+meshed as an ordinary solid.</p></li>
+<li><p><strong>The copper has to be a perfect conductor.</strong>  This is the default
+for an imported board.  Giving <code class="docutils literal notranslate"><span class="pre">copper=</span></code> a finite conductivity turns
+the layers into ordinary lossy solids, which the grid then has to
+resolve.</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">MeshControl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.mesh.mesher</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mesh</span>
+
+<span class="n">mesh</span> <span class="o">=</span> <span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">MeshControl</span><span class="p">(</span><span class="n">min_nodes_per_wavelength</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_cell_size</span><span class="o">=</span><span class="mf">200e-6</span><span class="p">),</span>
+    <span class="n">f_max</span><span class="o">=</span><span class="mf">5e9</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The floor has to be larger than the copper thickness — that is the
+comparison the detection makes — and there is no reason to put it close
+to it: its purpose is to keep the grid from following the metal, so a
+floor several times the thickness, chosen from the smallest feature the
+<em>fields</em> need resolved, is the useful setting.  200 µm on 35 µm copper
+is a typical starting point.</p>
+<p>Because a copper layer arrives as <strong>one</strong> solid spanning the whole
+board, this works regardless of how narrow the individual tracks are:
+what is compared against the floor is the layer’s thickness, and the
+copper’s actual footprint is classified afterwards, feature by feature.</p>
+<p>Conductor loss on such a layer is not modelled by giving the metal a
+conductivity — see <a class="reference internal" href="conductor-losses.html"><span class="doc">Conductor losses</span></a> for the surface-impedance
+route, which applies to a perfectly conducting boundary.</p>
+</section>
+<section id="materials">
+<h2>Materials<a class="headerlink" href="#materials" title="Link to this heading">#</a></h2>
+<p>Copper layers and barrels default to a perfect electric conductor.
+Dielectrics take the permittivity the job file states; a dielectric
+whose permittivity is missing arrives <strong>without</strong> a material — a
+construction body that the model refuses to accept — rather than
+silently as vacuum.</p>
+<p>Anything can be overridden by name:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">Material</span>
+
+<span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span>
+    <span class="s2">&quot;fabrication/&quot;</span><span class="p">,</span>
+    <span class="p">{</span><span class="s2">&quot;dielectric_1&quot;</span><span class="p">:</span> <span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;RO4350B&quot;</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">3.66</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Keys may use shell wildcards (<code class="docutils literal notranslate"><span class="pre">&quot;via_*&quot;</span></code>), a literal name beats a
+wildcard, and a key that matches no solid is an error rather than a
+silent no-op.</p>
+<section id="loss-tangent">
+<h3>Loss tangent<a class="headerlink" href="#loss-tangent" title="Link to this heading">#</a></h3>
+<p>A stackup states a loss tangent, and the import reports it but does not
+model it.  A loss tangent is a single number, and the job file does not
+record the frequency it was measured at; a loss tangent that does not
+vary with frequency violates Kramers–Kronig, so there is nothing in it
+alone to build a causal material from.</p>
+<p>Supplying that missing frequency is the caller’s decision, and once it
+is supplied the standard causal substrate model
+(<a class="reference internal" href="dispersive-materials.html"><span class="doc">Dispersive and lossy materials</span></a>) does the rest:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">Material</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.materials.dispersion</span><span class="w"> </span><span class="kn">import</span> <span class="n">DispersionModel</span>
+
+<span class="n">fr4</span> <span class="o">=</span> <span class="n">Material</span><span class="o">.</span><span class="n">dispersive</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;FR4&quot;</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">DispersionModel</span><span class="o">.</span><span class="n">djordjevic_sarkar</span><span class="p">(</span>
+        <span class="n">eps_r</span><span class="o">=</span><span class="mf">4.5</span><span class="p">,</span> <span class="n">tan_delta</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span> <span class="n">f_ref</span><span class="o">=</span><span class="mf">1e9</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+<span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span><span class="s2">&quot;fabrication/&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;dielectric_1&quot;</span><span class="p">:</span> <span class="n">fr4</span><span class="p">})</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="limits">
+<h2>Limits<a class="headerlink" href="#limits" title="Link to this heading">#</a></h2>
+<p>The reader refuses, with the file and line, anything it cannot turn
+into copper rather than dropping it silently — a missing pad in a board
+is not something a caller can be expected to notice.  Currently
+refused: step-and-repeat blocks, negative images, the deprecated image
+transformations, single-quadrant arc mode, tracks drawn with a
+rectangular aperture, and the moiré and thermal aperture macro
+primitives.  In each case the remedy is to re-export the layer with the
+construct resolved, which every layout tool can do.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="cad-import.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">CAD import</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="meshing-conformal.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Mesh generation and conformal geometry</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-a-fabrication-export-carries">What a fabrication export carries</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-stackup-is-taken-literally">The stackup is taken literally</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-the-layers-are-named">What the layers are named</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#holes-and-vias">Holes and vias</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#where-the-model-is-not-the-board">Where the model is not the board</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#meshing-a-board">Meshing a board</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#materials">Materials</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#loss-tangent">Loss tangent</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#limits">Limits</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/methods/pcb-import.md.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Bernd Breitkreutz.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

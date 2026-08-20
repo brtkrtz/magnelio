@@ -122,7 +122,7 @@ after the drawing changes; positions and face counts do not.
 
 
     pec = mio.Material.pec()
-    ptfe = mio.Material.from_isotropic(name="PTFE", epsilon=2.1)
+    ptfe = mio.Material(name="PTFE", epsilon=(2.1,) * 3, color=(0.45, 0.68, 0.84), alpha=0.6)
 
     connector = import_step(
         STEP_FILE,
@@ -185,14 +185,22 @@ closes the coaxial line off at the outside.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 107-111
+.. GENERATED FROM PYTHON SOURCE LINES 107-119
 
-The cross-section is drawn in the colours the CAD system painted the
-parts with; STEP carries those too.  They are decoration only — the
-physics comes from the materials assigned above — and a material with
-an explicit colour of its own keeps it.
+The brass of the pin and the steel of the shell are the colours the
+CAD system painted those parts with: STEP carries them, and the
+import hands them on.  They are decoration only — the physics comes
+from the materials assigned above.
 
-.. GENERATED FROM PYTHON SOURCE LINES 113-119
+The insulator shows the other half of the rule, and why a material
+may want a colour of its own.  CAD systems paint PTFE off-white, and
+an off-white ring between two greys is a picture that says nothing
+about what the parts *are*.  A ``color`` on the material overrules
+the file, so the dielectric above was given the tint Magnelio would
+have chosen for it anyway, and reads as a dielectric again.  Neither
+``color`` nor ``alpha`` touches the field solve.
+
+.. GENERATED FROM PYTHON SOURCE LINES 121-127
 
 Running the imported part
 -------------------------
@@ -201,7 +209,7 @@ From here on nothing is specific to the import.  The line is coaxial
 with a 0.65 mm pin in a 2.18 mm bore filled with PTFE, so both ends
 take an analytical coax port, and a single run gives the S-matrix.
 
-.. GENERATED FROM PYTHON SOURCE LINES 119-142
+.. GENERATED FROM PYTHON SOURCE LINES 127-150
 
 .. code-block:: Python
 
@@ -241,7 +249,7 @@ take an analytical coax port, and a single run gives the S-matrix.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 143-150
+.. GENERATED FROM PYTHON SOURCE LINES 151-158
 
 A uniform, lossless line transmits everything and delays it by the
 time the wave needs to cross — so the check is the phase of
@@ -251,7 +259,7 @@ time the wave needs to cross — so the check is the phase of
 
    \angle S_{21} = -2\pi f \sqrt{\varepsilon_r}\, L / c_0 .
 
-.. GENERATED FROM PYTHON SOURCE LINES 150-169
+.. GENERATED FROM PYTHON SOURCE LINES 158-177
 
 .. code-block:: Python
 
@@ -286,7 +294,7 @@ time the wave needs to cross — so the check is the phase of
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 170-190
+.. GENERATED FROM PYTHON SOURCE LINES 178-198
 
 Units, healing, and the other format
 ------------------------------------
@@ -312,7 +320,7 @@ system first.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 5.529 seconds)
+   **Total running time of the script:** (0 minutes 5.489 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_16_cad_import.py:
