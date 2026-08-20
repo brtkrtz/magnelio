@@ -336,7 +336,7 @@ def plot_cross_section(
     from matplotlib.patches import Polygon as MplPolygon  # noqa: PLC0415
 
     from magnelio.geo._occ_backend import cross_section_polygons  # noqa: PLC0415
-    from magnelio.post._colors import material_color  # noqa: PLC0415
+    from magnelio.post._colors import shape_color  # noqa: PLC0415
 
     if normal not in _AXIS_LABELS:
         raise ValueError(f"normal must be 'x', 'y', or 'z'; got {normal!r}")
@@ -371,7 +371,7 @@ def plot_cross_section(
         if not mat.visible:
             continue
 
-        rgba = material_color(mat)
+        rgba = shape_color(shape)
         transparent = rgba[3] < 1e-6
         if transparent and not outline_transparent:
             continue  # fully transparent (air) — skip
@@ -724,7 +724,7 @@ def show_geometry(
     """
     from OCC.Display.WebGl.jupyter_renderer import JupyterRenderer  # noqa: PLC0415
 
-    from magnelio.post._colors import material_color  # noqa: PLC0415
+    from magnelio.post._colors import shape_color  # noqa: PLC0415
 
     renderer: Any = JupyterRenderer(size=size)
 
@@ -739,8 +739,7 @@ def show_geometry(
 
     for shape in shapes:
         occ_shp = shape._occ_shape(geo_scale)
-        mat = shape.material
-        rgba = material_color(mat)
+        rgba = shape_color(shape)
 
         is_air = rgba[3] < 1e-6
         color_hex = _rgba_to_hex(*rgba[:3]) if not is_air else "#e0e8f0"

@@ -21,7 +21,8 @@ Directory layout (the write-once model, plus the ``runs/`` and
   ``BRepTools`` (exact, lossless round-trip); the shape → material
   mapping rides in ``geometry.json`` in the same order the compound
   iterates.  BREP carries the boundary representation only, so the
-  reconstructed geometry is OCC-shape-backed (:class:`_LoadedShape`) —
+  reconstructed geometry is kernel-shape-backed
+  (:class:`~magnelio.geo.ImportedSolid`) —
   the original ``Brick`` / ``Difference`` CSG tree is not recovered
   (by design; the store serves visualisation, documentation and
   re-meshing, and resume never needs geometry).
@@ -233,50 +234,6 @@ def read_brep(path: str | Path) -> list:
         shapes.append(it.Value())
         it.Next()
     return shapes
-
-
-class _LoadedShape:
-    """OCC-shape-backed geometry shape recovered from a BREP store.
-
-    Exposes the read surface that :meth:`~magnelio.mesh.mesher.Mesh.
-    from_geometry`, VTM/STL export, and geometry plotting rely on
-    (``_occ_shape``, ``material``, ``name``, ``bounding_box``), so a
-    loaded geometry can be re-meshed or visualised — but it is *not* the
-    original CSG primitive (BREP stores boundary representation only).
-    """
-
-    def __init__(self, shape, material, name: str | None = None) -> None:
-        self._shape = shape
-        self.material = material
-        self.name = name
-        self._scaled: dict[float, object] = {}
-
-    def _occ_shape(self, scale: float = 1.0):
-        # The stored BRep is meter-space; a non-unity DD-120 scale is
-        # realised as a lazy uniform transform (cached per scale).
-        if scale == 1.0:
-            return self._shape
-        cached = self._scaled.get(scale)
-        if cached is None:
-            from magnelio.geo._occ_backend import occ_scale  # noqa: PLC0415
-
-            cached = occ_scale(self._shape, float(scale), (0.0, 0.0, 0.0))
-            self._scaled[scale] = cached
-        return cached
-
-    def _analytic_bbox(self):
-        # OCC-free is impossible for a BRep-only shape, but no build at
-        # an unknown scale is involved either: the meter-space shape
-        # already exists, so its BRep bbox is a valid (exact) source
-        # for the DD-120 scale choice.
-        from magnelio.geo._occ_backend import bounding_box  # noqa: PLC0415
-
-        return bounding_box(self._shape)
-
-    def bounding_box(self, scale: float | None = None):
-        from magnelio.geo._occ_backend import bounding_box  # noqa: PLC0415
-
-        return bounding_box(self._shape)
 
 
 class LoadedGeometry:
@@ -2474,6 +2431,11 @@ class ProjectStore:
                 "names": [getattr(s, "name", None) for s in shapes],
                 "kinds": ["wire" if isinstance(s, ThinWire) else "solid" for s in shapes],
                 "radii": [s.radius if isinstance(s, ThinWire) else None for s in shapes],
+                # Display colour imported from a CAD file (DD-178), if any.
+                "colors": [
+                    list(c) if (c := getattr(s, "color", None)) is not None else None
+                    for s in shapes
+                ],
                 "background": (_material_to_dict(background) if background is not None else None),
             },
         )
@@ -2822,6 +2784,8 @@ class Project(ScatteringResultMixin):
         geometry (``geometry.brep`` absent).
         """
         if self._geometry is None:
+            from magnelio.geo.imported import ImportedSolid  # noqa: PLC0415
+
             brep = self.path / "geometry.brep"
             if not brep.exists():
                 return None
@@ -2850,9 +2814,10 @@ class Project(ScatteringResultMixin):
                     stacklevel=2,
                 )
             names = gj.get("names", [None] * len(mats))
+            colors = gj.get("colors") or [None] * len(mats)
             shapes = [
-                _LoadedShape(s, m, name=n)
-                for s, m, n, kind in zip(occ_shapes, mats, names, kinds)
+                ImportedSolid(s, m, name=n, color=tuple(c) if c is not None else None)
+                for s, m, n, c, kind in zip(occ_shapes, mats, names, colors, kinds)
                 if kind != "wire"
             ]
             self._geometry = LoadedGeometry(shapes, background)

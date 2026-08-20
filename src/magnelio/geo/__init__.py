@@ -13,6 +13,8 @@ CSG geometry subsystem.
   operators ``a + b`` / ``a - b`` / ``a & b`` on any shape — and
   ``Loft`` through a series of cross-sections.
 - Containers: ``Group`` (material-preserving bundle), ``GeometryModel``.
+- Imported geometry: ``ImportedSolid`` — a solid read from a CAD file
+  (``magnelio.io.import_step``) or from a project store.
 - Verbs: chainable shape methods — ``.translated()``, ``.rotated()``,
   ``.scaled()``, ``.mirrored()``, ``.chamfered()``, ``.filleted()``,
   ``.extruded()``, ``.lofted()``, ``.revolved()``, ``.swept()``,
@@ -29,6 +31,7 @@ from typing import TYPE_CHECKING
 
 from magnelio.geo._validate import operand
 from magnelio.geo.curves import Curve
+from magnelio.geo.imported import ImportedSolid
 from magnelio.geo.modifications import Loft
 from magnelio.geo.operations import Difference, Group, Intersection, Union
 from magnelio.geo.path import Path
@@ -441,5 +444,6 @@ __all__ = [
     "Loft",
     "Group",
     "ThinWire",
+    "ImportedSolid",
     "GeometryOverlapError",
 ]
