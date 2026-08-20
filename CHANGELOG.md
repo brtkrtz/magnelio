@@ -9,6 +9,22 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+### Added
+
+- CAD import: `magnelio.io.import_step` reads a STEP file — solids,
+  their names, their display colours and the file's length unit, so a
+  part drawn in millimetres arrives at its true size.  Materials are
+  assigned on import by solid name, with wildcards and a literal-wins
+  rule; a key matching no solid is an error, and an unmapped solid
+  arrives as a construction body rather than silently as vacuum.
+  Assemblies are flattened into a `Group` with every solid placed.
+  `magnelio.io.import_brep` reads the geometry kernel's own format,
+  which states no unit, so `unit=` is required.
+- `magnelio.geo.ImportedSolid`: the shape type both importers and the
+  project store return.  It is a full `Shape` — Boolean operators, the
+  chainable verbs, `volume()` — and carries the name and display colour
+  its source file gave it.
+
 ### Fixed
 
 - Installing without pythonocc-core (the pip route) failed at the first
@@ -254,7 +270,7 @@ First public release.
   (Hammerstad, Huray)
 - Geometry: CSG primitives and Boolean operators (`a - b`, `a + b`,
   `a & b`), chainable transforms, profile-based construction (loft,
-  sweep, revolve, shell), STEP import via pythonocc-core; thin wires
+  sweep, revolve, shell), thin wires
 - Field monitors (time and frequency domain, flux, wall loss),
   plane-wave source (TF/SF), 3D cavity eigenmode solver
 - Project store on disk: streamed results, bit-exact resume,

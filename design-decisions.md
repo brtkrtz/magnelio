@@ -3852,7 +3852,7 @@ finished/aborted runs resume bit-exactly.  Nine frozen decisions:
 | D5 | The store is a **Level-B primitive**; Level A consumes it; RAM-only stays the Level-B default. |
 | D6 | Store unit = **named run = one time-marching trajectory**; the S-matrix is **derived on read** from stored raw V/I — never stored — so partial fill and later fill-in are natural. |
 | D7 | **Shared container for TD + eigen**: runs (streamable, TD) and results (one-shot); streaming/resume are TD-specific. |
-| D8 | Geometry: **BREP** (exact round-trip) + **STL** (viz); STEP dropped. |
+| D8 | Geometry: **BREP** (exact round-trip) + **STL** (viz); STEP dropped *as a store format* — STEP import is DD-178. |
 | D9 | Old ``save_project``/``load_project`` **deleted**; its writers reused inside the store. |
 
 Rejected forks (developer, session 97): Zarr / hand-rolled append-log
@@ -8653,7 +8653,8 @@ Supporting rationale:
 
 **Deferred/rejected** (recorded so the gaps are known, not forgotten):
 bend and cylindrical-bend operations; `Insert`/`Imprint` Booleans with
-material precedence; STEP import and healing; analytical parametric
+material precedence; STEP import and healing (taken up in DD-178);
+analytical parametric
 curves (in Python, generate points and spline them); elliptical
 cylinder; sphere pole truncation; twist and taper on extrusions.
 **Local/working coordinate systems are rejected outright**, not
@@ -11858,3 +11859,107 @@ in one call.
 **Files:** `src/magnelio/sources/plane_wave.py`,
 `tests/integration/test_plane_wave.py` (amplitude and leakage on all
 six axes), `benchmarks/bench_plane_wave_tfsf.py` (the table above).
+
+---
+
+## DD-178 — CAD import: STEP is the format, names are the interface
+
+**Problem.**  Every model had to be rebuilt with the CSG API.  For the
+parts Magnelio is aimed at — connectors, housings, machined
+accelerator components — a mechanical drawing already exists, and
+redrawing it is both work and a source of discrepancies between what
+is simulated and what is manufactured.  `read_brep` existed but only
+as the project store's own reader: it returns bare `TopoDS_Shape`
+objects, states no unit and knows no names.
+
+**Decision.**  `magnelio.io.import_step` / `import_brep`, returning a
+`geo.Group` of `geo.ImportedSolid`.  Five choices are worth recording.
+
+*STEP over BREP.*  FreeCAD's `.brep` export is literally
+`BRepTools::Write` — the same kernel, exact and lossless — which makes
+it tempting.  It carries no length unit, no names and no colours,
+though, so it cannot be read without out-of-band knowledge, and the
+failure mode of guessing wrong is a model a thousand times too large
+that nothing contradicts.  STEP states its unit, names its solids and
+carries display colours, and every CAD system writes it.  BREP stays
+as the secondary path with a mandatory `unit=`.
+
+*Materials by name, assigned at import.*  No exchange format carries
+the constitutive parameters a field solver needs; what CAD systems
+call a material is a parts-list label.  Assignment is therefore keyed
+on the solid names, which are what survives a re-export after the
+drawing changes (positions, face counts and solid order do not).  The
+resolution rules exist to make a stale mapping loud: literal beats
+wildcard, two wildcards disagreeing over one solid is an error, and a
+key matching nothing is an error naming the available solids.
+
+*Unmapped solids are construction bodies, not vacuum.*  They arrive
+with `material=None`, which DD-127 already defines as a body usable as
+a Boolean operand but rejected by `GeometryModel.add`.  A half-mapped
+assembly therefore cannot mesh with its unmapped parts silently
+filled by the background.
+
+*Flatten assemblies into a Group.*  The assembly tree is a container
+structure, not geometry; `Group` (DD-071) already is the
+material-preserving bundle the rest of the API consumes, distributes
+transforms over its members and is flattened again at `add()`.
+Reproducing the tree would add a second hierarchy with no consumer.
+Component placements are accumulated down the tree and baked into the
+leaf solids.
+
+*Colour is a display channel, never a material fork.*  `Material.__eq__`
+drives the material library and the overlap check, so cloning a
+material per file colour would fragment both.  The colour rides on the
+shape, and `post/_colors.material_color(mat, color)` takes the hue from
+the file but the **opacity** from the material — opacity encodes what
+a body is (metal opaque, dielectric translucent, vacuum invisible),
+which is a modelling statement, not decoration.  An explicit
+`Material(color=…)` still wins.
+
+**Mechanics.**  `STEPCAFControl_Reader` with name and colour mode into
+an XCAF document.  Units are normalised by setting the process-global
+`xstep.cascade.unit` to `M` around the read and restoring it in a
+`finally`; the stored `TopoDS_Shape` is therefore always meter-space,
+which is exactly the contract the store's loaded shapes already had.
+XCAF invents placeholder label names after the shape type (`SOLID`,
+`COMPOUND`) for products that carried none — every unnamed solid would
+get the same one, so those are treated as unnamed and replaced by
+`solid_1…n`.  Colour is read from the placed instance first
+(`GetInstanceColor`) and from the prototype label second
+(`XCAFDoc_ColorTool.GetColor`, a static method), surface before
+generic before curve.  Non-solid leaves (free faces, unstitched
+shells) are warned about and skipped; a file with no solid at all is
+an error.
+
+`_LoadedShape`, the store's private BRep wrapper, **became**
+`geo.ImportedSolid`: same lazy per-scale transform (DD-120), now a
+`Shape` subclass, so an imported solid has the verbs and the Boolean
+operators and the store's loaded geometry gained them with it.
+Healing is `ShapeFix_Shape` per solid (`heal=True` by default for
+STEP, off for BREP, which comes from this kernel);
+`ShapeUpgrade_UnifySameDomain` is opt-in because it edits topology.
+A solid still invalid after healing produces a warning naming it, not
+an error — the mesher has its own guards.
+
+**Consequences.**  Geometry that came from a file is indistinguishable
+from geometry that was drawn: the integration gate meshes a STEP box
+and the equivalent `Brick` and compares grid lines and material fill
+element by element.  `geometry.json` gained a schema-additive
+`"colors"` list, so a store round-trip keeps the file colours; a store
+written before this reads back as all-`None`.  Parametric history is
+*not* recoverable from any exchange format and is not attempted —
+changing a dimension means changing it in the CAD system and
+exporting again, which is what the name-keyed material mapping is
+built to survive.
+
+**Deferred:** sheet bodies and sewing shells into solids; IGES and
+mesh formats; Gerber/PCB import (a separate track: stackup, drill
+data, 2-D union per layer before extrusion).
+
+**Files:** `src/magnelio/io/cad.py`, `src/magnelio/geo/imported.py`,
+`src/magnelio/io/project.py` (rehydration, `colors`),
+`src/magnelio/post/_colors.py`, `src/magnelio/io/paraview.py`,
+`tests/unit/test_import_cad.py`,
+`tests/integration/test_import_step_pipeline.py`,
+`docs/methods/cad-import.md`,
+`examples/tutorials/plot_16_cad_import.py`.
