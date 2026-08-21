@@ -12247,11 +12247,85 @@ be re-measured for a 64-wide wavefront.  Intel `dpnp` is the same shape
 for a narrower audience.  `array-api-compat` stays unnecessary at 87
 call sites, as [[DD-006]] already judged.
 
+**Measured on hardware, not estimated.**  The table above rests on
+STREAM; the kernel itself was then measured on an M1 Pro (10-core,
+8P+2E, 16 GB, 200 GB/s fabric) under both macOS 15 and Asahi Linux,
+against the Ryzen/Ada desktop.  The harness is geometry-free — a vacuum
+cube with PEC walls driving `FITTimeDomainSolver` directly, so no port
+operators or DFT accumulators enter the per-step cost — and derives the
+step cost from a three-point least-squares fit of `t(N) = setup +
+N·cost`, keeping it clear of the second-scale scatter in setup (internal
+record `userscripts/fitbench.py`, results in `userscripts/fitbench/`).
+Fit residuals stayed below 0.7 %.
+
+Thread scaling at 4 Mcells, achieved bandwidth [GB/s]:
+
+| Threads | M1 Pro, macOS | M1 Pro, Asahi | 7800X3D |
+|---|---|---|---|
+| 1 | 23.0 | 22.6 | 42.5 |
+| 4 | 64.6 | 58.6 | 79.5 |
+| 8 | 71.7 | **82.5** | **81.3** |
+| 10 / 16 | 68.1 | 51.5 | 71.9 |
+
+Three findings.  *The kernel reaches about 41 % of the fabric*
+(82.5 of 200 GB/s), far below STREAM's 88 %, which is the three-stride
+prefetch penalty the Metal argument above already anticipated — so the
+CPU-side figure in that table is optimistic and the headroom a Metal
+backend could claim is nearer the 2× estimated there than the 1.0–1.4×
+tabulated.  The rejection stands on its other grounds.  *Efficiency
+cores subtract throughput*: `prange` splits the loop statically and
+every kernel ends on a barrier, so two slow cores hold eight fast ones
+at the barrier — costing 5 % under macOS, which migrates threads
+between clusters, and 38 % under Asahi, which does not.  *At this mesh size and
+equal thread count Asahi is 15 % faster than macOS*; the sweep's apparent
+macOS lead (76.0 vs 51.9 GB/s at 8 Mcells) is entirely the ten-thread
+default, not the platform.  That lead narrows on larger meshes — see the
+re-sweep below.
+
+Consequence for every CPU run: set the thread count to the number of
+performance cores.  Not wired into the library — `NUMBA_NUM_THREADS` is
+the user's to set, and the performance-core count is not portably
+discoverable.
+
+Re-sweeping all three machines at eight threads sizes that consequence
+and settles the platform question.  Achieved bandwidth [GB/s], vendor
+default → eight threads:
+
+| Mcells | 7800X3D 16→8 | Asahi 10→8 | macOS 10→8 |
+|---|---|---|---|
+| 0.12 | 72.6 → 100.0 | 33.3 → 50.8 | 33.8 → 36.2 |
+| 1.00 | 174.9 → 222.1 | 48.7 → 73.2 | 54.6 → 67.2 |
+| 4.02 | 61.4 → 81.7 | 51.2 → 80.3 | 69.1 → 70.6 |
+| 8.00 | 45.6 → 48.3 | 51.9 → 80.8 | 76.0 → 75.1 |
+| 16.0 | — | 58.0 → **82.9** | 76.5 → 80.5 |
+
+Three corrections follow.  *The x86 gain is 6–38 %, not the 8–10 % first
+recorded* — that figure came from a single 8 Mcell measurement, the one
+point where the effect is smallest, because a saturated memory system
+leaves no thread layout anything to win; where the working set still fits
+in cache, SMT siblings cost L1/L2 and issue slots and the gain is
+largest.  *The M1 Pro ceiling is 82.9 GB/s, 41 % of its 200 GB/s
+fabric* — the thread scan predicted 82.5 from a different direction, so
+the wall is real and reproducible, and it is a prefetch wall, not a
+parallelism one.  *At eight threads the two operating systems converge*:
+82.9 vs 80.5 GB/s at 16 Mcells is a 3 % difference, not the platform gap
+the default-thread sweep suggested.  Asahi keeps a real 14 % lead at
+4 Mcells; beyond that both hit the same fabric limit.  Choosing between
+macOS and Asahi is therefore not a performance decision once the thread
+count is set.
+
+Cross-check on measurement quality: the GPU column was re-measured
+unintentionally in the same sweeps (thread count touches only the CPU
+path) and reproduced to better than 1 % — 419.9/679.1/916.8/538.4/426.7/
+351.3 against 420.7/674.8/919.4/532.5/426.5/351.1 GB/s.
+
 **Adjacent, not part of this.**  If Apple Silicon performance matters,
-the lever is the fused Numba CPU kernel, not a GPU backend: whether it
-actually reaches the achievable 224–338 GB/s (thread scaling across
-P- and E-cores, `prange` parallelism when `Nx` is small, cache blocking
-across the three neighbour strides).  That is backend-agnostic and
+the lever is the fused Numba CPU kernel, not a GPU backend.  Thread
+scaling is now measured (above) and says the ceiling is not the core
+count; what remains untested is `prange` parallelism when `Nx` is small
+and cache blocking across the three neighbour strides — the latter now
+the most promising item, since the 41 % fabric utilisation is a
+prefetch problem, not a parallelism one.  That is backend-agnostic and
 benefits every CPU.
 
 **Files:** none — nothing was implemented.
