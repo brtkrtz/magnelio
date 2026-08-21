@@ -9790,6 +9790,34 @@ diagnosed, none a physics regression:
 After the fix and the three fixture recalibrations the unit suite
 (1746) and the full integration suite run green at the enlarged step.
 
+**Known cost: this is the memory peak of a run** (measured
+2026-08-21, coaxial line with two ports, RSS and `ru_maxrss` per
+phase; internal record `userscripts/fitbench/`).  At 2.58 Mcells the
+process peaks at 4.39 GB, of which `spectral_dt` contributes 2.37 GB —
+against 1.30 GB that stays resident and 0.072 GB/Mcell for the field
+arrays the time loop actually iterates.  Meshing (0.57 GB/Mcell) and
+the material matrices (60 MB, and they are the ones built in float64)
+are not the driver, contrary to the obvious guess.  Two posts:
+
+| post | per Mcell |
+|---|---|
+| ARPACK Krylov basis, default `ncv` = 20 vectors | ~0.49 GB |
+| `C_abs = C.copy()` — full copy of the curl matrix | ~0.15 GB |
+
+The peak is transient — it is gone before the first time step — so on
+a machine with generous swap it costs page-outs, not a failed run,
+which is why nothing was changed here.  Both posts are reducible, at
+different prices.  Sharing `C`'s index arrays instead of copying the
+structure, and dropping `C_abs` once the bound is in hand, is
+bit-identical (`dt` and `lambda_max` unchanged to the last digit) but
+measured only **3.6 %** off the peak — not worth touching production
+code for.  Lowering `ncv` is the real lever, worth about half the
+peak, and the one thing that cannot be done quietly: ARPACK then
+converges on a slightly different value inside the same tolerance,
+`dt` shifts, and the bit-identical rebuild this entry's fixed `v0`
+exists to guarantee is gone — with it the project store's exact
+resume.  Take it up only as a deliberate compatibility decision.
+
 **Gates:** `tests/unit/test_spectral_dt.py` (stable at the measured
 step, unstable 5 % above the limit, dominates the heuristic on a
 conformal fixture, vacuum box stays at the geometric value, cache
