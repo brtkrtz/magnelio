@@ -453,8 +453,8 @@ i = \frac{v_{\text{src}} - v_{\text{hist}} - v_{\text{total}}}
 (<code class="docutils literal notranslate"><span class="pre">ports/discrete/operator.py</span></code>, DD-030/DD-075).  Embedding lumped
 resistive sources and loads into the FDTD grid in this
 field-circuit-consistent way is the established <em>lumped-element FDTD</em>
-technique of Sui et al. <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id28" title="Wenquan Sui, Douglas A. Christensen, and Carl H. Durney. Extending the two-dimensional FDTD method to hybrid electromagnetic systems with active and passive lumped elements. IEEE Transactions on Microwave Theory and Techniques, 40(4):724–730, 1992. doi:10.1109/22.127522.">27</a>]</span> and Piket-May,
-Taflove and Baron <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id29" title="Melinda Piket-May, Allen Taflove, and John Baron. FD-TD modeling of digital signal propagation in 3-D circuits with passive and active loads. IEEE Transactions on Microwave Theory and Techniques, 42(8):1514–1523, 1994. doi:10.1109/22.297814.">28</a>]</span> (the
+technique of Sui et al. <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id30" title="Wenquan Sui, Douglas A. Christensen, and Carl H. Durney. Extending the two-dimensional FDTD method to hybrid electromagnetic systems with active and passive lumped elements. IEEE Transactions on Microwave Theory and Techniques, 40(4):724–730, 1992. doi:10.1109/22.127522.">27</a>]</span> and Piket-May,
+Taflove and Baron <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id31" title="Melinda Piket-May, Allen Taflove, and John Baron. FD-TD modeling of digital signal propagation in 3-D circuits with passive and active loads. IEEE Transactions on Microwave Theory and Techniques, 42(8):1514–1523, 1994. doi:10.1109/22.297814.">28</a>]</span> (the
 semi-implicit averaging of the local field term is the standard
 stabilisation in that literature; the specific multi-edge chain
 formulation follows the in-repo derivation).</p>
@@ -471,9 +471,9 @@ the trapezoidal rule (<code class="docutils literal notranslate"><span class="pr
 \]</div>
 <p>Companion models with trapezoidal (bilinear) integration are the
 classical workhorse of circuit simulators of the SPICE family; the
-canonical references are Nagel’s SPICE2 report <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id30" title="Laurence W. Nagel. SPICE2: a computer program to simulate semiconductor circuits. Technical Report UCB/ERL M520, University of California, Berkeley, 1975.">29</a>]</span>
+canonical references are Nagel’s SPICE2 report <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id32" title="Laurence W. Nagel. SPICE2: a computer program to simulate semiconductor circuits. Technical Report UCB/ERL M520, University of California, Berkeley, 1975.">29</a>]</span>
 and the circuit-simulation textbook treatment of Chua
-and Lin <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id31" title="Leon O. Chua and Pen-Min Lin. Computer-Aided Analysis of Electronic Circuits: Algorithms and Computational Techniques. Prentice-Hall, 1975.">30</a>]</span>.  The trapezoidal rule was
+and Lin <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id33" title="Leon O. Chua and Pen-Min Lin. Computer-Aided Analysis of Electronic Circuits: Algorithms and Computational Techniques. Prentice-Hall, 1975.">30</a>]</span>.  The trapezoidal rule was
 chosen (over backward Euler) for its energy conservation on L/C —
 matching the non-dissipative leapfrog interior — which is a standard
 argument in both circuit and field simulation.</p>
@@ -484,7 +484,7 @@ construction).</p>
 <p>Excitation units follow the power-wave convention: a user waveform in
 <span class="math notranslate nohighlight">\(\sqrt{\mathrm W}\)</span> is realised as <span class="math notranslate nohighlight">\(v_{\text{src}} = 2\sqrt{Z_0}\,a(t)\)</span>
 (DD-078), consistent with Kurokawa power waves
-<span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id18" title="Kaneyuki Kurokawa. Power waves and the scattering matrix. IEEE Transactions on Microwave Theory and Techniques, 13(2):194–202, 1965. doi:10.1109/TMTT.1965.1125964.">26</a>]</span>.</p>
+<span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id20" title="Kaneyuki Kurokawa. Power waves and the scattering matrix. IEEE Transactions on Microwave Theory and Techniques, 13(2):194–202, 1965. doi:10.1109/TMTT.1965.1125964.">26</a>]</span>.</p>
 </section>
 <section id="lumped-devices-on-symmetry-planes">
 <h2>Lumped devices on symmetry planes<a class="headerlink" href="#lumped-devices-on-symmetry-planes" title="Link to this heading">#</a></h2>

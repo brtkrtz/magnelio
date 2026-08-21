@@ -449,8 +449,8 @@ introduced by Weiland <span class="bibtex-citation" id="id1">[<a class="referenc
 the mature
 formulation with the discrete topological operators (curl matrix
 <span class="math notranslate nohighlight">\(\mathbf C\)</span>, exact <span class="math notranslate nohighlight">\(\mathbf S \mathbf C = 0\)</span> identities) and diagonal
-material mass matrices is summarised in <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id4" title="Thomas Weiland. Time domain electromagnetic field computation with finite difference methods. International Journal of Numerical Modelling: Electronic Networks, Devices and Fields, 9(4):295–319, 1996. doi:10.1002/(SICI)1099-1204(199607)9:4&lt;295::AID-JNM240&gt;3.0.CO;2-8.">2</a>]</span>
-and <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id5" title="Markus Clemens and Thomas Weiland. Discrete electromagnetism with the finite integration technique. Progress In Electromagnetics Research (PIER), 32:65–87, 2001. doi:10.2528/PIER00080103.">3</a>]</span>.</p>
+material mass matrices is summarised in <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id6" title="Thomas Weiland. Time domain electromagnetic field computation with finite difference methods. International Journal of Numerical Modelling: Electronic Networks, Devices and Fields, 9(4):295–319, 1996. doi:10.1002/(SICI)1099-1204(199607)9:4&lt;295::AID-JNM240&gt;3.0.CO;2-8.">2</a>]</span>
+and <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id7" title="Markus Clemens and Thomas Weiland. Discrete electromagnetism with the finite integration technique. Progress In Electromagnetics Research (PIER), 32:65–87, 2001. doi:10.2528/PIER00080103.">3</a>]</span>.</p>
 <p>On a Cartesian dual-orthogonal grid the FIT time-domain update is
 algebraically identical to the finite-difference time-domain (FDTD)
 scheme of Yee <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id2" title="Kane S. Yee. Numerical solution of initial boundary value problems involving Maxwell's equations in isotropic media. IEEE Transactions on Antennas and Propagation, 14(3):302–307, 1966. doi:10.1109/TAP.1966.1138693.">4</a>]</span> — the source
@@ -486,14 +486,14 @@ step:</p>
 folded into <span class="math notranslate nohighlight">\(\alpha,\beta\)</span> with the <strong>semi-implicit (time-averaged)
 conductor update</strong>, the standard exponential-free treatment of lossy
 media in FDTD/FIT; the scheme and its properties are textbook material
-<span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id6" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.  The leapfrog scheme
+<span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.  The leapfrog scheme
 itself goes back to Yee <span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id2" title="Kane S. Yee. Numerical solution of initial boundary value problems involving Maxwell's equations in isotropic media. IEEE Transactions on Antennas and Propagation, 14(3):302–307, 1966. doi:10.1109/TAP.1966.1138693.">4</a>]</span>.</p>
 </section>
 <section id="stability-cfl-condition">
 <h2>Stability (CFL condition)<a class="headerlink" href="#stability-cfl-condition" title="Link to this heading">#</a></h2>
 <p>The explicit leapfrog scheme is conditionally stable under the
 Courant–Friedrichs–Lewy criterion
-<span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id7" title="Richard Courant, Kurt Friedrichs, and Hans Lewy. Über die partiellen differenzengleichungen der mathematischen physik. Mathematische Annalen, 100:32–74, 1928. doi:10.1007/BF01448839.">6</a>]</span>, in the FDTD form</p>
+<span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id9" title="Richard Courant, Kurt Friedrichs, and Hans Lewy. Über die partiellen differenzengleichungen der mathematischen physik. Mathematische Annalen, 100:32–74, 1928. doi:10.1007/BF01448839.">6</a>]</span>, in the FDTD form</p>
 <div class="math notranslate nohighlight">
 \[
 \Delta t \le \frac{s}{c_{\max}\sqrt{\Delta x_{\min}^{-2}
@@ -501,7 +501,7 @@ Courant–Friedrichs–Lewy criterion
 \qquad s &lt; 1,
 \]</div>
 <p>(<code class="docutils literal notranslate"><span class="pre">solver/stability.py</span></code>, safety factors 0.90/0.95/0.99).  The FDTD form
-of the criterion is standard <span class="bibtex-citation" id="id8">[<a class="reference internal" href="../bibliography.html#id6" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>, but as a
+of the criterion is standard <span class="bibtex-citation" id="id8">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>, but as a
 worst-case product over per-axis minima it is loose on conformal
 meshes, where partially filled sub-cells reduce the local mass-matrix
 entries.  The production time step is therefore taken from the sharp

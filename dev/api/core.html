@@ -459,15 +459,15 @@ public name lives in exactly one domain namespace —
 underscore modules are internal.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.AnalysisEigenmode">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.</span></span><span class="sig-name descname"><span class="pre">AnalysisEigenmode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_modes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.AnalysisEigenmode" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.</span></span><span class="sig-name descname"><span class="pre">AnalysisEigenmode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_modes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase_advance_deg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.AnalysisEigenmode" title="Link to this definition">#</a></dt>
 <dd><p>High-level eigenmode analysis for 3D cavities.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>mesh</strong> (<a class="reference internal" href="#magnelio.Mesh" title="magnelio.Mesh"><em>Mesh</em></a>) – The simulation mesh, carrying the boundary closure it was built
 with (declared on the <code class="docutils literal notranslate"><span class="pre">GeometryModel</span></code> or on
-<code class="docutils literal notranslate"><span class="pre">Mesh.from_grid</span></code>).  Only PEC and PMC are meaningful for an
-eigenmode problem.</p></li>
+<code class="docutils literal notranslate"><span class="pre">Mesh.from_grid</span></code>).  PEC, PMC and Periodic faces are
+meaningful for an eigenmode problem; CPML is rejected.</p></li>
 <li><p><strong>n_modes</strong> (<em>int</em>) – Number of physical resonant modes to find (default 5).</p></li>
 <li><p><strong>solver</strong> (<em>str</em><em> or </em><em>None</em>) – Inner-solve strategy.  <code class="docutils literal notranslate"><span class="pre">None</span></code> → auto-dispatch (SuperLU for small,
 AMG-CG for large).  <code class="docutils literal notranslate"><span class="pre">&quot;arpack-amg&quot;</span></code> forces AMG, <code class="docutils literal notranslate"><span class="pre">&quot;arpack-superlu&quot;</span></code>
@@ -480,6 +480,14 @@ the modes found so far are kept.  Pass an explicit value
 still returns fewer than <code class="docutils literal notranslate"><span class="pre">n_modes</span></code> modes emits a
 <code class="docutils literal notranslate"><span class="pre">RuntimeWarning</span></code> either way.</p></li>
 <li><p><strong>verbose</strong> (<em>bool</em>) – Print solver progress information.</p></li>
+<li><p><strong>phase_advance_deg</strong> (<em>float</em><em>, </em><em>dict</em><em> or </em><em>None</em>) – Bloch phase advance [degrees] across the mesh’s <code class="docutils literal notranslate"><span class="pre">&quot;Periodic&quot;</span></code>
+face pair — the phase by which the field in one period leads
+the next.  Sweeping it from 0 to 180 traces the dispersion
+diagram of the infinite periodic structure.  A number serves a
+single periodic axis; with several, pass <code class="docutils literal notranslate"><span class="pre">{axis:</span> <span class="pre">degrees}</span></code>.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> (default) is zero phase.  Phases other than 0 and 180
+degrees give complex mode fields and need the default
+(SuperLU) solver.</p></li>
 <li><p><strong>project</strong> (<em>object</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>geometry</strong> (<em>object</em><em> | </em><em>None</em>)</p></li>
 </ul>
@@ -525,6 +533,11 @@ apply.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="magnelio.AnalysisEigenmode.n_modes">
 <span class="sig-name descname"><span class="pre">n_modes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></span><a class="headerlink" href="#magnelio.AnalysisEigenmode.n_modes" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.AnalysisEigenmode.phase_advance_deg">
+<span class="sig-name descname"><span class="pre">phase_advance_deg</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#magnelio.AnalysisEigenmode.phase_advance_deg" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -2229,6 +2242,7 @@ watchdog.  Not inherited — each segment gets its own.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.AnalysisEigenmode.geometry"><code class="docutils literal notranslate"><span class="pre">AnalysisEigenmode.geometry</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.AnalysisEigenmode.mesh"><code class="docutils literal notranslate"><span class="pre">AnalysisEigenmode.mesh</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.AnalysisEigenmode.n_modes"><code class="docutils literal notranslate"><span class="pre">AnalysisEigenmode.n_modes</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.AnalysisEigenmode.phase_advance_deg"><code class="docutils literal notranslate"><span class="pre">AnalysisEigenmode.phase_advance_deg</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.AnalysisEigenmode.project"><code class="docutils literal notranslate"><span class="pre">AnalysisEigenmode.project</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.AnalysisEigenmode.sigma"><code class="docutils literal notranslate"><span class="pre">AnalysisEigenmode.sigma</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.AnalysisEigenmode.solver"><code class="docutils literal notranslate"><span class="pre">AnalysisEigenmode.solver</span></code></a></li>

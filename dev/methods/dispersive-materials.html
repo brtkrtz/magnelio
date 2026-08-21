@@ -451,19 +451,19 @@ are expressed in the <strong>complex-conjugate pole-residue form</strong></p>
 (<code class="docutils literal notranslate"><span class="pre">materials/dispersion.py</span></code>, DD-083).  Using this single general form —
 with Debye, Lorentz, Drude and wideband-laminate models as
 <em>constructors</em> on it rather than separate update schemes — follows
-Han, Dutton and Fan <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id32" title="Mingqi Han, Robert W. Dutton, and Shanhui Fan. Model dispersive media in finite-difference time-domain method with complex-conjugate pole-residue pairs. IEEE Microwave and Wireless Components Letters, 16(3):119–121, 2006. doi:10.1109/LMWC.2006.869862.">31</a>]</span>, who introduced
+Han, Dutton and Fan <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id34" title="Mingqi Han, Robert W. Dutton, and Shanhui Fan. Model dispersive media in finite-difference time-domain method with complex-conjugate pole-residue pairs. IEEE Microwave and Wireless Components Letters, 16(3):119–121, 2006. doi:10.1109/LMWC.2006.869862.">31</a>]</span>, who introduced
 the complex-conjugate pole-residue formulation for dispersive FDTD.</p>
 <p>The named constructors realise classical material models: Debye
 relaxation, Lorentz resonance, Drude conduction (all textbook,
-<span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id6" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>) and the wideband
+<span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>) and the wideband
 causal laminate model of Djordjević, Biljić, Likar-Smiljanić and
-Sarkar <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id33" title="Antonije R. Djordjević, R. M. Biljić, V. D. Likar-Smiljanić, and Tapan K. Sarkar. Wideband frequency-domain characterization of FR-4 and time-domain causality. IEEE Transactions on Electromagnetic Compatibility, 43(4):662–667, 2001. doi:10.1109/15.974647.">32</a>]</span>.</p>
+Sarkar <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id35" title="Antonije R. Djordjević, R. M. Biljić, V. D. Likar-Smiljanić, and Tapan K. Sarkar. Wideband frequency-domain characterization of FR-4 and time-domain causality. IEEE Transactions on Electromagnetic Compatibility, 43(4):662–667, 2001. doi:10.1109/15.974647.">32</a>]</span>.</p>
 <p><strong>Passivity is enforced at construction</strong> (left-half-plane poles plus
 band-sampled <span class="math notranslate nohighlight">\(\varepsilon'' \ge 0\)</span>), acting as the mandatory
 acceptance filter for fitted data — an in-house design rule motivated
 by the well-known instability of non-passive dispersive FDTD models
 (the Kramers–Kronig/passivity background is classical
-<span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id38" title="Lev D. Landau and Evgeny M. Lifshitz. Electrodynamics of Continuous Media. Volume 8 of Course of Theoretical Physics. Pergamon Press, 2nd edition, 1984.">33</a>]</span>).</p>
+<span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id40" title="Lev D. Landau and Evgeny M. Lifshitz. Electrodynamics of Continuous Media. Volume 8 of Course of Theoretical Physics. Pergamon Press, 2nd edition, 1984.">33</a>]</span>).</p>
 </section>
 <section id="auxiliary-differential-equation-ade-update">
 <h2>Auxiliary differential equation (ADE) update<a class="headerlink" href="#auxiliary-differential-equation-ade-update" title="Link to this heading">#</a></h2>
@@ -472,13 +472,13 @@ equation method</strong>: one polarisation-current state per pole on the
 dispersive edges only, advanced with the <strong>trapezoidal rule</strong> and
 folded semi-implicitly into the E update so the field kernels stay
 untouched (<code class="docutils literal notranslate"><span class="pre">solver/dispersion.py</span></code>, DD-084).  The ADE technique is due
-to Kashiwa and Fukai <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id34" title="Tatsuya Kashiwa and Ichiro Fukai. A treatment by the FD-TD method of the dispersive characteristics associated with electronic polarization. Microwave and Optical Technology Letters, 3(6):203–205, 1990. doi:10.1002/mop.4650030606.">34</a>]</span> and
-Joseph, Hagness and Taflove <span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id35" title="Rose M. Joseph, Susan C. Hagness, and Allen Taflove. Direct time integration of Maxwell's equations in linear dispersive media with absorption for scattering and propagation of femtosecond electromagnetic pulses. Optics Letters, 16(18):1412–1414, 1991. doi:10.1364/OL.16.001412.">35</a>]</span>; the
-textbook treatment is <span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id6" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.
+to Kashiwa and Fukai <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id36" title="Tatsuya Kashiwa and Ichiro Fukai. A treatment by the FD-TD method of the dispersive characteristics associated with electronic polarization. Microwave and Optical Technology Letters, 3(6):203–205, 1990. doi:10.1002/mop.4650030606.">34</a>]</span> and
+Joseph, Hagness and Taflove <span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id37" title="Rose M. Joseph, Susan C. Hagness, and Allen Taflove. Direct time integration of Maxwell's equations in linear dispersive media with absorption for scattering and propagation of femtosecond electromagnetic pulses. Optics Letters, 16(18):1412–1414, 1991. doi:10.1364/OL.16.001412.">35</a>]</span>; the
+textbook treatment is <span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.
 Discretising the auxiliary equations by the trapezoidal/bilinear
 transform — A-stable for every passive pole, so the CFL limit stays
 the <span class="math notranslate nohighlight">\(\varepsilon_\infty\)</span> one — is the Möbius/bilinear-transform
-approach of Pereda et al. <span class="bibtex-citation" id="id8">[<a class="reference internal" href="../bibliography.html#id36" title="José A. Pereda, Ángel Vegas, and Andrés Prieto. FDTD modeling of wave propagation in dispersive media by using the Möbius transformation technique. IEEE Transactions on Microwave Theory and Techniques, 50(7):1689–1695, 2002. doi:10.1109/TMTT.2002.800388.">36</a>]</span>.</p>
+approach of Pereda et al. <span class="bibtex-citation" id="id8">[<a class="reference internal" href="../bibliography.html#id38" title="José A. Pereda, Ángel Vegas, and Andrés Prieto. FDTD modeling of wave propagation in dispersive media by using the Möbius transformation technique. IEEE Transactions on Microwave Theory and Techniques, 50(7):1689–1695, 2002. doi:10.1109/TMTT.2002.800388.">36</a>]</span>.</p>
 <p>Two in-house exactness properties are used as structural
 gates: the Drude DC pole (<span class="math notranslate nohighlight">\(a_p = 0\)</span>) reduces bit-exactly to
 the standard semi-implicit conductor update with
@@ -492,14 +492,14 @@ by the exact <span class="math notranslate nohighlight">\(\mu\)</span>-Drude-DC 
 <p>Magnetic conductivity (the <span class="math notranslate nohighlight">\(\sigma^*\)</span> term in the Faraday update) is
 carried as a diagonal <span class="math notranslate nohighlight">\(M_{\sigma^*}\)</span> with the same semi-implicit
 time-averaged update as electric <span class="math notranslate nohighlight">\(\sigma\)</span> (DD-081) — standard
-FDTD/FIT practice <span class="bibtex-citation" id="id9">[<a class="reference internal" href="../bibliography.html#id6" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.</p>
+FDTD/FIT practice <span class="bibtex-citation" id="id9">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.</p>
 </section>
 <section id="vector-fitting-of-measured-data">
 <h2>Vector fitting of measured data<a class="headerlink" href="#vector-fitting-of-measured-data" title="Link to this heading">#</a></h2>
 <p>Tabulated <span class="math notranslate nohighlight">\(\varepsilon(f)\)</span> data are fitted onto the pole-residue form
 with an in-repo implementation of <strong>vector fitting</strong>
 (<code class="docutils literal notranslate"><span class="pre">materials/vector_fit.py</span></code>, DD-086), the pole-relocation iteration of
-Gustavsen and Semlyen <span class="bibtex-citation" id="id10">[<a class="reference internal" href="../bibliography.html#id37" title="Bjorn Gustavsen and Adam Semlyen. Rational approximation of frequency domain responses by vector fitting. IEEE Transactions on Power Delivery, 14(3):1052–1061, 1999. doi:10.1109/61.772353.">37</a>]</span>,
+Gustavsen and Semlyen <span class="bibtex-citation" id="id10">[<a class="reference internal" href="../bibliography.html#id39" title="Bjorn Gustavsen and Adam Semlyen. Rational approximation of frequency domain responses by vector fitting. IEEE Transactions on Power Delivery, 14(3):1052–1061, 1999. doi:10.1109/61.772353.">37</a>]</span>,
 including the standard unstable-pole flipping rule.  Passivity is
 <em>not</em> enforced by the fit; the <code class="docutils literal notranslate"><span class="pre">DispersionModel</span></code> constructor is the
 acceptance filter (see above).  The implementation was written from

@@ -456,7 +456,7 @@ plane clustering, DD-059…DD-062) plus feature-based two-scale
 refinement (<code class="docutils literal notranslate"><span class="pre">h_fine</span></code> near features, <code class="docutils literal notranslate"><span class="pre">h_coarse</span></code> in bulk, geometric
 grading between them, DD-028).  Graded Cartesian meshes and the
 accuracy trade-offs of local grading are standard FDTD/FIT practice
-<span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id6" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>; the specific fixpoint,
+<span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>; the specific fixpoint,
 plane-clustering and thin-sheet heuristics are in-house engineering.</p>
 </section>
 <section id="conformal-sub-cell-material-matrices-partially-filled-cells">
@@ -470,10 +470,10 @@ data (unified per-edge/per-face sub-cell classification, DD-051).
 This family of techniques — retaining the standard leapfrog update and
 encoding sub-cell geometry purely in the material matrices — was
 introduced for FIT by Krietenstein, Schuhmann, Thoma and Weiland
-<span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id13" title="Bernd Krietenstein, Rolf Schuhmann, Peter Thoma, and Thomas Weiland. The perfect boundary approximation technique facing the big challenge of high precision field computation. In Proceedings of the XIX International Linear Accelerator Conference (LINAC 98), 860–862. Chicago, IL, 1998.">7</a>]</span>.</p>
+<span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id15" title="Bernd Krietenstein, Rolf Schuhmann, Peter Thoma, and Thomas Weiland. The perfect boundary approximation technique facing the big challenge of high precision field computation. In Proceedings of the XIX International Linear Accelerator Conference (LINAC 98), 860–862. Chicago, IL, 1998.">7</a>]</span>.</p>
 <p>For perfectly conducting boundaries the classifier additionally
 shortens partially-PEC edges (free-length weighting), which is the
-conformal-PEC idea of Dey and Mittra <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id14" title="Supriyo Dey and Raj Mittra. A locally conformal finite-difference time-domain (FDTD) algorithm for modeling three-dimensional perfectly conducting objects. IEEE Microwave and Guided Wave Letters, 7(9):273–275, 1997. doi:10.1109/75.622536.">8</a>]</span>
+conformal-PEC idea of Dey and Mittra <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id16" title="Supriyo Dey and Raj Mittra. A locally conformal finite-difference time-domain (FDTD) algorithm for modeling three-dimensional perfectly conducting objects. IEEE Microwave and Guided Wave Letters, 7(9):273–275, 1997. doi:10.1109/75.622536.">8</a>]</span>
 (DD-036, since generalised into the unified classifier of DD-051).</p>
 <p>Two refinements are in-house:</p>
 <ul class="simple">
@@ -488,7 +488,7 @@ so a discrete travelling wave on a uniform line is exact
 neutral): stabilising strongly cut cells by borrowing area from the
 uncut neighbour.  The published antecedent is the family of
 uniformly stable conformal schemes / enlarged-cell techniques, e.g.
-Zagorodnov, Schuhmann and Weiland <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id15" title="Igor Zagorodnov, Rolf Schuhmann, and Thomas Weiland. A uniformly stable conformal FDTD-method in Cartesian grids. International Journal of Numerical Modelling: Electronic Networks, Devices and Fields, 16(2):127–141, 2003. doi:10.1002/jnm.488.">9</a>]</span>.</p></li>
+Zagorodnov, Schuhmann and Weiland <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id17" title="Igor Zagorodnov, Rolf Schuhmann, and Thomas Weiland. A uniformly stable conformal FDTD-method in Cartesian grids. International Journal of Numerical Modelling: Electronic Networks, Devices and Fields, 16(2):127–141, 2003. doi:10.1002/jnm.488.">9</a>]</span>.</p></li>
 </ul>
 </section>
 <section id="thin-conducting-sheets">
@@ -496,7 +496,7 @@ Zagorodnov, Schuhmann and Weiland <span class="bibtex-citation" id="id4">[<a cla
 <p>Zero-thickness or sub-cell metallisation is detected before gridding
 (DD-035, DD-059) and represented as PEC edge masks on the primal grid
 (<code class="docutils literal notranslate"><span class="pre">apply_thin_pec_sheet</span></code>, DD-017) — the standard thin-sheet treatment
-in Cartesian time-domain solvers <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id6" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>
+in Cartesian time-domain solvers <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>
 (subcell thin-sheet models are ch. 10 there; the
 detection pipeline itself is in-house).</p>
 </section>
@@ -505,9 +505,9 @@ detection pipeline itself is in-house).</p>
 <p><code class="docutils literal notranslate"><span class="pre">ThinWire(curve,</span> <span class="pre">radius)</span></code> embeds a conductor thinner than a cell as a
 PEC edge chain with corrected surrounding material matrices
 (<code class="docutils literal notranslate"><span class="pre">mesh/thin_wire.py</span></code>, DD-080).  The model is the classic thin-wire
-sub-cell treatment of Holland and Simpson <span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id16" title="Richard Holland and Larry Simpson. Finite-difference analysis of EMP coupling to thin struts and wires. IEEE Transactions on Electromagnetic Compatibility, 23(2):88–97, 1981. doi:10.1109/TEMC.1981.303899.">10</a>]</span>,
+sub-cell treatment of Holland and Simpson <span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id18" title="Richard Holland and Larry Simpson. Finite-difference analysis of EMP coupling to thin struts and wires. IEEE Transactions on Electromagnetic Compatibility, 23(2):88–97, 1981. doi:10.1109/TEMC.1981.303899.">10</a>]</span>,
 realised in the paired <span class="math notranslate nohighlight">\((m, 1/m)\)</span> encoding of
-Noda and Yokoyama <span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id17" title="Taku Noda and Shigeru Yokoyama. Thin wire representation in finite difference time domain surge simulation. IEEE Transactions on Power Delivery, 17(3):840–847, 2002. doi:10.1109/TPWRD.2002.1022813.">11</a>]</span>:
+Noda and Yokoyama <span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id19" title="Taku Noda and Shigeru Yokoyama. Thin wire representation in finite difference time domain surge simulation. IEEE Transactions on Power Delivery, 17(3):840–847, 2002. doi:10.1109/TPWRD.2002.1022813.">11</a>]</span>:
 the four encircling
 dual faces scale <span class="math notranslate nohighlight">\(M_\mu\)</span> by
 <span class="math notranslate nohighlight">\(m = \ln(\delta/a)/\ln(\delta/r_0)\)</span> and the co-located radial edges
@@ -517,7 +517,7 @@ product — and hence the wave speed and the CFL bound — is untouched.
 The bare-grid equivalent radius <span class="math notranslate nohighlight">\(r_0 = \kappa_0\,\delta\)</span> with
 <span class="math notranslate nohighlight">\(\kappa_0 = e^{-\gamma}/2^{3/2} \approx 0.1985\)</span> comes from the
 square-lattice Green’s function, as given in the thin-wire literature
-<span class="bibtex-citation" id="id8">[<a class="reference internal" href="../bibliography.html#id17" title="Taku Noda and Shigeru Yokoyama. Thin wire representation in finite difference time domain surge simulation. IEEE Transactions on Power Delivery, 17(3):840–847, 2002. doi:10.1109/TPWRD.2002.1022813.">11</a>]</span>.</p>
+<span class="bibtex-citation" id="id8">[<a class="reference internal" href="../bibliography.html#id19" title="Taku Noda and Shigeru Yokoyama. Thin wire representation in finite difference time domain surge simulation. IEEE Transactions on Power Delivery, 17(3):840–847, 2002. doi:10.1109/TPWRD.2002.1022813.">11</a>]</span>.</p>
 </section>
 <section id="mesh-quality-safeguards">
 <h2>Mesh quality safeguards<a class="headerlink" href="#mesh-quality-safeguards" title="Link to this heading">#</a></h2>

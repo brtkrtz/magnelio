@@ -309,6 +309,23 @@ as a ``.py`` script or a ``.ipynb`` notebook.
     </div>
 
 
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Every cavity so far was a closed box with a discrete set of resonances. An accelerating structure is different: a chain of identical cells, coupled through their irises, and what matters is how the field in one cell relates to the field in the next.  For an infinite chain that relation is Floquet&#x27;s theorem — the field in cell n+1 is the field in cell n times a phase factor e^{-\mathrm j \varphi} — and the resonant frequency becomes a function of the phase advance \varphi per cell.  That function, plotted over 0 \le \varphi \le \pi, is the dispersion diagram (or Brillouin diagram) of the structure.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_18_periodic_tesla_cell_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_18_periodic_tesla_cell`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Periodic structures: the dispersion diagram of a TESLA cell</div>
+    </div>
+
+
 .. thumbnail-parent-div-close
 
 .. raw:: html
@@ -336,6 +353,7 @@ as a ``.py`` script or a ``.ipynb`` notebook.
    /tutorials/plot_15_dipole_farfield
    /tutorials/plot_16_cad_import
    /tutorials/plot_17_pcb_import
+   /tutorials/plot_18_periodic_tesla_cell
 
 
 

@@ -445,9 +445,9 @@
 corrections on the six box faces inject the incident wave into the
 total-field region while the exterior carries only scattered field
 (<code class="docutils literal notranslate"><span class="pre">sources/plane_wave.py</span></code>, DD-013).  The TF/SF formulation is due to
-Merewether, Fisher and Smith <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id53" title="David E. Merewether, Ronald Fisher, and F. W. Smith. On implementing a numeric Huygens' source scheme in a finite difference program to illuminate scattering bodies. IEEE Transactions on Nuclear Science, 27(6):1829–1833, 1980. doi:10.1109/TNS.1980.4331114.">52</a>]</span> and
-Umashankar and Taflove <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id54" title="Korada Umashankar and Allen Taflove. A novel method to analyze electromagnetic scattering of complex objects. IEEE Transactions on Electromagnetic Compatibility, 24(4):397–405, 1982. doi:10.1109/TEMC.1982.304054.">53</a>]</span>;
-textbook treatment in <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id6" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.
+Merewether, Fisher and Smith <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id55" title="David E. Merewether, Ronald Fisher, and F. W. Smith. On implementing a numeric Huygens' source scheme in a finite difference program to illuminate scattering bodies. IEEE Transactions on Nuclear Science, 27(6):1829–1833, 1980. doi:10.1109/TNS.1980.4331114.">52</a>]</span> and
+Umashankar and Taflove <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id56" title="Korada Umashankar and Allen Taflove. A novel method to analyze electromagnetic scattering of complex objects. IEEE Transactions on Electromagnetic Compatibility, 24(4):397–405, 1982. doi:10.1109/TEMC.1982.304054.">53</a>]</span>;
+textbook treatment in <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.
 The incident samples are converted to FIT grid quantities per
 edge/face, so amplitudes are physical (V/m) on any grid — an
 in-house calibration (DD-085).</p>
@@ -460,7 +460,7 @@ to the on-disk store.</p></li>
 <li><p><strong>MonitorFieldFrequency</strong> — running (accumulated) discrete Fourier
 transform of the fields at selected frequencies during the march;
 the running-DFT-during-timestepping technique is standard practice
-in time-domain solvers <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id6" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.</p></li>
+in time-domain solvers <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.</p></li>
 <li><p><strong>MonitorFluxTime</strong> — Poynting flux through a plane,
 <span class="math notranslate nohighlight">\(\sum \hat e \cdot \hat h\)</span> in the FIT pairing (physical Watt after
 DD-085).</p></li>
@@ -482,7 +482,7 @@ picture of the field around it (DD-175).</p>
 <p>Excitation waveforms are Gaussian-family pulses with prescribed
 spectral occupancy; S-parameters divide recorded spectra by the
 excitation spectrum (standard practice
-<span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id6" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>).  CW measurements use
+<span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>).  CW measurements use
 lock-in phasor extraction over an integer number of periods after
 settling (<code class="docutils literal notranslate"><span class="pre">cw_lockin_phasors</span></code>) — standard signal processing.</p>
 <p>A frequency monitor is divided by the same spectrum, and for the same
