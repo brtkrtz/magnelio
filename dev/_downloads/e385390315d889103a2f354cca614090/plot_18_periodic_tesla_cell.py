@@ -34,10 +34,10 @@ elliptical arc, a straight wall and a circular arc joined tangentially
 # plane to the equator plane, is:
 #
 # - an **elliptical arc** around the iris, centred on the iris plane
-#   at :math:`r = R_\\mathrm{iris} + b` with half-axes
+#   at :math:`r = R_\mathrm{iris} + b` with half-axes
 #   :math:`a = 12` mm along the beam axis and :math:`b = 19` mm
 #   radially, so the aperture is smallest exactly on the iris plane;
-# - a **circular arc** of radius :math:`R_\\mathrm{arc} = 42` mm at
+# - a **circular arc** of radius :math:`R_\mathrm{arc} = 42` mm at
 #   the equator, centred below the equator point so the contour is
 #   flat there;
 # - the straight **wall** between them, tangent to both.
@@ -198,10 +198,10 @@ print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 # ----------------------------
 #
 # Before the sweep, the two ends of the passband by the traditional
-# route.  At :math:`\\varphi = 0` every cell carries the same field, and
+# route.  At :math:`\varphi = 0` every cell carries the same field, and
 # the iris plane is a mirror plane across which the accelerating field
 # :math:`E_z` is *even* — a plane where the tangential electric field
-# vanishes, i.e. an electric wall.  At :math:`\\varphi = \\pi` the field
+# vanishes, i.e. an electric wall.  At :math:`\varphi = \pi` the field
 # flips sign from cell to cell, :math:`E_z` is *odd* across the iris
 # plane and the wall there is magnetic.  Two ordinary cavity solves,
 # nothing periodic about them:
@@ -250,14 +250,14 @@ freqs = np.array(freqs)
 #
 # .. math::
 #
-#     f(\\varphi)^2 = f_{\\pi/2}^2\\,(1 - k \\cos\\varphi)
+#     f(\varphi)^2 = f_{\pi/2}^2\,(1 - k \cos\varphi)
 #
 # (Wangler, *RF Linear Accelerators*, eq. 3.31), where the
 # **cell-to-cell coupling** :math:`k` is also the fractional width of
-# the passband, :math:`(f_\\pi - f_0)/f_{\\pi/2}`.  Fitting the two
+# the passband, :math:`(f_\pi - f_0)/f_{\pi/2}`.  Fitting the two
 # parameters to the computed points checks the curve's *shape*; the
-# published values are 1.300 GHz for the :math:`\\pi`-mode and
-# :math:`k = 1.87\\,\\%`.
+# published values are 1.300 GHz for the :math:`\pi`-mode and
+# :math:`k = 1.87\,\%`.
 
 phi = np.radians(phases)
 design = np.column_stack([np.ones_like(phi), -np.cos(phi)])
@@ -300,25 +300,41 @@ fig.tight_layout()
 # (the wall-type models are meshed separately, and a magnetic wall
 # pulls the grid in differently from a periodic face) — and the curve
 # between them has the cosine shape the circuit model predicts.  The
-# :math:`\\pi`-mode, where the chain is operated, is the top of the
+# :math:`\pi`-mode, where the chain is operated, is the top of the
 # band: the field reverses from cell to cell in the time a relativistic
 # particle takes to cross one, which is what makes the period
 # :math:`c/2f`.
 #
-# The field
-# ---------
+# The field: standing wave and travelling wave
+# --------------------------------------------
 #
-# The :math:`\\pi`-mode's electric field on the meridian plane.  The
-# field is strongest on the axis and concentrates at the iris tips;
-# the equator region, where the magnetic field peaks, carries little
-# electric field.
+# The TESLA cavity is operated in the :math:`\pi`-mode (Aune et al.,
+# Table 2): the field reverses from cell to cell in the time a
+# relativistic particle takes to cross one, which is what fixes the
+# period at :math:`c/2f`.  As a band edge it is a *standing* wave and,
+# as the wall-type solve above showed, needs no periodic boundary at
+# all.  Every other point of the diagram is a *travelling* wave — the
+# field pattern advances by :math:`\varphi` per cell and the mode
+# fields are complex — and exists only through the periodic pair.
+# The :math:`2\pi/3` phase advance is the textbook choice of
+# travelling-wave linacs, so it serves as the example: the plot shows
+# the real snapshot of its electric field next to the
+# :math:`\pi`-mode, both on the meridian plane of the quarter model.
+# The standing wave is symmetric about the cell's mid-plane; the
+# travelling wave is not, and no combination of walls would produce it.
 
-result = mio.AnalysisEigenmode(mesh=mesh, n_modes=1, verbose=False, phase_advance_deg=180.0).run()
-fig, ax = plt.subplots(figsize=(7.5, 5.0))
-result.plot(
-    mode=0, component="E", normal="y", position=0.0, plot_type="color", geometry=model, ax=ax
-)
-ax.set_title(f"$\\pi$-mode, {result.frequencies[0] / 1e9:.4f} GHz — |E| on the meridian plane")
+pi_mode = mio.AnalysisEigenmode(mesh=mesh, n_modes=1, verbose=False, phase_advance_deg=180.0).run()
+tw_mode = mio.AnalysisEigenmode(mesh=mesh, n_modes=1, verbose=False, phase_advance_deg=120.0).run()
+
+fig, axes = plt.subplots(1, 2, figsize=(11, 5.0))
+for ax, res, label in (
+    (axes[0], pi_mode, "$\\pi$-mode (standing wave)"),
+    (axes[1], tw_mode, "$2\\pi/3$-mode (travelling wave)"),
+):
+    res.plot(
+        mode=0, component="E", normal="y", position=0.0, plot_type="vector", geometry=model, ax=ax
+    )
+    ax.set_title(f"{label}, {res.frequencies[0] / 1e9:.4f} GHz")
 fig.tight_layout()
 
 # %%
