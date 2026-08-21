@@ -29,8 +29,8 @@ class AnalysisEigenmode:
     mesh : Mesh
         The simulation mesh, carrying the boundary closure it was built
         with (declared on the ``GeometryModel`` or on
-        ``Mesh.from_grid``).  Only PEC and PMC are meaningful for an
-        eigenmode problem.
+        ``Mesh.from_grid``).  PEC, PMC and Periodic faces are
+        meaningful for an eigenmode problem; CPML is rejected.
     n_modes : int
         Number of physical resonant modes to find (default 5).
     solver : str or None
@@ -47,6 +47,15 @@ class AnalysisEigenmode:
         ``RuntimeWarning`` either way.
     verbose : bool
         Print solver progress information.
+    phase_advance_deg : float, dict or None
+        Bloch phase advance [degrees] across the mesh's ``"Periodic"``
+        face pair — the phase by which the field in one period leads
+        the next.  Sweeping it from 0 to 180 traces the dispersion
+        diagram of the infinite periodic structure.  A number serves a
+        single periodic axis; with several, pass ``{axis: degrees}``.
+        ``None`` (default) is zero phase.  Phases other than 0 and 180
+        degrees give complex mode fields and need the default
+        (SuperLU) solver.
     """
 
     mesh: Mesh
@@ -56,6 +65,7 @@ class AnalysisEigenmode:
     verbose: bool = True
     project: object | None = None
     geometry: object | None = None
+    phase_advance_deg: float | dict[str, float] | None = None
 
     @property
     def boundary_conditions(self) -> dict[str, str]:
@@ -90,6 +100,7 @@ class AnalysisEigenmode:
             solver=self.solver,
             sigma=self.sigma,
             verbose=self.verbose,
+            phase_advance_deg=self.phase_advance_deg,
         )
 
         freq_hz, E_modes, H_modes = eigen_solver.solve(self.mesh)
@@ -110,6 +121,7 @@ class AnalysisEigenmode:
             # Omitted faces default to PEC (solver convention); wall-loss
             # postprocessing reads this to enumerate PEC domain walls.
             "boundary_conditions": dict(self.boundary_conditions),
+            "phase_advance_deg": self.phase_advance_deg,
         }
 
         result = EigenmodeResult(

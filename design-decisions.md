@@ -12399,3 +12399,93 @@ circumscribed circle, the same bound the circular arc uses.
 (`_ellipse_frame`, `Curve.ellipse_arc`), `geo/_occ_backend.py`
 (`make_ellipse_arc`), `tests/unit/test_geometry.py`,
 `examples/tutorials/plot_14_profile_geometry.py` (summary bullet).
+
+## DD-182 — A periodic face pair is a Bloch condition, and the phase advance lives on the analysis
+
+**Date:** 2026-08-21.
+
+**Problem.**  `"Periodic"` was a valid face declaration that the
+eigenmode solver silently solved as PMC: `_build_pec_dof_mask` knows
+only "PEC or not", `_estimate_sigma` treated every non-PEC pair as a
+magnetic wall, and nothing coupled the two faces — the mesher's own
+docstring pointed at an operator-level mechanism that did not exist
+(`mesher.py:1167`).  CPML at the eigensolver went the same silent
+way.  Meanwhile the one thing a periodic eigenmode problem is *for* —
+the dispersion diagram of an infinite periodic structure, phase
+advance 0…π per cell — was unreachable: it needs the far face to be
+the near face times `exp(-iφ)`, which is a complex Hermitian problem
+for 0 < φ < π.
+
+**Decision.**  The pairing is imposed by a congruence transformation.
+`_build_floquet_projector` builds a sparse `P` of shape
+`(n_E, n_kept)` that maps every kept edge (interior and near plane) to
+the full set, with the far-plane tangential edges as images of their
+near-plane partners times `exp(-iφ)`; the reduced problem is
+`P^H A P`, `P^H B P`, solved by the unchanged shift-invert machinery.
+A kept edge is PEC when any of its images is.  Two periodic axes
+compose (a corner edge is the image of an image, phases multiply).
+`P` is real (entries ±1) for φ ∈ {0, π}, so those cases stay on the
+real symmetric path with every backend available; in between the
+problem is complex Hermitian and only the SuperLU backend takes it —
+CHOLMOD (SPD Cholesky), pyamg (`symmetry="symmetric"`) and the folded
+LOBPCG path are real by construction and raise `NotImplementedError`
+with that reason.  The phase advance is a parameter of the *analysis*
+(`AnalysisEigenmode(phase_advance_deg=…)`, a number for one periodic
+axis, `{axis: degrees}` for several), not of the boundary
+declaration: the mesh is the unit cell and is built once, the sweep
+over φ runs on it.  This is also the vocabulary of the large suites
+(face pair + phase shift).
+
+**The metric trap.**  The first implementation assumed the far-plane
+edges carried *half* a dual cell, so that `P^H B P` would add the two
+halves and assemble the periodic metric by itself.  The empty
+periodic box refuted it: exact for φ = 0, 1–9 % off elsewhere, with
+ghost modes below the TE₁₀ line.  The material matrices book a *full*
+dual cell on every domain face (the mirror convention behind the
+natural PMC wall), so the congruence was double-counting the face
+terms of the identified plane while the cell terms entered once.  φ = 0
+passed only because every reference mode there has k_z = 0, where the
+mismatched terms vanish.  The fix is to strip the far plane of its
+metric before the congruence (`M_eps` on far-plane edges and `1/M_mu`
+on the far-plane faces of the component along the axis set to zero)
+and let the near plane's full cell stand for the pair.  The H-field
+reconstruction keeps the unstripped `1/M_mu`, so the returned fields
+obey the Bloch condition on both planes.
+
+**Verification.**  Empty PEC-walled box, Bloch in z, on a uniform
+8×4×6 grid against the *discrete* dispersion relation
+ω² = c²Σ[(2/h) sin(k h/2)]² with k_z = (φ + 2πp)/L: the four lowest
+modes agree to 1e-8 for φ = 0°, 60°, 90°, 150°, 180° (the exact
+discrete reference leaves no discretisation error to hide behind); the
+returned `Ey`/`Hz` satisfy far = exp(-iφ)·near to 1e-12.  Pillbox with
+iris (period 50 mm): the φ = 0 spectrum is the union of the
+{PEC, PEC} and {PMC, PMC} half-cell spectra, φ = π the union of the
+mixed pairs, to 1e-3 (exact where the half cell is a grid
+restriction; 2e-4 where a PMC mid-plane pulls the grid in, DD-164).
+Note the wall assignment for a TM₀₁₀-type chain: the **electric** wall
+in the iris plane gives the 0-mode (E_z even across the plane), the
+magnetic wall the π-mode.
+
+**Consequences.**  `BoundaryConditions` rejects an unpaired
+`"Periodic"` face; the eigensolver rejects CPML instead of solving it
+as PMC.  Mode fields of a complex phase are complex arrays — the
+`FieldState`, the HDF5 store and the ParaView path follow the dtype —
+and `EigenmodeResult.plot` draws them as the real snapshot at the
+instant of maximum energy on the slice (global phase of an eigenvector
+is arbitrary; `_real_snapshot` rotates by half the argument of
+Σ a²).  `solver_info` records `phase_advance_deg`.
+`_estimate_sigma` takes the Bloch wavenumber φ/L as the axis's lowest
+k (nothing for φ = 0, as for PMC–PMC).  The time-domain
+`PeriodicBoundary` is untouched (zero phase advance only; a TD phase
+advance needs complex fields and is a separate decision).  The
+half-cell band-edge calculation remains the classical route to the
+two ends of a passband; everything in between now has a solver.
+
+**Files:** `src/magnelio/solver/_eigenmode_3d.py`
+(`_periodic_axes`, `_resolve_phase_advance`,
+`_build_floquet_projector`, `solve`, `_estimate_sigma`,
+`_merge_physical_modes` Hermitian), `analysis/eigenmode.py`
+(`phase_advance_deg`), `boundaries/boundary_conditions.py` (pair
+check), `solver/eigenmode_result.py` (`_real_snapshot`),
+`tests/integration/test_floquet_eigenmode.py` (new),
+`docs/methods/eigenmode-analysis.md`, `docs/methods/boundaries.md`.

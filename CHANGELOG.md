@@ -11,6 +11,14 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- Periodic structures in eigenmode analysis: a `"Periodic"` face pair
+  on the mesh and `AnalysisEigenmode(phase_advance_deg=...)` solve the
+  unit cell of an infinite periodic structure with a Bloch phase advance
+  of 0…180 degrees per period — sweep it to trace a dispersion
+  (Brillouin) diagram.  0 and 180 degrees stay real; in between the
+  mode fields are complex and `result.plot` draws them as the real
+  snapshot of maximum energy.  Previously a periodic face was solved as
+  a magnetic wall without notice.
 - `geo.Path.ellipse_to` / `geo.Curve.ellipse_arc`: elliptical arcs as
   profile segments — centre, the two semi-axes and the direction of the
   first, the sense fixed by `normal=` exactly as for circular arcs.
@@ -48,6 +56,8 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- The eigenmode solver rejects CPML faces and unpaired `"Periodic"`
+  faces instead of silently solving them as PMC.
 - A cross-section drew solids with a hole as if they were solid: the
   bore of a tube, the gap of an annulus and the bore of a coaxial line
   were filled in the surrounding material's colour, hiding whatever sat

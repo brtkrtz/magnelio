@@ -37,6 +37,35 @@ Two experimental backends exist (DD-033):
   convergence on the vector curl-curl operator — a known limitation
   in the literature on AMG for Maxwell problems).
 
+### Periodic structures: Bloch boundaries and the dispersion diagram
+
+A face pair declared `"Periodic"` turns the cavity problem into a
+unit-cell problem of an infinite periodic structure.  The field in
+one period leads the next by a **phase advance** $\varphi$ (Floquet's
+theorem, in the periodic-waveguide form given by Collin
+{cite}`collin1991`): on the far plane of the period the tangential
+electric edge voltages are those of the near plane times
+$e^{-\mathrm j\varphi}$.  The solver imposes this by a congruence
+transformation — a projector $\mathbf P$ identifies every far-plane
+edge with its near-plane image (times the phase factor), and the
+reduced operators $\mathbf P^{\mathsf H} \mathbf A \mathbf P$,
+$\mathbf P^{\mathsf H} \mathbf B \mathbf P$ are solved with the
+same shift-invert machinery.  The far plane contributes no material
+metric of its own: the FIT material matrices book a full dual cell on
+every domain face, and that full cell stands for the identified pair.
+
+For $\varphi = 0$ and $\varphi = \pi$ the projector is real and the
+problem stays real symmetric; in between it is complex Hermitian and
+the eigenvectors are travelling Bloch modes, which only the SuperLU
+backend solves.  Sweeping $\varphi$ from $0$ to $\pi$ traces the
+**dispersion (Brillouin) diagram** $f(\varphi)$ of the structure; the
+band edges $\varphi = 0$ and $\varphi = \pi$ coincide with the classic
+half-cell calculations (electric or magnetic wall at the cell
+boundary), which is the check the implementation is held to.
+Verified against the discrete dispersion relation of the empty
+periodic box (exact to solver tolerance for $\varphi$ between 0 and
+180 degrees, `tests/integration/test_floquet_eigenmode.py`).
+
 Quality factors of eigenmodes are evaluated with the perturbative
 wall-loss route (see [conductor losses](conductor-losses.md))
 {cite}`pozar2012,jackson1999`.

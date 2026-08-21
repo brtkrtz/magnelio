@@ -13,6 +13,22 @@ import numpy as np
 from magnelio._fields.field_arrays import FieldState
 
 
+def _real_snapshot(data: dict) -> dict:
+    """Real part of complex slice data at the instant of maximum energy.
+
+    An eigenvector's global phase is arbitrary.  Rotating by half the
+    argument of ``sum(a*a)`` aligns the field so its real part carries
+    the maximum of ``sum(|Re a|^2)`` over all instants, which is the
+    natural snapshot of a travelling Bloch mode.  Real data passes
+    through untouched.
+    """
+    if not any(np.iscomplexobj(a) for a in data.values()):
+        return data
+    moment = sum(np.sum(np.asarray(a, dtype=complex) ** 2) for a in data.values())
+    rotation = np.exp(-0.5j * np.angle(moment)) if moment != 0 else 1.0
+    return {c: np.real(np.asarray(a) * rotation) for c, a in data.items()}
+
+
 @dataclass
 class EigenmodeResult:
     """Result of a 3D cavity eigenmode analysis.
@@ -73,7 +89,11 @@ class EigenmodeResult:
         centres and rendered on the plane selected by *normal* and
         *position*.  Mode fields are normalised eigenvectors, so the
         amplitudes are in arbitrary units; the spatial pattern is the
-        physical content.
+        physical content.  A complex mode (Bloch phase advance other
+        than 0 or 180 degrees) is drawn as the real snapshot at the
+        instant of maximum field energy on the slice — the global phase
+        of an eigenvector is arbitrary, and this choice makes the
+        picture independent of it.
 
         Parameters
         ----------
@@ -149,6 +169,7 @@ class EigenmodeResult:
             slabs[pv.normal_idx] = slice(base + pv.slice_index, base + pv.slice_index + 1)
         data = _interp_to_cell_centres(self.modes[mode], comps, *slabs, grid)
         data = {c: np.squeeze(a, axis=pv.normal_idx) for c, a in data.items()}
+        data = _real_snapshot(data)
 
         overlay = None
         if geometry is not None:

@@ -167,6 +167,12 @@ class BoundaryConditions:
             if pos is not None:
                 sym[face] = float(pos)
         for axis in "xyz":
+            lo, hi = getattr(self, f"{axis}min"), getattr(self, f"{axis}max")
+            if (lo == "Periodic") != (hi == "Periodic"):
+                raise ValueError(
+                    f"Periodic boundaries come in pairs: {axis}min and "
+                    f"{axis}max must both be 'Periodic' (got {lo!r} and {hi!r})."
+                )
             if f"{axis}min" in sym and f"{axis}max" in sym:
                 raise ValueError(
                     f"both {axis}min and {axis}max are declared symmetry "

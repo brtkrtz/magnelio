@@ -110,10 +110,139 @@ _FACE_AXIS = {
 }
 
 
+def _periodic_axes(bcs: dict[str, str]) -> list[str]:
+    """Axes whose face pair is declared ``"Periodic"`` (validated pairwise)."""
+    axes = []
+    for axis in "xyz":
+        lo = bcs.get(f"{axis}min", "PEC").upper() == "PERIODIC"
+        hi = bcs.get(f"{axis}max", "PEC").upper() == "PERIODIC"
+        if lo != hi:
+            raise ValueError(
+                f"Periodic boundaries come in pairs: {axis}min and {axis}max "
+                f"must both be 'Periodic' (got {bcs.get(f'{axis}min', 'PEC')!r} "
+                f"and {bcs.get(f'{axis}max', 'PEC')!r})."
+            )
+        if lo:
+            axes.append(axis)
+    for face, kind in bcs.items():
+        if kind.upper() == "CPML":
+            raise ValueError(
+                f"Boundary {face!r} is CPML, which has no meaning for an "
+                f"eigenmode problem; declare the face PEC, PMC or Periodic."
+            )
+    return axes
+
+
+def _resolve_phase_advance(phase_advance_deg, periodic_axes: list[str]) -> dict[str, float]:
+    """Normalise the user's phase advance into ``{axis: radians}``."""
+    if not periodic_axes:
+        if phase_advance_deg is not None:
+            raise ValueError(
+                "phase_advance_deg was given, but no face pair is declared "
+                "'Periodic' — the phase advance belongs to a periodic axis."
+            )
+        return {}
+    if phase_advance_deg is None:
+        return dict.fromkeys(periodic_axes, 0.0)
+    if isinstance(phase_advance_deg, dict):
+        unknown = set(phase_advance_deg) - set(periodic_axes)
+        if unknown:
+            raise ValueError(
+                f"phase_advance_deg names axes {sorted(unknown)!r} that are "
+                f"not periodic (periodic axes: {periodic_axes!r})."
+            )
+        return {axis: np.deg2rad(float(phase_advance_deg.get(axis, 0.0))) for axis in periodic_axes}
+    if len(periodic_axes) > 1:
+        raise ValueError(
+            f"{len(periodic_axes)} periodic axes ({periodic_axes!r}): pass "
+            f"phase_advance_deg as a dict, one entry per axis."
+        )
+    return {periodic_axes[0]: np.deg2rad(float(phase_advance_deg))}
+
+
+def _build_floquet_projector(grid, phases: dict[str, float]):
+    """Bloch-periodic identification of the E-edge DOFs.
+
+    Along a periodic axis the tangential edges in the far plane
+    (index ``N``) are the edges in the near plane (index ``0``) times
+    ``exp(-i*phi)``.  The returned sparse ``P`` of shape
+    ``(n_E, n_kept)`` maps the kept (near-plane and interior) DOFs to
+    the full set, so ``P^H A P`` and ``P^H B P`` are the reduced
+    operators.  The material matrices book a *full* dual cell on every
+    domain face (the mirror convention of the natural PMC wall), so the
+    far plane must carry no metric of its own: its edge entries of
+    ``M_eps`` and its face entries of ``1/M_mu`` are zeroed before the
+    congruence, and the near plane's full dual cell stands for the
+    identified pair.  ``P`` is real (entries ±1) when every phase is 0
+    or π, complex otherwise.
+
+    Returns ``(P, far_E, far_H)``: the projector, the mask of far-plane
+    E-edges (rows of ``P`` that are images) and the mask of far-plane
+    H-faces (the component along each periodic axis at index ``N``).
+    """
+    Nx, Ny, Nz = grid.Nx, grid.Ny, grid.Nz
+    shapes = (
+        (Nx, Ny + 1, Nz + 1),
+        (Nx + 1, Ny, Nz + 1),
+        (Nx + 1, Ny + 1, Nz),
+    )
+    extents = (Nx, Ny, Nz)
+    n_E = sum(int(np.prod(shp)) for shp in shapes)
+    is_real = all(abs(np.sin(phi)) < 1e-14 for phi in phases.values())
+    factor = np.ones(n_E, dtype=float if is_real else complex)
+    master = np.arange(n_E)
+    offset = 0
+    for comp, shp in enumerate(shapes):
+        ii, jj, kk = np.meshgrid(*(np.arange(n) for n in shp), indexing="ij")
+        idx = [ii.ravel(), jj.ravel(), kk.ravel()]
+        fac = np.ones(ii.size, dtype=factor.dtype)
+        for ax_name, phi in phases.items():
+            ax = "xyz".index(ax_name)
+            if ax == comp:
+                continue  # the component along the axis has no far-plane copy
+            far = idx[ax] == extents[ax]
+            idx[ax] = np.where(far, 0, idx[ax])
+            fac = np.where(
+                far, fac * (np.cos(phi) - 1j * np.sin(phi) if not is_real else np.cos(phi)), fac
+            )
+        flat = (idx[0] * shp[1] + idx[1]) * shp[2] + idx[2]
+        master[offset : offset + ii.size] = offset + flat
+        factor[offset : offset + ii.size] = fac
+        offset += ii.size
+    kept = master == np.arange(n_E)
+    kept_idx = np.where(kept)[0]
+    column = np.full(n_E, -1)
+    column[kept_idx] = np.arange(kept_idx.size)
+    P = sp.csr_matrix(
+        (factor, (np.arange(n_E), column[master])),
+        shape=(n_E, kept_idx.size),
+    )
+    h_shapes = (
+        (Nx + 1, Ny, Nz),
+        (Nx, Ny + 1, Nz),
+        (Nx, Ny, Nz + 1),
+    )
+    far_H = np.zeros(sum(int(np.prod(shp)) for shp in h_shapes), dtype=bool)
+    offset = 0
+    for comp, shp in enumerate(h_shapes):
+        size = int(np.prod(shp))
+        for ax_name in phases:
+            ax = "xyz".index(ax_name)
+            if ax == comp:
+                block = np.zeros(shp, dtype=bool)
+                index = [slice(None)] * 3
+                index[ax] = extents[ax]
+                block[tuple(index)] = True
+                far_H[offset : offset + size] |= block.ravel()
+        offset += size
+    return P, ~kept, far_H
+
+
 def _estimate_sigma(
     grid,
     bcs: dict[str, str],
     eps_r_max: float,
+    phases: dict[str, float] | None = None,
 ) -> float | None:
     """Estimate ARPACK shift σ ≈ 0.75·λ₁ from grid and boundary conditions.
 
@@ -123,6 +252,7 @@ def _estimate_sigma(
     - PEC–PEC pair  →  half-wavelength resonance  →  k_min = π / L
     - PEC–PMC pair  →  quarter-wavelength          →  k_min = π / (2·L)
     - PMC–PMC pair  →  zero-variation (TEM-like)   →  k_min = 0
+    - Periodic pair →  Bloch phase advance φ       →  k_min = φ / L
 
     The two smallest non-zero k_min² terms (corresponding to the lowest
     two-index mode, which uses the two largest spatial dimensions) are
@@ -134,6 +264,7 @@ def _estimate_sigma(
     Returns ``None`` when fewer than two non-zero k_min terms are found
     (e.g. fully PMC box); the caller must then require a user-supplied σ.
     """
+    phases = phases or {}
     dims = {
         "x": float(grid.x[-1] - grid.x[0]),
         "y": float(grid.y[-1] - grid.y[0]),
@@ -148,7 +279,13 @@ def _estimate_sigma(
         both_pec = (bc0 == "PEC") and (bc1 == "PEC")
         both_pmc = (bc0 == "PMC") and (bc1 == "PMC")
 
-        if both_pec:
+        if bc0 == "PERIODIC":
+            # Bloch axis: the lowest wavenumber is the phase advance per
+            # period (zero for the 0-mode, which then adds no bound).
+            phi = abs(phases.get(axis, 0.0))
+            if phi > 0.0:
+                k2_terms.append((phi / L) ** 2)
+        elif both_pec:
             k2_terms.append((np.pi / L) ** 2)  # half-wave
         elif not both_pmc:  # one PEC + one PMC
             k2_terms.append((np.pi / (2.0 * L)) ** 2)  # quarter-wave
@@ -198,10 +335,10 @@ def _merge_physical_modes(
         ]
         if cluster:
             K = np.stack([keep_vecs[k] for k in cluster], axis=1)
-            overlaps = K.T @ (b_diag * cand)
-            gram = K.T @ (b_diag[:, None] * K)
-            proj_sq = float(overlaps @ np.linalg.solve(gram, overlaps))
-            norm_sq = float(cand @ (b_diag * cand))
+            overlaps = K.conj().T @ (b_diag * cand)
+            gram = K.conj().T @ (b_diag[:, None] * K)
+            proj_sq = float((overlaps.conj() @ np.linalg.solve(gram, overlaps)).real)
+            norm_sq = float((cand.conj() @ (b_diag * cand)).real)
             if norm_sq - proj_sq < 0.25 * norm_sq:
                 continue
         keep_vals.append(float(new_vals[j]))
@@ -443,6 +580,12 @@ class EigenmodeSolver3D:
         that still under-delivers emits a ``RuntimeWarning``.
     verbose : bool
         Print solver progress information.
+    phase_advance_deg : float, dict or None
+        Bloch phase advance [degrees] across each ``"Periodic"`` face
+        pair: a number for a single periodic axis, ``{axis: degrees}``
+        for several.  ``None`` means zero phase.  Phases other than 0
+        and 180 degrees make the problem complex Hermitian, which only
+        the SuperLU backend supports.
     """
 
     n_modes: int = 5
@@ -450,6 +593,7 @@ class EigenmodeSolver3D:
     solver: str | None = None
     sigma: float | None = None
     verbose: bool = False
+    phase_advance_deg: float | dict[str, float] | None = None
 
     def solve(self, mesh: Mesh) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Solve for cavity eigenmodes.
@@ -498,6 +642,22 @@ class EigenmodeSolver3D:
         pec_mask[n_Ex : n_Ex + n_Ey] |= mat_pec[1, :n_Ey]
         pec_mask[n_Ex + n_Ey : n_Ex + n_Ey + n_Ez] |= mat_pec[2, :n_Ez]
 
+        # Bloch-periodic identification (DD-182): far-plane edges are
+        # near-plane edges times exp(-i*phi).  The reduced problem is
+        # P^H A P, P^H B P on the kept DOFs; a kept edge is PEC when
+        # any of its images is.
+        periodic_axes = _periodic_axes(self.boundary_conditions)
+        phases = _resolve_phase_advance(self.phase_advance_deg, periodic_axes)
+        projector = None
+        if periodic_axes:
+            projector, far_E, far_H = _build_floquet_projector(grid, phases)
+            pec_mask = (abs(projector).T @ pec_mask.astype(float)) > 0.0
+            M_eps = np.where(far_E, 0.0, M_eps)
+            M_mu_inv_operator = np.where(far_H, 0.0, M_mu_inv)
+        else:
+            M_mu_inv_operator = M_mu_inv
+        is_complex = projector is not None and np.iscomplexobj(projector)
+
         free_idx = np.where(~pec_mask)[0]
         n_free = len(free_idx)
 
@@ -505,7 +665,18 @@ class EigenmodeSolver3D:
         solver_key = (self.solver or "").lower()
         n_null_seen = 0  # null-space artefacts dropped before post-processing
 
+        if is_complex and solver_key not in ("", "arpack", "arpack-superlu"):
+            raise NotImplementedError(
+                f"solver={self.solver!r} handles real symmetric problems only; "
+                f"a Bloch phase advance other than 0 or 180 degrees makes the "
+                f"eigenproblem complex Hermitian.  Use the default SuperLU backend."
+            )
         if solver_key == "lobpcg":
+            if projector is not None:
+                raise NotImplementedError(
+                    "solver='lobpcg' does not support periodic boundaries; "
+                    "use the default SuperLU backend."
+                )
             k_request = min(self.n_modes + 8, n_free - 2)
             eigenvalues, eigenvectors_free = self._solve_lobpcg(
                 grid,
@@ -520,11 +691,16 @@ class EigenmodeSolver3D:
         else:
             # Sparse matrix assembly (ARPACK backends only)
             C = build_curl_matrix(grid)
-            M_mu_inv_diag = sp.diags(M_mu_inv, 0, format="csr")
+            M_mu_inv_diag = sp.diags(M_mu_inv_operator, 0, format="csr")
             A = C.T @ M_mu_inv_diag @ C
 
             M_eps_safe = np.where(M_eps > 0, M_eps, np.finfo(float).tiny)
             B = sp.diags(M_eps_safe, 0, format="csr")
+
+            if projector is not None:
+                P_H = projector.conj().T.tocsr()
+                A = (P_H @ A @ projector).tocsr()
+                B = (P_H @ B @ projector).tocsr()
 
             A_f = A[np.ix_(free_idx, free_idx)].tocsr()
             B_f = B[np.ix_(free_idx, free_idx)].tocsr()
@@ -623,8 +799,13 @@ class EigenmodeSolver3D:
         n_E = n_Ex + n_Ey + n_Ez
         n_modes_out = eigenvectors_free.shape[1]
 
-        E_modes = np.zeros((n_E, n_modes_out))
-        E_modes[free_idx, :] = eigenvectors_free
+        if projector is not None:
+            E_reduced = np.zeros((projector.shape[1], n_modes_out), dtype=eigenvectors_free.dtype)
+            E_reduced[free_idx, :] = eigenvectors_free
+            E_modes = np.asarray(projector @ E_reduced)
+        else:
+            E_modes = np.zeros((n_E, n_modes_out), dtype=eigenvectors_free.dtype)
+            E_modes[free_idx, :] = eigenvectors_free
 
         # ── Compute H-field for each mode: h = (1/ω) M_mu_inv C e ──────────
         n_Hx = (Nx + 1) * Ny * Nz
@@ -636,11 +817,11 @@ class EigenmodeSolver3D:
         mu_inv_y = M_mu_inv[n_Hx : n_Hx + n_Hy].reshape(Nx, Ny + 1, Nz)
         mu_inv_z = M_mu_inv[n_Hx + n_Hy :].reshape(Nx, Ny, Nz + 1)
 
-        Hx_buf = np.empty((Nx + 1, Ny, Nz))
-        Hy_buf = np.empty((Nx, Ny + 1, Nz))
-        Hz_buf = np.empty((Nx, Ny, Nz + 1))
+        Hx_buf = np.empty((Nx + 1, Ny, Nz), dtype=E_modes.dtype)
+        Hy_buf = np.empty((Nx, Ny + 1, Nz), dtype=E_modes.dtype)
+        Hz_buf = np.empty((Nx, Ny, Nz + 1), dtype=E_modes.dtype)
 
-        H_modes = np.zeros((n_H, n_modes_out))
+        H_modes = np.zeros((n_H, n_modes_out), dtype=E_modes.dtype)
         for m in range(n_modes_out):
             omega = 2 * np.pi * freq_hz[m]
             e = E_modes[:, m]
@@ -684,7 +865,10 @@ class EigenmodeSolver3D:
         if self.sigma is not None:
             return [self.sigma]
         eps_r_max = max(max(m.epsilon) for m in mesh.material_library.values() if not m.is_pec)
-        sigma = _estimate_sigma(grid, self.boundary_conditions, eps_r_max)
+        phases = _resolve_phase_advance(
+            self.phase_advance_deg, _periodic_axes(self.boundary_conditions)
+        )
+        sigma = _estimate_sigma(grid, self.boundary_conditions, eps_r_max, phases)
         if sigma is None:
             raise ValueError(
                 "Cannot auto-estimate sigma for the given boundary "

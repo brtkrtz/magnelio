@@ -37,9 +37,10 @@ Gedney's {cite}`gedney1996`.
   the dual grid.  Standard FIT/FDTD practice
   {cite}`weiland1996`.
 - **Periodic** (`boundaries/periodic.py`): direct field wrap-around of
-  the curl stencil at opposing faces (no phase shift / Floquet
-  variant implemented).  Standard practice
-  {cite}`taflovehagness2005`.
+  the curl stencil at opposing faces in the time-domain solver (zero
+  phase advance), standard practice {cite}`taflovehagness2005`.  The
+  eigenmode solver imposes the same pairing with an arbitrary Bloch
+  phase advance, see [eigenmode analysis](eigenmode-analysis.md).
 
 ## Symmetry planes
 
