@@ -295,7 +295,7 @@ textbook formula.
       [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 188.37 Ω
     Z_L (port solver):  188.3652 Ohm
     Z_L (eta0 * b/a) :  188.3652 Ohm
-    relative deviation: 1.11e-16
+    relative deviation: 2.22e-16
 
 
 
@@ -376,7 +376,7 @@ run stops on its own once the port signals have decayed.
 
  .. code-block:: none
 
-    max |S11| in band: -125.3 dB
+    max |S11| in band: -124.8 dB
 
 
 
@@ -446,7 +446,7 @@ spec matched to its cross-section.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 14.357 seconds)
+   **Total running time of the script:** (0 minutes 11.436 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_01_parallel_plate.py:

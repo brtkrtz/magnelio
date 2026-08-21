@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=5d43cf28"></script>
+    <script src="../_static/documentation_options.js?v=d1e85a04"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -690,8 +690,8 @@ the two curves that carry the actual splitting into one line.</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;max |S43| (E-arm isolation):    </span><span class="si">{</span><span class="n">result_h</span><span class="o">.</span><span class="n">db</span><span class="p">(</span><span class="s1">&#39;port4&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;port3&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> dB&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_06_field_monitors_005.png" srcset="../_images/sphx_glr_plot_06_field_monitors_005.png" alt="H-arm drive" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S13 - S23| (equal split):   1.1e-08
-max |S43| (E-arm isolation):    -158.6 dB
+<img src="../_images/sphx_glr_plot_06_field_monitors_005.png" srcset="../_images/sphx_glr_plot_06_field_monitors_005.png" alt="H-arm drive" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S13 - S23| (equal split):   1.5e-08
+max |S43| (E-arm isolation):    -163.6 dB
 </pre></div>
 </div>
 <p>An isolation of −160 dB is not a converged small number — it is the
@@ -729,8 +729,8 @@ counterpart of the H-arm’s symmetric one:</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;max |S34| (H-arm isolation):       </span><span class="si">{</span><span class="n">result_e</span><span class="o">.</span><span class="n">db</span><span class="p">(</span><span class="s1">&#39;port3&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;port4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> dB&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S14 + S24| (anti-phase split): 1.0e-08
-max |S34| (H-arm isolation):       -160.5 dB
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S14 + S24| (anti-phase split): 1.6e-08
+max |S34| (H-arm isolation):       -167.7 dB
 </pre></div>
 </div>
 <p>Sum and difference: that is the “magic”.  Two signals entering the
@@ -754,7 +754,7 @@ and lengthen the arms.</p>
 The next tutorial moves simulations into a <em>project on disk</em>: every
 run keeps its monitor data, volumes stream without filling memory,
 results reopen after a restart, and the fields go to ParaView.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 19.579 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 13.316 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-06-field-monitors-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/825a29b440fdb9eb743a9f886157c4e0/plot_06_field_monitors.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_06_field_monitors.ipynb</span></code></a></p>
