@@ -58,6 +58,10 @@ major version is 0, minor releases may change the public API.
 
 - The eigenmode solver rejects CPML faces and unpaired `"Periodic"`
   faces instead of silently solving them as PMC.
+- The automatic eigenmode shift escalates two steps beyond the
+  empty-cavity estimate when a solve returns no mode, so shaped cells
+  (irises, noses) whose fundamental sits well above the box estimate no
+  longer come back empty.
 - A cross-section drew solids with a hole as if they were solid: the
   bore of a tube, the gap of an annulus and the bore of a coaxial line
   were filled in the surrounding material's colour, hiding whatever sat

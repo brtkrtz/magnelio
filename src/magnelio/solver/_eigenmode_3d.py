@@ -860,7 +860,9 @@ class EigenmodeSolver3D:
         the true fundamental from below and escalating can never skip
         it.  Steps of ``_SIGMA_RETRY_FACTOR`` walk up to the ε_r = 1
         estimate, the matching upper bound — the interval a partially
-        filled cavity lives in (KB-011).
+        filled cavity lives in (KB-011) — and two rungs beyond it, since
+        the empty estimate is a box heuristic that a shaped cell (irises,
+        noses, periodic cells) can exceed by half an octave.
         """
         if self.sigma is not None:
             return [self.sigma]
@@ -882,6 +884,13 @@ class EigenmodeSolver3D:
             ladder.append(ladder[-1] * _SIGMA_RETRY_FACTOR)
         if eps_r_max > 1.0 + 1e-12:
             ladder.append(sigma_empty)
+        # The empty-cavity estimate is itself a box heuristic; a shaped
+        # cell (irises, noses) resonates well above it, and a shift
+        # nearer the null space than the band returns no physical mode
+        # even at eps_r = 1.  Two rungs above the estimate cover that;
+        # they are only climbed on under-delivery.
+        for _ in range(2):
+            ladder.append(ladder[-1] * _SIGMA_RETRY_FACTOR)
         return ladder
 
     # ── ARPACK + SuperLU (small problems) ───────────────────────────────────

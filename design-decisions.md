@@ -12481,6 +12481,16 @@ advance needs complex fields and is a separate decision).  The
 half-cell band-edge calculation remains the classical route to the
 two ends of a passband; everything in between now has a solver.
 
+**Shift ladder.**  The first gallery run of tutorial 18 returned no
+mode at 60°: the auto shift comes from the box dimensions (0.85 GHz
+for a 103 × 103 × 115 mm box), the shaped cell resonates at 1.28 GHz,
+and with `eps_r = 1` the ladder had a single rung, so the null space —
+nearer the shift than the band — took every Ritz value and nothing
+escalated.  The ladder now carries two rungs of `_SIGMA_RETRY_FACTOR`
+above the empty-cavity estimate; they are climbed only on
+under-delivery, so nothing changes for a solve that succeeds on the
+first attempt.
+
 **Files:** `src/magnelio/solver/_eigenmode_3d.py`
 (`_periodic_axes`, `_resolve_phase_advance`,
 `_build_floquet_projector`, `solve`, `_estimate_sigma`,
