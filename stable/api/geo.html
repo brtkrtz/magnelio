@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=4621528c"></script>
+    <script src="../_static/documentation_options.js?v=6c02275b"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -463,6 +463,8 @@ conductor track.</p></li>
 operators <code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">+</span> <span class="pre">b</span></code> / <code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">-</span> <span class="pre">b</span></code> / <code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">&amp;</span> <span class="pre">b</span></code> on any shape — and
 <code class="docutils literal notranslate"><span class="pre">Loft</span></code> through a series of cross-sections.</p></li>
 <li><p>Containers: <code class="docutils literal notranslate"><span class="pre">Group</span></code> (material-preserving bundle), <code class="docutils literal notranslate"><span class="pre">GeometryModel</span></code>.</p></li>
+<li><p>Imported geometry: <code class="docutils literal notranslate"><span class="pre">ImportedSolid</span></code> — a solid read from a CAD file
+(<code class="docutils literal notranslate"><span class="pre">magnelio.io.import_step</span></code>) or from a project store.</p></li>
 <li><p>Verbs: chainable shape methods — <code class="docutils literal notranslate"><span class="pre">.translated()</span></code>, <code class="docutils literal notranslate"><span class="pre">.rotated()</span></code>,
 <code class="docutils literal notranslate"><span class="pre">.scaled()</span></code>, <code class="docutils literal notranslate"><span class="pre">.mirrored()</span></code>, <code class="docutils literal notranslate"><span class="pre">.chamfered()</span></code>, <code class="docutils literal notranslate"><span class="pre">.filleted()</span></code>,
 <code class="docutils literal notranslate"><span class="pre">.extruded()</span></code>, <code class="docutils literal notranslate"><span class="pre">.lofted()</span></code>, <code class="docutils literal notranslate"><span class="pre">.revolved()</span></code>, <code class="docutils literal notranslate"><span class="pre">.swept()</span></code>,
@@ -652,6 +654,36 @@ three points must not be collinear.</p></li>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#magnelio.geo.Curve" title="magnelio.geo.curves.Curve"><em>Curve</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.geo.Curve.ellipse_arc">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">ellipse_arc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">center</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">semi_axes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">major_axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.geo.Curve.ellipse_arc" title="Link to this definition">#</a></dt>
+<dd><p>An elliptical arc from <em>start</em> to <em>end</em>, counter-clockwise about <em>normal</em>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>start</strong> (<em>tuple</em><em> of </em><em>float</em>) – Arc endpoints [meters]; both must lie on the ellipse.</p></li>
+<li><p><strong>end</strong> (<em>tuple</em><em> of </em><em>float</em>) – Arc endpoints [meters]; both must lie on the ellipse.</p></li>
+<li><p><strong>center</strong> (<em>tuple</em><em> of </em><em>float</em>) – Centre of the ellipse [meters].</p></li>
+<li><p><strong>semi_axes</strong> (<em>tuple</em><em> of </em><em>float</em>) – <code class="docutils literal notranslate"><span class="pre">(a,</span> <span class="pre">b)</span></code> [meters]: <em>a</em> along <em>major_axis</em>, <em>b</em> along
+<code class="docutils literal notranslate"><span class="pre">normal</span> <span class="pre">x</span> <span class="pre">major_axis</span></code>.  Either may be the larger one.</p></li>
+<li><p><strong>major_axis</strong> (<em>str</em><em> or </em><em>sequence</em><em> of </em><em>float</em>) – Direction of the first semi-axis — <code class="docutils literal notranslate"><span class="pre">'x'</span></code>, <code class="docutils literal notranslate"><span class="pre">'y'</span></code>, <code class="docutils literal notranslate"><span class="pre">'z'</span></code>
+or any non-zero 3-vector (its component along <em>normal</em> is
+discarded).</p></li>
+<li><p><strong>normal</strong> (<em>str</em><em> or </em><em>sequence</em><em> of </em><em>float</em>) – Normal of the ellipse’s plane; the arc turns counter-clockwise
+about it, seen from the tip of the axis.</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – Optional label.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If an endpoint is off the ellipse, if <em>major_axis</em> is parallel
+    to <em>normal</em>, or if a semi-axis is not positive.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#magnelio.geo.Curve" title="magnelio.geo.curves.Curve"><em>Curve</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1057,6 +1089,83 @@ place.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="magnelio.geo.ImportedSolid">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.geo.</span></span><span class="sig-name descname"><span class="pre">ImportedSolid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.geo.ImportedSolid" title="Link to this definition">#</a></dt>
+<dd><p>A solid whose geometry came from a CAD file or a project store.</p>
+<p>Instances are produced by <a class="reference internal" href="io.html#magnelio.io.import_step" title="magnelio.io.import_step"><code class="xref py py-func docutils literal notranslate"><span class="pre">import_step()</span></code></a>,
+<a class="reference internal" href="io.html#magnelio.io.import_brep" title="magnelio.io.import_brep"><code class="xref py py-func docutils literal notranslate"><span class="pre">import_brep()</span></code></a> and by reading back a project’s
+stored geometry; there is no reason to build one by hand.</p>
+<p>An imported solid is a <a class="reference internal" href="#magnelio.geo.Shape" title="magnelio.geo.Shape"><code class="xref py py-class docutils literal notranslate"><span class="pre">Shape</span></code></a> like any other — Boolean
+operators, the chainable verbs, <a class="reference internal" href="#magnelio.geo.Shape.volume" title="magnelio.geo.Shape.volume"><code class="xref py py-meth docutils literal notranslate"><span class="pre">volume()</span></code></a>
+and <a class="reference internal" href="#magnelio.geo.ImportedSolid.bounding_box" title="magnelio.geo.ImportedSolid.bounding_box"><code class="xref py py-meth docutils literal notranslate"><span class="pre">bounding_box()</span></code></a> all work on it, and it can be added to a
+<a class="reference internal" href="core.html#magnelio.GeometryModel" title="magnelio.geo.GeometryModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeometryModel</span></code></a> once it carries a material.
+What it is <em>not</em> is the original CSG construction: boundary
+representation is a finished solid, so the parameters it was drawn
+from (a radius, an extrusion length) are gone and cannot be edited.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>material</strong> (<a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material"><em>Material</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>name</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>color</strong> (<em>tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>] </em><em>| </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.geo.ImportedSolid.material">
+<span class="sig-name descname"><span class="pre">material</span></span><a class="headerlink" href="#magnelio.geo.ImportedSolid.material" title="Link to this definition">#</a></dt>
+<dd><p>Material of the solid.  <code class="docutils literal notranslate"><span class="pre">None</span></code> marks a construction body — a
+solid that was imported but not assigned a material; it can act
+as a Boolean operand but is rejected by
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">add()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material">Material</a> or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.geo.ImportedSolid.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#magnelio.geo.ImportedSolid.name" title="Link to this definition">#</a></dt>
+<dd><p>Name the solid carried in its source file.  This is the key
+material assignments are made against, so it survives a
+re-export of the same CAD model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.geo.ImportedSolid.color">
+<span class="sig-name descname"><span class="pre">color</span></span><a class="headerlink" href="#magnelio.geo.ImportedSolid.color" title="Link to this definition">#</a></dt>
+<dd><p>Display colour <code class="docutils literal notranslate"><span class="pre">(r,</span> <span class="pre">g,</span> <span class="pre">b)</span></code> in 0–1 from the source file, or
+<code class="docutils literal notranslate"><span class="pre">None</span></code>.  Purely cosmetic: plots and the ParaView export use it
+when the material prescribes no colour of its own; it never
+affects the physics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple of float or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.geo.ImportedSolid.bounding_box">
+<span class="sig-name descname"><span class="pre">bounding_box</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.geo.ImportedSolid.bounding_box" title="Link to this definition">#</a></dt>
+<dd><p>Axis-aligned bounding box <code class="docutils literal notranslate"><span class="pre">(min_corner,</span> <span class="pre">max_corner)</span></code> [meters].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>scale</strong> (<em>float</em><em> | </em><em>None</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="magnelio.geo.Intersection">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.geo.</span></span><span class="sig-name descname"><span class="pre">Intersection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape_a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape_b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.geo.Intersection" title="Link to this definition">#</a></dt>
 <dd><p>Boolean intersection of two shapes.</p>
@@ -1242,6 +1351,56 @@ loop.</p>
 <dd class="field-even"><p><a class="reference internal" href="#magnelio.geo.Curve" title="magnelio.geo.Curve">Curve</a></p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.geo.Path.ellipse_to">
+<span class="sig-name descname"><span class="pre">ellipse_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">end</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">center</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">semi_axes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">major_axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.geo.Path.ellipse_to" title="Link to this definition">#</a></dt>
+<dd><p>Append an elliptical arc ending at <em>end</em>.</p>
+<p>The ellipse is given by its <em>center</em>, its two semi-axes and the
+direction of the first one; the current point and <em>end</em> must both
+lie on it.  Of the two arcs joining them, the one drawn runs
+counter-clockwise about <em>normal</em> — the same convention as
+<a class="reference internal" href="#magnelio.geo.Path.arc_to" title="magnelio.geo.Path.arc_to"><code class="xref py py-meth docutils literal notranslate"><span class="pre">arc_to()</span></code></a> with <code class="docutils literal notranslate"><span class="pre">center=</span></code> and <code class="docutils literal notranslate"><span class="pre">normal=</span></code>, so reversing the
+direction of <em>normal</em> gives the complementary arc.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>end</strong> (<em>tuple</em><em> of </em><em>float</em>) – End point <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y,</span> <span class="pre">z)</span></code> [meters], on the ellipse.</p></li>
+<li><p><strong>center</strong> (<em>tuple</em><em> of </em><em>float</em>) – Centre of the ellipse [meters].</p></li>
+<li><p><strong>semi_axes</strong> (<em>tuple</em><em> of </em><em>float</em>) – <code class="docutils literal notranslate"><span class="pre">(a,</span> <span class="pre">b)</span></code> [meters]: <em>a</em> along <em>major_axis</em>, <em>b</em> along
+<code class="docutils literal notranslate"><span class="pre">normal</span> <span class="pre">x</span> <span class="pre">major_axis</span></code>.  Either may be the larger one — the
+names only say which direction each length belongs to.</p></li>
+<li><p><strong>major_axis</strong> (<em>str</em><em> or </em><em>sequence</em><em> of </em><em>float</em>) – Direction of the <em>a</em> semi-axis: <code class="docutils literal notranslate"><span class="pre">'x'</span></code>, <code class="docutils literal notranslate"><span class="pre">'y'</span></code>, <code class="docutils literal notranslate"><span class="pre">'z'</span></code>, or
+any non-zero 3-vector (its component along <em>normal</em> is ignored).</p></li>
+<li><p><strong>normal</strong> (<em>str</em><em> or </em><em>sequence</em><em> of </em><em>float</em>) – Normal of the ellipse’s plane and the sense of the arc.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new Path ending at <em>end</em>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#magnelio.geo.Path" title="magnelio.geo.Path">Path</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If an endpoint is off the ellipse or its plane, if a semi-axis
+    is not positive, or if <em>major_axis</em> is parallel to <em>normal</em>.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>The iris of an accelerator cell, drawn in the x-z plane (x is the
+radius, z the axis): a quarter turn from the z-ward end of the
+ellipse down to the iris radius (normal <code class="docutils literal notranslate"><span class="pre">-y</span></code> picks the short
+way round):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">path</span><span class="o">.</span><span class="n">ellipse_to</span><span class="p">(</span>
+    <span class="p">(</span><span class="mf">0.035</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.012</span><span class="p">),</span>
+    <span class="n">center</span><span class="o">=</span><span class="p">(</span><span class="mf">0.054</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.012</span><span class="p">),</span>
+    <span class="n">semi_axes</span><span class="o">=</span><span class="p">(</span><span class="mf">0.012</span><span class="p">,</span> <span class="mf">0.019</span><span class="p">),</span>
+    <span class="n">major_axis</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span>
+    <span class="n">normal</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -1986,6 +2145,7 @@ material of the first shape.</p></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Cone"><code class="docutils literal notranslate"><span class="pre">Cone</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Curve"><code class="docutils literal notranslate"><span class="pre">Curve</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Curve.arc"><code class="docutils literal notranslate"><span class="pre">Curve.arc()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Curve.ellipse_arc"><code class="docutils literal notranslate"><span class="pre">Curve.ellipse_arc()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Curve.helix"><code class="docutils literal notranslate"><span class="pre">Curve.helix()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Curve.polyline"><code class="docutils literal notranslate"><span class="pre">Curve.polyline()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Curve.spline"><code class="docutils literal notranslate"><span class="pre">Curve.spline()</span></code></a></li>
@@ -2005,12 +2165,20 @@ material of the first shape.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Group.volume"><code class="docutils literal notranslate"><span class="pre">Group.volume()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.ImportedSolid"><code class="docutils literal notranslate"><span class="pre">ImportedSolid</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.ImportedSolid.material"><code class="docutils literal notranslate"><span class="pre">ImportedSolid.material</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.ImportedSolid.name"><code class="docutils literal notranslate"><span class="pre">ImportedSolid.name</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.ImportedSolid.color"><code class="docutils literal notranslate"><span class="pre">ImportedSolid.color</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.ImportedSolid.bounding_box"><code class="docutils literal notranslate"><span class="pre">ImportedSolid.bounding_box()</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Intersection"><code class="docutils literal notranslate"><span class="pre">Intersection</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Loft"><code class="docutils literal notranslate"><span class="pre">Loft</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Path"><code class="docutils literal notranslate"><span class="pre">Path</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Path.arc_to"><code class="docutils literal notranslate"><span class="pre">Path.arc_to()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Path.closed"><code class="docutils literal notranslate"><span class="pre">Path.closed()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Path.curve"><code class="docutils literal notranslate"><span class="pre">Path.curve()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Path.ellipse_to"><code class="docutils literal notranslate"><span class="pre">Path.ellipse_to()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Path.line_to"><code class="docutils literal notranslate"><span class="pre">Path.line_to()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Path.spline_to"><code class="docutils literal notranslate"><span class="pre">Path.spline_to()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Path.current"><code class="docutils literal notranslate"><span class="pre">Path.current</span></code></a></li>

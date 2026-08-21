@@ -403,7 +403,7 @@ smooth rather than creased.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 248-270
+.. GENERATED FROM PYTHON SOURCE LINES 248-273
 
 What to take away
 -----------------
@@ -417,6 +417,9 @@ What to take away
 * An arc through a centre is ambiguous; ``normal=`` removes the
   ambiguity, and the direction reverses when the pen comes back along
   the far side of a loop.
+* ``ellipse_to`` draws an elliptical arc the same way — centre, the
+  two semi-axes and the direction of the first, ``normal=`` for the
+  sense — for the outlines of accelerator cells and lens profiles.
 * ``shelled`` hollows, ``traced`` follows a route, ``Loft``
   interpolates cross-sections.  Each replaces a construction that
   would otherwise be assembled from tool bodies by hand.
@@ -431,7 +434,7 @@ verbs that turn it into a solid ask for the material explicitly.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.472 seconds)
+   **Total running time of the script:** (0 minutes 0.476 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_14_profile_geometry.py:

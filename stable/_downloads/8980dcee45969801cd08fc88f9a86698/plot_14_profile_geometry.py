@@ -257,6 +257,9 @@ fig, ax = plots.plot_cross_section([taper], "y", 0.0, title="a ruled taper betwe
 # * An arc through a centre is ambiguous; ``normal=`` removes the
 #   ambiguity, and the direction reverses when the pen comes back along
 #   the far side of a loop.
+# * ``ellipse_to`` draws an elliptical arc the same way — centre, the
+#   two semi-axes and the direction of the first, ``normal=`` for the
+#   sense — for the outlines of accelerator cells and lens profiles.
 # * ``shelled`` hollows, ``traced`` follows a route, ``Loft``
 #   interpolates cross-sections.  Each replaces a construction that
 #   would otherwise be assembled from tool bodies by hand.

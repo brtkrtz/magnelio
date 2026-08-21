@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=4621528c"></script>
+    <script src="../_static/documentation_options.js?v=6c02275b"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -364,6 +364,8 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="fit-discretization.html">Spatial discretisation and time integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cad-import.html">CAD import</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pcb-import.html">Board import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="meshing-conformal.html">Mesh generation and conformal geometry</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boundaries.html">Boundary conditions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ports.html">Waveguide ports and S-parameter extraction</a></li>
@@ -458,9 +460,9 @@ E_\varphi = -\frac{jk}{4\pi}\,\bigl(\eta N_\varphi - L_\theta\bigr).
 \]</div>
 <p>This is the standard surface-equivalence formulation of FDTD/FIT
 post-processing, introduced by Umashankar and
-Taflove <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id54" title="Korada Umashankar and Allen Taflove. A novel method to analyze electromagnetic scattering of complex objects. IEEE Transactions on Electromagnetic Compatibility, 24(4):397–405, 1982. doi:10.1109/TEMC.1982.304054.">53</a>]</span> and covered in textbook form by
-Taflove and Hagness <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id6" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>; the antenna-side
-definitions follow Balanis <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id55" title="Constantine A. Balanis. Antenna Theory: Analysis and Design. Wiley, Hoboken, NJ, 4th edition, 2016.">54</a>]</span>.</p>
+Taflove <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id56" title="Korada Umashankar and Allen Taflove. A novel method to analyze electromagnetic scattering of complex objects. IEEE Transactions on Electromagnetic Compatibility, 24(4):397–405, 1982. doi:10.1109/TEMC.1982.304054.">53</a>]</span> and covered in textbook form by
+Taflove and Hagness <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>; the antenna-side
+definitions follow Balanis <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id57" title="Constantine A. Balanis. Antenna Theory: Analysis and Design. Wiley, Hoboken, NJ, 4th edition, 2016.">54</a>]</span>.</p>
 <p><code class="docutils literal notranslate"><span class="pre">monitors.MonitorFarField(freqs=[...])</span></code> records everything needed
 during the run: it places a closed box a few grid cells inside the
 physical domain (the absorber layers are excluded automatically, the

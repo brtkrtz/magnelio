@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=4621528c"></script>
+    <script src="../_static/documentation_options.js?v=6c02275b"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -364,6 +364,8 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="fit-discretization.html">Spatial discretisation and time integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cad-import.html">CAD import</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pcb-import.html">Board import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="meshing-conformal.html">Mesh generation and conformal geometry</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boundaries.html">Boundary conditions</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Waveguide ports and S-parameter extraction</a></li>
@@ -455,7 +457,7 @@ same metric as the 3D problem (rather than with an independent 2D
 solver) is the property that makes the discrete mode an exact
 eigenvector of the 3D-restricted transversal operator; the FIT
 curl-curl eigenformulation itself is standard
-<span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id4" title="Thomas Weiland. Time domain electromagnetic field computation with finite difference methods. International Journal of Numerical Modelling: Electronic Networks, Devices and Fields, 9(4):295–319, 1996. doi:10.1002/(SICI)1099-1204(199607)9:4&lt;295::AID-JNM240&gt;3.0.CO;2-8.">2</a>, <a class="reference internal" href="../bibliography.html#id5" title="Markus Clemens and Thomas Weiland. Discrete electromagnetism with the finite integration technique. Progress In Electromagnetics Research (PIER), 32:65–87, 2001. doi:10.2528/PIER00080103.">3</a>]</span>.  The TM
+<span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id6" title="Thomas Weiland. Time domain electromagnetic field computation with finite difference methods. International Journal of Numerical Modelling: Electronic Networks, Devices and Fields, 9(4):295–319, 1996. doi:10.1002/(SICI)1099-1204(199607)9:4&lt;295::AID-JNM240&gt;3.0.CO;2-8.">2</a>, <a class="reference internal" href="../bibliography.html#id7" title="Markus Clemens and Thomas Weiland. Discrete electromagnetism with the finite integration technique. Progress In Electromagnetics Research (PIER), 32:65–87, 2001. doi:10.2528/PIER00080103.">3</a>]</span>.  The TM
 variant is the exact restriction of the same operator, an in-house
 derivation (DD-055).</p>
 </section>
@@ -470,14 +472,14 @@ the quasi-TEM effective parameters follow the classic two-capacitance
 construction <span class="math notranslate nohighlight">\(\varepsilon_{\text{eff}} = C'/C'_0\)</span>,
 <span class="math notranslate nohighlight">\(Z_0 = 1/(c\sqrt{C' C'_0})\)</span> — standard quasi-static transmission-line
 theory as found in the microwave-engineering literature
-<span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id26" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>, <a class="reference internal" href="../bibliography.html#id27" title="Robert E. Collin. Field Theory of Guided Waves. IEEE Press, 2nd edition, 1991.">17</a>]</span> (the specific
+<span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>, <a class="reference internal" href="../bibliography.html#id29" title="Robert E. Collin. Field Theory of Guided Waves. IEEE Press, 2nd edition, 1991.">17</a>]</span> (the specific
 formulation is textbook material; no single originating paper is
 claimed).  The line-impedance definition used for TEM modes is the
 power–current impedance <span class="math notranslate nohighlight">\(Z_{\pi}\)</span> (DD-025); the coexistence of
 <span class="math notranslate nohighlight">\(Z_{PI}\)</span>, <span class="math notranslate nohighlight">\(Z_{PV}\)</span>, <span class="math notranslate nohighlight">\(Z_{VI}\)</span> definitions is classical waveguide
-theory <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id26" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>, <a class="reference internal" href="../bibliography.html#id25" title="Nathan Marcuvitz. Waveguide Handbook. Volume 10 of MIT Radiation Laboratory Series. McGraw-Hill, 1951.">18</a>]</span>.  Analytical
+theory <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>, <a class="reference internal" href="../bibliography.html#id27" title="Nathan Marcuvitz. Waveguide Handbook. Volume 10 of MIT Radiation Laboratory Series. McGraw-Hill, 1951.">18</a>]</span>.  Analytical
 reference modes for coaxial and rectangular-waveguide ports are
-closed-form textbook solutions <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id26" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>]</span>.</p>
+closed-form textbook solutions <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>]</span>.</p>
 </section>
 <section id="mode-classification-and-multi-mode-merge">
 <h3>Mode classification and multi-mode merge<a class="headerlink" href="#mode-classification-and-multi-mode-merge" title="Link to this heading">#</a></h3>
@@ -511,12 +513,12 @@ lattice (derivation in DD-054/DD-055; measured port floors −124 to
 transparent boundary conditions</em> — deriving the boundary kernel from
 the discretised interior scheme rather than discretising a continuous
 ABC — is established in the numerical-analysis literature, e.g. by Arnold,
-Ehrhardt and Sofronov <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id20" title="Anton Arnold, Matthias Ehrhardt, and Ivan Sofronov. Discrete transparent boundary conditions for the Schrödinger equation: fast calculation, approximation, and stability. Communications in Mathematical Sciences, 1(3):501–556, 2003.">19</a>]</span> and
+Ehrhardt and Sofronov <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id22" title="Anton Arnold, Matthias Ehrhardt, and Ivan Sofronov. Discrete transparent boundary conditions for the Schrödinger equation: fast calculation, approximation, and stability. Communications in Mathematical Sciences, 1(3):501–556, 2003.">19</a>]</span> and
 Ehrhardt’s work on discrete TBCs for Schrödinger-type equations
-<span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id21" title="Matthias Ehrhardt. Discrete transparent boundary conditions for general Schrödinger-type equations. VLSI Design, 9(4):325–338, 1999.">20</a>]</span>; discretely nonreflecting
+<span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id23" title="Matthias Ehrhardt. Discrete transparent boundary conditions for general Schrödinger-type equations. VLSI Design, 9(4):325–338, 1999.">20</a>]</span>; discretely nonreflecting
 boundary closures for finite-difference schemes of linear hyperbolic
 systems are constructed by Rowley and Colonius
-<span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id22" title="Clarence W. Rowley and Tim Colonius. Discretely nonreflecting boundary conditions for linear hyperbolic systems. Journal of Computational Physics, 157(2):500–538, 2000. doi:10.1006/jcph.1999.6383.">21</a>]</span>.  None of these antecedents treats modal
+<span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id24" title="Clarence W. Rowley and Tim Colonius. Discretely nonreflecting boundary conditions for linear hyperbolic systems. Journal of Computational Physics, 157(2):500–538, 2000. doi:10.1006/jcph.1999.6383.">21</a>]</span>.  None of these antecedents treats modal
 FIT/FDTD waveguide ports; that application appears to be original to
 Magnelio.</p>
 </section>
@@ -534,7 +536,7 @@ eigenpairs of the <strong>quadratic ζ-pencil</strong></p>
 (<code class="docutils literal notranslate"><span class="pre">ports/modal/zeta_pencil.py</span></code>), solved by sparse shift-invert ARPACK
 on the linearised pencil.  Quadratic eigenvalue problems and their
 linearisations are covered by the survey of Tisseur and Meerbergen
-<span class="bibtex-citation" id="id8">[<a class="reference internal" href="../bibliography.html#id23" title="Françoise Tisseur and Karl Meerbergen. The quadratic eigenvalue problem. SIAM Review, 43(2):235–286, 2001. doi:10.1137/S0036144500381988.">22</a>]</span>; computing waveguide
+<span class="bibtex-citation" id="id8">[<a class="reference internal" href="../bibliography.html#id25" title="Françoise Tisseur and Karl Meerbergen. The quadratic eigenvalue problem. SIAM Review, 43(2):235–286, 2001. doi:10.1137/S0036144500381988.">22</a>]</span>; computing waveguide
 Bloch/propagation modes from a transfer/period formulation is
 established practice in computational photonics and microwave theory
 (no single originating publication is claimed).
@@ -551,7 +553,7 @@ inheriting the palindromic symmetry that makes the projected lattice
 lossless, and is closed by the exact small-system DTBC kernel
 (<code class="docutils literal notranslate"><span class="pre">ports/modal/band_dtbc.py</span></code>).  Projection-based model order reduction
 (Galerkin projection onto an SVD/POD subspace) is standard numerical
-practice <span class="bibtex-citation" id="id9">[<a class="reference internal" href="../bibliography.html#id24" title="Peter Benner, Serkan Gugercin, and Karen Willcox. A survey of projection-based model reduction methods for parametric dynamical systems. SIAM Review, 57(4):483–531, 2015. doi:10.1137/130932715.">23</a>]</span> (survey reference; the
+practice <span class="bibtex-citation" id="id9">[<a class="reference internal" href="../bibliography.html#id26" title="Peter Benner, Serkan Gugercin, and Karen Willcox. A survey of projection-based model reduction methods for parametric dynamical systems. SIAM Review, 57(4):483–531, 2015. doi:10.1137/130932715.">23</a>]</span> (survey reference; the
 specific passive-by-construction boundary closure is in-house).</p>
 </section>
 <section id="modal-mur-fallback">
@@ -560,11 +562,11 @@ specific passive-by-construction boundary closure is in-house).</p>
 terminated by a <strong>first-order Mur absorbing boundary applied per mode
 in modal-coefficient space</strong>, with the per-mode phase velocity at the
 mode-calculation frequency (<code class="docutils literal notranslate"><span class="pre">ports/modal/operator.py</span></code>).  The ABC is
-Mur’s <span class="bibtex-citation" id="id10">[<a class="reference internal" href="../bibliography.html#id12" title="Gerrit Mur. Absorbing boundary conditions for the finite-difference approximation of the time-domain electromagnetic-field equations. IEEE Transactions on Electromagnetic Compatibility, 23(4):377–382, 1981. doi:10.1109/TEMC.1981.303970.">24</a>]</span>.  The design of the
+Mur’s <span class="bibtex-citation" id="id10">[<a class="reference internal" href="../bibliography.html#id14" title="Gerrit Mur. Absorbing boundary conditions for the finite-difference approximation of the time-domain electromagnetic-field equations. IEEE Transactions on Electromagnetic Compatibility, 23(4):377–382, 1981. doi:10.1109/TEMC.1981.303970.">24</a>]</span>.  The design of the
 modal port
 operator as a co-simulated 1D termination per mode follows the
 modal-absorbing-port literature, specifically Luo and Chen
-<span class="bibtex-citation" id="id11">[<a class="reference internal" href="../bibliography.html#id19" title="Shuiping Luo and Zhizhang Chen. An efficient modal FDTD for absorbing boundary conditions and incident wave generator in waveguide structures. Progress In Electromagnetics Research (PIER), 68:229–246, 2007. doi:10.2528/PIER06090506.">25</a>]</span> (DD-047; higher-order Mur/Higdon
+<span class="bibtex-citation" id="id11">[<a class="reference internal" href="../bibliography.html#id21" title="Shuiping Luo and Zhizhang Chen. An efficient modal FDTD for absorbing boundary conditions and incident wave generator in waveguide structures. Progress In Electromagnetics Research (PIER), 68:229–246, 2007. doi:10.2528/PIER06090506.">25</a>]</span> (DD-047; higher-order Mur/Higdon
 variants were evaluated and rejected, DD-069).</p>
 </section>
 </section>
@@ -575,7 +577,7 @@ plane (DTBC branch) or injects on the port plane (Mur branch); V/I are
 recorded on a single co-located plane (DD-041).  Time signals are
 smooth pulses (Gaussian and derived shapes, <code class="docutils literal notranslate"><span class="pre">signals/waveforms.py</span></code>) —
 standard practice
-<span class="bibtex-citation" id="id12">[<a class="reference internal" href="../bibliography.html#id6" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.</p>
+<span class="bibtex-citation" id="id12">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.</p>
 </section>
 <section id="s-parameters">
 <h2>S-parameters<a class="headerlink" href="#s-parameters" title="Link to this heading">#</a></h2>
@@ -583,7 +585,7 @@ standard practice
 normalisation, <span class="math notranslate nohighlight">\(a,b = (V \pm Z_0 I)/(2\sqrt{Z_0})\)</span> per mode, from the
 recorded modal V/I after Fourier transform
 (<code class="docutils literal notranslate"><span class="pre">postprocessing/modal_sparameters.py</span></code>, DD-042/DD-078).  The
-power-wave formalism is Kurokawa’s <span class="bibtex-citation" id="id13">[<a class="reference internal" href="../bibliography.html#id18" title="Kaneyuki Kurokawa. Power waves and the scattering matrix. IEEE Transactions on Microwave Theory and Techniques, 13(2):194–202, 1965. doi:10.1109/TMTT.1965.1125964.">26</a>]</span>.
+power-wave formalism is Kurokawa’s <span class="bibtex-citation" id="id13">[<a class="reference internal" href="../bibliography.html#id20" title="Kaneyuki Kurokawa. Power waves and the scattering matrix. IEEE Transactions on Microwave Theory and Techniques, 13(2):194–202, 1965. doi:10.1109/TMTT.1965.1125964.">26</a>]</span>.
 Two discrete-exactness refinements are
 in-house (DD-063, DD-056): the a/b split de-staggers E and H
 with the exact discrete factor <span class="math notranslate nohighlight">\(\lambda^{1/2}(z)\)</span> and uses the exact

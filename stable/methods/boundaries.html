@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=4621528c"></script>
+    <script src="../_static/documentation_options.js?v=6c02275b"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -364,6 +364,8 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="fit-discretization.html">Spatial discretisation and time integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cad-import.html">CAD import</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pcb-import.html">Board import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="meshing-conformal.html">Mesh generation and conformal geometry</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Boundary conditions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ports.html">Waveguide ports and S-parameter extraction</a></li>
@@ -439,7 +441,7 @@
 <section id="absorbing-boundary-cpml">
 <h2>Absorbing boundary: CPML<a class="headerlink" href="#absorbing-boundary-cpml" title="Link to this heading">#</a></h2>
 <p>Open-region truncation uses the <strong>convolutional perfectly matched
-layer (CPML)</strong> of Roden and Gedney <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id10" title="J. Alan Roden and Stephen D. Gedney. Convolution PML (CPML): an efficient FDTD implementation of the CFS-PML for arbitrary media. Microwave and Optical Technology Letters, 27(5):334–339, 2000. doi:10.1002/1098-2760(20001205)27:5&lt;334::AID-MOP14&gt;3.0.CO;2-A.">12</a>]</span>
+layer (CPML)</strong> of Roden and Gedney <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id12" title="J. Alan Roden and Stephen D. Gedney. Convolution PML (CPML): an efficient FDTD implementation of the CFS-PML for arbitrary media. Microwave and Optical Technology Letters, 27(5):334–339, 2000. doi:10.1002/1098-2760(20001205)27:5&lt;334::AID-MOP14&gt;3.0.CO;2-A.">12</a>]</span>
 (<code class="docutils literal notranslate"><span class="pre">boundaries/cpml.py</span></code>, chosen over the uniaxial PML in
 DD-001).  The implementation carries the full <strong>complex
 frequency-shifted (CFS)</strong> stretching function</p>
@@ -447,18 +449,18 @@ frequency-shifted (CFS)</strong> stretching function</p>
 \[
 s(\omega) = \kappa + \frac{\sigma}{\alpha + j\omega\varepsilon_0}
 \]</div>
-<p>introduced by Kuzuoglu and Mittra <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id9" title="Mustafa Kuzuoglu and Raj Mittra. Frequency dependence of the constitutive parameters of causal perfectly matched anisotropic absorbers. IEEE Microwave and Guided Wave Letters, 6(12):447–449, 1996. doi:10.1109/75.544545.">13</a>]</span>,
+<p>introduced by Kuzuoglu and Mittra <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id11" title="Mustafa Kuzuoglu and Raj Mittra. Frequency dependence of the constitutive parameters of causal perfectly matched anisotropic absorbers. IEEE Microwave and Guided Wave Letters, 6(12):447–449, 1996. doi:10.1109/75.544545.">13</a>]</span>,
 realised recursively through per-face auxiliary
 memory variables <span class="math notranslate nohighlight">\(\psi\)</span> with the standard <span class="math notranslate nohighlight">\((b, c)\)</span> update
 coefficients.  Profiles are the customary polynomial grading
 <span class="math notranslate nohighlight">\(\sigma(\rho) = \sigma_{\max}\rho^m\)</span>,
 <span class="math notranslate nohighlight">\(\kappa(\rho) = 1 + (\kappa_{\max}-1)\rho^m\)</span> and a linearly decreasing
 <span class="math notranslate nohighlight">\(\alpha\)</span>; grading choices follow the CPML literature
-<span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id6" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>, <a class="reference internal" href="../bibliography.html#id10" title="J. Alan Roden and Stephen D. Gedney. Convolution PML (CPML): an efficient FDTD implementation of the CFS-PML for arbitrary media. Microwave and Optical Technology Letters, 27(5):334–339, 2000. doi:10.1002/1098-2760(20001205)27:5&lt;334::AID-MOP14&gt;3.0.CO;2-A.">12</a>]</span>.
+<span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>, <a class="reference internal" href="../bibliography.html#id12" title="J. Alan Roden and Stephen D. Gedney. Convolution PML (CPML): an efficient FDTD implementation of the CFS-PML for arbitrary media. Microwave and Optical Technology Letters, 27(5):334–339, 2000. doi:10.1002/1098-2760(20001205)27:5&lt;334::AID-MOP14&gt;3.0.CO;2-A.">12</a>]</span>.
 The PML
-concept itself originates with Bérenger <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id8" title="Jean-Pierre Bérenger. A perfectly matched layer for the absorption of electromagnetic waves. Journal of Computational Physics, 114(2):185–200, 1994. doi:10.1006/jcph.1994.1159.">14</a>]</span>;
+concept itself originates with Bérenger <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id10" title="Jean-Pierre Bérenger. A perfectly matched layer for the absorption of electromagnetic waves. Journal of Computational Physics, 114(2):185–200, 1994. doi:10.1006/jcph.1994.1159.">14</a>]</span>;
 the uniaxial variant used for comparison in DD-001 is
-Gedney’s <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id11" title="Stephen D. Gedney. An anisotropic perfectly matched layer-absorbing medium for the truncation of FDTD lattices. IEEE Transactions on Antennas and Propagation, 44(12):1630–1639, 1996. doi:10.1109/8.546249.">15</a>]</span>.</p>
+Gedney’s <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id13" title="Stephen D. Gedney. An anisotropic perfectly matched layer-absorbing medium for the truncation of FDTD lattices. IEEE Transactions on Antennas and Propagation, 44(12):1630–1639, 1996. doi:10.1109/8.546249.">15</a>]</span>.</p>
 </section>
 <section id="pec-pmc-and-periodic-walls">
 <h2>PEC, PMC and periodic walls<a class="headerlink" href="#pec-pmc-and-periodic-walls" title="Link to this heading">#</a></h2>
@@ -466,16 +468,17 @@ Gedney’s <span class="bibtex-citation" id="id5">[<a class="reference internal"
 <li><p><strong>PEC</strong> (<code class="docutils literal notranslate"><span class="pre">boundaries/pec.py</span></code>): tangential-E edge zeroing after each
 E update; in the eigenmode solver, PEC is imposed by degree-of-
 freedom elimination (DD-009).  Standard practice
-<span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id6" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.</p></li>
+<span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.</p></li>
 <li><p><strong>PMC</strong> (<code class="docutils literal notranslate"><span class="pre">boundaries/pmc.py</span></code>, DD-065): realised as the <em>natural</em>
 boundary of the FIT update (the missing exterior circulation terms
 are simply absent), which is the discretely exact magnetic wall on
 the dual grid.  Standard FIT/FDTD practice
-<span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id4" title="Thomas Weiland. Time domain electromagnetic field computation with finite difference methods. International Journal of Numerical Modelling: Electronic Networks, Devices and Fields, 9(4):295–319, 1996. doi:10.1002/(SICI)1099-1204(199607)9:4&lt;295::AID-JNM240&gt;3.0.CO;2-8.">2</a>]</span>.</p></li>
+<span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id6" title="Thomas Weiland. Time domain electromagnetic field computation with finite difference methods. International Journal of Numerical Modelling: Electronic Networks, Devices and Fields, 9(4):295–319, 1996. doi:10.1002/(SICI)1099-1204(199607)9:4&lt;295::AID-JNM240&gt;3.0.CO;2-8.">2</a>]</span>.</p></li>
 <li><p><strong>Periodic</strong> (<code class="docutils literal notranslate"><span class="pre">boundaries/periodic.py</span></code>): direct field wrap-around of
-the curl stencil at opposing faces (no phase shift / Floquet
-variant implemented).  Standard practice
-<span class="bibtex-citation" id="id8">[<a class="reference internal" href="../bibliography.html#id6" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.</p></li>
+the curl stencil at opposing faces in the time-domain solver (zero
+phase advance), standard practice <span class="bibtex-citation" id="id8">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.  The
+eigenmode solver imposes the same pairing with an arbitrary Bloch
+phase advance, see <a class="reference internal" href="eigenmode-analysis.html"><span class="std std-doc">eigenmode analysis</span></a>.</p></li>
 </ul>
 </section>
 <section id="symmetry-planes">

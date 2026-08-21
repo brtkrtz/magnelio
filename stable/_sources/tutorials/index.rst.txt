@@ -275,6 +275,57 @@ as a ``.py`` script or a ``.ipynb`` notebook.
     </div>
 
 
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Not every model is drawn in Magnelio.  A connector, a housing, a machined part — anything with a mechanical drawing behind it — already exists in a CAD system, and rebuilding it with primitives is both work and a source of discrepancies between the simulated and the manufactured part.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_16_cad_import_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_16_cad_import`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Importing a CAD model</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Tutorial 09 built a microstrip line out of three bricks.  That works for a line, and stops working the moment the board has more than one trace on it: a real layout is drawn in a layout tool, and redrawing it with primitives is both work and a fresh source of discrepancies between what was simulated and what was manufactured.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_17_pcb_import_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_17_pcb_import`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Importing a circuit board</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Every cavity so far was a closed box with a discrete set of resonances. An accelerating structure is different: a chain of identical cells, coupled through their irises, and what matters is how the field in one cell relates to the field in the next.  For an infinite chain that relation is Floquet&#x27;s theorem — the field in cell n+1 is the field in cell n times a phase factor e^{-\mathrm j \varphi} — and the resonant frequency becomes a function of the phase advance \varphi per cell.  That function, plotted over 0 \le \varphi \le \pi, is the dispersion diagram (or Brillouin diagram) of the structure.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_18_periodic_tesla_cell_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_18_periodic_tesla_cell`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Periodic structures: the dispersion diagram of a TESLA cell</div>
+    </div>
+
+
 .. thumbnail-parent-div-close
 
 .. raw:: html
@@ -300,6 +351,9 @@ as a ``.py`` script or a ``.ipynb`` notebook.
    /tutorials/plot_13_dielectric_filter
    /tutorials/plot_14_profile_geometry
    /tutorials/plot_15_dipole_farfield
+   /tutorials/plot_16_cad_import
+   /tutorials/plot_17_pcb_import
+   /tutorials/plot_18_periodic_tesla_cell
 
 
 

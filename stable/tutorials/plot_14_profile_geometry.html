@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=4621528c"></script>
+    <script src="../_static/documentation_options.js?v=6c02275b"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -376,6 +376,9 @@
 <li class="toctree-l1"><a class="reference internal" href="plot_13_dielectric_filter.html">Capstone: a two-pole dielectric resonator filter</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Profiles: shapes the primitives do not cover</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_15_dipole_farfield.html">Antenna symmetry: a half-wave dipole as a half model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_16_cad_import.html">Importing a CAD model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_17_pcb_import.html">Importing a circuit board</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_18_periodic_tesla_cell.html">Periodic structures: the dispersion diagram of a TESLA cell</a></li>
 </ul>
 </div>
 </nav></div>
@@ -685,6 +688,9 @@ sheet is a profile for <code class="docutils literal notranslate"><span class="p
 <li><p>An arc through a centre is ambiguous; <code class="docutils literal notranslate"><span class="pre">normal=</span></code> removes the
 ambiguity, and the direction reverses when the pen comes back along
 the far side of a loop.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ellipse_to</span></code> draws an elliptical arc the same way — centre, the
+two semi-axes and the direction of the first, <code class="docutils literal notranslate"><span class="pre">normal=</span></code> for the
+sense — for the outlines of accelerator cells and lens profiles.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">shelled</span></code> hollows, <code class="docutils literal notranslate"><span class="pre">traced</span></code> follows a route, <code class="docutils literal notranslate"><span class="pre">Loft</span></code>
 interpolates cross-sections.  Each replaces a construction that
 would otherwise be assembled from tool bodies by hand.</p></li>
@@ -695,7 +701,7 @@ two routes to the same part agreeing.</p></li>
 <p>A profile carrying no material is a <em>construction</em> profile: it is not
 a physical object and cannot be meshed on its own, which is why the
 verbs that turn it into a solid ask for the material explicitly.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.472 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.476 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-14-profile-geometry-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/bd56a784e653efaf900109070ab3849d/plot_14_profile_geometry.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_14_profile_geometry.ipynb</span></code></a></p>

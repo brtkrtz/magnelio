@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=4621528c"></script>
+    <script src="../_static/documentation_options.js?v=6c02275b"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -364,6 +364,8 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="fit-discretization.html">Spatial discretisation and time integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cad-import.html">CAD import</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pcb-import.html">Board import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="meshing-conformal.html">Mesh generation and conformal geometry</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boundaries.html">Boundary conditions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ports.html">Waveguide ports and S-parameter extraction</a></li>
@@ -435,8 +437,8 @@
 <h1>Numerical methods<a class="headerlink" href="#numerical-methods" title="Link to this heading">#</a></h1>
 <p>The chapters below inventory every numerical method currently built
 into Magnelio, in the order a simulation passes through them: spatial
-discretisation, mesh generation and conformal geometry, boundary
-conditions, port models, lumped circuit elements, dispersive
+discretisation, geometry and board input, mesh generation and conformal
+geometry, boundary conditions, port models, lumped circuit elements, dispersive
 materials, conductor losses, sources and monitors, far-field
 computation, and the eigenmode solver.  A final chapter covers implementation-level engineering
 (backends, precision) that is not itself a research method.</p>
@@ -450,6 +452,24 @@ in-house derivations are marked as such in the text.</p>
 <li class="toctree-l2"><a class="reference internal" href="fit-discretization.html#stability-cfl-condition">Stability (CFL condition)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="fit-discretization.html#selectable-precision">Selectable precision</a></li>
 <li class="toctree-l2"><a class="reference internal" href="fit-discretization.html#simulation-duration-and-energy-stopping">Simulation duration and energy stopping</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cad-import.html">CAD import</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cad-import.html#what-an-exchange-format-carries-and-what-it-does-not">What an exchange format carries, and what it does not</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cad-import.html#only-solids-are-imported">Only solids are imported</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cad-import.html#assigning-materials-by-name">Assigning materials by name</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cad-import.html#assemblies">Assemblies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cad-import.html#colours">Colours</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cad-import.html#healing">Healing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cad-import.html#limits">Limits</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pcb-import.html">Board import</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pcb-import.html#what-a-fabrication-export-carries">What a fabrication export carries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pcb-import.html#the-stackup-is-taken-literally">The stackup is taken literally</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pcb-import.html#meshing-a-board">Meshing a board</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pcb-import.html#materials">Materials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pcb-import.html#limits">Limits</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="meshing-conformal.html">Mesh generation and conformal geometry</a><ul>
