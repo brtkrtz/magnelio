@@ -1,10 +1,13 @@
 """
 Backend abstraction layer.
 
-All numerical modules use ``xp = get_xp()`` instead of importing numpy directly.
-This allows transparent switching between NumPy (CPU) and CuPy (GPU, v1.1).
+Numerical code takes its array module as an explicit ``xp`` argument, resolved
+per solver by :func:`resolve_backend` — NumPy on the CPU, CuPy on a CUDA device.
+The module-global :func:`get_xp` / :func:`set_backend` pair predates that and
+survives only as a default for consumers not wired to a solver instance.
 
-See design-decisions.md DD-006.
+See design-decisions.md DD-006 (original pattern), DD-090 (per-solver backend)
+and DD-180 (what a third backend would cost).
 """
 
 import os
@@ -15,15 +18,11 @@ _BACKEND: str = "numpy"
 
 
 def get_xp():
-    """Return the active array module (numpy or cupy).
+    """Return the array module selected by :func:`set_backend`.
 
-    Usage in numerical code::
-
-        from magnelio._backend.array_api import get_xp
-
-        def compute(data):
-            xp = get_xp()
-            return xp.zeros_like(data)
+    Legacy accessor.  New numerical code receives its module as an explicit
+    ``xp`` argument from :func:`resolve_backend`, so that a solver's backend
+    is a property of that solver rather than of the process.
     """
     if _BACKEND == "numpy":
         return np
@@ -196,12 +195,17 @@ def copy_into(dst, src) -> None:
 def set_backend(name: str) -> None:
     """Switch the global array backend.
 
-    Args:
-        name: One of ``'numpy'`` or ``'cupy'``.
+    Parameters
+    ----------
+    name : {"numpy", "cupy"}
+        The array module the module-global :func:`get_xp` will return.
 
-    Note:
-        CuPy support is planned for v1.1. Setting ``'cupy'`` in v1.0 will raise
-        ImportError unless CuPy is manually installed.
+    Notes
+    -----
+    Legacy mechanism: solvers resolve their own backend through
+    :func:`resolve_backend` and pass it down, so this global affects only
+    consumers that are not wired to a solver instance.  Selecting ``"cupy"``
+    without CuPy installed raises on the next :func:`get_xp` call, not here.
     """
     global _BACKEND
     if name not in ("numpy", "cupy"):
