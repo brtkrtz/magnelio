@@ -762,6 +762,19 @@ so the question "was this ever a problem?" has a cheap answer):
   late-time autoregressive signal estimation for pulsed runs; the
   certified measurement today is CW lock-in
   (``validation/kg_dtbc_wg_port_floors.py``).
+* **A third compute backend** — assessed 2026-08-21, nothing built
+  (DD-180).  The blocker is not the amount of CUDA (204 lines, no shared
+  memory or intrinsics; 1.2 % of `src/` is backend-specific) but that
+  `xp is not np` is the solver's capability test, so any third array
+  module takes the CUDA path.  Metal is **rejected on bandwidth**: CPU
+  and GPU share one memory on Apple Silicon and reach 1.0×…1.4× of each
+  other, while the loop is bandwidth-bound — and Metal has no FP64, so
+  `precision="double"` would be lost.  CuPy on ROCm is the candidate
+  worth the effort (same array API, CUDA source translates nearly
+  verbatim), but the launch geometry is measured on one Ada card and
+  would need re-measuring.  Nothing merges without a run on the actual
+  hardware: CI runs `tests/unit` only, so every cross-backend gate is a
+  local run today.
 * **Residual GPU small-grid floor** — ~0.41 ms/step at 10k cells is
   per-port feedback round trips plus the Python loop rest, not kernel
   time.  Needs port-hook restructuring (DD-092).

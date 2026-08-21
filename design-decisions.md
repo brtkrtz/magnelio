@@ -139,6 +139,13 @@ breakpoints between steps. No magic or hidden state mutations.
 is sufficient and zero-dependency. All numerical modules import `xp = get_xp()` instead of `np`.
 Migration to `array-api-compat` is straightforward when CuPy support is added.
 
+**Superseded in part.**  The module-global `get_xp()`/`set_backend()` state
+described above is no longer the production path: [[DD-090]] made the backend a
+per-solver value resolved by `resolve_backend()` and passed down explicitly, and
+only `boundaries/cpml.py` still consults the global as a default.  The
+`array-api-compat` question was revisited in [[DD-180]] and answered the same
+way — at ~87 `xp.*` call sites the compatibility layer still buys nothing.
+
 ---
 
 ## DD-007 — scipy.sparse.linalg.eigsh for eigenmode solver
@@ -874,6 +881,14 @@ GPU (RTX 4070 Super, ~504 GB/s GDDR6X) is projected to yield ~12× additional sp
 beyond what Numba's `parallel=True` already provides cannot exceed the memory bus. GPU has 10–25×
 higher memory bandwidth than DDR4/DDR5, making it the natural next step. The CuPy drop-in approach
 avoids a separate CUDA codebase while still enabling GPU acceleration for the entire solver loop.
+
+**Later note — the tier numbers above were renumbered.**  When the hand-written
+CUDA kernel arrived it took the top slot, so the module docstring of
+`_operators/numba_kernels.py` today counts 1 = fused CUDA, 2 = fused Numba CPU,
+3 = array stencil.  The table above predates that and numbers the surviving two
+1 and 2.  The stencil tier is what both faster paths fall back to, and it is the
+only reason the dispatch is portable at all; [[DD-180]] records what that
+fallback does and does not buy a prospective third backend.
 
 ---
 
@@ -12111,3 +12126,132 @@ and discarded today); a sheet-preserving public `Union` of coplanar
 `tests/integration/test_import_pcb_pipeline.py`,
 `benchmarks/bench_pcb_import.py`, `docs/methods/pcb-import.md`,
 `examples/tutorials/plot_17_pcb_import.py`.
+
+## DD-180 — Backend portability: describe capabilities, not compare modules
+
+**Date:** 2026-08-21 (assessment prompted by an outside question about
+Apple Silicon and AMD support).
+**Status:** Deferred — evaluated, not scheduled.  Nothing implemented;
+this entry exists so the measurements are not re-derived.
+
+**Problem.**  The backend axis knows exactly two names.
+`resolve_backend` hard-codes the pair in three places
+(`_backend/array_api.py:39,135,207`), and the solver's capability test
+is `self._use_gpu = xp is not np` (`solver/fit_td.py:312`): "not NumPy"
+means "CuPy on CUDA" throughout.  A third array module would take the
+CUDA path immediately and fail at kernel compile.  Thirteen further
+sites duck-type the same question — `hasattr(x, "get")` ten times,
+`type(f.Ex).__module__ == "cupy"` three.  Every prospective backend
+therefore pays the same preparatory bill before it can be evaluated at
+all.
+
+**What the code actually costs to port.**  Less than expected.  Of
+63,800 lines under `src/magnelio/`, ~750–850 are backend-specific
+(1.2 %), in 14 of 407 files.  The package makes ~87 `xp.*` calls,
+almost all `asarray`, `zeros`, `empty`; the time loop is ufuncs, slices
+and fancy indexing — no `einsum`, no `linalg`, and no sparse matrix at
+all (the material matrices are diagonals as flat 1-D arrays).  The
+hand-written CUDA is 204 lines (`_operators/numba_kernels.py:232–437`)
+with no shared memory, atomics, warp intrinsics or barriers: one thread
+per element, bandwidth-bound.  And the array-stencil fallback of [[DD-032]]
+(`update_E_stencil` / `update_H_stencil`, `numba_kernels.py:137–205`) already
+runs on any NumPy-like module.
+
+**Two traps behind that comfort.**  Dead-tile skipping ([[DD-100]]) and
+graph capture ([[DD-092]]) are both gated on `update_E_fused_cuda is
+not None` (`fit_td.py:533`, `:932`), so a portable path loses both.
+And a backend that serves only the array API lands on the stencil
+fallback — six curl temporaries and several passes over memory — which on
+the same machine is likely *slower* than the fused Numba kernel, not
+faster.  The CPU comparison point is never NumPy.
+
+**Rejected: Metal, in every form.**  On Apple Silicon the CPU and the
+GPU share one memory with one connection, so a bandwidth-bound kernel
+can only win the difference in *achievable* bandwidth:
+
+| Chip | Peak | CPU reaches | GPU reaches | GPU/CPU |
+|---|---|---|---|---|
+| M1 (base) | ~67 GB/s | 59 | 60 | 1.0× |
+| M4 (base) | 120 GB/s | 103 | 100 | 0.97× |
+| M1 Max | 409 GB/s | 224 (P-cores), 243 with E-cores | ~330 | ~1.4× |
+
+Base parts: STREAM figures from *Apple vs. Oranges: Evaluating the
+Apple Silicon M-Series SoCs for HPC*, arXiv:2502.05317.  M1 Max:
+AnandTech's bandwidth-scaling measurement — the CPU cluster saturates
+at 224 GB/s of a 409 GB/s fabric, which is where the gap comes from,
+not from GPU speed.  STREAM flatters the CPU (ideal prefetching) and a
+3-D stencil with three neighbour strides suits a GPU's latency hiding
+better, so the practical figure is nearer 2× than 1× — but the ceiling
+is still the bandwidth.  Against that stand a third kernel dialect to
+maintain and `precision="double"` lost outright, since Metal GPUs have
+no native FP64, so the [[DD-094]] opt-in would be unavailable.  The
+capacity advantage of unified memory — the genuinely attractive
+property, one to two orders of magnitude more cells than a consumer
+card — is already open to the NumPy/Numba path, which sees the same
+memory.
+
+The order of these arguments matters: maturity is the *second* reason,
+not the first.  MacMetalPy is disqualified on its own (alpha, one
+contributor, dormant since March 2026, cp312 wheels only, and a silent
+float64→float32 downcast documented as intended behaviour), but
+1.0×…1.4× does not improve when a library grows up.  MLX fails
+differently: its lazy, non-in-place array model works against a
+leapfrog built on `+=` over persistent buffers.  `metalcompute` and
+`metalgpu` are kernel launchers with no array API at all.  Reopen only
+on a structural change — a separate, substantially faster GPU memory
+path, or FP64 in the hardware.
+
+**Also rejected.**  PyTorch as a universal backend.  One backend would
+cover CUDA, ROCm and Metal at once, but it costs a ~2 GB dependency and
+foreign memory management; the developer chose to keep the dependency
+tree lean.
+
+**Direction sketched, not decided.**  Should this be taken up, the
+shape that follows from the findings is a `BackendSpec` — name, array
+module, `is_device`, `to_host`, `supports_float64`, optional fused
+`kernels`, optional `graphs`, and a cross-backend `tolerance` — behind
+a registry, so the two-element name sets become one list and the error
+texts enumerate what is registered ([[DD-176]] style).
+`precision="double"` would then fail at the front door on a backend
+without FP64 rather than downcast silently.  A backend certificate
+would be the admission condition, built on the two oracles that already
+exist: the NumPy replica of the fused kernel with identical in-thread
+operation order (`_reference_sweep` in
+`tests/integration/test_tile_skip_kernels.py`) and the two-sided
+activation gate in
+`tests/integration/test_gpu_backend.py::TestGPUSinglePrecision`, which
+asserts that a path both agreed with the reference *and* differed from
+the fallback — without it a backend reports green while crawling on the
+stencil fallback.
+
+**Why nothing can be merged on trust.**  CI runs `tests/unit` only, so
+all three NumPy↔CuPy cross-checks are local runs; of 2489 tests, 24 are
+GPU-gated and none is backend-parametrised, and `resolve_backend` has
+no unit test at all.  The sharp bounds those cross-checks use (1e-12
+absolute, `max|Δ| == 0`) are statements about identical operation
+order, not about physics — another compiler may contract FMAs.  Any new
+backend needs its own branch, its own hardware and its own
+measurements before it is documented as supported.  Cost of that
+verification is not the obstacle: Apple arm64 CPU runners are free for
+public repositories, and a 192 GB AMD part rents for 1.71–2.59 $/h, so
+a first session is under 15 $ — the expense is the CuPy source build,
+not the bill.
+
+**Deferred candidates.**  CuPy on ROCm is the strongest: identical
+array API, so the stencil fallback works at once, and the CUDA source
+translates to hiprtc nearly verbatim.  It needs a source build
+(`CUPY_INSTALL_USE_HIP=1`), is not on conda-forge, and its launch
+geometry — `_BLK = (32, 4, 2)` with the matching `DEFAULT_TILE =
+(2, 4, 32)`, both measured on one Ada card ([[DD-100]]) — would have to
+be re-measured for a 64-wide wavefront.  Intel `dpnp` is the same shape
+for a narrower audience.  `array-api-compat` stays unnecessary at 87
+call sites, as [[DD-006]] already judged.
+
+**Adjacent, not part of this.**  If Apple Silicon performance matters,
+the lever is the fused Numba CPU kernel, not a GPU backend: whether it
+actually reaches the achievable 224–338 GB/s (thread scaling across
+P- and E-cores, `prange` parallelism when `Nx` is small, cache blocking
+across the three neighbour strides).  That is backend-agnostic and
+benefits every CPU.
+
+**Files:** none — nothing was implemented.
