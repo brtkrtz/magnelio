@@ -225,6 +225,69 @@ class Path:
             p_via = tuple(o + sign * radius * x / length for o, x in zip(c, bisector))
         return self._extended(Curve.arc(p_start, p_via, p_end))
 
+    def ellipse_to(self, end, *, center, semi_axes, major_axis, normal) -> "Path":
+        """Append an elliptical arc ending at *end*.
+
+        The ellipse is given by its *center*, its two semi-axes and the
+        direction of the first one; the current point and *end* must both
+        lie on it.  Of the two arcs joining them, the one drawn runs
+        counter-clockwise about *normal* — the same convention as
+        :meth:`arc_to` with ``center=`` and ``normal=``, so reversing the
+        direction of *normal* gives the complementary arc.
+
+        Parameters
+        ----------
+        end : tuple of float
+            End point ``(x, y, z)`` [meters], on the ellipse.
+        center : tuple of float
+            Centre of the ellipse [meters].
+        semi_axes : tuple of float
+            ``(a, b)`` [meters]: *a* along *major_axis*, *b* along
+            ``normal x major_axis``.  Either may be the larger one — the
+            names only say which direction each length belongs to.
+        major_axis : str or sequence of float
+            Direction of the *a* semi-axis: ``'x'``, ``'y'``, ``'z'``, or
+            any non-zero 3-vector (its component along *normal* is ignored).
+        normal : str or sequence of float
+            Normal of the ellipse's plane and the sense of the arc.
+
+        Returns
+        -------
+        Path
+            A new Path ending at *end*.
+
+        Raises
+        ------
+        ValueError
+            If an endpoint is off the ellipse or its plane, if a semi-axis
+            is not positive, or if *major_axis* is parallel to *normal*.
+
+        Examples
+        --------
+        The iris of an accelerator cell, drawn in the x-z plane (x is the
+        radius, z the axis): a quarter turn from the z-ward end of the
+        ellipse down to the iris radius (normal ``-y`` picks the short
+        way round)::
+
+            path.ellipse_to(
+                (0.035, 0.0, 0.012),
+                center=(0.054, 0.0, 0.012),
+                semi_axes=(0.012, 0.019),
+                major_axis="z",
+                normal=(0.0, -1.0, 0.0),
+            )
+        """
+        return self._extended(
+            Curve.ellipse_arc(
+                self.current,
+                point3(end, "ellipse_to(end)"),
+                center=center,
+                semi_axes=semi_axes,
+                major_axis=major_axis,
+                normal=normal,
+            )
+        )
+
     def spline_to(self, *points) -> "Path":
         """Append a smooth spline through *points*, ending at the last one.
 

@@ -12357,3 +12357,45 @@ prefetch problem, not a parallelism one.  That is backend-agnostic and
 benefits every CPU.
 
 **Files:** none — nothing was implemented.
+
+## DD-181 — An elliptical arc is a profile segment, not a spline
+
+**Date:** 2026-08-21.
+
+**Problem.**  `geo.Path` could draw lines, circular arcs and splines.
+The outline of an accelerator cell — the TESLA mid-cell, the standard
+shape of a superconducting linac — is a circular arc at the equator
+joined by a tangent line to an *elliptical* arc at the iris
+{cite}`aune2000`.  Without an ellipse primitive the iris had to be
+approximated by a spline through sampled points: the geometry kernel
+then carries a B-spline where the design carries an analytic curve,
+the sampling density becomes a hidden model parameter, and the
+tangent-line construction (which needs the ellipse's normal direction)
+has nothing exact to attach to.  Lens profiles and elliptical
+waveguides hit the same wall.
+
+**Decision.**  `Path.ellipse_to(end, *, center, semi_axes, major_axis,
+normal)` and its constructor form `Curve.ellipse_arc(start, end, ...)`.
+The vocabulary follows `arc_to(center=, normal=)`: the ellipse is named
+by its centre, its two semi-axes and the direction of the first, and
+the arc is the one running counter-clockwise about *normal* — reversing
+*normal* gives the complementary arc, exactly as for circles.  Both
+endpoints must lie on the ellipse and in its plane (checked with the
+join tolerance, DD-176 style: at the call, naming the offending point).
+
+**Kernel detail.**  OCC's `gp_Elips` insists that the first radius be
+the major one.  The user's `semi_axes=(a, b)` is a statement about
+*directions*, not about which is longer, so `make_ellipse_arc` swaps
+the frame when `a < b`: `(u, v, a, b, t) -> (v, -u, b, a, t - pi/2)`
+describes the same point set, and the parameter shift keeps the arc's
+endpoints where they were.  The swap is invisible at the API; the test
+draws the same arc both ways and checks the sampled points against the
+implicit equation to 1e-9.
+
+**Bounds.**  The curve's scale box is `center ± max(a, b)` — the
+circumscribed circle, the same bound the circular arc uses.
+
+**Files:** `src/magnelio/geo/path.py`, `geo/curves.py`
+(`_ellipse_frame`, `Curve.ellipse_arc`), `geo/_occ_backend.py`
+(`make_ellipse_arc`), `tests/unit/test_geometry.py`,
+`examples/tutorials/plot_14_profile_geometry.py` (summary bullet).

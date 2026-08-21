@@ -3137,6 +3137,66 @@ class TestPath:
         cap = Path((0, 1e-3, 0)).arc_to((0, -1e-3, 0), center=(0, 0, 0), normal="z").curve()
         assert cap.bounding_box()[0][0] == pytest.approx(-1e-3, abs=1e-9)
 
+    def test_ellipse_arc_points_lie_on_the_ellipse(self):
+        """Both axis orders, and the sense follows normal= like arc_to."""
+        from magnelio.geo import Path
+        from magnelio.geo._occ_backend import sample_wire
+
+        _occ()
+        c = (0.054, 0.0, 0.012)
+        a, b = 0.012, 0.019  # a along z, b along x
+        p0, p1 = (0.054, 0.0, 0.024), (0.035, 0.0, 0.012)
+        for semi_axes, major_axis in (((a, b), "z"), ((b, a), "x")):
+            short = (
+                Path(p0)
+                .ellipse_to(
+                    p1, center=c, semi_axes=semi_axes, major_axis=major_axis, normal=(0, -1, 0)
+                )
+                .curve()
+            )
+            pts = sample_wire(short._occ_shape(1.0), 1e-5)
+            residual = ((pts[:, 2] - c[2]) / a) ** 2 + ((pts[:, 0] - c[0]) / b) ** 2 - 1.0
+            assert abs(residual).max() < 1e-9
+            assert pts[0] == pytest.approx(p0, abs=1e-12)
+            assert pts[-1] == pytest.approx(p1, abs=1e-12)
+            assert pts[:, 0].max() == pytest.approx(c[0], abs=1e-9)  # quarter turn
+        long = (
+            Path(p0).ellipse_to(p1, center=c, semi_axes=(a, b), major_axis="z", normal="y").curve()
+        )
+        pts = sample_wire(long._occ_shape(1.0), 1e-5)
+        assert pts[:, 0].max() == pytest.approx(c[0] + b, abs=1e-9)  # three quarters
+
+    def test_ellipse_profile_revolves_to_a_spheroid(self):
+        import magnelio as mio
+        from magnelio.geo import Path
+
+        _occ()
+        a, b = 0.012, 0.019
+        kw = dict(center=(0, 0, 0), semi_axes=(a, b), major_axis="z", normal=(0, -1, 0))
+        spheroid = (
+            Path((0.0, 0.0, -a))
+            .ellipse_to((b, 0.0, 0.0), **kw)
+            .ellipse_to((0.0, 0.0, a), **kw)
+            .closed()
+            .covered()
+            .revolved(axis="z", material=mio.Material.air())
+        )
+        assert spheroid.volume() == pytest.approx(4.0 / 3.0 * math.pi * a * b * b, rel=1e-9)
+
+    def test_ellipse_arguments_are_checked_at_the_call(self):
+        from magnelio.geo import Path
+
+        c, p0 = (0.054, 0.0, 0.012), (0.054, 0.0, 0.024)
+        kw = dict(center=c, semi_axes=(0.012, 0.019), major_axis="z", normal="y")
+        with pytest.raises(ValueError, match="does not lie on the ellipse"):
+            Path(p0).ellipse_to((0.05, 0.0, 0.0), **kw)
+        with pytest.raises(ValueError, match="off the ellipse's plane"):
+            Path(p0).ellipse_to((0.035, 1e-3, 0.012), **kw)
+        with pytest.raises(ValueError, match="parallel to its normal"):
+            Path(p0).ellipse_to((0.035, 0.0, 0.012), **{**kw, "major_axis": "y"})
+        with pytest.raises(ValueError, match="must be positive"):
+            Path(p0).ellipse_to((0.035, 0.0, 0.012), **{**kw, "semi_axes": (0.012, -0.019)})
+
     def test_antipodal_ends_without_normal_are_rejected(self):
         from magnelio.geo import Path
 

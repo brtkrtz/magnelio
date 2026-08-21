@@ -11,6 +11,9 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- `geo.Path.ellipse_to` / `geo.Curve.ellipse_arc`: elliptical arcs as
+  profile segments — centre, the two semi-axes and the direction of the
+  first, the sense fixed by `normal=` exactly as for circular arcs.
 - CAD import: `magnelio.io.import_step` reads a STEP file — solids,
   their names, their display colours and the file's length unit, so a
   part drawn in millimetres arrives at its true size.  Materials are

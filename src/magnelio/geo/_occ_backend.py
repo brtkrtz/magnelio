@@ -4283,6 +4283,50 @@ def make_arc(p_start, p_through, p_end, scale: float = 1.0):
     return BRepBuilderAPI_MakeWire(edge).Wire()
 
 
+def make_ellipse_arc(center, u_dir, v_dir, a, b, t_start, t_end, scale: float = 1.0):
+    """Build an elliptical-arc wire.
+
+    The ellipse is ``center + a*cos(t)*u_dir + b*sin(t)*v_dir``; the arc
+    runs from parameter *t_start* to *t_end* (``t_end > t_start``), i.e.
+    counter-clockwise about ``u_dir x v_dir``.  OCC insists on the major
+    radius being the first one, so a > b is restored here by swapping the
+    axes (a quarter-turn of the parameter) when the caller's *a* is the
+    minor one.
+    """
+    occ = _require_occ()
+    try:
+        from OCC.Core.BRepBuilderAPI import (  # noqa: PLC0415
+            BRepBuilderAPI_MakeEdge,
+            BRepBuilderAPI_MakeWire,
+        )
+        from OCC.Core.GC import GC_MakeArcOfEllipse  # noqa: PLC0415
+        from OCC.Core.gp import gp_Elips  # noqa: PLC0415
+    except ImportError as exc:
+        raise ImportError("pythonocc-core is required for curve construction.") from exc
+    if a < b:
+        # (u, v, a, b, t) -> (v, -u, b, a, t - pi/2) describes the same point set.
+        u_dir, v_dir = v_dir, tuple(-x for x in u_dir)
+        a, b = b, a
+        t_start -= 0.5 * math.pi
+        t_end -= 0.5 * math.pi
+    normal = (
+        u_dir[1] * v_dir[2] - u_dir[2] * v_dir[1],
+        u_dir[2] * v_dir[0] - u_dir[0] * v_dir[2],
+        u_dir[0] * v_dir[1] - u_dir[1] * v_dir[0],
+    )
+    frame = occ["gp_Ax2"](
+        occ["gp_Pnt"](*_scale3(center, scale)),
+        occ["gp_Dir"](*normal),
+        occ["gp_Dir"](*u_dir),
+    )
+    ellipse = gp_Elips(frame, a * scale, b * scale)
+    arc = GC_MakeArcOfEllipse(ellipse, t_start, t_end, True)
+    if not arc.IsDone():
+        raise ValueError("OCC could not build the elliptical arc.")
+    edge = BRepBuilderAPI_MakeEdge(arc.Value()).Edge()
+    return BRepBuilderAPI_MakeWire(edge).Wire()
+
+
 def make_spline(points, scale: float = 1.0):
     """Build a B-spline wire interpolating a sequence of 3D points."""
     occ = _require_occ()

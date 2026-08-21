@@ -29,6 +29,64 @@ from magnelio.geo._validate import point3, point_list, positive
 _JOIN_RTOL = 1e-6
 
 
+def _ellipse_frame(p_start, p_end, center, semi_axes, major_axis, normal):
+    """Resolve an elliptical arc into (center, u, v, a, b, t_start, t_end).
+
+    ``u``/``v`` are the unit directions of the two semi-axes (``v = n x u``),
+    ``t`` the parameter of ``c + a cos(t) u + b sin(t) v``; the arc is the
+    counter-clockwise one about ``n``, so ``t_end > t_start``.
+    """
+    from magnelio.geo._axes import normalize_axis  # noqa: PLC0415
+
+    c = point3(center, "ellipse center")
+    try:
+        a, b = (float(x) for x in semi_axes)
+    except (TypeError, ValueError):
+        raise ValueError(
+            f"semi_axes must be a pair (a, b) of lengths in meters; got {semi_axes!r}."
+        ) from None
+    if a <= 0.0 or b <= 0.0:
+        raise ValueError(f"Ellipse semi-axes must be positive; got a={a:.3e}, b={b:.3e}.")
+    n = normalize_axis(normal, "ellipse normal")
+    m = normalize_axis(major_axis, "ellipse major_axis")
+    along_n = sum(x * y for x, y in zip(m, n))
+    u = [x - along_n * y for x, y in zip(m, n)]
+    norm_u = math.sqrt(sum(x * x for x in u))
+    if norm_u <= 1e-9:
+        raise ValueError("major_axis of an ellipse must not be parallel to its normal.")
+    u = tuple(x / norm_u for x in u)
+    v = (
+        n[1] * u[2] - n[2] * u[1],
+        n[2] * u[0] - n[0] * u[2],
+        n[0] * u[1] - n[1] * u[0],
+    )
+    r_max = max(a, b)
+
+    def parameter(p, label):
+        d = tuple(x - y for x, y in zip(p, c))
+        off_plane = sum(x * y for x, y in zip(d, n))
+        if abs(off_plane) > _JOIN_RTOL * r_max:
+            raise ValueError(
+                f"The {label} point of the elliptical arc is off the ellipse's "
+                f"plane by {abs(off_plane):.3e} m."
+            )
+        xu = sum(x * y for x, y in zip(d, u)) / a
+        xv = sum(x * y for x, y in zip(d, v)) / b
+        if abs(xu * xu + xv * xv - 1.0) > 2.0 * _JOIN_RTOL:
+            raise ValueError(
+                f"The {label} point of the elliptical arc does not lie on the "
+                f"ellipse (centre {c}, semi-axes {a:.6e} x {b:.6e} m): "
+                f"(x/a)^2 + (y/b)^2 = {xu * xu + xv * xv:.6f}."
+            )
+        return math.atan2(xv, xu)
+
+    t0 = parameter(p_start, "start")
+    t1 = parameter(p_end, "end")
+    if t1 <= t0 + 1e-12:
+        t1 += 2.0 * math.pi
+    return c, u, v, a, b, t0, t1
+
+
 @dataclass
 class Curve:
     """An abstract 3D locus backed by an OCC wire (no material).
@@ -375,6 +433,56 @@ class Curve:
             center, radius = circle
             bounds = pad_box((center, center), radius)
         return cls(_build=build, name=name, _bounds=bounds, _ends=(p_start, p_end))
+
+    @classmethod
+    def ellipse_arc(
+        cls, start, end, *, center, semi_axes, major_axis, normal, name=None
+    ) -> "Curve":
+        """An elliptical arc from *start* to *end*, counter-clockwise about *normal*.
+
+        Parameters
+        ----------
+        start, end : tuple of float
+            Arc endpoints [meters]; both must lie on the ellipse.
+        center : tuple of float
+            Centre of the ellipse [meters].
+        semi_axes : tuple of float
+            ``(a, b)`` [meters]: *a* along *major_axis*, *b* along
+            ``normal x major_axis``.  Either may be the larger one.
+        major_axis : str or sequence of float
+            Direction of the first semi-axis — ``'x'``, ``'y'``, ``'z'``
+            or any non-zero 3-vector (its component along *normal* is
+            discarded).
+        normal : str or sequence of float
+            Normal of the ellipse's plane; the arc turns counter-clockwise
+            about it, seen from the tip of the axis.
+        name : str, optional
+            Optional label.
+
+        Raises
+        ------
+        ValueError
+            If an endpoint is off the ellipse, if *major_axis* is parallel
+            to *normal*, or if a semi-axis is not positive.
+        """
+        p_start = point3(start, "Curve.ellipse_arc(start)")
+        p_end = point3(end, "Curve.ellipse_arc(end)")
+        frame = _ellipse_frame(p_start, p_end, center, semi_axes, major_axis, normal)
+        c, u, v, a, b, t0, t1 = frame
+
+        def build(scale):
+            from magnelio.geo._occ_backend import make_ellipse_arc  # noqa: PLC0415
+
+            return make_ellipse_arc(c, u, v, a, b, t0, t1, scale=scale)
+
+        from magnelio.geo._scaling import pad_box  # noqa: PLC0415
+
+        return cls(
+            _build=build,
+            name=name,
+            _bounds=pad_box((c, c), max(a, b)),
+            _ends=(p_start, p_end),
+        )
 
     @classmethod
     def spline(cls, points, *, name=None) -> "Curve":
