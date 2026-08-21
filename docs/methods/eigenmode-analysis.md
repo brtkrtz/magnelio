@@ -60,8 +60,11 @@ the eigenvectors are travelling Bloch modes, which only the SuperLU
 backend solves.  Sweeping $\varphi$ from $0$ to $\pi$ traces the
 **dispersion (Brillouin) diagram** $f(\varphi)$ of the structure; the
 band edges $\varphi = 0$ and $\varphi = \pi$ coincide with the classic
-half-cell calculations (electric or magnetic wall at the cell
-boundary), which is the check the implementation is held to.
+wall-type calculations (electric or magnetic wall at the cell
+boundary), which is the check the implementation is held to, and for
+a chain of electrically coupled cells the curve follows
+$f^2 = f_{\pi/2}^2 (1 - k\cos\varphi)$ with $k$ the cell-to-cell
+coupling {cite}`wangler2008`.
 Verified against the discrete dispersion relation of the empty
 periodic box (exact to solver tolerance for $\varphi$ between 0 and
 180 degrees, `tests/integration/test_floquet_eigenmode.py`).
