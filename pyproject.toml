@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "magnelio"
-version = "0.4.0"
+version = "0.4.1"
 description = "Python library for full-wave 3D electromagnetic field simulation"
 readme = "README.md"
 requires-python = ">=3.11"
