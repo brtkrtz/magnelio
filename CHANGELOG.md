@@ -7,6 +7,19 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Added
+
+- Tutorial 19, *Striplines as pickups and kickers*: the beam
+  instrumentation workflow on the public API — dimension a stripline
+  pair with 2-D port solves, drive it as a kicker in its sum and
+  difference modes through the symmetry plane between the strips, and
+  obtain beam voltage, kicker constants, shunt impedances and (by
+  Panofsky–Wenzel and reciprocity) the pickup transfer impedances and
+  position sensitivity from one line monitor, checked against the
+  ideal-stripline formulas.
+
 ## [0.4.0] - 2026-08-21
 
 ### Added

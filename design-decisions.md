@@ -12499,3 +12499,69 @@ first attempt.
 check), `solver/eigenmode_result.py` (`_real_snapshot`),
 `tests/integration/test_floquet_eigenmode.py` (new),
 `docs/methods/eigenmode-analysis.md`, `docs/methods/boundaries.md`.
+
+## DD-183 — Beam-coupling figures are post-processing of a kicker run, not a solver feature
+
+**Date:** 2026-08-22.
+
+**Problem.**  Pickups and kickers are the bread-and-butter devices of
+beam instrumentation, and their figures of merit (kicker constant,
+shunt impedance, transfer impedance, position sensitivity) are not
+S-parameters: a port model has no beam.  The developer's working
+notebook for a stripline pair carried the chain as an ad-hoc function
+with stale conventions (`repmat`, cumulative integrals, a transverse
+gradient read at whatever cell the monitor landed on) and a geometry
+whose free parameters were picked "somehow" (`alpha = w/dia` made the
+24 mm strips 12 mm wide).
+
+**Decision.**  The workflow is documented as tutorial 19
+(`examples/tutorials/plot_19_stripline_pickup_kicker.py`) on the
+public API only; no library code changes.  The chain is the one of
+Goldberg and Lambertson's primer: drive the device as a kicker, beam
+voltage `V = ∫E_z e^{-jk_B z}dz` from a line monitor, transverse kick
+by Panofsky–Wenzel from the transverse gradient of `V`, pickup transfer
+impedances by reciprocity.  Three conventions are fixed by it:
+
+- **Sign of the transit phase.**  The frequency monitors accumulate
+  `Σ f·exp(+jωt)dt`, so a particle moving toward +z carries
+  `exp(-j k_B z)`.  Verified by directivity: the wrong sign leaves 4 %
+  of the beam voltage at the design frequency (the cancellation at the
+  second gap for a beam running with the wave).
+- **Symmetry plane as mode selector and drive.**  The plane between
+  the two strips as `"SymmetryPMC"` is the sum mode, as
+  `"SymmetryPEC"` the difference mode; one excited port in the half
+  model drives both downstream ports (1 W each, full model), so the
+  total drive power is 2 W.  The port report's `z_line_num` under that
+  plane is the pair impedance (DD-155: PMC → parallel, PEC → series);
+  one strip's impedance is `2·z` resp. `z/2`.
+- **Electrical length of a real stripline.**  The ideal-gap formulas
+  take the feed-to-feed distance `l + 2 g_c`, not the strip length:
+  the `E_z` peaks sit at the feeds.  The residual 10–20 % below the
+  ideal peaks is the transit-time factor of the extended end fields
+  and is the reason to simulate.
+
+**Dimensioning by port solver.**  The strip height above the pit
+floor is found from 2-D port solves on a 10 mm slice (five heights,
+~1.5 s each) and interpolated to 50 Ω in the difference mode
+(h = 7.7 mm at φ = 60°, b = 25 mm, 5 mm side gap).  The coax feed
+(1.52/3.5 mm) needs `min_cells_per_feature=8` to land within 5 % of
+50 Ω; the `min_cell_size` floor does not refine it.
+
+**Verification.**  Shape of every curve against the ideal stripline
+with `l_el = l + 2 g_c`: lobes, nulls at `k_B l_el = π`, `1/k_B²`
+decline of `R_⊥T²`; at 0.5 GHz K_∥ 0.41 (ideal 0.46), K_⊥ 2.83 (3.26);
+position sensitivity 7.2 %/mm (ideal `4 sin(φ/2)/(φ b)` = 7.6).
+Run: 41 × 44 × 209 cells, two runs of 11 s on the GPU; the whole
+script ~2:20 on the CPU.  Derivation and
+measurements: internal record
+`investigations/stripline_coupler/{DERIVATION,MEASUREMENTS}.md` with
+the probes `probe_zline2.py`, `probe_3d.py`, `probe_coax.py`.
+
+**Not done.**  No `docs/methods` chapter — the chain is post-processing
+of public monitor data and lives in the tutorial; a chapter becomes
+due once a library-side helper (beam voltage, Panofsky–Wenzel) exists.
+Only β = 1 is exercised; `BETA` is a parameter of the script.
+
+**Files:** `examples/tutorials/plot_19_stripline_pickup_kicker.py`,
+`docs/references.bib` (`goldberglambertson1992`, `panofskywenzel1956`,
+`wendt2020`).

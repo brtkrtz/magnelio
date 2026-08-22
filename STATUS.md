@@ -1,38 +1,32 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-21.*  Latest work: periodic structures have an
-eigenmode solver (DD-182) and a tutorial.  A `"Periodic"` face pair on
-the mesh plus `AnalysisEigenmode(phase_advance_deg=…)` solves the unit
-cell of an infinite chain with a Bloch phase advance: a sparse
-projector identifies every far-plane edge with its near-plane partner
-times `exp(-iφ)`, and the reduced `P^H A P`, `P^H B P` go through the
-unchanged shift-invert machinery — real for 0 and π, complex Hermitian
-on the SuperLU backend in between.  The load-bearing discovery was the
-boundary metric: the material matrices book a *full* dual cell on every
-domain face, so the far plane must be stripped of its metric before the
-congruence (the half-cell assumption passed at φ = 0 and failed
-everywhere else; the empty periodic box against its *discrete*
-dispersion relation caught it).  Before this, a periodic face at the
-eigensolver was silently solved as PMC, as was CPML; both are now
-rejected or solved properly.  Tutorial 18 builds the TESLA mid-cell
-from its published parameters — elliptical iris arc (new
-`Path.ellipse_to`, DD-181), equator circle, and the wall as their
-common tangent found by a root search (13.31°) — as a quarter model
-with two symmetry planes, and sweeps the phase advance: 0-mode
-1.2766 GHz, π-mode 1.3010 GHz (design 1.300), cell-to-cell coupling
-1.89 % (published 1.87 %), band edges reproduced by plain electric /
-magnetic walls on the iris planes; 140 s end to end at 4 mm cells.
-Two geometry traps are now recorded: a profile edge *on* the
-revolution axis yields a defective solid (volume −30 %, open section
-chains on every plane), and an arc drawn on the way back needs the
-opposite `normal` or it takes the long way round — the Pappus volume
-of the profile is the check.  The plane-wave tutorial was split off
-this item and deferred.
+*Last updated: 2026-08-22.*  Latest work: tutorial 19 documents the
+pickup/kicker workflow of beam instrumentation on the public API alone
+(DD-183).  A stripline pair is dimensioned with 2-D port solves (strip
+height for 50 Ω in the difference mode), driven as a kicker in its
+sum and difference modes by the wall type on the plane between the
+strips, and the beam-coupling figures follow from one line monitor:
+beam voltage `∫E_z e^{-jk_B z}dz` (sign fixed by directivity, 25:1),
+transverse kick by Panofsky–Wenzel from the gradient off the electric
+wall, pickup transfer impedances by reciprocity.  Against the
+ideal-stripline formulas of Goldberg/Lambertson with the feed-to-feed
+electrical length: curve shapes reproduced, peaks 10–20 % lower
+(transit-time factor of the extended end fields), position
+sensitivity 7.2 %/mm vs 7.6 ideal.  The coax feed needs
+`min_cells_per_feature=8` to sit within 5 % of 50 Ω — the
+`min_cell_size` floor does not refine it.  Script: ~2:20 on the CPU
+(two 3-D runs of 0.38 M cells plus ten 2-D port solves).  Before that: periodic
+structures have an eigenmode solver (DD-182) and tutorial 18 (TESLA
+mid-cell, 0-mode 1.2766 / π-mode 1.3010 GHz, coupling 1.89 % vs
+1.87 % published); the boundary metric books a full dual cell on every
+domain face, so the far plane must be stripped before the congruence.
+The plane-wave tutorial remains deferred.
 
 ## Recent decisions
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-183** (2026-08-22) — Tutorial 19, pickups and kickers as post-processing of a kicker run: beam voltage with `exp(-j k_B z)` for a +z particle (monitor convention, verified by directivity), symmetry plane between the strips selects sum/difference mode and drives both ports (2 W), `z_line_num` under it is the pair impedance, ideal-stripline reference with feed-to-feed length; no library change.
 * **DD-182** (2026-08-21) — Bloch-periodic eigenmodes: a `"Periodic"` face pair plus `AnalysisEigenmode(phase_advance_deg=…)` solves the unit cell by a congruence `P^H A P` (far-plane edges = near-plane × e^{-iφ}; far plane stripped of its full-dual-cell metric first — the half-cell assumption was refuted by the empty box); real path for 0/π, complex Hermitian on SuperLU in between; verified against the discrete dispersion of the empty box (1e-8) and half-cell band edges of an iris pillbox (1e-3); CPML and unpaired Periodic now rejected instead of solved as PMC.
 * **DD-181** (2026-08-21) — `Path.ellipse_to`/`Curve.ellipse_arc`: elliptical arcs as profile segments with the `arc_to` centre/normal vocabulary; OCC's major-first rule absorbed by an axis swap with a quarter-turn parameter shift.
 * **DD-179** (2026-08-20) — Board import: `io.import_pcb` reads a Gerber/Excellon/`.gbrjob` fabrication set into one `ImportedSolid` per stackup layer plus one per plated barrel; own readers written from the Ucamco spec (no kernel dependency, unsupported constructs refused by file and line); 2-D face set per layer then a single extrusion, so no Boolean is three-dimensional; barrels fill their cuts exactly (union volume = sum of volumes); copper at its real thickness rides the DD-059/DD-124 thin-sheet path because a layer is one board-spanning solid; construction at a private `fine_detail_scale` power of two; dielectrics numbered `dielectric_n` because layout tools name every core after its material; loss tangent reported, never modelled.
@@ -138,7 +132,7 @@ Older decisions: `design-decisions.md`.
 ## Script directories
 
 `examples/` is the public-API surface — `examples/tutorials/` holds
-the 16 gallery tutorials, no internal imports.  All run to completion
+the 19 gallery tutorials, no internal imports.  All run to completion
 on the GPU box on pure defaults: the DD-096 port-signal criterion is
 on by default (DD-114) because the energy criterion alone never fires
 on the TM-cut-off plateau of a shielded lossless structure.
@@ -341,7 +335,7 @@ through the same change untouched.  It surfaced only in CI, because
 sphinx-gallery re-executes a tutorial when *its script* changes, not
 when the library under it does — a local build without
 `build_docs.sh --clean` shows cached figures from an older library.  Pillars: Tutorials (generated from
-`examples/tutorials/*.py`, tutorials 01–17 shipped and given a
+`examples/tutorials/*.py`, tutorials 01–19 shipped and given a
 reader-perspective polish pass — full gallery build ~8:40, clean, of
 which the board tutorial is 2.4 s;
 tutorial 13, the DR-filter capstone, is deliberately the most
@@ -349,7 +343,7 @@ expensive page at ~5.5 min since the design path is the content),
 API reference (high-level page + one page per component namespace),
 Numerical methods (thirteen chapters, every method with citations,
 in-house derivations marked in prose), Bibliography.
-`docs/references.bib` holds 60 entries with bibliographic data only —
+`docs/references.bib` holds 63 entries with bibliographic data only —
 the citation-confidence bookkeeping lives exclusively in the
 maintainers' internal records (internal record:
 `reference_docs/provenance-ledger.md`); public docs and BibTeX carry
