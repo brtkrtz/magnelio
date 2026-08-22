@@ -2,7 +2,7 @@
 Striplines as pickups and kickers: beam-coupling figures from S-parameter runs
 ==============================================================================
 
-A pair of stripline electrodes in a beam pipe is the workhorse of beam
+A pair of stripline electrodes in a beam pipe is a workhorse of beam
 instrumentation: read out, it is a broadband *pickup* (a beam position
 monitor); driven, it is a *kicker* that deflects the beam.  Neither
 role is an S-parameter — a port model has no beam — yet both follow
@@ -15,7 +15,8 @@ to design such devices (Goldberg and Lambertson, *AIP Conf. Proc.*
 - integrate that field with the particle's own phase to get the
   **beam voltage** and the longitudinal **kicker constant**;
 - obtain the **transverse** kick from the transverse gradient of the
-  same longitudinal field — the Panofsky–Wenzel theorem;
+  longitudinal field of a push-pull drive — the Panofsky–Wenzel
+  theorem;
 - turn kicker constants into the **pickup transfer impedances** by
   the Lorentz reciprocity theorem.
 
@@ -139,6 +140,23 @@ def build_coupler(h):
     electrode = electrode + electrode.rotated(axis="z", angle_deg=180)
     return [vacuum - electrode, electrode]
 
+
+# %%
+# A geometry of this complexity — revolved faces, lofts, mirrors and a
+# half-turn copy — is best assembled in a notebook, where every
+# intermediate body can be looked at in the interactive 3D view before
+# the next operation builds on it:
+#
+# .. code-block:: python
+#
+#     model = mio.GeometryModel(background=pec)
+#     for body in build_coupler(7.5e-3):
+#         model.add(body)
+#     model.plot()
+#
+# .. image:: /_static/tutorial_19_notebook_model_plot.png
+#    :width: 70 %
+#    :alt: The stripline pair with its four coaxial feeds in a notebook's 3D view
 
 # %%
 # Dimensioning the strip with the port solver
