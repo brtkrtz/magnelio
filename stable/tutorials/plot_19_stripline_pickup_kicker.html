@@ -1,0 +1,1196 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Striplines as pickups and kickers: beam-coupling figures from S-parameter runs &#8212; Magnelio Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+
+    <script src="../_static/documentation_options.js?v=c87aa342"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/plot_19_stripline_pickup_kicker';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/stable/tutorials/plot_19_stripline_pickup_kicker.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API reference" href="../api/index.html" />
+    <link rel="prev" title="Periodic structures: the dispersion diagram of a TESLA cell" href="plot_18_periodic_tesla_cell.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Magnelio Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../methods/index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../methods/index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="plot_01_parallel_plate.html">Your first simulation: a parallel-plate line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_02_coax_line.html">A coaxial line: solids, booleans, and a coax port</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_03_coax_smatrix.html">Exciting both ports: the full S-matrix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_04_higher_modes.html">Higher-order modes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_05_eigenmode_sphere.html">Eigenmode analysis: a spherical cavity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_06_field_monitors.html">Field monitors: watching a magic tee work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_07_project_store.html">Using disk storage: monitors at scale, resume, ParaView</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_08_open_boundary.html">Open boundaries: a monopole antenna</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_09_microstrip_line.html">Microstrip lines: quasi-TEM ports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_10_lumped_elements.html">Lumped elements: a Wilkinson power divider</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_11_losses.html">Conductor and dielectric losses</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_12_sweep_optimize.html">Parameter sweeps and optimisation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_13_dielectric_filter.html">Capstone: a two-pole dielectric resonator filter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_14_profile_geometry.html">Profiles: shapes the primitives do not cover</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_15_dipole_farfield.html">Antenna symmetry: a half-wave dipole as a half model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_16_cad_import.html">Importing a CAD model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_17_pcb_import.html">Importing a circuit board</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_18_periodic_tesla_cell.html">Periodic structures: the dispersion diagram of a TESLA cell</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-tutorials-plot-19-stripline-pickup-kicker-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code.</p>
+</div>
+<section class="sphx-glr-example-title" id="striplines-as-pickups-and-kickers-beam-coupling-figures-from-s-parameter-runs">
+<span id="sphx-glr-tutorials-plot-19-stripline-pickup-kicker-py"></span><h1>Striplines as pickups and kickers: beam-coupling figures from S-parameter runs<a class="headerlink" href="#striplines-as-pickups-and-kickers-beam-coupling-figures-from-s-parameter-runs" title="Link to this heading">#</a></h1>
+<p>A pair of stripline electrodes in a beam pipe is a workhorse of beam
+instrumentation: read out, it is a broadband <em>pickup</em> (a beam position
+monitor); driven, it is a <em>kicker</em> that deflects the beam.  Neither
+role is an S-parameter — a port model has no beam — yet both follow
+from one S-parameter simulation.  This tutorial walks the route used
+to design such devices (Goldberg and Lambertson, <em>AIP Conf. Proc.</em>
+249, 537 (1992)):</p>
+<ul class="simple">
+<li><p>simulate the device as a <strong>kicker</strong>: drive the ports, record the
+longitudinal electric field along the beam axis;</p></li>
+<li><p>integrate that field with the particle’s own phase to get the
+<strong>beam voltage</strong> and the longitudinal <strong>kicker constant</strong>;</p></li>
+<li><p>obtain the <strong>transverse</strong> kick from the transverse gradient of the
+longitudinal field of a push-pull drive — the Panofsky–Wenzel
+theorem;</p></li>
+<li><p>turn kicker constants into the <strong>pickup transfer impedances</strong> by
+the Lorentz reciprocity theorem.</p></li>
+</ul>
+<p>On the way, the difference and sum modes of the electrode pair are
+excited with a single port each by choosing the symmetry plane between
+them, and the line impedance of one strip is dimensioned with the port
+solver alone.  The ideal-stripline formulas of the primer serve as the
+reference.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<section id="the-device">
+<h2>The device<a class="headerlink" href="#the-device" title="Link to this heading">#</a></h2>
+<p>Two strips of angular coverage <span class="math notranslate nohighlight">\(\varphi\)</span> face each other across
+a round beam pipe of radius <span class="math notranslate nohighlight">\(b\)</span>.  Each strip sits in a recess
+(a <em>pit</em>) of the pipe wall, a distance <span class="math notranslate nohighlight">\(h\)</span> above the pit floor;
+the pit floor and side walls are the strip’s ground, and the pit is
+wide enough that the strip edges see a gap to the side walls.  Each
+strip end is taken out through a 50 Ω air-filled coaxial feed, so
+the pair has four ports; the feed sits a little beyond the strip end
+and the pit reaches a little beyond the feed.  A short piece of plain
+beam pipe continues on either side.</p>
+<p>The one number that makes the device a <em>stripline</em> rather than a
+pair of buttons is its length: the two ends of a strip respond with
+opposite sign, and for a beam travelling at the speed of light the
+two contributions add in phase when the strip is a quarter wavelength
+long.  With the design frequency at 500 MHz the strip is 150 mm long.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>quantity</p></th>
+<th class="head"><p>value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>beam pipe radius <span class="math notranslate nohighlight">\(b\)</span></p></td>
+<td><p>25 mm</p></td>
+</tr>
+<tr class="row-odd"><td><p>strip coverage angle <span class="math notranslate nohighlight">\(\varphi\)</span></p></td>
+<td><p>60°</p></td>
+</tr>
+<tr class="row-even"><td><p>strip length <span class="math notranslate nohighlight">\(l = c/4f_0\)</span></p></td>
+<td><p>149.9 mm</p></td>
+</tr>
+<tr class="row-odd"><td><p>strip thickness</p></td>
+<td><p>1 mm</p></td>
+</tr>
+<tr class="row-even"><td><p>pit side gap (strip edge to pit wall)</p></td>
+<td><p>5 mm</p></td>
+</tr>
+<tr class="row-odd"><td><p>strip height above pit floor <span class="math notranslate nohighlight">\(h\)</span></p></td>
+<td><p><em>to be found</em></p></td>
+</tr>
+<tr class="row-even"><td><p>coax inner / outer radius</p></td>
+<td><p>1.52 / 3.50 mm</p></td>
+</tr>
+<tr class="row-odd"><td><p>feed offset beyond the strip end</p></td>
+<td><p>1.5 × 3.5 mm</p></td>
+</tr>
+<tr class="row-even"><td><p>pit end beyond the strip end</p></td>
+<td><p>3 × 3.5 mm</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The strip height <span class="math notranslate nohighlight">\(h\)</span> is left open on purpose: it sets the line
+impedance of the strip, and the strip should match its 50 Ω feeds.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span><span class="p">,</span> <span class="n">monitors</span><span class="p">,</span> <span class="n">ports</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">C0</span>
+
+<span class="n">F0</span> <span class="o">=</span> <span class="mf">0.5e9</span>
+<span class="n">F_MAX</span> <span class="o">=</span> <span class="mf">2.0e9</span>
+<span class="n">B</span> <span class="o">=</span> <span class="mf">25e-3</span>
+<span class="n">PHI_DEG</span> <span class="o">=</span> <span class="mf">60.0</span>
+<span class="n">PHI</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">PHI_DEG</span><span class="p">)</span>
+<span class="n">L</span> <span class="o">=</span> <span class="n">C0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">F0</span><span class="p">)</span>
+<span class="n">T</span> <span class="o">=</span> <span class="mf">1e-3</span>
+<span class="n">GAP</span> <span class="o">=</span> <span class="mf">5e-3</span>
+<span class="n">R_IN</span><span class="p">,</span> <span class="n">R_OUT</span><span class="p">,</span> <span class="n">L_COAX</span> <span class="o">=</span> <span class="mf">1.52e-3</span><span class="p">,</span> <span class="mf">3.5e-3</span><span class="p">,</span> <span class="mf">8e-3</span>
+<span class="n">G_FEED</span> <span class="o">=</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">R_OUT</span>
+<span class="n">G_PIT</span> <span class="o">=</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="n">R_OUT</span>
+<span class="n">L_PIPE</span> <span class="o">=</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="n">B</span>
+
+<span class="n">Z_COAX_DESIGN</span> <span class="o">=</span> <span class="mf">60.0</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">R_OUT</span> <span class="o">/</span> <span class="n">R_IN</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;strip length </span><span class="si">{</span><span class="n">L</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> mm, coax </span><span class="si">{</span><span class="n">Z_COAX_DESIGN</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> ohm&quot;</span><span class="p">)</span>
+
+<span class="n">pec</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">()</span>
+<span class="n">air</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Material</span><span class="o">.</span><span class="n">air</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">build_coupler</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">h</span></a><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The electrode pair in its pipe: [vacuum body, electrode body] for strip height h.&quot;&quot;&quot;</span>
+    <span class="n">pit_deg</span> <span class="o">=</span> <span class="n">PHI_DEG</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">degrees</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">GAP</span> <span class="o">/</span> <span class="n">B</span><span class="p">)</span>
+    <span class="n">r_pit</span> <span class="o">=</span> <span class="n">B</span> <span class="o">+</span> <span class="n">T</span> <span class="o">+</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">h</span></a>
+    <span class="n">y_top</span> <span class="o">=</span> <span class="n">r_pit</span> <span class="o">+</span> <span class="n">L_COAX</span>
+
+    <span class="n">vacuum</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">(</span>
+        <span class="n">radius</span><span class="o">=</span><span class="n">B</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">L_PIPE</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">L</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">L_PIPE</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">air</span>
+    <span class="p">)</span>
+    <span class="n">pit</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">geo</span><span class="o">.</span><span class="n">Face</span><span class="p">(</span>
+            <span class="n">normal</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span>
+            <span class="n">points</span><span class="o">=</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">G_PIT</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span> <span class="o">+</span> <span class="n">G_PIT</span><span class="p">),</span> <span class="p">(</span><span class="n">r_pit</span><span class="p">,</span> <span class="n">L</span> <span class="o">+</span> <span class="n">G_PIT</span><span class="p">),</span> <span class="p">(</span><span class="n">r_pit</span><span class="p">,</span> <span class="o">-</span><span class="n">G_PIT</span><span class="p">)),</span>
+            <span class="n">material</span><span class="o">=</span><span class="n">pec</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">revolved</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">angle_deg</span><span class="o">=</span><span class="n">pit_deg</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">rotated</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">angle_deg</span><span class="o">=-</span><span class="n">pit_deg</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">filleted</span><span class="p">(</span><span class="n">edges</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">coax</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">G_FEED</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">y_top</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="n">R_OUT</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">air</span><span class="p">)</span>
+    <span class="n">pin</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">(</span>
+        <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">r_pit</span><span class="p">,</span> <span class="o">-</span><span class="n">G_FEED</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">L_COAX</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="n">R_IN</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">pec</span>
+    <span class="p">)</span>
+    <span class="n">strip</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">geo</span><span class="o">.</span><span class="n">Face</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">points</span><span class="o">=</span><span class="p">((</span><span class="n">B</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">L</span><span class="p">),</span> <span class="p">(</span><span class="n">B</span> <span class="o">+</span> <span class="n">T</span><span class="p">,</span> <span class="n">L</span><span class="p">),</span> <span class="p">(</span><span class="n">B</span> <span class="o">+</span> <span class="n">T</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span> <span class="n">material</span><span class="o">=</span><span class="n">pec</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">revolved</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">angle_deg</span><span class="o">=</span><span class="n">PHI_DEG</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">rotated</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">angle_deg</span><span class="o">=-</span><span class="n">PHI_DEG</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="c1"># The strip end bends up into the coax pin: a tangent-blended loft.</span>
+    <span class="n">feed</span> <span class="o">=</span> <span class="n">strip</span><span class="o">.</span><span class="n">lofted</span><span class="p">(</span>
+        <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">B</span> <span class="o">+</span> <span class="n">T</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+        <span class="n">pin</span><span class="p">,</span>
+        <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">r_pit</span><span class="p">,</span> <span class="o">-</span><span class="n">G_FEED</span><span class="p">),</span>
+        <span class="n">material</span><span class="o">=</span><span class="n">pec</span><span class="p">,</span>
+        <span class="n">blend</span><span class="o">=</span><span class="s2">&quot;tangent&quot;</span><span class="p">,</span>
+        <span class="n">tension</span><span class="o">=</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">far</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">position</span><span class="o">=</span><span class="n">L</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">vacuum</span> <span class="o">=</span> <span class="n">vacuum</span> <span class="o">+</span> <span class="n">pit</span> <span class="o">+</span> <span class="n">coax</span> <span class="o">+</span> <span class="n">coax</span><span class="o">.</span><span class="n">mirrored</span><span class="p">(</span><span class="o">**</span><span class="n">far</span><span class="p">)</span>
+    <span class="n">electrode</span> <span class="o">=</span> <span class="n">strip</span> <span class="o">+</span> <span class="n">feed</span> <span class="o">+</span> <span class="n">feed</span><span class="o">.</span><span class="n">mirrored</span><span class="p">(</span><span class="o">**</span><span class="n">far</span><span class="p">)</span> <span class="o">+</span> <span class="n">pin</span> <span class="o">+</span> <span class="n">pin</span><span class="o">.</span><span class="n">mirrored</span><span class="p">(</span><span class="o">**</span><span class="n">far</span><span class="p">)</span>
+    <span class="c1"># The second strip is the first one turned half a revolution.</span>
+    <span class="n">vacuum</span> <span class="o">=</span> <span class="n">vacuum</span> <span class="o">+</span> <span class="n">vacuum</span><span class="o">.</span><span class="n">rotated</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">angle_deg</span><span class="o">=</span><span class="mi">180</span><span class="p">)</span>
+    <span class="n">electrode</span> <span class="o">=</span> <span class="n">electrode</span> <span class="o">+</span> <span class="n">electrode</span><span class="o">.</span><span class="n">rotated</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">angle_deg</span><span class="o">=</span><span class="mi">180</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">vacuum</span> <span class="o">-</span> <span class="n">electrode</span><span class="p">,</span> <span class="n">electrode</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>strip length 149.9 mm, coax 50.0 ohm
+</pre></div>
+</div>
+<p>A geometry of this complexity — revolved faces, lofts, mirrors and a
+half-turn copy — is best assembled in a notebook, where every
+intermediate body can be looked at in the interactive 3D view before
+the next operation builds on it:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span><span class="n">background</span><span class="o">=</span><span class="n">pec</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">body</span> <span class="ow">in</span> <span class="n">build_coupler</span><span class="p">(</span><span class="mf">7.5e-3</span><span class="p">):</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">body</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/tutorial_19_notebook_model_plot.png"><img alt="The stripline pair with its four coaxial feeds in a notebook's 3D view" src="../_images/tutorial_19_notebook_model_plot.png" style="width: 70%;" />
+</a>
+</section>
+<section id="dimensioning-the-strip-with-the-port-solver">
+<h2>Dimensioning the strip with the port solver<a class="headerlink" href="#dimensioning-the-strip-with-the-port-solver" title="Link to this heading">#</a></h2>
+<p>The strip and its pit form a TEM line, and the port solver computes
+the line impedance of any cross-section handed to it.  A slice of the
+device around its mid-plane, ten millimetres long, with a port on the
+slice face is enough — no time-domain run is needed.  The loop below
+does this for a few strip heights.</p>
+<p>Two strips are two coupled lines, and a coupled pair has two modes:
+the <strong>sum mode</strong> (both strips at the same potential) and the
+<strong>difference mode</strong> (opposite potentials), each with its own line
+impedance.  The plane between the strips is a mirror plane of the
+cross-section, and the two modes are the two wall types on it: the
+sum mode has no normal electric field there (a magnetic wall, PMC),
+the difference mode no tangential field (an electric wall, PEC).
+Declaring the plane as a symmetry boundary (tutorial 09) therefore
+selects the mode, and the half-model port solves one strip.</p>
+<p>The port report quotes the impedance of the <em>full model</em>, i.e. of the
+pair as the symmetry plane combines it: in the sum mode the two
+strips act in parallel (half the impedance of one strip), in the
+difference mode in series (twice the impedance of one strip).  The
+strip’s own impedance is recovered below with the matching factor.
+A second symmetry plane, the one through both strips, cuts the model
+once more without changing the mode.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">FAR</span> <span class="o">=</span> <span class="mf">10.0</span>  <span class="c1"># a &quot;large&quot; coordinate for half-open boxes</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">strip_impedance</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">h</span></a><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Line impedance of one strip in the sum (&quot;PMC&quot;) or difference (&quot;PEC&quot;) mode.&quot;&quot;&quot;</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span>
+        <span class="n">background</span><span class="o">=</span><span class="n">pec</span><span class="p">,</span> <span class="n">boundary_conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;xmin&quot;</span><span class="p">:</span> <span class="s2">&quot;SymmetryPMC&quot;</span><span class="p">,</span> <span class="s2">&quot;ymin&quot;</span><span class="p">:</span> <span class="s2">&quot;Symmetry&quot;</span> <span class="o">+</span> <span class="n">mode</span><span class="p">}</span>
+    <span class="p">)</span>
+    <span class="n">box</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="o">.</span><span class="n">from_ranges</span><span class="p">(</span><span class="n">x1</span><span class="o">=-</span><span class="n">FAR</span><span class="p">,</span> <span class="n">x2</span><span class="o">=</span><span class="n">FAR</span><span class="p">,</span> <span class="n">y1</span><span class="o">=-</span><span class="n">FAR</span><span class="p">,</span> <span class="n">y2</span><span class="o">=</span><span class="n">FAR</span><span class="p">,</span> <span class="n">z1</span><span class="o">=</span><span class="n">L</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">z2</span><span class="o">=</span><span class="n">L</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="mf">10e-3</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">body</span> <span class="ow">in</span> <span class="n">build_coupler</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">h</span></a><span class="p">):</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">Intersection</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="n">box</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add_port</span><span class="p">(</span>
+        <span class="n">ports</span><span class="o">.</span><span class="n">PortWaveguide</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;strip&quot;</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s2">&quot;zmin&quot;</span><span class="p">,</span> <span class="n">corners</span><span class="o">=</span><span class="p">((</span><span class="o">-</span><span class="n">FAR</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="p">(</span><span class="n">FAR</span><span class="p">,</span> <span class="n">FAR</span><span class="p">,</span> <span class="kc">None</span><span class="p">)),</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">mesh</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span>
+        <span class="n">model</span><span class="p">,</span> <span class="n">mio</span><span class="o">.</span><span class="n">MeshControl</span><span class="p">(</span><span class="n">min_cell_size</span><span class="o">=</span><span class="n">T</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">max_cell_size</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">),</span> <span class="n">f_max</span><span class="o">=</span><span class="n">F_MAX</span>
+    <span class="p">)</span>
+    <span class="n">report</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="n">F_MAX</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">solve_ports</span><span class="p">()</span>
+    <span class="n">z_pair</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s2">&quot;strip&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">z_line_num</span>
+    <span class="k">return</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">z_pair</span> <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;PMC&quot;</span> <span class="k">else</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">z_pair</span>
+
+
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">heights</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">([</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">,</span> <span class="mf">8.0</span><span class="p">,</span> <span class="mf">9.0</span><span class="p">])</span> <span class="o">*</span> <span class="mf">1e-3</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_sum</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">([</span><span class="n">strip_impedance</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">h</span></a><span class="p">,</span> <span class="s2">&quot;PMC&quot;</span><span class="p">)</span> <span class="k">for</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">h</span></a> <span class="ow">in</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">heights</span></a><span class="p">])</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_diff</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">([</span><span class="n">strip_impedance</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">h</span></a><span class="p">,</span> <span class="s2">&quot;PEC&quot;</span><span class="p">)</span> <span class="k">for</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">h</span></a> <span class="ow">in</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">heights</span></a><span class="p">])</span>
+<span class="k">for</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">h</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">zs</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">zd</span></a> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">heights</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_sum</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_diff</span></a><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;h = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">h</span></a><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> mm: Z_strip = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">zs</span></a><span class="si">:</span><span class="s2">5.1f</span><span class="si">}</span><span class="s2"> ohm (sum)  </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">zd</span></a><span class="si">:</span><span class="s2">5.1f</span><span class="si">}</span><span class="s2"> ohm (difference)&quot;</span><span class="p">)</span>
+
+<span class="n">H</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.interp.html#numpy.interp" title="numpy.interp" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">interp</span></a><span class="p">(</span><span class="n">Z_COAX_DESIGN</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_diff</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">heights</span></a><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;strip height for a </span><span class="si">{</span><span class="n">Z_COAX_DESIGN</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> ohm strip in the difference mode: </span><span class="si">{</span><span class="n">H</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm&quot;</span><span class="p">)</span>
+
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">6.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">))</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html#matplotlib.axes.Axes.plot" title="matplotlib.axes.Axes.plot" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">heights</span></a> <span class="o">*</span> <span class="mf">1e3</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_sum</span></a><span class="p">,</span> <span class="s2">&quot;s-&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;sum mode&quot;</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html#matplotlib.axes.Axes.plot" title="matplotlib.axes.Axes.plot" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">heights</span></a> <span class="o">*</span> <span class="mf">1e3</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_diff</span></a><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;difference mode&quot;</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.axhline.html#matplotlib.axes.Axes.axhline" title="matplotlib.axes.Axes.axhline" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">axhline</span></a><span class="p">(</span><span class="n">Z_COAX_DESIGN</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;0.6&quot;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;coax feed&quot;</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.axvline.html#matplotlib.axes.Axes.axvline" title="matplotlib.axes.Axes.axvline" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">axvline</span></a><span class="p">(</span><span class="n">H</span> <span class="o">*</span> <span class="mf">1e3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;0.6&quot;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_xlabel.html#matplotlib.axes.Axes.set_xlabel" title="matplotlib.axes.Axes.set_xlabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span></a><span class="p">(</span><span class="s2">&quot;strip height above pit floor $h$ (mm)&quot;</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_ylabel.html#matplotlib.axes.Axes.set_ylabel" title="matplotlib.axes.Axes.set_ylabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span></a><span class="p">(</span><span class="s2">&quot;line impedance of one strip (Ω)&quot;</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">&quot;Strip impedance from the port solver&quot;</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.grid.html#matplotlib.axes.Axes.grid" title="matplotlib.axes.Axes.grid" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">grid</span></a><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_19_stripline_pickup_kicker_001.png" srcset="../_images/sphx_glr_plot_19_stripline_pickup_kicker_001.png" alt="Strip impedance from the port solver" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>h = 5 mm: Z_strip =  40.2 ohm (sum)   39.2 ohm (difference)
+h = 6 mm: Z_strip =  44.6 ohm (sum)   43.3 ohm (difference)
+h = 7 mm: Z_strip =  48.5 ohm (sum)   46.9 ohm (difference)
+h = 8 mm: Z_strip =  53.3 ohm (sum)   51.5 ohm (difference)
+h = 9 mm: Z_strip =  55.3 ohm (sum)   53.3 ohm (difference)
+strip height for a 50 ohm strip in the difference mode: 7.69 mm
+</pre></div>
+</div>
+<p>The two modes differ by a few percent: the strips are shielded from
+each other by the pipe wall and only couple through the aperture.
+The difference mode is the one a transverse kicker or a position
+pickup works in, so <span class="math notranslate nohighlight">\(h\)</span> is set for 50 Ω there.  The strip
+impedances for the design follow, together with the mode itself:</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">Z_SUM</span> <span class="o">=</span> <span class="n">strip_impedance</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="s2">&quot;PMC&quot;</span><span class="p">)</span>
+<span class="n">Z_DIFF</span> <span class="o">=</span> <span class="n">strip_impedance</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="s2">&quot;PEC&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;design: Z_strip = </span><span class="si">{</span><span class="n">Z_SUM</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> ohm (sum), </span><span class="si">{</span><span class="n">Z_DIFF</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> ohm (difference)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>design: Z_strip = 49.6 ohm (sum), 48.0 ohm (difference)
+</pre></div>
+</div>
+</section>
+<section id="the-kicker-model">
+<h2>The kicker model<a class="headerlink" href="#the-kicker-model" title="Link to this heading">#</a></h2>
+<p>The full device, with a port window on each coaxial feed.  The
+symmetry plane between the strips again selects the mode, and it
+does one more thing: it <em>drives</em> both strips.  With the electric wall
+in place, the mirror image of the excited port carries the opposite
+voltage — the two downstream ports are fed 180° apart, as they would
+be from a hybrid.  One excited port in the half model is therefore a
+differentially driven pair, the configuration of a transverse kicker.
+The second symmetry plane, through the strips, halves the work once
+more and cuts each coaxial port window in two; the solver accounts
+for that and the declared power stays a full-model watt per port.</p>
+<p>The run records the longitudinal field <span class="math notranslate nohighlight">\(E_z\)</span> along a line
+parallel to the beam axis, at every frequency of interest, plus a
+field picture on the mid-plane at the design frequency.  Where that
+line sits matters: on the electric wall <span class="math notranslate nohighlight">\(E_z\)</span> vanishes, and the
+transverse analysis below needs its <em>gradient</em> — so the line is asked
+for close to the axis, and the monitor reports the cell centre it
+actually landed on.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.arange.html#numpy.arange" title="numpy.arange" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">arange</span></a><span class="p">(</span><span class="mf">0.1e9</span><span class="p">,</span> <span class="n">F_MAX</span><span class="p">,</span> <span class="mf">0.05e9</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">kicker_run</span><span class="p">(</span><span class="n">mode</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Drive the downstream port of the pair in the sum or difference mode.&quot;&quot;&quot;</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span>
+        <span class="n">background</span><span class="o">=</span><span class="n">pec</span><span class="p">,</span> <span class="n">boundary_conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;xmin&quot;</span><span class="p">:</span> <span class="s2">&quot;SymmetryPMC&quot;</span><span class="p">,</span> <span class="s2">&quot;ymin&quot;</span><span class="p">:</span> <span class="s2">&quot;Symmetry&quot;</span> <span class="o">+</span> <span class="n">mode</span><span class="p">}</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">body</span> <span class="ow">in</span> <span class="n">build_coupler</span><span class="p">(</span><span class="n">H</span><span class="p">):</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">body</span><span class="p">)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="mf">1.6</span> <span class="o">*</span> <span class="n">R_OUT</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">zc</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">&quot;upstream&quot;</span><span class="p">,</span> <span class="o">-</span><span class="n">G_FEED</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;downstream&quot;</span><span class="p">,</span> <span class="n">L</span> <span class="o">+</span> <span class="n">G_FEED</span><span class="p">)):</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">add_port</span><span class="p">(</span>
+            <span class="n">ports</span><span class="o">.</span><span class="n">PortWaveguide</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s2">&quot;ymax&quot;</span><span class="p">,</span> <span class="n">corners</span><span class="o">=</span><span class="p">((</span><span class="o">-</span><span class="n">r</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">zc</span> <span class="o">-</span> <span class="n">r</span><span class="p">),</span> <span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">zc</span> <span class="o">+</span> <span class="n">r</span><span class="p">)),</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="n">mesh</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span>
+        <span class="n">model</span><span class="p">,</span>
+        <span class="n">mio</span><span class="o">.</span><span class="n">MeshControl</span><span class="p">(</span><span class="n">min_cells_per_feature</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">min_cell_size</span><span class="o">=</span><span class="n">T</span> <span class="o">/</span> <span class="mi">4</span><span class="p">,</span> <span class="n">max_cell_size</span><span class="o">=</span><span class="mf">2e-3</span><span class="p">),</span>
+        <span class="n">f_max</span><span class="o">=</span><span class="n">F_MAX</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFieldFrequency</span><span class="p">(</span>
+        <span class="n">freqs</span><span class="o">=</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Ez&quot;</span><span class="p">],</span> <span class="n">corners</span><span class="o">=</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="o">-</span><span class="n">FAR</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="n">FAR</span><span class="p">)),</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Ez_line&quot;</span>
+    <span class="p">)</span>
+    <span class="n">plane</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFieldFrequency</span><span class="p">(</span>
+        <span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="n">F0</span><span class="p">],</span> <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span> <span class="n">corners</span><span class="o">=</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)),</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;E_plane&quot;</span>
+    <span class="p">)</span>
+    <span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span>
+        <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="n">F_MAX</span><span class="p">,</span> <span class="n">monitors</span><span class="o">=</span><span class="p">[</span><span class="n">line</span><span class="p">,</span> <span class="n">plane</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">)</span>
+    <span class="n">z_port</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">solve_ports</span><span class="p">()[</span><span class="s2">&quot;downstream&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">z_line_num</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">excited</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;downstream&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">mesh</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">plane</span><span class="p">,</span> <span class="n">z_port</span>
+
+
+<span class="n">model</span><span class="p">,</span> <span class="n">mesh</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">plane</span><span class="p">,</span> <span class="n">Z_PORT</span> <span class="o">=</span> <span class="n">kicker_run</span><span class="p">(</span><span class="s2">&quot;PEC&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;grid: </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Nx</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Ny</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Nz</span><span class="si">}</span><span class="s2"> cells&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;coax port impedance on the grid: </span><span class="si">{</span><span class="n">Z_PORT</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> ohm&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;field line recorded at y = </span><span class="si">{</span><span class="n">line</span><span class="o">.</span><span class="n">region</span><span class="o">.</span><span class="n">yc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">region</span><span class="o">.</span><span class="n">zc</span><span class="p">)</span><span class="si">}</span><span class="s2"> points&quot;</span><span class="p">)</span>
+
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">9.0</span><span class="p">,</span> <span class="mf">3.6</span><span class="p">))</span>
+<span class="n">model</span><span class="o">.</span><span class="n">plot_cross_section</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">flip</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a><span class="o">=</span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">&quot;Mid-plane of the half model (x = 0)&quot;</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_19_stripline_pickup_kicker_002.png" srcset="../_images/sphx_glr_plot_19_stripline_pickup_kicker_002.png" alt="Mid-plane of the half model (x = 0)" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>grid: 41 x 44 x 209 cells
+coax port impedance on the grid: 52.7 ohm
+field line recorded at y = 0.95 mm, 209 points
+</pre></div>
+</div>
+<p>The S-parameters say what a network analyser would: the feeds are
+matched, and the drive power leaves through the <em>upstream</em> port of
+the same strip — a stripline is a directional coupler, and a kicker’s
+upstream loads have to absorb the full drive power.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">6.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">))</span>
+<span class="n">result</span><span class="o">.</span><span class="n">plot_s</span><span class="p">((</span><span class="s2">&quot;downstream&quot;</span><span class="p">,</span> <span class="s2">&quot;downstream&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;upstream&quot;</span><span class="p">,</span> <span class="s2">&quot;downstream&quot;</span><span class="p">),</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a><span class="o">=</span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">&quot;Differentially driven pair&quot;</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_19_stripline_pickup_kicker_003.png" srcset="../_images/sphx_glr_plot_19_stripline_pickup_kicker_003.png" alt="Differentially driven pair" class = "sphx-glr-single-img"/><p>The field picture shows what the beam will see: the drive enters at
+the right, and the longitudinal field that does the kicking is
+concentrated at the two strip ends, where the strip voltage steps
+from its line value to the grounded pit.  Along the strip itself the
+field is transverse — a TEM line has no <span class="math notranslate nohighlight">\(E_z\)</span>.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">9.0</span><span class="p">,</span> <span class="mf">3.6</span><span class="p">))</span>
+<span class="n">plane</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">component</span><span class="o">=</span><span class="s2">&quot;Ez&quot;</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="n">F0</span><span class="p">,</span> <span class="n">plot_type</span><span class="o">=</span><span class="s2">&quot;color&quot;</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">flip</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=-</span><span class="mf">1e3</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mf">1e3</span><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a><span class="o">=</span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a>
+<span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">&quot;$E_z$ at 500 MHz on the mid-plane, difference mode&quot;</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_19_stripline_pickup_kicker_004.png" srcset="../_images/sphx_glr_plot_19_stripline_pickup_kicker_004.png" alt="$E_z$ at 500 MHz on the mid-plane, difference mode" class = "sphx-glr-single-img"/></section>
+<section id="beam-voltage-and-kicker-constant">
+<h2>Beam voltage and kicker constant<a class="headerlink" href="#beam-voltage-and-kicker-constant" title="Link to this heading">#</a></h2>
+<p>A particle of charge <span class="math notranslate nohighlight">\(e\)</span> and velocity <span class="math notranslate nohighlight">\(\beta c\)</span> crossing
+the device on a line parallel to the axis gains the energy
+<span class="math notranslate nohighlight">\(eV\)</span>, with the <strong>beam voltage</strong></p>
+<div class="math notranslate nohighlight">
+\[V = \int E_z(z)\, e^{-\mathrm{j} k_B z}\, \mathrm{d}z, \qquad
+k_B = \frac{\omega}{\beta c}.\]</div>
+<p>The phase factor is the field’s own oscillation sampled along the
+particle’s path; its sign follows the phasor convention of the
+frequency monitors (tutorial 06) for a particle travelling toward
+<span class="math notranslate nohighlight">\(+z\)</span>, and reverses for the opposite direction.  The monitor
+data are fields per 1 W incident at the excited port, so <span class="math notranslate nohighlight">\(V\)</span>
+comes out per watt too.  The <strong>kicker constant</strong> normalises it to the
+voltage at the kicker’s input terminal, <span class="math notranslate nohighlight">\(V_K = \sqrt{2 Z_c P}\)</span>,
+where <span class="math notranslate nohighlight">\(P\)</span> is the total drive power — two watts here, one per
+strip — and <span class="math notranslate nohighlight">\(Z_c\)</span> the feed impedance as the grid sees it.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">beam_voltage</span><span class="p">(</span><span class="n">ez</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">direction</span><span class="o">=+</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Complex beam voltage V(f) for a particle moving along ±z at velocity beta·c.&quot;&quot;&quot;</span>
+    <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_b</span></a> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">*</span> <span class="n">f</span> <span class="o">/</span> <span class="p">(</span><span class="n">beta</span> <span class="o">*</span> <span class="n">C0</span><span class="p">)</span>
+    <span class="k">return</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.trapezoid.html#numpy.trapezoid" title="numpy.trapezoid" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">trapezoid</span></a><span class="p">(</span><span class="n">ez</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">exp</span></a><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">direction</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_b</span></a><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">z</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]),</span> <span class="n">z</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="n">P_IN</span> <span class="o">=</span> <span class="mf">2.0</span>
+<span class="n">V_K</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">Z_PORT</span> <span class="o">*</span> <span class="n">P_IN</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_line</span></a> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">region</span><span class="o">.</span><span class="n">zc</span>
+<a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y_line</span></a> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">region</span><span class="o">.</span><span class="n">yc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ez_diff</span></a> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;Ez&quot;</span><span class="p">]</span>
+
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">v_forward</span></a> <span class="o">=</span> <span class="n">beam_voltage</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ez_diff</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_line</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a><span class="p">,</span> <span class="n">direction</span><span class="o">=+</span><span class="mi">1</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">v_backward</span></a> <span class="o">=</span> <span class="n">beam_voltage</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ez_diff</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_line</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a><span class="p">,</span> <span class="n">direction</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">6.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">))</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html#matplotlib.axes.Axes.plot" title="matplotlib.axes.Axes.plot" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">v_forward</span></a><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;beam against the drive wave (+z)&quot;</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html#matplotlib.axes.Axes.plot" title="matplotlib.axes.Axes.plot" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">v_backward</span></a><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;beam along the drive wave (−z)&quot;</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_xlabel.html#matplotlib.axes.Axes.set_xlabel" title="matplotlib.axes.Axes.set_xlabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span></a><span class="p">(</span><span class="s2">&quot;frequency (GHz)&quot;</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_ylabel.html#matplotlib.axes.Axes.set_ylabel" title="matplotlib.axes.Axes.set_ylabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span></a><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;|V| at y = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y_line</span></a><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> mm  (V per √W)&quot;</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">&quot;Beam voltage off axis, difference mode&quot;</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.grid.html#matplotlib.axes.Axes.grid" title="matplotlib.axes.Axes.grid" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">grid</span></a><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_19_stripline_pickup_kicker_005.png" srcset="../_images/sphx_glr_plot_19_stripline_pickup_kicker_005.png" alt="Beam voltage off axis, difference mode" class = "sphx-glr-single-img"/><p>The two directions are not equivalent.  A particle running <em>against</em>
+the drive wave collects the kicks of both strip ends in phase at the
+design frequency; one running <em>with</em> the wave, at the wave’s own
+speed, sees the second end cancel the first — the same directivity
+the S-parameters showed from the port side.  A stripline kicker is
+therefore fed from its downstream end, and a stripline pickup is read
+out upstream.  The lobes repeat: the third harmonic of the design
+frequency is the next maximum.</p>
+</section>
+<section id="transverse-kick-the-panofskywenzel-theorem">
+<h2>Transverse kick: the Panofsky–Wenzel theorem<a class="headerlink" href="#transverse-kick-the-panofskywenzel-theorem" title="Link to this heading">#</a></h2>
+<p>In the difference mode <span class="math notranslate nohighlight">\(E_z\)</span> is odd across the symmetry plane
+and vanishes on the axis — the beam voltage at the axis is zero, and
+there is no energy change.  There is a <em>deflection</em>: the
+Panofsky–Wenzel theorem (Panofsky and Wenzel, <em>Rev. Sci. Instrum.</em>
+27, 967 (1956)) states that the transverse momentum kick is the
+transverse gradient of the longitudinal beam voltage,</p>
+<div class="math notranslate nohighlight">
+\[\Delta p_\perp = \frac{e}{\mathrm{j}\omega}\,\nabla_\perp V,\]</div>
+<p>and its simple consequence for a kicker is that a transverse kicker
+needs a longitudinal field with a transverse gradient — which is what
+the difference mode provides.  With the gradient taken from the
+recorded line (the field is zero on the electric wall, so one line
+gives the secant from the axis), the <strong>transverse kicker constant</strong>
+and the <strong>transverse shunt impedance</strong> follow (Goldberg and
+Lambertson, eqs. 4.7 and 4.11):</p>
+<div class="math notranslate nohighlight">
+\[K_\perp = \frac{1}{k_B V_K}\left|\frac{\partial V}{\partial y}\right|,
+\qquad
+R_\perp T^2 = Z_c\, |K_\perp|^2 .\]</div>
+<p><span class="math notranslate nohighlight">\(K_\perp\)</span> is the transverse momentum, in voltage units
+<span class="math notranslate nohighlight">\(\beta c\, \Delta p_\perp / e\)</span>, per volt at the terminal;
+<span class="math notranslate nohighlight">\(R_\perp T^2\)</span> relates that to the drive power.  Note the
+<span class="math notranslate nohighlight">\(1/k_B\)</span>: at a fixed longitudinal field, a transverse kicker
+gets <em>weaker</em> with frequency.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">BETA</span> <span class="o">=</span> <span class="mf">1.0</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_b</span></a> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a> <span class="o">/</span> <span class="p">(</span><span class="n">BETA</span> <span class="o">*</span> <span class="n">C0</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dv_dy</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">v_forward</span></a> <span class="o">/</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y_line</span></a>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_perp</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dv_dy</span></a><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_b</span></a> <span class="o">*</span> <span class="n">V_K</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">r_perp</span></a> <span class="o">=</span> <span class="n">Z_PORT</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_perp</span></a><span class="o">**</span><span class="mi">2</span>
+</pre></div>
+</div>
+</section>
+<section id="longitudinal-quantities-the-sum-mode">
+<h2>Longitudinal quantities: the sum mode<a class="headerlink" href="#longitudinal-quantities-the-sum-mode" title="Link to this heading">#</a></h2>
+<p>The same run with the magnetic wall drives both strips in phase.
+Now <span class="math notranslate nohighlight">\(E_z\)</span> is <em>even</em> across the plane, the beam voltage on the
+axis is the quantity of interest, and the longitudinal kicker
+constant and shunt impedance are (eqs. 4.1 and 4.10)</p>
+<div class="math notranslate nohighlight">
+\[K_\parallel = \frac{|V|}{V_K}, \qquad
+R_\parallel T^2 = Z_c\, |K_\parallel|^2 .\]</div>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">model_sum</span><span class="p">,</span> <span class="n">mesh_sum</span><span class="p">,</span> <span class="n">result_sum</span><span class="p">,</span> <span class="n">line_sum</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">Z_PORT_SUM</span> <span class="o">=</span> <span class="n">kicker_run</span><span class="p">(</span><span class="s2">&quot;PMC&quot;</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">v_sum</span></a> <span class="o">=</span> <span class="n">beam_voltage</span><span class="p">(</span><span class="n">line_sum</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;Ez&quot;</span><span class="p">],</span> <span class="n">line_sum</span><span class="o">.</span><span class="n">region</span><span class="o">.</span><span class="n">zc</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a><span class="p">,</span> <span class="n">direction</span><span class="o">=+</span><span class="mi">1</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_par</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">v_sum</span></a><span class="p">)</span> <span class="o">/</span> <span class="n">V_K</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">r_par</span></a> <span class="o">=</span> <span class="n">Z_PORT</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_par</span></a><span class="o">**</span><span class="mi">2</span>
+</pre></div>
+</div>
+</section>
+<section id="the-ideal-stripline-as-the-reference">
+<h2>The ideal stripline as the reference<a class="headerlink" href="#the-ideal-stripline-as-the-reference" title="Link to this heading">#</a></h2>
+<p>For a stripline whose end gaps are short, the primer gives the
+kicker constants in closed form.  A strip driven at voltage
+<span class="math notranslate nohighlight">\(V_L\)</span> leaves a beam voltage of <span class="math notranslate nohighlight">\(\pm g V_L\)</span> at each end,
+the two ends <span class="math notranslate nohighlight">\(l\)</span> apart, and the sum of the two with the
+particle’s phase is <span class="math notranslate nohighlight">\(2 g V_L \sin\theta\)</span> with</p>
+<div class="math notranslate nohighlight">
+\[\theta = \tfrac{1}{2}(k_L + k_B)\, l,\]</div>
+<p>where <span class="math notranslate nohighlight">\(k_L = \omega/c\)</span> is the wave number on the (air-filled)
+strip.  The <strong>coverage factor</strong> <span class="math notranslate nohighlight">\(g\)</span> is the fraction of the
+strip voltage that reaches the beam — an electrostatic quantity of
+the cross-section.  For strips of angle <span class="math notranslate nohighlight">\(\varphi\)</span> on a round
+pipe, the pair at equal potential gives <span class="math notranslate nohighlight">\(g_\parallel =
+\varphi/\pi\)</span> on the axis; at opposite potentials the potential on
+the axis is zero and grows linearly with the offset,
+<span class="math notranslate nohighlight">\(g_\perp(y) = \frac{4}{\pi}\sin\frac{\varphi}{2}\,\frac{y}{b}\)</span>.
+Feeding the pair through a matched splitter from <span class="math notranslate nohighlight">\(Z_c\)</span> sets
+<span class="math notranslate nohighlight">\(V_L / V_K = \sqrt{Z_L / 2 Z_c}\)</span>, and the kicker constants
+become</p>
+<div class="math notranslate nohighlight">
+\[K_\parallel = \sqrt{\frac{2 Z_L}{Z_c}}\; g_\parallel\, |\sin\theta|,
+\qquad
+K_\perp = \sqrt{\frac{2 Z_L}{Z_c}}\;
+          \frac{4 \sin(\varphi/2)}{\pi\, k_B\, b}\, |\sin\theta| .\]</div>
+<p>The shunt impedances <span class="math notranslate nohighlight">\(Z_c |K|^2\)</span> then no longer contain
+<span class="math notranslate nohighlight">\(Z_c\)</span> at all: they are properties of the electrodes (eqs. 8.11
+and 8.17 of the primer).  One choice remains — what <em>is</em> <span class="math notranslate nohighlight">\(l\)</span>
+for the real device?  The field picture above answers it: the kicks
+happen where the strip meets its feed, so the electrical length is
+the distance between the two feeds, not the strip’s own length.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">L_ELECTRIC</span> <span class="o">=</span> <span class="n">L</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">G_FEED</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_l</span></a> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a> <span class="o">/</span> <span class="n">C0</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">theta</span></a> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_l</span></a> <span class="o">+</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_b</span></a><span class="p">)</span> <span class="o">*</span> <span class="n">L_ELECTRIC</span>
+<span class="n">g_par</span> <span class="o">=</span> <span class="n">PHI</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span>
+<span class="n">g_perp</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">PHI</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">B</span><span class="p">)</span>
+
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_par_ideal</span></a> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">Z_SUM</span> <span class="o">/</span> <span class="n">Z_PORT</span><span class="p">)</span> <span class="o">*</span> <span class="n">g_par</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">sin</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">theta</span></a><span class="p">))</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_perp_ideal</span></a> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">Z_DIFF</span> <span class="o">/</span> <span class="n">Z_PORT</span><span class="p">)</span> <span class="o">*</span> <span class="n">g_perp</span> <span class="o">/</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_b</span></a> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">sin</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">theta</span></a><span class="p">))</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">r_par_ideal</span></a> <span class="o">=</span> <span class="n">Z_PORT</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_par_ideal</span></a><span class="o">**</span><span class="mi">2</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">r_perp_ideal</span></a> <span class="o">=</span> <span class="n">Z_PORT</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_perp_ideal</span></a><span class="o">**</span><span class="mi">2</span>
+
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a> <span class="o">=</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">11.0</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">))</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">r_par</span></a><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;simulation&quot;</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">r_par_ideal</span></a><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;0.6&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;ideal stripline&quot;</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;$R_</span><span class="se">\\</span><span class="s2">parallel T^2$ (Ω)&quot;</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Longitudinal shunt impedance&quot;</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">r_perp</span></a><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;simulation&quot;</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">r_perp_ideal</span></a><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;0.6&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;ideal stripline&quot;</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;$R_</span><span class="se">\\</span><span class="s2">perp T^2$ (Ω)&quot;</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Transverse shunt impedance&quot;</span><span class="p">)</span>
+<span class="k">for</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="ow">in</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">:</span>
+    <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.axvline.html#matplotlib.axes.Axes.axvline" title="matplotlib.axes.Axes.axvline" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">axvline</span></a><span class="p">(</span><span class="n">F0</span> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;0.8&quot;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+    <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_xlabel.html#matplotlib.axes.Axes.set_xlabel" title="matplotlib.axes.Axes.set_xlabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span></a><span class="p">(</span><span class="s2">&quot;frequency (GHz)&quot;</span><span class="p">)</span>
+    <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.grid.html#matplotlib.axes.Axes.grid" title="matplotlib.axes.Axes.grid" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">grid</span></a><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+    <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
+
+<span class="n">i0</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.argmin.html#numpy.argmin" title="numpy.argmin" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">argmin</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a> <span class="o">-</span> <span class="n">F0</span><span class="p">)))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;at </span><span class="si">{</span><span class="n">F0</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> GHz:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  K_par  = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_par</span></a><span class="p">[</span><span class="n">i0</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">  (ideal </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_par_ideal</span></a><span class="p">[</span><span class="n">i0</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  K_perp = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_perp</span></a><span class="p">[</span><span class="n">i0</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">  (ideal </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_perp_ideal</span></a><span class="p">[</span><span class="n">i0</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  R_par T^2  = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">r_par</span></a><span class="p">[</span><span class="n">i0</span><span class="p">]</span><span class="si">:</span><span class="s2">6.1f</span><span class="si">}</span><span class="s2"> ohm  (ideal </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">r_par_ideal</span></a><span class="p">[</span><span class="n">i0</span><span class="p">]</span><span class="si">:</span><span class="s2">6.1f</span><span class="si">}</span><span class="s2"> ohm)&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  R_perp T^2 = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">r_perp</span></a><span class="p">[</span><span class="n">i0</span><span class="p">]</span><span class="si">:</span><span class="s2">6.1f</span><span class="si">}</span><span class="s2"> ohm  (ideal </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">r_perp_ideal</span></a><span class="p">[</span><span class="n">i0</span><span class="p">]</span><span class="si">:</span><span class="s2">6.1f</span><span class="si">}</span><span class="s2"> ohm)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_19_stripline_pickup_kicker_006.png" srcset="../_images/sphx_glr_plot_19_stripline_pickup_kicker_006.png" alt="Longitudinal shunt impedance, Transverse shunt impedance" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>at 0.5 GHz:
+  K_par  = 0.409  (ideal 0.455)
+  K_perp = 2.825  (ideal 3.261)
+  R_par T^2  =    8.8 ohm  (ideal   10.9 ohm)
+  R_perp T^2 =  420.2 ohm  (ideal  560.1 ohm)
+</pre></div>
+</div>
+<p>The ideal curves reproduce the shape — the lobes, the maximum near
+the design frequency, the <span class="math notranslate nohighlight">\(1/k_B^2\)</span> decline of the transverse
+response — and overestimate the peaks by some twenty percent.  The
+reason is visible in the field picture: the kicks are not delivered
+across short gaps but spread over the pit ends and the bent feeds,
+and a field spread over a length comparable to a fraction of the
+wavelength loses part of its effect to the particle’s transit (the
+<em>transit-time factor</em> of cavity design).  The ideal model places the
+device well; the simulation sizes it.</p>
+</section>
+<section id="pickup-figures-by-reciprocity">
+<h2>Pickup figures by reciprocity<a class="headerlink" href="#pickup-figures-by-reciprocity" title="Link to this heading">#</a></h2>
+<p>Lorentz reciprocity connects the kicker constants to the <strong>transfer
+impedances</strong> of the same electrodes used as a pickup, the output
+voltage per beam current and per beam dipole moment (eqs. 4.17 and
+4.19):</p>
+<div class="math notranslate nohighlight">
+\[Z_P = \tfrac{1}{2} Z_c K_\parallel, \qquad
+Z_P' = \tfrac{1}{2} k_B Z_c K_\perp ,\]</div>
+<p>with the beam direction reversed between the two roles.  The
+<span class="math notranslate nohighlight">\(k_B\)</span> cancels the one in <span class="math notranslate nohighlight">\(K_\perp\)</span>: a stripline’s
+transverse <em>pickup</em> response has the same frequency dependence as
+its longitudinal one, and the ratio of the two is the pickup’s
+<strong>position sensitivity</strong> — the relative change of the difference
+signal per unit displacement, ideally
+<span class="math notranslate nohighlight">\(4\sin(\varphi/2) / (\varphi\, b)\)</span> and independent of
+frequency.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_p</span></a> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">Z_PORT</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_par</span></a>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_p_t</span></a> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_b</span></a> <span class="o">*</span> <span class="n">Z_PORT</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_perp</span></a>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_p_ideal</span></a> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">Z_PORT</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_par_ideal</span></a>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_p_t_ideal</span></a> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_b</span></a> <span class="o">*</span> <span class="n">Z_PORT</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_perp_ideal</span></a>
+<span class="n">sensitivity_ideal</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">PHI</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">PHI</span> <span class="o">*</span> <span class="n">B</span><span class="p">)</span>
+
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a> <span class="o">=</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">11.0</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">))</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_p</span></a><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;$Z_P$ simulation&quot;</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_p_ideal</span></a><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;0.6&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;$Z_P$ ideal&quot;</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;longitudinal transfer impedance (Ω)&quot;</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_p_t</span></a><span class="p">,</span> <span class="s2">&quot;o-&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;$Z_P&#39;$ simulation&quot;</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_p_t_ideal</span></a><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;0.6&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;$Z_P&#39;$ ideal&quot;</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;transverse transfer impedance (Ω/m)&quot;</span><span class="p">)</span>
+<span class="k">for</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="ow">in</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">:</span>
+    <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_xlabel.html#matplotlib.axes.Axes.set_xlabel" title="matplotlib.axes.Axes.set_xlabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span></a><span class="p">(</span><span class="s2">&quot;frequency (GHz)&quot;</span><span class="p">)</span>
+    <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.grid.html#matplotlib.axes.Axes.grid" title="matplotlib.axes.Axes.grid" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">grid</span></a><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+    <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Pickup: sum signal&quot;</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Pickup: difference signal&quot;</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
+
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">band</span></a> <span class="o">=</span> <span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a> <span class="o">&gt;</span> <span class="mf">0.25e9</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">FREQS</span></a> <span class="o">&lt;</span> <span class="mf">0.75e9</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sens</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_p_t</span></a><span class="p">[</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">band</span></a><span class="p">]</span> <span class="o">/</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">z_p</span></a><span class="p">[</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">band</span></a><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;position sensitivity over 0.25-0.75 GHz: </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sens</span></a><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> ... </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sens</span></a><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> /m&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  = </span><span class="si">{</span><span class="mf">0.1</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sens</span></a><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> %/mm   (ideal </span><span class="si">{</span><span class="mf">0.1</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">sensitivity_ideal</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> %/mm)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_19_stripline_pickup_kicker_007.png" srcset="../_images/sphx_glr_plot_19_stripline_pickup_kicker_007.png" alt="Pickup: sum signal, Pickup: difference signal" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>position sensitivity over 0.25-0.75 GHz: 72 ... 73 /m
+  = 7.2 %/mm   (ideal 7.6 %/mm)
+</pre></div>
+</div>
+</section>
+<section id="where-to-go-next">
+<h2>Where to go next<a class="headerlink" href="#where-to-go-next" title="Link to this heading">#</a></h2>
+<p>Nothing in this tutorial is specific to striplines: any structure
+with ports can be driven as a kicker, and the three steps — beam
+voltage from <span class="math notranslate nohighlight">\(E_z\)</span> with the particle’s phase, transverse kick
+from its gradient, pickup response from reciprocity — apply to
+buttons, cavities and slotlines alike.  Two things to vary: the
+particle velocity enters only through <span class="math notranslate nohighlight">\(k_B\)</span> (set <code class="docutils literal notranslate"><span class="pre">BETA</span></code> below
+one and watch the lobes shift down in frequency and the transverse
+response change), and the pit depth and feed offsets are the knobs
+that move the real device toward, or away from, the ideal stripline.</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (4 minutes 49.699 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-19-stripline-pickup-kicker-py">
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/d20126bb2bac15fefc7042ec3cb1b2f4/plot_19_stripline_pickup_kicker.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_19_stripline_pickup_kicker.ipynb</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/3aa788d06701e9e8b08d0bb3a9485556/plot_19_stripline_pickup_kicker.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_19_stripline_pickup_kicker.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-zip docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/3308e62b0b7be2bcec95b0f84a9eb069/plot_19_stripline_pickup_kicker.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">zipped:</span> <span class="pre">plot_19_stripline_pickup_kicker.zip</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="plot_18_periodic_tesla_cell.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Periodic structures: the dispersion diagram of a TESLA cell</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../api/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">API reference</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-device">The device</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dimensioning-the-strip-with-the-port-solver">Dimensioning the strip with the port solver</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-kicker-model">The kicker model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#beam-voltage-and-kicker-constant">Beam voltage and kicker constant</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#transverse-kick-the-panofskywenzel-theorem">Transverse kick: the Panofsky–Wenzel theorem</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#longitudinal-quantities-the-sum-mode">Longitudinal quantities: the sum mode</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-ideal-stripline-as-the-reference">The ideal stripline as the reference</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pickup-figures-by-reciprocity">Pickup figures by reciprocity</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#where-to-go-next">Where to go next</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/tutorials/plot_19_stripline_pickup_kicker.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Bernd Breitkreutz.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
