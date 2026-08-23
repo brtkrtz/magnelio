@@ -172,9 +172,27 @@ class TestCrossImplementation:
         labels = [p.name for p in results["store"].mesh.ports]
         assert labels == ["p1", "p2"]
 
-    def test_touchstone_partial_raises(self, results, tmp_path):
-        with pytest.raises(ValueError, match="never excited"):
+    def test_touchstone_extension_must_match_export(self, results, tmp_path):
+        """Only p1 was excited, so a .s2p is a mis-declared file."""
+        with pytest.raises(ValueError, match="declares a 2-port network"):
             results["ram"].to_touchstone(tmp_path / "x.s2p")
+
+    def test_touchstone_one_port_agrees_across_implementations(self, results, tmp_path):
+        """Both readers reduce to the same measured reflection."""
+        written = {}
+        for key in ("ram", "store"):
+            out = tmp_path / f"{key}.s1p"
+            results[key].to_touchstone(out)
+            data = np.loadtxt(out, comments=("!", "#"))
+            assert data.shape[1] == 3
+            written[key] = data[:, 1] + 1j * data[:, 2]
+        scale = float(np.max(np.abs(written["ram"])))
+        np.testing.assert_allclose(
+            written["ram"],
+            written["store"],
+            rtol=1e-6,
+            atol=1e-9 * scale,
+        )
 
     def test_recompute_agrees(self, results):
         f_axis = np.linspace(16e9, 19e9, 31)

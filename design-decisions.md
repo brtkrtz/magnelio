@@ -7360,6 +7360,8 @@ cross-checks allow eps-level run divergence).  Interop:
 channels, mapping in the comment header; hard error when any channel
 was never excited — no silent padding) and `.to_skrf()`
 (`skrf.Network`, optional `magnelio[interop]` extra, lazy import).
+The completeness rule was superseded by DD-184: an export covers the
+excited channels, with the rest matched.
 
 ## DD-113 — Geometry verbs: CSG operators + chainable methods
 
@@ -12565,3 +12567,66 @@ Only β = 1 is exercised; `BETA` is a parameter of the script.
 **Files:** `examples/tutorials/plot_19_stripline_pickup_kicker.py`,
 `docs/references.bib` (`goldberglambertson1992`, `panofskywenzel1956`,
 `wendt2020`).
+
+## DD-184 — A Touchstone export is the sub-matrix over the excited channels
+
+**Status:** Decided 2026-08-23 (session 194, developer sign-off);
+shipped same session.
+
+**Problem.**  Reported as issue #3.  `to_touchstone()` refused to
+write anything unless every *observed* channel had also been excited
+(DD-112: "hard error when any channel was never excited — no silent
+padding").  But `channels` follows from `n_modes` and `excitations`
+from `run(excited=...)`, two independent user statements, and the
+`run()` default excites one channel — so the default run was never
+exportable.  A user who solves a two-port for three modes each to
+inspect the mode table, then excites mode 0 on both, was told to spend
+four more time-domain runs on modes he does not want.  The error text
+also mis-stated the case: nothing would have been padded, because the
+excited channels already span a fully measured square sub-matrix.
+
+**Decision.**  Rows and columns of an export are the *excited*
+channels (`SParameterResult.export_channels`), so every exported
+entry was measured.  The reduction is physically exact, not a
+truncation: an unexcited channel is not left open, it carries its
+reflection-free port boundary for the whole run, which is the
+matched-termination condition the definition of S-parameters asks
+for.  The export is therefore the network seen with the omitted
+channels matched — a one-port reflection export of a two-port is a
+valid `.s1p`, and the developer's acceptance case (compare a measured
+input impedance against simulation) is exactly that.
+
+Two guards replace the blanket refusal:
+
+1. **A warning for dropped propagating modes at an exported port.**
+   Omitting a whole port is a deliberate cut through the network and
+   is silent.  Omitting higher modes at a port that *is* exported is
+   the subtle case — the file looks like a complete N-port while the
+   mode conversion at that port is missing, so cascading it loses the
+   scattered power.  Only modes whose cut-off lies inside the
+   exported band can carry that power; evanescent ones draw no
+   warning, since solving for more modes than one excites is ordinary
+   practice.  The cut-offs come from a `_channel_cutoffs()` hook on
+   the result contract, overridden by both implementations from their
+   port-mode records — `SParameterResult` stays a pure data class and
+   knows no cut-offs.
+2. **The `.sNp` extension must match the exported channel count.**
+   Touchstone 1.x carries the port count *only* in the extension (the
+   body has no field for it), so a `.s6p` holding two-port rows is
+   unreadable rather than merely misnamed.  A mismatch raises; a path
+   without an extension gets the matching one
+   (`to_touchstone("wr90")` → `wr90.s2p`).  Deliberately *not* an
+   auto-rename: writing to a different file than the caller named
+   loses the file for the next script in the chain.  This guard is
+   also what still catches the real mistake the old refusal aimed at
+   — "I meant to excite both ports and forgot" now fails as
+   "`.s2p` declares 2 ports, the export covers 1".
+
+`channels=` selects the exported sub-network explicitly (bare port
+name = mode 0); entries that were never excited raise.  `to_skrf()`
+follows the same rules.  Supersedes the export half of DD-112.
+
+**Files:** `src/magnelio/post/sparameter_result.py`,
+`src/magnelio/analysis/result_interface.py`,
+`src/magnelio/analysis/scattering_td.py`, `src/magnelio/io/project.py`,
+`tests/unit/test_schema_interop.py`, `docs/methods/ports.md`.

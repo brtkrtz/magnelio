@@ -1,6 +1,13 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-22.*  Latest work: tutorial 19 documents the
+*Last updated: 2026-08-23.*  Latest work: the Touchstone/scikit-rf
+export covers the excited channels instead of demanding the complete
+square matrix (DD-184, issue #3) — an unexcited channel is matched by
+its own port boundary, so the sub-matrix is the network seen with it
+terminated; the `.sNp` extension is now checked against the exported
+port count and filled in when absent, and an export that drops
+*propagating* higher modes at a port it keeps warns.  Before that:
+tutorial 19 documents the
 pickup/kicker workflow of beam instrumentation on the public API alone
 (DD-183).  A stripline pair is dimensioned with 2-D port solves (strip
 height for 50 Ω in the difference mode), driven as a kicker in its
@@ -26,6 +33,7 @@ The plane-wave tutorial remains deferred.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-184** (2026-08-23) — a Touchstone export is the square sub-matrix over the *excited* channels (issue #3): unexcited channels carry their reflection-free boundary all run, so dropping them is the matched-termination condition of the S-parameter definition, not a truncation; `channels=` selects a sub-network explicitly; a warning fires only for propagating modes dropped at a port that is itself exported (mode conversion missing from a file that looks complete); the `.sNp` extension must match the exported port count — Touchstone records it nowhere else — and is filled in when absent; supersedes the completeness rule of DD-112.
 * **DD-183** (2026-08-22) — Tutorial 19, pickups and kickers as post-processing of a kicker run: beam voltage with `exp(-j k_B z)` for a +z particle (monitor convention, verified by directivity), symmetry plane between the strips selects sum/difference mode and drives both ports (2 W), `z_line_num` under it is the pair impedance, ideal-stripline reference with feed-to-feed length; no library change.
 * **DD-182** (2026-08-21) — Bloch-periodic eigenmodes: a `"Periodic"` face pair plus `AnalysisEigenmode(phase_advance_deg=…)` solves the unit cell by a congruence `P^H A P` (far-plane edges = near-plane × e^{-iφ}; far plane stripped of its full-dual-cell metric first — the half-cell assumption was refuted by the empty box); real path for 0/π, complex Hermitian on SuperLU in between; verified against the discrete dispersion of the empty box (1e-8) and half-cell band edges of an iris pillbox (1e-3); CPML and unpaired Periodic now rejected instead of solved as PMC.
 * **DD-181** (2026-08-21) — `Path.ellipse_to`/`Curve.ellipse_arc`: elliptical arcs as profile segments with the `arc_to` centre/normal vocabulary; OCC's major-first rule absorbed by an axis swap with a quarter-turn parameter shift.

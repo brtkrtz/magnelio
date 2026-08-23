@@ -7,6 +7,30 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Fixed
+
+- `to_touchstone()` / `to_skrf()` no longer refuse to export when a
+  port was solved for more modes than were excited.  The exported
+  matrix is now the square sub-matrix over the excited channels, which
+  is the network seen with the remaining channels matched — so
+  exciting mode 0 on two 3-mode ports writes a `.s2p`, and exciting
+  one port of a two-port writes its reflection as a `.s1p`.  An export
+  that drops *propagating* higher modes at a port it does keep now
+  warns, naming the port and the cut-off: such a file is not a
+  complete model of the component.
+
+### Added
+
+- `to_touchstone()` checks the `.sNp` extension against the number of
+  exported ports and fills a missing one in, so `to_touchstone("wr90")`
+  writes `wr90.s2p`.  A mismatched extension is an error: Touchstone
+  records the port count nowhere else, so the file would be unreadable.
+- `channels=` on `to_touchstone()` / `to_skrf()` selects the exported
+  sub-network explicitly, e.g. `channels=["port1", "port3"]` to cut a
+  two-port out of a fully excited three-port.
+
 ## [0.4.1] - 2026-08-22
 
 ### Added

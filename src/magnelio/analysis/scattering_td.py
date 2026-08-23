@@ -246,6 +246,23 @@ class _LumpedModeStub:
         return True
 
 
+def _cutoffs_from_port_modes(port_modes: dict | None) -> dict | None:
+    """``{(port, mode): f_cutoff [Hz]}`` from a per-port Mode list.
+
+    Modes without a cut-off (lumped stubs) are left out; the export
+    warning treats a missing entry as "unknown", not as "DC".
+    """
+    if not port_modes:
+        return None
+    out = {}
+    for port, modes in port_modes.items():
+        for index, mode in enumerate(modes):
+            omega_c = getattr(mode, "omega_c", None)
+            if omega_c is not None:
+                out[(port, index)] = float(omega_c) / (2.0 * math.pi)
+    return out or None
+
+
 @dataclass(frozen=True)
 class ScatteringTDResult(ScatteringResultMixin):
     """Result of one :meth:`AnalysisScatteringTD.run` call.
@@ -338,6 +355,10 @@ class ScatteringTDResult(ScatteringResultMixin):
     def excitations(self) -> tuple:
         """Excited ``(port_name, mode_idx)`` pairs — the S-matrix columns present."""
         return self.s_params.excitations
+
+    def _channel_cutoffs(self) -> dict | None:
+        """Per-channel cut-off frequency [Hz] from the port-mode records."""
+        return _cutoffs_from_port_modes(self.port_modes)
 
     def _s_params_on(self, f_axis) -> SParameterResult:
         """Recompute the S-matrix on a custom frequency axis.

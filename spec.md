@@ -612,7 +612,7 @@ result = analysis.run(excited=[("port1", m) for m in range(n_modes)])
 
 s21 = result.S("port2", "port1", mode_out=0, mode_in=0)
 result.plot_s()
-result.to_touchstone("wr90.s10p")               # needs all ports excited
+result.to_touchstone("wr90")                    # -> .sNp over excited channels
 ```
 
 Ports are declared on the model **before meshing** (DD-109) so the

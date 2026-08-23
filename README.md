@@ -109,7 +109,7 @@ result = analysis.run(
 )
 result.plot_s(("port2", "port1"), ("port1", "port1"))   # |S| over frequency
 s21 = result.S("port2", "port1")         # complex S21 on result.f_axis
-result.to_touchstone("wr90.s6p")         # 6 channels = 2 ports × 3 modes
+result.to_touchstone("wr90")             # -> wr90.s6p, 2 ports × 3 modes
 ```
 
 Fourteen executable tutorials — from a first parallel-plate line to a

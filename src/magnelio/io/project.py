@@ -3160,6 +3160,18 @@ class Project(ScatteringResultMixin):
         """The full S-matrix, derived on read from the stored signals."""
         return self._s_params()
 
+    def _channel_cutoffs(self) -> dict | None:
+        """Per-channel cut-off frequency [Hz] from the stored modes."""
+        from magnelio.analysis.scattering_td import (  # noqa: PLC0415
+            _cutoffs_from_port_modes,
+        )
+
+        try:
+            run = self._load_run(self._first_started_run())
+        except Exception:  # noqa: BLE001 — no started run yet
+            return None
+        return _cutoffs_from_port_modes(run.get("port_modes"))
+
     @property
     def settings(self) -> RunSettings:
         """Settings the stored run was produced with (result contract).

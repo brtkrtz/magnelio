@@ -23,9 +23,108 @@ single multi-port S-matrix.
 
 from __future__ import annotations
 
+import re
+import warnings
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Sequence
 
 import numpy as np
+
+_TOUCHSTONE_SUFFIX = re.compile(r"^\.s(\d+)p$", re.IGNORECASE)
+
+
+def _touchstone_path(path, channels: Sequence[tuple[str, int]]) -> Path:
+    """Resolve the output path, checking the ``.sNp`` port count.
+
+    Touchstone 1.x carries the port count *only* in the file
+    extension — the file body has no field for it — so an extension
+    that disagrees with the matrix produces a file no reader can
+    interpret correctly.  A missing extension is filled in; a
+    disagreeing one is an error rather than a silent rename, so a
+    downstream script still finds the file it asked for.
+    """
+    out = Path(path)
+    n_ports = len(channels)
+    suffix = out.suffix
+    if not suffix:
+        return out.with_suffix(f".s{n_ports}p")
+    match = _TOUCHSTONE_SUFFIX.match(suffix)
+    if match is None:
+        raise ValueError(
+            f"{suffix!r} is not a Touchstone extension; expected "
+            f"'.s{n_ports}p' for this {n_ports}-port matrix (or pass a "
+            f"path without an extension to have it filled in)."
+        )
+    declared = int(match.group(1))
+    if declared != n_ports:
+        raise ValueError(
+            f"file name declares a {declared}-port network ('{suffix}') "
+            f"but the export covers {n_ports} channel(s): "
+            f"{list(channels)}. Rename to '.s{n_ports}p', or excite / "
+            f"select (channels=) the channels you meant — Touchstone "
+            f"records the port count nowhere but in the extension, so "
+            f"writing this file would make it unreadable."
+        )
+    return out
+
+
+def warn_unexported_modes(
+    exported: Sequence[tuple[str, int]],
+    channels: Sequence[tuple[str, int]],
+    cutoffs: dict[tuple[str, int], float] | None,
+    f_max: float,
+    *,
+    stacklevel: int = 3,
+) -> None:
+    """Warn about propagating modes dropped at an *exported* port.
+
+    A channel omitted at a port that is not exported at all is a
+    deliberate cut through the network — a one-port reflection export
+    of a two-port, say — and the result describes that sub-network
+    correctly, with the omitted port matched.  Higher modes dropped at
+    a port that *is* exported are the subtle case: the file then looks
+    like a complete N-port while the mode conversion at that port is
+    missing from it, so cascading it in a circuit simulator quietly
+    loses the power scattered into the omitted modes.
+
+    Only modes that propagate inside the exported band can carry that
+    power.  Evanescent ones cannot — solving for more modes than one
+    excites, so that the evanescent content is represented at the port
+    plane, is ordinary practice and draws no warning.  Does nothing
+    when the cut-off frequencies are unknown.
+    """
+    if not cutoffs:
+        return
+    exported = tuple(exported)
+    exported_set = set(exported)
+    exported_ports = {port for port, _ in exported}
+    seen: list[str] = []
+    for port, _ in channels:
+        if port in exported_ports and port not in seen:
+            seen.append(port)
+    for port in seen:
+        dropped = [m for (p, m) in channels if p == port and (p, m) not in exported_set]
+        propagating = []
+        for mode in dropped:
+            f_c = cutoffs.get((port, mode))
+            if f_c is not None and f_c < f_max:
+                propagating.append(mode)
+        if not propagating:
+            continue
+        f_low = min(cutoffs[(port, mode)] for mode in propagating)
+        kept = [m for (p, m) in exported if p == port]
+        warnings.warn(
+            f"port {port!r}: mode(s) {propagating} are left out of the "
+            f"export but propagate above {f_low / 1e9:.4g} GHz, so the "
+            f"exported channel(s) {kept} do not describe the mode "
+            f"conversion at this port. The data are valid for the "
+            f"exported channels with the others matched, but the file "
+            f"is not a complete model of the component — excite and "
+            f"export those modes to cascade it.",
+            UserWarning,
+            stacklevel=stacklevel,
+        )
 
 
 @dataclass(frozen=True)
@@ -217,43 +316,110 @@ class SParameterResult:
     # Constructors
     # ------------------------------------------------------------------
 
-    def _square_matrix(self, what: str) -> np.ndarray:
-        """The K×K matrix in channel order; raises when incomplete."""
-        if not self.is_complete:
-            missing = sorted(set(self.channels) - set(self.excitations))
-            raise ValueError(
-                f"{what} needs the complete square S-matrix, but "
-                f"{len(missing)} channel(s) were never excited: "
-                f"{missing}. Run with every port excited (e.g. "
-                f"run(excited=[...]) over all channels) — silently "
-                f"padding the matrix would fake data."
-            )
-        col = {chan: j for j, chan in enumerate(self.excitations)}
-        order = [col[chan] for chan in self.channels]
-        return self.matrix[:, :, order]
+    def export_channels(
+        self,
+        channels: Sequence[str | tuple[str, int]] | None = None,
+    ) -> tuple[tuple[str, int], ...]:
+        """The channel set an export covers, in canonical channel order.
 
-    def to_touchstone(self, path) -> None:
-        """Write the complete S-matrix as a Touchstone ``.sNp`` file.
+        Default (``channels=None``): every excited channel.  Rows and
+        columns of the exported matrix are that same set, so the
+        result is a square sub-matrix in which every entry was
+        measured — nothing is padded or inferred.
 
-        Requires every observed channel to have been excited (a square
-        matrix); raises otherwise.  Touchstone ports are the *channels*
-        in canonical order — a multi-mode port occupies one Touchstone
-        port per mode; the mapping is recorded in the file's comment
-        header.  Data are the power-wave (generalised) S-parameters on
-        the per-mode reference impedances; the nominal ``R 50`` of the
-        option line does not renormalise them.
+        The sub-matrix is a valid network description in its own
+        right.  Channels left out of it are not open circuits: each
+        one is terminated by its own reflection-free port boundary
+        throughout the run, which is exactly the matched-termination
+        condition the definition of S-parameters asks for.  The export
+        is therefore the network *seen with the omitted channels
+        matched* — the same quantity a vector network analyser
+        measures with its unused ports terminated.
+
+        Parameters
+        ----------
+        channels : sequence of str or (str, int), optional
+            Explicit channel selection, e.g. to cut a two-port out of
+            a fully excited three-port.  A bare port name means mode
+            0.  Every entry must have been excited.
+
+        Returns
+        -------
+        tuple of (str, int)
+        """
+        if channels is None:
+            excited = set(self.excitations)
+            return tuple(chan for chan in self.channels if chan in excited)
+
+        sel: list[tuple[str, int]] = []
+        for entry in channels:
+            chan = (entry, 0) if isinstance(entry, str) else (entry[0], int(entry[1]))
+            if chan not in self.channels:
+                raise ValueError(
+                    f"channel {chan!r} is not in this result; available: {list(self.channels)}"
+                )
+            if chan not in self.excitations:
+                raise ValueError(
+                    f"channel {chan!r} was never excited, so its column "
+                    f"of the S-matrix was not measured; excited "
+                    f"channels are {list(self.excitations)}."
+                )
+            if chan in sel:
+                raise ValueError(f"channel {chan!r} listed twice in channels=.")
+            sel.append(chan)
+        if not sel:
+            raise ValueError("channels= is empty; pass at least one channel.")
+        order = {chan: i for i, chan in enumerate(self.channels)}
+        sel.sort(key=lambda chan: order[chan])
+        return tuple(sel)
+
+    def _export_matrix(
+        self,
+        channels: Sequence[str | tuple[str, int]] | None = None,
+    ) -> tuple[tuple[tuple[str, int], ...], np.ndarray]:
+        """``(channels, S)`` of the square sub-matrix to export."""
+        sel = self.export_channels(channels)
+        rows = [self.channels.index(chan) for chan in sel]
+        cols = [self.excitations.index(chan) for chan in sel]
+        return sel, self.matrix[:, rows, :][:, :, cols]
+
+    def to_touchstone(
+        self,
+        path,
+        *,
+        channels: Sequence[str | tuple[str, int]] | None = None,
+    ) -> None:
+        """Write the S-matrix as a Touchstone ``.sNp`` file.
+
+        Exports the square sub-matrix over
+        :meth:`export_channels` — by default every excited channel,
+        with the unexcited ones matched (see that method for what the
+        reduction does and does not describe).  Touchstone ports are
+        the exported *channels* in canonical order — a multi-mode port
+        occupies one Touchstone port per mode; the mapping is recorded
+        in the file's comment header.  Data are the power-wave
+        (generalised) S-parameters on the per-mode reference
+        impedances; the nominal ``R 50`` of the option line does not
+        renormalise them.
+
+        The ``.sNp`` extension must agree with the exported port
+        count: Touchstone 1.x records the port count nowhere else, so
+        a mismatch is rejected.  A path without an extension gets the
+        matching one.
 
         Parameters
         ----------
         path : str or pathlib.Path
-            Output file; conventionally ``<name>.s{N}p``.
+            Output file.  ``<name>.s{N}p``, or ``<name>`` to have the
+            extension filled in.
+        channels : sequence of str or (str, int), optional
+            Explicit channel selection, as in :meth:`export_channels`.
         """
-        from pathlib import Path  # noqa: PLC0415
-
-        s = self._square_matrix("to_touchstone()")
-        n = len(self.channels)
+        chans, s = self._export_matrix(channels)
+        n = len(chans)
+        out = _touchstone_path(path, chans)
         lines = ["! magnelio S-parameter export (power-wave S-parameters)"]
-        for k, chan in enumerate(self.channels, start=1):
+        for k, chan in enumerate(chans, start=1):
             lines.append(f"! port {k} = channel {chan[0]!r} mode {chan[1]}")
         lines.append("# Hz S RI R 50")
         for k, f in enumerate(np.asarray(self.f_axis, dtype=float)):
@@ -269,14 +435,28 @@ class SParameterResult:
                         f"{s[k, i, j].real:.12e} {s[k, i, j].imag:.12e}" for j in range(n)
                     )
                     lines.append(f"{f:.12e} {row}" if i == 0 else row)
-        Path(path).write_text("\n".join(lines) + "\n", encoding="ascii")
+        out.write_text("\n".join(lines) + "\n", encoding="ascii")
 
-    def to_skrf(self, name: str = "magnelio"):
-        """Return the complete S-matrix as a ``skrf.Network``.
+    def to_skrf(
+        self,
+        name: str = "magnelio",
+        *,
+        channels: Sequence[str | tuple[str, int]] | None = None,
+    ):
+        """Return the S-matrix as a ``skrf.Network``.
 
-        Requires ``scikit-rf`` (install extra ``magnelio[interop]``) and
-        a complete square matrix; multi-mode ports map to one network
-        port per channel, in canonical channel order.
+        Requires ``scikit-rf`` (install extra ``magnelio[interop]``).
+        Exports the same square sub-matrix as
+        :meth:`to_touchstone` — by default every excited channel, with
+        the unexcited ones matched; multi-mode ports map to one
+        network port per channel, in canonical channel order.
+
+        Parameters
+        ----------
+        name : str, optional
+            Network name.
+        channels : sequence of str or (str, int), optional
+            Explicit channel selection, as in :meth:`export_channels`.
 
         Returns
         -------
@@ -289,13 +469,13 @@ class SParameterResult:
                 "to_skrf() requires scikit-rf — install it via "
                 "'pip install scikit-rf' (or the magnelio[interop] extra)"
             ) from exc
-        s = self._square_matrix("to_skrf()")
+        chans, s = self._export_matrix(channels)
         freq = skrf.Frequency.from_f(
             np.asarray(self.f_axis, dtype=float),
             unit="hz",
         )
         ntw = skrf.Network(frequency=freq, s=s, name=name)
-        ntw.port_names = [f"{p}:{m}" for (p, m) in self.channels]
+        ntw.port_names = [f"{p}:{m}" for (p, m) in chans]
         return ntw
 
     @classmethod

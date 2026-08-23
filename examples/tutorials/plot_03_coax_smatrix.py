@@ -208,6 +208,11 @@ print(f"max ||S11|sim - |S11|theory|: {np.abs(np.abs(s11) - np.abs(s11_tl)).max(
 # ``to_touchstone`` writes the industry-standard ``.s2p`` file that
 # every circuit simulator reads; ``to_skrf`` hands the live matrix to
 # `scikit-rf <https://scikit-rf.org>`_ if it is installed.
+#
+# The file holds one port per excited channel — here the two ports at
+# mode 0 — and the ``.sNp`` extension has to agree with that count,
+# because Touchstone records it nowhere else.  Leave the extension off
+# and it is filled in for you.
 
 s2p = Path(tempfile.mkdtemp()) / "coax_gap.s2p"
 result.to_touchstone(s2p)

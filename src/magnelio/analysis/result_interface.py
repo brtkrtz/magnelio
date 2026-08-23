@@ -152,22 +152,87 @@ class ScatteringResultMixin:
         ax.legend()
         return fig, ax
 
-    def to_touchstone(self, path) -> None:
-        """Write the complete S-matrix as a Touchstone ``.sNp`` file.
+    def _channel_cutoffs(self) -> dict | None:
+        """Per-channel cut-off frequency [Hz], or ``None`` if unknown.
 
-        Delegates to
-        :meth:`magnelio.post.SParameterResult.to_touchstone`; requires
-        every channel to have been excited.
+        Backs the export warning about propagating modes left out of a
+        Touchstone file.  Both implementations override it from their
+        port-mode records; the fallback keeps the exports working for
+        any other holder of the contract.
         """
-        self.s_params.to_touchstone(path)
+        return None
 
-    def to_skrf(self, name: str = "magnelio"):
-        """Return the complete S-matrix as a ``skrf.Network``.
+    def _warn_export(self, channels) -> None:
+        """Warn about propagating modes the export would leave out."""
+        from magnelio.post.sparameter_result import (  # noqa: PLC0415
+            warn_unexported_modes,
+        )
 
-        Delegates to :meth:`magnelio.post.SParameterResult.to_skrf`;
-        requires scikit-rf and a complete square matrix.
+        s_params = self.s_params
+        exported = s_params.export_channels(channels)
+        warn_unexported_modes(
+            exported,
+            s_params.channels,
+            self._channel_cutoffs(),
+            float(np.max(np.asarray(s_params.f_axis, dtype=float))),
+            stacklevel=4,
+        )
+
+    def to_touchstone(self, path, *, channels=None) -> None:
+        """Write the S-matrix as a Touchstone ``.sNp`` file.
+
+        Exports the square sub-matrix over the excited channels — one
+        Touchstone port per channel, so a multi-mode port occupies one
+        port per mode.  Channels that were observed but never excited
+        are dropped from rows and columns alike; they carry a
+        reflection-free boundary throughout the run, so the export is
+        the network seen with them *matched*, the same quantity a
+        network analyser measures with its unused ports terminated.
+
+        Warns when a port that *is* exported carries propagating modes
+        that the export leaves out: the file then looks like a
+        complete N-port while the mode conversion at that port is
+        missing from it.
+
+        The ``.sNp`` extension must agree with the number of exported
+        channels — Touchstone records the port count nowhere else — so
+        a mismatch raises instead of writing an unreadable file.  A
+        path without an extension gets the matching one.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            Output file.  ``<name>.s{N}p``, or ``<name>`` to have the
+            extension filled in.
+        channels : sequence of str or (str, int), optional
+            Select the exported sub-network explicitly, e.g.
+            ``["port1", "port3"]`` to cut a two-port out of a fully
+            excited three-port.  A bare port name means mode 0.  Every
+            entry must have been excited.
         """
-        return self.s_params.to_skrf(name=name)
+        self._warn_export(channels)
+        self.s_params.to_touchstone(path, channels=channels)
+
+    def to_skrf(self, name: str = "magnelio", *, channels=None):
+        """Return the S-matrix as a ``skrf.Network``.
+
+        Requires scikit-rf (extra ``magnelio[interop]``).  Same
+        sub-matrix, channel selection and warning as
+        :meth:`to_touchstone`.
+
+        Parameters
+        ----------
+        name : str, optional
+            Network name.
+        channels : sequence of str or (str, int), optional
+            Explicit channel selection, as in :meth:`to_touchstone`.
+
+        Returns
+        -------
+        skrf.Network
+        """
+        self._warn_export(channels)
+        return self.s_params.to_skrf(name=name, channels=channels)
 
 
 @runtime_checkable
