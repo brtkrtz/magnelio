@@ -596,6 +596,42 @@ leak; and CW measurements solve the exact 2×2 phasor system per port
 <p>Excitation amplitudes are pinned to physical units at the source
 (C = 1 convention, DD-085), so recorded V/I and monitor fields are in
 SI units — an in-house calibration convention.</p>
+<section id="what-a-touchstone-export-covers-dd-184">
+<h3>What a Touchstone export covers (DD-184)<a class="headerlink" href="#what-a-touchstone-export-covers-dd-184" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">to_touchstone()</span></code> and <code class="docutils literal notranslate"><span class="pre">to_skrf()</span></code> export the square sub-matrix over
+the <strong>excited</strong> channels: one Touchstone port per channel, so a
+multi-mode port occupies one port per mode.  Channels that were
+observed but not excited are dropped from both the rows and the
+columns; nothing is padded.</p>
+<p>Dropping them is sound because an unexcited channel is not an open
+circuit.  Every port carries its own reflection-free boundary
+throughout the run, so the omitted channels are <em>matched</em> — which is
+exactly the termination condition the definition of S-parameters asks
+for.  The export is the network seen with those channels terminated,
+the same quantity a vector network analyser measures with its unused
+ports on 50 Ω loads.  Exciting one port of a two-port and writing the
+reflection as a <code class="docutils literal notranslate"><span class="pre">.s1p</span></code> is therefore a valid export, not a truncated
+one.</p>
+<p>What the reduction does <em>not</em> carry is mode conversion at a port that
+is itself exported.  If <code class="docutils literal notranslate"><span class="pre">port1</span></code> is solved with three modes, only mode
+0 is excited, and modes 1 and 2 propagate inside the exported band,
+then power scattered from mode 0 into those modes leaves the matrix:
+the file looks like a complete two-port while the component is not
+one.  Such an export warns, naming the port and the cut-off above
+which the omitted modes propagate.  Evanescent omitted modes draw no
+warning — solving for more modes than one excites, so that the
+evanescent content is represented at the port plane, is ordinary
+practice.</p>
+<p>Pass <code class="docutils literal notranslate"><span class="pre">channels=</span></code> to select the sub-network explicitly, e.g.
+<code class="docutils literal notranslate"><span class="pre">channels=[&quot;port1&quot;,</span> <span class="pre">&quot;port3&quot;]</span></code> to cut a two-port out of a fully
+excited three-port.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">.sNp</span></code> extension must agree with the number of exported channels.
+Touchstone 1.x records the port count nowhere else — the file body
+has no field for it — so a <code class="docutils literal notranslate"><span class="pre">.s6p</span></code> holding two-port rows is not merely
+misnamed but unreadable; a mismatch raises rather than writes.  A
+path given without an extension gets the matching one, so
+<code class="docutils literal notranslate"><span class="pre">to_touchstone(&quot;wr90&quot;)</span></code> writes <code class="docutils literal notranslate"><span class="pre">wr90.s2p</span></code>.</p>
+</section>
 </section>
 </section>
 
@@ -660,7 +696,10 @@ SI units — an in-house calibration convention.</p>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#excitation-and-recording">Excitation and recording</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#s-parameters">S-parameters</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#s-parameters">S-parameters</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-a-touchstone-export-covers-dd-184">What a Touchstone export covers (DD-184)</a></li>
+</ul>
+</li>
 </ul>
   </nav></div>
 

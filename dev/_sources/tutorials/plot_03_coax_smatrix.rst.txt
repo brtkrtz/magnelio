@@ -332,7 +332,7 @@ ideal impedances of the circular cross-section
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 193-211
+.. GENERATED FROM PYTHON SOURCE LINES 193-216
 
 The two curves agree to better than 0.001 in magnitude across the
 band.  Note why the agreement is this good even though the previous
@@ -353,7 +353,12 @@ S-parameter results leave Magnelio in standard formats.
 every circuit simulator reads; ``to_skrf`` hands the live matrix to
 `scikit-rf <https://scikit-rf.org>`_ if it is installed.
 
-.. GENERATED FROM PYTHON SOURCE LINES 211-217
+The file holds one port per excited channel — here the two ports at
+mode 0 — and the ``.sNp`` extension has to agree with that count,
+because Touchstone records it nowhere else.  Leave the extension off
+and it is filled in for you.
+
+.. GENERATED FROM PYTHON SOURCE LINES 216-222
 
 .. code-block:: Python
 
@@ -377,7 +382,7 @@ every circuit simulator reads; ``to_skrf`` hands the live matrix to
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 218-227
+.. GENERATED FROM PYTHON SOURCE LINES 223-232
 
 Where to go next
 ----------------
@@ -392,7 +397,7 @@ top of the port indices.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 14.936 seconds)
+   **Total running time of the script:** (0 minutes 6.761 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_03_coax_smatrix.py:

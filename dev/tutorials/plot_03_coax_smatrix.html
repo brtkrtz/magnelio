@@ -656,6 +656,10 @@ percents matter.</p>
 <code class="docutils literal notranslate"><span class="pre">to_touchstone</span></code> writes the industry-standard <code class="docutils literal notranslate"><span class="pre">.s2p</span></code> file that
 every circuit simulator reads; <code class="docutils literal notranslate"><span class="pre">to_skrf</span></code> hands the live matrix to
 <a class="reference external" href="https://scikit-rf.org">scikit-rf</a> if it is installed.</p>
+<p>The file holds one port per excited channel — here the two ports at
+mode 0 — and the <code class="docutils literal notranslate"><span class="pre">.sNp</span></code> extension has to agree with that count,
+because Touchstone records it nowhere else.  Leave the extension off
+and it is filled in for you.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">s2p</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">())</span> <span class="o">/</span> <span class="s2">&quot;coax_gap.s2p&quot;</span>
 <span class="n">result</span><span class="o">.</span><span class="n">to_touchstone</span><span class="p">(</span><span class="n">s2p</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">s2p</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
@@ -675,7 +679,7 @@ checks, a transmission-line cascade as reference, and the Touchstone
 export.  The next tutorial raises the frequency until the line
 carries more than one mode — and the S-matrix gains mode indices on
 top of the port indices.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 14.936 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 6.761 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-03-coax-smatrix-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/2a9054853abfb9fb8c9a86d028d6fd6c/plot_03_coax_smatrix.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_03_coax_smatrix.ipynb</span></code></a></p>
