@@ -47,8 +47,6 @@ gap = 2.0e-3  # feed gap
 a_wire = 0.5e-3  # wire radius
 pad = 50.0e-3  # clearance antenna -> absorbing boundary
 
-air = mio.Material.air()
-
 model = mio.GeometryModel(
     boundary_conditions={
         "zmin": "SymmetryPEC",  # electric mirror through the feed
@@ -63,7 +61,7 @@ model.add(
     geo.Brick(
         origin=(-pad, -pad, -(h_arm + pad)),
         size=(2 * pad, 2 * pad, 2 * (h_arm + pad)),
-        material=air,
+        material="air",
     )
 )
 model.add(
@@ -116,7 +114,6 @@ farfield = monitors.MonitorFarField(freqs=[f0], name="farfield")
 analysis = mio.AnalysisScatteringTD(
     mesh=mesh,
     f_min=f_min,
-    f_max=f_max,
     monitors=(farfield,),
     verbose=False,
 )

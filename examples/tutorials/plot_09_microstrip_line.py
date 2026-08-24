@@ -86,13 +86,11 @@ L = 20.0e-3  # line length
 eps_r = 4.3
 f_max = 15.0e9
 
-pec = mio.Material.pec()
-air = mio.Material.air()
 fr4 = mio.Material.from_isotropic(name="FR4", epsilon=eps_r)
 
 substrate = geo.Brick(origin=(-W_box / 2, 0.0, 0.0), size=(W_box, h_sub, L), material=fr4)
-air_cap = geo.Brick(origin=(-W_box / 2, h_sub, 0.0), size=(W_box, H_box - h_sub, L), material=air)
-strip = geo.Brick(origin=(-w_strip / 2, h_sub, 0.0), size=(w_strip, t_strip, L), material=pec)
+air_cap = geo.Brick(origin=(-W_box / 2, h_sub, 0.0), size=(W_box, H_box - h_sub, L), material="air")
+strip = geo.Brick(origin=(-w_strip / 2, h_sub, 0.0), size=(w_strip, t_strip, L), material="pec")
 
 model = mio.GeometryModel(boundary_conditions={"xmin": "SymmetryPMC"})
 model.add(substrate)
@@ -132,7 +130,7 @@ fig, ax = model.plot_cross_section("z", L / 2, mesh=mesh, title="microstrip cros
 # There is no textbook formula for that compromise; the port solves
 # the 2D cross-section problem numerically, before any time stepping:
 
-analysis = mio.AnalysisScatteringTD(mesh=mesh, f_max=f_max, verbose=False)
+analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
 
 report = analysis.solve_ports()["port1"]
 print(report)

@@ -71,11 +71,10 @@ print(f"{len(model_d.poles)} relaxation poles, eps_inf = {model_d.eps_inf:.3f}")
 r_i, r_o, L_coax = 0.405e-3, 1.475e-3, 24e-3
 f_max = 6e9
 
-pec = mio.Material.pec()
 dielectric = geo.Cylinder(origin=(0, 0, 0), radius=r_o, height=L_coax, axis="z", material=fr4)
-inner = geo.Cylinder(origin=(0, 0, 0), radius=r_i, height=L_coax, axis="z", material=pec)
+inner = geo.Cylinder(origin=(0, 0, 0), radius=r_i, height=L_coax, axis="z", material="pec")
 
-model = mio.GeometryModel(background=pec)
+model = mio.GeometryModel(background="pec")
 model.add(geo.Difference(dielectric, inner))
 model.add(inner)
 model.add_port(ports.PortWaveguide(name="port1", plane="zmin"))
@@ -85,7 +84,7 @@ mesh = mio.Mesh.from_geometry(
     model, mio.MeshControl(max_cell_size=0.16e-3, min_cell_size=0.16e-3), f_max=f_max
 )
 
-result = mio.AnalysisScatteringTD(mesh=mesh, f_max=f_max, verbose=False).run(excited=["port1"])
+result = mio.AnalysisScatteringTD(mesh=mesh, verbose=False).run(excited=["port1"])
 
 # %%
 # On a uniform matched line, ``|S21| = e^(−αL)``, so one transmission
@@ -164,9 +163,8 @@ a_wg, b_wg, L_wg = 22.86e-3, 10.16e-3, 100e-3
 sigma_steel = 1.45e6
 f_lo, f_hi = 8.2e9, 12.4e9
 
-air = mio.Material.air()
-wg = mio.GeometryModel(background=air)
-wg.add(geo.Brick(origin=(0, 0, 0), size=(a_wg, b_wg, L_wg), material=air))
+wg = mio.GeometryModel(background="air")
+wg.add(geo.Brick(origin=(0, 0, 0), size=(a_wg, b_wg, L_wg), material="air"))
 wg.add_port(ports.PortWaveguide(name="port1", plane="zmin", n_modes=1))
 wg.add_port(ports.PortWaveguide(name="port2", plane="zmax", n_modes=1))
 
@@ -183,7 +181,6 @@ def run_waveguide(**wall_kwargs):
     analysis = mio.AnalysisScatteringTD(
         mesh=wg_mesh,
         f_min=f_lo,
-        f_max=f_hi,
         monitors=(monitor,),
         verbose=False,
         **wall_kwargs,
@@ -280,8 +277,8 @@ print(f"sibc vs closed form across the band: {ratio.min():.3f} .. {ratio.max():.
 a_c, b_c, d_c = 20e-3, 10e-3, 25e-3
 sigma_cu = 5.8e7
 
-cavity = mio.GeometryModel(background=air)
-cavity.add(geo.Brick(origin=(0, 0, 0), size=(a_c, b_c, d_c), material=air))
+cavity = mio.GeometryModel(background="air")
+cavity.add(geo.Brick(origin=(0, 0, 0), size=(a_c, b_c, d_c), material="air"))
 f101 = C0 / 2 * np.sqrt((1 / a_c) ** 2 + (1 / d_c) ** 2)
 
 cav_mesh = mio.Mesh.from_geometry(

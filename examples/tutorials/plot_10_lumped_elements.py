@@ -61,8 +61,6 @@ H_box = 5.0e-3  # shield height
 W_box = 14.0e-3  # shield width
 f_max = 9.0e9
 
-pec = mio.Material.pec()
-air = mio.Material.air()
 ro4003 = mio.Material.from_isotropic(name="RO4003", epsilon=eps_r)
 
 
@@ -75,19 +73,19 @@ def build_divider(with_resistor=True):
     y0 = h_sub  # metallization sits on the substrate
 
     ring = geo.Difference(
-        geo.Cylinder(origin=(0, y0, z_c), radius=r_out, height=t_met, axis="y", material=pec),
+        geo.Cylinder(origin=(0, y0, z_c), radius=r_out, height=t_met, axis="y", material="pec"),
         geo.Cylinder(
-            origin=(0, y0 - t_met, z_c), radius=r_in, height=3 * t_met, axis="y", material=pec
+            origin=(0, y0 - t_met, z_c), radius=r_in, height=3 * t_met, axis="y", material="pec"
         ),
     )
     feed = geo.Brick(
-        origin=(-w50 / 2, y0, 0.0), size=(w50, t_met, z_c - r_in + 0.2e-3), material=pec
+        origin=(-w50 / 2, y0, 0.0), size=(w50, t_met, z_c - r_in + 0.2e-3), material="pec"
     )
     stubs = [
         geo.Brick(
             origin=(sx - w50 / 2, y0, z_c + r_in - 0.5e-3),
             size=(w50, t_met, (line_z + w50 / 2) - (z_c + r_in - 0.5e-3)),
-            material=pec,
+            material="pec",
         )
         for sx in (-stub_x, stub_x)
     ]
@@ -95,20 +93,20 @@ def build_divider(with_resistor=True):
         geo.Brick(
             origin=(x0, y0, line_z - w50 / 2),
             size=(W_box / 2 - stub_x + w50 / 2, t_met, w50),
-            material=pec,
+            material="pec",
         )
         for x0 in (-W_box / 2, stub_x - w50 / 2)
     ]
     gap_cutter = geo.Brick(
         origin=(-gap / 2, y0 - t_met, z_c + r_in - 0.05e-3),
         size=(gap, 3 * t_met, (r_out - r_in) + 0.1e-3),
-        material=pec,
+        material="pec",
     )
-    metal = geo.Difference(geo.Union(ring, feed, *stubs, *lines, material=pec), gap_cutter)
+    metal = geo.Difference(geo.Union(ring, feed, *stubs, *lines, material="pec"), gap_cutter)
 
     substrate = geo.Brick(origin=(-W_box / 2, 0, 0), size=(W_box, h_sub, L_box), material=ro4003)
     air_cap = geo.Brick(
-        origin=(-W_box / 2, h_sub, 0), size=(W_box, H_box - h_sub, L_box), material=air
+        origin=(-W_box / 2, h_sub, 0), size=(W_box, H_box - h_sub, L_box), material="air"
     )
 
     model = mio.GeometryModel()
@@ -184,7 +182,7 @@ fig, ax = model.plot_cross_section("y", h_sub + t_met / 2, mesh=mesh, title="Wil
 # the analysis at 9 GHz — from DC up to a safe margin below that
 # ceiling.
 
-analysis = mio.AnalysisScatteringTD(mesh=mesh, f_max=f_max, verbose=False)
+analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
 report = analysis.solve_ports()["port1"]
 print(report)
 
@@ -245,9 +243,7 @@ mesh_bare = mio.Mesh.from_geometry(
     mio.MeshControl(min_nodes_per_wavelength=25, min_cells_per_feature=10, min_cell_size=51e-6),
     f_max=f_max,
 )
-result_bare = mio.AnalysisScatteringTD(mesh=mesh_bare, f_max=f_max, verbose=False).run(
-    excited=["port2"]
-)
+result_bare = mio.AnalysisScatteringTD(mesh=mesh_bare, verbose=False).run(excited=["port2"])
 s22_bare = result_bare.S("port2", "port2")
 s23_bare = result_bare.S("port3", "port2")
 

@@ -9,8 +9,9 @@ material bookkeeping is id-based), and the mesh now records the
 `f_max` it was generated for: `AnalysisScatteringTD` defaults its band
 to `mesh.f_max`, warns when an explicit value exceeds it (undersampled
 grid — previously silent), and `from_grid` meshes keep requiring an
-explicit value.  Rejected from the same issue: sticky last-used
-material and abbreviated kwarg aliases (see DD-185).  Unit suite 2152
+explicit value.  All 19 tutorials use the two idioms throughout.
+Rejected from the same issue: sticky last-used
+material and abbreviated kwarg aliases (see DD-185).  Unit suite 2155
 passed / 3 skipped.  Before that: the Touchstone/scikit-rf
 export covers the excited channels instead of demanding the complete
 square matrix (DD-184, issue #3) — an unexcited channel is matched by

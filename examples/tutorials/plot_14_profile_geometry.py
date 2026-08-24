@@ -23,7 +23,6 @@ import math
 import magnelio as mio
 from magnelio import geo, plots
 
-pec = mio.Material.pec()
 copper = mio.Material.lossy_metal(name="copper", sigma=5.8e7)
 
 # %%
@@ -44,7 +43,7 @@ electrode = geo.Cylinder(
     inner_radius=R_IN,
     height=HEIGHT,
     angle_deg=(0.0, SPAN),
-    material=pec,
+    material="pec",
 )
 
 fig, ax = plots.plot_cross_section(
@@ -85,7 +84,7 @@ outline = (
     .closed()
 )
 
-drawn = outline.covered().extruded(vector=(0.0, 0.0, HEIGHT), material=pec)
+drawn = outline.covered().extruded(vector=(0.0, 0.0, HEIGHT), material="pec")
 
 # The two routes describe the same solid, and `volume()` is the way to
 # say so: it reports what the CAD kernel actually built, not what the
@@ -124,7 +123,7 @@ chamfered = (
     .arc_to(on_circle(R_IN, 0.0), center=CENTRE, normal=(0.0, 0.0, -1.0))
     .closed()
     .covered()
-    .extruded(vector=(0.0, 0.0, HEIGHT), material=pec)
+    .extruded(vector=(0.0, 0.0, HEIGHT), material="pec")
 )
 
 fig, ax = plots.plot_cross_section(
@@ -152,7 +151,7 @@ nose = (
     .arc_to((0.0, 0.0, 11.0e-3), via=(2.1e-3, 0.0, 10.1e-3))
     .closed()
     .covered()
-    .revolved(axis="z", material=pec)
+    .revolved(axis="z", material="pec")
 )
 
 fig, ax = plots.plot_cross_section([nose], "y", 0.0, title="revolved profile: a rounded pin")
@@ -170,7 +169,7 @@ fig, ax = plots.plot_cross_section([nose], "y", 0.0, title="revolved profile: a 
 WALL = 1.5e-3
 BOX = (40.0e-3, 25.0e-3, 12.0e-3)
 
-housing = geo.Brick(origin=(0.0, 0.0, 0.0), size=BOX, material=pec).shelled(
+housing = geo.Brick(origin=(0.0, 0.0, 0.0), size=BOX, material="pec").shelled(
     thickness=WALL,
     opening_face_near=[(0.0, BOX[1] / 2, BOX[2] / 2), (BOX[0], BOX[1] / 2, BOX[2] / 2)],
 )
@@ -240,7 +239,7 @@ def square(half, z):
     )
 
 
-taper = geo.Loft(square(4.0e-3, 0.0), square(10.0e-3, 18.0e-3), blend="ruled", material=pec)
+taper = geo.Loft(square(4.0e-3, 0.0), square(10.0e-3, 18.0e-3), blend="ruled", material="pec")
 
 fig, ax = plots.plot_cross_section([taper], "y", 0.0, title="a ruled taper between two squares")
 
