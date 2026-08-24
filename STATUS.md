@@ -17,18 +17,22 @@ raise.  On top of it: the **How-to guides** gallery (DD-188,
 stripline pickup/kicker page moved out of the tutorials (old
 `tutorials/plot_19_…` URL lapses, changelog notes it), the filter
 capstone re-anchored as the close of tutorials 01–12, and the first
-lumped-port termination guides (DD-189, twice amended on developer
-review): **four pages** — *Lumped ports: investigations* (principle +
-sensitivity sweeps for coax, microstrip and CPW) and one compact
-*Lumped port tuning* pre-flight tool per line type (given → knobs →
-derived → scoreboard).  Waveguide port as measuring instrument, WG–WG
-reference run as grid-exact phase ruler, phase polarity normalised to
-n·180° at the low band edge, no de-embedding and no optimiser in the
-pages.  MS: vertical trace-end port, position optimum ≈ −1.0·h_sub on
-the example grid, dispersion tilts the compromise.  CPW: load both
-slots (port + resistor, 2·Z each), close the slots behind the plane,
-pass late resistors via `elements=`, keep the test shield single-mode
-(overmoded 8×5 box: floor −6.6 dB vs −17.2 dB in 4×2.5).
+lumped-port termination guides (DD-189, three developer-review
+amendments): **four pages** — *Lumped ports: investigations*
+(principle + sensitivity sweeps for coax, microstrip and CPW) and one
+compact *Lumped port tuning* pre-flight tool per line type (given →
+knobs → derived → scoreboard, fixture cut as gallery thumbnail).
+Waveguide port as measuring instrument, WG–WG reference run as
+grid-exact phase ruler, phase polarity normalised to n·180° at the
+low band edge, no de-embedding and no optimiser in the pages.  MS:
+vertical trace-end port, position optimum ≈ −1.0·h_sub on the example
+grid, dispersion tilts the compromise.  CPW (third amendment, after
+the developer's reference model): symmetry-plane end-gap port — strip
+ends an end gap short of the ground behind it, lumped port bridges it
+longitudinally on the ``SymmetryPMC`` plane, PMC lid, coax knobs;
+position optimum ≈ **+16·s beyond** the plane (21.4° → 0.74°, sign
+opposite to coax/MS).  Side find: empty boolean results crash
+`plot()` via uncaught C++ exception → KB-026.
 Unit suite 2170
 passed / 3 skipped.  Before that: released v0.4.2 (issue-#2
 boilerplate cuts DD-185/186 + DD-184 export fix) and v0.4.3 (hotfix:
@@ -69,7 +73,7 @@ The plane-wave tutorial remains deferred.
 
 Newest first, one line each; the full record is the DD entry.
 
-* **DD-189** (2026-08-24, twice amended) — lumped-port termination guides, four pages: *Lumped ports: investigations* (principle + sweeps for all three line types) plus a compact *Lumped port tuning* tool each for coax/microstrip/CPW.  Waveguide port as instrument, WG–WG reference run as grid-exact phase ruler (no closed-form dispersion), phase polarity normalised to n·180° at the low band edge, knobs = series-element geometry / position / port impedance as geometric re-run sweeps (de-embedding and the single overloaded page both dropped on developer review), no built-in optimiser.  CPW traps: load both slots (2·Z each), close them behind the plane (slotline stubs), `elements=` for late resistors, single-mode test shield.  All three line types shipped.
+* **DD-189** (2026-08-24, three amendments) — lumped-port termination guides, four pages: *Lumped ports: investigations* (principle + sweeps for all three line types) plus a compact *Lumped port tuning* tool each for coax/microstrip/CPW.  Waveguide port as instrument, WG–WG reference run as grid-exact phase ruler (no closed-form dispersion), phase polarity normalised to n·180° at the low band edge, knobs = end-gap geometry / position / port impedance as geometric re-run sweeps (de-embedding, the single overloaded page, and the CPW slot-port+resistor scheme all dropped on developer review).  CPW = coax picture on the symmetry plane: longitudinal end-gap port (`SymmetryPMC` half model, PMC lid), position optimum +16·s *beyond* the plane.  Kept as general (non-guide) knowledge: `elements=` for post-mesh lumped elements, single-mode test shields.  All three line types shipped; side find KB-026 (empty boolean crashes plot()).
 * **DD-188** (2026-08-24) — second sphinx-gallery "How-to guides" (`examples/howto/` → `docs/howto/`, unnumbered pages, own toctree caption): task recipes separated from the numbered curriculum; stripline page moved out of the tutorials (old URL lapses), filter capstone re-anchored as the close of tutorials 01–12; renumbering the tutorials rejected (URL + prose breakage).
 * **DD-187** (2026-08-24) — post-hoc reference-plane shift `result.deembed({"port": d})` on the exact discrete chain dispersion: `lambda^{-d/dz}` evaluated on the unit circle (passband magnitudes exactly untouched; the off-circle `lambda_symbol` offset would bias by `O(1e-8·d/dz)`), continuum `γ(ω)` fallback for uncertified channels, lumped ports raise; measured to cancel a uniform line to the run's own floor with zero reference-plane offset; `phase`/`plot_s` moved to `SDerivedAccessors`, shared by run results and `SParameterResult`.
 * **DD-186** (2026-08-24) — the mesh carries the f_max it was built for: `Mesh.from_geometry` records it, `AnalysisScatteringTD(f_max=None)` defaults to it, an explicit value above it warns (undersampled grid), `from_grid` meshes keep requiring an explicit value; rejected the issue's session-global "last used f_max" buffer (execution-order-dependent).

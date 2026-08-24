@@ -12856,6 +12856,17 @@ types) and one compact *Lumped port tuning* download tool each for
 coax, microstrip and CPW (given quantities → knobs → derived →
 scoreboard, no sweeps).  File names sort the overview first and the
 tools directly after it.  Shipped 2026-08-24, all three line types.
+**Amended a third time 2026-08-24** (developer review of the CPW
+pages, with a reference model in the private workspace): the
+slot-port-plus-dummy-resistor termination is replaced by the
+practitioner's scheme — the strip ends an **end gap** short of the
+ground metallisation behind it and the lumped port bridges that gap
+*longitudinally* on the pair's symmetry plane (``SymmetryPMC`` half
+model, DD-172), exactly the coax picture and exactly the port the
+target simulation excites through.  Open lid = **PMC** boundary, not
+a metal cover; the closing ground plate falls out of one boolean.
+Same knobs as the coax (end-gap width, end-gap position, impedance);
+no resistor, no ``elements=``, no tight-box requirement.
 
 **Problem.**  Discrete (lumped) ports are approximate line
 terminations.  Vendor rules of thumb ("terminate a coax like this")
@@ -12915,15 +12926,22 @@ cell size their production mesh will have (PCB cross-sections use
   position optimum near −1.0·h_sub on the example grid (23.3° →
   2.9°), and the position compromise is frequency-dependent
   (dispersion) — the curves tilt.
-- *CPW*: both slots must be loaded (port + `SeriesRLC` resistor, each
-  2·Z_line); the slots must be **closed** one slot-width behind the
-  termination plane or they resonate as shorted slotline stubs; a
-  resistor declared after `Mesh.from_geometry` must be passed via
-  `elements=` or it is silently absent (elements travel on the mesh,
-  DD-123); the test shield must be single-mode over the band —
-  in the roomy 8×5 mm box two extra modes propagate at 15 GHz and the
-  measured floor collapses (−6.6 dB vs −17.2 dB in the tight
-  4×2.5 mm box).
+- *CPW* (third amendment's scheme): symmetry-plane end-gap port on an
+  open Rogers-4003 structure (PMC lid), measured optimum of the gap
+  position at ≈ **+16·s** *beyond* the reference plane (21.4° →
+  0.74°) — opposite sign to coax/microstrip, because the mode's
+  return current detours through the ground plate behind the gap;
+  gap width 1s/2s/4s → −26.6/−19.6/−14.6 dB.  Two findings from the
+  discarded slot-loaded scheme stay valid as general knowledge (not
+  in the guides): a lumped element declared after
+  `Mesh.from_geometry` must be passed via `elements=` or it is
+  silently absent (elements travel on the mesh, DD-123), and a
+  shielded test fixture must stay single-mode over the band or its
+  box modes masquerade as termination error.
+- The empty-boolean crash the developer hit while building the CPW
+  model (`add(a − b)` with b ⊇ a: `plot()` dies in an uncaught C++
+  `std::invalid_argument`, the mesher in a cryptic `GridLines`
+  error) is recorded as KB-026.
 
 **Files:** `examples/howto/plot_lumped_port_investigations.py`,
 `examples/howto/plot_lumped_port_tuning_coax.py`,

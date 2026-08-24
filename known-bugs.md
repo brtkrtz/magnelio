@@ -16,8 +16,31 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Two entries are open as of 2026-08-20: KB-022 and KB-023.**
-Everything else is struck through and resolved.
+**Three entries are open as of 2026-08-24: KB-022, KB-023 and
+KB-026.**  Everything else is struck through and resolved.
+
+## KB-026: An empty boolean result crashes plot() with a C++ abort — Open (2026-08-24)
+
+`GeometryModel.add(a - b)` accepts a `Difference` whose result is
+empty (subtrahend covers the minuend, e.g. two equal bricks), and the
+failure surfaces only downstream, twice removed from the cause:
+
+- `model.plot()` **aborts the process** — the OCC tessellation of the
+  empty shape throws `std::invalid_argument: "The deviation must be
+  greater than 0"` (zero bounding-box diagonal → zero chordal
+  deviation), the exception crosses the C++/Python boundary uncaught,
+  and `terminate()` kills the interpreter.  In a notebook this reads
+  as a kernel death with no traceback (found by the developer while
+  building the CPW tuning model, internal notebook record).
+- `Mesh.from_geometry` fails with `GridLines.x must be a 1D array
+  with at least 2 elements` — technically an exception, but naming
+  the mesher's internals instead of the empty shape.
+
+Wanted: validate at `add()` (or at boolean construction) that a shape
+has volume, and raise a `ValueError` naming the empty operand there —
+the same early-error principle as the DD-176 argument validation.
+Until then: a model that suddenly "has no geometry" after a boolean
+edit is the signature; check the operands.
 
 ## KB-025: ~~A cross-section paints its holes shut~~ — Resolved (2026-08-20)
 

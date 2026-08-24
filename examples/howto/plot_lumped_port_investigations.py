@@ -53,7 +53,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import magnelio as mio
-from magnelio import circuit, geo, ports
+from magnelio import geo, ports
 
 F_MAX = 15e9
 
@@ -330,108 +330,99 @@ ax.legend()
 # Coplanar waveguide
 # ------------------
 #
-# The CPW even mode returns its current through *both* ground strips,
-# so the termination must load **both slots**: a lumped port across
-# one slot and a plain resistor
-# (:class:`~magnelio.circuit.LumpedElement`) across the other, each
-# with **twice** the line impedance — in parallel they present the
-# line impedance to the mode.  Three details make or break this
-# setup, and each one was found the hard way:
+# The CPW termination is, once the model exploits the pair's
+# symmetry, *the coax picture again*: the centre strip stops an **end
+# gap** short of the ground metallisation behind it — one boolean cut
+# shapes strip, slots, end gap and closing ground plate in a single
+# stroke — and the lumped port bridges the gap longitudinally, on the
+# symmetry plane.  Declaring that plane as a magnetic wall
+# (``xmin="SymmetryPMC"``) halves the model and keeps the port
+# centred on the even mode; without the symmetry plane a centred
+# single-edge port would not exist and both slots would have to be
+# loaded separately.  The structure is open above (a PMC lid, not a
+# metal cover) and the substrate floats on air below — a plain,
+# ungrounded CPW.
 #
-# 1. **Close the slots behind the termination.**  If the ground
-#    strips simply continue, the two slots run on as slotline stubs,
-#    shorted at the shield's back wall — a resonator that ruins the
-#    reflection at the top of the band.  A closing plate over strip
-#    and slots, one slot-width behind the termination plane, ends the
-#    line as definitely as the coax's end plate does.  (Directly *at*
-#    the plane it would swallow the port edges — total reflection.)
-# 2. **Pass the resistor to the analysis.**  Lumped elements travel
-#    on the mesh; an element declared *after* ``Mesh.from_geometry``
-#    must be handed over explicitly (``elements=[...]``), exactly as
-#    the late-declared port needs ``ports=``.  Forget it and the
-#    resistor is silently absent — one open slot, and the even mode
-#    partly converts into the slot mode instead of being absorbed.
-# 3. **Keep the test box single-mode.**  In a roomy shield the box
-#    modes start propagating inside the band, the n_modes=1 waveguide
-#    port no longer matches them, and the measured "termination
-#    error" is really the test fixture.  The demonstration below
-#    measures the same termination in a roomy and in a tight box.
+# The knobs are the coax knobs: end-gap width, end-gap position, port
+# impedance.
 
-w_cpw = 1.2e-3
-s_cpw = 0.4e-3
+w_cpw = 0.7e-3  # centre strip width
+s_cpw = 0.05e-3  # slot width
+h_cpw = 0.508e-3  # substrate height
+t_cpw = 17e-6  # metallisation thickness
+eps_cpw = 3.38  # Rogers 4003
+a_air = 10 * s_cpw  # air above the metallisation
+b_air = 5 * s_cpw  # air below the substrate
+L_cpw = 5.0 * w_cpw
+p_gnd = 3.0 * (w_cpw / 2 + s_cpw)
+X_cpw = w_cpw / 2 + s_cpw + p_gnd
 
 
-def _cpw_model(length, strip_len, box, close_from=None):
-    wb, hb = box
-    fr4 = mio.Material.from_isotropic(name="FR4", epsilon=eps_pcb)
-    model = mio.GeometryModel(background="pec")
-    model.add(geo.Brick(origin=(-wb / 2, 0.0, 0.0), size=(wb, h_sub, length), material=fr4))
-    air = geo.Brick(origin=(-wb / 2, h_sub, 0.0), size=(wb, hb - h_sub, length), material="air")
-    metal = [
-        geo.Brick(origin=(-w_cpw / 2, h_sub, 0.0), size=(w_cpw, t_met, strip_len), material="pec")
-    ]
-    for sign in (+1, -1):
-        x0, x1 = sign * (w_cpw / 2 + s_cpw), sign * wb / 2
-        metal.append(
-            geo.Brick(
-                origin=(min(x0, x1), h_sub, 0.0),
-                size=(abs(x1 - x0), t_met, length),
-                material="pec",
-            )
+def _cpw_model(strip_end=None, gap=None):
+    z_lo = -L_cpw
+    z_hi = (0.0 if strip_end is None else strip_end + gap) + p_gnd
+    diel = mio.Material.from_isotropic(epsilon=eps_cpw, name="rogers4003")
+    lift = geo.Brick.from_ranges(
+        x1=-X_cpw, x2=X_cpw, y1=-h_cpw - b_air, y2=-h_cpw, z1=z_lo, z2=z_hi, material="air"
+    )
+    subst = geo.Brick.from_ranges(
+        x1=-X_cpw, x2=X_cpw, y1=-h_cpw, y2=0, z1=z_lo, z2=z_hi, material=diel
+    )
+    air = geo.Brick.from_ranges(
+        x1=-X_cpw, x2=X_cpw, y1=0, y2=a_air, z1=z_lo, z2=z_hi, material="air"
+    )
+    metal = geo.Brick.from_ranges(
+        x1=-X_cpw, x2=X_cpw, y1=0, y2=t_cpw, z1=z_lo, z2=z_hi, material="pec"
+    )
+    cut_z2 = z_hi + 1.0 if strip_end is None else strip_end + gap
+    metal -= geo.Brick.from_ranges(
+        x1=-w_cpw / 2 - s_cpw, x2=w_cpw / 2 + s_cpw, y1=-1, y2=1, z1=-1, z2=cut_z2
+    )
+    strip_z2 = z_hi if strip_end is None else strip_end
+    metal += geo.Brick.from_ranges(
+        x1=-w_cpw / 2, x2=w_cpw / 2, y1=0, y2=t_cpw, z1=z_lo, z2=strip_z2, material="pec"
+    )
+    model = mio.GeometryModel(
+        background="air",
+        boundary_conditions={"xmin": "SymmetryPMC", "ymax": "PMC"},
+    )
+    model.add([lift, subst, metal, air - metal])
+    model.add_port(
+        ports.PortWaveguide(
+            name="wg", plane="zmin", corners=((-1, -1, None), (1, 1, None)), n_modes=1
         )
-    if close_from is not None:
-        metal.append(
-            geo.Brick(
-                origin=(-(w_cpw / 2 + s_cpw), h_sub, close_from),
-                size=(w_cpw + 2 * s_cpw, t_met, length - close_from),
-                material="pec",
-            )
-        )
-    model.add(geo.Difference(air, geo.Union(*metal)))
-    for m in metal:
-        model.add(m)
-    model.add_port(ports.PortWaveguide(name="wg", plane="zmin", n_modes=1))
+    )
     return model
 
 
-BOX_TIGHT = (4.0e-3, 2.5e-3)
-BOX_ROOMY = (8.0e-3, 5.0e-3)
-L_cpw = 5.0 * w_cpw
+def _cpw_mesh(model):
+    return mio.Mesh.from_geometry(model, mio.MeshControl(min_cell_size=s_cpw / 4), f_max=F_MAX)
 
 
-def reference_cpw(box=BOX_TIGHT):
-    model = _cpw_model(L_cpw, strip_len=L_cpw, box=box)
-    model.add_port(ports.PortWaveguide(name="far", plane="zmax", n_modes=1))
-    return mio.AnalysisScatteringTD(mesh=_pcb_mesh(model), verbose=False).run(excited=[("wg", 0)])
+def reference_cpw():
+    model = _cpw_model()
+    model.add_port(
+        ports.PortWaveguide(
+            name="far", plane="zmax", corners=((-1, -1, None), (1, 1, None)), n_modes=1
+        )
+    )
+    return mio.AnalysisScatteringTD(mesh=_cpw_mesh(model), verbose=False).run(excited=[("wg", 0)])
 
 
-def measure_cpw(end_position, z0=None, box=BOX_TIGHT, load_second_slot=True):
-    z_pin = L_cpw + end_position
-    model = _cpw_model(z_pin + tail, strip_len=z_pin, box=box, close_from=z_pin + s_cpw)
-    mesh = _pcb_mesh(model)
-    z_line = mio.AnalysisScatteringTD(mesh=mesh, verbose=False).solve_ports()["wg"].modes[0].z_line
-    z_slot = 2.0 * float(z0 if z0 is not None else z_line)
+def measure_cpw(gap, gap_position, z0=None):
+    model = _cpw_model(strip_end=gap_position, gap=gap)
+    mesh = _cpw_mesh(model)
+    z_line = mio.AnalysisScatteringTD(mesh=mesh, verbose=False).solve_ports()["wg"].z_line_num
     model.add_port(
         ports.PortLumped(
             name="dut",
-            start=(w_cpw / 2, h_sub, z_pin),
-            end=(w_cpw / 2 + s_cpw, h_sub, z_pin),
-            Z0=z_slot,
+            start=(0.0, 0.0, gap_position),
+            end=(0.0, 0.0, gap_position + gap),
+            Z0=float(z0 if z0 is not None else z_line),
         )
     )
-    elements = []
-    if load_second_slot:
-        elements.append(
-            circuit.LumpedElement(
-                name="load2",
-                start=(-w_cpw / 2, h_sub, z_pin),
-                end=(-(w_cpw / 2 + s_cpw), h_sub, z_pin),
-                element=circuit.SeriesRLC(R=z_slot),
-            )
-        )
-    result = mio.AnalysisScatteringTD(
-        mesh=mesh, ports=list(model.ports), elements=elements, verbose=False
-    ).run(excited=[("wg", 0)])
+    mesh = _cpw_mesh(model)  # rebuild: the mesh carries the port
+    result = mio.AnalysisScatteringTD(mesh=mesh, verbose=False).run(excited=[("wg", 0)])
     return result, z_line
 
 
@@ -439,61 +430,58 @@ ref_cpw = reference_cpw()
 f_w = np.asarray(ref_cpw.f_axis)
 band_w = f_w <= F_MAX
 
-cpw, z_cpw = measure_cpw(0.0)
+cpw, z_cpw = measure_cpw(s_cpw, 0.0)
 print(f"CPW line impedance on this grid: {z_cpw:.2f} Ohm")
-scoreboard(cpw, ref_cpw, "CPW, both slots loaded, tight box")
+scoreboard(cpw, ref_cpw, "CPW, naive start values")
 
 # %%
-# The two failure modes, measured.  One open slot (the forgotten
-# resistor) reflects strongly across the band; the roomy box looks
-# fine at low frequency and collapses once its own modes propagate —
-# a fixture artefact that would be misread as a termination problem.
-
-one_slot, _ = measure_cpw(0.0, load_second_slot=False)
-roomy, _ = measure_cpw(0.0, box=BOX_ROOMY)
-
-fig, ax = plt.subplots()
-ax.plot(f_w[band_w] / 1e9, cpw.db("wg", "wg")[band_w], label="both slots, tight box")
-ax.plot(f_w[band_w] / 1e9, one_slot.db("wg", "wg")[band_w], label="second slot open")
-f_r = np.asarray(roomy.f_axis)
-b_r = f_r <= F_MAX
-ax.plot(f_r[b_r] / 1e9, roomy.db("wg", "wg")[b_r], label="both slots, roomy (overmoded) box")
-ax.set_xlabel("frequency [GHz]")
-ax.set_ylabel("|S11| [dB]")
-ax.set_title("CPW: what a missing slot load and an overmoded fixture look like")
-ax.grid(True, alpha=0.3)
-ax.legend()
-
-# %%
-# With the setup sound, the same two knobs as before.  The position
-# scale of a CPW end effect is the slot width, not the substrate
-# height; and the impedance comparison is drastic here because the
-# grid impedance (≈41 Ω) sits far from the 50 Ω a catalogue formula
-# for the open structure would suggest — the tight test shield and
-# the bottom ground load the line, and the termination must match
-# *that* line, not the data sheet.
+# The two geometric knobs, swept.  The gap-width sweep mirrors the
+# coax; the position sweep runs toward *positive* offsets — the
+# current returning through the ground plate behind the gap lengthens
+# the effective line, so the gap wants to sit noticeably *beyond* the
+# reference plane on this structure.
 
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9.0, 3.6))
-for k in (0.0, -1.0, -2.0):
-    res_k, _ = measure_cpw(k * s_cpw)
-    err_k = phase_error(res_k, ref_cpw, f_w)
-    ax1.plot(f_w[band_w] / 1e9, err_k[band_w], label=f"strip end at {k:.0f}·s")
-    print(f"CPW, strip end at {k:.0f}·s: max |phase error| {np.abs(err_k[band_w]).max():6.2f} deg")
+for factor in (1.0, 2.0, 4.0):
+    res_g, _ = measure_cpw(factor * s_cpw, 0.0)
+    ax1.plot(
+        f_w[band_w] / 1e9,
+        res_g.db("wg", "wg")[band_w],
+        label=f"gap = {factor:.0f}·s",
+    )
 ax1.set_xlabel("frequency [GHz]")
-ax1.set_ylabel("phase error [deg]")
-ax1.set_title("CPW: position sweep")
+ax1.set_ylabel("|S11| [dB]")
+ax1.set_title("CPW: end-gap width")
 ax1.grid(True, alpha=0.3)
 ax1.legend()
 
-cpw_50, _ = measure_cpw(0.0, z0=50.0)
-ax2.plot(f_w[band_w] / 1e9, cpw.db("wg", "wg")[band_w], label=f"Z0 = grid ({z_cpw:.0f} Ohm)")
-ax2.plot(f_w[band_w] / 1e9, cpw_50.db("wg", "wg")[band_w], label="Z0 = 50 Ohm")
+for k in (0.0, 8.0, 16.0, 24.0):
+    res_k, _ = measure_cpw(s_cpw, k * s_cpw)
+    err_k = phase_error(res_k, ref_cpw, f_w)
+    ax2.plot(f_w[band_w] / 1e9, err_k[band_w], label=f"gap start at +{k:.0f}·s")
+    worst = np.abs(err_k[band_w]).max()
+    print(f"CPW, gap start at +{k:.0f}·s: max |phase error| {worst:6.2f} deg")
 ax2.set_xlabel("frequency [GHz]")
-ax2.set_ylabel("|S11| [dB]")
-ax2.set_title("CPW: impedance mismatch floor")
+ax2.set_ylabel("phase error [deg]")
+ax2.set_title("CPW: end-gap position")
 ax2.grid(True, alpha=0.3)
 ax2.legend()
 fig.tight_layout()
+
+# %%
+# And the impedance floor, as before: the grid's line impedance sits
+# well away from a nominal 50 Ω here, so terminating with the
+# catalogue value leaves a visible broadband pedestal.
+
+cpw_50, _ = measure_cpw(s_cpw, 0.0, z0=50.0)
+fig, ax = plt.subplots()
+ax.plot(f_w[band_w] / 1e9, cpw.db("wg", "wg")[band_w], label=f"Z0 = grid ({z_cpw:.1f} Ohm)")
+ax.plot(f_w[band_w] / 1e9, cpw_50.db("wg", "wg")[band_w], label="Z0 = 50 Ohm")
+ax.set_xlabel("frequency [GHz]")
+ax.set_ylabel("|S11| [dB]")
+ax.set_title("CPW: impedance mismatch floor")
+ax.grid(True, alpha=0.3)
+ax.legend()
 
 # %%
 # What carries over
@@ -501,8 +489,8 @@ fig.tight_layout()
 #
 # Across all three line types the same three-part picture:
 #
-# - the **series element geometry** (gap length; for microstrip the
-#   fixed substrate height) sets the broadband reflection level;
+# - the **end-gap geometry** (gap width; for microstrip the fixed
+#   substrate height) sets the broadband reflection level;
 # - the **position** of the termination relative to the reference
 #   plane sets the phase error — exactly compensable on TEM lines,
 #   a band compromise on dispersive ones;
@@ -510,11 +498,11 @@ fig.tight_layout()
 #   right value is the line impedance *of the grid*, read from the
 #   waveguide-port solve, not the catalogue number.
 #
-# And two rules about the fixture itself: terminate *every* current
-# path the mode uses (both CPW slots — and remember ``elements=`` for
-# late-declared resistors), and keep the test shield single-mode over
-# the band, or the fixture's own modes masquerade as termination
-# error.
+# Symmetry is the CPW's friend: the magnetic wall through the strip
+# centre is what lets a single edge chain terminate the even mode the
+# way the coax pin gap does.  And keep the test fixture itself above
+# suspicion — its shield (if any) single-mode over the band, its
+# resolution the resolution of the production model.
 #
 # None of the optima transfer between grids.  The per-line *tuning*
 # pages package this measurement as a compact tool: fill in the given
