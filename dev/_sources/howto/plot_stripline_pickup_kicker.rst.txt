@@ -859,7 +859,7 @@ that move the real device toward, or away from, the ideal stripline.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (4 minutes 46.900 seconds)
+   **Total running time of the script:** (4 minutes 57.934 seconds)
 
 
 .. _sphx_glr_download_howto_plot_stripline_pickup_kicker.py:
