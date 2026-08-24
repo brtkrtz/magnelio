@@ -36,7 +36,7 @@ whole shapes rather than outlines: hollowing, tracking, and lofting.
 
 Nothing here runs a simulation; it is geometry only, and takes seconds.
 
-.. GENERATED FROM PYTHON SOURCE LINES 20-29
+.. GENERATED FROM PYTHON SOURCE LINES 20-28
 
 .. code-block:: Python
 
@@ -46,7 +46,6 @@ Nothing here runs a simulation; it is geometry only, and takes seconds.
     import magnelio as mio
     from magnelio import geo, plots
 
-    pec = mio.Material.pec()
     copper = mio.Material.lossy_metal(name="copper", sigma=5.8e7)
 
 
@@ -56,7 +55,7 @@ Nothing here runs a simulation; it is geometry only, and takes seconds.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 30-39
+.. GENERATED FROM PYTHON SOURCE LINES 29-38
 
 A worked example: a curved electrode
 ------------------------------------
@@ -68,7 +67,7 @@ the choice between them comes up again for every part.
 The first is a primitive.  A cylinder takes a bore and an angular
 extent, so the electrode is one call:
 
-.. GENERATED FROM PYTHON SOURCE LINES 39-54
+.. GENERATED FROM PYTHON SOURCE LINES 38-53
 
 .. code-block:: Python
 
@@ -80,7 +79,7 @@ extent, so the electrode is one call:
         inner_radius=R_IN,
         height=HEIGHT,
         angle_deg=(0.0, SPAN),
-        material=pec,
+        material="pec",
     )
 
     fig, ax = plots.plot_cross_section(
@@ -99,7 +98,7 @@ extent, so the electrode is one call:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 55-69
+.. GENERATED FROM PYTHON SOURCE LINES 54-68
 
 The same part, drawn as a profile
 ---------------------------------
@@ -116,7 +115,7 @@ counter-clockwise about it.  That is the same sense as
 :meth:`~magnelio.geo.Shape.rotated`, and it settles the ambiguity even
 for a half-circle, where the two ends alone say nothing at all.
 
-.. GENERATED FROM PYTHON SOURCE LINES 69-100
+.. GENERATED FROM PYTHON SOURCE LINES 68-99
 
 .. code-block:: Python
 
@@ -139,7 +138,7 @@ for a half-circle, where the two ends alone say nothing at all.
         .closed()
     )
 
-    drawn = outline.covered().extruded(vector=(0.0, 0.0, HEIGHT), material=pec)
+    drawn = outline.covered().extruded(vector=(0.0, 0.0, HEIGHT), material="pec")
 
     # The two routes describe the same solid, and `volume()` is the way to
     # say so: it reports what the CAD kernel actually built, not what the
@@ -166,7 +165,7 @@ for a half-circle, where the two ends alone say nothing at all.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 101-115
+.. GENERATED FROM PYTHON SOURCE LINES 100-114
 
 .. note::
 
@@ -183,7 +182,7 @@ moment the outline is not a plain sector — a broken edge, a keyway, a
 flat on one side.  Adding a chamfer to the inner corner is one more
 segment in the pen stroke, and no new tool body:
 
-.. GENERATED FROM PYTHON SOURCE LINES 115-134
+.. GENERATED FROM PYTHON SOURCE LINES 114-133
 
 .. code-block:: Python
 
@@ -199,7 +198,7 @@ segment in the pen stroke, and no new tool body:
         .arc_to(on_circle(R_IN, 0.0), center=CENTRE, normal=(0.0, 0.0, -1.0))
         .closed()
         .covered()
-        .extruded(vector=(0.0, 0.0, HEIGHT), material=pec)
+        .extruded(vector=(0.0, 0.0, HEIGHT), material="pec")
     )
 
     fig, ax = plots.plot_cross_section(
@@ -218,7 +217,7 @@ segment in the pen stroke, and no new tool body:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 135-147
+.. GENERATED FROM PYTHON SOURCE LINES 134-146
 
 A profile can also be revolved or swept
 ---------------------------------------
@@ -233,7 +232,7 @@ outline is not a rectangle — a rounded-nose centre conductor, a
 stepped transformer, a bead.  Here the outline is drawn in the x-z
 plane and turned about z:
 
-.. GENERATED FROM PYTHON SOURCE LINES 147-160
+.. GENERATED FROM PYTHON SOURCE LINES 146-159
 
 .. code-block:: Python
 
@@ -245,7 +244,7 @@ plane and turned about z:
         .arc_to((0.0, 0.0, 11.0e-3), via=(2.1e-3, 0.0, 10.1e-3))
         .closed()
         .covered()
-        .revolved(axis="z", material=pec)
+        .revolved(axis="z", material="pec")
     )
 
     fig, ax = plots.plot_cross_section([nose], "y", 0.0, title="revolved profile: a rounded pin")
@@ -262,7 +261,7 @@ plane and turned about z:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 161-169
+.. GENERATED FROM PYTHON SOURCE LINES 160-168
 
 Hollowing a solid
 -----------------
@@ -273,7 +272,7 @@ anything but a box is not the outside scaled down.
 inward, so the outer dimensions stay exactly as designed, and naming a
 face leaves it out of the shell to become an opening.
 
-.. GENERATED FROM PYTHON SOURCE LINES 169-180
+.. GENERATED FROM PYTHON SOURCE LINES 168-179
 
 .. code-block:: Python
 
@@ -281,7 +280,7 @@ face leaves it out of the shell to become an opening.
     WALL = 1.5e-3
     BOX = (40.0e-3, 25.0e-3, 12.0e-3)
 
-    housing = geo.Brick(origin=(0.0, 0.0, 0.0), size=BOX, material=pec).shelled(
+    housing = geo.Brick(origin=(0.0, 0.0, 0.0), size=BOX, material="pec").shelled(
         thickness=WALL,
         opening_face_near=[(0.0, BOX[1] / 2, BOX[2] / 2), (BOX[0], BOX[1] / 2, BOX[2] / 2)],
     )
@@ -300,7 +299,7 @@ face leaves it out of the shell to become an opening.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 181-192
+.. GENERATED FROM PYTHON SOURCE LINES 180-191
 
 Tracks that follow a route
 --------------------------
@@ -314,7 +313,7 @@ port has to meet the port plane squarely, and the default rounded end
 would leave a sliver of air there.  Outside corners come out rounded,
 which is what a fabricated track does too.
 
-.. GENERATED FROM PYTHON SOURCE LINES 192-214
+.. GENERATED FROM PYTHON SOURCE LINES 191-213
 
 .. code-block:: Python
 
@@ -352,7 +351,7 @@ which is what a fabricated track does too.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 215-232
+.. GENERATED FROM PYTHON SOURCE LINES 214-231
 
 Tapers between two cross-sections
 ---------------------------------
@@ -372,7 +371,7 @@ third mode: ``blend="tangent"`` leaves each face along its own normal,
 so a bend between two parts that face different directions comes out
 smooth rather than creased.
 
-.. GENERATED FROM PYTHON SOURCE LINES 232-247
+.. GENERATED FROM PYTHON SOURCE LINES 231-246
 
 .. code-block:: Python
 
@@ -387,7 +386,7 @@ smooth rather than creased.
         )
 
 
-    taper = geo.Loft(square(4.0e-3, 0.0), square(10.0e-3, 18.0e-3), blend="ruled", material=pec)
+    taper = geo.Loft(square(4.0e-3, 0.0), square(10.0e-3, 18.0e-3), blend="ruled", material="pec")
 
     fig, ax = plots.plot_cross_section([taper], "y", 0.0, title="a ruled taper between two squares")
 
@@ -403,7 +402,7 @@ smooth rather than creased.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 248-273
+.. GENERATED FROM PYTHON SOURCE LINES 247-272
 
 What to take away
 -----------------
@@ -434,7 +433,7 @@ verbs that turn it into a solid ask for the material explicitly.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.482 seconds)
+   **Total running time of the script:** (0 minutes 0.464 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_14_profile_geometry.py:

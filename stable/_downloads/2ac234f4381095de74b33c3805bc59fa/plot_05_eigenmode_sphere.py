@@ -66,11 +66,8 @@ for name, kr, g in levels:
 # treatment, which is what makes sub-percent accuracy possible at
 # this modest resolution.
 
-pec = mio.Material.pec()
-air = mio.Material.air()
-
-model = mio.GeometryModel(background=pec)
-model.add(geo.Sphere(center=(0, 0, 0), radius=R, material=air))
+model = mio.GeometryModel(background="pec")
+model.add(geo.Sphere(center=(0, 0, 0), radius=R, material="air"))
 
 mesh = mio.Mesh.from_geometry(model, mio.MeshControl(max_cell_size=1.5e-3), f_max=11e9)
 print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")

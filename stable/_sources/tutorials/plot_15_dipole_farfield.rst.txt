@@ -67,7 +67,7 @@ gap in series with half the impedance — and reports every quantity
 at full-model scale, exactly as the port impedances of the
 microstrip tutorial did.  Declared watts stay full-model watts.
 
-.. GENERATED FROM PYTHON SOURCE LINES 38-94
+.. GENERATED FROM PYTHON SOURCE LINES 38-92
 
 .. code-block:: Python
 
@@ -83,8 +83,6 @@ microstrip tutorial did.  Declared watts stay full-model watts.
     a_wire = 0.5e-3  # wire radius
     pad = 50.0e-3  # clearance antenna -> absorbing boundary
 
-    air = mio.Material.air()
-
     model = mio.GeometryModel(
         boundary_conditions={
             "zmin": "SymmetryPEC",  # electric mirror through the feed
@@ -99,7 +97,7 @@ microstrip tutorial did.  Declared watts stay full-model watts.
         geo.Brick(
             origin=(-pad, -pad, -(h_arm + pad)),
             size=(2 * pad, 2 * pad, 2 * (h_arm + pad)),
-            material=air,
+            material="air",
         )
     )
     model.add(
@@ -139,7 +137,7 @@ microstrip tutorial did.  Declared watts stay full-model watts.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 95-103
+.. GENERATED FROM PYTHON SOURCE LINES 93-101
 
 Mesh, monitors, run
 -------------------
@@ -150,7 +148,7 @@ one frequency is enough for a pattern — and no geometry: it places
 its recording box inside the free-space region and books the
 symmetry plane automatically.
 
-.. GENERATED FROM PYTHON SOURCE LINES 103-126
+.. GENERATED FROM PYTHON SOURCE LINES 101-123
 
 .. code-block:: Python
 
@@ -170,7 +168,6 @@ symmetry plane automatically.
     analysis = mio.AnalysisScatteringTD(
         mesh=mesh,
         f_min=f_min,
-        f_max=f_max,
         monitors=(farfield,),
         verbose=False,
     )
@@ -190,7 +187,7 @@ symmetry plane automatically.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 127-135
+.. GENERATED FROM PYTHON SOURCE LINES 124-132
 
 Full-model electrical results from half a model
 -----------------------------------------------
@@ -201,7 +198,7 @@ half a wavelength, feed resistance near 73 Ω.  A missing factor of
 two here would be the monopole reading; the symmetry accounting is
 what keeps it away.
 
-.. GENERATED FROM PYTHON SOURCE LINES 135-158
+.. GENERATED FROM PYTHON SOURCE LINES 132-155
 
 .. code-block:: Python
 
@@ -247,7 +244,7 @@ what keeps it away.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 159-166
+.. GENERATED FROM PYTHON SOURCE LINES 156-163
 
 The full-sphere pattern
 -----------------------
@@ -257,7 +254,7 @@ not physics: the mirror half of the world exists, so the pattern
 covers the whole sphere.  The elevation cut shows the dipole donut —
 and the peak lands at the half-wave dipole's 2.15 dBi.
 
-.. GENERATED FROM PYTHON SOURCE LINES 166-178
+.. GENERATED FROM PYTHON SOURCE LINES 163-175
 
 .. code-block:: Python
 
@@ -293,14 +290,14 @@ and the peak lands at the half-wave dipole's 2.15 dBi.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 179-183
+.. GENERATED FROM PYTHON SOURCE LINES 176-180
 
 The elevation cut carries the shape; the azimuth cut is the circle
 every wire antenna owes its users.  The 3D surface puts both into
 one picture — the radius is the gain in dB above the floor, so the
 axial nulls show as pinch points.
 
-.. GENERATED FROM PYTHON SOURCE LINES 183-186
+.. GENERATED FROM PYTHON SOURCE LINES 180-183
 
 .. code-block:: Python
 
@@ -319,7 +316,7 @@ axial nulls show as pinch points.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 187-197
+.. GENERATED FROM PYTHON SOURCE LINES 184-194
 
 Where to go next
 ----------------
@@ -335,7 +332,7 @@ full-model answers.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 28.424 seconds)
+   **Total running time of the script:** (0 minutes 27.720 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_15_dipole_farfield.py:

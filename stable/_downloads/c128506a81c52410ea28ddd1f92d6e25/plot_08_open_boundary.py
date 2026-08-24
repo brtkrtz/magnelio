@@ -57,8 +57,6 @@ a_wire = 0.5e-3  # wire radius
 gap = 2.0e-3  # feed gap between ground and wire base
 pad = 50.0e-3  # clearance antenna -> absorbing boundary
 
-air = mio.Material.air()
-
 model = mio.GeometryModel(
     boundary_conditions={
         "zmin": "PEC",  # infinite ground plane
@@ -73,7 +71,7 @@ model.add(
     geo.Brick(
         origin=(-pad, -pad, 0.0),
         size=(2 * pad, 2 * pad, gap + h + pad),
-        material=air,
+        material="air",
     )
 )
 model.add(
@@ -142,7 +140,6 @@ farfield = monitors.MonitorFarField(freqs=[f0], name="farfield")
 analysis = mio.AnalysisScatteringTD(
     mesh=mesh,
     f_min=f_min,
-    f_max=f_max,
     monitors=(nearfield, farfield),
     verbose=False,
 )

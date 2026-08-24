@@ -160,3 +160,43 @@ leak; and CW measurements solve the exact 2×2 phasor system per port
 Excitation amplitudes are pinned to physical units at the source
 (C = 1 convention, DD-085), so recorded V/I and monitor fields are in
 SI units — an in-house calibration convention.
+
+### What a Touchstone export covers (DD-184)
+
+`to_touchstone()` and `to_skrf()` export the square sub-matrix over
+the **excited** channels: one Touchstone port per channel, so a
+multi-mode port occupies one port per mode.  Channels that were
+observed but not excited are dropped from both the rows and the
+columns; nothing is padded.
+
+Dropping them is sound because an unexcited channel is not an open
+circuit.  Every port carries its own reflection-free boundary
+throughout the run, so the omitted channels are *matched* — which is
+exactly the termination condition the definition of S-parameters asks
+for.  The export is the network seen with those channels terminated,
+the same quantity a vector network analyser measures with its unused
+ports on 50 Ω loads.  Exciting one port of a two-port and writing the
+reflection as a `.s1p` is therefore a valid export, not a truncated
+one.
+
+What the reduction does *not* carry is mode conversion at a port that
+is itself exported.  If `port1` is solved with three modes, only mode
+0 is excited, and modes 1 and 2 propagate inside the exported band,
+then power scattered from mode 0 into those modes leaves the matrix:
+the file looks like a complete two-port while the component is not
+one.  Such an export warns, naming the port and the cut-off above
+which the omitted modes propagate.  Evanescent omitted modes draw no
+warning — solving for more modes than one excites, so that the
+evanescent content is represented at the port plane, is ordinary
+practice.
+
+Pass `channels=` to select the sub-network explicitly, e.g.
+`channels=["port1", "port3"]` to cut a two-port out of a fully
+excited three-port.
+
+The `.sNp` extension must agree with the number of exported channels.
+Touchstone 1.x records the port count nowhere else — the file body
+has no field for it — so a `.s6p` holding two-port rows is not merely
+misnamed but unreadable; a mismatch raises rather than writes.  A
+path given without an extension gets the matching one, so
+`to_touchstone("wr90")` writes `wr90.s2p`.

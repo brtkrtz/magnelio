@@ -77,7 +77,7 @@ decayed first.  A quarter wavelength is the minimum, half a
 wavelength is comfortable — here the 50 mm of clearance is about
 :math:`\lambda/2.4` at resonance.
 
-.. GENERATED FROM PYTHON SOURCE LINES 48-87
+.. GENERATED FROM PYTHON SOURCE LINES 48-85
 
 .. code-block:: Python
 
@@ -93,8 +93,6 @@ wavelength is comfortable — here the 50 mm of clearance is about
     gap = 2.0e-3  # feed gap between ground and wire base
     pad = 50.0e-3  # clearance antenna -> absorbing boundary
 
-    air = mio.Material.air()
-
     model = mio.GeometryModel(
         boundary_conditions={
             "zmin": "PEC",  # infinite ground plane
@@ -109,7 +107,7 @@ wavelength is comfortable — here the 50 mm of clearance is about
         geo.Brick(
             origin=(-pad, -pad, 0.0),
             size=(2 * pad, 2 * pad, gap + h + pad),
-            material=air,
+            material="air",
         )
     )
     model.add(
@@ -133,7 +131,7 @@ wavelength is comfortable — here the 50 mm of clearance is about
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 88-98
+.. GENERATED FROM PYTHON SOURCE LINES 86-96
 
 The feed: a discrete port
 -------------------------
@@ -146,7 +144,7 @@ equivalent of the SMA connector soldered to the ground plane.  A
 later tutorial treats discrete ports and lumped elements
 systematically; here it is simply the right feed for the job.
 
-.. GENERATED FROM PYTHON SOURCE LINES 98-101
+.. GENERATED FROM PYTHON SOURCE LINES 96-99
 
 .. code-block:: Python
 
@@ -166,7 +164,7 @@ systematically; here it is simply the right feed for the job.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 102-108
+.. GENERATED FROM PYTHON SOURCE LINES 100-106
 
 With the feed declared, a vertical cut shows the whole model.  Note
 what is *not* a solid in this picture: the wire is a curve with a
@@ -175,7 +173,7 @@ cross-section to slice.  They are drawn from their definitions
 instead — which is the only way an antenna model shows up as
 anything but an empty box of air.
 
-.. GENERATED FROM PYTHON SOURCE LINES 108-111
+.. GENERATED FROM PYTHON SOURCE LINES 106-109
 
 .. code-block:: Python
 
@@ -194,7 +192,7 @@ anything but an empty box of air.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 112-123
+.. GENERATED FROM PYTHON SOURCE LINES 110-121
 
 Mesh, monitor, and the run
 --------------------------
@@ -208,7 +206,7 @@ far-field computation needs.  The latter takes no geometry at all:
 it places a closed recording box inside the free-space region by
 itself, and the ground plane is handled for it (more below).
 
-.. GENERATED FROM PYTHON SOURCE LINES 123-152
+.. GENERATED FROM PYTHON SOURCE LINES 121-149
 
 .. code-block:: Python
 
@@ -234,7 +232,6 @@ itself, and the ground plane is handled for it (more below).
     analysis = mio.AnalysisScatteringTD(
         mesh=mesh,
         f_min=f_min,
-        f_max=f_max,
         monitors=(nearfield, farfield),
         verbose=False,
     )
@@ -254,7 +251,7 @@ itself, and the ground plane is handled for it (more below).
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 153-160
+.. GENERATED FROM PYTHON SOURCE LINES 150-157
 
 Reading S11 of an antenna
 -------------------------
@@ -264,7 +261,7 @@ A one-port device has a single S-parameter, and for an antenna it
 goes somewhere other than back — and with no walls and no losses,
 "somewhere" can only be radiation.
 
-.. GENERATED FROM PYTHON SOURCE LINES 160-170
+.. GENERATED FROM PYTHON SOURCE LINES 157-167
 
 .. code-block:: Python
 
@@ -297,7 +294,7 @@ goes somewhere other than back — and with no walls and no losses,
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 171-176
+.. GENERATED FROM PYTHON SOURCE LINES 168-173
 
 Note what the dip is *not*: it is not −40 dB.  A well-built antenna
 is not automatically a well-matched one, and this dip bottoms out
@@ -305,7 +302,7 @@ near −18 dB because the monopole's feed resistance is ~37 Ω, not the
 50 Ω of the source.  The input impedance, computed from S11 the way
 a network analyzer would, makes that quantitative:
 
-.. GENERATED FROM PYTHON SOURCE LINES 176-198
+.. GENERATED FROM PYTHON SOURCE LINES 173-195
 
 .. code-block:: Python
 
@@ -350,7 +347,7 @@ a network analyzer would, makes that quantitative:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 199-228
+.. GENERATED FROM PYTHON SOURCE LINES 196-225
 
 The curve reads like the antenna-theory chapter: capacitive
 (:math:`X < 0`) below resonance, a zero crossing where the wire is
@@ -382,7 +379,7 @@ PEC wall instead, this picture would be criss-crossed by
 standing-wave fringes — and the S11 curve above would ripple with the
 resonances of the box instead of showing one clean antenna dip.
 
-.. GENERATED FROM PYTHON SOURCE LINES 228-253
+.. GENERATED FROM PYTHON SOURCE LINES 225-250
 
 .. code-block:: Python
 
@@ -423,7 +420,7 @@ resonances of the box instead of showing one clean antenna dip.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 254-269
+.. GENERATED FROM PYTHON SOURCE LINES 251-266
 
 The far field: how much power goes where
 ----------------------------------------
@@ -441,7 +438,7 @@ pattern; the elevation cut below is the monopole's textbook shape —
 maximum along the ground plane, a null straight up, nothing below
 the horizon.
 
-.. GENERATED FROM PYTHON SOURCE LINES 269-274
+.. GENERATED FROM PYTHON SOURCE LINES 266-271
 
 .. code-block:: Python
 
@@ -462,7 +459,7 @@ the horizon.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 275-284
+.. GENERATED FROM PYTHON SOURCE LINES 272-281
 
 The numbers behind the plot come as the standard antenna quantities,
 all referenced to the half-space problem the ground plane defines.
@@ -474,7 +471,7 @@ within the discretisation, and the peak sits at the monopole's
 textbook ~5.2 dBi (the half-wave dipole's 2.15 dBi plus 3 dB from
 radiating into half the space).
 
-.. GENERATED FROM PYTHON SOURCE LINES 284-292
+.. GENERATED FROM PYTHON SOURCE LINES 281-289
 
 .. code-block:: Python
 
@@ -502,7 +499,7 @@ radiating into half the space).
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 293-312
+.. GENERATED FROM PYTHON SOURCE LINES 290-309
 
 The last line doubles as a sanity check on the whole simulation: for
 a lossless antenna, the power radiated through the far-field surface
@@ -527,7 +524,7 @@ components built from them.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 16.019 seconds)
+   **Total running time of the script:** (0 minutes 15.963 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_08_open_boundary.py:

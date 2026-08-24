@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=c87aa342"></script>
+    <script src="../_static/documentation_options.js?v=5bfaad31"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -497,8 +497,6 @@ wavelength is comfortable — here the 50 mm of clearance is about
 <span class="n">gap</span> <span class="o">=</span> <span class="mf">2.0e-3</span>  <span class="c1"># feed gap between ground and wire base</span>
 <span class="n">pad</span> <span class="o">=</span> <span class="mf">50.0e-3</span>  <span class="c1"># clearance antenna -&gt; absorbing boundary</span>
 
-<span class="n">air</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Material</span><span class="o">.</span><span class="n">air</span><span class="p">()</span>
-
 <span class="n">model</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span>
     <span class="n">boundary_conditions</span><span class="o">=</span><span class="p">{</span>
         <span class="s2">&quot;zmin&quot;</span><span class="p">:</span> <span class="s2">&quot;PEC&quot;</span><span class="p">,</span>  <span class="c1"># infinite ground plane</span>
@@ -513,7 +511,7 @@ wavelength is comfortable — here the 50 mm of clearance is about
     <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span>
         <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="n">pad</span><span class="p">,</span> <span class="o">-</span><span class="n">pad</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
         <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">pad</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">pad</span><span class="p">,</span> <span class="n">gap</span> <span class="o">+</span> <span class="n">h</span> <span class="o">+</span> <span class="n">pad</span><span class="p">),</span>
-        <span class="n">material</span><span class="o">=</span><span class="n">air</span><span class="p">,</span>
+        <span class="n">material</span><span class="o">=</span><span class="s2">&quot;air&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 <span class="p">)</span>
 <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
@@ -585,7 +583,6 @@ itself, and the ground plane is handled for it (more below).</p>
 <span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span>
     <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span>
     <span class="n">f_min</span><span class="o">=</span><span class="n">f_min</span><span class="p">,</span>
-    <span class="n">f_max</span><span class="o">=</span><span class="n">f_max</span><span class="p">,</span>
     <span class="n">monitors</span><span class="o">=</span><span class="p">(</span><span class="n">nearfield</span><span class="p">,</span> <span class="n">farfield</span><span class="p">),</span>
     <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span>
@@ -760,7 +757,7 @@ returns to antennas with a dipole computed as a half model on a
 symmetry plane, 3D pattern included.  The next tutorials leave the
 wire world and move to printed circuits: microstrip lines and the
 components built from them.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 16.019 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 15.963 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-08-open-boundary-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/b718b63296483895102268247dded24c/plot_08_open_boundary.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_08_open_boundary.ipynb</span></code></a></p>

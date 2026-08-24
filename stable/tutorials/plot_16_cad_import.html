@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=c87aa342"></script>
+    <script src="../_static/documentation_options.js?v=5bfaad31"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -507,14 +507,13 @@ exchange format carries those — so materials are assigned on import,
 keyed by the solid names just printed.</p>
 <p>Names are what a re-export preserves, so this mapping keeps working
 after the drawing changes; positions and face counts do not.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">pec</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">()</span>
-<span class="n">ptfe</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;PTFE&quot;</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">2.1</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mf">0.45</span><span class="p">,</span> <span class="mf">0.68</span><span class="p">,</span> <span class="mf">0.84</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">)</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">ptfe</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;PTFE&quot;</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">2.1</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mf">0.45</span><span class="p">,</span> <span class="mf">0.68</span><span class="p">,</span> <span class="mf">0.84</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">)</span>
 
 <span class="n">connector</span> <span class="o">=</span> <span class="n">import_step</span><span class="p">(</span>
     <span class="n">STEP_FILE</span><span class="p">,</span>
     <span class="p">{</span>
-        <span class="s2">&quot;centre_pin&quot;</span><span class="p">:</span> <span class="n">pec</span><span class="p">,</span>
-        <span class="s2">&quot;outer_shell&quot;</span><span class="p">:</span> <span class="n">pec</span><span class="p">,</span>
+        <span class="s2">&quot;centre_pin&quot;</span><span class="p">:</span> <span class="s2">&quot;pec&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;outer_shell&quot;</span><span class="p">:</span> <span class="s2">&quot;pec&quot;</span><span class="p">,</span>
         <span class="s2">&quot;insulator&quot;</span><span class="p">:</span> <span class="n">ptfe</span><span class="p">,</span>
     <span class="p">},</span>
 <span class="p">)</span>
@@ -537,7 +536,7 @@ grouping, and a literal name overrules them:</p>
 Boolean operations and the chainable verbs, and go into a model.
 Everything outside them is the model’s background — here metal, which
 closes the coaxial line off at the outside.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span><span class="n">background</span><span class="o">=</span><span class="n">pec</span><span class="p">)</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span><span class="n">background</span><span class="o">=</span><span class="s2">&quot;pec&quot;</span><span class="p">)</span>
 <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">connector</span><span class="p">)</span>
 
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">plots</span><span class="o">.</span><span class="n">plot_cross_section</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="mf">6e-3</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;feed-through, cut across the axis&quot;</span><span class="p">)</span>
@@ -579,7 +578,7 @@ take an analytical coax port, and a single run gives the S-matrix.</p>
 <span class="n">mesh</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">mio</span><span class="o">.</span><span class="n">MeshControl</span><span class="p">(</span><span class="n">max_cell_size</span><span class="o">=</span><span class="mf">0.25e-3</span><span class="p">),</span> <span class="n">f_max</span><span class="o">=</span><span class="n">f_max</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;grid: </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Nx</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Ny</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Nz</span><span class="si">}</span><span class="s2"> cells&quot;</span><span class="p">)</span>
 
-<span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="n">f_max</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">result</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -618,7 +617,7 @@ time the wave needs to cross — so the check is the phase of
 <code class="docutils literal notranslate"><span class="pre">import_step</span></code> is safe.  <code class="docutils literal notranslate"><span class="pre">.brep</span></code> files — the geometry kernel’s own
 dump — do not, which is why
 <a class="reference internal" href="../api/io.html#magnelio.io.import_brep" title="magnelio.io.import_brep"><code class="xref py py-func docutils literal notranslate"><span class="pre">import_brep()</span></code></a> insists on being told:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">part</span> <span class="o">=</span> <span class="n">import_brep</span><span class="p">(</span><span class="s2">&quot;horn.brep&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;mm&quot;</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">pec</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">part</span> <span class="o">=</span> <span class="n">import_brep</span><span class="p">(</span><span class="s2">&quot;horn.brep&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;mm&quot;</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">&quot;pec&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><strong>Files travel between kernels, and not always intact.</strong>  Every solid
@@ -628,7 +627,7 @@ neighbouring faces that exporters like to split a plane into.</p>
 <p><strong>Only solids are imported.</strong>  A material fills a volume, so surface
 bodies are reported and skipped — stitch them into solids in the CAD
 system first.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 5.642 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 5.525 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-16-cad-import-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/25be568afb36e8bf28b9d90558f78b7c/plot_16_cad_import.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_16_cad_import.ipynb</span></code></a></p>

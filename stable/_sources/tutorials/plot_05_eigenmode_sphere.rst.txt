@@ -105,16 +105,13 @@ the partially filled cells are handled by the conformal boundary
 treatment, which is what makes sub-percent accuracy possible at
 this modest resolution.
 
-.. GENERATED FROM PYTHON SOURCE LINES 68-78
+.. GENERATED FROM PYTHON SOURCE LINES 68-75
 
 .. code-block:: Python
 
 
-    pec = mio.Material.pec()
-    air = mio.Material.air()
-
-    model = mio.GeometryModel(background=pec)
-    model.add(geo.Sphere(center=(0, 0, 0), radius=R, material=air))
+    model = mio.GeometryModel(background="pec")
+    model.add(geo.Sphere(center=(0, 0, 0), radius=R, material="air"))
 
     mesh = mio.Mesh.from_geometry(model, mio.MeshControl(max_cell_size=1.5e-3), f_max=11e9)
     print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
@@ -132,7 +129,7 @@ this modest resolution.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 79-85
+.. GENERATED FROM PYTHON SOURCE LINES 76-82
 
 Solving for the eigenmodes
 --------------------------
@@ -141,7 +138,7 @@ Solving for the eigenmodes
 complete degenerate clusters.  The result carries the resonant
 frequencies and the full 3D field pattern of every mode.
 
-.. GENERATED FROM PYTHON SOURCE LINES 85-91
+.. GENERATED FROM PYTHON SOURCE LINES 82-88
 
 .. code-block:: Python
 
@@ -171,12 +168,12 @@ frequencies and the full 3D field pattern of every mode.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 92-94
+.. GENERATED FROM PYTHON SOURCE LINES 89-91
 
 The spectrum shows exactly the predicted structure — a triplet and a
 quintet:
 
-.. GENERATED FROM PYTHON SOURCE LINES 94-104
+.. GENERATED FROM PYTHON SOURCE LINES 91-101
 
 .. code-block:: Python
 
@@ -204,7 +201,7 @@ quintet:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 105-123
+.. GENERATED FROM PYTHON SOURCE LINES 102-120
 
 The triplet lands within 0.03 % of the Bessel value, the quintet
 within 0.25 %.  On the ideal sphere each cluster would be exactly
@@ -225,7 +222,7 @@ in arbitrary units — an eigenmode has no absolute scale, only a
 shape.  Passing the geometry model overlays its cross-section: the
 dashed circle is the cavity wall, sliced from the actual model:
 
-.. GENERATED FROM PYTHON SOURCE LINES 123-131
+.. GENERATED FROM PYTHON SOURCE LINES 120-128
 
 .. code-block:: Python
 
@@ -249,7 +246,7 @@ dashed circle is the cavity wall, sliced from the actual model:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 132-148
+.. GENERATED FROM PYTHON SOURCE LINES 129-145
 
 Mode 0 shows the dipole-like pattern of the lowest TM resonance;
 mode 3, the first member of the quintet, already carries the richer
@@ -268,7 +265,7 @@ On this slice its **E** field lies entirely *in* the plane (left).
 the blank node lines of the pattern — a sign structure the ⊙/⊗
 markers resolve and a magnitude plot would hide:
 
-.. GENERATED FROM PYTHON SOURCE LINES 148-162
+.. GENERATED FROM PYTHON SOURCE LINES 145-159
 
 .. code-block:: Python
 
@@ -298,7 +295,7 @@ markers resolve and a magnitude plot would hide:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 163-176
+.. GENERATED FROM PYTHON SOURCE LINES 160-173
 
 (Which sector carries ⊙ and which ⊗ is not meaningful — the overall
 sign of an eigenmode is arbitrary, and inside a degenerate cluster
@@ -317,7 +314,7 @@ the solvers — starting with field monitors, which record fields
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 34.384 seconds)
+   **Total running time of the script:** (0 minutes 33.686 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_05_eigenmode_sphere.py:

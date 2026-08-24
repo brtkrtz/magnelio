@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=c87aa342"></script>
+    <script src="../_static/documentation_options.js?v=5bfaad31"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -600,9 +600,6 @@ and the axis.</p></li>
     <span class="k">return</span> <span class="p">(</span><span class="n">PERIOD</span> <span class="o">-</span> <span class="n">zr</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">zr</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 
 
-<span class="n">air</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Material</span><span class="o">.</span><span class="n">air</span><span class="p">()</span>
-<span class="n">pec</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">()</span>
-
 <span class="n">outline</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">geo</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">xz</span><span class="p">((</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">R_IRIS</span><span class="p">)))</span>
     <span class="o">.</span><span class="n">ellipse_to</span><span class="p">(</span>
@@ -624,9 +621,9 @@ and the axis.</p></li>
     <span class="o">.</span><span class="n">closed</span><span class="p">()</span>
     <span class="o">.</span><span class="n">covered</span><span class="p">()</span>
 <span class="p">)</span>
-<span class="n">ring</span> <span class="o">=</span> <span class="n">outline</span><span class="o">.</span><span class="n">revolved</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">air</span><span class="p">)</span>
-<span class="n">tube</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">radius</span><span class="o">=</span><span class="n">R_IRIS</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">PERIOD</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">air</span><span class="p">)</span>
-<span class="n">cell</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Union</span><span class="p">(</span><span class="n">ring</span><span class="p">,</span> <span class="n">tube</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">air</span><span class="p">)</span>
+<span class="n">ring</span> <span class="o">=</span> <span class="n">outline</span><span class="o">.</span><span class="n">revolved</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">&quot;air&quot;</span><span class="p">)</span>
+<span class="n">tube</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">radius</span><span class="o">=</span><span class="n">R_IRIS</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">PERIOD</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">&quot;air&quot;</span><span class="p">)</span>
+<span class="n">cell</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Union</span><span class="p">(</span><span class="n">ring</span><span class="p">,</span> <span class="n">tube</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">&quot;air&quot;</span><span class="p">)</span>
 
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">plots</span><span class="o">.</span><span class="n">plot_cross_section</span><span class="p">([</span><span class="n">cell</span><span class="p">],</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;TESLA mid-cell, one period&quot;</span><span class="p">)</span>
 </pre></div>
@@ -642,7 +639,7 @@ interest have their electric field in the r-z plane, which is
 <em>tangential</em> to the planes x = 0 and y = 0, so the correct wall there
 is the magnetic one (tutorial 09).</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span>
-    <span class="n">background</span><span class="o">=</span><span class="n">pec</span><span class="p">,</span>
+    <span class="n">background</span><span class="o">=</span><span class="s2">&quot;pec&quot;</span><span class="p">,</span>
     <span class="n">boundary_conditions</span><span class="o">=</span><span class="p">{</span>
         <span class="s2">&quot;xmin&quot;</span><span class="p">:</span> <span class="s2">&quot;SymmetryPMC&quot;</span><span class="p">,</span>
         <span class="s2">&quot;ymin&quot;</span><span class="p">:</span> <span class="s2">&quot;SymmetryPMC&quot;</span><span class="p">,</span>
@@ -671,7 +668,7 @@ flips sign from cell to cell, <span class="math notranslate nohighlight">\(E_z\)
 plane and the wall there is magnetic.  Two ordinary cavity solves,
 nothing periodic about them:</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">lowest_mode</span><span class="p">(</span><span class="n">bcs</span><span class="p">):</span>
-    <span class="n">half</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span><span class="n">background</span><span class="o">=</span><span class="n">pec</span><span class="p">,</span> <span class="n">boundary_conditions</span><span class="o">=</span><span class="n">bcs</span><span class="p">)</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span><span class="n">background</span><span class="o">=</span><span class="s2">&quot;pec&quot;</span><span class="p">,</span> <span class="n">boundary_conditions</span><span class="o">=</span><span class="n">bcs</span><span class="p">)</span>
     <span class="n">half</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
     <span class="n">m</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span><span class="n">half</span><span class="p">,</span> <span class="n">mio</span><span class="o">.</span><span class="n">MeshControl</span><span class="p">(</span><span class="n">max_cell_size</span><span class="o">=</span><span class="mf">4e-3</span><span class="p">),</span> <span class="n">f_max</span><span class="o">=</span><span class="mf">1.5e9</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisEigenmode</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span><span class="o">.</span><span class="n">frequencies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -823,7 +820,7 @@ parameter table leaves implicit.  The same pair of declarations
 serves any periodic structure whose unit cell fits in a box —
 disk-loaded waveguides, photonic-crystal slabs, frequency-selective
 surfaces at normal incidence.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (3 minutes 53.425 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (3 minutes 46.974 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-18-periodic-tesla-cell-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/784a329cd82bda387fe74c6dd69b284a/plot_18_periodic_tesla_cell.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_18_periodic_tesla_cell.ipynb</span></code></a></p>

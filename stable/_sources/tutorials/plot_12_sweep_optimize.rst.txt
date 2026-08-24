@@ -70,7 +70,7 @@ to cancel the mismatch.  We put it on the symmetry plane
 :math:`x = 0` — a choice we will come back to, because it decides
 what the post is allowed to disturb.
 
-.. GENERATED FROM PYTHON SOURCE LINES 41-58
+.. GENERATED FROM PYTHON SOURCE LINES 41-55
 
 .. code-block:: Python
 
@@ -88,8 +88,6 @@ what the post is allowed to disturb.
     R_POST = 1.5e-3  # matching-post radius
     F_MIN, F_MAX = 8.2e9, 12.4e9  # WR-90 design band
 
-    pec = mio.Material.pec()
-    air = mio.Material.air()
 
 
 
@@ -97,8 +95,7 @@ what the post is allowed to disturb.
 
 
 
-
-.. GENERATED FROM PYTHON SOURCE LINES 59-73
+.. GENERATED FROM PYTHON SOURCE LINES 56-70
 
 Geometry as a function of a parameter
 -------------------------------------
@@ -115,7 +112,7 @@ already PEC, so *subtracting* a cylinder from the air leaves a hole
 that the background fills.  One boolean operation, and the tee has
 a post.
 
-.. GENERATED FROM PYTHON SOURCE LINES 73-105
+.. GENERATED FROM PYTHON SOURCE LINES 70-102
 
 .. code-block:: Python
 
@@ -124,13 +121,13 @@ a post.
     def build_tee(y_post=None):
         """Magic tee, optionally with a matching post at ``(0, y_post)``."""
         collinear = geo.Brick.from_ranges(
-            x1=-(A / 2 + ARM), dx=A + 2 * ARM, y1=-A / 2, dy=A, z1=0.0, dz=B, material=air
+            x1=-(A / 2 + ARM), dx=A + 2 * ARM, y1=-A / 2, dy=A, z1=0.0, dz=B, material="air"
         )
         h_arm = geo.Brick.from_ranges(
-            x1=-A / 2, dx=A, y1=0.0, dy=A / 2 + ARM, z1=0.0, dz=B, material=air
+            x1=-A / 2, dx=A, y1=0.0, dy=A / 2 + ARM, z1=0.0, dz=B, material="air"
         )
         e_arm = geo.Brick.from_ranges(
-            x1=-B / 2, dx=B, y1=-A / 2, dy=A, z1=0.0, dz=B + ARM, material=air
+            x1=-B / 2, dx=B, y1=-A / 2, dy=A, z1=0.0, dz=B + ARM, material="air"
         )
         body = geo.Union(collinear, h_arm, e_arm, name="tee")
 
@@ -142,7 +139,7 @@ a post.
                 origin=(0.0, y_post, -1e-3), radius=R_POST, height=B + 1e-3, axis="z"
             )
 
-        model = mio.GeometryModel(background=pec)
+        model = mio.GeometryModel(background="pec")
         model.add(body)
         model.add_port(ports.PortWaveguide(name="port1", plane="xmin", n_modes=1))
         model.add_port(ports.PortWaveguide(name="port2", plane="xmax", n_modes=1))
@@ -158,7 +155,7 @@ a post.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 106-124
+.. GENERATED FROM PYTHON SOURCE LINES 103-121
 
 The mesh deserves a word of its own.  The post is 3 mm across, and
 a grid that cannot resolve it will not react to moving it: on a
@@ -179,7 +176,7 @@ fifteen runs below — but following it here would coarsen the grid
 past the post and destroy the very sensitivity we are after.  A
 mesher warning reports a cost, it does not know your intent.
 
-.. GENERATED FROM PYTHON SOURCE LINES 124-142
+.. GENERATED FROM PYTHON SOURCE LINES 121-139
 
 .. code-block:: Python
 
@@ -192,7 +189,7 @@ mesher warning reports a cost, it does not know your intent.
             mio.MeshControl(min_nodes_per_wavelength=15, min_cell_size=1.0e-3),
             f_max=F_MAX,
         )
-        return mio.AnalysisScatteringTD(mesh=mesh, f_min=F_MIN, f_max=F_MAX, verbose=False)
+        return mio.AnalysisScatteringTD(mesh=mesh, f_min=F_MIN, verbose=False)
 
 
     def run_tee(analysis, both=False):
@@ -208,7 +205,7 @@ mesher warning reports a cost, it does not know your intent.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 143-157
+.. GENERATED FROM PYTHON SOURCE LINES 140-154
 
 A look at the post
 ------------------
@@ -225,7 +222,7 @@ component altogether.  For orientation in that second cut: the
 collinear guide is the low channel along the bottom, the H-arm
 leaves to the right, and the E-arm rises through the broad wall.
 
-.. GENERATED FROM PYTHON SOURCE LINES 157-165
+.. GENERATED FROM PYTHON SOURCE LINES 154-162
 
 .. code-block:: Python
 
@@ -249,7 +246,7 @@ leaves to the right, and the E-arm rises through the broad wall.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 166-178
+.. GENERATED FROM PYTHON SOURCE LINES 163-175
 
 Choosing what to minimise
 -------------------------
@@ -264,7 +261,7 @@ The mean reflected *power* over the band is smooth, robust against
 isolated spikes, and physically meaningful: −20 dB means one
 percent of the incident power comes back on average.
 
-.. GENERATED FROM PYTHON SOURCE LINES 178-190
+.. GENERATED FROM PYTHON SOURCE LINES 175-187
 
 .. code-block:: Python
 
@@ -294,7 +291,7 @@ percent of the incident power comes back on average.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 191-199
+.. GENERATED FROM PYTHON SOURCE LINES 188-196
 
 The sweep
 ---------
@@ -305,7 +302,7 @@ specific left to learn.  Eight positions are enough to see the
 shape of the landscape, which is what a sweep is for; finding the
 exact bottom is the optimiser's job.
 
-.. GENERATED FROM PYTHON SOURCE LINES 199-208
+.. GENERATED FROM PYTHON SOURCE LINES 196-205
 
 .. code-block:: Python
 
@@ -338,7 +335,7 @@ exact bottom is the optimiser's job.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 209-221
+.. GENERATED FROM PYTHON SOURCE LINES 206-218
 
 The landscape has a single clear minimum a few millimetres behind
 the junction — no side minima, no plateau, which is what makes the
@@ -353,7 +350,7 @@ estimate for where to start looking, not as a formula: the relevant
 reference plane is the post's *near edge* rather than its axis, and
 neither the junction nor the post has a sharply defined one.
 
-.. GENERATED FROM PYTHON SOURCE LINES 221-232
+.. GENERATED FROM PYTHON SOURCE LINES 218-229
 
 .. code-block:: Python
 
@@ -380,7 +377,7 @@ neither the junction nor the post has a sharply defined one.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 233-245
+.. GENERATED FROM PYTHON SOURCE LINES 230-242
 
 The optimiser
 -------------
@@ -395,7 +392,7 @@ position to a tenth of a millimetre would be spending simulations
 on digits that the discretisation does not support; 0.3 mm is
 honest and costs seven evaluations.
 
-.. GENERATED FROM PYTHON SOURCE LINES 245-260
+.. GENERATED FROM PYTHON SOURCE LINES 242-257
 
 .. code-block:: Python
 
@@ -435,14 +432,14 @@ honest and costs seven evaluations.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 261-265
+.. GENERATED FROM PYTHON SOURCE LINES 258-262
 
 Plotting the optimiser's path over the swept landscape shows how
 few evaluations a bracketing method needs once the landscape is
 known to be unimodal — and that most of them are spent confirming
 the bottom rather than finding it.
 
-.. GENERATED FROM PYTHON SOURCE LINES 265-279
+.. GENERATED FROM PYTHON SOURCE LINES 262-276
 
 .. code-block:: Python
 
@@ -472,7 +469,7 @@ the bottom rather than finding it.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 280-285
+.. GENERATED FROM PYTHON SOURCE LINES 277-282
 
 What the post bought
 --------------------
@@ -480,7 +477,7 @@ What the post bought
 The final design gets a full run with both drives, so the whole
 scattering matrix can be compared against the bare tee.
 
-.. GENERATED FROM PYTHON SOURCE LINES 285-312
+.. GENERATED FROM PYTHON SOURCE LINES 282-309
 
 .. code-block:: Python
 
@@ -523,7 +520,7 @@ scattering matrix can be compared against the bare tee.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 313-319
+.. GENERATED FROM PYTHON SOURCE LINES 310-316
 
 Both panels improve, and they improve for the same reason.  Power
 that no longer returns to the H-arm has nowhere to go but the
@@ -532,7 +529,7 @@ onto the ideal −3.01 dB line.  A match and a split are not two
 independent specifications of a lossless junction; they are two
 views of the same energy balance.
 
-.. GENERATED FROM PYTHON SOURCE LINES 319-325
+.. GENERATED FROM PYTHON SOURCE LINES 316-322
 
 .. code-block:: Python
 
@@ -556,7 +553,7 @@ views of the same energy balance.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 326-347
+.. GENERATED FROM PYTHON SOURCE LINES 323-344
 
 What the post was *not* allowed to break
 ----------------------------------------
@@ -580,7 +577,7 @@ within one class.  Our post is 3 mm thick, so it reaches out to
 :math:`x = \pm 1.5` mm, where the antisymmetric field is no longer
 zero — it is nearly invisible to the E-arm, not exactly invisible.
 
-.. GENERATED FROM PYTHON SOURCE LINES 347-354
+.. GENERATED FROM PYTHON SOURCE LINES 344-351
 
 .. code-block:: Python
 
@@ -605,7 +602,7 @@ zero — it is nearly invisible to the E-arm, not exactly invisible.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 355-381
+.. GENERATED FROM PYTHON SOURCE LINES 352-378
 
 Where this stops
 ----------------
@@ -637,7 +634,7 @@ above lets you estimate before you commit to it.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (3 minutes 20.963 seconds)
+   **Total running time of the script:** (3 minutes 22.033 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_12_sweep_optimize.py:

@@ -97,7 +97,7 @@ pit end beyond the strip end               3 × 3.5 mm
 The strip height :math:`h` is left open on purpose: it sets the line
 impedance of the strip, and the strip should match its 50 Ω feeds.
 
-.. GENERATED FROM PYTHON SOURCE LINES 68-144
+.. GENERATED FROM PYTHON SOURCE LINES 68-143
 
 .. code-block:: Python
 
@@ -127,9 +127,6 @@ impedance of the strip, and the strip should match its 50 Ω feeds.
     Z_COAX_DESIGN = 60.0 * math.log(R_OUT / R_IN)
     print(f"strip length {L * 1e3:.1f} mm, coax {Z_COAX_DESIGN:.1f} ohm")
 
-    pec = mio.Material.pec()
-    air = mio.Material.air()
-
 
     def build_coupler(h):
         """The electrode pair in its pipe: [vacuum body, electrode body] for strip height h."""
@@ -138,24 +135,26 @@ impedance of the strip, and the strip should match its 50 Ω feeds.
         y_top = r_pit + L_COAX
 
         vacuum = geo.Cylinder(
-            radius=B, origin=(0, 0, -L_PIPE), axis="z", height=L + 2 * L_PIPE, material=air
+            radius=B, origin=(0, 0, -L_PIPE), axis="z", height=L + 2 * L_PIPE, material="air"
         )
         pit = (
             geo.Face(
                 normal="x",
                 points=((0, -G_PIT), (0, L + G_PIT), (r_pit, L + G_PIT), (r_pit, -G_PIT)),
-                material=pec,
+                material="pec",
             )
             .revolved(axis="z", angle_deg=pit_deg)
             .rotated(axis="z", angle_deg=-pit_deg / 2)
             .filleted(edges="all", radius=1e-3)
         )
-        coax = geo.Cylinder(origin=(0, 0, -G_FEED), axis="y", height=y_top, radius=R_OUT, material=air)
+        coax = geo.Cylinder(
+            origin=(0, 0, -G_FEED), axis="y", height=y_top, radius=R_OUT, material="air"
+        )
         pin = geo.Cylinder(
-            origin=(0, r_pit, -G_FEED), axis="y", height=L_COAX, radius=R_IN, material=pec
+            origin=(0, r_pit, -G_FEED), axis="y", height=L_COAX, radius=R_IN, material="pec"
         )
         strip = (
-            geo.Face(normal="x", points=((B, 0), (B, L), (B + T, L), (B + T, 0)), material=pec)
+            geo.Face(normal="x", points=((B, 0), (B, L), (B + T, L), (B + T, 0)), material="pec")
             .revolved(axis="z", angle_deg=PHI_DEG)
             .rotated(axis="z", angle_deg=-PHI_DEG / 2)
         )
@@ -164,7 +163,7 @@ impedance of the strip, and the strip should match its 50 Ω feeds.
             (0, B + T / 2, 0),
             pin,
             (0, r_pit, -G_FEED),
-            material=pec,
+            material="pec",
             blend="tangent",
             tension=(0.8, 0.2),
         )
@@ -190,7 +189,7 @@ impedance of the strip, and the strip should match its 50 Ω feeds.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 145-160
+.. GENERATED FROM PYTHON SOURCE LINES 144-159
 
 A geometry of this complexity — revolved faces, lofts, mirrors and a
 half-turn copy — is best assembled in a notebook, where every
@@ -199,7 +198,7 @@ the next operation builds on it:
 
 .. code-block:: python
 
-    model = mio.GeometryModel(background=pec)
+    model = mio.GeometryModel(background="pec")
     for body in build_coupler(7.5e-3):
         model.add(body)
     model.plot()
@@ -208,7 +207,7 @@ the next operation builds on it:
    :width: 70 %
    :alt: The stripline pair with its four coaxial feeds in a notebook's 3D view
 
-.. GENERATED FROM PYTHON SOURCE LINES 162-188
+.. GENERATED FROM PYTHON SOURCE LINES 161-187
 
 Dimensioning the strip with the port solver
 -------------------------------------------
@@ -237,7 +236,7 @@ strip's own impedance is recovered below with the matching factor.
 A second symmetry plane, the one through both strips, cuts the model
 once more without changing the mode.
 
-.. GENERATED FROM PYTHON SOURCE LINES 188-234
+.. GENERATED FROM PYTHON SOURCE LINES 187-233
 
 .. code-block:: Python
 
@@ -248,7 +247,7 @@ once more without changing the mode.
     def strip_impedance(h, mode):
         """Line impedance of one strip in the sum ("PMC") or difference ("PEC") mode."""
         model = mio.GeometryModel(
-            background=pec, boundary_conditions={"xmin": "SymmetryPMC", "ymin": "Symmetry" + mode}
+            background="pec", boundary_conditions={"xmin": "SymmetryPMC", "ymin": "Symmetry" + mode}
         )
         box = geo.Brick.from_ranges(x1=-FAR, x2=FAR, y1=-FAR, y2=FAR, z1=L / 2, z2=L / 2 + 10e-3)
         for body in build_coupler(h):
@@ -261,7 +260,7 @@ once more without changing the mode.
         mesh = mio.Mesh.from_geometry(
             model, mio.MeshControl(min_cell_size=T / 2, max_cell_size=1e-3), f_max=F_MAX
         )
-        report = mio.AnalysisScatteringTD(mesh=mesh, f_max=F_MAX, verbose=False).solve_ports()
+        report = mio.AnalysisScatteringTD(mesh=mesh, verbose=False).solve_ports()
         z_pair = report["strip"].z_line_num
         return 2.0 * z_pair if mode == "PMC" else 0.5 * z_pair
 
@@ -310,7 +309,7 @@ once more without changing the mode.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 235-240
+.. GENERATED FROM PYTHON SOURCE LINES 234-239
 
 The two modes differ by a few percent: the strips are shielded from
 each other by the pipe wall and only couple through the aperture.
@@ -318,7 +317,7 @@ The difference mode is the one a transverse kicker or a position
 pickup works in, so :math:`h` is set for 50 Ω there.  The strip
 impedances for the design follow, together with the mode itself:
 
-.. GENERATED FROM PYTHON SOURCE LINES 240-245
+.. GENERATED FROM PYTHON SOURCE LINES 239-244
 
 .. code-block:: Python
 
@@ -340,7 +339,7 @@ impedances for the design follow, together with the mode itself:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 246-267
+.. GENERATED FROM PYTHON SOURCE LINES 245-266
 
 The kicker model
 ----------------
@@ -364,7 +363,7 @@ transverse analysis below needs its *gradient* — so the line is asked
 for close to the axis, and the monitor reports the cell centre it
 actually landed on.
 
-.. GENERATED FROM PYTHON SOURCE LINES 267-314
+.. GENERATED FROM PYTHON SOURCE LINES 266-311
 
 .. code-block:: Python
 
@@ -375,7 +374,7 @@ actually landed on.
     def kicker_run(mode):
         """Drive the downstream port of the pair in the sum or difference mode."""
         model = mio.GeometryModel(
-            background=pec, boundary_conditions={"xmin": "SymmetryPMC", "ymin": "Symmetry" + mode}
+            background="pec", boundary_conditions={"xmin": "SymmetryPMC", "ymin": "Symmetry" + mode}
         )
         for body in build_coupler(H):
             model.add(body)
@@ -397,9 +396,7 @@ actually landed on.
         plane = monitors.MonitorFieldFrequency(
             freqs=[F0], fields=["E"], corners=((0, None, None), (0, None, None)), name="E_plane"
         )
-        analysis = mio.AnalysisScatteringTD(
-            mesh=mesh, f_max=F_MAX, monitors=[line, plane], verbose=False
-        )
+        analysis = mio.AnalysisScatteringTD(mesh=mesh, monitors=[line, plane], verbose=False)
         z_port = analysis.solve_ports()["downstream"].z_line_num
         result = analysis.run(excited=["downstream"])
         return model, mesh, result, line, plane, z_port
@@ -435,14 +432,14 @@ actually landed on.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 315-319
+.. GENERATED FROM PYTHON SOURCE LINES 312-316
 
 The S-parameters say what a network analyser would: the feeds are
 matched, and the drive power leaves through the *upstream* port of
 the same strip — a stripline is a directional coupler, and a kicker's
 upstream loads have to absorb the full drive power.
 
-.. GENERATED FROM PYTHON SOURCE LINES 319-325
+.. GENERATED FROM PYTHON SOURCE LINES 316-322
 
 .. code-block:: Python
 
@@ -464,7 +461,7 @@ upstream loads have to absorb the full drive power.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 326-331
+.. GENERATED FROM PYTHON SOURCE LINES 323-328
 
 The field picture shows what the beam will see: the drive enters at
 the right, and the longitudinal field that does the kicking is
@@ -472,7 +469,7 @@ concentrated at the two strip ends, where the strip voltage steps
 from its line value to the grounded pit.  Along the strip itself the
 field is transverse — a TEM line has no :math:`E_z`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 331-339
+.. GENERATED FROM PYTHON SOURCE LINES 328-336
 
 .. code-block:: Python
 
@@ -496,7 +493,7 @@ field is transverse — a TEM line has no :math:`E_z`.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 340-361
+.. GENERATED FROM PYTHON SOURCE LINES 337-358
 
 Beam voltage and kicker constant
 --------------------------------
@@ -520,7 +517,7 @@ voltage at the kicker's input terminal, :math:`V_K = \sqrt{2 Z_c P}`,
 where :math:`P` is the total drive power — two watts here, one per
 strip — and :math:`Z_c` the feed impedance as the grid sees it.
 
-.. GENERATED FROM PYTHON SOURCE LINES 361-388
+.. GENERATED FROM PYTHON SOURCE LINES 358-385
 
 .. code-block:: Python
 
@@ -563,7 +560,7 @@ strip — and :math:`Z_c` the feed impedance as the grid sees it.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 389-431
+.. GENERATED FROM PYTHON SOURCE LINES 386-428
 
 The two directions are not equivalent.  A particle running *against*
 the drive wave collects the kicks of both strip ends in phase at the
@@ -608,7 +605,7 @@ Lambertson, eqs. 4.7 and 4.11):
 :math:`1/k_B`: at a fixed longitudinal field, a transverse kicker
 gets *weaker* with frequency.
 
-.. GENERATED FROM PYTHON SOURCE LINES 431-438
+.. GENERATED FROM PYTHON SOURCE LINES 428-435
 
 .. code-block:: Python
 
@@ -626,7 +623,7 @@ gets *weaker* with frequency.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 439-451
+.. GENERATED FROM PYTHON SOURCE LINES 436-448
 
 Longitudinal quantities: the sum mode
 -------------------------------------
@@ -641,7 +638,7 @@ constant and shunt impedance are (eqs. 4.1 and 4.10)
     K_\parallel = \frac{|V|}{V_K}, \qquad
     R_\parallel T^2 = Z_c\, |K_\parallel|^2 .
 
-.. GENERATED FROM PYTHON SOURCE LINES 451-457
+.. GENERATED FROM PYTHON SOURCE LINES 448-454
 
 .. code-block:: Python
 
@@ -658,7 +655,7 @@ constant and shunt impedance are (eqs. 4.1 and 4.10)
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 458-496
+.. GENERATED FROM PYTHON SOURCE LINES 455-493
 
 The ideal stripline as the reference
 ------------------------------------
@@ -699,7 +696,7 @@ for the real device?  The field picture above answers it: the kicks
 happen where the strip meets its feed, so the electrical length is
 the distance between the two feeds, not the strip's own length.
 
-.. GENERATED FROM PYTHON SOURCE LINES 496-531
+.. GENERATED FROM PYTHON SOURCE LINES 493-528
 
 .. code-block:: Python
 
@@ -760,7 +757,7 @@ the distance between the two feeds, not the strip's own length.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 532-563
+.. GENERATED FROM PYTHON SOURCE LINES 529-560
 
 The ideal curves reproduce the shape — the lobes, the maximum near
 the design frequency, the :math:`1/k_B^2` decline of the transverse
@@ -794,7 +791,7 @@ signal per unit displacement, ideally
 :math:`4\sin(\varphi/2) / (\varphi\, b)` and independent of
 frequency.
 
-.. GENERATED FROM PYTHON SOURCE LINES 563-590
+.. GENERATED FROM PYTHON SOURCE LINES 560-587
 
 .. code-block:: Python
 
@@ -844,7 +841,7 @@ frequency.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 591-603
+.. GENERATED FROM PYTHON SOURCE LINES 588-600
 
 Where to go next
 ----------------
@@ -862,7 +859,7 @@ that move the real device toward, or away from, the ideal stripline.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (4 minutes 49.699 seconds)
+   **Total running time of the script:** (4 minutes 47.973 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_19_stripline_pickup_kicker.py:

@@ -59,8 +59,6 @@ IRIS_T = 2.0e-3  # thickness of the dividing wall
 R_PIN = 0.635e-3  # SMA inner conductor, 1.27 mm across
 GAP = 1.0e-3  # port gap between floor and pin foot
 
-pec = mio.Material.pec()
-air = mio.Material.air()
 ceramic = mio.Material.from_isotropic(name="ceramic", epsilon=EPS_R)
 
 # %%
@@ -157,7 +155,7 @@ def assemble(cavity, contents):
     """
     for solid in contents:
         cavity = cavity - solid
-    model = mio.GeometryModel(background=pec)
+    model = mio.GeometryModel(background="pec")
     model.add(cavity)
     for solid in contents:
         model.add(solid)
@@ -167,7 +165,7 @@ def assemble(cavity, contents):
 def single_resonator(width=WIDTH):
     """One puck alone in a square housing."""
     box = geo.Brick.from_ranges(
-        x1=-width / 2, dx=width, y1=-width / 2, dy=width, z1=0.0, dz=H, material=air
+        x1=-width / 2, dx=width, y1=-width / 2, dy=width, z1=0.0, dz=H, material="air"
     )
     return assemble(box, [puck()])
 
@@ -268,10 +266,10 @@ def housing(iris_window):
     """
     half = IRIS_T / 2
     left = geo.Brick.from_ranges(
-        x1=-LENGTH / 2, x2=-half, y1=-WIDTH / 2, dy=WIDTH, z1=0.0, dz=H, material=air
+        x1=-LENGTH / 2, x2=-half, y1=-WIDTH / 2, dy=WIDTH, z1=0.0, dz=H, material="air"
     )
     right = geo.Brick.from_ranges(
-        x1=half, x2=LENGTH / 2, y1=-WIDTH / 2, dy=WIDTH, z1=0.0, dz=H, material=air
+        x1=half, x2=LENGTH / 2, y1=-WIDTH / 2, dy=WIDTH, z1=0.0, dz=H, material="air"
     )
     window = geo.Brick.from_ranges(
         x1=-half,
@@ -280,7 +278,7 @@ def housing(iris_window):
         dy=iris_window,
         z1=0.0,
         dz=H,
-        material=air,
+        material="air",
     )
     return geo.Union(left, right, window)
 
@@ -361,7 +359,9 @@ print(f"\nwindow for k = {K12_TARGET:.4f}: {IRIS_WINDOW * 1e3:.2f} mm")
 
 def feed_pin(x):
     """PEC pin from the port gap up to the lid, standing at ``(x, 0)``."""
-    return geo.Cylinder(origin=(x, 0.0, GAP), radius=R_PIN, height=H - GAP, axis="z", material=pec)
+    return geo.Cylinder(
+        origin=(x, 0.0, GAP), radius=R_PIN, height=H - GAP, axis="z", material="pec"
+    )
 
 
 def probe_fixture(r_probe, iris_window):
@@ -422,7 +422,7 @@ def q_external(model, *, steps=400_000, f_lo=1.8e9, f_hi=3.4e9):
         mio.MeshControl(min_nodes_per_wavelength=15, min_cell_size=2.5e-4),
         f_max=f_hi,
     )
-    result = mio.AnalysisScatteringTD(mesh=mesh, f_min=f_lo, f_max=f_hi, verbose=False).run(
+    result = mio.AnalysisScatteringTD(mesh=mesh, f_min=f_lo, verbose=False).run(
         excited=["p1"], total_time_steps=steps
     )
 
@@ -547,7 +547,6 @@ work_dir = os.path.join(tempfile.mkdtemp(), "dr_filter")
 result = mio.AnalysisScatteringTD(
     mesh=mesh,
     f_min=1.8e9,
-    f_max=F_TOP,
     monitors=(pattern,),
     project=work_dir,
     geometry=device,

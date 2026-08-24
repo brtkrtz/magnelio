@@ -62,7 +62,7 @@ arm a quarter wave at 5 GHz — the textbook value is 2.9 mm, but the
 feed and stub junctions add excess length, so the radius is
 stretched to 3.2 mm to compensate.
 
-.. GENERATED FROM PYTHON SOURCE LINES 45-136
+.. GENERATED FROM PYTHON SOURCE LINES 45-134
 
 .. code-block:: Python
 
@@ -85,8 +85,6 @@ stretched to 3.2 mm to compensate.
     W_box = 14.0e-3  # shield width
     f_max = 9.0e9
 
-    pec = mio.Material.pec()
-    air = mio.Material.air()
     ro4003 = mio.Material.from_isotropic(name="RO4003", epsilon=eps_r)
 
 
@@ -99,19 +97,19 @@ stretched to 3.2 mm to compensate.
         y0 = h_sub  # metallization sits on the substrate
 
         ring = geo.Difference(
-            geo.Cylinder(origin=(0, y0, z_c), radius=r_out, height=t_met, axis="y", material=pec),
+            geo.Cylinder(origin=(0, y0, z_c), radius=r_out, height=t_met, axis="y", material="pec"),
             geo.Cylinder(
-                origin=(0, y0 - t_met, z_c), radius=r_in, height=3 * t_met, axis="y", material=pec
+                origin=(0, y0 - t_met, z_c), radius=r_in, height=3 * t_met, axis="y", material="pec"
             ),
         )
         feed = geo.Brick(
-            origin=(-w50 / 2, y0, 0.0), size=(w50, t_met, z_c - r_in + 0.2e-3), material=pec
+            origin=(-w50 / 2, y0, 0.0), size=(w50, t_met, z_c - r_in + 0.2e-3), material="pec"
         )
         stubs = [
             geo.Brick(
                 origin=(sx - w50 / 2, y0, z_c + r_in - 0.5e-3),
                 size=(w50, t_met, (line_z + w50 / 2) - (z_c + r_in - 0.5e-3)),
-                material=pec,
+                material="pec",
             )
             for sx in (-stub_x, stub_x)
         ]
@@ -119,20 +117,20 @@ stretched to 3.2 mm to compensate.
             geo.Brick(
                 origin=(x0, y0, line_z - w50 / 2),
                 size=(W_box / 2 - stub_x + w50 / 2, t_met, w50),
-                material=pec,
+                material="pec",
             )
             for x0 in (-W_box / 2, stub_x - w50 / 2)
         ]
         gap_cutter = geo.Brick(
             origin=(-gap / 2, y0 - t_met, z_c + r_in - 0.05e-3),
             size=(gap, 3 * t_met, (r_out - r_in) + 0.1e-3),
-            material=pec,
+            material="pec",
         )
-        metal = geo.Difference(geo.Union(ring, feed, *stubs, *lines, material=pec), gap_cutter)
+        metal = geo.Difference(geo.Union(ring, feed, *stubs, *lines, material="pec"), gap_cutter)
 
         substrate = geo.Brick(origin=(-W_box / 2, 0, 0), size=(W_box, h_sub, L_box), material=ro4003)
         air_cap = geo.Brick(
-            origin=(-W_box / 2, h_sub, 0), size=(W_box, H_box - h_sub, L_box), material=air
+            origin=(-W_box / 2, h_sub, 0), size=(W_box, H_box - h_sub, L_box), material="air"
         )
 
         model = mio.GeometryModel()
@@ -164,7 +162,7 @@ stretched to 3.2 mm to compensate.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 137-158
+.. GENERATED FROM PYTHON SOURCE LINES 135-156
 
 Two things in that construction deserve a closer look.
 
@@ -188,7 +186,7 @@ mesher notes that a sheet this thin cannot register a wall-loss
 surface — accurate, and irrelevant here, because the metal is
 lossless PEC anyway.
 
-.. GENERATED FROM PYTHON SOURCE LINES 158-168
+.. GENERATED FROM PYTHON SOURCE LINES 156-166
 
 .. code-block:: Python
 
@@ -220,7 +218,7 @@ lossless PEC anyway.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 169-186
+.. GENERATED FROM PYTHON SOURCE LINES 167-184
 
 The top view shows the racetrack as meshed: feed from the bottom,
 the two arms, the gap at the top with the output stubs beside it,
@@ -240,12 +238,12 @@ circuit and are not terminated by the single-mode ports, so we stop
 the analysis at 9 GHz — from DC up to a safe margin below that
 ceiling.
 
-.. GENERATED FROM PYTHON SOURCE LINES 186-191
+.. GENERATED FROM PYTHON SOURCE LINES 184-189
 
 .. code-block:: Python
 
 
-    analysis = mio.AnalysisScatteringTD(mesh=mesh, f_max=f_max, verbose=False)
+    analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
     report = analysis.solve_ports()["port1"]
     print(report)
 
@@ -264,14 +262,14 @@ ceiling.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 192-196
+.. GENERATED FROM PYTHON SOURCE LINES 190-194
 
 The feed resolves at 49.1 Ω — the trimmed 50 Ω line of the previous
 tutorial, now on the thinner RO4003 stackup.  Time to run.  Exciting
 port 1 measures the split; exciting port 2 measures output match and
 isolation:
 
-.. GENERATED FROM PYTHON SOURCE LINES 196-225
+.. GENERATED FROM PYTHON SOURCE LINES 194-223
 
 .. code-block:: Python
 
@@ -323,7 +321,7 @@ isolation:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 226-241
+.. GENERATED FROM PYTHON SOURCE LINES 224-239
 
 Both outputs sit on the −3 dB line across the whole band (the two
 curves are indistinguishable — the geometry is exactly mirror
@@ -341,7 +339,7 @@ and the resistor might as well not exist.  Its job only shows in the
 *output* quantities — and the cleanest way to see that is to build
 the same divider again without it:
 
-.. GENERATED FROM PYTHON SOURCE LINES 241-268
+.. GENERATED FROM PYTHON SOURCE LINES 239-264
 
 .. code-block:: Python
 
@@ -352,9 +350,7 @@ the same divider again without it:
         mio.MeshControl(min_nodes_per_wavelength=25, min_cells_per_feature=10, min_cell_size=51e-6),
         f_max=f_max,
     )
-    result_bare = mio.AnalysisScatteringTD(mesh=mesh_bare, f_max=f_max, verbose=False).run(
-        excited=["port2"]
-    )
+    result_bare = mio.AnalysisScatteringTD(mesh=mesh_bare, verbose=False).run(excited=["port2"])
     s22_bare = result_bare.S("port2", "port2")
     s23_bare = result_bare.S("port3", "port2")
 
@@ -390,7 +386,7 @@ the same divider again without it:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 269-296
+.. GENERATED FROM PYTHON SOURCE LINES 265-292
 
 This is the whole point of the component.  Without the resistor the
 divider is just a lossless three-port, and the theorem from the
@@ -423,7 +419,7 @@ next tutorial's subject.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 51.697 seconds)
+   **Total running time of the script:** (1 minutes 51.188 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_10_lumped_elements.py:

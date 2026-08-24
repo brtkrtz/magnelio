@@ -99,16 +99,15 @@ and the two TE11 polarisations, sorted by cut-off.  (The analytical
 coax port of tutorial 2 stays single-mode: its closed form covers
 only TEM.)
 
-.. GENERATED FROM PYTHON SOURCE LINES 63-79
+.. GENERATED FROM PYTHON SOURCE LINES 63-78
 
 .. code-block:: Python
 
 
-    pec = mio.Material.pec()
     pe = mio.Material.from_isotropic(name="polyethylene", epsilon=eps_r)
 
-    model = mio.GeometryModel(background=pec)
-    inner = geo.Cylinder(origin=(0, 0, 0), radius=r_i, height=L, axis="z", material=pec)
+    model = mio.GeometryModel(background="pec")
+    inner = geo.Cylinder(origin=(0, 0, 0), radius=r_i, height=L, axis="z", material="pec")
     outer = geo.Cylinder(origin=(0, 0, 0), radius=r_o, height=L, axis="z", material=pe)
     model.add(geo.Difference(outer, inner))
     model.add(inner)
@@ -132,17 +131,17 @@ only TEM.)
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 80-82
+.. GENERATED FROM PYTHON SOURCE LINES 79-81
 
 The mode ladder
 ---------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 82-87
+.. GENERATED FROM PYTHON SOURCE LINES 81-86
 
 .. code-block:: Python
 
 
-    analysis = mio.AnalysisScatteringTD(mesh=mesh, f_max=f_max, verbose=False)
+    analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
     report = analysis.solve_ports()["port1"]
     print(report)
 
@@ -166,7 +165,7 @@ The mode ladder
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 88-102
+.. GENERATED FROM PYTHON SOURCE LINES 87-101
 
 The report lists the ladder: TEM at :math:`f_c = 0`, then the TE11
 pair — at the *same* cut-off up to a 0.001 % split from the
@@ -183,7 +182,7 @@ The transverse profiles make the ladder concrete — the radial TEM
 field, and the two TE11 polarisations (`geometry=model` overlays
 the conductor cross-section on each):
 
-.. GENERATED FROM PYTHON SOURCE LINES 102-108
+.. GENERATED FROM PYTHON SOURCE LINES 101-107
 
 .. code-block:: Python
 
@@ -205,7 +204,7 @@ the conductor cross-section on each):
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 109-114
+.. GENERATED FROM PYTHON SOURCE LINES 108-113
 
 Mode-resolved S-parameters
 --------------------------
@@ -213,7 +212,7 @@ Mode-resolved S-parameters
 Excitations are ``(port, mode)`` pairs now.  We launch the TEM mode
 and one TE11 polarisation; each entry is one time-domain run:
 
-.. GENERATED FROM PYTHON SOURCE LINES 114-117
+.. GENERATED FROM PYTHON SOURCE LINES 113-116
 
 .. code-block:: Python
 
@@ -227,14 +226,14 @@ and one TE11 polarisation; each entry is one time-domain run:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 118-122
+.. GENERATED FROM PYTHON SOURCE LINES 117-121
 
 S-parameter lookups gain the same mode indices,
 ``result.S(out_port, in_port, mode_out=..., mode_in=...)``.  First
 the transmission magnitudes — TEM crosses the whole band, TE11 only
 exists above its cut-off:
 
-.. GENERATED FROM PYTHON SOURCE LINES 122-141
+.. GENERATED FROM PYTHON SOURCE LINES 121-140
 
 .. code-block:: Python
 
@@ -271,18 +270,18 @@ exists above its cut-off:
  .. code-block:: none
 
 
-    <matplotlib.legend.Legend object at 0x7f2b7b599b10>
+    <matplotlib.legend.Legend object at 0x7f95323b5750>
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 142-146
+.. GENERATED FROM PYTHON SOURCE LINES 141-145
 
 Below its cut-off the TE11 wave is evanescent — nothing arrives at
 port 2 and the curve falls off the plot; above cut-off it transmits
 fully.  Why "subspace power" instead of a single :math:`S_{21}`
 entry?  Look at the degenerate 2x2 block at 45 GHz:
 
-.. GENERATED FROM PYTHON SOURCE LINES 146-155
+.. GENERATED FROM PYTHON SOURCE LINES 145-154
 
 .. code-block:: Python
 
@@ -308,7 +307,7 @@ entry?  Look at the degenerate 2x2 block at 45 GHz:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 156-163
+.. GENERATED FROM PYTHON SOURCE LINES 155-162
 
 Port 2 reports the transmitted wave in its *own* TE11 basis — and
 here it happens to label the pair in swapped order, so the power
@@ -318,7 +317,7 @@ statements are meaningful, and the invariant here — total subspace
 power — is 1.  Genuine mode *conversion*, by contrast, is between
 non-degenerate modes, and on this uniform line it is absent:
 
-.. GENERATED FROM PYTHON SOURCE LINES 163-172
+.. GENERATED FROM PYTHON SOURCE LINES 162-171
 
 .. code-block:: Python
 
@@ -345,7 +344,7 @@ non-degenerate modes, and on this uniform line it is absent:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 173-195
+.. GENERATED FROM PYTHON SOURCE LINES 172-194
 
 The dispersion anchor
 ---------------------
@@ -370,7 +369,7 @@ changing nothing measurable, which is why the alignment below works
 in steps of :math:`\pi` rather than :math:`2\pi`.  Using the
 report's cut-off in the formula:
 
-.. GENERATED FROM PYTHON SOURCE LINES 195-216
+.. GENERATED FROM PYTHON SOURCE LINES 194-215
 
 .. code-block:: Python
 
@@ -413,7 +412,7 @@ report's cut-off in the formula:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 217-226
+.. GENERATED FROM PYTHON SOURCE LINES 216-225
 
 Where to go next
 ----------------
@@ -428,7 +427,7 @@ closed cavity.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 14.976 seconds)
+   **Total running time of the script:** (0 minutes 14.834 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_04_higher_modes.py:

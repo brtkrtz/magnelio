@@ -49,7 +49,7 @@ coupling coefficient :math:`k` and an external quality factor
 simulation.  Only at the end is the assembled filter computed, as a
 check.  This tutorial walks that path.
 
-.. GENERATED FROM PYTHON SOURCE LINES 33-65
+.. GENERATED FROM PYTHON SOURCE LINES 33-63
 
 .. code-block:: Python
 
@@ -81,8 +81,6 @@ check.  This tutorial walks that path.
     R_PIN = 0.635e-3  # SMA inner conductor, 1.27 mm across
     GAP = 1.0e-3  # port gap between floor and pin foot
 
-    pec = mio.Material.pec()
-    air = mio.Material.air()
     ceramic = mio.Material.from_isotropic(name="ceramic", epsilon=EPS_R)
 
 
@@ -92,7 +90,7 @@ check.  This tutorial walks that path.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 67-82
+.. GENERATED FROM PYTHON SOURCE LINES 65-80
 
 The specification, and what it asks of the geometry
 ---------------------------------------------------
@@ -110,7 +108,7 @@ them:
 That is the entire synthesis.  Two numbers, and the electromagnetics
 has not been touched yet.
 
-.. GENERATED FROM PYTHON SOURCE LINES 82-124
+.. GENERATED FROM PYTHON SOURCE LINES 80-122
 
 .. code-block:: Python
 
@@ -170,7 +168,7 @@ has not been touched yet.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 125-139
+.. GENERATED FROM PYTHON SOURCE LINES 123-137
 
 The resonator, and a first look at the mode
 -------------------------------------------
@@ -187,7 +185,7 @@ air volume *is* the cavity and the six bounding-box faces are its
 walls.  The pucks are then subtracted from the air and added back as
 ceramic.
 
-.. GENERATED FROM PYTHON SOURCE LINES 139-179
+.. GENERATED FROM PYTHON SOURCE LINES 137-177
 
 .. code-block:: Python
 
@@ -212,7 +210,7 @@ ceramic.
         """
         for solid in contents:
             cavity = cavity - solid
-        model = mio.GeometryModel(background=pec)
+        model = mio.GeometryModel(background="pec")
         model.add(cavity)
         for solid in contents:
             model.add(solid)
@@ -222,7 +220,7 @@ ceramic.
     def single_resonator(width=WIDTH):
         """One puck alone in a square housing."""
         box = geo.Brick.from_ranges(
-            x1=-width / 2, dx=width, y1=-width / 2, dy=width, z1=0.0, dz=H, material=air
+            x1=-width / 2, dx=width, y1=-width / 2, dy=width, z1=0.0, dz=H, material="air"
         )
         return assemble(box, [puck()])
 
@@ -243,7 +241,7 @@ ceramic.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 180-194
+.. GENERATED FROM PYTHON SOURCE LINES 178-192
 
 Finding the working mode
 ------------------------
@@ -260,7 +258,7 @@ permittivity.
 
 Always check how many modes actually came back.
 
-.. GENERATED FROM PYTHON SOURCE LINES 194-222
+.. GENERATED FROM PYTHON SOURCE LINES 192-220
 
 .. code-block:: Python
 
@@ -308,7 +306,7 @@ Always check how many modes actually came back.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 223-235
+.. GENERATED FROM PYTHON SOURCE LINES 221-233
 
 The uncomfortable observation
 -----------------------------
@@ -323,7 +321,7 @@ If the design depended on hitting an absolute frequency, this would
 be fatal — and it is why filters are not designed that way.  What
 follows shows the alternative, and why it works.
 
-.. GENERATED FROM PYTHON SOURCE LINES 237-259
+.. GENERATED FROM PYTHON SOURCE LINES 235-257
 
 Stage 2: coupling between the resonators
 ----------------------------------------
@@ -348,7 +346,7 @@ between them with a window cut in it: below the window's cut-off the
 fields reach through evanescently, and the window width sets how
 much.
 
-.. GENERATED FROM PYTHON SOURCE LINES 259-297
+.. GENERATED FROM PYTHON SOURCE LINES 257-295
 
 .. code-block:: Python
 
@@ -364,10 +362,10 @@ much.
         """
         half = IRIS_T / 2
         left = geo.Brick.from_ranges(
-            x1=-LENGTH / 2, x2=-half, y1=-WIDTH / 2, dy=WIDTH, z1=0.0, dz=H, material=air
+            x1=-LENGTH / 2, x2=-half, y1=-WIDTH / 2, dy=WIDTH, z1=0.0, dz=H, material="air"
         )
         right = geo.Brick.from_ranges(
-            x1=half, x2=LENGTH / 2, y1=-WIDTH / 2, dy=WIDTH, z1=0.0, dz=H, material=air
+            x1=half, x2=LENGTH / 2, y1=-WIDTH / 2, dy=WIDTH, z1=0.0, dz=H, material="air"
         )
         window = geo.Brick.from_ranges(
             x1=-half,
@@ -376,7 +374,7 @@ much.
             dy=iris_window,
             z1=0.0,
             dz=H,
-            material=air,
+            material="air",
         )
         return geo.Union(left, right, window)
 
@@ -402,12 +400,12 @@ much.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 298-300
+.. GENERATED FROM PYTHON SOURCE LINES 296-298
 
 Sweeping the window
 -------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 300-315
+.. GENERATED FROM PYTHON SOURCE LINES 298-313
 
 .. code-block:: Python
 
@@ -442,14 +440,14 @@ Sweeping the window
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 316-320
+.. GENERATED FROM PYTHON SOURCE LINES 314-318
 
 The ratio is robust where the frequency is not
 ----------------------------------------------
 
 Re-run one window on the finer grid and compare both quantities.
 
-.. GENERATED FROM PYTHON SOURCE LINES 320-344
+.. GENERATED FROM PYTHON SOURCE LINES 318-342
 
 .. code-block:: Python
 
@@ -499,7 +497,7 @@ Re-run one window on the finer grid and compare both quantities.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 345-360
+.. GENERATED FROM PYTHON SOURCE LINES 343-358
 
 Stage 3: how hard the outside world pulls
 -----------------------------------------
@@ -517,7 +515,7 @@ the lid is one large metal sheet with a small hole in it.  A
 :class:`~magnelio.ports.PortLumped` across the gap is the natural
 feed, the same one the monopole tutorial used.
 
-.. GENERATED FROM PYTHON SOURCE LINES 360-383
+.. GENERATED FROM PYTHON SOURCE LINES 358-383
 
 .. code-block:: Python
 
@@ -525,7 +523,9 @@ feed, the same one the monopole tutorial used.
 
     def feed_pin(x):
         """PEC pin from the port gap up to the lid, standing at ``(x, 0)``."""
-        return geo.Cylinder(origin=(x, 0.0, GAP), radius=R_PIN, height=H - GAP, axis="z", material=pec)
+        return geo.Cylinder(
+            origin=(x, 0.0, GAP), radius=R_PIN, height=H - GAP, axis="z", material="pec"
+        )
 
 
     def probe_fixture(r_probe, iris_window):
@@ -599,7 +599,7 @@ either number alone.
             mio.MeshControl(min_nodes_per_wavelength=15, min_cell_size=2.5e-4),
             f_max=f_hi,
         )
-        result = mio.AnalysisScatteringTD(mesh=mesh, f_min=f_lo, f_max=f_hi, verbose=False).run(
+        result = mio.AnalysisScatteringTD(mesh=mesh, f_min=f_lo, verbose=False).run(
             excited=["p1"], total_time_steps=steps
         )
 
@@ -756,7 +756,7 @@ The structure is symmetric about the iris, so :math:`S_{22} = S_{11}`
 and :math:`S_{12} = S_{21}`.  Driving the second port would cost a
 full run and add nothing.
 
-.. GENERATED FROM PYTHON SOURCE LINES 522-561
+.. GENERATED FROM PYTHON SOURCE LINES 522-560
 
 .. code-block:: Python
 
@@ -788,7 +788,6 @@ full run and add nothing.
     result = mio.AnalysisScatteringTD(
         mesh=mesh,
         f_min=1.8e9,
-        f_max=F_TOP,
         monitors=(pattern,),
         project=work_dir,
         geometry=device,
@@ -812,7 +811,7 @@ full run and add nothing.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 562-577
+.. GENERATED FROM PYTHON SOURCE LINES 561-576
 
 The yardstick: the response the synthesis promised
 --------------------------------------------------
@@ -830,7 +829,7 @@ bandwidth.  For a Chebyshev the two differ by a fixed factor,
 which is 2.34 here.  Reading the −3 dB width as the design width
 would make this filter look more than twice too wide.
 
-.. GENERATED FROM PYTHON SOURCE LINES 577-605
+.. GENERATED FROM PYTHON SOURCE LINES 576-604
 
 .. code-block:: Python
 
@@ -878,12 +877,12 @@ would make this filter look more than twice too wide.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 606-608
+.. GENERATED FROM PYTHON SOURCE LINES 605-607
 
 The result
 ----------
 
-.. GENERATED FROM PYTHON SOURCE LINES 608-623
+.. GENERATED FROM PYTHON SOURCE LINES 607-622
 
 .. code-block:: Python
 
@@ -914,7 +913,7 @@ The result
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 624-671
+.. GENERATED FROM PYTHON SOURCE LINES 623-670
 
 Looking inside: how the filter passes power
 -------------------------------------------
@@ -964,7 +963,7 @@ monitor recorded three frequencies across the band, so that claim
 can simply be read off it: sum :math:`E_z` over each half of the
 housing and compare the phases.
 
-.. GENERATED FROM PYTHON SOURCE LINES 671-682
+.. GENERATED FROM PYTHON SOURCE LINES 670-681
 
 .. code-block:: Python
 
@@ -995,7 +994,7 @@ housing and compare the phases.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 683-695
+.. GENERATED FROM PYTHON SOURCE LINES 682-694
 
 A steady drift of tens of degrees, not the 0° or 180° a standing
 even/odd pair would show — and nothing in between is available to a
@@ -1010,7 +1009,7 @@ both resonators are near their peaks — at phase zero, one of them
 happens to be near a zero crossing and the render looks like a
 half-empty filter.
 
-.. GENERATED FROM PYTHON SOURCE LINES 697-729
+.. GENERATED FROM PYTHON SOURCE LINES 696-728
 
 What this shows
 ---------------
@@ -1048,7 +1047,7 @@ and mirror one more chamber into the housing.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (6 minutes 38.638 seconds)
+   **Total running time of the script:** (6 minutes 37.585 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_13_dielectric_filter.py:

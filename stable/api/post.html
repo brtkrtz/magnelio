@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=c87aa342"></script>
+    <script src="../_static/documentation_options.js?v=5bfaad31"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -882,36 +882,80 @@ meaningful response.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.post.SParameterResult.to_skrf">
-<span class="sig-name descname"><span class="pre">to_skrf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'magnelio'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.post.SParameterResult.to_skrf" title="Link to this definition">#</a></dt>
-<dd><p>Return the complete S-matrix as a <code class="docutils literal notranslate"><span class="pre">skrf.Network</span></code>.</p>
-<p>Requires <code class="docutils literal notranslate"><span class="pre">scikit-rf</span></code> (install extra <code class="docutils literal notranslate"><span class="pre">magnelio[interop]</span></code>) and
-a complete square matrix; multi-mode ports map to one network
-port per channel, in canonical channel order.</p>
+<dt class="sig sig-object py" id="magnelio.post.SParameterResult.export_channels">
+<span class="sig-name descname"><span class="pre">export_channels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.post.SParameterResult.export_channels" title="Link to this definition">#</a></dt>
+<dd><p>The channel set an export covers, in canonical channel order.</p>
+<p>Default (<code class="docutils literal notranslate"><span class="pre">channels=None</span></code>): every excited channel.  Rows and
+columns of the exported matrix are that same set, so the
+result is a square sub-matrix in which every entry was
+measured — nothing is padded or inferred.</p>
+<p>The sub-matrix is a valid network description in its own
+right.  Channels left out of it are not open circuits: each
+one is terminated by its own reflection-free port boundary
+throughout the run, which is exactly the matched-termination
+condition the definition of S-parameters asks for.  The export
+is therefore the network <em>seen with the omitted channels
+matched</em> — the same quantity a vector network analyser
+measures with its unused ports terminated.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>skrf.Network</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>channels</strong> (<em>sequence</em><em> of </em><em>str</em><em> or </em><em>(</em><em>str</em><em>, </em><em>int</em><em>)</em><em>, </em><em>optional</em>) – Explicit channel selection, e.g. to cut a two-port out of
+a fully excited three-port.  A bare port name means mode
+0.  Every entry must have been excited.</p>
 </dd>
-<dt class="field-even">Parameters<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>name</strong> (<em>str</em>)</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple of (str, int)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.post.SParameterResult.to_skrf">
+<span class="sig-name descname"><span class="pre">to_skrf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'magnelio'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.post.SParameterResult.to_skrf" title="Link to this definition">#</a></dt>
+<dd><p>Return the S-matrix as a <code class="docutils literal notranslate"><span class="pre">skrf.Network</span></code>.</p>
+<p>Requires <code class="docutils literal notranslate"><span class="pre">scikit-rf</span></code> (install extra <code class="docutils literal notranslate"><span class="pre">magnelio[interop]</span></code>).
+Exports the same square sub-matrix as
+<a class="reference internal" href="#magnelio.post.SParameterResult.to_touchstone" title="magnelio.post.SParameterResult.to_touchstone"><code class="xref py py-meth docutils literal notranslate"><span class="pre">to_touchstone()</span></code></a> — by default every excited channel, with
+the unexcited ones matched; multi-mode ports map to one
+network port per channel, in canonical channel order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – Network name.</p></li>
+<li><p><strong>channels</strong> (<em>sequence</em><em> of </em><em>str</em><em> or </em><em>(</em><em>str</em><em>, </em><em>int</em><em>)</em><em>, </em><em>optional</em>) – Explicit channel selection, as in <a class="reference internal" href="#magnelio.post.SParameterResult.export_channels" title="magnelio.post.SParameterResult.export_channels"><code class="xref py py-meth docutils literal notranslate"><span class="pre">export_channels()</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>skrf.Network</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.post.SParameterResult.to_touchstone">
-<span class="sig-name descname"><span class="pre">to_touchstone</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.post.SParameterResult.to_touchstone" title="Link to this definition">#</a></dt>
-<dd><p>Write the complete S-matrix as a Touchstone <code class="docutils literal notranslate"><span class="pre">.sNp</span></code> file.</p>
-<p>Requires every observed channel to have been excited (a square
-matrix); raises otherwise.  Touchstone ports are the <em>channels</em>
-in canonical order — a multi-mode port occupies one Touchstone
-port per mode; the mapping is recorded in the file’s comment
-header.  Data are the power-wave (generalised) S-parameters on
-the per-mode reference impedances; the nominal <code class="docutils literal notranslate"><span class="pre">R</span> <span class="pre">50</span></code> of the
-option line does not renormalise them.</p>
+<span class="sig-name descname"><span class="pre">to_touchstone</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.post.SParameterResult.to_touchstone" title="Link to this definition">#</a></dt>
+<dd><p>Write the S-matrix as a Touchstone <code class="docutils literal notranslate"><span class="pre">.sNp</span></code> file.</p>
+<p>Exports the square sub-matrix over
+<a class="reference internal" href="#magnelio.post.SParameterResult.export_channels" title="magnelio.post.SParameterResult.export_channels"><code class="xref py py-meth docutils literal notranslate"><span class="pre">export_channels()</span></code></a> — by default every excited channel,
+with the unexcited ones matched (see that method for what the
+reduction does and does not describe).  Touchstone ports are
+the exported <em>channels</em> in canonical order — a multi-mode port
+occupies one Touchstone port per mode; the mapping is recorded
+in the file’s comment header.  Data are the power-wave
+(generalised) S-parameters on the per-mode reference
+impedances; the nominal <code class="docutils literal notranslate"><span class="pre">R</span> <span class="pre">50</span></code> of the option line does not
+renormalise them.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">.sNp</span></code> extension must agree with the exported port
+count: Touchstone 1.x records the port count nowhere else, so
+a mismatch is rejected.  A path without an extension gets the
+matching one.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>path</strong> (<em>str</em><em> or </em><em>pathlib.Path</em>) – Output file; conventionally <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;.s{N}p</span></code>.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>str</em><em> or </em><em>pathlib.Path</em>) – Output file.  <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;.s{N}p</span></code>, or <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> to have the
+extension filled in.</p></li>
+<li><p><strong>channels</strong> (<em>sequence</em><em> of </em><em>str</em><em> or </em><em>(</em><em>str</em><em>, </em><em>int</em><em>)</em><em>, </em><em>optional</em>) – Explicit channel selection, as in <a class="reference internal" href="#magnelio.post.SParameterResult.export_channels" title="magnelio.post.SParameterResult.export_channels"><code class="xref py py-meth docutils literal notranslate"><span class="pre">export_channels()</span></code></a>.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -1217,6 +1261,7 @@ applies to; lossy-metal solids always use their own.  <code class="docutils lite
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.SParameterResult.channel_index"><code class="docutils literal notranslate"><span class="pre">SParameterResult.channel_index()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.SParameterResult.db"><code class="docutils literal notranslate"><span class="pre">SParameterResult.db()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.SParameterResult.excitation_index"><code class="docutils literal notranslate"><span class="pre">SParameterResult.excitation_index()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.SParameterResult.export_channels"><code class="docutils literal notranslate"><span class="pre">SParameterResult.export_channels()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.SParameterResult.to_skrf"><code class="docutils literal notranslate"><span class="pre">SParameterResult.to_skrf()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.SParameterResult.to_touchstone"><code class="docutils literal notranslate"><span class="pre">SParameterResult.to_touchstone()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.post.SParameterResult.is_complete"><code class="docutils literal notranslate"><span class="pre">SParameterResult.is_complete</span></code></a></li>

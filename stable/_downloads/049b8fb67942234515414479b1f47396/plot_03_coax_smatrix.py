@@ -64,13 +64,13 @@ f_max = 6e9
 # material)`` triples keeps the construction readable; this pattern
 # scales to structures with many more sections than three.
 
-pec = mio.Material.pec()
+# Built-in materials can be named by string ("pec", "air", "vacuum");
+# only parameterised materials need explicit construction.
 pe = mio.Material.from_isotropic(name="polyethylene", epsilon=eps_r)
-air = mio.Material.air()
 
-model = mio.GeometryModel(background=pec)
-inner = geo.Cylinder(origin=(0, 0, 0), radius=r_i, height=L, axis="z", material=pec)
-sections = [(0.0, L_pe, pe), (L_pe, L_gap, air), (L_pe + L_gap, L_pe, pe)]
+model = mio.GeometryModel(background="pec")
+inner = geo.Cylinder(origin=(0, 0, 0), radius=r_i, height=L, axis="z", material="pec")
+sections = [(0.0, L_pe, pe), (L_pe, L_gap, "air"), (L_pe + L_gap, L_pe, pe)]
 for z0, length, mat in sections:
     outer = geo.Cylinder(origin=(0, 0, z0), radius=r_o, height=length, axis="z", material=mat)
     model.add(geo.Difference(outer, inner))
@@ -109,7 +109,9 @@ print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 # merges everything into a single result that answers for every
 # :math:`S_{ij}`.
 
-analysis = mio.AnalysisScatteringTD(mesh=mesh, f_max=f_max, verbose=False)
+# f_max is omitted: the analysis band defaults to the design frequency
+# the mesh was generated for (``mesh.f_max``).
+analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
 result = analysis.run(excited=["port1", "port2"])
 
 # %%
@@ -208,6 +210,11 @@ print(f"max ||S11|sim - |S11|theory|: {np.abs(np.abs(s11) - np.abs(s11_tl)).max(
 # ``to_touchstone`` writes the industry-standard ``.s2p`` file that
 # every circuit simulator reads; ``to_skrf`` hands the live matrix to
 # `scikit-rf <https://scikit-rf.org>`_ if it is installed.
+#
+# The file holds one port per excited channel — here the two ports at
+# mode 0 — and the ``.sNp`` extension has to agree with that count,
+# because Touchstone records it nowhere else.  Leave the extension off
+# and it is filled in for you.
 
 s2p = Path(tempfile.mkdtemp()) / "coax_gap.s2p"
 result.to_touchstone(s2p)

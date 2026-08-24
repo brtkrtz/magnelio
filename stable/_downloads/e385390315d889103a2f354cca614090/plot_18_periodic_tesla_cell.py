@@ -137,9 +137,6 @@ def mirrored(zr):
     return (PERIOD - zr[0], zr[1])
 
 
-air = mio.Material.air()
-pec = mio.Material.pec()
-
 outline = (
     geo.Path(xz((0.0, R_IRIS)))
     .ellipse_to(
@@ -161,9 +158,9 @@ outline = (
     .closed()
     .covered()
 )
-ring = outline.revolved(axis="z", material=air)
-tube = geo.Cylinder(origin=(0, 0, 0), radius=R_IRIS, height=PERIOD, axis="z", material=air)
-cell = geo.Union(ring, tube, material=air)
+ring = outline.revolved(axis="z", material="air")
+tube = geo.Cylinder(origin=(0, 0, 0), radius=R_IRIS, height=PERIOD, axis="z", material="air")
+cell = geo.Union(ring, tube, material="air")
 
 fig, ax = plots.plot_cross_section([cell], "y", 0.0, title="TESLA mid-cell, one period")
 
@@ -180,7 +177,7 @@ fig, ax = plots.plot_cross_section([cell], "y", 0.0, title="TESLA mid-cell, one 
 # is the magnetic one (tutorial 09).
 
 model = mio.GeometryModel(
-    background=pec,
+    background="pec",
     boundary_conditions={
         "xmin": "SymmetryPMC",
         "ymin": "SymmetryPMC",
@@ -208,7 +205,7 @@ print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 
 
 def lowest_mode(bcs):
-    half = mio.GeometryModel(background=pec, boundary_conditions=bcs)
+    half = mio.GeometryModel(background="pec", boundary_conditions=bcs)
     half.add(cell)
     m = mio.Mesh.from_geometry(half, mio.MeshControl(max_cell_size=4e-3), f_max=1.5e9)
     return mio.AnalysisEigenmode(mesh=m, n_modes=1, verbose=False).run().frequencies[0]

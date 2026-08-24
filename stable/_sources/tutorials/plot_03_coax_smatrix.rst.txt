@@ -113,13 +113,13 @@ scales to structures with many more sections than three.
 .. code-block:: Python
 
 
-    pec = mio.Material.pec()
+    # Built-in materials can be named by string ("pec", "air", "vacuum");
+    # only parameterised materials need explicit construction.
     pe = mio.Material.from_isotropic(name="polyethylene", epsilon=eps_r)
-    air = mio.Material.air()
 
-    model = mio.GeometryModel(background=pec)
-    inner = geo.Cylinder(origin=(0, 0, 0), radius=r_i, height=L, axis="z", material=pec)
-    sections = [(0.0, L_pe, pe), (L_pe, L_gap, air), (L_pe + L_gap, L_pe, pe)]
+    model = mio.GeometryModel(background="pec")
+    inner = geo.Cylinder(origin=(0, 0, 0), radius=r_i, height=L, axis="z", material="pec")
+    sections = [(0.0, L_pe, pe), (L_pe, L_gap, "air"), (L_pe + L_gap, L_pe, pe)]
     for z0, length, mat in sections:
         outer = geo.Cylinder(origin=(0, 0, z0), radius=r_o, height=length, axis="z", material=mat)
         model.add(geo.Difference(outer, inner))
@@ -172,12 +172,14 @@ mode".  The analysis performs one time-domain run per entry and
 merges everything into a single result that answers for every
 :math:`S_{ij}`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 111-115
+.. GENERATED FROM PYTHON SOURCE LINES 111-117
 
 .. code-block:: Python
 
 
-    analysis = mio.AnalysisScatteringTD(mesh=mesh, f_max=f_max, verbose=False)
+    # f_max is omitted: the analysis band defaults to the design frequency
+    # the mesh was generated for (``mesh.f_max``).
+    analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
     result = analysis.run(excited=["port1", "port2"])
 
 
@@ -187,12 +189,12 @@ merges everything into a single result that answers for every
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 116-118
+.. GENERATED FROM PYTHON SOURCE LINES 118-120
 
 The quickest look is the built-in plot, which draws any selection of
 :math:`S_{ij}` channels in one call:
 
-.. GENERATED FROM PYTHON SOURCE LINES 118-128
+.. GENERATED FROM PYTHON SOURCE LINES 120-130
 
 .. code-block:: Python
 
@@ -224,7 +226,7 @@ The quickest look is the built-in plot, which draws any selection of
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 129-138
+.. GENERATED FROM PYTHON SOURCE LINES 131-140
 
 Reading the matrix: symmetry and reciprocity
 --------------------------------------------
@@ -236,7 +238,7 @@ reciprocal materials it must be **reciprocal**:
 :math:`S_{12} = S_{21}` — regardless of any symmetry.  Both hold to
 numerical precision:
 
-.. GENERATED FROM PYTHON SOURCE LINES 138-147
+.. GENERATED FROM PYTHON SOURCE LINES 140-149
 
 .. code-block:: Python
 
@@ -263,7 +265,7 @@ numerical precision:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 148-159
+.. GENERATED FROM PYTHON SOURCE LINES 150-161
 
 In practice these identities are cheap health checks: a broken
 reciprocity points at a solver or normalisation problem, a broken
@@ -277,7 +279,7 @@ ideal impedances of the circular cross-section
 (:math:`Z_\mathrm{PE} = 51.7\,\Omega`,
 :math:`Z_\mathrm{air} = 77.5\,\Omega`).
 
-.. GENERATED FROM PYTHON SOURCE LINES 159-192
+.. GENERATED FROM PYTHON SOURCE LINES 161-194
 
 .. code-block:: Python
 
@@ -332,7 +334,7 @@ ideal impedances of the circular cross-section
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 193-211
+.. GENERATED FROM PYTHON SOURCE LINES 195-218
 
 The two curves agree to better than 0.001 in magnitude across the
 band.  Note why the agreement is this good even though the previous
@@ -353,7 +355,12 @@ S-parameter results leave Magnelio in standard formats.
 every circuit simulator reads; ``to_skrf`` hands the live matrix to
 `scikit-rf <https://scikit-rf.org>`_ if it is installed.
 
-.. GENERATED FROM PYTHON SOURCE LINES 211-217
+The file holds one port per excited channel — here the two ports at
+mode 0 — and the ``.sNp`` extension has to agree with that count,
+because Touchstone records it nowhere else.  Leave the extension off
+and it is filled in for you.
+
+.. GENERATED FROM PYTHON SOURCE LINES 218-224
 
 .. code-block:: Python
 
@@ -377,7 +384,7 @@ every circuit simulator reads; ``to_skrf`` hands the live matrix to
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 218-227
+.. GENERATED FROM PYTHON SOURCE LINES 225-234
 
 Where to go next
 ----------------
@@ -392,7 +399,7 @@ top of the port indices.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 14.057 seconds)
+   **Total running time of the script:** (0 minutes 13.978 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_03_coax_smatrix.py:

@@ -101,7 +101,7 @@ convenient here, where such a mode could only be spurious clutter,
 but worth remembering whenever a symmetry plane is declared: the
 structure and the excitation must both respect it.
 
-.. GENERATED FROM PYTHON SOURCE LINES 72-114
+.. GENERATED FROM PYTHON SOURCE LINES 72-112
 
 .. code-block:: Python
 
@@ -122,13 +122,11 @@ structure and the excitation must both respect it.
     eps_r = 4.3
     f_max = 15.0e9
 
-    pec = mio.Material.pec()
-    air = mio.Material.air()
     fr4 = mio.Material.from_isotropic(name="FR4", epsilon=eps_r)
 
     substrate = geo.Brick(origin=(-W_box / 2, 0.0, 0.0), size=(W_box, h_sub, L), material=fr4)
-    air_cap = geo.Brick(origin=(-W_box / 2, h_sub, 0.0), size=(W_box, H_box - h_sub, L), material=air)
-    strip = geo.Brick(origin=(-w_strip / 2, h_sub, 0.0), size=(w_strip, t_strip, L), material=pec)
+    air_cap = geo.Brick(origin=(-W_box / 2, h_sub, 0.0), size=(W_box, H_box - h_sub, L), material="air")
+    strip = geo.Brick(origin=(-w_strip / 2, h_sub, 0.0), size=(w_strip, t_strip, L), material="pec")
 
     model = mio.GeometryModel(boundary_conditions={"xmin": "SymmetryPMC"})
     model.add(substrate)
@@ -165,7 +163,7 @@ structure and the excitation must both respect it.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 115-134
+.. GENERATED FROM PYTHON SOURCE LINES 113-132
 
 The cross-section plot shows the mesher at work on thin layers: the
 0.8 mm substrate and the 0.2 mm trace anchor grid planes at their
@@ -187,12 +185,12 @@ properties set by a weighted compromise between the two dielectrics.
 There is no textbook formula for that compromise; the port solves
 the 2D cross-section problem numerically, before any time stepping:
 
-.. GENERATED FROM PYTHON SOURCE LINES 134-144
+.. GENERATED FROM PYTHON SOURCE LINES 132-142
 
 .. code-block:: Python
 
 
-    analysis = mio.AnalysisScatteringTD(mesh=mesh, f_max=f_max, verbose=False)
+    analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
 
     report = analysis.solve_ports()["port1"]
     print(report)
@@ -218,7 +216,7 @@ the 2D cross-section problem numerically, before any time stepping:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 145-168
+.. GENERATED FROM PYTHON SOURCE LINES 143-166
 
 Two numbers to hold on to.  The line impedance comes out at
 **51.5 Ω** — the trace width was picked to land near 50 Ω, and it
@@ -244,7 +242,7 @@ the substrate under the trace, with a fringing skirt in the air.
 It is drawn across the full width: only half of it was solved, and
 the mirror image is filled in for the picture.
 
-.. GENERATED FROM PYTHON SOURCE LINES 168-172
+.. GENERATED FROM PYTHON SOURCE LINES 166-170
 
 .. code-block:: Python
 
@@ -270,7 +268,7 @@ the mirror image is filled in for the picture.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 173-178
+.. GENERATED FROM PYTHON SOURCE LINES 171-176
 
 Running the line and reading the S-parameters
 ---------------------------------------------
@@ -278,7 +276,7 @@ Running the line and reading the S-parameters
 A matched straight line is the simplest possible S-parameter test:
 everything should go through, nothing should come back.
 
-.. GENERATED FROM PYTHON SOURCE LINES 178-189
+.. GENERATED FROM PYTHON SOURCE LINES 176-187
 
 .. code-block:: Python
 
@@ -312,7 +310,7 @@ everything should go through, nothing should come back.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 190-211
+.. GENERATED FROM PYTHON SOURCE LINES 188-209
 
 Transmission hugs 0 dB.  The reflection sits near −32 dB at its
 worst — and it is worth understanding what that number *is*.  It is
@@ -336,7 +334,7 @@ instrument to extract it: over a line of length L, the mode
 accumulates φ = −β L, so β — and with it
 ε_eff = (c₀ β / ω)² — can be read off per frequency:
 
-.. GENERATED FROM PYTHON SOURCE LINES 211-229
+.. GENERATED FROM PYTHON SOURCE LINES 209-227
 
 .. code-block:: Python
 
@@ -378,7 +376,7 @@ accumulates φ = −β L, so β — and with it
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 230-249
+.. GENERATED FROM PYTHON SOURCE LINES 228-247
 
 The curve starts at the quasi-static value and rises to ≈ 3.3 at
 15 GHz — a 10 % walk toward εᵣ across the band, right in the range
@@ -403,7 +401,7 @@ resistor.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 4.235 seconds)
+   **Total running time of the script:** (0 minutes 4.221 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_09_microstrip_line.py:

@@ -106,7 +106,7 @@ The test vehicle is the RG-58 coax geometry from the earlier
 tutorials, with the polyethylene swapped for this material.  At these
 loss levels 24 mm of line eats a measurable half dB.
 
-.. GENERATED FROM PYTHON SOURCE LINES 70-90
+.. GENERATED FROM PYTHON SOURCE LINES 70-89
 
 .. code-block:: Python
 
@@ -114,11 +114,10 @@ loss levels 24 mm of line eats a measurable half dB.
     r_i, r_o, L_coax = 0.405e-3, 1.475e-3, 24e-3
     f_max = 6e9
 
-    pec = mio.Material.pec()
     dielectric = geo.Cylinder(origin=(0, 0, 0), radius=r_o, height=L_coax, axis="z", material=fr4)
-    inner = geo.Cylinder(origin=(0, 0, 0), radius=r_i, height=L_coax, axis="z", material=pec)
+    inner = geo.Cylinder(origin=(0, 0, 0), radius=r_i, height=L_coax, axis="z", material="pec")
 
-    model = mio.GeometryModel(background=pec)
+    model = mio.GeometryModel(background="pec")
     model.add(geo.Difference(dielectric, inner))
     model.add(inner)
     model.add_port(ports.PortWaveguide(name="port1", plane="zmin"))
@@ -128,7 +127,7 @@ loss levels 24 mm of line eats a measurable half dB.
         model, mio.MeshControl(max_cell_size=0.16e-3, min_cell_size=0.16e-3), f_max=f_max
     )
 
-    result = mio.AnalysisScatteringTD(mesh=mesh, f_max=f_max, verbose=False).run(excited=["port1"])
+    result = mio.AnalysisScatteringTD(mesh=mesh, verbose=False).run(excited=["port1"])
 
 
 
@@ -137,7 +136,7 @@ loss levels 24 mm of line eats a measurable half dB.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 91-103
+.. GENERATED FROM PYTHON SOURCE LINES 90-102
 
 On a uniform matched line, ``|S21| = e^(−αL)``, so one transmission
 measurement hands us the attenuation constant.  Two closed forms to
@@ -152,7 +151,7 @@ material's high-frequency permittivity, so on a strongly dispersive
 line the port is slightly mismatched to the in-band wave — here
 ``|S11|`` stays below −26 dB and shows up only as a gentle ripple.
 
-.. GENERATED FROM PYTHON SOURCE LINES 103-133
+.. GENERATED FROM PYTHON SOURCE LINES 102-132
 
 .. code-block:: Python
 
@@ -204,7 +203,7 @@ line the port is slightly mismatched to the in-band wave — here
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 134-162
+.. GENERATED FROM PYTHON SOURCE LINES 133-161
 
 From 1.6 GHz up the simulated attenuation tracks the model within a
 few percent; below that, α·L shrinks toward the ripple floor and the
@@ -235,7 +234,7 @@ stainless steel (σ = 1.45·10⁶ S/m — about 6× the surface resistance
 of copper, a realistic worst case and comfortably measurable).  Flat
 walls also mean the closed form is trustworthy across the band.
 
-.. GENERATED FROM PYTHON SOURCE LINES 162-194
+.. GENERATED FROM PYTHON SOURCE LINES 161-191
 
 .. code-block:: Python
 
@@ -244,9 +243,8 @@ walls also mean the closed form is trustworthy across the band.
     sigma_steel = 1.45e6
     f_lo, f_hi = 8.2e9, 12.4e9
 
-    air = mio.Material.air()
-    wg = mio.GeometryModel(background=air)
-    wg.add(geo.Brick(origin=(0, 0, 0), size=(a_wg, b_wg, L_wg), material=air))
+    wg = mio.GeometryModel(background="air")
+    wg.add(geo.Brick(origin=(0, 0, 0), size=(a_wg, b_wg, L_wg), material="air"))
     wg.add_port(ports.PortWaveguide(name="port1", plane="zmin", n_modes=1))
     wg.add_port(ports.PortWaveguide(name="port2", plane="zmax", n_modes=1))
 
@@ -263,7 +261,6 @@ walls also mean the closed form is trustworthy across the band.
         analysis = mio.AnalysisScatteringTD(
             mesh=wg_mesh,
             f_min=f_lo,
-            f_max=f_hi,
             monitors=(monitor,),
             verbose=False,
             **wall_kwargs,
@@ -278,7 +275,7 @@ walls also mean the closed form is trustworthy across the band.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 195-200
+.. GENERATED FROM PYTHON SOURCE LINES 192-197
 
 First the default.  The monitor needs to know which conductor it is
 metering — the walls here are the domain boundary, so ``bc_faces``
@@ -286,7 +283,7 @@ lists them and ``sigma`` supplies their conductivity (a lossy-metal
 *solid* would carry its own).  The reference plane turns the booked
 wall power into a fraction of the power flowing down the guide.
 
-.. GENERATED FROM PYTHON SOURCE LINES 200-209
+.. GENERATED FROM PYTHON SOURCE LINES 197-206
 
 .. code-block:: Python
 
@@ -312,7 +309,7 @@ wall power into a fraction of the power flowing down the guide.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 210-216
+.. GENERATED FROM PYTHON SOURCE LINES 207-213
 
 ``|S21| = 1`` to a few 10⁻⁴: the run itself was lossless, yet the
 monitor already knows the walls would eat about 2 % of the power —
@@ -321,7 +318,7 @@ fraction is a *power* ratio, α is a field amplitude rate.)
 
 Now the same guide with the surface impedance in the update.
 
-.. GENERATED FROM PYTHON SOURCE LINES 216-255
+.. GENERATED FROM PYTHON SOURCE LINES 213-252
 
 .. code-block:: Python
 
@@ -382,7 +379,7 @@ Now the same guide with the surface impedance in the update.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 256-279
+.. GENERATED FROM PYTHON SOURCE LINES 253-276
 
 Three independent estimates of the same physics — the surface
 impedance marching in the update, the perturbative bookkeeping on a
@@ -408,7 +405,7 @@ perturbative wall loss of one mode and returns
 ``Q = ω·W / P_loss``.  The reference: the classic closed form for
 the TE₁₀₁ mode of a rectangular copper cavity.
 
-.. GENERATED FROM PYTHON SOURCE LINES 279-305
+.. GENERATED FROM PYTHON SOURCE LINES 276-302
 
 .. code-block:: Python
 
@@ -416,8 +413,8 @@ the TE₁₀₁ mode of a rectangular copper cavity.
     a_c, b_c, d_c = 20e-3, 10e-3, 25e-3
     sigma_cu = 5.8e7
 
-    cavity = mio.GeometryModel(background=air)
-    cavity.add(geo.Brick(origin=(0, 0, 0), size=(a_c, b_c, d_c), material=air))
+    cavity = mio.GeometryModel(background="air")
+    cavity.add(geo.Brick(origin=(0, 0, 0), size=(a_c, b_c, d_c), material="air"))
     f101 = C0 / 2 * np.sqrt((1 / a_c) ** 2 + (1 / d_c) ** 2)
 
     cav_mesh = mio.Mesh.from_geometry(
@@ -452,7 +449,7 @@ the TE₁₀₁ mode of a rectangular copper cavity.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 306-312
+.. GENERATED FROM PYTHON SOURCE LINES 303-309
 
 Within one percent of the closed form.  The result also knows *where*
 the power goes — ``per_tag`` splits the wall loss by face, and the
@@ -461,7 +458,7 @@ tangential magnetic field of TE₁₀₁ and take half the loss between
 them; the four side walls, each touched by only one H component,
 share the rest.
 
-.. GENERATED FROM PYTHON SOURCE LINES 312-324
+.. GENERATED FROM PYTHON SOURCE LINES 309-321
 
 .. code-block:: Python
 
@@ -489,7 +486,7 @@ share the rest.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 325-346
+.. GENERATED FROM PYTHON SOURCE LINES 322-343
 
 Where to go from here
 ---------------------
@@ -516,7 +513,7 @@ and optimization with ordinary Python loops.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 26.968 seconds)
+   **Total running time of the script:** (0 minutes 27.450 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_11_losses.py:

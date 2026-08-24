@@ -75,7 +75,10 @@ f_max = 10e9  # upper band edge [Hz]
 # -------------------------------------------
 #
 # A Magnelio model is a :class:`~magnelio.GeometryModel` filled with
-# shapes, each carrying its :class:`~magnelio.Material`.  Our entire
+# shapes, each carrying its :class:`~magnelio.Material` — built-in
+# materials are simply named by string (``"air"``, ``"pec"``,
+# ``"vacuum"``); only parameterised materials need an explicit
+# :class:`~magnelio.Material` object.  Our entire
 # geometry is a single air-filled :class:`~magnelio.geo.Brick`;
 # the conductors do not need to be drawn at all, because they coincide
 # with the boundary of the computational domain:
@@ -87,13 +90,11 @@ f_max = 10e9  # upper band edge [Hz]
 # The boundary closure is declared once, on the model, and travels
 # with the mesh from there.
 
-air = mio.Material.air()
-
 model = mio.GeometryModel(
     boundary_conditions=mio.BoundaryConditions(xmin="PMC", xmax="PMC"),
 )
 model.add(
-    geo.Brick(origin=(-a / 2, -b / 2, -L / 2), size=(a, b, L), material=air),
+    geo.Brick(origin=(-a / 2, -b / 2, -L / 2), size=(a, b, L), material="air"),
 )
 
 # %%
@@ -141,13 +142,15 @@ fig, ax = plots.plot_cross_section(model, "z", 0.0, mesh=mesh, title="Port cross
 # The port modes
 # --------------
 #
-# The analysis object bundles mesh, band and ports.  Solving the port
+# The analysis object bundles mesh, band and ports — ``f_max`` is
+# taken from the mesh, which records the design frequency it was
+# generated for.  Solving the port
 # modes is a cheap 2D eigenproblem — worth inspecting before the 3D
 # run.  The report prints the mode ladder of each port; for a TEM mode
 # it also carries the line impedance, which we can hold against the
 # textbook formula.
 
-analysis = mio.AnalysisScatteringTD(mesh=mesh, f_max=f_max, verbose=False)
+analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
 
 report = analysis.solve_ports()["port1"]
 print(report)

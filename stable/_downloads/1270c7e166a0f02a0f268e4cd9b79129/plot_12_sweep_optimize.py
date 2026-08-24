@@ -52,9 +52,6 @@ ARM = 30.0e-3  # arm length beyond the junction
 R_POST = 1.5e-3  # matching-post radius
 F_MIN, F_MAX = 8.2e9, 12.4e9  # WR-90 design band
 
-pec = mio.Material.pec()
-air = mio.Material.air()
-
 # %%
 # Geometry as a function of a parameter
 # -------------------------------------
@@ -75,13 +72,13 @@ air = mio.Material.air()
 def build_tee(y_post=None):
     """Magic tee, optionally with a matching post at ``(0, y_post)``."""
     collinear = geo.Brick.from_ranges(
-        x1=-(A / 2 + ARM), dx=A + 2 * ARM, y1=-A / 2, dy=A, z1=0.0, dz=B, material=air
+        x1=-(A / 2 + ARM), dx=A + 2 * ARM, y1=-A / 2, dy=A, z1=0.0, dz=B, material="air"
     )
     h_arm = geo.Brick.from_ranges(
-        x1=-A / 2, dx=A, y1=0.0, dy=A / 2 + ARM, z1=0.0, dz=B, material=air
+        x1=-A / 2, dx=A, y1=0.0, dy=A / 2 + ARM, z1=0.0, dz=B, material="air"
     )
     e_arm = geo.Brick.from_ranges(
-        x1=-B / 2, dx=B, y1=-A / 2, dy=A, z1=0.0, dz=B + ARM, material=air
+        x1=-B / 2, dx=B, y1=-A / 2, dy=A, z1=0.0, dz=B + ARM, material="air"
     )
     body = geo.Union(collinear, h_arm, e_arm, name="tee")
 
@@ -93,7 +90,7 @@ def build_tee(y_post=None):
             origin=(0.0, y_post, -1e-3), radius=R_POST, height=B + 1e-3, axis="z"
         )
 
-    model = mio.GeometryModel(background=pec)
+    model = mio.GeometryModel(background="pec")
     model.add(body)
     model.add_port(ports.PortWaveguide(name="port1", plane="xmin", n_modes=1))
     model.add_port(ports.PortWaveguide(name="port2", plane="xmax", n_modes=1))
@@ -130,7 +127,7 @@ def tee_analysis(y_post=None):
         mio.MeshControl(min_nodes_per_wavelength=15, min_cell_size=1.0e-3),
         f_max=F_MAX,
     )
-    return mio.AnalysisScatteringTD(mesh=mesh, f_min=F_MIN, f_max=F_MAX, verbose=False)
+    return mio.AnalysisScatteringTD(mesh=mesh, f_min=F_MIN, verbose=False)
 
 
 def run_tee(analysis, both=False):

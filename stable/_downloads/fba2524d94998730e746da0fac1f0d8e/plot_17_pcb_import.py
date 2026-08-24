@@ -106,11 +106,9 @@ for solid in board.members():
 # top of the board — the cells *beside* the trace fall to the model
 # background, which is air as well.
 
-air = mio.Material.air()
-
 model = mio.GeometryModel()
 model.add(board)
-model.add(geo.Brick(origin=(0.0, 0.0, 35e-6), size=(L, 8.0e-3, H_AIR), material=air))
+model.add(geo.Brick(origin=(0.0, 0.0, 35e-6), size=(L, 8.0e-3, H_AIR), material="air"))
 
 model.add_port(ports.PortWaveguide(name="port1", plane="xmin", n_modes=1))
 model.add_port(ports.PortWaveguide(name="port2", plane="xmax", n_modes=1))
@@ -167,7 +165,7 @@ ax.set_ylim(-1.05, 0.95)
 # at once, in the substrate and in the air — and no closed formula for
 # the compromise it settles on.
 
-analysis = mio.AnalysisScatteringTD(mesh=mesh, f_max=F_MAX, verbose=False)
+analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
 
 report = analysis.solve_ports()["port1"]
 print(report)
