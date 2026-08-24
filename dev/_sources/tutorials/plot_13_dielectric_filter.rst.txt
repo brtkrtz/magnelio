@@ -21,10 +21,13 @@
 Capstone: a two-pole dielectric resonator filter
 ================================================
 
-The tutorials so far each isolated one capability.  This one is a
-design job of the kind the rest were preparation for: a narrowband
-bandpass filter built from ceramic resonators, dimensioned from a
-specification and verified against it.
+Tutorials 01–12 each isolated one capability of the core S-parameter
+workflow; this one closes that arc with a design job of the kind they
+were preparation for: a narrowband bandpass filter built from ceramic
+resonators, dimensioned from a specification and verified against it.
+(The tutorials after this one are feature chapters — profiles, far
+fields, CAD and PCB import, periodic structures — to be read as
+needed.)
 
 The device is a TM-mode dielectric filter.  Two ceramic pucks stand in
 a flat metal housing, soldered to floor and lid, separated by a wall
@@ -49,7 +52,7 @@ coupling coefficient :math:`k` and an external quality factor
 simulation.  Only at the end is the assembled filter computed, as a
 check.  This tutorial walks that path.
 
-.. GENERATED FROM PYTHON SOURCE LINES 33-63
+.. GENERATED FROM PYTHON SOURCE LINES 36-66
 
 .. code-block:: Python
 
@@ -90,7 +93,7 @@ check.  This tutorial walks that path.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 65-80
+.. GENERATED FROM PYTHON SOURCE LINES 68-83
 
 The specification, and what it asks of the geometry
 ---------------------------------------------------
@@ -108,7 +111,7 @@ them:
 That is the entire synthesis.  Two numbers, and the electromagnetics
 has not been touched yet.
 
-.. GENERATED FROM PYTHON SOURCE LINES 80-122
+.. GENERATED FROM PYTHON SOURCE LINES 83-125
 
 .. code-block:: Python
 
@@ -168,7 +171,7 @@ has not been touched yet.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 123-137
+.. GENERATED FROM PYTHON SOURCE LINES 126-140
 
 The resonator, and a first look at the mode
 -------------------------------------------
@@ -185,7 +188,7 @@ air volume *is* the cavity and the six bounding-box faces are its
 walls.  The pucks are then subtracted from the air and added back as
 ceramic.
 
-.. GENERATED FROM PYTHON SOURCE LINES 137-177
+.. GENERATED FROM PYTHON SOURCE LINES 140-180
 
 .. code-block:: Python
 
@@ -241,7 +244,7 @@ ceramic.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 178-192
+.. GENERATED FROM PYTHON SOURCE LINES 181-195
 
 Finding the working mode
 ------------------------
@@ -258,7 +261,7 @@ permittivity.
 
 Always check how many modes actually came back.
 
-.. GENERATED FROM PYTHON SOURCE LINES 192-220
+.. GENERATED FROM PYTHON SOURCE LINES 195-223
 
 .. code-block:: Python
 
@@ -306,7 +309,7 @@ Always check how many modes actually came back.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 221-233
+.. GENERATED FROM PYTHON SOURCE LINES 224-236
 
 The uncomfortable observation
 -----------------------------
@@ -321,7 +324,7 @@ If the design depended on hitting an absolute frequency, this would
 be fatal — and it is why filters are not designed that way.  What
 follows shows the alternative, and why it works.
 
-.. GENERATED FROM PYTHON SOURCE LINES 235-257
+.. GENERATED FROM PYTHON SOURCE LINES 238-260
 
 Stage 2: coupling between the resonators
 ----------------------------------------
@@ -346,7 +349,7 @@ between them with a window cut in it: below the window's cut-off the
 fields reach through evanescently, and the window width sets how
 much.
 
-.. GENERATED FROM PYTHON SOURCE LINES 257-295
+.. GENERATED FROM PYTHON SOURCE LINES 260-298
 
 .. code-block:: Python
 
@@ -400,12 +403,12 @@ much.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 296-298
+.. GENERATED FROM PYTHON SOURCE LINES 299-301
 
 Sweeping the window
 -------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 298-313
+.. GENERATED FROM PYTHON SOURCE LINES 301-316
 
 .. code-block:: Python
 
@@ -440,14 +443,14 @@ Sweeping the window
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 314-318
+.. GENERATED FROM PYTHON SOURCE LINES 317-321
 
 The ratio is robust where the frequency is not
 ----------------------------------------------
 
 Re-run one window on the finer grid and compare both quantities.
 
-.. GENERATED FROM PYTHON SOURCE LINES 318-342
+.. GENERATED FROM PYTHON SOURCE LINES 321-345
 
 .. code-block:: Python
 
@@ -497,7 +500,7 @@ Re-run one window on the finer grid and compare both quantities.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 343-358
+.. GENERATED FROM PYTHON SOURCE LINES 346-361
 
 Stage 3: how hard the outside world pulls
 -----------------------------------------
@@ -515,7 +518,7 @@ the lid is one large metal sheet with a small hole in it.  A
 :class:`~magnelio.ports.PortLumped` across the gap is the natural
 feed, the same one the monopole tutorial used.
 
-.. GENERATED FROM PYTHON SOURCE LINES 358-383
+.. GENERATED FROM PYTHON SOURCE LINES 361-386
 
 .. code-block:: Python
 
@@ -551,7 +554,7 @@ feed, the same one the monopole tutorial used.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 384-407
+.. GENERATED FROM PYTHON SOURCE LINES 387-410
 
 Two ways to read Q, and why both are printed
 --------------------------------------------
@@ -577,7 +580,7 @@ ever reaching the noise floor.  When the two agree the window was
 long enough; when they diverge it was not.  That is worth more than
 either number alone.
 
-.. GENERATED FROM PYTHON SOURCE LINES 407-462
+.. GENERATED FROM PYTHON SOURCE LINES 410-465
 
 .. code-block:: Python
 
@@ -651,7 +654,7 @@ either number alone.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 463-471
+.. GENERATED FROM PYTHON SOURCE LINES 466-474
 
 External Q rises exponentially with distance
 --------------------------------------------
@@ -662,7 +665,7 @@ so :math:`\ln Q_e` is a straight line in the probe radius.  Two
 points would in principle place the design; three show that the line
 is real.
 
-.. GENERATED FROM PYTHON SOURCE LINES 471-486
+.. GENERATED FROM PYTHON SOURCE LINES 474-489
 
 .. code-block:: Python
 
@@ -700,7 +703,7 @@ is real.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 487-496
+.. GENERATED FROM PYTHON SOURCE LINES 490-499
 
 Stage 4: the filter itself
 --------------------------
@@ -712,7 +715,7 @@ the second half from the first: the filter is symmetric about
 :math:`x = 0`, and saying so in the geometry means it cannot drift
 out of symmetry through a typo.
 
-.. GENERATED FROM PYTHON SOURCE LINES 496-515
+.. GENERATED FROM PYTHON SOURCE LINES 499-518
 
 .. code-block:: Python
 
@@ -747,7 +750,7 @@ out of symmetry through a typo.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 516-522
+.. GENERATED FROM PYTHON SOURCE LINES 519-525
 
 One excitation is enough
 ------------------------
@@ -756,7 +759,7 @@ The structure is symmetric about the iris, so :math:`S_{22} = S_{11}`
 and :math:`S_{12} = S_{21}`.  Driving the second port would cost a
 full run and add nothing.
 
-.. GENERATED FROM PYTHON SOURCE LINES 522-560
+.. GENERATED FROM PYTHON SOURCE LINES 525-563
 
 .. code-block:: Python
 
@@ -811,7 +814,7 @@ full run and add nothing.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 561-576
+.. GENERATED FROM PYTHON SOURCE LINES 564-579
 
 The yardstick: the response the synthesis promised
 --------------------------------------------------
@@ -829,7 +832,7 @@ bandwidth.  For a Chebyshev the two differ by a fixed factor,
 which is 2.34 here.  Reading the −3 dB width as the design width
 would make this filter look more than twice too wide.
 
-.. GENERATED FROM PYTHON SOURCE LINES 576-604
+.. GENERATED FROM PYTHON SOURCE LINES 579-607
 
 .. code-block:: Python
 
@@ -877,12 +880,12 @@ would make this filter look more than twice too wide.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 605-607
+.. GENERATED FROM PYTHON SOURCE LINES 608-610
 
 The result
 ----------
 
-.. GENERATED FROM PYTHON SOURCE LINES 607-622
+.. GENERATED FROM PYTHON SOURCE LINES 610-625
 
 .. code-block:: Python
 
@@ -913,7 +916,7 @@ The result
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 623-670
+.. GENERATED FROM PYTHON SOURCE LINES 626-673
 
 Looking inside: how the filter passes power
 -------------------------------------------
@@ -963,7 +966,7 @@ monitor recorded three frequencies across the band, so that claim
 can simply be read off it: sum :math:`E_z` over each half of the
 housing and compare the phases.
 
-.. GENERATED FROM PYTHON SOURCE LINES 670-681
+.. GENERATED FROM PYTHON SOURCE LINES 673-684
 
 .. code-block:: Python
 
@@ -994,7 +997,7 @@ housing and compare the phases.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 682-694
+.. GENERATED FROM PYTHON SOURCE LINES 685-697
 
 A steady drift of tens of degrees, not the 0° or 180° a standing
 even/odd pair would show — and nothing in between is available to a
@@ -1009,7 +1012,7 @@ both resonators are near their peaks — at phase zero, one of them
 happens to be near a zero crossing and the render looks like a
 half-empty filter.
 
-.. GENERATED FROM PYTHON SOURCE LINES 696-728
+.. GENERATED FROM PYTHON SOURCE LINES 699-731
 
 What this shows
 ---------------
@@ -1047,7 +1050,7 @@ and mirror one more chamber into the housing.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (6 minutes 28.256 seconds)
+   **Total running time of the script:** (6 minutes 32.973 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_13_dielectric_filter.py:

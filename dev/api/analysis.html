@@ -151,6 +151,13 @@
 </li>
 
 
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     API reference
@@ -274,6 +281,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../tutorials/index.html">
     Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
   </a>
 </li>
 
@@ -510,9 +524,10 @@ cross-checked by running one shared set of assertions over both.</p>
 frequency, as a complex number, in dB, or as a phase</p></li>
 <li><p><a class="reference internal" href="#magnelio.analysis.ScatteringResult.a" title="magnelio.analysis.ScatteringResult.a"><code class="xref py py-meth docutils literal notranslate"><span class="pre">a()</span></code></a>, <a class="reference internal" href="#magnelio.analysis.ScatteringResult.b" title="magnelio.analysis.ScatteringResult.b"><code class="xref py py-meth docutils literal notranslate"><span class="pre">b()</span></code></a> — incident and outgoing power waves in time</p></li>
 </ul>
-<p>Three further accessors come from <code class="xref py py-class docutils literal notranslate"><span class="pre">ScatteringResultMixin</span></code>
-and are shared verbatim rather than reimplemented: <code class="docutils literal notranslate"><span class="pre">plot_s</span></code> and
-the <code class="docutils literal notranslate"><span class="pre">to_touchstone</span></code> / <code class="docutils literal notranslate"><span class="pre">to_skrf</span></code> exports.</p>
+<p>Further accessors come from <code class="xref py py-class docutils literal notranslate"><span class="pre">ScatteringResultMixin</span></code> and are
+shared verbatim rather than reimplemented: <code class="docutils literal notranslate"><span class="pre">plot_s</span></code>, <code class="docutils literal notranslate"><span class="pre">deembed</span></code>
+(reference-plane shift) and the <code class="docutils literal notranslate"><span class="pre">to_touchstone</span></code> / <code class="docutils literal notranslate"><span class="pre">to_skrf</span></code>
+exports.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.analysis.ScatteringResult.S">
 <span class="sig-name descname"><span class="pre">S</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out_port</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_port</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode_out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.ScatteringResult.S" title="Link to this definition">#</a></dt>
@@ -877,6 +892,47 @@ number instead of <code class="docutils literal notranslate"><span class="pre">-
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="magnelio.analysis.ScatteringTDResult.deembed">
+<span class="sig-name descname"><span class="pre">deembed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distances</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.ScatteringTDResult.deembed" title="Link to this definition">#</a></dt>
+<dd><p>Shift port reference planes; return the de-embedded S-matrix.</p>
+<p>Removes the feed-line propagation between a port plane and its
+new reference plane: <code class="docutils literal notranslate"><span class="pre">result.deembed({&quot;port1&quot;:</span> <span class="pre">d})</span></code> moves
+port1’s reference plane the distance <code class="docutils literal notranslate"><span class="pre">d</span></code> [m] from the port
+plane <em>into</em> the domain, and every S-parameter touching that
+port is multiplied by the inverse line propagation factor over
+<code class="docutils literal notranslate"><span class="pre">d</span></code> — reflections twice, transmissions once per shifted end.
+A negative distance moves the plane outward (adds line
+length); ports not named keep their plane.</p>
+<p>The shift uses the discrete dispersion of the port’s uniform
+feed chain — the same grid propagation the solver applied — so
+de-embedding a uniform feed line removes its phase down to the
+accuracy floor of the run itself, including the
+grid-dispersion part that an analytic <code class="docutils literal notranslate"><span class="pre">exp(-jβd)</span></code> would
+leave behind on coarse meshes.  It assumes the cross-section
+stays that of the port over the shifted length; channels
+without certified discrete line parameters fall back to the
+mode’s continuum <code class="docutils literal notranslate"><span class="pre">γ(f)</span></code>.</p>
+<p>Below its cut-off a channel’s factor grows exponentially with
+distance, so de-embedded values there keep the diagnostic
+character the raw ones have.  Lumped ports carry no feed-line
+dispersion; naming one raises.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>distances</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em>) – Per-port shift distance [m], positive into the domain.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new result referenced at the shifted planes — the
+original is untouched.  It answers <code class="docutils literal notranslate"><span class="pre">S</span></code> / <code class="docutils literal notranslate"><span class="pre">db</span></code> /
+<code class="docutils literal notranslate"><span class="pre">phase</span></code> / <code class="docutils literal notranslate"><span class="pre">plot_s</span></code> and the Touchstone / scikit-rf
+exports.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="post.html#magnelio.post.SParameterResult" title="magnelio.post.SParameterResult">SParameterResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="magnelio.analysis.ScatteringTDResult.phase">
 <span class="sig-name descname"><span class="pre">phase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out_port</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_port</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode_out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unwrap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.ScatteringTDResult.phase" title="Link to this definition">#</a></dt>
 <dd><p>Phase of one S-parameter over the frequency axis.</p>
@@ -889,8 +945,10 @@ number instead of <code class="docutils literal notranslate"><span class="pre">-
 <code class="docutils literal notranslate"><span class="pre">mode_in</span></code>), as in <a class="reference internal" href="#magnelio.analysis.ScatteringTDResult.S" title="magnelio.analysis.ScatteringTDResult.S"><code class="xref py py-meth docutils literal notranslate"><span class="pre">S()</span></code></a>.</p></li>
 <li><p><strong>deg</strong> (<em>bool</em><em>, </em><em>default True</em>) – Return degrees; <code class="docutils literal notranslate"><span class="pre">False</span></code> returns radians.</p></li>
 <li><p><strong>unwrap</strong> (<em>bool</em><em>, </em><em>default True</em>) – Unwrap 2π discontinuities along the frequency axis.</p></li>
-<li><p><strong>f_axis</strong> (<em>array-like</em><em>, </em><em>optional</em>) – Custom frequency axis; recomputed from the recorded
-signals like <a class="reference internal" href="#magnelio.analysis.ScatteringTDResult.S" title="magnelio.analysis.ScatteringTDResult.S"><code class="xref py py-meth docutils literal notranslate"><span class="pre">S()</span></code></a>.</p></li>
+<li><p><strong>f_axis</strong> (<em>array-like</em><em>, </em><em>optional</em>) – Custom frequency axis, on hosts whose <a class="reference internal" href="#magnelio.analysis.ScatteringTDResult.S" title="magnelio.analysis.ScatteringTDResult.S"><code class="xref py py-meth docutils literal notranslate"><span class="pre">S()</span></code></a> can
+recompute the spectrum (run results); a plain
+<code class="xref py py-class docutils literal notranslate"><span class="pre">SParameterResult</span></code> holds one fixed axis and
+rejects it.</p></li>
 <li><p><strong>mode_out</strong> (<em>int</em>)</p></li>
 <li><p><strong>mode_in</strong> (<em>int</em>)</p></li>
 </ul>
@@ -1083,6 +1141,7 @@ entry must have been excited.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringTDResult.a"><code class="docutils literal notranslate"><span class="pre">ScatteringTDResult.a()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringTDResult.b"><code class="docutils literal notranslate"><span class="pre">ScatteringTDResult.b()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringTDResult.db"><code class="docutils literal notranslate"><span class="pre">ScatteringTDResult.db()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringTDResult.deembed"><code class="docutils literal notranslate"><span class="pre">ScatteringTDResult.deembed()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringTDResult.phase"><code class="docutils literal notranslate"><span class="pre">ScatteringTDResult.phase()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringTDResult.plot_s"><code class="docutils literal notranslate"><span class="pre">ScatteringTDResult.plot_s()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringTDResult.to_skrf"><code class="docutils literal notranslate"><span class="pre">ScatteringTDResult.to_skrf()</span></code></a></li>

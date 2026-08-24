@@ -48,7 +48,7 @@
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/plot_19_stripline_pickup_kicker';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'howto/plot_stripline_pickup_kicker';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
@@ -57,11 +57,11 @@
             true;
         </script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
-    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/dev/tutorials/plot_19_stripline_pickup_kicker.html" />
+    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/dev/howto/plot_stripline_pickup_kicker.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="API reference" href="../api/index.html" />
-    <link rel="prev" title="Periodic structures: the dispersion diagram of a TESLA cell" href="plot_18_periodic_tesla_cell.html" />
+    <link rel="prev" title="Lumped port tuning: microstrip" href="plot_lumped_port_tuning_microstrip.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -146,9 +146,16 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
-    Tutorials
+    How-to guides
   </a>
 </li>
 
@@ -273,9 +280,16 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
-    Tutorials
+    How-to guides
   </a>
 </li>
 
@@ -363,24 +377,10 @@
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="plot_01_parallel_plate.html">Your first simulation: a parallel-plate line</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_02_coax_line.html">A coaxial line: solids, booleans, and a coax port</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_03_coax_smatrix.html">Exciting both ports: the full S-matrix</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_04_higher_modes.html">Higher-order modes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_05_eigenmode_sphere.html">Eigenmode analysis: a spherical cavity</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_06_field_monitors.html">Field monitors: watching a magic tee work</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_07_project_store.html">Using disk storage: monitors at scale, resume, ParaView</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_08_open_boundary.html">Open boundaries: a monopole antenna</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_09_microstrip_line.html">Microstrip lines: quasi-TEM ports</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_10_lumped_elements.html">Lumped elements: a Wilkinson power divider</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_11_losses.html">Conductor and dielectric losses</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_12_sweep_optimize.html">Parameter sweeps and optimisation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_13_dielectric_filter.html">Capstone: a two-pole dielectric resonator filter</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_14_profile_geometry.html">Profiles: shapes the primitives do not cover</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_15_dipole_farfield.html">Antenna symmetry: a half-wave dipole as a half model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_16_cad_import.html">Importing a CAD model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_17_pcb_import.html">Importing a circuit board</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_18_periodic_tesla_cell.html">Periodic structures: the dispersion diagram of a TESLA cell</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_investigations.html">Lumped ports: investigations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_coax.html">Lumped port tuning: coaxial line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_cpw.html">Lumped port tuning: coplanar waveguide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_microstrip.html">Lumped port tuning: microstrip</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</a></li>
 </ul>
 </div>
@@ -423,7 +423,7 @@
       </a>
     </li>
     
-    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">How-to guides</a></li>
     
     <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</span></li>
   </ul>
@@ -444,16 +444,16 @@
                   
   <div class="sphx-glr-download-link-note admonition note">
 <p class="admonition-title">Note</p>
-<p><a class="reference internal" href="#sphx-glr-download-tutorials-plot-19-stripline-pickup-kicker-py"><span class="std std-ref">Go to the end</span></a>
+<p><a class="reference internal" href="#sphx-glr-download-howto-plot-stripline-pickup-kicker-py"><span class="std std-ref">Go to the end</span></a>
 to download the full example code.</p>
 </div>
 <section class="sphx-glr-example-title" id="striplines-as-pickups-and-kickers-beam-coupling-figures-from-s-parameter-runs">
-<span id="sphx-glr-tutorials-plot-19-stripline-pickup-kicker-py"></span><h1>Striplines as pickups and kickers: beam-coupling figures from S-parameter runs<a class="headerlink" href="#striplines-as-pickups-and-kickers-beam-coupling-figures-from-s-parameter-runs" title="Link to this heading">#</a></h1>
+<span id="sphx-glr-howto-plot-stripline-pickup-kicker-py"></span><h1>Striplines as pickups and kickers: beam-coupling figures from S-parameter runs<a class="headerlink" href="#striplines-as-pickups-and-kickers-beam-coupling-figures-from-s-parameter-runs" title="Link to this heading">#</a></h1>
 <p>A pair of stripline electrodes in a beam pipe is a workhorse of beam
 instrumentation: read out, it is a broadband <em>pickup</em> (a beam position
 monitor); driven, it is a <em>kicker</em> that deflects the beam.  Neither
 role is an S-parameter — a port model has no beam — yet both follow
-from one S-parameter simulation.  This tutorial walks the route used
+from one S-parameter simulation.  This guide walks the route used
 to design such devices (Goldberg and Lambertson, <em>AIP Conf. Proc.</em>
 249, 537 (1992)):</p>
 <ul class="simple">
@@ -689,7 +689,7 @@ once more without changing the mode.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_19_stripline_pickup_kicker_001.png" srcset="../_images/sphx_glr_plot_19_stripline_pickup_kicker_001.png" alt="Strip impedance from the port solver" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>h = 5 mm: Z_strip =  40.2 ohm (sum)   39.2 ohm (difference)
+<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_001.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_001.png" alt="Strip impedance from the port solver" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>h = 5 mm: Z_strip =  40.2 ohm (sum)   39.2 ohm (difference)
 h = 6 mm: Z_strip =  44.6 ohm (sum)   43.3 ohm (difference)
 h = 7 mm: Z_strip =  48.5 ohm (sum)   46.9 ohm (difference)
 h = 8 mm: Z_strip =  53.3 ohm (sum)   51.5 ohm (difference)
@@ -775,7 +775,7 @@ actually landed on.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_19_stripline_pickup_kicker_002.png" srcset="../_images/sphx_glr_plot_19_stripline_pickup_kicker_002.png" alt="Mid-plane of the half model (x = 0)" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>grid: 41 x 44 x 209 cells
+<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_002.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_002.png" alt="Mid-plane of the half model (x = 0)" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>grid: 41 x 44 x 209 cells
 coax port impedance on the grid: 52.7 ohm
 field line recorded at y = 0.95 mm, 209 points
 </pre></div>
@@ -790,7 +790,7 @@ upstream loads have to absorb the full drive power.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_19_stripline_pickup_kicker_003.png" srcset="../_images/sphx_glr_plot_19_stripline_pickup_kicker_003.png" alt="Differentially driven pair" class = "sphx-glr-single-img"/><p>The field picture shows what the beam will see: the drive enters at
+<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_003.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_003.png" alt="Differentially driven pair" class = "sphx-glr-single-img"/><p>The field picture shows what the beam will see: the drive enters at
 the right, and the longitudinal field that does the kicking is
 concentrated at the two strip ends, where the strip voltage steps
 from its line value to the grounded pit.  Along the strip itself the
@@ -803,7 +803,7 @@ field is transverse — a TEM line has no <span class="math notranslate nohighli
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_19_stripline_pickup_kicker_004.png" srcset="../_images/sphx_glr_plot_19_stripline_pickup_kicker_004.png" alt="$E_z$ at 500 MHz on the mid-plane, difference mode" class = "sphx-glr-single-img"/></section>
+<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_004.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_004.png" alt="$E_z$ at 500 MHz on the mid-plane, difference mode" class = "sphx-glr-single-img"/></section>
 <section id="beam-voltage-and-kicker-constant">
 <h2>Beam voltage and kicker constant<a class="headerlink" href="#beam-voltage-and-kicker-constant" title="Link to this heading">#</a></h2>
 <p>A particle of charge <span class="math notranslate nohighlight">\(e\)</span> and velocity <span class="math notranslate nohighlight">\(\beta c\)</span> crossing
@@ -847,7 +847,7 @@ strip — and <span class="math notranslate nohighlight">\(Z_c\)</span> the feed
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_19_stripline_pickup_kicker_005.png" srcset="../_images/sphx_glr_plot_19_stripline_pickup_kicker_005.png" alt="Beam voltage off axis, difference mode" class = "sphx-glr-single-img"/><p>The two directions are not equivalent.  A particle running <em>against</em>
+<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_005.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_005.png" alt="Beam voltage off axis, difference mode" class = "sphx-glr-single-img"/><p>The two directions are not equivalent.  A particle running <em>against</em>
 the drive wave collects the kicks of both strip ends in phase at the
 design frequency; one running <em>with</em> the wave, at the wave’s own
 speed, sees the second end cancel the first — the same directivity
@@ -972,7 +972,7 @@ the distance between the two feeds, not the strip’s own length.</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  R_perp T^2 = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">r_perp</span></a><span class="p">[</span><span class="n">i0</span><span class="p">]</span><span class="si">:</span><span class="s2">6.1f</span><span class="si">}</span><span class="s2"> ohm  (ideal </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">r_perp_ideal</span></a><span class="p">[</span><span class="n">i0</span><span class="p">]</span><span class="si">:</span><span class="s2">6.1f</span><span class="si">}</span><span class="s2"> ohm)&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_19_stripline_pickup_kicker_006.png" srcset="../_images/sphx_glr_plot_19_stripline_pickup_kicker_006.png" alt="Longitudinal shunt impedance, Transverse shunt impedance" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>at 0.5 GHz:
+<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_006.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_006.png" alt="Longitudinal shunt impedance, Transverse shunt impedance" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>at 0.5 GHz:
   K_par  = 0.409  (ideal 0.455)
   K_perp = 2.825  (ideal 3.261)
   R_par T^2  =    8.8 ohm  (ideal   10.9 ohm)
@@ -1033,14 +1033,14 @@ frequency.</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  = </span><span class="si">{</span><span class="mf">0.1</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sens</span></a><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> %/mm   (ideal </span><span class="si">{</span><span class="mf">0.1</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">sensitivity_ideal</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> %/mm)&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_19_stripline_pickup_kicker_007.png" srcset="../_images/sphx_glr_plot_19_stripline_pickup_kicker_007.png" alt="Pickup: sum signal, Pickup: difference signal" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>position sensitivity over 0.25-0.75 GHz: 72 ... 73 /m
+<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_007.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_007.png" alt="Pickup: sum signal, Pickup: difference signal" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>position sensitivity over 0.25-0.75 GHz: 72 ... 73 /m
   = 7.2 %/mm   (ideal 7.6 %/mm)
 </pre></div>
 </div>
 </section>
 <section id="where-to-go-next">
 <h2>Where to go next<a class="headerlink" href="#where-to-go-next" title="Link to this heading">#</a></h2>
-<p>Nothing in this tutorial is specific to striplines: any structure
+<p>Nothing in this guide is specific to striplines: any structure
 with ports can be driven as a kicker, and the three steps — beam
 voltage from <span class="math notranslate nohighlight">\(E_z\)</span> with the particle’s phase, transverse kick
 from its gradient, pickup response from reciprocity — apply to
@@ -1049,16 +1049,16 @@ particle velocity enters only through <span class="math notranslate nohighlight"
 one and watch the lobes shift down in frequency and the transverse
 response change), and the pit depth and feed offsets are the knobs
 that move the real device toward, or away from, the ideal stripline.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (4 minutes 41.203 seconds)</p>
-<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-19-stripline-pickup-kicker-py">
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (4 minutes 46.900 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-stripline-pickup-kicker-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
-<p><a class="reference download internal" download="" href="../_downloads/d20126bb2bac15fefc7042ec3cb1b2f4/plot_19_stripline_pickup_kicker.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_19_stripline_pickup_kicker.ipynb</span></code></a></p>
+<p><a class="reference download internal" download="" href="../_downloads/4f45f16660f9674c2e4e6eb9a377a83f/plot_stripline_pickup_kicker.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_stripline_pickup_kicker.ipynb</span></code></a></p>
 </div>
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
-<p><a class="reference download internal" download="" href="../_downloads/3aa788d06701e9e8b08d0bb3a9485556/plot_19_stripline_pickup_kicker.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_19_stripline_pickup_kicker.py</span></code></a></p>
+<p><a class="reference download internal" download="" href="../_downloads/6f00ae0c2d0e8c36407ca3c6de472001/plot_stripline_pickup_kicker.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_stripline_pickup_kicker.py</span></code></a></p>
 </div>
 <div class="sphx-glr-download sphx-glr-download-zip docutils container">
-<p><a class="reference download internal" download="" href="../_downloads/3308e62b0b7be2bcec95b0f84a9eb069/plot_19_stripline_pickup_kicker.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">zipped:</span> <span class="pre">plot_19_stripline_pickup_kicker.zip</span></code></a></p>
+<p><a class="reference download internal" download="" href="../_downloads/8bbbd2eb81d9a2457b5dd2a7e06537b0/plot_stripline_pickup_kicker.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">zipped:</span> <span class="pre">plot_stripline_pickup_kicker.zip</span></code></a></p>
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
@@ -1076,12 +1076,12 @@ that move the real device toward, or away from, the ideal stripline.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="plot_18_periodic_tesla_cell.html"
+       href="plot_lumped_port_tuning_microstrip.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Periodic structures: the dispersion diagram of a TESLA cell</p>
+        <p class="prev-next-title">Lumped port tuning: microstrip</p>
       </div>
     </a>
     <a class="right-next"
@@ -1127,7 +1127,7 @@ that move the real device toward, or away from, the ideal stripline.</p>
   <div class="sidebar-secondary-item">
 
   <div class="tocsection sourcelink">
-    <a href="../_sources/tutorials/plot_19_stripline_pickup_kicker.rst.txt">
+    <a href="../_sources/howto/plot_stripline_pickup_kicker.rst.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>

@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**23:20.288** total execution time for 19 files **from tutorials**:
+**18:48.964** total execution time for 18 files **from tutorials**:
 
 .. container::
 
@@ -33,59 +33,56 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_tutorials_plot_13_dielectric_filter.py` (``plot_13_dielectric_filter.py``)
-     - 06:28.256
-     - 0.0
-   * - :ref:`sphx_glr_tutorials_plot_19_stripline_pickup_kicker.py` (``plot_19_stripline_pickup_kicker.py``)
-     - 04:41.203
+     - 06:32.973
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_18_periodic_tesla_cell.py` (``plot_18_periodic_tesla_cell.py``)
-     - 03:39.363
+     - 03:39.001
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_12_sweep_optimize.py` (``plot_12_sweep_optimize.py``)
-     - 03:13.705
+     - 03:15.488
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_10_lumped_elements.py` (``plot_10_lumped_elements.py``)
-     - 01:47.733
+     - 01:48.846
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_05_eigenmode_sphere.py` (``plot_05_eigenmode_sphere.py``)
-     - 00:31.144
+     - 00:31.417
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_07_project_store.py` (``plot_07_project_store.py``)
-     - 00:27.834
+     - 00:27.954
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_15_dipole_farfield.py` (``plot_15_dipole_farfield.py``)
-     - 00:27.111
+     - 00:27.617
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_11_losses.py` (``plot_11_losses.py``)
-     - 00:26.695
+     - 00:26.561
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_06_field_monitors.py` (``plot_06_field_monitors.py``)
-     - 00:19.058
+     - 00:19.291
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_08_open_boundary.py` (``plot_08_open_boundary.py``)
-     - 00:15.628
-     - 0.0
-   * - :ref:`sphx_glr_tutorials_plot_04_higher_modes.py` (``plot_04_higher_modes.py``)
-     - 00:14.516
+     - 00:15.725
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_01_parallel_plate.py` (``plot_01_parallel_plate.py``)
-     - 00:14.269
+     - 00:14.798
+     - 0.0
+   * - :ref:`sphx_glr_tutorials_plot_04_higher_modes.py` (``plot_04_higher_modes.py``)
+     - 00:14.798
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_03_coax_smatrix.py` (``plot_03_coax_smatrix.py``)
-     - 00:13.420
+     - 00:13.902
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_02_coax_line.py` (``plot_02_coax_line.py``)
-     - 00:07.122
+     - 00:07.306
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_16_cad_import.py` (``plot_16_cad_import.py``)
-     - 00:05.388
+     - 00:05.423
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_09_microstrip_line.py` (``plot_09_microstrip_line.py``)
-     - 00:04.117
+     - 00:04.139
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_17_pcb_import.py` (``plot_17_pcb_import.py``)
-     - 00:03.261
+     - 00:03.263
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_14_profile_geometry.py` (``plot_14_profile_geometry.py``)
-     - 00:00.463
+     - 00:00.464
      - 0.0
