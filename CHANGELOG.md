@@ -7,6 +7,16 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Fixed
+
+- `geo.Loft(material="pec")` raised `AttributeError: 'str' object has
+  no attribute 'visible'` later, in plotting or meshing, instead of
+  resolving the built-in name like every other material argument —
+  the `Loft` class constructor had been missed by the 0.4.2 name
+  resolution.
+
 ## [0.4.2] - 2026-08-24
 
 ### Fixed

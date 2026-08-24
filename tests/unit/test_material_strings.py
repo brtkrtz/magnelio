@@ -135,3 +135,15 @@ class TestCadImportMapping:
         from magnelio.io.cad import _resolve_materials
 
         assert _resolve_materials(["pin"], {"pin": "pec"}) == ["pec"]
+
+
+class TestLoftConstructor:
+    def test_material_string_resolves(self):
+        # Regression: Loft is a public class constructor, not routed
+        # through the loft() factory — its material must resolve too
+        # (tutorial 14 hit the raw string in plot_cross_section).
+        from magnelio.geo import Face, Loft
+
+        throat = Face(normal="z", points=((0, 0), (1e-3, 0), (0, 1e-3)))
+        mouth = Face(normal="z", points=((0, 0), (2e-3, 0), (0, 2e-3)), position=5e-3)
+        assert Loft(throat, mouth, material="pec").material.is_pec

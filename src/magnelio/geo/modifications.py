@@ -575,7 +575,7 @@ class Loft(Shape):
                 )
         self.sections = sections
         self.blend = blend
-        self.material = material
+        self.material = resolve_material(material, "Loft(material=...)")
         self.name = name
 
     @cached_occ_shape
