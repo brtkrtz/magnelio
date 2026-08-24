@@ -65,14 +65,13 @@ for solid in parts.members():
 # Names are what a re-export preserves, so this mapping keeps working
 # after the drawing changes; positions and face counts do not.
 
-pec = mio.Material.pec()
 ptfe = mio.Material(name="PTFE", epsilon=(2.1,) * 3, color=(0.45, 0.68, 0.84), alpha=0.6)
 
 connector = import_step(
     STEP_FILE,
     {
-        "centre_pin": pec,
-        "outer_shell": pec,
+        "centre_pin": "pec",
+        "outer_shell": "pec",
         "insulator": ptfe,
     },
 )
@@ -98,7 +97,7 @@ connector = import_step(
 # Everything outside them is the model's background — here metal, which
 # closes the coaxial line off at the outside.
 
-model = mio.GeometryModel(background=pec)
+model = mio.GeometryModel(background="pec")
 model.add(connector)
 
 fig, ax = plots.plot_cross_section(model, "z", 6e-3, title="feed-through, cut across the axis")
@@ -144,7 +143,7 @@ for name, plane in (("port1", "zmin"), ("port2", "zmax")):
 mesh = mio.Mesh.from_geometry(model, mio.MeshControl(max_cell_size=0.25e-3), f_max=f_max)
 print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 
-analysis = mio.AnalysisScatteringTD(mesh=mesh, f_max=f_max, verbose=False)
+analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
 result = analysis.run()
 
 # %%
@@ -185,7 +184,7 @@ fig.tight_layout()
 # dump — do not, which is why
 # :func:`~magnelio.io.import_brep` insists on being told::
 #
-#     part = import_brep("horn.brep", unit="mm", material=pec)
+#     part = import_brep("horn.brep", unit="mm", material="pec")
 #
 # **Files travel between kernels, and not always intact.**  Every solid
 # is repaired on import; if one is still invalid afterwards the import

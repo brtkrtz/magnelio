@@ -178,7 +178,7 @@ cell.  Two details from tutorial 14 apply:
   ring, and united with a plain cylinder that supplies the beam tube
   and the axis.
 
-.. GENERATED FROM PYTHON SOURCE LINES 128-170
+.. GENERATED FROM PYTHON SOURCE LINES 128-167
 
 .. code-block:: Python
 
@@ -193,9 +193,6 @@ cell.  Two details from tutorial 14 apply:
         """The same (z, r) point in the second half of the cell."""
         return (PERIOD - zr[0], zr[1])
 
-
-    air = mio.Material.air()
-    pec = mio.Material.pec()
 
     outline = (
         geo.Path(xz((0.0, R_IRIS)))
@@ -218,9 +215,9 @@ cell.  Two details from tutorial 14 apply:
         .closed()
         .covered()
     )
-    ring = outline.revolved(axis="z", material=air)
-    tube = geo.Cylinder(origin=(0, 0, 0), radius=R_IRIS, height=PERIOD, axis="z", material=air)
-    cell = geo.Union(ring, tube, material=air)
+    ring = outline.revolved(axis="z", material="air")
+    tube = geo.Cylinder(origin=(0, 0, 0), radius=R_IRIS, height=PERIOD, axis="z", material="air")
+    cell = geo.Union(ring, tube, material="air")
 
     fig, ax = plots.plot_cross_section([cell], "y", 0.0, title="TESLA mid-cell, one period")
 
@@ -236,7 +233,7 @@ cell.  Two details from tutorial 14 apply:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 171-181
+.. GENERATED FROM PYTHON SOURCE LINES 168-178
 
 Unit cell, quarter model
 ------------------------
@@ -249,13 +246,13 @@ interest have their electric field in the r-z plane, which is
 *tangential* to the planes x = 0 and y = 0, so the correct wall there
 is the magnetic one (tutorial 09).
 
-.. GENERATED FROM PYTHON SOURCE LINES 181-196
+.. GENERATED FROM PYTHON SOURCE LINES 178-193
 
 .. code-block:: Python
 
 
     model = mio.GeometryModel(
-        background=pec,
+        background="pec",
         boundary_conditions={
             "xmin": "SymmetryPMC",
             "ymin": "SymmetryPMC",
@@ -281,7 +278,7 @@ is the magnetic one (tutorial 09).
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 197-208
+.. GENERATED FROM PYTHON SOURCE LINES 194-205
 
 Band edges the classical way
 ----------------------------
@@ -295,14 +292,14 @@ flips sign from cell to cell, :math:`E_z` is *odd* across the iris
 plane and the wall there is magnetic.  Two ordinary cavity solves,
 nothing periodic about them:
 
-.. GENERATED FROM PYTHON SOURCE LINES 208-223
+.. GENERATED FROM PYTHON SOURCE LINES 205-220
 
 .. code-block:: Python
 
 
 
     def lowest_mode(bcs):
-        half = mio.GeometryModel(background=pec, boundary_conditions=bcs)
+        half = mio.GeometryModel(background="pec", boundary_conditions=bcs)
         half.add(cell)
         m = mio.Mesh.from_geometry(half, mio.MeshControl(max_cell_size=4e-3), f_max=1.5e9)
         return mio.AnalysisEigenmode(mesh=m, n_modes=1, verbose=False).run().frequencies[0]
@@ -328,7 +325,7 @@ nothing periodic about them:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 224-234
+.. GENERATED FROM PYTHON SOURCE LINES 221-231
 
 The sweep
 ---------
@@ -341,7 +338,7 @@ problem is real; in between the mode fields are complex — travelling
 waves — and the solver switches to a complex Hermitian formulation
 without anything to configure.
 
-.. GENERATED FROM PYTHON SOURCE LINES 234-245
+.. GENERATED FROM PYTHON SOURCE LINES 231-242
 
 .. code-block:: Python
 
@@ -375,7 +372,7 @@ without anything to configure.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 246-261
+.. GENERATED FROM PYTHON SOURCE LINES 243-258
 
 The dispersion diagram
 ----------------------
@@ -393,7 +390,7 @@ parameters to the computed points checks the curve's *shape*; the
 published values are 1.300 GHz for the :math:`\pi`-mode and
 :math:`k = 1.87\,\%`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 261-297
+.. GENERATED FROM PYTHON SOURCE LINES 258-294
 
 .. code-block:: Python
 
@@ -452,7 +449,7 @@ published values are 1.300 GHz for the :math:`\pi`-mode and
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 298-325
+.. GENERATED FROM PYTHON SOURCE LINES 295-322
 
 The band edges from the periodic solves land on the wall-type solves
 — the same two numbers by two routes, to a fraction of a permille
@@ -482,7 +479,7 @@ the real snapshot of its electric field next to the
 The standing wave is symmetric about the cell's mid-plane; the
 travelling wave is not, and no combination of walls would produce it.
 
-.. GENERATED FROM PYTHON SOURCE LINES 325-340
+.. GENERATED FROM PYTHON SOURCE LINES 322-337
 
 .. code-block:: Python
 
@@ -513,7 +510,7 @@ travelling wave is not, and no combination of walls would produce it.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 341-353
+.. GENERATED FROM PYTHON SOURCE LINES 338-350
 
 Where to go next
 ----------------
@@ -531,7 +528,7 @@ surfaces at normal incidence.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (3 minutes 22.936 seconds)
+   **Total running time of the script:** (1 minutes 56.300 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_18_periodic_tesla_cell.py:

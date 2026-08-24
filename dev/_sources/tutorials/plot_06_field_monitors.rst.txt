@@ -65,7 +65,7 @@ same plane, and the E-arm along :math:`+z` through the broad wall.
 A :class:`~magnelio.geo.Union` merges them into a single shape whose
 overlap region *is* the junction.
 
-.. GENERATED FROM PYTHON SOURCE LINES 36-60
+.. GENERATED FROM PYTHON SOURCE LINES 36-59
 
 .. code-block:: Python
 
@@ -80,17 +80,16 @@ overlap region *is* the junction.
     b = 10.16e-3  # WR-90 narrow wall
     arm = 30.0e-3  # arm length beyond the junction
 
-    pec = mio.Material.pec()
-    air = mio.Material.air()
-
     # collinear arms along x (broad wall in y, TE10 E-field along z)
-    collinear = geo.Brick(origin=(-(a / 2 + arm), -a / 2, 0.0), size=(a + 2 * arm, a, b), material=air)
+    collinear = geo.Brick(
+        origin=(-(a / 2 + arm), -a / 2, 0.0), size=(a + 2 * arm, a, b), material="air"
+    )
     # H-arm along +y (broad wall in x, E-field along z)
-    h_arm = geo.Brick(origin=(-a / 2, 0.0, 0.0), size=(a, a / 2 + arm, b), material=air)
+    h_arm = geo.Brick(origin=(-a / 2, 0.0, 0.0), size=(a, a / 2 + arm, b), material="air")
     # E-arm along +z (broad wall in y, E-field along x)
-    e_arm = geo.Brick(origin=(-b / 2, -a / 2, 0.0), size=(b, a, b + arm), material=air)
+    e_arm = geo.Brick(origin=(-b / 2, -a / 2, 0.0), size=(b, a, b + arm), material="air")
 
-    model = mio.GeometryModel(background=pec)
+    model = mio.GeometryModel(background="pec")
     model.add(geo.Union(collinear, h_arm, e_arm, name="tee"))
 
 
@@ -106,13 +105,13 @@ overlap region *is* the junction.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 61-64
+.. GENERATED FROM PYTHON SOURCE LINES 60-63
 
 Two cross-sections show the whole device: the mid-height cut
 contains the collinear arms and the H-arm; the vertical cut along
 the collinear axis contains the E-arm standing on the broad wall.
 
-.. GENERATED FROM PYTHON SOURCE LINES 64-70
+.. GENERATED FROM PYTHON SOURCE LINES 63-69
 
 .. code-block:: Python
 
@@ -134,7 +133,7 @@ the collinear axis contains the E-arm standing on the broad wall.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 71-85
+.. GENERATED FROM PYTHON SOURCE LINES 70-84
 
 Ports, mesh, and a band-limited excitation
 ------------------------------------------
@@ -151,7 +150,7 @@ criterion to 50 dB of port-signal decay and let a gentle time-domain
 taper absorb the small truncation remainder — for the −3 dB
 splitting curves of a tee, 50 dB is plenty.
 
-.. GENERATED FROM PYTHON SOURCE LINES 85-100
+.. GENERATED FROM PYTHON SOURCE LINES 84-99
 
 .. code-block:: Python
 
@@ -183,7 +182,7 @@ splitting curves of a tee, 50 dB is plenty.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 101-126
+.. GENERATED FROM PYTHON SOURCE LINES 100-125
 
 Declaring monitors
 ------------------
@@ -211,7 +210,7 @@ runs, not merely proportional to whatever pulse drove them.  Should
 you ever want the untouched transform, it stays available as
 ``.data_raw``.
 
-.. GENERATED FROM PYTHON SOURCE LINES 126-163
+.. GENERATED FROM PYTHON SOURCE LINES 125-161
 
 .. code-block:: Python
 
@@ -247,7 +246,6 @@ you ever want the untouched transform, it stays available as
     analysis = mio.AnalysisScatteringTD(
         mesh=mesh,
         f_min=f_min,
-        f_max=f_max,
         monitors=(probe, movie, pattern_h, pattern_e),
         verbose=False,
     )
@@ -259,7 +257,7 @@ you ever want the untouched transform, it stays available as
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 164-171
+.. GENERATED FROM PYTHON SOURCE LINES 162-169
 
 Driving the H-arm
 -----------------
@@ -269,7 +267,7 @@ simulation, and at its start every monitor is cleared.  We therefore
 run one excitation at a time and harvest the pictures in between —
 first the H-arm.
 
-.. GENERATED FROM PYTHON SOURCE LINES 171-174
+.. GENERATED FROM PYTHON SOURCE LINES 169-172
 
 .. code-block:: Python
 
@@ -283,7 +281,7 @@ first the H-arm.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 175-181
+.. GENERATED FROM PYTHON SOURCE LINES 173-179
 
 The point monitor plots straight away — a 0D region over time gives
 the field at that spot as a trace.  The pulse arrives after its trip
@@ -292,7 +290,7 @@ is the junction ringing down through all four ports (the run
 continues well past the window shown, until that tail has decayed
 by the requested 50 dB):
 
-.. GENERATED FROM PYTHON SOURCE LINES 181-185
+.. GENERATED FROM PYTHON SOURCE LINES 179-183
 
 .. code-block:: Python
 
@@ -318,7 +316,7 @@ by the requested 50 dB):
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 186-192
+.. GENERATED FROM PYTHON SOURCE LINES 184-190
 
 The movie monitor holds every frame of the mid-height cut; three of
 them tell the story.  The pulse runs down the H-arm, meets the
@@ -327,7 +325,7 @@ junction, and leaves through the two collinear arms — with the
 mirror plane of the tee, so it can only excite the symmetric
 combination of the two arms:
 
-.. GENERATED FROM PYTHON SOURCE LINES 192-199
+.. GENERATED FROM PYTHON SOURCE LINES 190-197
 
 .. code-block:: Python
 
@@ -350,7 +348,7 @@ combination of the two arms:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 200-206
+.. GENERATED FROM PYTHON SOURCE LINES 198-204
 
 The frequency monitor condenses the whole run into one complex
 pattern per field component.  At 10 GHz the in-phase split shows as
@@ -359,7 +357,7 @@ fully in-plane in this cut — curls through the junction accordingly.
 The standing-wave modulation visible in the H-arm is real physics:
 an unmatched tee reflects part of the drive back up its feed.
 
-.. GENERATED FROM PYTHON SOURCE LINES 206-214
+.. GENERATED FROM PYTHON SOURCE LINES 204-212
 
 .. code-block:: Python
 
@@ -383,7 +381,7 @@ an unmatched tee reflects part of the drive back up its feed.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 215-224
+.. GENERATED FROM PYTHON SOURCE LINES 213-222
 
 The S-parameters say the same thing without pictures: the drive
 splits evenly (``|S13|`` a little above −3 dB plus a reflected
@@ -395,7 +393,7 @@ The isolation gets an axis of its own on the right.  Drawn on the
 shared scale it would sit 150 dB below everything else and squeeze
 the two curves that carry the actual splitting into one line.
 
-.. GENERATED FROM PYTHON SOURCE LINES 224-253
+.. GENERATED FROM PYTHON SOURCE LINES 222-251
 
 .. code-block:: Python
 
@@ -447,7 +445,7 @@ the two curves that carry the actual splitting into one line.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 254-268
+.. GENERATED FROM PYTHON SOURCE LINES 252-266
 
 An isolation of −160 dB is not a converged small number — it is the
 numerical floor.  The E-arm mode is *antisymmetric* under the tee's
@@ -464,7 +462,7 @@ The second run feeds port 4.  Same monitors, fresh data — and the
 vertical cut now earns its keep, because this drive lives in that
 plane:
 
-.. GENERATED FROM PYTHON SOURCE LINES 268-278
+.. GENERATED FROM PYTHON SOURCE LINES 266-276
 
 .. code-block:: Python
 
@@ -490,7 +488,7 @@ plane:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 279-285
+.. GENERATED FROM PYTHON SOURCE LINES 277-283
 
 The arrows come down the E-arm and split at the junction — and
 because the E-arm's field points *along* the collinear axis, the
@@ -499,7 +497,7 @@ panel shows :math:`E_z` flipping between the left and the right
 arm.  This drive produces the antisymmetric combination, the exact
 counterpart of the H-arm's symmetric one:
 
-.. GENERATED FROM PYTHON SOURCE LINES 285-291
+.. GENERATED FROM PYTHON SOURCE LINES 283-289
 
 .. code-block:: Python
 
@@ -523,7 +521,7 @@ counterpart of the H-arm's symmetric one:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 292-315
+.. GENERATED FROM PYTHON SOURCE LINES 290-313
 
 Sum and difference: that is the "magic".  Two signals entering the
 collinear arms emerge at the H-arm added and at the E-arm
@@ -552,7 +550,7 @@ results reopen after a restart, and the fields go to ParaView.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 13.060 seconds)
+   **Total running time of the script:** (0 minutes 8.623 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_06_field_monitors.py:

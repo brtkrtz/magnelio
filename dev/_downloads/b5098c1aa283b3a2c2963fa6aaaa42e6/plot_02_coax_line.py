@@ -72,15 +72,14 @@ print(f"target impedance: {z_formula:.3f} Ohm")
 # therefore solid conductor: the shield comes for free, and its inner
 # surface is exactly the dielectric boundary at ``r_o``.
 
-pec = mio.Material.pec()
 polyethylene = mio.Material.from_isotropic(name="polyethylene", epsilon=eps_r)
 
 dielectric = geo.Cylinder(
     origin=(0.0, 0.0, 0.0), radius=r_o, height=L, axis="z", material=polyethylene
 )
-inner = geo.Cylinder(origin=(0.0, 0.0, 0.0), radius=r_i, height=L, axis="z", material=pec)
+inner = geo.Cylinder(origin=(0.0, 0.0, 0.0), radius=r_i, height=L, axis="z", material="pec")
 
-model = mio.GeometryModel(background=pec)
+model = mio.GeometryModel(background="pec")
 model.add(geo.Difference(dielectric, inner))  # the dielectric annulus
 model.add(inner)  # the inner conductor
 
@@ -168,7 +167,7 @@ fig.tight_layout()
 # Numerical mode vs. analytical reference
 # ---------------------------------------
 
-analysis = mio.AnalysisScatteringTD(mesh=mesh, f_max=f_max, verbose=False)
+analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
 
 report = analysis.solve_ports()["port1"]
 print(report)

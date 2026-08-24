@@ -56,7 +56,7 @@ Geometry, ports and mesh are unchanged from the previous tutorial —
 three WR-90 arms united into a tee, four single-mode ports, and the
 band-limited 8.2–12.4 GHz excitation.
 
-.. GENERATED FROM PYTHON SOURCE LINES 27-63
+.. GENERATED FROM PYTHON SOURCE LINES 27-62
 
 .. code-block:: Python
 
@@ -74,14 +74,13 @@ band-limited 8.2–12.4 GHz excitation.
     b = 10.16e-3  # WR-90 narrow wall
     arm = 30.0e-3  # arm length beyond the junction
 
-    pec = mio.Material.pec()
-    air = mio.Material.air()
+    collinear = geo.Brick(
+        origin=(-(a / 2 + arm), -a / 2, 0.0), size=(a + 2 * arm, a, b), material="air"
+    )
+    h_arm = geo.Brick(origin=(-a / 2, 0.0, 0.0), size=(a, a / 2 + arm, b), material="air")
+    e_arm = geo.Brick(origin=(-b / 2, -a / 2, 0.0), size=(b, a, b + arm), material="air")
 
-    collinear = geo.Brick(origin=(-(a / 2 + arm), -a / 2, 0.0), size=(a + 2 * arm, a, b), material=air)
-    h_arm = geo.Brick(origin=(-a / 2, 0.0, 0.0), size=(a, a / 2 + arm, b), material=air)
-    e_arm = geo.Brick(origin=(-b / 2, -a / 2, 0.0), size=(b, a, b + arm), material=air)
-
-    model = mio.GeometryModel(background=pec)
+    model = mio.GeometryModel(background="pec")
     model.add(geo.Union(collinear, h_arm, e_arm, name="tee"))
     model.add_port(ports.PortWaveguide(name="port1", plane="xmin", n_modes=1))
     model.add_port(ports.PortWaveguide(name="port2", plane="xmax", n_modes=1))
@@ -103,7 +102,7 @@ band-limited 8.2–12.4 GHz excitation.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 64-87
+.. GENERATED FROM PYTHON SOURCE LINES 63-86
 
 A 3D monitor and a project directory
 ------------------------------------
@@ -129,7 +128,7 @@ temporary folder so this page can build anywhere; in real work you
 would pick a permanent location on fast local storage, because the
 solver writes into it continuously.
 
-.. GENERATED FROM PYTHON SOURCE LINES 87-110
+.. GENERATED FROM PYTHON SOURCE LINES 86-108
 
 .. code-block:: Python
 
@@ -146,7 +145,6 @@ solver writes into it continuously.
     analysis = mio.AnalysisScatteringTD(
         mesh=mesh,
         f_min=f_min,
-        f_max=f_max,
         monitors=(volume,),
         project=proj_dir,
         geometry=model,
@@ -170,7 +168,7 @@ solver writes into it continuously.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 111-116
+.. GENERATED FROM PYTHON SOURCE LINES 109-114
 
 ``run()`` on a project returns not an in-RAM result but a *reader*
 over the directory it just wrote.  Both excitations now live on disk
@@ -178,7 +176,7 @@ as separate named runs — including, unlike in the previous tutorial,
 both sets of monitor data.  A look at the files shows where
 everything went (sizes in kB):
 
-.. GENERATED FROM PYTHON SOURCE LINES 116-124
+.. GENERATED FROM PYTHON SOURCE LINES 114-122
 
 .. code-block:: Python
 
@@ -220,7 +218,7 @@ everything went (sizes in kB):
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 125-141
+.. GENERATED FROM PYTHON SOURCE LINES 123-139
 
 ``project.json`` carries the run registry and the reconstruction
 recipe, ``mesh.h5`` and ``geometry.brep`` the exact model, and each
@@ -239,7 +237,7 @@ separation the store exists for: a cluster job computes, your
 laptop evaluates.  S-parameters are derived on read from the stored
 signals, with the accessors you already know:
 
-.. GENERATED FROM PYTHON SOURCE LINES 141-148
+.. GENERATED FROM PYTHON SOURCE LINES 139-146
 
 .. code-block:: Python
 
@@ -269,7 +267,7 @@ signals, with the accessors you already know:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 149-164
+.. GENERATED FROM PYTHON SOURCE LINES 147-162
 
 Watching a run: the energy trace
 --------------------------------
@@ -287,7 +285,7 @@ process — another shell, a notebook on your laptop — can
 :func:`~magnelio.open_project` the very same directory and follow
 the progress live, without touching the job that is computing.
 
-.. GENERATED FROM PYTHON SOURCE LINES 164-180
+.. GENERATED FROM PYTHON SOURCE LINES 162-178
 
 .. code-block:: Python
 
@@ -326,7 +324,7 @@ the progress live, without touching the job that is computing.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 181-189
+.. GENERATED FROM PYTHON SOURCE LINES 179-187
 
 The monitor data of *every* run is preserved — where the previous
 tutorial had to harvest its in-RAM monitors between two ``run()``
@@ -337,7 +335,7 @@ stored pattern is a full 3D volume, the slice plane is chosen at
 mid-height cut, the E-arm drive on the vertical cut, both from data
 recorded in the same simulation:
 
-.. GENERATED FROM PYTHON SOURCE LINES 189-202
+.. GENERATED FROM PYTHON SOURCE LINES 187-200
 
 .. code-block:: Python
 
@@ -366,7 +364,7 @@ recorded in the same simulation:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 203-214
+.. GENERATED FROM PYTHON SOURCE LINES 201-212
 
 Running longer: resume
 ----------------------
@@ -380,7 +378,7 @@ interrupted job, a stop criterion chosen too shallow, and the
 convergence question "would more ring-down change my S-parameters?".
 Here we ask the third one, extending the H-arm run by 2000 steps:
 
-.. GENERATED FROM PYTHON SOURCE LINES 214-224
+.. GENERATED FROM PYTHON SOURCE LINES 212-222
 
 .. code-block:: Python
 
@@ -408,7 +406,7 @@ Here we ask the third one, extending the H-arm run by 2000 steps:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 225-238
+.. GENERATED FROM PYTHON SOURCE LINES 223-236
 
 The change is far below any engineering tolerance — the original
 stop criterion was deep enough, and finding that out cost two
@@ -424,7 +422,7 @@ volume invites the ones you don't.  Every project run ships with a
 generated ParaView session for its monitors — the files appeared in
 the listing above:
 
-.. GENERATED FROM PYTHON SOURCE LINES 238-244
+.. GENERATED FROM PYTHON SOURCE LINES 236-242
 
 .. code-block:: Python
 
@@ -447,7 +445,7 @@ the listing above:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 245-275
+.. GENERATED FROM PYTHON SOURCE LINES 243-273
 
 ``paraview.pvsm`` is a double-clickable state file: geometry as
 translucent solids, slice and clip widgets through the field
@@ -483,7 +481,7 @@ them the first antenna.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 21.544 seconds)
+   **Total running time of the script:** (0 minutes 13.374 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_07_project_store.py:

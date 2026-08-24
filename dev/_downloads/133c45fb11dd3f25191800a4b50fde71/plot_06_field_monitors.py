@@ -44,17 +44,16 @@ a = 22.86e-3  # WR-90 broad wall
 b = 10.16e-3  # WR-90 narrow wall
 arm = 30.0e-3  # arm length beyond the junction
 
-pec = mio.Material.pec()
-air = mio.Material.air()
-
 # collinear arms along x (broad wall in y, TE10 E-field along z)
-collinear = geo.Brick(origin=(-(a / 2 + arm), -a / 2, 0.0), size=(a + 2 * arm, a, b), material=air)
+collinear = geo.Brick(
+    origin=(-(a / 2 + arm), -a / 2, 0.0), size=(a + 2 * arm, a, b), material="air"
+)
 # H-arm along +y (broad wall in x, E-field along z)
-h_arm = geo.Brick(origin=(-a / 2, 0.0, 0.0), size=(a, a / 2 + arm, b), material=air)
+h_arm = geo.Brick(origin=(-a / 2, 0.0, 0.0), size=(a, a / 2 + arm, b), material="air")
 # E-arm along +z (broad wall in y, E-field along x)
-e_arm = geo.Brick(origin=(-b / 2, -a / 2, 0.0), size=(b, a, b + arm), material=air)
+e_arm = geo.Brick(origin=(-b / 2, -a / 2, 0.0), size=(b, a, b + arm), material="air")
 
-model = mio.GeometryModel(background=pec)
+model = mio.GeometryModel(background="pec")
 model.add(geo.Union(collinear, h_arm, e_arm, name="tee"))
 
 # %%
@@ -155,7 +154,6 @@ pattern_e = monitors.MonitorFieldFrequency(
 analysis = mio.AnalysisScatteringTD(
     mesh=mesh,
     f_min=f_min,
-    f_max=f_max,
     monitors=(probe, movie, pattern_h, pattern_e),
     verbose=False,
 )

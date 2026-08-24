@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=2c986542"></script>
+    <script src="../_static/documentation_options.js?v=f07922c9"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -512,7 +512,10 @@ readable.</p>
 <section id="geometry-materials-and-boundary-conditions">
 <h2>Geometry, materials and boundary conditions<a class="headerlink" href="#geometry-materials-and-boundary-conditions" title="Link to this heading">#</a></h2>
 <p>A Magnelio model is a <a class="reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeometryModel</span></code></a> filled with
-shapes, each carrying its <a class="reference internal" href="../api/core.html#magnelio.Material" title="magnelio.Material"><code class="xref py py-class docutils literal notranslate"><span class="pre">Material</span></code></a>.  Our entire
+shapes, each carrying its <a class="reference internal" href="../api/core.html#magnelio.Material" title="magnelio.Material"><code class="xref py py-class docutils literal notranslate"><span class="pre">Material</span></code></a> — built-in
+materials are simply named by string (<code class="docutils literal notranslate"><span class="pre">&quot;air&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;pec&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&quot;vacuum&quot;</span></code>); only parameterised materials need an explicit
+<a class="reference internal" href="../api/core.html#magnelio.Material" title="magnelio.Material"><code class="xref py py-class docutils literal notranslate"><span class="pre">Material</span></code></a> object.  Our entire
 geometry is a single air-filled <a class="reference internal" href="../api/geo.html#magnelio.geo.Brick" title="magnelio.geo.Brick"><code class="xref py py-class docutils literal notranslate"><span class="pre">Brick</span></code></a>;
 the conductors do not need to be drawn at all, because they coincide
 with the boundary of the computational domain:</p>
@@ -523,13 +526,11 @@ with the boundary of the computational domain:</p>
 </ul>
 <p>The boundary closure is declared once, on the model, and travels
 with the mesh from there.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">air</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Material</span><span class="o">.</span><span class="n">air</span><span class="p">()</span>
-
-<span class="n">model</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span>
     <span class="n">boundary_conditions</span><span class="o">=</span><span class="n">mio</span><span class="o">.</span><span class="n">BoundaryConditions</span><span class="p">(</span><span class="n">xmin</span><span class="o">=</span><span class="s2">&quot;PMC&quot;</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="s2">&quot;PMC&quot;</span><span class="p">),</span>
 <span class="p">)</span>
 <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-    <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="n">a</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="n">b</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="n">L</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">L</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="n">air</span><span class="p">),</span>
+    <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="n">a</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="n">b</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="n">L</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">L</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">&quot;air&quot;</span><span class="p">),</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -583,12 +584,14 @@ tutorial — it renders the model as a rotatable widget.)</p>
 <img src="../_images/sphx_glr_plot_01_parallel_plate_001.png" srcset="../_images/sphx_glr_plot_01_parallel_plate_001.png" alt="Port cross-section (z = 0)" class = "sphx-glr-single-img"/></section>
 <section id="the-port-modes">
 <h2>The port modes<a class="headerlink" href="#the-port-modes" title="Link to this heading">#</a></h2>
-<p>The analysis object bundles mesh, band and ports.  Solving the port
+<p>The analysis object bundles mesh, band and ports — <code class="docutils literal notranslate"><span class="pre">f_max</span></code> is
+taken from the mesh, which records the design frequency it was
+generated for.  Solving the port
 modes is a cheap 2D eigenproblem — worth inspecting before the 3D
 run.  The report prints the mode ladder of each port; for a TEM mode
 it also carries the line impedance, which we can hold against the
 textbook formula.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="n">f_max</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
 <span class="n">report</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">solve_ports</span><span class="p">()[</span><span class="s2">&quot;port1&quot;</span><span class="p">]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">report</span><span class="p">)</span>
@@ -683,7 +686,7 @@ before the run, and validate against known results where they
 exist.  The next tutorial builds a real three-dimensional structure
 (a coaxial line) from solids and boolean operations, with a port
 spec matched to its cross-section.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 9.359 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 8.566 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-01-parallel-plate-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/669effd58f485a0c27678f09024dad99/plot_01_parallel_plate.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_01_parallel_plate.ipynb</span></code></a></p>

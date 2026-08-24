@@ -91,9 +91,6 @@ L_PIPE = 3.0 * B
 Z_COAX_DESIGN = 60.0 * math.log(R_OUT / R_IN)
 print(f"strip length {L * 1e3:.1f} mm, coax {Z_COAX_DESIGN:.1f} ohm")
 
-pec = mio.Material.pec()
-air = mio.Material.air()
-
 
 def build_coupler(h):
     """The electrode pair in its pipe: [vacuum body, electrode body] for strip height h."""
@@ -102,24 +99,26 @@ def build_coupler(h):
     y_top = r_pit + L_COAX
 
     vacuum = geo.Cylinder(
-        radius=B, origin=(0, 0, -L_PIPE), axis="z", height=L + 2 * L_PIPE, material=air
+        radius=B, origin=(0, 0, -L_PIPE), axis="z", height=L + 2 * L_PIPE, material="air"
     )
     pit = (
         geo.Face(
             normal="x",
             points=((0, -G_PIT), (0, L + G_PIT), (r_pit, L + G_PIT), (r_pit, -G_PIT)),
-            material=pec,
+            material="pec",
         )
         .revolved(axis="z", angle_deg=pit_deg)
         .rotated(axis="z", angle_deg=-pit_deg / 2)
         .filleted(edges="all", radius=1e-3)
     )
-    coax = geo.Cylinder(origin=(0, 0, -G_FEED), axis="y", height=y_top, radius=R_OUT, material=air)
+    coax = geo.Cylinder(
+        origin=(0, 0, -G_FEED), axis="y", height=y_top, radius=R_OUT, material="air"
+    )
     pin = geo.Cylinder(
-        origin=(0, r_pit, -G_FEED), axis="y", height=L_COAX, radius=R_IN, material=pec
+        origin=(0, r_pit, -G_FEED), axis="y", height=L_COAX, radius=R_IN, material="pec"
     )
     strip = (
-        geo.Face(normal="x", points=((B, 0), (B, L), (B + T, L), (B + T, 0)), material=pec)
+        geo.Face(normal="x", points=((B, 0), (B, L), (B + T, L), (B + T, 0)), material="pec")
         .revolved(axis="z", angle_deg=PHI_DEG)
         .rotated(axis="z", angle_deg=-PHI_DEG / 2)
     )
@@ -128,7 +127,7 @@ def build_coupler(h):
         (0, B + T / 2, 0),
         pin,
         (0, r_pit, -G_FEED),
-        material=pec,
+        material="pec",
         blend="tangent",
         tension=(0.8, 0.2),
     )
@@ -149,7 +148,7 @@ def build_coupler(h):
 #
 # .. code-block:: python
 #
-#     model = mio.GeometryModel(background=pec)
+#     model = mio.GeometryModel(background="pec")
 #     for body in build_coupler(7.5e-3):
 #         model.add(body)
 #     model.plot()
@@ -192,7 +191,7 @@ FAR = 10.0  # a "large" coordinate for half-open boxes
 def strip_impedance(h, mode):
     """Line impedance of one strip in the sum ("PMC") or difference ("PEC") mode."""
     model = mio.GeometryModel(
-        background=pec, boundary_conditions={"xmin": "SymmetryPMC", "ymin": "Symmetry" + mode}
+        background="pec", boundary_conditions={"xmin": "SymmetryPMC", "ymin": "Symmetry" + mode}
     )
     box = geo.Brick.from_ranges(x1=-FAR, x2=FAR, y1=-FAR, y2=FAR, z1=L / 2, z2=L / 2 + 10e-3)
     for body in build_coupler(h):
@@ -205,7 +204,7 @@ def strip_impedance(h, mode):
     mesh = mio.Mesh.from_geometry(
         model, mio.MeshControl(min_cell_size=T / 2, max_cell_size=1e-3), f_max=F_MAX
     )
-    report = mio.AnalysisScatteringTD(mesh=mesh, f_max=F_MAX, verbose=False).solve_ports()
+    report = mio.AnalysisScatteringTD(mesh=mesh, verbose=False).solve_ports()
     z_pair = report["strip"].z_line_num
     return 2.0 * z_pair if mode == "PMC" else 0.5 * z_pair
 
@@ -271,7 +270,7 @@ FREQS = np.arange(0.1e9, F_MAX, 0.05e9)
 def kicker_run(mode):
     """Drive the downstream port of the pair in the sum or difference mode."""
     model = mio.GeometryModel(
-        background=pec, boundary_conditions={"xmin": "SymmetryPMC", "ymin": "Symmetry" + mode}
+        background="pec", boundary_conditions={"xmin": "SymmetryPMC", "ymin": "Symmetry" + mode}
     )
     for body in build_coupler(H):
         model.add(body)
@@ -293,9 +292,7 @@ def kicker_run(mode):
     plane = monitors.MonitorFieldFrequency(
         freqs=[F0], fields=["E"], corners=((0, None, None), (0, None, None)), name="E_plane"
     )
-    analysis = mio.AnalysisScatteringTD(
-        mesh=mesh, f_max=F_MAX, monitors=[line, plane], verbose=False
-    )
+    analysis = mio.AnalysisScatteringTD(mesh=mesh, monitors=[line, plane], verbose=False)
     z_port = analysis.solve_ports()["downstream"].z_line_num
     result = analysis.run(excited=["downstream"])
     return model, mesh, result, line, plane, z_port

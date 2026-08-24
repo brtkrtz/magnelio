@@ -113,13 +113,16 @@ readable.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 74-89
+.. GENERATED FROM PYTHON SOURCE LINES 74-92
 
 Geometry, materials and boundary conditions
 -------------------------------------------
 
 A Magnelio model is a :class:`~magnelio.GeometryModel` filled with
-shapes, each carrying its :class:`~magnelio.Material`.  Our entire
+shapes, each carrying its :class:`~magnelio.Material` — built-in
+materials are simply named by string (``"air"``, ``"pec"``,
+``"vacuum"``); only parameterised materials need an explicit
+:class:`~magnelio.Material` object.  Our entire
 geometry is a single air-filled :class:`~magnelio.geo.Brick`;
 the conductors do not need to be drawn at all, because they coincide
 with the boundary of the computational domain:
@@ -131,18 +134,16 @@ with the boundary of the computational domain:
 The boundary closure is declared once, on the model, and travels
 with the mesh from there.
 
-.. GENERATED FROM PYTHON SOURCE LINES 89-99
+.. GENERATED FROM PYTHON SOURCE LINES 92-100
 
 .. code-block:: Python
 
-
-    air = mio.Material.air()
 
     model = mio.GeometryModel(
         boundary_conditions=mio.BoundaryConditions(xmin="PMC", xmax="PMC"),
     )
     model.add(
-        geo.Brick(origin=(-a / 2, -b / 2, -L / 2), size=(a, b, L), material=air),
+        geo.Brick(origin=(-a / 2, -b / 2, -L / 2), size=(a, b, L), material="air"),
     )
 
 
@@ -158,7 +159,7 @@ with the mesh from there.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 100-109
+.. GENERATED FROM PYTHON SOURCE LINES 101-110
 
 Ports
 -----
@@ -170,7 +171,7 @@ use them to launch the excitation, and absorb whatever comes back.
 With ``n_modes=1`` each port handles the fundamental (here: TEM)
 mode.
 
-.. GENERATED FROM PYTHON SOURCE LINES 109-113
+.. GENERATED FROM PYTHON SOURCE LINES 110-114
 
 .. code-block:: Python
 
@@ -191,7 +192,7 @@ mode.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 114-124
+.. GENERATED FROM PYTHON SOURCE LINES 115-125
 
 Mesh
 ----
@@ -204,7 +205,7 @@ resolution like every discrete result.  The
 :class:`~magnelio.MeshControl` knobs override such decisions; here we
 cap the cell size at 1/16 of the plate spacing.
 
-.. GENERATED FROM PYTHON SOURCE LINES 124-132
+.. GENERATED FROM PYTHON SOURCE LINES 125-133
 
 .. code-block:: Python
 
@@ -229,14 +230,14 @@ cap the cell size at 1/16 of the plate spacing.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 133-137
+.. GENERATED FROM PYTHON SOURCE LINES 134-138
 
 Cross-sections of geometry and mesh are one call each — useful as a
 sanity check before spending any solver time.  (For an interactive
 3D view, call ``model.plot()`` in the notebook version of this
 tutorial — it renders the model as a rotatable widget.)
 
-.. GENERATED FROM PYTHON SOURCE LINES 137-140
+.. GENERATED FROM PYTHON SOURCE LINES 138-141
 
 .. code-block:: Python
 
@@ -255,23 +256,25 @@ tutorial — it renders the model as a rotatable widget.)
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 141-149
+.. GENERATED FROM PYTHON SOURCE LINES 142-152
 
 The port modes
 --------------
 
-The analysis object bundles mesh, band and ports.  Solving the port
+The analysis object bundles mesh, band and ports — ``f_max`` is
+taken from the mesh, which records the design frequency it was
+generated for.  Solving the port
 modes is a cheap 2D eigenproblem — worth inspecting before the 3D
 run.  The report prints the mode ladder of each port; for a TEM mode
 it also carries the line impedance, which we can hold against the
 textbook formula.
 
-.. GENERATED FROM PYTHON SOURCE LINES 149-161
+.. GENERATED FROM PYTHON SOURCE LINES 152-164
 
 .. code-block:: Python
 
 
-    analysis = mio.AnalysisScatteringTD(mesh=mesh, f_max=f_max, verbose=False)
+    analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
 
     report = analysis.solve_ports()["port1"]
     print(report)
@@ -300,7 +303,7 @@ textbook formula.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 162-170
+.. GENERATED FROM PYTHON SOURCE LINES 165-173
 
 The two agree to machine precision: the uniform TEM field of this
 cross-section is represented exactly on the grid.  (On less trivial
@@ -311,7 +314,7 @@ before trusting a result.)
 The transverse mode profile confirms what a TEM plate mode should
 look like — a uniform vertical E field:
 
-.. GENERATED FROM PYTHON SOURCE LINES 170-173
+.. GENERATED FROM PYTHON SOURCE LINES 173-176
 
 .. code-block:: Python
 
@@ -330,7 +333,7 @@ look like — a uniform vertical E field:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 174-182
+.. GENERATED FROM PYTHON SOURCE LINES 177-185
 
 Run and S-parameters
 --------------------
@@ -341,7 +344,7 @@ record what arrives, and the recorded signals are transformed into
 S-parameters over the whole band — one run, all frequencies.  The
 run stops on its own once the port signals have decayed.
 
-.. GENERATED FROM PYTHON SOURCE LINES 182-200
+.. GENERATED FROM PYTHON SOURCE LINES 185-203
 
 .. code-block:: Python
 
@@ -381,7 +384,7 @@ run stops on its own once the port signals have decayed.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 201-209
+.. GENERATED FROM PYTHON SOURCE LINES 204-212
 
 A matched, lossless, uniform line transmits everything: ``|S21|``
 sits at 0 dB and ``|S11|`` at the numerical noise floor (below
@@ -392,7 +395,7 @@ The phase of S21 carries the physics of the 20 mm flight path.  For a
 TEM line it must follow :math:`e^{-j \beta L}` with
 :math:`\beta = 2 \pi f / c_0`:
 
-.. GENERATED FROM PYTHON SOURCE LINES 209-225
+.. GENERATED FROM PYTHON SOURCE LINES 212-228
 
 .. code-block:: Python
 
@@ -430,7 +433,7 @@ TEM line it must follow :math:`e^{-j \beta L}` with
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 226-236
+.. GENERATED FROM PYTHON SOURCE LINES 229-239
 
 Where to go next
 ----------------
@@ -446,7 +449,7 @@ spec matched to its cross-section.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 9.359 seconds)
+   **Total running time of the script:** (0 minutes 8.566 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_01_parallel_plate.py:

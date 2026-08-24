@@ -61,11 +61,10 @@ print(f"TE11 cut-off estimate: {f_c_estimate / 1e9:.2f} GHz")
 # coax port of tutorial 2 stays single-mode: its closed form covers
 # only TEM.)
 
-pec = mio.Material.pec()
 pe = mio.Material.from_isotropic(name="polyethylene", epsilon=eps_r)
 
-model = mio.GeometryModel(background=pec)
-inner = geo.Cylinder(origin=(0, 0, 0), radius=r_i, height=L, axis="z", material=pec)
+model = mio.GeometryModel(background="pec")
+inner = geo.Cylinder(origin=(0, 0, 0), radius=r_i, height=L, axis="z", material="pec")
 outer = geo.Cylinder(origin=(0, 0, 0), radius=r_o, height=L, axis="z", material=pe)
 model.add(geo.Difference(outer, inner))
 model.add(inner)
@@ -80,7 +79,7 @@ print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 # The mode ladder
 # ---------------
 
-analysis = mio.AnalysisScatteringTD(mesh=mesh, f_max=f_max, verbose=False)
+analysis = mio.AnalysisScatteringTD(mesh=mesh, verbose=False)
 report = analysis.solve_ports()["port1"]
 print(report)
 
