@@ -69,10 +69,12 @@ extensions = [
 ]
 
 sphinx_gallery_conf = {
-    # Tutorial sources are runnable scripts in the public examples tree;
+    # Gallery sources are runnable scripts in the public examples tree;
     # the HTML pages and .ipynb downloads are generated from them.
-    "examples_dirs": ["../examples/tutorials"],
-    "gallery_dirs": ["tutorials"],
+    # Tutorials are the ordered curriculum; how-to guides are
+    # unordered task recipes (unnumbered file names, alphabetical).
+    "examples_dirs": ["../examples/tutorials", "../examples/howto"],
+    "gallery_dirs": ["tutorials", "howto"],
     # Only scripts named plot_* are executed at build time; other
     # scripts are rendered and downloadable without execution.
     "filename_pattern": r"/plot_",

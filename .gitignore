@@ -38,6 +38,8 @@ validation/results/structure/
 # Sphinx documentation build output
 docs/_build/
 
-# sphinx-gallery output (generated from examples/tutorials/)
+# sphinx-gallery output (generated from examples/tutorials/ and
+# examples/howto/)
 docs/tutorials/
+docs/howto/
 docs/sg_execution_times.rst

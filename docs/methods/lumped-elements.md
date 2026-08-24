@@ -22,6 +22,12 @@ semi-implicit averaging of the local field term is the standard
 stabilisation in that literature; the specific multi-edge chain
 formulation follows the in-repo derivation).
 
+A discrete port is not an exact line termination: its residual
+reflection and phase offset depend on the grid at the gap, the gap
+geometry, and the chosen $Z_0$.  The how-to guide *Characterising a
+lumped port termination* measures both against a waveguide port
+(DD-189) instead of relying on rules of thumb.
+
 ## Trapezoidal RLC companion models
 
 General series/parallel RLC two-terminal elements are reduced per time

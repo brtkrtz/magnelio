@@ -12794,3 +12794,96 @@ between the local and the port-plane spacing.
 `tests/integration/test_deembed_line.py`,
 `tests/integration/test_result_contract.py`,
 `validation/deembed_uniform_line.py`.
+
+## DD-188 — A "How-to guides" gallery beside the tutorial curriculum
+
+**Status:** Decided 2026-08-24 (developer chose the plan in the
+planning discussion); shipped 2026-08-24.
+
+**Problem.**  The tutorial gallery had become two things at once: a
+numbered learning curriculum (01–12 core workflow, then feature
+chapters) and, with tutorial 19 (striplines as pickups/kickers), a
+home for task-oriented application recipes that teach no new library
+capability.  The planned discrete-port characterisation scripts
+(DD-189) would have stretched that further, and the "capstone" filter
+sat at position 13 with six chapters after it.
+
+**Decision.**
+
+1. Second sphinx-gallery instance: sources in `examples/howto/`,
+   rendered to `docs/howto/`, own toctree caption **"How-to guides"**.
+   Same machinery as the tutorials — `plot_` pages execute at build
+   time (a silent regression test) and every page gets the
+   auto-generated `.py`/`.ipynb` downloads.
+2. How-to pages are **unnumbered** (`plot_stripline_pickup_kicker.py`),
+   alphabetical order; they are recipes to adapt, not a sequence to
+   follow.
+3. Tutorial 19 moved there (renamed, self-references "tutorial" →
+   "guide"; its references *to* tutorials 06/09 stay).  The old
+   `tutorials/plot_19_…` URL lapses — noted in the changelog.
+4. The filter capstone stays at 13; its intro now anchors it as the
+   close of the core workflow 01–12 and names the later chapters as
+   feature chapters read on demand.
+
+**Rejected:** renumbering the tutorials so the capstone comes last
+(breaks `/stable/` URLs and the number references in tutorial prose
+for cosmetics); a section named after the first content ("Discrete
+Ports") instead of the generic "How-to guides" (the section will
+grow: convergence practice, mesh practice, …); keeping the stripline
+page a tutorial (it teaches no capability and the curriculum reads
+tighter without it).
+
+**Files:** `docs/conf.py`, `docs/index.md`, `.gitignore`,
+`examples/howto/README.txt`,
+`examples/howto/plot_stripline_pickup_kicker.py` (moved from
+`examples/tutorials/plot_19_stripline_pickup_kicker.py`),
+`examples/tutorials/plot_13_dielectric_filter.py`.
+
+## DD-189 — Discrete-port characterisation as how-to guides, one per line type
+
+**Status:** Decided 2026-08-24 (planning discussion with developer;
+optimiser deliberately left out); coax guide shipped 2026-08-24,
+microstrip and CPW planned.
+
+**Problem.**  Discrete (lumped) ports are approximate line
+terminations.  Vendor rules of thumb ("terminate a coax like this")
+say nothing about the residual reflection and phase error on a
+*given* grid, nor up to which frequency the termination is usable —
+and the behaviour is grid-dependent, so no fixed rule can.
+
+**Decision.**  Per line type, a how-to page (public API only,
+DD-188 gallery) that **measures** the user's own termination instead
+of prescribing one:
+
+1. A waveguide port — reflection-free by construction — launches the
+   exact grid mode down a short uniform line onto the lumped port
+   under test.  `|S11|` is the termination's self-reflection; the
+   page prints the band edge where it crosses −20 dB.
+2. The phase error is read from the de-embedded transmission
+   (DD-187): shift the waveguide port's reference plane to a
+   candidate plane and what remains of `arg S21` is the
+   termination's phase error there.  Because de-embedding is
+   post-processing, the **reference-plane sweep is free** — one run,
+   re-referenced to several planes, shows where the termination
+   effectively sits (`plot_discrete_port_coax.py`: 17.4° at the end
+   plane vs 5.7° one to two gap lengths behind it, on the example
+   grid with 0.5·r_i cells).  This replaced the planned analytic phase
+   reference — no closed form needed, so microstrip/CPW need no
+   extra machinery.
+3. Knobs on the page: gap length (re-run sweep), reference plane
+   (free sweep), port impedance (grid line impedance from
+   `solve_ports` vs catalogue value).
+4. **No built-in optimiser.**  2–3 parameters, seconds per run, and
+   the sweep shows the sensitivity that a black box would hide; the
+   page names `scipy.optimize` for readers who want the last
+   fraction of a dB automated.
+5. Measured values appear as properties of the example grid, never
+   as transferable rules — the page's closing section says to
+   re-measure whenever cross-section, resolution or band change.
+
+The test grid pins `max_cell_size = min_cell_size` so the feed is
+uniform and the de-embedding assumption is exact; the knob the user
+sets is the cross-section cell size their production mesh will have.
+
+**Files:** `examples/howto/plot_discrete_port_coax.py`,
+`docs/methods/lumped-elements.md` (pointer).

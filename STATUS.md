@@ -12,8 +12,15 @@ uncertified channels).  Reference plane confirmed to sit exactly on
 the port plane (no half-cell/half-step offset).  Works on RAM and
 store results; returns an `SParameterResult` that now shares
 `phase`/`plot_s` via the new `SDerivedAccessors` base; lumped ports
-raise.  Groundwork for the discrete-port how-to guides (own gallery
-planned; stripline tutorial 19 will move there).  Unit suite 2170
+raise.  On top of it: the **How-to guides** gallery (DD-188,
+`examples/howto/` → `docs/howto/`, unnumbered pages) with the
+stripline pickup/kicker page moved out of the tutorials (old
+`tutorials/plot_19_…` URL lapses, changelog notes it), the filter
+capstone re-anchored as the close of tutorials 01–12, and the first
+discrete-port characterisation guide (DD-189, coax): waveguide port
+as measuring instrument, `deembed` as phase reference, free
+reference-plane sweep (one run, re-referenced), no built-in
+optimiser; microstrip and CPW guides still open.  Unit suite 2170
 passed / 3 skipped.  Before that: released v0.4.2 (issue-#2
 boilerplate cuts DD-185/186 + DD-184 export fix) and v0.4.3 (hotfix:
 `Loft` missed the DD-185 name resolution); new versioning rule in
@@ -26,9 +33,10 @@ its own port boundary, so the sub-matrix is the network seen with it
 terminated; the `.sNp` extension is now checked against the exported
 port count and filled in when absent, and an export that drops
 *propagating* higher modes at a port it keeps warns.  Before that:
-tutorial 19 documents the
-pickup/kicker workflow of beam instrumentation on the public API alone
-(DD-183).  A stripline pair is dimensioned with 2-D port solves (strip
+the stripline pickup/kicker page (DD-183; written as tutorial 19,
+since DD-188 a how-to guide) documents the
+pickup/kicker workflow of beam instrumentation on the public API
+alone.  A stripline pair is dimensioned with 2-D port solves (strip
 height for 50 Ω in the difference mode), driven as a kicker in its
 sum and difference modes by the wall type on the plane between the
 strips, and the beam-coupling figures follow from one line monitor:
@@ -52,6 +60,8 @@ The plane-wave tutorial remains deferred.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-189** (2026-08-24) — discrete-port characterisation as how-to guides, one per line type: waveguide port as reflection-free measuring instrument, band edge from `|S11| < −20 dB`, phase error from the de-embedded transmission with a *free* reference-plane sweep (one run re-referenced; replaced the planned analytic phase reference, so microstrip/CPW need no extra machinery), knobs = gap length / reference plane / port impedance, no built-in optimiser (sweep shows the sensitivity; `scipy.optimize` named for automation); coax shipped, microstrip + CPW open.
+* **DD-188** (2026-08-24) — second sphinx-gallery "How-to guides" (`examples/howto/` → `docs/howto/`, unnumbered pages, own toctree caption): task recipes separated from the numbered curriculum; stripline page moved out of the tutorials (old URL lapses), filter capstone re-anchored as the close of tutorials 01–12; renumbering the tutorials rejected (URL + prose breakage).
 * **DD-187** (2026-08-24) — post-hoc reference-plane shift `result.deembed({"port": d})` on the exact discrete chain dispersion: `lambda^{-d/dz}` evaluated on the unit circle (passband magnitudes exactly untouched; the off-circle `lambda_symbol` offset would bias by `O(1e-8·d/dz)`), continuum `γ(ω)` fallback for uncertified channels, lumped ports raise; measured to cancel a uniform line to the run's own floor with zero reference-plane offset; `phase`/`plot_s` moved to `SDerivedAccessors`, shared by run results and `SParameterResult`.
 * **DD-186** (2026-08-24) — the mesh carries the f_max it was built for: `Mesh.from_geometry` records it, `AnalysisScatteringTD(f_max=None)` defaults to it, an explicit value above it warns (undersampled grid), `from_grid` meshes keep requiring an explicit value; rejected the issue's session-global "last used f_max" buffer (execution-order-dependent).
 * **DD-185** (2026-08-24) — built-in materials by name: `"air"`/`"vacuum"`/`"pec"` accepted (case-insensitive) at every public material argument, resolved at the call site to canonical shared instances; `"copper"` deferred to a curated material library; sticky last-used material and `bg=`/`mat=` aliases rejected (issue #2).
@@ -399,6 +409,11 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
 
 ## Open construction sites
 
+* **Discrete-port how-to guides (DD-189).**  Coax shipped; microstrip
+  and CPW pages remain.  Both reuse the coax skeleton (waveguide port
+  as instrument, de-embedded phase, free reference-plane sweep) —
+  QTEM dispersion needs no extra machinery since the phase reference
+  is the de-embedding itself, not a closed form.
 * **Symmetry planes — known limitations (DD-154/DD-155/DD-172).**
   Lumped ports/elements on a symmetry plane are corrected since
   DD-172 (full-model declaration, internal half-device scaling, exact

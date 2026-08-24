@@ -11,6 +11,12 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- New documentation section **How-to guides**: task-oriented recipes
+  meant to be downloaded and adapted, starting with *Characterising a
+  lumped port termination: coaxial line* — a small measurement setup
+  that reports the self-reflection, the usable band and the effective
+  reference plane of a lumped port termination on your own
+  cross-section, mesh resolution and frequency band.
 - De-embedding: `result.deembed({"port1": d})` shifts port reference
   planes by a distance along the feed line and returns the S-matrix
   referenced there, without re-running.  The shift removes the exact
@@ -20,6 +26,13 @@ major version is 0, minor releases may change the public API.
   accuracy floor of the run itself.  Works on in-RAM and
   project-store results alike; the returned matrix answers the same
   `S`/`db`/`phase`/`plot_s` calls and Touchstone/scikit-rf exports.
+
+### Changed
+
+- The stripline pickup/kicker page moved from the tutorials (former
+  tutorial 19) into the new How-to guides section; its content is
+  unchanged, but the old `tutorials/plot_19_…` documentation URL no
+  longer exists.
 
 ## [0.4.3] - 2026-08-24
 
