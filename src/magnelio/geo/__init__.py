@@ -84,8 +84,9 @@ class GeometryModel:
 
     Parameters
     ----------
-    background : Material or None
-        Material for cells not covered by any shape.  Defaults to air
+    background : Material or str or None
+        Material for cells not covered by any shape — an instance or a
+        built-in name (``"air"``, ``"vacuum"``, ``"pec"``).  Defaults to air
         (eps=mu=1, sigma=0).  The background fills the *volume* outside
         every shape; the boundary closure of the domain is declared
         separately via *boundary_conditions* and wins over it on the
@@ -151,15 +152,13 @@ class GeometryModel:
         from magnelio.boundaries.boundary_conditions import (  # noqa: PLC0415
             resolve_boundary_conditions,
         )
-        from magnelio.materials.material import Material  # noqa: PLC0415
+        from magnelio.materials.material import (  # noqa: PLC0415
+            Material,
+            resolve_material,
+        )
 
         self.shapes: list = []
-        if background is not None and not isinstance(background, Material):
-            raise TypeError(
-                f"GeometryModel(background=...) takes a Material, not a "
-                f"{type(background).__name__}. Build one with "
-                f"Material.air() / Material.pec() / Material.from_isotropic(...)."
-            )
+        background = resolve_material(background, "GeometryModel(background=...)")
         self.background: Material = background if background is not None else Material.air()
         self.boundary_conditions = resolve_boundary_conditions(
             boundary_conditions,

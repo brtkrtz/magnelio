@@ -289,8 +289,12 @@ class TestModelArguments:
     """The model's own arguments."""
 
     def test_background_must_be_a_material(self):
+        # DD-185: built-in name strings are valid; other types still raise.
         with pytest.raises(TypeError, match=r"GeometryModel\(background=\.\.\.\)"):
-            GeometryModel(background="air")
+            GeometryModel(background=1.0)
+
+    def test_background_accepts_builtin_name(self):
+        assert GeometryModel(background="air").background.name == "air"
 
     def test_from_corners_names_its_own_argument(self):
         with pytest.raises(ValueError, match=r"Brick.from_corners\(p2\)"):

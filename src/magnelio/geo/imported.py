@@ -58,8 +58,10 @@ class ImportedSolid(Shape):
         name: str | None = None,
         color: tuple[float, float, float] | None = None,
     ) -> None:
+        from magnelio.materials.material import resolve_material  # noqa: PLC0415
+
         self._shape = shape
-        self.material = material
+        self.material = resolve_material(material, "ImportedSolid.material")
         self.name = name
         self.color = color
         self._scaled: dict[float, object] = {}

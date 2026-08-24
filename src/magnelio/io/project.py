@@ -478,6 +478,10 @@ def _save_mesh(f, mesh) -> None:
         mg.attrs["elements"] = json.dumps(
             [_lumped_element_to_dict(e) for e in mesh.elements],
         )
+    # Design frequency (DD-186) — travels with the mesh like the
+    # closure and the ports.
+    if getattr(mesh, "f_max", None) is not None:
+        mg.attrs["f_max"] = float(mesh.f_max)
 
     if mesh.edge_material is not None:
         _save_dataclass_arrays(mg.create_group("edge_material"), mesh.edge_material)
@@ -552,6 +556,7 @@ def _load_mesh(f):
         face_material=face_material,
         pec_surface=pec_surface,
         boundary_conditions=boundary_conditions,
+        f_max=float(mg.attrs["f_max"]) if "f_max" in mg.attrs else None,
     )
 
 

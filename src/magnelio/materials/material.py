@@ -21,6 +21,12 @@ class Material:
     All values are in SI units. Permittivity and permeability are relative
     (dimensionless, relative to ε₀ and μ₀ respectively).
 
+    Wherever the public API expects a material (shape ``material=``,
+    ``GeometryModel(background=)``, ...), the parameter-free built-ins
+    may be named by string instead: ``"air"``, ``"vacuum"`` or ``"pec"``
+    (case-insensitive) resolve to the canonical instances of
+    :meth:`air`, :meth:`vacuum` and :meth:`pec`.
+
     Parameters
     ----------
     name : str
@@ -345,3 +351,63 @@ class Material:
             f"epsilon={self.epsilon}, mu={self.mu}"
             f"{pec_flag}{disp_flag}{disp_mu_flag})"
         )
+
+
+# ----------------------------------------------------------------------
+# Built-in material names (DD-185)
+# ----------------------------------------------------------------------
+
+_BUILTIN_FACTORIES = {
+    "air": Material.air,
+    "vacuum": Material.vacuum,
+    "pec": Material.pec,
+}
+_builtin_instances: dict[str, Material] = {}
+
+
+def resolve_material(value, what: str = "material"):
+    """Return *value* as a :class:`Material`, resolving built-in names.
+
+    The public API accepts the parameter-free built-in materials by name
+    wherever a material is expected: ``"air"``, ``"vacuum"`` and
+    ``"pec"`` (case-insensitive) resolve to canonical instances of
+    :meth:`Material.air`, :meth:`Material.vacuum` and
+    :meth:`Material.pec` — the same shared instance on every use, so the
+    mesher's identity-based material bookkeeping sees one material, not
+    one per shape.  ``None`` and :class:`Material` instances pass
+    through unchanged; anything else raises at the call site.
+
+    Parameters
+    ----------
+    value : Material or str or None
+        The user-supplied material argument.
+    what : str
+        Name of the argument for error messages, e.g. ``"Brick.material"``.
+
+    Returns
+    -------
+    Material or None
+    """
+    if value is None or isinstance(value, Material):
+        return value
+    if isinstance(value, str):
+        key = value.lower()
+        factory = _BUILTIN_FACTORIES.get(key)
+        if factory is None:
+            names = ", ".join(f'"{n}"' for n in _BUILTIN_FACTORIES)
+            raise ValueError(
+                f"{what} = {value!r} is not a built-in material name; "
+                f"recognised names: {names}. Parameterised materials are "
+                f"built explicitly, e.g. Material.from_isotropic(...) or "
+                f"Material.lossy_metal(...)."
+            )
+        instance = _builtin_instances.get(key)
+        if instance is None:
+            instance = _builtin_instances[key] = factory()
+        return instance
+    raise TypeError(
+        f'{what} takes a Material or a built-in material name ("air", '
+        f'"vacuum", "pec"), not a {type(value).__name__}. Build custom '
+        f"materials with Material.from_isotropic(...) / "
+        f"Material.lossy_metal(...)."
+    )

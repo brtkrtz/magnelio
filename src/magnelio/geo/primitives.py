@@ -28,6 +28,7 @@ from magnelio.geo._validate import (
     vector3,
 )
 from magnelio.geo.shape import Shape
+from magnelio.materials.material import resolve_material
 
 
 @dataclass
@@ -84,7 +85,7 @@ class Brick(_BaseShape):
         ``(dx, dy, dz)`` — extents in each direction [meters], each
         positive.  To give two opposite corners in any order instead,
         use :meth:`from_corners`.
-    material : Material, optional
+    material : Material or str, optional
         Material filling this volume.  Omit it for a construction solid
         used only as a Boolean operand.
     name : str, optional
@@ -95,6 +96,7 @@ class Brick(_BaseShape):
     size: tuple[float, float, float] = (1.0, 1.0, 1.0)
 
     def __post_init__(self):
+        self.material = resolve_material(self.material, "Brick.material")
         self.origin = point3(self.origin, "Brick.origin")
         size = vector3(self.size, "Brick.size")
         if any(s <= 0.0 for s in size):
@@ -121,7 +123,7 @@ class Brick(_BaseShape):
         p1, p2 : tuple of float
             Two opposite corners ``(x, y, z)`` of the box [meters], in any
             order.
-        material : Material, optional
+        material : Material or str, optional
             Material filling this volume.  Omit it for a construction
             solid used only as a Boolean operand — the two-corner form
             is the natural spelling for a cutting box.
@@ -183,7 +185,7 @@ class Brick(_BaseShape):
             The same for y.
         z1, z2, dz : float, optional
             The same for z.
-        material : Material, optional
+        material : Material or str, optional
             Material filling this volume.  Omit it for a construction
             solid used only as a Boolean operand.
         name : str, optional
@@ -246,7 +248,7 @@ class Sphere(_BaseShape):
         ``(x, y, z)`` center position [meters].
     radius : float
         Radius [meters], positive.
-    material : Material, optional
+    material : Material or str, optional
         Material filling this volume.  Omit it for a construction solid
         used only as a Boolean operand.
     name : str, optional
@@ -257,6 +259,7 @@ class Sphere(_BaseShape):
     radius: float = 1.0
 
     def __post_init__(self):
+        self.material = resolve_material(self.material, "Sphere.material")
         self.center = point3(self.center, "Sphere.center")
         self.radius = positive(self.radius, "Sphere.radius")
 
@@ -306,7 +309,7 @@ class Cylinder(_BaseShape):
         Angular extent [degrees]: a single value for a segment starting
         at zero, or ``(start, end)`` for one anywhere.  ``None``
         (default) is the full turn.
-    material : Material, optional
+    material : Material or str, optional
         Material filling this volume.  Omit it for a construction solid
         used only as a Boolean operand.
     name : str, optional
@@ -332,6 +335,7 @@ class Cylinder(_BaseShape):
     def __post_init__(self):
         from magnelio.geo._axes import normalize_axis
 
+        self.material = resolve_material(self.material, "Cylinder.material")
         self.origin = point3(self.origin, "Cylinder.origin")
         self.radius = positive(self.radius, "Cylinder.radius")
         self.height = nonzero(self.height, "Cylinder.height")
@@ -414,7 +418,7 @@ class Cone(_BaseShape):
         from the origin.
     axis : str or tuple of float
         Axis direction: ``'x'``/``'y'``/``'z'`` or any 3-vector.
-    material : Material, optional
+    material : Material or str, optional
         Material filling this volume.  Omit it for a construction solid
         used only as a Boolean operand.
     name : str, optional
@@ -430,6 +434,7 @@ class Cone(_BaseShape):
     def __post_init__(self):
         from magnelio.geo._axes import normalize_axis
 
+        self.material = resolve_material(self.material, "Cone.material")
         self.origin = point3(self.origin, "Cone.origin")
         self.bottom_radius = nonnegative(self.bottom_radius, "Cone.bottom_radius")
         self.top_radius = nonnegative(self.top_radius, "Cone.top_radius")
@@ -490,7 +495,7 @@ class Face(PlanarSheet):
         self-intersection.  The polygon is closed automatically.
     position : float
         Position of the plane along the normal axis [meters] (default 0).
-    material : Material, optional
+    material : Material or str, optional
         Material of the thin sheet.  ``None`` (default) = construction
         profile.
     name : str, optional
@@ -504,6 +509,7 @@ class Face(PlanarSheet):
     name: str | None = None
 
     def __post_init__(self):
+        self.material = resolve_material(self.material, "Face.material")
         if self.normal not in ("x", "y", "z"):
             raise ValueError(f"Face.normal must be 'x', 'y', or 'z'; got {self.normal!r}")
         self.points = point_list(self.points, "Face.points", dim=2, minimum=3)
@@ -546,7 +552,7 @@ class Torus(_BaseShape):
         through itself.
     axis : str or tuple of float
         Symmetry axis: ``'x'``/``'y'``/``'z'`` or any 3-vector.
-    material : Material, optional
+    material : Material or str, optional
         Material filling this volume.  Omit it for a construction solid
         used only as a Boolean operand.
     name : str, optional
@@ -561,6 +567,7 @@ class Torus(_BaseShape):
     def __post_init__(self):
         from magnelio.geo._axes import normalize_axis
 
+        self.material = resolve_material(self.material, "Torus.material")
         self.center = point3(self.center, "Torus.center")
         self.major_radius = positive(self.major_radius, "Torus.major_radius")
         self.minor_radius = positive(self.minor_radius, "Torus.minor_radius")

@@ -161,6 +161,11 @@ class Mesh:
     edge_material: "EdgeMaterialData | None" = None
     face_material: "FaceMaterialData | None" = None
     pec_surface: "PECSurfaceData | None" = None
+    # Design frequency (DD-186): the f_max ``from_geometry`` generated
+    # this mesh for; ``None`` on the OCC-free ``from_grid`` path.  The
+    # scattering analysis defaults its band to it and warns when asked
+    # to exceed it.
+    f_max: float | None = None
     # Boundary closure of the six bbox faces (DD-103).  Declared on the
     # model / grid the mesh was built from, carried here because the
     # mesh is what reaches the analysis, and read back by the analyses to
@@ -247,8 +252,10 @@ class Mesh:
             mesh = Mesh.from_grid(grid, regions=[(fr4, (0, 0, 0, 10e-3, 10e-3, 1.6e-3))])
         """
         from magnelio.materials.material import Material as Mat
+        from magnelio.materials.material import resolve_material
         from magnelio.mesh.indexing import build_pec_mask_faces
 
+        background = resolve_material(background, "Mesh.from_grid(background=...)")
         if background is None:
             background = Mat.air()
 
@@ -269,6 +276,7 @@ class Mesh:
             zc = 0.5 * (grid.z[:-1] + grid.z[1:])  # shape (Nz,)
 
             for mat, bbox in regions:
+                mat = resolve_material(mat, "Mesh.from_grid regions material")
                 xmin, ymin, zmin, xmax, ymax, zmax = bbox
 
                 # Get or assign material ID
@@ -333,7 +341,9 @@ class Mesh:
             geometry:  A :class:`~magnelio.geo.GeometryModel` (CSG tree root).
             control:   :class:`MeshControl` parameters.
             f_max:     Maximum simulation frequency [Hz]. Determines target
-                       cell size.
+                       cell size and is recorded on the mesh as its design
+                       frequency (``mesh.f_max``); the scattering analysis
+                       defaults its band to it.
 
         The boundary closure is read off
         ``geometry.boundary_conditions``; every mesh-time consequence
@@ -1041,6 +1051,7 @@ class Mesh:
             face_material=face_material_data,
             pec_surface=pec_surface_data,
             boundary_conditions=boundary_conditions,
+            f_max=f_max,
             ports=tuple(getattr(geometry, "ports", ()) or ()),
             elements=tuple(getattr(geometry, "elements", ()) or ()),
             _wall_backup=wall_backup,
@@ -1196,6 +1207,7 @@ class Mesh:
             edge_material=self.edge_material,
             face_material=self.face_material,
             pec_surface=self.pec_surface,
+            f_max=self.f_max,
             boundary_conditions=self.boundary_conditions,
             ports=self.ports,
             elements=self.elements,
@@ -1319,6 +1331,7 @@ class Mesh:
             edge_material=self.edge_material,
             face_material=self.face_material,
             pec_surface=self.pec_surface,
+            f_max=self.f_max,
             boundary_conditions=resolved,
             ports=self.ports,
             elements=self.elements,

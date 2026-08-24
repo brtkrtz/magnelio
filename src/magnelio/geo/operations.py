@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 from magnelio.geo._cache import cached_occ_shape
 from magnelio.geo._validate import operand
 from magnelio.geo.shape import Shape
+from magnelio.materials.material import resolve_material
 
 
 def _reject_group(operands, op_name: str) -> None:
@@ -80,6 +81,7 @@ class Union(Shape):
     def __init__(self, *shapes, material=None, name=None):
         _check_operands(shapes, "Union", minimum=1)
         self.shapes = shapes
+        material = resolve_material(material, "Union(material=...)")
         self.material = material if material is not None else shapes[0].material
         self.name = name
 
@@ -113,6 +115,7 @@ class Intersection(Shape):
 
     def __post_init__(self):
         _check_operands((self.shape_a, self.shape_b), "Intersection", minimum=2)
+        self.material = resolve_material(self.material, "Intersection(material=...)")
         if self.material is None:
             self.material = self.shape_a.material
 
@@ -155,6 +158,7 @@ class Difference(Shape):
         _check_operands((base, *tools), "Difference", minimum=2)
         self.base = base
         self.tools = tools
+        material = resolve_material(material, "Difference(material=...)")
         self.material = material if material is not None else base.material
         self.name = name
 

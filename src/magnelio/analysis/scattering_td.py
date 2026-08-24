@@ -710,8 +710,14 @@ class AnalysisScatteringTD:
         fields as pure loads: they are never excited, never recorded,
         and do not appear in the S-matrix.  Their labels share the
         port-label namespace.
-    f_max : float
-        Upper band edge of the analysis [Hz].  Single frequency source:
+    f_max : float, optional
+        Upper band edge of the analysis [Hz].  ``None`` (default) uses
+        the design frequency the mesh was generated for (``mesh.f_max``,
+        recorded by :meth:`~magnelio.mesh.mesher.Mesh.from_geometry`);
+        a mesh without one (``Mesh.from_grid``) requires an explicit
+        value.  An explicit value above the mesh's design frequency
+        warns — the grid undersamples the upper band.  Single frequency
+        source:
         sizes the default frequency axis (see ``f_axis``), sets the
         mode-calculation frequency of the modal port builder, and
         parameterises the default excitation waveform.
@@ -857,7 +863,7 @@ class AnalysisScatteringTD:
     # Design: SIBC_PLAN WP-D5 (wall_model="sibc"), WP-D2 (causal K(f)·R_s fit).
 
     mesh: Mesh
-    f_max: float
+    f_max: float | None = None
     ports: Sequence[PortSpec] | None = None
     elements: Sequence | None = None
     f_min: float = 0.0
@@ -908,8 +914,30 @@ class AnalysisScatteringTD:
 
     def __post_init__(self) -> None:
         self._mur_notice_printed = False
+        # DD-186: the mesh records the f_max it was generated for; the
+        # analysis band defaults to it.
+        mesh_f_max = getattr(self.mesh, "f_max", None)
+        if self.f_max is None:
+            if mesh_f_max is None:
+                raise ValueError(
+                    "f_max is required: this mesh carries no design "
+                    "frequency (it was not built by Mesh.from_geometry), "
+                    "so the analysis band cannot be inferred. Pass "
+                    "f_max= explicitly."
+                )
+            self.f_max = float(mesh_f_max)
         if self.f_max <= 0.0:
             raise ValueError(f"f_max must be positive; got {self.f_max}")
+        if mesh_f_max is not None and self.f_max > float(mesh_f_max):
+            warnings.warn(
+                f"analysis f_max = {self.f_max:.4g} Hz exceeds the design "
+                f"frequency this mesh was generated for "
+                f"({float(mesh_f_max):.4g} Hz): the grid undersamples the "
+                f"upper band. Re-mesh with the analysis f_max for a "
+                f"resolved result.",
+                UserWarning,
+                stacklevel=3,
+            )
         if not 0.0 <= self.f_min < self.f_max:
             raise ValueError(
                 f"f_min must satisfy 0 <= f_min < f_max; "

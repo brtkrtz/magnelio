@@ -1,6 +1,17 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-23.*  Latest work: the Touchstone/scikit-rf
+*Last updated: 2026-08-24.*  Latest work: two boilerplate cuts from
+issue #2 (DD-185/186, branch `feat/material-strings-mesh-fmax`).
+Built-in materials may be named by string wherever a material is
+expected (`material="air"`, `background="pec"`; case-insensitive,
+resolved at the call site to canonical shared instances — the mesher's
+material bookkeeping is id-based), and the mesh now records the
+`f_max` it was generated for: `AnalysisScatteringTD` defaults its band
+to `mesh.f_max`, warns when an explicit value exceeds it (undersampled
+grid — previously silent), and `from_grid` meshes keep requiring an
+explicit value.  Rejected from the same issue: sticky last-used
+material and abbreviated kwarg aliases (see DD-185).  Unit suite 2152
+passed / 3 skipped.  Before that: the Touchstone/scikit-rf
 export covers the excited channels instead of demanding the complete
 square matrix (DD-184, issue #3) — an unexcited channel is matched by
 its own port boundary, so the sub-matrix is the network seen with it
@@ -33,6 +44,8 @@ The plane-wave tutorial remains deferred.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-186** (2026-08-24) — the mesh carries the f_max it was built for: `Mesh.from_geometry` records it, `AnalysisScatteringTD(f_max=None)` defaults to it, an explicit value above it warns (undersampled grid), `from_grid` meshes keep requiring an explicit value; rejected the issue's session-global "last used f_max" buffer (execution-order-dependent).
+* **DD-185** (2026-08-24) — built-in materials by name: `"air"`/`"vacuum"`/`"pec"` accepted (case-insensitive) at every public material argument, resolved at the call site to canonical shared instances; `"copper"` deferred to a curated material library; sticky last-used material and `bg=`/`mat=` aliases rejected (issue #2).
 * **DD-184** (2026-08-23) — a Touchstone export is the square sub-matrix over the *excited* channels (issue #3): unexcited channels carry their reflection-free boundary all run, so dropping them is the matched-termination condition of the S-parameter definition, not a truncation; `channels=` selects a sub-network explicitly; a warning fires only for propagating modes dropped at a port that is itself exported (mode conversion missing from a file that looks complete); the `.sNp` extension must match the exported port count — Touchstone records it nowhere else — and is filled in when absent; supersedes the completeness rule of DD-112.
 * **DD-183** (2026-08-22) — Tutorial 19, pickups and kickers as post-processing of a kicker run: beam voltage with `exp(-j k_B z)` for a +z particle (monitor convention, verified by directivity), symmetry plane between the strips selects sum/difference mode and drives both ports (2 W), `z_line_num` under it is the pair impedance, ideal-stripline reference with feed-to-feed length; no library change.
 * **DD-182** (2026-08-21) — Bloch-periodic eigenmodes: a `"Periodic"` face pair plus `AnalysisEigenmode(phase_advance_deg=…)` solves the unit cell by a congruence `P^H A P` (far-plane edges = near-plane × e^{-iφ}; far plane stripped of its full-dual-cell metric first — the half-cell assumption was refuted by the empty box); real path for 0/π, complex Hermitian on SuperLU in between; verified against the discrete dispersion of the empty box (1e-8) and half-cell band edges of an iris pillbox (1e-3); CPML and unpaired Periodic now rejected instead of solved as PMC.

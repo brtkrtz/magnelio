@@ -15,6 +15,7 @@ from magnelio.geo._cache import cached_occ_shape
 from magnelio.geo._sheet import PlanarSheet
 from magnelio.geo._validate import finite, nonzero, point3, positive, vector3
 from magnelio.geo.shape import Shape
+from magnelio.materials.material import resolve_material
 
 
 def _check_edge_selector(verb, near, face_near, edges):
@@ -105,6 +106,7 @@ def extrude(shape, *, vector, face_near=None, material=None):
     """
     from magnelio.geo._sheet import PlanarSheet  # noqa: PLC0415
 
+    material = resolve_material(material, "extruded(material=...)")
     if isinstance(shape, PlanarSheet):
         if material is None and shape.material is None:
             raise ValueError(
@@ -125,6 +127,7 @@ def cover(curve, *, material=None, name=None):
 
     Uses ``BRepBuilderAPI_MakeFace`` on the curve's wire.
     """
+    material = resolve_material(material, "covered(material=...)")
     if curve._ends is not None and not curve.is_closed:
         gap = math.dist(curve._ends[0], curve._ends[1])
         raise ValueError(
@@ -159,6 +162,7 @@ def trace(curve, *, width, thickness, caps="round", normal=None, material=None, 
 
     Offsets the centreline within its plane, then extrudes the outline.
     """
+    material = resolve_material(material, "traced(material=...)")
     width = positive(width, "traced(width)")
     thickness = nonzero(thickness, "traced(thickness)")
     if caps not in ("round", "flat"):
@@ -254,6 +258,7 @@ def loft(
     ``"tangent"``, sweeps one wire into the other along a Bezier spine
     with ``BRepOffsetAPI_MakePipeShell``.
     """
+    material = resolve_material(material, "lofted(material=...)")
     _check_blend(blend, allow_tangent=True)
     tension = _check_tension(tension, blend=blend)
     return _LoftedShape(shape_a, face_near_a, shape_b, face_near_b, material, blend, tension)
@@ -267,6 +272,7 @@ def revolve(profile, *, axis, angle_deg=360.0, origin=(0.0, 0.0, 0.0), material=
     from magnelio.geo._axes import normalize_axis  # noqa: PLC0415
     from magnelio.geo._sheet import PlanarSheet  # noqa: PLC0415
 
+    material = resolve_material(material, "revolved(material=...)")
     if isinstance(profile, PlanarSheet) and material is None and profile.material is None:
         raise ValueError(
             "Revolving a construction profile (material=None) requires an "
@@ -307,6 +313,7 @@ def thicken(sheet, *, thickness, direction="forward", material=None):
             f"thickened() grows a planar sheet into a solid, but this is a "
             f"{type(sheet).__name__}. To hollow a solid use shelled()."
         )
+    material = resolve_material(material, "thickened(material=...)")
     thickness = positive(thickness, "thickened(thickness)")
     if direction not in ("forward", "backward", "symmetric"):
         raise ValueError(
@@ -390,6 +397,7 @@ def sweep(profile, spine, *, material=None):
     """
     from magnelio.geo.curves import Curve  # noqa: PLC0415
 
+    material = resolve_material(material, "swept(material=...)")
     if material is None and getattr(profile, "material", None) is None:
         raise ValueError(
             "Sweeping a construction profile (material=None) requires an "

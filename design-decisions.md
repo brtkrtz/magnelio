@@ -12630,3 +12630,102 @@ follows the same rules.  Supersedes the export half of DD-112.
 `src/magnelio/analysis/result_interface.py`,
 `src/magnelio/analysis/scattering_td.py`, `src/magnelio/io/project.py`,
 `tests/unit/test_schema_interop.py`, `docs/methods/ports.md`.
+
+## DD-185 — A material argument accepts the built-in names as strings
+
+**Status:** Decided 2026-08-23 (issue #2 review, developer sign-off);
+shipped 2026-08-24.
+
+**Problem.**  Reported as issue #2 (part 1 of 4).  Every script opened
+with `pec = mio.Material.pec()` / `air = mio.Material.air()` before
+the first shape existed — ceremony for materials that carry no
+parameters and have exactly one canonical instance each.  Meanwhile
+the rest of the public API already spells its closed vocabularies as
+strings (`boundary_conditions={"xmin": "PEC"}`, `axis="z"`,
+`plane="zmin"`, `family="coax"`, `port_model="modal"`); materials
+were the odd one out.
+
+**Decision.**  Every public material argument (`material=` on
+primitives, Booleans, the profile verbs and `ImportedSolid`;
+`background=` on `GeometryModel` and `Mesh.from_grid`, including
+`from_grid` region tuples) accepts, besides a `Material` instance,
+the names of the parameter-free built-ins: `"air"`, `"vacuum"`,
+`"pec"` (case-insensitive).  A central resolver
+(`materials/material.py: resolve_material`, applied at the call site
+in the `geo/_validate.py` manner) maps them to **canonical cached
+instances** of the factories and raises on an unknown name, listing
+the valid ones.  The instances are shared deliberately: the mesher's
+material bookkeeping is identity-based (`id(mat)` keys), so a fresh
+instance per shape would inflate the material library.  Resolution
+happens at construction time — shapes, models and the project store
+only ever hold `Material` instances, and nothing downstream learns
+about strings.
+
+**Rejected.**
+
+- *`"copper"` and friends* — a named conductor implies a curated
+  material database: a specific σ with a citable source, dispersion
+  models for dielectrics.  That is a data-stewardship feature with
+  provenance obligations, not syntax sugar; split off as its own
+  issue.
+- *Sticky material* (issue #2 part 2: last used material becomes the
+  default for subsequent shapes) — order-dependent hidden state; a
+  lost `material=` line during copy-paste or reordering silently
+  changes the physics and still runs.  It would also make
+  "material-less shape" ambiguous, destroying the construction-body
+  invariant `GeometryModel.add()` enforces (DD-127).
+- *Abbreviated kwarg aliases* (issue #2 part 4: `bg=`, `mat=`) —
+  contradicts the one-vocabulary rule (DD-153, DD-117: no aliases);
+  with string shortcuts in place the verbosity the alias targeted is
+  gone anyway.
+
+**Files:** `src/magnelio/materials/material.py`,
+`src/magnelio/geo/__init__.py`, `src/magnelio/geo/primitives.py`,
+`src/magnelio/geo/operations.py`, `src/magnelio/geo/modifications.py`,
+`src/magnelio/geo/imported.py`, `src/magnelio/mesh/mesher.py`,
+`tests/unit/test_material_strings.py`,
+`examples/tutorials/plot_03_coax_smatrix.py`.
+
+## DD-186 — The mesh carries the f_max it was built for
+
+**Status:** Decided 2026-08-23 (issue #2 review, developer sign-off);
+shipped 2026-08-24.
+
+**Problem.**  Reported as issue #2 (part 3 of 4).  The same `f_max`
+was passed twice in consecutive lines — once to `Mesh.from_geometry`,
+once to `AnalysisScatteringTD` — in practically every script.  The
+issue proposed a session-global "last used `f_max`" buffer; rejected,
+because it makes results depend on execution order (notebook cells
+out of order, two models in one session, sweeps).  The real defect is
+elsewhere: the mesh is *built for* a frequency (`λ_min =
+c₀/(f_max·√n_max)` sizes `h_max`) but forgot it — `Mesh` had no
+`f_max` attribute — so the analysis could not know the mesh's design
+frequency even to check it.
+
+**Decision.**  `f_max` travels on the mesh, the same way boundary
+conditions (DD-103), declarative ports (DD-109) and lumped elements
+(DD-123) already do — the mesh is what reaches the analysis.
+
+1. `Mesh.from_geometry` records its `f_max` argument on the mesh
+   (`Mesh.f_max`); the wall-rewrite copies (`with_pec_boundaries`,
+   `with_boundary_conditions`) carry it along, and the project store
+   serialises it as a mesh attribute.
+2. `AnalysisScatteringTD(f_max=None)` (new default) resolves to
+   `mesh.f_max`; an explicit argument overrides, and a run with
+   neither raises, naming the `from_grid` origin of the gap.
+3. New guard: an explicit analysis `f_max` above `mesh.f_max` warns —
+   the mesh undersamples the requested band, a mismatch that
+   previously passed silently (`check_quality` runs at mesh time and
+   never sees the analysis band).  An analysis `f_max` *below* the
+   mesh's is legitimate (finer mesh than needed) and silent.
+4. `Mesh.from_grid` takes no `f_max`; the attribute stays `None`
+   there and the analysis keeps requiring an explicit value on that
+   path.  Pre-DD-186 stores rehydrate with `None` — the explicit
+   behaviour they always had.
+
+The eigenmode analysis takes no `f_max` and is untouched.
+
+**Files:** `src/magnelio/mesh/mesher.py`,
+`src/magnelio/analysis/scattering_td.py`, `src/magnelio/io/project.py`,
+`tests/unit/test_mesh_design_frequency.py`,
+`examples/tutorials/plot_03_coax_smatrix.py`.

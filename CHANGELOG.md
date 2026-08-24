@@ -23,6 +23,19 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- Built-in materials can be passed by name wherever a material is
+  expected: `material="air"`, `background="pec"`, etc. resolve to
+  the canonical `Material.air()` / `Material.vacuum()` /
+  `Material.pec()` instances (case-insensitive).  Explicit `Material`
+  objects work unchanged; an unknown name raises immediately, naming
+  the recognised ones.
+- The mesh now records the `f_max` it was generated for
+  (`mesh.f_max`), and `AnalysisScatteringTD` defaults its band to it
+  — `AnalysisScatteringTD(mesh=mesh)` no longer needs the `f_max`
+  repeated.  Passing an explicit analysis `f_max` above the mesh's
+  design frequency now warns: the grid undersamples the requested
+  band.  Meshes built without a design frequency (`Mesh.from_grid`)
+  keep requiring an explicit value.
 - `to_touchstone()` checks the `.sNp` extension against the number of
   exported ports and fills a missing one in, so `to_touchstone("wr90")`
   writes `wr90.s2p`.  A mismatched extension is an error: Touchstone
