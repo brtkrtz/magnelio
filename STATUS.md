@@ -18,9 +18,12 @@ stripline pickup/kicker page moved out of the tutorials (old
 `tutorials/plot_19_…` URL lapses, changelog notes it), the filter
 capstone re-anchored as the close of tutorials 01–12, and the first
 discrete-port characterisation guide (DD-189, coax): waveguide port
-as measuring instrument, `deembed` as phase reference, free
-reference-plane sweep (one run, re-referenced), no built-in
-optimiser; microstrip and CPW guides still open.  Unit suite 2170
+as measuring instrument, a WG–WG reference run as grid-exact phase
+ruler, geometric sweeps over gap length and gap position (developer
+review dropped the prototype's de-embedding sweep — the target
+simulation must commit to one gap position), scoreboard at start and
+end, no built-in optimiser; microstrip and CPW guides still open.
+Unit suite 2170
 passed / 3 skipped.  Before that: released v0.4.2 (issue-#2
 boilerplate cuts DD-185/186 + DD-184 export fix) and v0.4.3 (hotfix:
 `Loft` missed the DD-185 name resolution); new versioning rule in
@@ -60,7 +63,7 @@ The plane-wave tutorial remains deferred.
 
 Newest first, one line each; the full record is the DD entry.
 
-* **DD-189** (2026-08-24) — discrete-port characterisation as how-to guides, one per line type: waveguide port as reflection-free measuring instrument, band edge from `|S11| < −20 dB`, phase error from the de-embedded transmission with a *free* reference-plane sweep (one run re-referenced; replaced the planned analytic phase reference, so microstrip/CPW need no extra machinery), knobs = gap length / reference plane / port impedance, no built-in optimiser (sweep shows the sensitivity; `scipy.optimize` named for automation); coax shipped, microstrip + CPW open.
+* **DD-189** (2026-08-24, amended same day) — discrete-port characterisation as how-to guides, one per line type: waveguide port as reflection-free measuring instrument, band edge from `|S11| < −20 dB`, phase error against a WG–WG **reference run** of the same line (grid-exact ruler, no closed-form dispersion — microstrip/CPW need no extra machinery), knobs = gap length / **gap position** / port impedance, each a geometric re-run sweep (de-embedding dropped from the guide on developer review: the target simulation commits to one gap position), scoreboard at start and end, no built-in optimiser (`scipy.optimize` named for automation); coax shipped, microstrip + CPW open.
 * **DD-188** (2026-08-24) — second sphinx-gallery "How-to guides" (`examples/howto/` → `docs/howto/`, unnumbered pages, own toctree caption): task recipes separated from the numbered curriculum; stripline page moved out of the tutorials (old URL lapses), filter capstone re-anchored as the close of tutorials 01–12; renumbering the tutorials rejected (URL + prose breakage).
 * **DD-187** (2026-08-24) — post-hoc reference-plane shift `result.deembed({"port": d})` on the exact discrete chain dispersion: `lambda^{-d/dz}` evaluated on the unit circle (passband magnitudes exactly untouched; the off-circle `lambda_symbol` offset would bias by `O(1e-8·d/dz)`), continuum `γ(ω)` fallback for uncertified channels, lumped ports raise; measured to cancel a uniform line to the run's own floor with zero reference-plane offset; `phase`/`plot_s` moved to `SDerivedAccessors`, shared by run results and `SParameterResult`.
 * **DD-186** (2026-08-24) — the mesh carries the f_max it was built for: `Mesh.from_geometry` records it, `AnalysisScatteringTD(f_max=None)` defaults to it, an explicit value above it warns (undersampled grid), `from_grid` meshes keep requiring an explicit value; rejected the issue's session-global "last used f_max" buffer (execution-order-dependent).
@@ -411,9 +414,12 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
 
 * **Discrete-port how-to guides (DD-189).**  Coax shipped; microstrip
   and CPW pages remain.  Both reuse the coax skeleton (waveguide port
-  as instrument, de-embedded phase, free reference-plane sweep) —
-  QTEM dispersion needs no extra machinery since the phase reference
-  is the de-embedding itself, not a closed form.
+  as instrument, WG–WG reference run as phase ruler, geometric
+  gap-length/gap-position sweeps, scoreboard) — QTEM dispersion needs
+  no extra machinery since the ruler is measured on the grid, not a
+  closed form.  Open design point per line type: the termination
+  geometry itself (microstrip: vertical strip-to-ground gap; CPW:
+  symmetric vs per-side ground connection).
 * **Symmetry planes — known limitations (DD-154/DD-155/DD-172).**
   Lumped ports/elements on a symmetry plane are corrected since
   DD-172 (full-model declaration, internal half-device scaling, exact

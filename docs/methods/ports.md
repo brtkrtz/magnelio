@@ -188,10 +188,7 @@ continuum $\gamma(\omega)$.
 The shift assumes the port cross-section continues over the shifted
 length.  Below its cut-off a channel's factor grows as $e^{+\alpha
 d}$; those bins keep the diagnostic character the raw values have.
-Lumped ports carry no feed line and cannot be de-embedded — but a
-lumped port's *measured* reflection can be re-referenced through a
-waveguide port facing it, which is how the discrete-port
-characterisation guides use this feature.
+Lumped ports carry no feed line and cannot be de-embedded.
 
 ### What a Touchstone export covers (DD-184)
 

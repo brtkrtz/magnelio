@@ -12843,7 +12843,12 @@ tighter without it).
 
 **Status:** Decided 2026-08-24 (planning discussion with developer;
 optimiser deliberately left out); coax guide shipped 2026-08-24,
-microstrip and CPW planned.
+microstrip and CPW planned.  **Amended 2026-08-24** after developer
+review of the prototype: de-embedding is out of the guide entirely —
+the target simulation has no de-embedding, the one gap *position* is
+the compromise the user commits to — so the gap position is a
+geometric knob with its own re-run sweep, and the phase ruler is a
+reference run instead (see 2.).
 
 **Problem.**  Discrete (lumped) ports are approximate line
 terminations.  Vendor rules of thumb ("terminate a coax like this")
@@ -12859,20 +12864,24 @@ of prescribing one:
    exact grid mode down a short uniform line onto the lumped port
    under test.  `|S11|` is the termination's self-reflection; the
    page prints the band edge where it crosses −20 dB.
-2. The phase error is read from the de-embedded transmission
-   (DD-187): shift the waveguide port's reference plane to a
-   candidate plane and what remains of `arg S21` is the
-   termination's phase error there.  Because de-embedding is
-   post-processing, the **reference-plane sweep is free** — one run,
-   re-referenced to several planes, shows where the termination
-   effectively sits (`plot_discrete_port_coax.py`: 17.4° at the end
-   plane vs 5.7° one to two gap lengths behind it, on the example
-   grid with 0.5·r_i cells).  This replaced the planned analytic phase
-   reference — no closed form needed, so microstrip/CPW need no
-   extra machinery.
-3. Knobs on the page: gap length (re-run sweep), reference plane
-   (free sweep), port impedance (grid line impedance from
-   `solve_ports` vs catalogue value).
+2. The phase ruler is a **reference run**: the same line with
+   waveguide ports at both ends, transmission phase = the exact
+   propagation of *this grid* over the reference length.  The
+   termination's phase error is the difference of the lumped run's
+   `arg S21` against that ruler — no closed-form dispersion needed,
+   so microstrip/CPW need no extra machinery.  (The prototype read
+   the phase error from a de-embedding sweep instead; dropped on
+   developer review — the target simulation cannot de-embed a lumped
+   port into position, the geometry itself must be optimised.)
+3. Knobs on the page, each the compromise carried into the target
+   model: gap length (re-run sweep → reflection level), **gap
+   position relative to the reference plane** (re-run sweep → phase
+   error; on the example grid with 0.5·r_i cells: 29.0° with the gap
+   starting at the plane vs 5.7° starting 2–3 gap lengths before it;
+   on a TEM line the best position holds across the band, on
+   dispersive lines it becomes a band compromise), port impedance
+   (grid line impedance from `solve_ports` vs catalogue value →
+   low-frequency reflection floor).
 4. **No built-in optimiser.**  2–3 parameters, seconds per run, and
    the sweep shows the sensitivity that a black box would hide; the
    page names `scipy.optimize` for readers who want the last
@@ -12882,8 +12891,9 @@ of prescribing one:
    re-measure whenever cross-section, resolution or band change.
 
 The test grid pins `max_cell_size = min_cell_size` so the feed is
-uniform and the de-embedding assumption is exact; the knob the user
-sets is the cross-section cell size their production mesh will have.
+uniform and the reference run and the candidate runs see the same
+line per unit length; the knob the user sets is the cross-section
+cell size their production mesh will have.
 
 **Files:** `examples/howto/plot_discrete_port_coax.py`,
 `docs/methods/lumped-elements.md` (pointer).
