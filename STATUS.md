@@ -1,7 +1,14 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-24.*  Latest work: two boilerplate cuts from
-issue #2 (DD-185/186, branch `feat/material-strings-mesh-fmax`).
+*Last updated: 2026-08-24.*  Latest work: released v0.4.2 (issue-#2
+boilerplate cuts + DD-184 export fix) and v0.4.3 (hotfix: the `Loft`
+class constructor was the one public material argument the DD-185
+name resolution missed — a string surfaced later as an
+AttributeError; tutorial 14 caught it in the docs build, which is why
+the v0.4.2 `/stable/` docs never deployed).  New versioning rule in
+CLAUDE.md: while 0.x, PATCH covers everything backwards-compatible,
+MINOR is reserved for breaking changes.  The work itself: two
+boilerplate cuts from issue #2 (DD-185/186).
 Built-in materials may be named by string wherever a material is
 expected (`material="air"`, `background="pec"`; case-insensitive,
 resolved at the call site to canonical shared instances — the mesher's
