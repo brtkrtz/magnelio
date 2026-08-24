@@ -24,9 +24,11 @@ formulation follows the in-repo derivation).
 
 A discrete port is not an exact line termination: its residual
 reflection and phase offset depend on the grid at the gap, the gap
-geometry, and the chosen $Z_0$.  The how-to guide *Characterising a
-lumped port termination* measures both against a waveguide port
-(DD-189) instead of relying on rules of thumb.
+geometry and position, and the chosen $Z_0$.  The how-to guide
+*Lumped ports: investigations* measures both against a waveguide port
+(DD-189) instead of relying on rules of thumb, and the *Lumped port
+tuning* pages package the measurement as a per-line-type pre-flight
+tool.
 
 ## Trapezoidal RLC companion models
 

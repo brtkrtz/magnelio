@@ -12848,7 +12848,14 @@ review of the prototype: de-embedding is out of the guide entirely —
 the target simulation has no de-embedding, the one gap *position* is
 the compromise the user commits to — so the gap position is a
 geometric knob with its own re-run sweep, and the phase ruler is a
-reference run instead (see 2.).
+reference run instead (see 2.).  **Amended again 2026-08-24**
+(developer: the single page was overloaded): the material is split
+into **four pages** — *Lumped ports: investigations* (long: the
+measurement principle plus the sensitivity sweeps for all three line
+types) and one compact *Lumped port tuning* download tool each for
+coax, microstrip and CPW (given quantities → knobs → derived →
+scoreboard, no sweeps).  File names sort the overview first and the
+tools directly after it.  Shipped 2026-08-24, all three line types.
 
 **Problem.**  Discrete (lumped) ports are approximate line
 terminations.  Vendor rules of thumb ("terminate a coax like this")
@@ -12890,10 +12897,36 @@ of prescribing one:
    as transferable rules — the page's closing section says to
    re-measure whenever cross-section, resolution or band change.
 
-The test grid pins `max_cell_size = min_cell_size` so the feed is
-uniform and the reference run and the candidate runs see the same
+The coax test grid pins `max_cell_size = min_cell_size` so the feed
+is uniform and the reference run and the candidate runs see the same
 line per unit length; the knob the user sets is the cross-section
-cell size their production mesh will have.
+cell size their production mesh will have (PCB cross-sections use
+`min_nodes_per_wavelength` instead — multi-scale).
 
-**Files:** `examples/howto/plot_discrete_port_coax.py`,
+**Line-type findings** (internal record
+`investigations/discrete-port-guides/MEASUREMENTS.md`):
+
+- *Polarity normalisation*: the sign of a solved mode profile is a
+  convention, so lumped-port vs waveguide-mode polarity is ±180°
+  arbitrary; the phase error is referenced to the nearest multiple of
+  180° at the low band edge.  (Surfaced on microstrip, where the raw
+  error read ≈180°.)
+- *Microstrip*: vertical port trace-end → ground; no gap-length knob;
+  position optimum near −1.0·h_sub on the example grid (23.3° →
+  2.9°), and the position compromise is frequency-dependent
+  (dispersion) — the curves tilt.
+- *CPW*: both slots must be loaded (port + `SeriesRLC` resistor, each
+  2·Z_line); the slots must be **closed** one slot-width behind the
+  termination plane or they resonate as shorted slotline stubs; a
+  resistor declared after `Mesh.from_geometry` must be passed via
+  `elements=` or it is silently absent (elements travel on the mesh,
+  DD-123); the test shield must be single-mode over the band —
+  in the roomy 8×5 mm box two extra modes propagate at 15 GHz and the
+  measured floor collapses (−6.6 dB vs −17.2 dB in the tight
+  4×2.5 mm box).
+
+**Files:** `examples/howto/plot_lumped_port_investigations.py`,
+`examples/howto/plot_lumped_port_tuning_coax.py`,
+`examples/howto/plot_lumped_port_tuning_microstrip.py`,
+`examples/howto/plot_lumped_port_tuning_cpw.py`,
 `docs/methods/lumped-elements.md` (pointer).

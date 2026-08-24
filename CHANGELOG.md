@@ -12,12 +12,13 @@ major version is 0, minor releases may change the public API.
 ### Added
 
 - New documentation section **How-to guides**: task-oriented recipes
-  meant to be downloaded and adapted, starting with *Characterising a
-  lumped port termination: coaxial line* — a pre-flight measurement
-  that scores a lumped port termination (self-reflection, usable
-  band, phase error) on your own cross-section, mesh resolution and
-  frequency band, with sensitivity sweeps over gap length, gap
-  position and port impedance.
+  meant to be downloaded and adapted.  First content: lumped-port
+  termination guides — *Lumped ports: investigations* walks the
+  measurement principle and the sensitivity sweeps (gap length,
+  position, port impedance) for coax, microstrip and CPW, and one
+  compact *Lumped port tuning* page per line type scores a candidate
+  termination on your own cross-section, mesh resolution and
+  frequency band (self-reflection, usable band, phase error).
 - De-embedding: `result.deembed({"port1": d})` shifts port reference
   planes by a distance along the feed line and returns the S-matrix
   referenced there, without re-running.  The shift removes the exact
