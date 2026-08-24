@@ -29,6 +29,13 @@ major version is 0, minor releases may change the public API.
   project-store results alike; the returned matrix answers the same
   `S`/`db`/`phase`/`plot_s` calls and Touchstone/scikit-rf exports.
 
+### Fixed
+
+- `GeometryModel.plot()`: the 3D view can now be panned (right-drag or
+  shift + left-drag).  Panning had silently done nothing because the
+  orthographic camera the viewer used only impersonated one and left
+  the orbit controls with undefined frustum bounds.
+
 ### Changed
 
 - The stripline pickup/kicker page moved from the tutorials (former

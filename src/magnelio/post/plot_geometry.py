@@ -602,16 +602,23 @@ def _rgba_to_hex(r: float, g: float, b: float) -> str:
 def _display_renderer(renderer: Any) -> None:
     """Display a JupyterRenderer rebuilt for SI-unit (metre-scale) geometry.
 
-    Replicates JupyterRenderer.Display() but with two corrections that the
-    pythonocc default settings get wrong for metre-scale EM structures:
+    Replicates JupyterRenderer.Display() but with three corrections that the
+    pythonocc defaults get wrong for metre-scale EM structures:
 
-    1. CombinedCamera has separate clipping planes per mode — ``orthoNear`` /
-       ``orthoFar`` for orthographic, ``near`` / ``far`` for perspective.  The
-       pythonocc defaults (0.1, 2000) clip all geometry on a ~10 mm coax.
-    2. CombinedCamera's ``width`` / ``height`` are the orthographic frustum
-       in *world units*, not canvas pixels.  Passing ``self._size`` (pixel
-       dimensions, e.g. 800×500) makes the visible viewport 320 m wide after
-       zoom — the 10 mm coax becomes a sub-pixel speck on the canvas.
+    1. The clipping planes.  The pythonocc defaults (0.1, 2000) clip all
+       geometry on a ~10 mm coax; here ``near`` / ``far`` scale with the
+       bounding box.
+    2. The orthographic frustum is in *world units*, not canvas pixels.
+       pythonocc passes ``self._size`` (pixel dimensions, e.g. 800×500),
+       which makes the visible viewport 320 m wide after zoom — the 10 mm
+       coax becomes a sub-pixel speck on the canvas.
+    3. A plain ``OrthographicCamera`` replaces pythonocc's
+       ``CombinedCamera``.  The latter only *impersonates* an orthographic
+       camera: it reports ``type == "OrthographicCamera"`` but keeps
+       ``left`` / ``right`` / ``top`` / ``bottom`` on an inner camera object,
+       so ``OrbitControls`` computes its pan offset from undefined fields
+       (NaN) and panning silently does nothing.  With the real camera class
+       right-drag (or shift + left-drag) pans as expected.
 
     Both planes and frustum dimensions are scaled with the bounding box, so
     the function is unit-independent.  The renderer canvas itself is still
@@ -628,9 +635,9 @@ def _display_renderer(renderer: Any) -> None:
     from OCC.Display.WebGl.jupyter_renderer import Axes, BoundingBox, Grid  # noqa: PLC0415
     from pythreejs import (  # noqa: PLC0415
         AmbientLight,
-        CombinedCamera,
         DirectionalLight,
         OrbitControls,
+        OrthographicCamera,
         Picker,
         Scene,
     )
@@ -652,17 +659,16 @@ def _display_renderer(renderer: Any) -> None:
     cam_view_height = 4.0 * bb_max * renderer._camera_initial_zoom
     cam_view_width = cam_view_height * canvas_aspect
 
-    renderer._camera = CombinedCamera(
+    renderer._camera = OrthographicCamera(
         position=camera_pos,
-        width=cam_view_width,
-        height=cam_view_height,
+        left=-cam_view_width / 2.0,
+        right=cam_view_width / 2.0,
+        top=cam_view_height / 2.0,
+        bottom=-cam_view_height / 2.0,
         near=bb_max * 1e-3,
         far=bb_max * 1e3,
-        orthoNear=bb_max * 1e-3,
-        orthoFar=bb_max * 1e3,
     )
     renderer._camera.up = (0.0, 0.0, 1.0)
-    renderer._camera.mode = "orthographic"
     renderer._camera_target = camera_target
     renderer._camera.position = camera_pos
 
