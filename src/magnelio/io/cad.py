@@ -163,8 +163,13 @@ def _resolve_materials(names: list[str], materials) -> list:
     if materials is None:
         return [None] * len(names)
     if not isinstance(materials, dict):
-        from magnelio.materials.material import Material  # noqa: PLC0415
+        from magnelio.materials.material import (  # noqa: PLC0415
+            Material,
+            resolve_material,
+        )
 
+        # DD-185: a built-in name string broadcasts like the instance.
+        materials = resolve_material(materials, "materials")
         if not isinstance(materials, Material):
             raise TypeError(
                 "materials must be a Material (applied to every solid) or a "

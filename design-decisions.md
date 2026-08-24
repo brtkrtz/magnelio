@@ -12682,7 +12682,8 @@ about strings.
 **Files:** `src/magnelio/materials/material.py`,
 `src/magnelio/geo/__init__.py`, `src/magnelio/geo/primitives.py`,
 `src/magnelio/geo/operations.py`, `src/magnelio/geo/modifications.py`,
-`src/magnelio/geo/imported.py`, `src/magnelio/mesh/mesher.py`,
+`src/magnelio/geo/imported.py`, `src/magnelio/io/cad.py`,
+`src/magnelio/mesh/mesher.py`,
 `tests/unit/test_material_strings.py`,
 `examples/tutorials/plot_03_coax_smatrix.py`.
 

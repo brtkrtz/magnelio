@@ -253,8 +253,14 @@ class TestMaterialMapping:
 
     def test_wrong_materials_type_is_rejected(self, tmp_path):
         with pytest.raises(TypeError) as excinfo:
-            import_step(_simple_step(tmp_path), "PEC")
+            import_step(_simple_step(tmp_path), 1.0)
         assert "Material" in str(excinfo.value)
+
+    def test_builtin_name_string_broadcasts(self, tmp_path):
+        # DD-185: "pec" is the canonical PEC instance, applied to
+        # every solid like the explicit broadcast form.
+        parts = import_step(_simple_step(tmp_path), "PEC")
+        assert all(part.material.is_pec for part in parts.members())
 
     def test_duplicate_solid_names_are_all_matched(self):
         assigned = _resolve_materials(["ring", "ring"], {"ring": PEC})

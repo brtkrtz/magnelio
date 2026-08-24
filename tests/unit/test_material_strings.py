@@ -120,3 +120,18 @@ class TestFromGrid:
             ],
         )
         assert len(mesh.material_library) == 2  # background + one PEC
+
+
+class TestCadImportMapping:
+    def test_broadcast_string(self):
+        from magnelio.io.cad import _resolve_materials
+
+        mats = _resolve_materials(["a", "b"], "pec")
+        assert all(m.is_pec for m in mats)
+
+    def test_dict_value_string_reaches_imported_solid(self):
+        # Dict values pass through untouched here; ImportedSolid
+        # resolves them at construction.
+        from magnelio.io.cad import _resolve_materials
+
+        assert _resolve_materials(["pin"], {"pin": "pec"}) == ["pec"]
