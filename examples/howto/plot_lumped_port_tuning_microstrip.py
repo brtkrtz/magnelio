@@ -116,6 +116,18 @@ result = mio.AnalysisScatteringTD(mesh=mesh, ports=list(model.ports), verbose=Fa
 )
 
 # %%
+# The test fixture
+# ----------------
+#
+# A cut along the propagation direction, through the trace centre:
+# the waveguide port on the left, the trace ending at
+# ``end_position`` relative to the reference plane, the vertical
+# lumped port from the trace end down to the ground plane, and the
+# substrate/air tail continuing to the shield's back wall.
+
+fig, ax = plots.plot_cross_section(model, "x", 0.0, flip=True, title="Microstrip test fixture")
+
+# %%
 # The scoreboard
 # --------------
 #

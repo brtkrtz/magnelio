@@ -124,6 +124,18 @@ result = mio.AnalysisScatteringTD(mesh=mesh, ports=list(model.ports), verbose=Fa
 )
 
 # %%
+# The test fixture
+# ----------------
+#
+# A cut along the propagation direction: the waveguide port on the
+# left launches down the uniform line, the inner conductor stops at
+# ``gap_position`` relative to the reference plane, and the lumped
+# port under test bridges the gap to the shorted end plate.
+
+fig, ax = plots.plot_cross_section(model, "y", 0.0, flip=True, title="Coax test fixture")
+ax.set_xlim(-0.3, z_end * 1e3 + 1.0)
+
+# %%
 # The scoreboard
 # --------------
 #

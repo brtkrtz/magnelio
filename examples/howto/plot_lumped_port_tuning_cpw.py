@@ -151,6 +151,26 @@ result = mio.AnalysisScatteringTD(
 ).run(excited=[("wg", 0)])
 
 # %%
+# The test fixture
+# ----------------
+#
+# A top view of the metallisation plane, cut along the propagation
+# direction: centre strip and ground strips with the two slots, the
+# strip ending at ``end_position``, the lumped port across one slot
+# and the resistor across the other, and the closing plate one
+# slot-width behind the termination plane.
+
+model.add_element(load2)  # declare on the model so the plot shows it
+fig, ax = plots.plot_cross_section(
+    model,
+    "y",
+    h_sub + t_met / 2,
+    flip=True,
+    slab=t_met,
+    title="CPW test fixture (top view)",
+)
+
+# %%
 # The scoreboard
 # --------------
 #
