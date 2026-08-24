@@ -161,6 +161,38 @@ Excitation amplitudes are pinned to physical units at the source
 (C = 1 convention, DD-085), so recorded V/I and monitor fields are in
 SI units — an in-house calibration convention.
 
+### Reference-plane shift (de-embedding, DD-187)
+
+`result.deembed({"port1": d})` returns the S-matrix referenced at
+planes shifted a distance $d$ from the port planes into the domain
+(negative distances move outward): every S-parameter touching a
+shifted port is multiplied by the inverse line propagation factor over
+$d$ — reflections twice, transmissions once per shifted end.  This is
+the classical reference-plane transformation
+{cite}`pozar2012`; the in-house refinement is *which* propagation
+factor is removed.
+
+Wherever the run certified a channel's discrete line parameters, the
+shift uses the **exact discrete dispersion of the feed chain** — the
+same characteristic root $\lambda(z)$ the transparent boundary is
+built from — evaluated on the unit circle, so passband magnitudes are
+untouched exactly and the removed phase is exactly the phase the grid
+applied.  De-embedding a uniform feed line therefore cancels it to
+the accuracy floor of the run itself (measured: −120 dB TEM, −67 dB
+TE10 at 8 cells/λ), whereas the textbook continuum $e^{-\gamma d}$
+would leave the grid-dispersion gap behind — degrees of phase on
+coarse meshes, silently attributed to the device under test.
+Channels without certified line parameters fall back to the mode's
+continuum $\gamma(\omega)$.
+
+The shift assumes the port cross-section continues over the shifted
+length.  Below its cut-off a channel's factor grows as $e^{+\alpha
+d}$; those bins keep the diagnostic character the raw values have.
+Lumped ports carry no feed line and cannot be de-embedded — but a
+lumped port's *measured* reflection can be re-referenced through a
+waveguide port facing it, which is how the discrete-port
+characterisation guides use this feature.
+
 ### What a Touchstone export covers (DD-184)
 
 `to_touchstone()` and `to_skrf()` export the square sub-matrix over

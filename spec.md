@@ -424,7 +424,9 @@ waveguide port supporting all 6 domain faces. Features:
 - Port excitation: inject mode profile as a soft source at E-tangential edges
   (WaveguidePort also injects H-field for modal ABC)
 - Port monitoring: overlap integral with mode profile at each time step
-- S-parameter extraction: FFT of time-domain port signals + deembedding (DD-018)
+- S-parameter extraction: FFT of time-domain port signals; post-hoc
+  reference-plane shift via `result.deembed` on the exact discrete
+  chain dispersion (DD-187)
 - Waveform: Gaussian for TEM, modulated Gaussian for TE/TM (DD-022)
 
 ---

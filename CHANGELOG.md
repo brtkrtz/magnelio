@@ -7,6 +7,20 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Added
+
+- De-embedding: `result.deembed({"port1": d})` shifts port reference
+  planes by a distance along the feed line and returns the S-matrix
+  referenced there, without re-running.  The shift removes the exact
+  propagation the grid applied — including the numerical-dispersion
+  part an analytic `exp(-jβd)` would leave behind on coarse meshes —
+  so de-embedding a uniform feed line cancels its phase down to the
+  accuracy floor of the run itself.  Works on in-RAM and
+  project-store results alike; the returned matrix answers the same
+  `S`/`db`/`phase`/`plot_s` calls and Touchstone/scikit-rf exports.
+
 ## [0.4.3] - 2026-08-24
 
 ### Fixed

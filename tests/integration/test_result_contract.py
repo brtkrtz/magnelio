@@ -161,6 +161,24 @@ class TestCrossImplementation:
             results["store"].f_axis,
         )
 
+    def test_deembed_agrees(self, results):
+        # Exercises the stored line records (dt, line params, normal
+        # dx, modes) against the in-RAM ones on a Klein-Gordon (q > 0)
+        # channel; the shift factors must match exactly, so the only
+        # tolerance is the run divergence already allowed on S itself.
+        d = {"p1": 4e-3, "p2": 2e-3}
+        de_ram = results["ram"].deembed(d)
+        de_store = results["store"].deembed(d)
+        f = np.asarray(de_ram.f_axis)
+        band = f >= 16e9  # propagating, bounded shift factors
+        scale = float(np.max(np.abs(de_ram.matrix[band])))
+        np.testing.assert_allclose(
+            de_ram.matrix[band],
+            de_store.matrix[band],
+            rtol=1e-6,
+            atol=1e-9 * scale,
+        )
+
     def test_store_records_run_settings(self, results):
         s = results["store"].settings
         assert s.energy_stop_db == pytest.approx(40.0)

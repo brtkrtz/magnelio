@@ -12730,3 +12730,67 @@ The eigenmode analysis takes no `f_max` and is untouched.
 `src/magnelio/analysis/scattering_td.py`, `src/magnelio/io/project.py`,
 `tests/unit/test_mesh_design_frequency.py`,
 `examples/tutorials/plot_03_coax_smatrix.py`.
+
+## DD-187 — Post-hoc reference-plane shift (`result.deembed`) on the exact discrete chain dispersion
+
+**Status:** Decided 2026-08-24 (developer approved the post-hoc form
+over a CST-style per-port declaration); shipped 2026-08-24.
+
+**Problem.**  Comparing simulated S-parameters against measurements,
+against other tools, or against an on-grid device under test requires
+moving the port reference planes off the domain boundary — classically
+by multiplying with `exp(+γd)` per touched port.  Two open questions:
+where exactly the DTBC's reference plane sits (half-cell/half-step
+offsets would poison any shift), and which dispersion to shift with —
+on the coarse meshes the discrete-port how-to guides target, grid
+dispersion reaches degrees of phase, and a continuum `exp(-jβd)`
+misattributes exactly that to the device under test.
+
+**Measurement** (internal record
+`investigations/port-deembedding/MEASUREMENTS.md`, reproduced by
+`validation/deembed_uniform_line.py`): on a uniform matched line at
+8 cells/λ, cancelling S21 with the discrete chain root `lambda(z)`
+(DD-054/DD-055, `(r, q)` from `dtbc_line_params`, `dz` from
+`port_normal_dx`) leaves −119.9 dB (TEM) resp. −67.4 dB (TE10) —
+the run's own floor in both cases (S11 −123.2 / −76.7 dB) — with
+**zero reference-plane offset**: the DTBC plane *is* the port plane.
+The continuum factor leaves 9.7° (TEM) resp. 3.2° (TE10) of grid
+dispersion, −15/−25 dB.
+
+**Decision.**
+
+1. **Post-hoc, not at declaration:** `result.deembed({"port": d})` on
+   the scattering-result contract (RAM and store-backed alike)
+   returns a new `SParameterResult` referenced at planes shifted `d`
+   into the domain (negative = outward).  No re-run to iterate; a
+   port-level declaration can later delegate to this.
+2. **Discrete dispersion first:** channels with certified line
+   parameters shift by `lambda^{-d/dz}`, evaluated exactly *on* the
+   unit circle (`post/deembed.py:_chain_lambda_log`; the branch is
+   decided by the real-valued `A(ω)` alone, so passband magnitudes
+   stay exactly 1 — the `_EDGE_OFFSET` of the off-circle
+   `lambda_symbol` would bias magnitudes by `O(1e-8 · d/dz)`).
+   Channels without certified parameters fall back to the mode's
+   continuum `γ(ω)`; lumped channels raise (no feed line).
+3. **Shared accessors:** `phase`/`plot_s` moved from
+   `ScatteringResultMixin` into `SDerivedAccessors`
+   (`post/sparameter_result.py`), inherited by both the run results
+   and `SParameterResult` — a de-embedded matrix answers the same
+   calls as the result it came from.
+4. Below cut-off the factor grows as `exp(+α̂d)`; those bins keep the
+   diagnostic character the raw values have (no masking, matching the
+   S-parameter convention).
+
+The shift assumes the port cross-section continues over the shifted
+length and uses the port-plane `dz` chain; on feed meshes graded along
+the normal, the residual is the (second-order) dispersion difference
+between the local and the port-plane spacing.
+
+**Files:** `src/magnelio/post/deembed.py`,
+`src/magnelio/post/sparameter_result.py`,
+`src/magnelio/analysis/result_interface.py`,
+`src/magnelio/analysis/scattering_td.py`, `src/magnelio/io/project.py`,
+`tests/unit/test_deembed.py`,
+`tests/integration/test_deembed_line.py`,
+`tests/integration/test_result_contract.py`,
+`validation/deembed_uniform_line.py`.

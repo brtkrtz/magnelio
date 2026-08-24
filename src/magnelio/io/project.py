@@ -3177,6 +3177,20 @@ class Project(ScatteringResultMixin):
             return None
         return _cutoffs_from_port_modes(run.get("port_modes"))
 
+    def _deembed_data(self) -> tuple:
+        """Port line records backing :meth:`deembed` (result contract).
+
+        The line records are properties of the ports, not of the
+        excitation, so any started run's copy serves.
+        """
+        run = self._load_run(self._first_started_run())
+        return (
+            float(run["dt"]),
+            run.get("port_line_params"),
+            run.get("port_normal_dx"),
+            run.get("port_modes"),
+        )
+
     @property
     def settings(self) -> RunSettings:
         """Settings the stored run was produced with (result contract).

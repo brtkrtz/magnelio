@@ -1,25 +1,25 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-24.*  Latest work: released v0.4.2 (issue-#2
-boilerplate cuts + DD-184 export fix) and v0.4.3 (hotfix: the `Loft`
-class constructor was the one public material argument the DD-185
-name resolution missed — a string surfaced later as an
-AttributeError; tutorial 14 caught it in the docs build, which is why
-the v0.4.2 `/stable/` docs never deployed).  New versioning rule in
-CLAUDE.md: while 0.x, PATCH covers everything backwards-compatible,
-MINOR is reserved for breaking changes.  The work itself: two
-boilerplate cuts from issue #2 (DD-185/186).
-Built-in materials may be named by string wherever a material is
-expected (`material="air"`, `background="pec"`; case-insensitive,
-resolved at the call site to canonical shared instances — the mesher's
-material bookkeeping is id-based), and the mesh now records the
-`f_max` it was generated for: `AnalysisScatteringTD` defaults its band
-to `mesh.f_max`, warns when an explicit value exceeds it (undersampled
-grid — previously silent), and `from_grid` meshes keep requiring an
-explicit value.  All 19 tutorials use the two idioms throughout.
-Rejected from the same issue: sticky last-used
-material and abbreviated kwarg aliases (see DD-185).  Unit suite 2155
-passed / 3 skipped.  Before that: the Touchstone/scikit-rf
+*Last updated: 2026-08-24.*  Latest work: post-hoc de-embedding
+(DD-187, branch `feat/port-deembedding`, unmerged): `result.deembed(
+{"port": d})` shifts reference planes on the exact discrete chain
+dispersion — the on-circle `lambda^{-d/dz}` from the certified
+`(r, q, dz)` line records — and cancels a uniform feed line to the
+run's own floor (measured −119.9 dB TEM / −67.4 dB TE10 at 8 cells/λ;
+the continuum `exp(-γd)` would leave 3°–10° of grid dispersion, which
+is why discrete is the default and continuum only the fallback for
+uncertified channels).  Reference plane confirmed to sit exactly on
+the port plane (no half-cell/half-step offset).  Works on RAM and
+store results; returns an `SParameterResult` that now shares
+`phase`/`plot_s` via the new `SDerivedAccessors` base; lumped ports
+raise.  Groundwork for the discrete-port how-to guides (own gallery
+planned; stripline tutorial 19 will move there).  Unit suite 2170
+passed / 3 skipped.  Before that: released v0.4.2 (issue-#2
+boilerplate cuts DD-185/186 + DD-184 export fix) and v0.4.3 (hotfix:
+`Loft` missed the DD-185 name resolution); new versioning rule in
+CLAUDE.md — while 0.x, PATCH covers everything backwards-compatible,
+MINOR is reserved for breaking changes.  Before that: the
+Touchstone/scikit-rf
 export covers the excited channels instead of demanding the complete
 square matrix (DD-184, issue #3) — an unexcited channel is matched by
 its own port boundary, so the sub-matrix is the network seen with it
@@ -52,6 +52,7 @@ The plane-wave tutorial remains deferred.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-187** (2026-08-24) — post-hoc reference-plane shift `result.deembed({"port": d})` on the exact discrete chain dispersion: `lambda^{-d/dz}` evaluated on the unit circle (passband magnitudes exactly untouched; the off-circle `lambda_symbol` offset would bias by `O(1e-8·d/dz)`), continuum `γ(ω)` fallback for uncertified channels, lumped ports raise; measured to cancel a uniform line to the run's own floor with zero reference-plane offset; `phase`/`plot_s` moved to `SDerivedAccessors`, shared by run results and `SParameterResult`.
 * **DD-186** (2026-08-24) — the mesh carries the f_max it was built for: `Mesh.from_geometry` records it, `AnalysisScatteringTD(f_max=None)` defaults to it, an explicit value above it warns (undersampled grid), `from_grid` meshes keep requiring an explicit value; rejected the issue's session-global "last used f_max" buffer (execution-order-dependent).
 * **DD-185** (2026-08-24) — built-in materials by name: `"air"`/`"vacuum"`/`"pec"` accepted (case-insensitive) at every public material argument, resolved at the call site to canonical shared instances; `"copper"` deferred to a curated material library; sticky last-used material and `bg=`/`mat=` aliases rejected (issue #2).
 * **DD-184** (2026-08-23) — a Touchstone export is the square sub-matrix over the *excited* channels (issue #3): unexcited channels carry their reflection-free boundary all run, so dropping them is the matched-termination condition of the S-parameter definition, not a truncation; `channels=` selects a sub-network explicitly; a warning fires only for propagating modes dropped at a port that is itself exported (mode conversion missing from a file that looks complete); the `.sNp` extension must match the exported port count — Touchstone records it nowhere else — and is filled in when absent; supersedes the completeness rule of DD-112.

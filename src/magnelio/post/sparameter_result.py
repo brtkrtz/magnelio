@@ -127,8 +127,117 @@ def warn_unexported_modes(
         )
 
 
+class SDerivedAccessors:
+    """Accessors derived purely from ``S(...)``/``db(...)``.
+
+    Shared verbatim between :class:`SParameterResult` and the
+    scattering-result contract
+    (:class:`~magnelio.analysis.result_interface.ScatteringResultMixin`),
+    so a de-embedded or otherwise post-processed S-matrix answers the
+    same ``phase``/``plot_s`` calls as the run result it came from.
+    Hosts require ``S``, ``db``, ``f_axis``, ``channels`` and
+    ``excitations``.
+    """
+
+    def phase(
+        self,
+        out_port: str,
+        in_port: str,
+        *,
+        mode_out: int = 0,
+        mode_in: int = 0,
+        deg: bool = True,
+        unwrap: bool = True,
+        f_axis=None,
+    ) -> np.ndarray:
+        """Phase of one S-parameter over the frequency axis.
+
+        Parameters
+        ----------
+        out_port, in_port : str
+            Observed / excited port names (modes via ``mode_out`` /
+            ``mode_in``), as in :meth:`S`.
+        deg : bool, default True
+            Return degrees; ``False`` returns radians.
+        unwrap : bool, default True
+            Unwrap 2π discontinuities along the frequency axis.
+        f_axis : array-like, optional
+            Custom frequency axis, on hosts whose :meth:`S` can
+            recompute the spectrum (run results); a plain
+            :class:`SParameterResult` holds one fixed axis and
+            rejects it.
+
+        Returns
+        -------
+        np.ndarray
+            Phase per frequency point.
+        """
+        kwargs = {} if f_axis is None else {"f_axis": f_axis}
+        s = self.S(out_port, in_port, mode_out=mode_out, mode_in=mode_in, **kwargs)
+        ph = np.angle(s)
+        if unwrap:
+            ph = np.unwrap(ph)
+        return np.degrees(ph) if deg else ph
+
+    def plot_s(self, *pairs, db=True, floor_db=-200.0, ax=None):
+        """Plot S-parameter magnitudes over frequency.
+
+        Parameters
+        ----------
+        *pairs : tuple
+            Channels to plot, each ``(out_port, in_port)`` or
+            ``(out_port, in_port, mode_out, mode_in)``.  Without
+            arguments every recorded channel of every excitation is
+            plotted.
+        db : bool, default True
+            Magnitude in dB (with *floor_db*) instead of linear.
+        floor_db : float, default -200.0
+            Clip floor for the dB display.
+        ax : matplotlib.axes.Axes, optional
+            Axes to draw into; a new figure is created otherwise.
+
+        Returns
+        -------
+        fig : matplotlib.figure.Figure
+        ax : matplotlib.axes.Axes
+        """
+        import matplotlib.pyplot as plt  # noqa: PLC0415
+
+        if not pairs:
+            pairs = tuple(
+                (out_port, in_port, mode_out, mode_in)
+                for (in_port, mode_in) in self.excitations
+                for (out_port, mode_out) in self.channels
+            )
+        if ax is None:
+            fig, ax = plt.subplots()
+        else:
+            fig = ax.figure
+        f_ghz = np.asarray(self.f_axis) / 1e9
+        multi_mode = any(len(p) == 4 and (p[2] or p[3]) for p in pairs)
+        for p in pairs:
+            out_port, in_port = p[0], p[1]
+            mode_out = p[2] if len(p) > 2 else 0
+            mode_in = p[3] if len(p) > 3 else 0
+            if db:
+                y = self.db(
+                    out_port, in_port, mode_out=mode_out, mode_in=mode_in, floor_db=floor_db
+                )
+            else:
+                y = np.abs(self.S(out_port, in_port, mode_out=mode_out, mode_in=mode_in))
+            label = f"S({out_port} ← {in_port})"
+            if multi_mode:
+                label = f"S({out_port}:{mode_out} ← {in_port}:{mode_in})"
+            ax.plot(f_ghz, y, label=label)
+        ax.set_xlabel("f / GHz")
+        ax.set_ylabel("|S| / dB" if db else "|S|")
+        ax.grid(True, alpha=0.3)
+        ax.legend()
+        return fig, ax
+
+
 @dataclass(frozen=True)
-class SParameterResult:
+class SParameterResult(SDerivedAccessors):
     """Structured multi-port S-parameter spectrum.
 
     A single :class:`SParameterResult` holds the full S-matrix

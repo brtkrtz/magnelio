@@ -19,6 +19,8 @@ from typing import Protocol, runtime_checkable
 
 import numpy as np
 
+from magnelio.post.sparameter_result import SDerivedAccessors
+
 
 @dataclass(frozen=True)
 class RunSettings:
@@ -50,107 +52,79 @@ class RunSettings:
     port_model_used: str | None = None
 
 
-class ScatteringResultMixin:
-    """Accessors derived purely from ``S(...)`` — shared verbatim."""
+class ScatteringResultMixin(SDerivedAccessors):
+    """Accessors derived purely from ``S(...)`` — shared verbatim.
 
-    def phase(
-        self,
-        out_port: str,
-        in_port: str,
-        *,
-        mode_out: int = 0,
-        mode_in: int = 0,
-        deg: bool = True,
-        unwrap: bool = True,
-        f_axis=None,
-    ) -> np.ndarray:
-        """Phase of one S-parameter over the frequency axis.
+    ``phase`` and ``plot_s`` come from
+    :class:`~magnelio.post.sparameter_result.SDerivedAccessors`, the
+    same base a plain :class:`SParameterResult` (e.g. a de-embedded
+    matrix) uses; this mixin adds the members that need the run's port
+    records: the export warning, :meth:`to_touchstone` / :meth:`to_skrf`
+    and :meth:`deembed`.
+    """
+
+    def deembed(self, distances):
+        """Shift port reference planes; return the de-embedded S-matrix.
+
+        Removes the feed-line propagation between a port plane and its
+        new reference plane: ``result.deembed({"port1": d})`` moves
+        port1's reference plane the distance ``d`` [m] from the port
+        plane *into* the domain, and every S-parameter touching that
+        port is multiplied by the inverse line propagation factor over
+        ``d`` — reflections twice, transmissions once per shifted end.
+        A negative distance moves the plane outward (adds line
+        length); ports not named keep their plane.
+
+        The shift uses the discrete dispersion of the port's uniform
+        feed chain — the same grid propagation the solver applied — so
+        de-embedding a uniform feed line removes its phase down to the
+        accuracy floor of the run itself, including the
+        grid-dispersion part that an analytic ``exp(-jβd)`` would
+        leave behind on coarse meshes.  It assumes the cross-section
+        stays that of the port over the shifted length; channels
+        without certified discrete line parameters fall back to the
+        mode's continuum ``γ(f)``.
+
+        Below its cut-off a channel's factor grows exponentially with
+        distance, so de-embedded values there keep the diagnostic
+        character the raw ones have.  Lumped ports carry no feed-line
+        dispersion; naming one raises.
 
         Parameters
         ----------
-        out_port, in_port : str
-            Observed / excited port names (modes via ``mode_out`` /
-            ``mode_in``), as in :meth:`S`.
-        deg : bool, default True
-            Return degrees; ``False`` returns radians.
-        unwrap : bool, default True
-            Unwrap 2π discontinuities along the frequency axis.
-        f_axis : array-like, optional
-            Custom frequency axis; recomputed from the recorded
-            signals like :meth:`S`.
+        distances : dict[str, float]
+            Per-port shift distance [m], positive into the domain.
 
         Returns
         -------
-        np.ndarray
-            Phase per frequency point.
+        SParameterResult
+            A new result referenced at the shifted planes — the
+            original is untouched.  It answers ``S`` / ``db`` /
+            ``phase`` / ``plot_s`` and the Touchstone / scikit-rf
+            exports.
         """
-        s = self.S(
-            out_port,
-            in_port,
-            mode_out=mode_out,
-            mode_in=mode_in,
-            f_axis=f_axis,
+        from magnelio.post.deembed import deembed_s_params  # noqa: PLC0415
+
+        dt, line_params, normal_dx, port_modes = self._deembed_data()
+        return deembed_s_params(
+            self.s_params,
+            distances,
+            dt=dt,
+            port_line_params=line_params,
+            port_normal_dx=normal_dx,
+            port_modes=port_modes,
         )
-        ph = np.angle(s)
-        if unwrap:
-            ph = np.unwrap(ph)
-        return np.degrees(ph) if deg else ph
 
-    def plot_s(self, *pairs, db=True, floor_db=-200.0, ax=None):
-        """Plot S-parameter magnitudes over frequency.
+    def _deembed_data(self) -> tuple:
+        """``(dt, port_line_params, port_normal_dx, port_modes)``.
 
-        Parameters
-        ----------
-        *pairs : tuple
-            Channels to plot, each ``(out_port, in_port)`` or
-            ``(out_port, in_port, mode_out, mode_in)``.  Without
-            arguments every recorded channel of every excitation is
-            plotted.
-        db : bool, default True
-            Magnitude in dB (with *floor_db*) instead of linear.
-        floor_db : float, default -200.0
-            Clip floor for the dB display.
-        ax : matplotlib.axes.Axes, optional
-            Axes to draw into; a new figure is created otherwise.
-
-        Returns
-        -------
-        fig : matplotlib.figure.Figure
-        ax : matplotlib.axes.Axes
+        Both implementations override this from their run records; the
+        base raises so any other holder of the contract fails loudly
+        instead of de-embedding with nothing.
         """
-        import matplotlib.pyplot as plt  # noqa: PLC0415
-
-        if not pairs:
-            pairs = tuple(
-                (out_port, in_port, mode_out, mode_in)
-                for (in_port, mode_in) in self.excitations
-                for (out_port, mode_out) in self.channels
-            )
-        if ax is None:
-            fig, ax = plt.subplots()
-        else:
-            fig = ax.figure
-        f_ghz = np.asarray(self.f_axis) / 1e9
-        multi_mode = any(len(p) == 4 and (p[2] or p[3]) for p in pairs)
-        for p in pairs:
-            out_port, in_port = p[0], p[1]
-            mode_out = p[2] if len(p) > 2 else 0
-            mode_in = p[3] if len(p) > 3 else 0
-            if db:
-                y = self.db(
-                    out_port, in_port, mode_out=mode_out, mode_in=mode_in, floor_db=floor_db
-                )
-            else:
-                y = np.abs(self.S(out_port, in_port, mode_out=mode_out, mode_in=mode_in))
-            label = f"S({out_port} ← {in_port})"
-            if multi_mode:
-                label = f"S({out_port}:{mode_out} ← {in_port}:{mode_in})"
-            ax.plot(f_ghz, y, label=label)
-        ax.set_xlabel("f / GHz")
-        ax.set_ylabel("|S| / dB" if db else "|S|")
-        ax.grid(True, alpha=0.3)
-        ax.legend()
-        return fig, ax
+        raise NotImplementedError(
+            "this result does not expose the port line records de-embedding needs."
+        )
 
     def _channel_cutoffs(self) -> dict | None:
         """Per-channel cut-off frequency [Hz], or ``None`` if unknown.
@@ -258,9 +232,10 @@ class ScatteringResult(Protocol):
       frequency, as a complex number, in dB, or as a phase
     - :meth:`a`, :meth:`b` — incident and outgoing power waves in time
 
-    Three further accessors come from :class:`ScatteringResultMixin`
-    and are shared verbatim rather than reimplemented: ``plot_s`` and
-    the ``to_touchstone`` / ``to_skrf`` exports.
+    Further accessors come from :class:`ScatteringResultMixin` and are
+    shared verbatim rather than reimplemented: ``plot_s``, ``deembed``
+    (reference-plane shift) and the ``to_touchstone`` / ``to_skrf``
+    exports.
     """
 
     @property

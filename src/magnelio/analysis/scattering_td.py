@@ -360,6 +360,15 @@ class ScatteringTDResult(ScatteringResultMixin):
         """Per-channel cut-off frequency [Hz] from the port-mode records."""
         return _cutoffs_from_port_modes(self.port_modes)
 
+    def _deembed_data(self) -> tuple:
+        """Port line records backing :meth:`deembed` (result contract)."""
+        return (
+            self.dt,
+            self.port_line_params,
+            self.port_normal_dx,
+            self.port_modes,
+        )
+
     def _s_params_on(self, f_axis) -> SParameterResult:
         """Recompute the S-matrix on a custom frequency axis.
 
