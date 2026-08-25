@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=340bb9e5"></script>
+    <script src="../_static/documentation_options.js?v=03f3338f"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -633,6 +633,17 @@ would leave the grid-dispersion gap behind — degrees of phase on
 coarse meshes, silently attributed to the device under test.
 Channels without certified line parameters fall back to the mode’s
 continuum <span class="math notranslate nohighlight">\(\gamma(\omega)\)</span>.</p>
+<p>For a <strong>quasi-TEM channel</strong> — microstrip, CPW, any inhomogeneous
+cross-section, terminated by modal Mur in the default pipeline — that
+fallback is the quasi-static <span class="math notranslate nohighlight">\(\gamma\)</span> of the 2D Laplace mode,
+<span class="math notranslate nohighlight">\(\varepsilon_{\text{eff}} = C'/C'_0\)</span> taken frequency-flat.  The
+physical dispersion of the line (its <span class="math notranslate nohighlight">\(\varepsilon_{\text{eff}}\)</span>
+rising with frequency) is therefore <em>not</em> removed and stays in the
+de-embedded matrix: on a 16 mm microstrip on 0.8 mm
+<span class="math notranslate nohighlight">\(\varepsilon_r = 4.3\)</span> the residual S21 phase after de-embedding the
+full length is about 1°, 8° and 22° at 5, 10 and 15 GHz, growing with
+substrate thickness.  Keep quasi-TEM feed lines short when the
+reference plane matters, or compare raw S-parameters.</p>
 <p>The shift assumes the port cross-section continues over the shifted
 length.  Below its cut-off a channel’s factor grows as <span class="math notranslate nohighlight">\(e^{+\alpha
 d}\)</span>; those bins keep the diagnostic character the raw values have.

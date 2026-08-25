@@ -252,7 +252,7 @@ reactance is what reflects at the top of the band.
  .. code-block:: none
 
 
-    <matplotlib.legend.Legend object at 0x7f8c4daf0590>
+    <matplotlib.legend.Legend object at 0x7fbcf667b8d0>
 
 
 
@@ -302,7 +302,7 @@ whole band; hold that thought for the microstrip section.
     coax, gap start at -2·gap: max |phase error|   5.83 deg
     coax, gap start at -3·gap: max |phase error|   5.74 deg
 
-    <matplotlib.legend.Legend object at 0x7f8c180c4910>
+    <matplotlib.legend.Legend object at 0x7fbcf6a1fd50>
 
 
 
@@ -349,7 +349,7 @@ mismatch.
  .. code-block:: none
 
 
-    <matplotlib.legend.Legend object at 0x7f8c1833f4d0>
+    <matplotlib.legend.Legend object at 0x7fbcf6711910>
 
 
 
@@ -447,11 +447,11 @@ they would in a real layout.
 
  .. code-block:: none
 
-    microstrip line impedance on this grid: 50.27 Ohm
+    microstrip line impedance on this grid: 50.23 Ohm
     --- microstrip, trace end at the reference plane ---
-    worst |S11| in band :  -14.6 dB
-    |S11| < -20 dB up to:   6.19 GHz
-    max |phase error|   :  23.33 deg
+    worst |S11| in band :  -14.4 dB
+    |S11| < -20 dB up to:   5.97 GHz
+    max |phase error|   :  23.73 deg
 
 
 
@@ -496,12 +496,12 @@ of the band that matters most in your application.
 
  .. code-block:: none
 
-    microstrip, trace end at 0.0·h_sub: max |phase error|  23.33 deg
-    microstrip, trace end at -0.5·h_sub: max |phase error|  10.19 deg
-    microstrip, trace end at -1.0·h_sub: max |phase error|   2.93 deg
-    microstrip, trace end at -1.5·h_sub: max |phase error|  16.03 deg
+    microstrip, trace end at 0.0·h_sub: max |phase error|  23.73 deg
+    microstrip, trace end at -0.5·h_sub: max |phase error|  10.59 deg
+    microstrip, trace end at -1.0·h_sub: max |phase error|   2.53 deg
+    microstrip, trace end at -1.5·h_sub: max |phase error|  15.63 deg
 
-    <matplotlib.legend.Legend object at 0x7f8c4d9b7390>
+    <matplotlib.legend.Legend object at 0x7fbcf6a07a50>
 
 
 
@@ -732,7 +732,7 @@ catalogue value leaves a visible broadband pedestal.
  .. code-block:: none
 
 
-    <matplotlib.legend.Legend object at 0x7f8c187e3550>
+    <matplotlib.legend.Legend object at 0x7fbd3fd2acd0>
 
 
 
@@ -782,9 +782,9 @@ quantities of your production model, run, and read the scoreboard.
     |S11| < -20 dB up to:  14.18 GHz
     max |phase error|   :  28.97 deg
     --- microstrip, naive start values ---
-    worst |S11| in band :  -14.6 dB
-    |S11| < -20 dB up to:   6.19 GHz
-    max |phase error|   :  23.33 deg
+    worst |S11| in band :  -14.4 dB
+    |S11| < -20 dB up to:   5.97 GHz
+    max |phase error|   :  23.73 deg
     --- CPW, naive start values ---
     worst |S11| in band :  -26.6 dB
     |S11| < -20 dB up to:  15.00 GHz
@@ -796,7 +796,7 @@ quantities of your production model, run, and read the scoreboard.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 48.546 seconds)
+   **Total running time of the script:** (1 minutes 32.177 seconds)
 
 
 .. _sphx_glr_download_howto_plot_lumped_port_investigations.py:

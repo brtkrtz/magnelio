@@ -289,7 +289,7 @@ goes somewhere other than back — and with no walls and no losses,
  .. code-block:: none
 
     S11 dip: -17.7 dB at 2.49 GHz
-    -10 dB band: 2.31 to 2.72 GHz
+    -10 dB band: 2.31 to 2.71 GHz
 
 
 
@@ -342,7 +342,7 @@ a network analyzer would, makes that quantitative:
  .. code-block:: none
 
     resonance (Im Zin = 0): 2.44 GHz
-    feed resistance there:  37.4 Ohm (thin-monopole textbook: ~36.5)
+    feed resistance there:  37.3 Ohm (thin-monopole textbook: ~36.5)
 
 
 
@@ -524,7 +524,7 @@ components built from them.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 8.359 seconds)
+   **Total running time of the script:** (0 minutes 14.825 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_08_open_boundary.py:

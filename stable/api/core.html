@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=340bb9e5"></script>
+    <script src="../_static/documentation_options.js?v=03f3338f"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -2056,13 +2056,18 @@ mapping.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.MeshControl">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.</span></span><span class="sig-name descname"><span class="pre">MeshControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_nodes_per_wavelength</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_cells_per_feature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">growth_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cell_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_cell_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forced_planes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conformal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dey_mittra_eta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_feature_gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_edge_refinement</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.MeshControl" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.</span></span><span class="sig-name descname"><span class="pre">MeshControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_nodes_per_wavelength</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_cells_per_feature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">growth_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cell_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_cell_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forced_planes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conformal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dey_mittra_eta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_feature_gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_edge_refinement</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavelength_rule</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'local'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">singularity_refinement</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.MeshControl" title="Link to this definition">#</a></dt>
 <dd><p>Parameters controlling grid-line generation.</p>
 <p>The mesher uses two cell-size scales per axis:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">h_max</span></code> (bulk) is wavelength-based,
-<code class="docutils literal notranslate"><span class="pre">h_max</span> <span class="pre">=</span> <span class="pre">λ_min</span> <span class="pre">/</span> <span class="pre">min_nodes_per_wavelength</span></code>.  Cells in regions
-far from material interfaces are capped at <code class="docutils literal notranslate"><span class="pre">h_max</span></code>.</p></li>
+<code class="docutils literal notranslate"><span class="pre">h_max</span> <span class="pre">=</span> <span class="pre">λ</span> <span class="pre">/</span> <span class="pre">min_nodes_per_wavelength</span></code>.  Cells in regions
+far from material interfaces are capped at <code class="docutils literal notranslate"><span class="pre">h_max</span></code>.  With the
+default <code class="docutils literal notranslate"><span class="pre">wavelength_rule=&quot;local&quot;</span></code> the wavelength is that of
+the densest material <em>in the slab</em> an axis interval spans, so
+air around a small dielectric is meshed at the air wavelength;
+<code class="docutils literal notranslate"><span class="pre">&quot;global&quot;</span></code> uses the densest material of the whole model
+everywhere.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">h_fine</span></code> (interface) is feature-based and <strong>per axis</strong>,
 <code class="docutils literal notranslate"><span class="pre">h_fine</span> <span class="pre">=</span> <span class="pre">min_gap</span> <span class="pre">/</span> <span class="pre">min_cells_per_feature</span></code> where
 <code class="docutils literal notranslate"><span class="pre">min_gap</span></code> is the smallest distance between adjacent material
@@ -2119,6 +2124,28 @@ than <code class="docutils literal notranslate"><span class="pre">h_max</span> <
 time step follows the smallest cell, so the ratio also bounds
 the runtime cost of resolving small edges.  <code class="docutils literal notranslate"><span class="pre">0</span></code> disables
 edge planes altogether (material faces and silhouettes only).</p></li>
+<li><p><strong>wavelength_rule</strong> (<em>{&quot;local&quot;</em><em>, </em><em>&quot;global&quot;}</em><em>, </em><em>default &quot;local&quot;</em>) – Which wavelength sets the bulk cell size.  <code class="docutils literal notranslate"><span class="pre">&quot;local&quot;</span></code>: each
+axis interval between grid planes is a slab of the domain, and
+the densest material whose bounding box reaches into that slab
+sets its bulk size — the air box around a small ceramic or a
+thin substrate is meshed at the air wavelength, the dielectric
+at its own.  <code class="docutils literal notranslate"><span class="pre">&quot;global&quot;</span></code>: the densest material anywhere in the
+model sets one bulk size for the whole domain.  Feature
+refinement, grading and the edge floor are the same under both
+rules; the rules differ only far from material interfaces.</p></li>
+<li><p><strong>singularity_refinement</strong> (<em>float</em><em>, </em><em>default 1.0</em>) – Refinement factor at conductor edges.  Where a metal body
+forms a wedge of less than 180° — the edges of a strip, a
+patch, an iris — the field and the surface current are
+singular (<code class="docutils literal notranslate"><span class="pre">r^(−1/3)</span></code> at a 90° edge, <code class="docutils literal notranslate"><span class="pre">r^(−1/2)</span></code> at a knife
+edge) and the error of impedances and S-parameters converges
+only slowly with the cell size there.  The grid planes holding
+such an edge start their grading on both sides at
+<code class="docutils literal notranslate"><span class="pre">h_fine</span> <span class="pre">/</span> <span class="pre">singularity_refinement</span></code> instead of <code class="docutils literal notranslate"><span class="pre">h_fine</span></code> and
+grow by <code class="docutils literal notranslate"><span class="pre">growth_factor</span></code> from there.  Concave metal edges (the
+corners of a cavity), tangential edges (a fillet’s onset) and
+dielectric edges are regular and not refined.  <code class="docutils literal notranslate"><span class="pre">1</span></code> disables
+the refinement.  The finer edge cells bound the time step:
+expect the run time to scale roughly with the factor.</p></li>
 </ul>
 </dd>
 </dl>
@@ -2170,6 +2197,16 @@ edge planes altogether (material faces and silhouettes only).</p></li>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="magnelio.MeshControl.min_nodes_per_wavelength">
 <span class="sig-name descname"><span class="pre">min_nodes_per_wavelength</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">20</span></span><a class="headerlink" href="#magnelio.MeshControl.min_nodes_per_wavelength" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.MeshControl.singularity_refinement">
+<span class="sig-name descname"><span class="pre">singularity_refinement</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1.0</span></span><a class="headerlink" href="#magnelio.MeshControl.singularity_refinement" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.MeshControl.wavelength_rule">
+<span class="sig-name descname"><span class="pre">wavelength_rule</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'local'</span></span><a class="headerlink" href="#magnelio.MeshControl.wavelength_rule" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -2424,6 +2461,8 @@ watchdog.  Not inherited — each segment gets its own.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.MeshControl.min_cells_per_feature"><code class="docutils literal notranslate"><span class="pre">MeshControl.min_cells_per_feature</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.MeshControl.min_feature_gap"><code class="docutils literal notranslate"><span class="pre">MeshControl.min_feature_gap</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.MeshControl.min_nodes_per_wavelength"><code class="docutils literal notranslate"><span class="pre">MeshControl.min_nodes_per_wavelength</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.MeshControl.singularity_refinement"><code class="docutils literal notranslate"><span class="pre">MeshControl.singularity_refinement</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.MeshControl.wavelength_rule"><code class="docutils literal notranslate"><span class="pre">MeshControl.wavelength_rule</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.open_project"><code class="docutils literal notranslate"><span class="pre">open_project()</span></code></a></li>

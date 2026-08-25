@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=340bb9e5"></script>
+    <script src="../_static/documentation_options.js?v=03f3338f"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -473,6 +473,34 @@ grading between them, DD-028).  Graded Cartesian meshes and the
 accuracy trade-offs of local grading are standard FDTD/FIT practice
 <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>; the specific fixpoint,
 plane-clustering and thin-sheet heuristics are in-house engineering.</p>
+<section id="which-wavelength-sets-the-bulk-cell-size">
+<h3>Which wavelength sets the bulk cell size<a class="headerlink" href="#which-wavelength-sets-the-bulk-cell-size" title="Link to this heading">#</a></h3>
+<p>The bulk cell size is <code class="docutils literal notranslate"><span class="pre">λ</span> <span class="pre">/</span> <span class="pre">min_nodes_per_wavelength</span></code>, and on a
+tensor-product grid the question is <em>which</em> λ.  A grid line spans the
+whole domain, so the finest sensible resolution is per <em>slab</em>: each
+interval between two grid planes on an axis is a slab of the domain,
+and the densest material whose bounding box reaches into that slab
+sets the slab’s wavelength (DD-192, the default
+<code class="docutils literal notranslate"><span class="pre">MeshControl(wavelength_rule=&quot;local&quot;)</span></code>).  The air box around a small
+ceramic is meshed at the air wavelength on every axis interval the
+ceramic does not reach; the slabs the ceramic occupies — and every
+slab of an axis the ceramic spans entirely, such as the in-plane
+axes of a full-width substrate — stay at the ceramic’s wavelength.
+The background material fills whatever no solid covers and counts in
+every slab.  The bounding box is exact for bricks and conservative
+for curved or rotated bodies, so a slab is never meshed coarser than
+the material in it.  <code class="docutils literal notranslate"><span class="pre">wavelength_rule=&quot;global&quot;</span></code> restores the older
+rule — the densest material anywhere sets one bulk size for the
+whole domain.</p>
+<p>The two rules differ only far from material interfaces.  Feature
+refinement (<code class="docutils literal notranslate"><span class="pre">min_cells_per_feature</span></code>), the geometric grading from an
+interface into the bulk, the DD-107 domain-face buffer and the edge
+floor below are the same under both; the edge floor keeps the
+densest material’s wavelength as its reference, because it bounds
+the time step, and the time step follows the smallest cell anywhere.
+This is the rule hex-mesh generators apply as per-material mesh
+settings; the slab-wise form is its consequence on a tensor grid.</p>
+</section>
 <section id="which-geometry-gets-a-grid-plane">
 <h3>Which geometry gets a grid plane<a class="headerlink" href="#which-geometry-gets-a-grid-plane" title="Link to this heading">#</a></h3>
 <p>Grid planes come from two passes over the CAD model.  The <em>face</em> pass
@@ -501,6 +529,45 @@ position, the cell it would have created and the ratio that keeps it.  The ratio
 bounds the time-step cost of resolving small edges (the explicit
 loop takes one step bounded by the smallest cell anywhere);
 <code class="docutils literal notranslate"><span class="pre">max_edge_refinement=0</span></code> switches the edge pass off.</p>
+</section>
+<section id="refining-the-conductor-edges">
+<h3>Refining the conductor edges<a class="headerlink" href="#refining-the-conductor-edges" title="Link to this heading">#</a></h3>
+<p>Where a conductor forms a wedge of less than 180° — the edges of a
+strip, a patch, an iris — the field and the surface current are
+singular: <span class="math notranslate nohighlight">\(r^{-1/3}\)</span> at a 90° edge, <span class="math notranslate nohighlight">\(r^{-1/2}\)</span> at a knife edge.  A
+grid cannot represent that, and everything that integrates the edge
+field — the line impedance, the effective permittivity and with them
+the phase of <span class="math notranslate nohighlight">\(S_{21}\)</span> and the resonant frequency of a patch —
+converges only about first order in the cell that holds the edge,
+however fine the bulk is.  Measured on a 50 Ω microstrip: the
+impedance the port solver reads off the grid is 51.5, 52.2 and
+52.6 Ω for edge cells of 50, 25 and 12.5 µm (limit about 52.9 Ω), and
+three grids with the same 12.5 µm edge cell agree within 0.1 Ω
+although their cell counts differ by almost two.</p>
+<p><code class="docutils literal notranslate"><span class="pre">MeshControl(singularity_refinement=k)</span></code> starts the grading at the
+planes that hold such an edge at <code class="docutils literal notranslate"><span class="pre">h_fine</span> <span class="pre">/</span> <span class="pre">k</span></code> instead of <code class="docutils literal notranslate"><span class="pre">h_fine</span></code>, on
+both sides of the plane, and grows by <code class="docutils literal notranslate"><span class="pre">growth_factor</span></code> from there.
+Which edges count is read from the CAD model: a convex edge of a
+metal body (PEC or lossy metal), or a concave edge of a non-metal
+body whose surroundings at the edge are metal — a vacuum body cut
+out of a PEC background, where the iris rim is the sharp metal wedge.
+The corners of a cavity are concave metal edges and regular; a
+fillet’s onset is tangential; dielectric edges are much weaker and
+not refined.  The refinement never adds a plane (the edge’s plane is
+a material face or an edge plane already), never touches the domain’s
+own end planes, and stops at <code class="docutils literal notranslate"><span class="pre">min_cell_size</span></code>.</p>
+<p>The factor is off by default, and the reason is the time step.  The
+edge cell bounds it, so a factor of 2 halves the step and adds the
+cells of the two ramps: on the mesh-convergence how-to’s structure
+the factors 1, 2 and 3 lie on one cost-versus-error curve — the
+factor moves resolution from the bulk to the edges, it does not buy
+accuracy for free.  It pays where the impedance or the effective
+permittivity is the quantity of interest, where the time step is
+bound by a <code class="docutils literal notranslate"><span class="pre">min_cell_size</span></code> floor or by another axis anyway (then the
+edge cells are free), and where memory rather than time is the
+limit: at equal edge cell the refined grids of the microstrip need a
+third fewer cells.  Model-wide refinement is still what
+<code class="docutils literal notranslate"><span class="pre">min_nodes_per_wavelength</span></code> is for.</p>
 <p>Why a feature below the grid is <em>silent</em> rather than approximately
 represented is a property of the conformal material matrices, next.</p>
 </section>
@@ -635,7 +702,9 @@ reported edge floor (DD-191) are in-house engineering.</p>
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#geometry-kernel-and-material-filling">Geometry kernel and material filling</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#graded-cartesian-mesh">Graded Cartesian mesh</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#which-wavelength-sets-the-bulk-cell-size">Which wavelength sets the bulk cell size</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#which-geometry-gets-a-grid-plane">Which geometry gets a grid plane</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#refining-the-conductor-edges">Refining the conductor edges</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#conformal-sub-cell-material-matrices-partially-filled-cells">Conformal sub-cell material matrices (partially filled cells)</a></li>

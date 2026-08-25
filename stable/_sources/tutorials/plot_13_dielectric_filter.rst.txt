@@ -307,10 +307,10 @@ Always check how many modes actually came back.
 
  .. code-block:: none
 
-    coarse (  7056 cells):  f0 = 2.5780 GHz
-    fine   ( 22188 cells):  f0 = 2.5986 GHz
-    next mode is at 4.73 GHz — the band is clear
-    drift between the two grids: +0.8 %
+    coarse (  7056 cells):  f0 = 2.5782 GHz
+    fine   ( 14700 cells):  f0 = 2.6004 GHz
+    next mode is at 4.74 GHz — the band is clear
+    drift between the two grids: +0.9 %
 
 
 
@@ -452,10 +452,10 @@ Sweeping the window
 
  .. code-block:: none
 
-    window  4.0 mm ->  k = 0.00806,  centre 2.8863 GHz
-    window  6.0 mm ->  k = 0.03092,  centre 2.8351 GHz
-    window  8.0 mm ->  k = 0.06457,  centre 2.7546 GHz
-    window 10.0 mm ->  k = 0.10421,  centre 2.6956 GHz
+    window  4.0 mm ->  k = 0.00804,  centre 2.8902 GHz
+    window  6.0 mm ->  k = 0.03088,  centre 2.8297 GHz
+    window  8.0 mm ->  k = 0.06448,  centre 2.7586 GHz
+    window 10.0 mm ->  k = 0.10408,  centre 2.6905 GHz
 
 
 
@@ -511,11 +511,11 @@ the pair's frequency is a fraction of the passband.
 
  .. code-block:: none
 
-    window 6.0 mm, coarse grid:  k = 0.03092, f = 2.8351 GHz
-    window 6.0 mm, fine grid:    k = 0.03116, f = 2.8557 GHz
-    k moves 0.8 %, f moves 0.7 %
+    window 6.0 mm, coarse grid:  k = 0.03088, f = 2.8297 GHz
+    window 6.0 mm, fine grid:    k = 0.03114, f = 2.8515 GHz
+    k moves 0.8 %, f moves 0.8 %
 
-    window for k = 0.0332: 6.13 mm
+    window for k = 0.0332: 6.14 mm
 
 
 
@@ -667,9 +667,9 @@ either number alone.
 
  .. code-block:: none
 
-    probe at 6.0 mm:  f0 = 2.9775 GHz,  Qe = 14.6 (group delay) / 14.3 (ring-down)
-    probe at 7.0 mm:  f0 = 2.9255 GHz,  Qe = 22.8 (group delay) / 22.7 (ring-down)
-    probe at 8.0 mm:  f0 = 2.8915 GHz,  Qe = 37.0 (group delay) / 36.8 (ring-down)
+    probe at 6.0 mm:  f0 = 2.9787 GHz,  Qe = 14.6 (group delay) / 14.3 (ring-down)
+    probe at 7.0 mm:  f0 = 2.9265 GHz,  Qe = 22.9 (group delay) / 22.7 (ring-down)
+    probe at 8.0 mm:  f0 = 2.8925 GHz,  Qe = 37.1 (group delay) / 36.8 (ring-down)
 
 
 
@@ -829,7 +829,7 @@ full run and add nothing.
 
  .. code-block:: none
 
-    grid: 92 x 44 x 13 = 52624 cells
+    grid: 90 x 40 x 13 = 46800 cells
 
 
 
@@ -892,10 +892,10 @@ would make this filter look more than twice too wide.
 
  .. code-block:: none
 
-    band centre     2.8977 GHz   (target 2.90 GHz)
+    band centre     2.8990 GHz   (target 2.90 GHz)
     ripple bandwidth 2.12 %      (target 2.00 %)
-    worst in-band insertion loss 0.058 dB
-    deviation from the synthesised response: max 0.01 dB
+    worst in-band insertion loss 0.059 dB
+    deviation from the synthesised response: max 0.02 dB
 
 
 
@@ -1010,9 +1010,9 @@ housing and compare the phases.
  .. code-block:: none
 
       f [GHz]   phase L    phase R   difference
-       2.8705     +49.7°    +112.5°     +62.8°
-       2.8924     +51.4°    +140.3°     +88.9°
-       2.9143     +50.2°    +166.2°    +116.0°
+       2.8705     +49.3°    +110.8°     +61.5°
+       2.8924     +51.7°    +138.8°     +87.2°
+       2.9143     +50.1°    +164.7°    +114.6°
 
 
 
@@ -1072,7 +1072,7 @@ and mirror one more chamber into the housing.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (4 minutes 59.053 seconds)
+   **Total running time of the script:** (7 minutes 56.777 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_13_dielectric_filter.py:
