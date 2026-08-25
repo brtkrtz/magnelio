@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=5bfaad31"></script>
+    <script src="../_static/documentation_options.js?v=90733dfc"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -147,6 +147,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../tutorials/index.html">
     Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
   </a>
 </li>
 
@@ -279,6 +286,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -373,6 +387,7 @@
 <li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
 </ul>
 </div>
@@ -445,7 +460,7 @@ one per plated hole, each carrying a name and a material
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">GeometryModel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_pcb</span>
 
-<span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span><span class="s2">&quot;fabrication/&quot;</span><span class="p">)</span>
+<span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span><span class="s2">"fabrication/"</span><span class="p">)</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">GeometryModel</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -531,7 +546,7 @@ by their position — <code class="docutils literal notranslate"><span class="pr
 tools name every core and prepreg after its material, and two layers
 called <code class="docutils literal notranslate"><span class="pre">FR4</span></code> would make the assignment ambiguous.  Plated barrels are
 <code class="docutils literal notranslate"><span class="pre">via_1</span></code>, <code class="docutils literal notranslate"><span class="pre">via_2</span></code>, … numbered in coordinate order.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span><span class="s2">&quot;fabrication/&quot;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span><span class="s2">"fabrication/"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">([</span><span class="n">solid</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">solid</span> <span class="ow">in</span> <span class="n">board</span><span class="o">.</span><span class="n">members</span><span class="p">()])</span>
 </pre></div>
 </div>
@@ -616,8 +631,8 @@ silently as vacuum.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">Material</span>
 
 <span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span>
-    <span class="s2">&quot;fabrication/&quot;</span><span class="p">,</span>
-    <span class="p">{</span><span class="s2">&quot;dielectric_1&quot;</span><span class="p">:</span> <span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;RO4350B&quot;</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">3.66</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)},</span>
+    <span class="s2">"fabrication/"</span><span class="p">,</span>
+    <span class="p">{</span><span class="s2">"dielectric_1"</span><span class="p">:</span> <span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"RO4350B"</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">3.66</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)},</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -638,12 +653,12 @@ is supplied the standard causal substrate model
 <span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.materials.dispersion</span><span class="w"> </span><span class="kn">import</span> <span class="n">DispersionModel</span>
 
 <span class="n">fr4</span> <span class="o">=</span> <span class="n">Material</span><span class="o">.</span><span class="n">dispersive</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;FR4&quot;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"FR4"</span><span class="p">,</span>
     <span class="n">model</span><span class="o">=</span><span class="n">DispersionModel</span><span class="o">.</span><span class="n">djordjevic_sarkar</span><span class="p">(</span>
         <span class="n">eps_r</span><span class="o">=</span><span class="mf">4.5</span><span class="p">,</span> <span class="n">tan_delta</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span> <span class="n">f_ref</span><span class="o">=</span><span class="mf">1e9</span>
     <span class="p">),</span>
 <span class="p">)</span>
-<span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span><span class="s2">&quot;fabrication/&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;dielectric_1&quot;</span><span class="p">:</span> <span class="n">fr4</span><span class="p">})</span>
+<span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span><span class="s2">"fabrication/"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"dielectric_1"</span><span class="p">:</span> <span class="n">fr4</span><span class="p">})</span>
 </pre></div>
 </div>
 </section>

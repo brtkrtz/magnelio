@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=5bfaad31"></script>
+    <script src="../_static/documentation_options.js?v=90733dfc"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -149,6 +149,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../tutorials/index.html">
     Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
   </a>
 </li>
 
@@ -281,6 +288,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -375,6 +389,7 @@
 <li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
 </ul>
 </div>
@@ -458,6 +473,13 @@ Taflove and Baron <span class="bibtex-citation" id="id2">[<a class="reference in
 semi-implicit averaging of the local field term is the standard
 stabilisation in that literature; the specific multi-edge chain
 formulation follows the in-repo derivation).</p>
+<p>A discrete port is not an exact line termination: its residual
+reflection and phase offset depend on the grid at the gap, the gap
+geometry and position, and the chosen <span class="math notranslate nohighlight">\(Z_0\)</span>.  The how-to guide
+<em>Lumped ports: investigations</em> measures both against a waveguide port
+(DD-189) instead of relying on rules of thumb, and the <em>Lumped port
+tuning</em> pages package the measurement as a per-line-type pre-flight
+tool.</p>
 </section>
 <section id="trapezoidal-rlc-companion-models">
 <h2>Trapezoidal RLC companion models<a class="headerlink" href="#trapezoidal-rlc-companion-models" title="Link to this heading">#</a></h2>

@@ -524,7 +524,7 @@ components built from them.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 15.963 seconds)
+   **Total running time of the script:** (0 minutes 16.115 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_08_open_boundary.py:

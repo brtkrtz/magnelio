@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=5bfaad31"></script>
+    <script src="../_static/documentation_options.js?v=90733dfc"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -149,6 +149,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../tutorials/index.html">
     Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
   </a>
 </li>
 
@@ -281,6 +288,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -375,6 +389,7 @@
 <li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
 </ul>
 </div>
@@ -532,8 +547,8 @@ symmetry makes exact.</p>
 <section id="plots">
 <h2>Plots<a class="headerlink" href="#plots" title="Link to this heading">#</a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pattern</span> <span class="o">=</span> <span class="n">ff</span><span class="o">.</span><span class="n">result</span><span class="p">(</span><span class="mf">2.45e9</span><span class="p">)</span>
-<span class="n">pattern</span><span class="o">.</span><span class="n">plot_cut</span><span class="p">(</span><span class="n">plane</span><span class="o">=</span><span class="s2">&quot;phi&quot;</span><span class="p">,</span> <span class="n">angle</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>        <span class="c1"># polar E-plane cut</span>
-<span class="n">pattern</span><span class="o">.</span><span class="n">plot_cut</span><span class="p">(</span><span class="n">plane</span><span class="o">=</span><span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="n">angle</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># azimuth cut</span>
+<span class="n">pattern</span><span class="o">.</span><span class="n">plot_cut</span><span class="p">(</span><span class="n">plane</span><span class="o">=</span><span class="s2">"phi"</span><span class="p">,</span> <span class="n">angle</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>        <span class="c1"># polar E-plane cut</span>
+<span class="n">pattern</span><span class="o">.</span><span class="n">plot_cut</span><span class="p">(</span><span class="n">plane</span><span class="o">=</span><span class="s2">"theta"</span><span class="p">,</span> <span class="n">angle</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># azimuth cut</span>
 <span class="n">pattern</span><span class="o">.</span><span class="n">plot_3d</span><span class="p">()</span>                               <span class="c1"># 3D radiation surface</span>
 </pre></div>
 </div>

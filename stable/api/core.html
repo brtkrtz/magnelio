@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=5bfaad31"></script>
+    <script src="../_static/documentation_options.js?v=90733dfc"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -147,6 +147,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../tutorials/index.html">
     Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
   </a>
 </li>
 
@@ -274,6 +281,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../tutorials/index.html">
     Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
   </a>
 </li>
 
@@ -1237,7 +1251,7 @@ modelled; the declared plane clips the mesh to <code class="docutils literal not
 mirror half is never meshed:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">GeometryModel</span><span class="p">(</span>
     <span class="n">background</span><span class="o">=</span><span class="n">pec</span><span class="p">,</span>
-    <span class="n">boundary_conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;xmin&quot;</span><span class="p">:</span> <span class="s2">&quot;SymmetryPMC&quot;</span><span class="p">},</span>
+    <span class="n">boundary_conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">"xmin"</span><span class="p">:</span> <span class="s2">"SymmetryPMC"</span><span class="p">},</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -1340,18 +1354,28 @@ its own.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.GeometryModel.plot">
-<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.GeometryModel.plot" title="Link to this definition">#</a></dt>
-<dd><p>Interactive 3D view in Jupyter via pythonocc.</p>
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.GeometryModel.plot" title="Link to this definition">#</a></dt>
+<dd><p>Interactive 3D view of the model.</p>
 <p>Thin wrapper around
-<code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code>.
-All keyword arguments are forwarded.</p>
+<code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code>.  In a notebook the
+view is a widget with an axis-aligned cutting plane driven from
+its toolbar; in a script it opens a window.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>**kwargs</strong> – Forwarded (<code class="docutils literal notranslate"><span class="pre">size</span></code>, <code class="docutils literal notranslate"><span class="pre">render_edges</span></code>, <code class="docutils literal notranslate"><span class="pre">edge_color</span></code>,
-<code class="docutils literal notranslate"><span class="pre">quality</span></code>).</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> (<a class="reference internal" href="#magnelio.Mesh" title="magnelio.Mesh"><em>Mesh</em></a><em>, </em><em>optional</em>) – Show this mesh’s grid with the geometry: the grid cells —
+coloured by assigned material — on the cutting plane.</p></li>
+<li><p><strong>**kwargs</strong> – Forwarded (<code class="docutils literal notranslate"><span class="pre">cut</span></code>, <code class="docutils literal notranslate"><span class="pre">flip</span></code>, <code class="docutils literal notranslate"><span class="pre">show_ports</span></code>, <code class="docutils literal notranslate"><span class="pre">show_wires</span></code>,
+<code class="docutils literal notranslate"><span class="pre">show_grid</span></code>, <code class="docutils literal notranslate"><span class="pre">mode</span></code>, <code class="docutils literal notranslate"><span class="pre">size</span></code>, <code class="docutils literal notranslate"><span class="pre">render_edges</span></code>,
+<code class="docutils literal notranslate"><span class="pre">edge_color</span></code>, <code class="docutils literal notranslate"><span class="pre">quality</span></code>, <code class="docutils literal notranslate"><span class="pre">scale_mm</span></code>, <code class="docutils literal notranslate"><span class="pre">camera</span></code>).</p></li>
+</ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>JupyterRenderer</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The plotter for <code class="docutils literal notranslate"><span class="pre">mode=&quot;none&quot;</span></code>; otherwise the view is
+displayed and <code class="docutils literal notranslate"><span class="pre">None</span></code> is returned.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyvista.Plotter or None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1811,7 +1835,7 @@ extend it for CPML or pull a PMC line in.</p></li>
     <span class="n">y</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">10e-3</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span>
     <span class="n">z</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">10e-3</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span>
 <span class="p">)</span>
-<span class="n">fr4</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;FR4&quot;</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">4.4</span><span class="p">,</span> <span class="mf">4.4</span><span class="p">,</span> <span class="mf">4.4</span><span class="p">))</span>
+<span class="n">fr4</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"FR4"</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">4.4</span><span class="p">,</span> <span class="mf">4.4</span><span class="p">,</span> <span class="mf">4.4</span><span class="p">))</span>
 <span class="n">mesh</span> <span class="o">=</span> <span class="n">Mesh</span><span class="o">.</span><span class="n">from_grid</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="p">[(</span><span class="n">fr4</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">10e-3</span><span class="p">,</span> <span class="mf">10e-3</span><span class="p">,</span> <span class="mf">1.6e-3</span><span class="p">))])</span>
 </pre></div>
 </div>

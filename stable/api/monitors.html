@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=5bfaad31"></script>
+    <script src="../_static/documentation_options.js?v=90733dfc"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -147,6 +147,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../tutorials/index.html">
     Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
   </a>
 </li>
 
@@ -274,6 +281,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../tutorials/index.html">
     Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
   </a>
 </li>
 
@@ -473,7 +487,7 @@ sampling never reads absorber cells.</p></li>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">monitors</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ff</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarField</span><span class="p">(</span><span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="mf">2.45e9</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;pattern&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ff</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarField</span><span class="p">(</span><span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="mf">2.45e9</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"pattern"</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="py method">
@@ -692,8 +706,8 @@ the same units and <code class="docutils literal notranslate"><span class="pre">
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mon</span> <span class="o">=</span> <span class="n">MonitorFieldFrequency</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">corners</span><span class="o">=</span><span class="p">((</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">),</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">)),</span>
 <span class="gp">... </span>    <span class="n">freqs</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">1e9</span><span class="p">,</span> <span class="mf">10e9</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span>
-<span class="gp">... </span>    <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">,</span> <span class="s2">&quot;H&quot;</span><span class="p">],</span>
-<span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;EH_xy_5GHz&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">"E"</span><span class="p">,</span> <span class="s2">"H"</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">"EH_xy_5GHz"</span><span class="p">,</span>
 <span class="gp">... </span><span class="p">)</span>
 </pre></div>
 </div>
@@ -701,9 +715,9 @@ the same units and <code class="docutils literal notranslate"><span class="pre">
 20 points per period of that top frequency instead of every step:</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mon</span> <span class="o">=</span> <span class="n">MonitorFieldFrequency</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="mf">2.87e9</span><span class="p">,</span> <span class="mf">2.91e9</span><span class="p">],</span>
-<span class="gp">... </span>    <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">"E"</span><span class="p">],</span>
 <span class="gp">... </span>    <span class="n">interval</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">20</span> <span class="o">*</span> <span class="mf">3.4e9</span><span class="p">),</span>
-<span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;E_volume&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">"E_volume"</span><span class="p">,</span>
 <span class="gp">... </span><span class="p">)</span>
 </pre></div>
 </div>
@@ -720,7 +734,7 @@ extent, or a single bound to reach the domain boundary on the
 other side.  All remaining keyword arguments are forwarded to
 the constructor.</p>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mon</span> <span class="o">=</span> <span class="n">MonitorFieldFrequency</span><span class="o">.</span><span class="n">from_ranges</span><span class="p">(</span><span class="n">x1</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span> <span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="mf">2.9e9</span><span class="p">],</span> <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">])</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mon</span> <span class="o">=</span> <span class="n">MonitorFieldFrequency</span><span class="o">.</span><span class="n">from_ranges</span><span class="p">(</span><span class="n">x1</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span> <span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="mf">2.9e9</span><span class="p">],</span> <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">"E"</span><span class="p">])</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1022,8 +1036,8 @@ set of instants:</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mon</span> <span class="o">=</span> <span class="n">MonitorFieldTime</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">corners</span><span class="o">=</span><span class="p">((</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">),</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">)),</span>
 <span class="gp">... </span>    <span class="n">times</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">10e-9</span><span class="p">,</span> <span class="mf">0.5e-9</span><span class="p">),</span>
-<span class="gp">... </span>    <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span>
-<span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;E_xy_plane&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">"E"</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">"E_xy_plane"</span><span class="p">,</span>
 <span class="gp">... </span><span class="p">)</span>
 </pre></div>
 </div>
@@ -1031,13 +1045,13 @@ set of instants:</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mon</span> <span class="o">=</span> <span class="n">MonitorFieldTime</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">corners</span><span class="o">=</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">20e-3</span><span class="p">),</span> <span class="p">(</span><span class="mf">5e-3</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">,</span> <span class="mf">20e-3</span><span class="p">)),</span>
 <span class="gp">... </span>    <span class="n">interval</span><span class="o">=</span><span class="mf">0.5e-9</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">],</span>
-<span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;E_box&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">"E"</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">"E_box"</span><span class="p">,</span>
 <span class="gp">... </span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The whole domain, same cadence:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mon</span> <span class="o">=</span> <span class="n">MonitorFieldTime</span><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="mf">0.5e-9</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">])</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mon</span> <span class="o">=</span> <span class="n">MonitorFieldTime</span><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="mf">0.5e-9</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">"E"</span><span class="p">])</span>
 </pre></div>
 </div>
 <dl class="py method">
@@ -1053,7 +1067,7 @@ extent, or a single bound to reach the domain boundary on the
 other side.  All remaining keyword arguments are forwarded to
 the constructor.</p>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mon</span> <span class="o">=</span> <span class="n">MonitorFieldTime</span><span class="o">.</span><span class="n">from_ranges</span><span class="p">(</span><span class="n">z1</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span> <span class="n">z2</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mf">0.5e-9</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;E&quot;</span><span class="p">])</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mon</span> <span class="o">=</span> <span class="n">MonitorFieldTime</span><span class="o">.</span><span class="n">from_ranges</span><span class="p">(</span><span class="n">z1</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span> <span class="n">z2</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mf">0.5e-9</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">"E"</span><span class="p">])</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1289,7 +1303,7 @@ Snapped to the nearest grid node.</p></li>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">flux</span> <span class="o">=</span> <span class="n">MonitorFluxTime</span><span class="p">(</span><span class="n">plane</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;flux_z&quot;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">flux</span> <span class="o">=</span> <span class="n">MonitorFluxTime</span><span class="p">(</span><span class="n">plane</span><span class="o">=</span><span class="p">(</span><span class="s2">"z"</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s2">"flux_z"</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="py method">

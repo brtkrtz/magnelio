@@ -226,7 +226,7 @@ as a ``.py`` script or a ``.ipynb`` notebook.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="The tutorials so far each isolated one capability.  This one is a design job of the kind the rest were preparation for: a narrowband bandpass filter built from ceramic resonators, dimensioned from a specification and verified against it.">
+    <div class="sphx-glr-thumbcontainer" tooltip="Tutorials 01–12 each isolated one capability of the core S-parameter workflow; this one closes that arc with a design job of the kind they were preparation for: a narrowband bandpass filter built from ceramic resonators, dimensioned from a specification and verified against it. (The tutorials after this one are feature chapters — profiles, far fields, CAD and PCB import, periodic structures — to be read as needed.)">
 
 .. only:: html
 
@@ -326,23 +326,6 @@ as a ``.py`` script or a ``.ipynb`` notebook.
     </div>
 
 
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="A pair of stripline electrodes in a beam pipe is a workhorse of beam instrumentation: read out, it is a broadband pickup (a beam position monitor); driven, it is a kicker that deflects the beam.  Neither role is an S-parameter — a port model has no beam — yet both follow from one S-parameter simulation.  This tutorial walks the route used to design such devices (Goldberg and Lambertson, AIP Conf. Proc. 249, 537 (1992)):">
-
-.. only:: html
-
-  .. image:: /tutorials/images/thumb/sphx_glr_plot_19_stripline_pickup_kicker_thumb.png
-    :alt:
-
-  :doc:`/tutorials/plot_19_stripline_pickup_kicker`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</div>
-    </div>
-
-
 .. thumbnail-parent-div-close
 
 .. raw:: html
@@ -371,7 +354,6 @@ as a ``.py`` script or a ``.ipynb`` notebook.
    /tutorials/plot_16_cad_import
    /tutorials/plot_17_pcb_import
    /tutorials/plot_18_periodic_tesla_cell
-   /tutorials/plot_19_stripline_pickup_kicker
 
 
 

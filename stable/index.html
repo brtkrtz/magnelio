@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="_static/documentation_options.js?v=5bfaad31"></script>
+    <script src="_static/documentation_options.js?v=90733dfc"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/sg-tags.js?v=d80f6fa4"></script>
@@ -146,6 +146,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="tutorials/index.html">
     Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="howto/index.html">
+    How-to guides
   </a>
 </li>
 
@@ -280,6 +287,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="howto/index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="api/index.html">
     API reference
   </a>
@@ -383,11 +397,15 @@ simulation. Its standard workflow is broadband S-parameter extraction
 over waveguide ports on arbitrary 3D geometry; the workhorse solver is
 a time-domain Finite Integration Technique (FIT-TD) engine.</p>
 <img alt="Electric field vectors in a two-pole dielectric resonator filter, where two ceramic pucks stand in a metal housing, separated by a wall with a coupling window, with a probe pin at each end." src="_images/hero_dielectric_filter.png" />
-<p>This documentation has four pillars:</p>
+<p>This documentation has five pillars:</p>
 <ol class="arabic simple">
-<li><p><strong>Tutorials.</strong> Executable walkthroughs of the public API. Every
-page is generated from a runnable script and can be downloaded as a
-Python script or a Jupyter notebook.</p></li>
+<li><p><strong>Tutorials.</strong> Executable walkthroughs of the public API, ordered
+from the first simulation to advanced workflows. Every page is
+generated from a runnable script and can be downloaded as a Python
+script or a Jupyter notebook.</p></li>
+<li><p><strong>How-to guides.</strong> Task-oriented recipes: each page solves one
+concrete engineering problem end to end and is meant to be
+downloaded and adapted to your own device.</p></li>
 <li><p><strong>API reference.</strong> The public surface — the core namespace and
 the domain namespaces — generated from the docstrings.</p></li>
 <li><p><strong>Technical description.</strong> Background information, mostly as a developer reference.
@@ -402,6 +420,12 @@ implementation or to adapt a new method into the same framework.</p></li>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">How-to guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="howto/index.html">How-to guides</a></li>
 </ul>
 </div>
 <div class="toctree-wrapper compound">
@@ -458,6 +482,7 @@ implementation or to adapt a new method into the same framework.</p></li>
 <li class="toctree-l2"><a class="reference internal" href="methods/sources-monitors.html">Sources, monitors and post-processing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="methods/far-field.html">Far-field computation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="methods/eigenmode-analysis.html">Eigenmode analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="methods/viewer.html">3D viewer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="methods/implementation.html">Implementation engineering (non-method)</a></li>
 </ul>
 </li>

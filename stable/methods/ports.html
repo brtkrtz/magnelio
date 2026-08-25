@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=5bfaad31"></script>
+    <script src="../_static/documentation_options.js?v=90733dfc"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -149,6 +149,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../tutorials/index.html">
     Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
   </a>
 </li>
 
@@ -281,6 +288,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -375,6 +389,7 @@
 <li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
 </ul>
 </div>
@@ -596,6 +611,33 @@ leak; and CW measurements solve the exact 2×2 phasor system per port
 <p>Excitation amplitudes are pinned to physical units at the source
 (C = 1 convention, DD-085), so recorded V/I and monitor fields are in
 SI units — an in-house calibration convention.</p>
+<section id="reference-plane-shift-de-embedding-dd-187">
+<h3>Reference-plane shift (de-embedding, DD-187)<a class="headerlink" href="#reference-plane-shift-de-embedding-dd-187" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">result.deembed({&quot;port1&quot;:</span> <span class="pre">d})</span></code> returns the S-matrix referenced at
+planes shifted a distance <span class="math notranslate nohighlight">\(d\)</span> from the port planes into the domain
+(negative distances move outward): every S-parameter touching a
+shifted port is multiplied by the inverse line propagation factor over
+<span class="math notranslate nohighlight">\(d\)</span> — reflections twice, transmissions once per shifted end.  This is
+the classical reference-plane transformation
+<span class="bibtex-citation" id="id14">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>]</span>; the in-house refinement is <em>which</em> propagation
+factor is removed.</p>
+<p>Wherever the run certified a channel’s discrete line parameters, the
+shift uses the <strong>exact discrete dispersion of the feed chain</strong> — the
+same characteristic root <span class="math notranslate nohighlight">\(\lambda(z)\)</span> the transparent boundary is
+built from — evaluated on the unit circle, so passband magnitudes are
+untouched exactly and the removed phase is exactly the phase the grid
+applied.  De-embedding a uniform feed line therefore cancels it to
+the accuracy floor of the run itself (measured: −120 dB TEM, −67 dB
+TE10 at 8 cells/λ), whereas the textbook continuum <span class="math notranslate nohighlight">\(e^{-\gamma d}\)</span>
+would leave the grid-dispersion gap behind — degrees of phase on
+coarse meshes, silently attributed to the device under test.
+Channels without certified line parameters fall back to the mode’s
+continuum <span class="math notranslate nohighlight">\(\gamma(\omega)\)</span>.</p>
+<p>The shift assumes the port cross-section continues over the shifted
+length.  Below its cut-off a channel’s factor grows as <span class="math notranslate nohighlight">\(e^{+\alpha
+d}\)</span>; those bins keep the diagnostic character the raw values have.
+Lumped ports carry no feed line and cannot be de-embedded.</p>
+</section>
 <section id="what-a-touchstone-export-covers-dd-184">
 <h3>What a Touchstone export covers (DD-184)<a class="headerlink" href="#what-a-touchstone-export-covers-dd-184" title="Link to this heading">#</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">to_touchstone()</span></code> and <code class="docutils literal notranslate"><span class="pre">to_skrf()</span></code> export the square sub-matrix over
@@ -697,6 +739,7 @@ path given without an extension gets the matching one, so
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#excitation-and-recording">Excitation and recording</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#s-parameters">S-parameters</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reference-plane-shift-de-embedding-dd-187">Reference-plane shift (de-embedding, DD-187)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-a-touchstone-export-covers-dd-184">What a Touchstone export covers (DD-184)</a></li>
 </ul>
 </li>

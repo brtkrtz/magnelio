@@ -230,14 +230,40 @@ cap the cell size at 1/16 of the plate spacing.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 134-138
+.. GENERATED FROM PYTHON SOURCE LINES 134-140
 
-Cross-sections of geometry and mesh are one call each — useful as a
-sanity check before spending any solver time.  (For an interactive
-3D view, call ``model.plot()`` in the notebook version of this
-tutorial — it renders the model as a rotatable widget.)
+Looking at geometry and mesh before spending any solver time is one
+call each.  ``model.plot()`` is the 3D view: the model opened along a
+cutting plane, with the grid cells the cut exposes coloured by the
+material the mesher assigned.  In the notebook version of this
+tutorial it is an interactive widget (orbit, pan, zoom, and the
+cutting plane in its toolbar); here it is rendered as a picture.
 
-.. GENERATED FROM PYTHON SOURCE LINES 138-141
+.. GENERATED FROM PYTHON SOURCE LINES 140-143
+
+.. code-block:: Python
+
+
+    model.plot(mesh=mesh, cut=("y", 0.0))
+
+
+
+
+.. image-sg:: /tutorials/images/sphx_glr_plot_01_parallel_plate_001.png
+   :alt: plot 01 parallel plate
+   :srcset: /tutorials/images/sphx_glr_plot_01_parallel_plate_001.png
+   :class: sphx-glr-single-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 144-146
+
+The 2D cross-section is the exact companion — a section through the
+CAD model with the grid lines overlaid.
+
+.. GENERATED FROM PYTHON SOURCE LINES 146-149
 
 .. code-block:: Python
 
@@ -247,16 +273,16 @@ tutorial — it renders the model as a rotatable widget.)
 
 
 
-.. image-sg:: /tutorials/images/sphx_glr_plot_01_parallel_plate_001.png
+.. image-sg:: /tutorials/images/sphx_glr_plot_01_parallel_plate_002.png
    :alt: Port cross-section (z = 0)
-   :srcset: /tutorials/images/sphx_glr_plot_01_parallel_plate_001.png
+   :srcset: /tutorials/images/sphx_glr_plot_01_parallel_plate_002.png
    :class: sphx-glr-single-img
 
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 142-152
+.. GENERATED FROM PYTHON SOURCE LINES 150-160
 
 The port modes
 --------------
@@ -269,7 +295,7 @@ run.  The report prints the mode ladder of each port; for a TEM mode
 it also carries the line impedance, which we can hold against the
 textbook formula.
 
-.. GENERATED FROM PYTHON SOURCE LINES 152-164
+.. GENERATED FROM PYTHON SOURCE LINES 160-172
 
 .. code-block:: Python
 
@@ -303,7 +329,7 @@ textbook formula.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 165-173
+.. GENERATED FROM PYTHON SOURCE LINES 173-181
 
 The two agree to machine precision: the uniform TEM field of this
 cross-section is represented exactly on the grid.  (On less trivial
@@ -314,7 +340,7 @@ before trusting a result.)
 The transverse mode profile confirms what a TEM plate mode should
 look like — a uniform vertical E field:
 
-.. GENERATED FROM PYTHON SOURCE LINES 173-176
+.. GENERATED FROM PYTHON SOURCE LINES 181-184
 
 .. code-block:: Python
 
@@ -324,16 +350,16 @@ look like — a uniform vertical E field:
 
 
 
-.. image-sg:: /tutorials/images/sphx_glr_plot_01_parallel_plate_002.png
+.. image-sg:: /tutorials/images/sphx_glr_plot_01_parallel_plate_003.png
    :alt: TEM mode, transverse E
-   :srcset: /tutorials/images/sphx_glr_plot_01_parallel_plate_002.png
+   :srcset: /tutorials/images/sphx_glr_plot_01_parallel_plate_003.png
    :class: sphx-glr-single-img
 
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 177-185
+.. GENERATED FROM PYTHON SOURCE LINES 185-193
 
 Run and S-parameters
 --------------------
@@ -344,7 +370,7 @@ record what arrives, and the recorded signals are transformed into
 S-parameters over the whole band — one run, all frequencies.  The
 run stops on its own once the port signals have decayed.
 
-.. GENERATED FROM PYTHON SOURCE LINES 185-203
+.. GENERATED FROM PYTHON SOURCE LINES 193-211
 
 .. code-block:: Python
 
@@ -369,9 +395,9 @@ run stops on its own once the port signals have decayed.
 
 
 
-.. image-sg:: /tutorials/images/sphx_glr_plot_01_parallel_plate_003.png
+.. image-sg:: /tutorials/images/sphx_glr_plot_01_parallel_plate_004.png
    :alt: Parallel-plate line, 20 mm
-   :srcset: /tutorials/images/sphx_glr_plot_01_parallel_plate_003.png
+   :srcset: /tutorials/images/sphx_glr_plot_01_parallel_plate_004.png
    :class: sphx-glr-single-img
 
 
@@ -384,7 +410,7 @@ run stops on its own once the port signals have decayed.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 204-212
+.. GENERATED FROM PYTHON SOURCE LINES 212-220
 
 A matched, lossless, uniform line transmits everything: ``|S21|``
 sits at 0 dB and ``|S11|`` at the numerical noise floor (below
@@ -395,7 +421,7 @@ The phase of S21 carries the physics of the 20 mm flight path.  For a
 TEM line it must follow :math:`e^{-j \beta L}` with
 :math:`\beta = 2 \pi f / c_0`:
 
-.. GENERATED FROM PYTHON SOURCE LINES 212-228
+.. GENERATED FROM PYTHON SOURCE LINES 220-236
 
 .. code-block:: Python
 
@@ -418,9 +444,9 @@ TEM line it must follow :math:`e^{-j \beta L}` with
 
 
 
-.. image-sg:: /tutorials/images/sphx_glr_plot_01_parallel_plate_004.png
+.. image-sg:: /tutorials/images/sphx_glr_plot_01_parallel_plate_005.png
    :alt: Transmission phase vs. analytic
-   :srcset: /tutorials/images/sphx_glr_plot_01_parallel_plate_004.png
+   :srcset: /tutorials/images/sphx_glr_plot_01_parallel_plate_005.png
    :class: sphx-glr-single-img
 
 
@@ -433,7 +459,7 @@ TEM line it must follow :math:`e^{-j \beta L}` with
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 229-239
+.. GENERATED FROM PYTHON SOURCE LINES 237-247
 
 Where to go next
 ----------------
@@ -449,7 +475,7 @@ spec matched to its cross-section.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 14.517 seconds)
+   **Total running time of the script:** (0 minutes 19.420 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_01_parallel_plate.py:

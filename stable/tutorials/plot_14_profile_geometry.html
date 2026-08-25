@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=5bfaad31"></script>
+    <script src="../_static/documentation_options.js?v=90733dfc"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -147,6 +147,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
   </a>
 </li>
 
@@ -279,6 +286,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -379,7 +393,6 @@
 <li class="toctree-l1"><a class="reference internal" href="plot_16_cad_import.html">Importing a CAD model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_17_pcb_import.html">Importing a circuit board</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_18_periodic_tesla_cell.html">Periodic structures: the dispersion diagram of a TESLA cell</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_19_stripline_pickup_kicker.html">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</a></li>
 </ul>
 </div>
 </nav></div>
@@ -464,7 +477,7 @@ whole shapes rather than outlines: hollowing, tracking, and lofting.</p>
 <span class="kn">import</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mio</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span><span class="p">,</span> <span class="n">plots</span>
 
-<span class="n">copper</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Material</span><span class="o">.</span><span class="n">lossy_metal</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;copper&quot;</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">5.8e7</span><span class="p">)</span>
+<span class="n">copper</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Material</span><span class="o">.</span><span class="n">lossy_metal</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"copper"</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">5.8e7</span><span class="p">)</span>
 </pre></div>
 </div>
 <section id="a-worked-example-a-curved-electrode">
@@ -481,11 +494,11 @@ extent, so the electrode is one call:</p>
     <span class="n">inner_radius</span><span class="o">=</span><span class="n">R_IN</span><span class="p">,</span>
     <span class="n">height</span><span class="o">=</span><span class="n">HEIGHT</span><span class="p">,</span>
     <span class="n">angle_deg</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">SPAN</span><span class="p">),</span>
-    <span class="n">material</span><span class="o">=</span><span class="s2">&quot;pec&quot;</span><span class="p">,</span>
+    <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">,</span>
 <span class="p">)</span>
 
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">plots</span><span class="o">.</span><span class="n">plot_cross_section</span><span class="p">(</span>
-    <span class="p">[</span><span class="n">electrode</span><span class="p">],</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">HEIGHT</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;electrode, cut across the axis&quot;</span>
+    <span class="p">[</span><span class="n">electrode</span><span class="p">],</span> <span class="s2">"z"</span><span class="p">,</span> <span class="n">HEIGHT</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"electrode, cut across the axis"</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -506,7 +519,7 @@ for a half-circle, where the two ends alone say nothing at all.</p>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">on_circle</span><span class="p">(</span><span class="n">radius</span><span class="p">,</span> <span class="n">angle_deg</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A point on a circle about the origin, in the z = 0 plane.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""A point on a circle about the origin, in the z = 0 plane."""</span>
     <span class="n">angle</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">angle_deg</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">radius</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span> <span class="n">radius</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">)</span>
 
@@ -514,13 +527,13 @@ for a half-circle, where the two ends alone say nothing at all.</p>
 <span class="n">outline</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">geo</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">on_circle</span><span class="p">(</span><span class="n">R_IN</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
     <span class="o">.</span><span class="n">line_to</span><span class="p">(</span><span class="n">on_circle</span><span class="p">(</span><span class="n">R_OUT</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
-    <span class="o">.</span><span class="n">arc_to</span><span class="p">(</span><span class="n">on_circle</span><span class="p">(</span><span class="n">R_OUT</span><span class="p">,</span> <span class="n">SPAN</span><span class="p">),</span> <span class="n">center</span><span class="o">=</span><span class="n">CENTRE</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">arc_to</span><span class="p">(</span><span class="n">on_circle</span><span class="p">(</span><span class="n">R_OUT</span><span class="p">,</span> <span class="n">SPAN</span><span class="p">),</span> <span class="n">center</span><span class="o">=</span><span class="n">CENTRE</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span>
     <span class="o">.</span><span class="n">line_to</span><span class="p">(</span><span class="n">on_circle</span><span class="p">(</span><span class="n">R_IN</span><span class="p">,</span> <span class="n">SPAN</span><span class="p">))</span>
     <span class="o">.</span><span class="n">arc_to</span><span class="p">(</span><span class="n">on_circle</span><span class="p">(</span><span class="n">R_IN</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">center</span><span class="o">=</span><span class="n">CENTRE</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">))</span>
     <span class="o">.</span><span class="n">closed</span><span class="p">()</span>
 <span class="p">)</span>
 
-<span class="n">drawn</span> <span class="o">=</span> <span class="n">outline</span><span class="o">.</span><span class="n">covered</span><span class="p">()</span><span class="o">.</span><span class="n">extruded</span><span class="p">(</span><span class="n">vector</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">HEIGHT</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">&quot;pec&quot;</span><span class="p">)</span>
+<span class="n">drawn</span> <span class="o">=</span> <span class="n">outline</span><span class="o">.</span><span class="n">covered</span><span class="p">()</span><span class="o">.</span><span class="n">extruded</span><span class="p">(</span><span class="n">vector</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">HEIGHT</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
 
 <span class="c1"># The two routes describe the same solid, and `volume()` is the way to</span>
 <span class="c1"># say so: it reports what the CAD kernel actually built, not what the</span>
@@ -528,9 +541,9 @@ for a half-circle, where the two ends alone say nothing at all.</p>
 <span class="c1"># operations, so they agree to numerical precision rather than bit for</span>
 <span class="c1"># bit -- the level of agreement to expect whenever one part can be</span>
 <span class="c1"># built two ways.</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;primitive: </span><span class="si">{</span><span class="n">electrode</span><span class="o">.</span><span class="n">volume</span><span class="p">()</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> mm^3&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;drawn:     </span><span class="si">{</span><span class="n">drawn</span><span class="o">.</span><span class="n">volume</span><span class="p">()</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> mm^3&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;relative difference: </span><span class="si">{</span><span class="nb">abs</span><span class="p">(</span><span class="n">drawn</span><span class="o">.</span><span class="n">volume</span><span class="p">()</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">electrode</span><span class="o">.</span><span class="n">volume</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">1.0</span><span class="p">)</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"primitive: </span><span class="si">{</span><span class="n">electrode</span><span class="o">.</span><span class="n">volume</span><span class="p">()</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> mm^3"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"drawn:     </span><span class="si">{</span><span class="n">drawn</span><span class="o">.</span><span class="n">volume</span><span class="p">()</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> mm^3"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"relative difference: </span><span class="si">{</span><span class="nb">abs</span><span class="p">(</span><span class="n">drawn</span><span class="o">.</span><span class="n">volume</span><span class="p">()</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">electrode</span><span class="o">.</span><span class="n">volume</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">1.0</span><span class="p">)</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>primitive: 230.383461 mm^3
@@ -558,16 +571,16 @@ segment in the pen stroke, and no new tool body:</p>
     <span class="n">geo</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">on_circle</span><span class="p">(</span><span class="n">R_IN</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
     <span class="o">.</span><span class="n">line_to</span><span class="p">(</span><span class="n">on_circle</span><span class="p">(</span><span class="n">R_OUT</span> <span class="o">-</span> <span class="n">CHAMFER</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
     <span class="o">.</span><span class="n">line_to</span><span class="p">((</span><span class="o">*</span><span class="n">on_circle</span><span class="p">(</span><span class="n">R_OUT</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)[:</span><span class="mi">2</span><span class="p">],</span> <span class="mf">0.0</span><span class="p">))</span>
-    <span class="o">.</span><span class="n">arc_to</span><span class="p">(</span><span class="n">on_circle</span><span class="p">(</span><span class="n">R_OUT</span><span class="p">,</span> <span class="n">SPAN</span><span class="p">),</span> <span class="n">center</span><span class="o">=</span><span class="n">CENTRE</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">arc_to</span><span class="p">(</span><span class="n">on_circle</span><span class="p">(</span><span class="n">R_OUT</span><span class="p">,</span> <span class="n">SPAN</span><span class="p">),</span> <span class="n">center</span><span class="o">=</span><span class="n">CENTRE</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span>
     <span class="o">.</span><span class="n">line_to</span><span class="p">(</span><span class="n">on_circle</span><span class="p">(</span><span class="n">R_IN</span><span class="p">,</span> <span class="n">SPAN</span><span class="p">))</span>
     <span class="o">.</span><span class="n">arc_to</span><span class="p">(</span><span class="n">on_circle</span><span class="p">(</span><span class="n">R_IN</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">center</span><span class="o">=</span><span class="n">CENTRE</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">))</span>
     <span class="o">.</span><span class="n">closed</span><span class="p">()</span>
     <span class="o">.</span><span class="n">covered</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">extruded</span><span class="p">(</span><span class="n">vector</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">HEIGHT</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">&quot;pec&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">extruded</span><span class="p">(</span><span class="n">vector</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">HEIGHT</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
 <span class="p">)</span>
 
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">plots</span><span class="o">.</span><span class="n">plot_cross_section</span><span class="p">(</span>
-    <span class="p">[</span><span class="n">chamfered</span><span class="p">],</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">HEIGHT</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;the same electrode, drawn and modified&quot;</span>
+    <span class="p">[</span><span class="n">chamfered</span><span class="p">],</span> <span class="s2">"z"</span><span class="p">,</span> <span class="n">HEIGHT</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"the same electrode, drawn and modified"</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -589,10 +602,10 @@ plane and turned about z:</p>
     <span class="o">.</span><span class="n">arc_to</span><span class="p">((</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">11.0e-3</span><span class="p">),</span> <span class="n">via</span><span class="o">=</span><span class="p">(</span><span class="mf">2.1e-3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.1e-3</span><span class="p">))</span>
     <span class="o">.</span><span class="n">closed</span><span class="p">()</span>
     <span class="o">.</span><span class="n">covered</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">revolved</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">&quot;pec&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">revolved</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
 <span class="p">)</span>
 
-<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">plots</span><span class="o">.</span><span class="n">plot_cross_section</span><span class="p">([</span><span class="n">nose</span><span class="p">],</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;revolved profile: a rounded pin&quot;</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">plots</span><span class="o">.</span><span class="n">plot_cross_section</span><span class="p">([</span><span class="n">nose</span><span class="p">],</span> <span class="s2">"y"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"revolved profile: a rounded pin"</span><span class="p">)</span>
 </pre></div>
 </div>
 <img src="../_images/sphx_glr_plot_14_profile_geometry_003.png" srcset="../_images/sphx_glr_plot_14_profile_geometry_003.png" alt="revolved profile: a rounded pin" class = "sphx-glr-single-img"/></section>
@@ -606,12 +619,12 @@ face leaves it out of the shell to become an opening.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">WALL</span> <span class="o">=</span> <span class="mf">1.5e-3</span>
 <span class="n">BOX</span> <span class="o">=</span> <span class="p">(</span><span class="mf">40.0e-3</span><span class="p">,</span> <span class="mf">25.0e-3</span><span class="p">,</span> <span class="mf">12.0e-3</span><span class="p">)</span>
 
-<span class="n">housing</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">BOX</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">&quot;pec&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">shelled</span><span class="p">(</span>
+<span class="n">housing</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">BOX</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span><span class="o">.</span><span class="n">shelled</span><span class="p">(</span>
     <span class="n">thickness</span><span class="o">=</span><span class="n">WALL</span><span class="p">,</span>
     <span class="n">opening_face_near</span><span class="o">=</span><span class="p">[(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">BOX</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">BOX</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="n">BOX</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">BOX</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">BOX</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)],</span>
 <span class="p">)</span>
 
-<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">plots</span><span class="o">.</span><span class="n">plot_cross_section</span><span class="p">([</span><span class="n">housing</span><span class="p">],</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">BOX</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;a housing, open at both ends&quot;</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">plots</span><span class="o">.</span><span class="n">plot_cross_section</span><span class="p">([</span><span class="n">housing</span><span class="p">],</span> <span class="s2">"z"</span><span class="p">,</span> <span class="n">BOX</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"a housing, open at both ends"</span><span class="p">)</span>
 </pre></div>
 </div>
 <img src="../_images/sphx_glr_plot_14_profile_geometry_004.png" srcset="../_images/sphx_glr_plot_14_profile_geometry_004.png" alt="a housing, open at both ends" class = "sphx-glr-single-img"/></section>
@@ -636,13 +649,13 @@ which is what a fabricated track does too.</p>
 <span class="n">track</span> <span class="o">=</span> <span class="n">route</span><span class="o">.</span><span class="n">traced</span><span class="p">(</span>
     <span class="n">width</span><span class="o">=</span><span class="n">W_TRACK</span><span class="p">,</span>
     <span class="n">thickness</span><span class="o">=</span><span class="n">T_COPPER</span><span class="p">,</span>
-    <span class="n">caps</span><span class="o">=</span><span class="s2">&quot;flat&quot;</span><span class="p">,</span>
-    <span class="n">normal</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span>
+    <span class="n">caps</span><span class="o">=</span><span class="s2">"flat"</span><span class="p">,</span>
+    <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span>
     <span class="n">material</span><span class="o">=</span><span class="n">copper</span><span class="p">,</span>
 <span class="p">)</span>
 
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">plots</span><span class="o">.</span><span class="n">plot_cross_section</span><span class="p">(</span>
-    <span class="p">[</span><span class="n">track</span><span class="p">],</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">T_COPPER</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;a routed track, square at both ends&quot;</span>
+    <span class="p">[</span><span class="n">track</span><span class="p">],</span> <span class="s2">"z"</span><span class="p">,</span> <span class="n">T_COPPER</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"a routed track, square at both ends"</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -662,17 +675,17 @@ third mode: <code class="docutils literal notranslate"><span class="pre">blend=&
 so a bend between two parts that face different directions comes out
 smooth rather than creased.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">square</span><span class="p">(</span><span class="n">half</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A square outline of half-width *half*, at height *z*.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""A square outline of half-width *half*, at height *z*."""</span>
     <span class="k">return</span> <span class="n">geo</span><span class="o">.</span><span class="n">Face</span><span class="p">(</span>
-        <span class="n">normal</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span>
+        <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span>
         <span class="n">points</span><span class="o">=</span><span class="p">[(</span><span class="o">-</span><span class="n">half</span><span class="p">,</span> <span class="o">-</span><span class="n">half</span><span class="p">),</span> <span class="p">(</span><span class="n">half</span><span class="p">,</span> <span class="o">-</span><span class="n">half</span><span class="p">),</span> <span class="p">(</span><span class="n">half</span><span class="p">,</span> <span class="n">half</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="n">half</span><span class="p">,</span> <span class="n">half</span><span class="p">)],</span>
         <span class="n">position</span><span class="o">=</span><span class="n">z</span><span class="p">,</span>
     <span class="p">)</span>
 
 
-<span class="n">taper</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Loft</span><span class="p">(</span><span class="n">square</span><span class="p">(</span><span class="mf">4.0e-3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">square</span><span class="p">(</span><span class="mf">10.0e-3</span><span class="p">,</span> <span class="mf">18.0e-3</span><span class="p">),</span> <span class="n">blend</span><span class="o">=</span><span class="s2">&quot;ruled&quot;</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">&quot;pec&quot;</span><span class="p">)</span>
+<span class="n">taper</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Loft</span><span class="p">(</span><span class="n">square</span><span class="p">(</span><span class="mf">4.0e-3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">square</span><span class="p">(</span><span class="mf">10.0e-3</span><span class="p">,</span> <span class="mf">18.0e-3</span><span class="p">),</span> <span class="n">blend</span><span class="o">=</span><span class="s2">"ruled"</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
 
-<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">plots</span><span class="o">.</span><span class="n">plot_cross_section</span><span class="p">([</span><span class="n">taper</span><span class="p">],</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;a ruled taper between two squares&quot;</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">plots</span><span class="o">.</span><span class="n">plot_cross_section</span><span class="p">([</span><span class="n">taper</span><span class="p">],</span> <span class="s2">"y"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"a ruled taper between two squares"</span><span class="p">)</span>
 </pre></div>
 </div>
 <img src="../_images/sphx_glr_plot_14_profile_geometry_006.png" srcset="../_images/sphx_glr_plot_14_profile_geometry_006.png" alt="a ruled taper between two squares" class = "sphx-glr-single-img"/></section>
@@ -701,7 +714,7 @@ two routes to the same part agreeing.</p></li>
 <p>A profile carrying no material is a <em>construction</em> profile: it is not
 a physical object and cannot be meshed on its own, which is why the
 verbs that turn it into a solid ask for the material explicitly.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.464 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.485 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-14-profile-geometry-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/bd56a784e653efaf900109070ab3849d/plot_14_profile_geometry.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_14_profile_geometry.ipynb</span></code></a></p>

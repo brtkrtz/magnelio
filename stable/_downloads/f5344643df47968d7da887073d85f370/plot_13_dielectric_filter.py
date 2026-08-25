@@ -2,10 +2,13 @@
 Capstone: a two-pole dielectric resonator filter
 ================================================
 
-The tutorials so far each isolated one capability.  This one is a
-design job of the kind the rest were preparation for: a narrowband
-bandpass filter built from ceramic resonators, dimensioned from a
-specification and verified against it.
+Tutorials 01–12 each isolated one capability of the core S-parameter
+workflow; this one closes that arc with a design job of the kind they
+were preparation for: a narrowband bandpass filter built from ceramic
+resonators, dimensioned from a specification and verified against it.
+(The tutorials after this one are feature chapters — profiles, far
+fields, CAD and PCB import, periodic structures — to be read as
+needed.)
 
 The device is a TM-mode dielectric filter.  Two ceramic pucks stand in
 a flat metal housing, soldered to floor and lid, separated by a wall

@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=5bfaad31"></script>
+    <script src="../_static/documentation_options.js?v=90733dfc"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -149,6 +149,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../tutorials/index.html">
     Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
   </a>
 </li>
 
@@ -281,6 +288,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../api/index.html">
     API reference
   </a>
@@ -375,6 +389,7 @@
 <li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
 </ul>
 </div>
@@ -440,8 +455,9 @@ into Magnelio, in the order a simulation passes through them: spatial
 discretisation, geometry and board input, mesh generation and conformal
 geometry, boundary conditions, port models, lumped circuit elements, dispersive
 materials, conductor losses, sources and monitors, far-field
-computation, and the eigenmode solver.  A final chapter covers implementation-level engineering
-(backends, precision) that is not itself a research method.</p>
+computation, and the eigenmode solver.  Two final chapters cover the 3D
+viewer and implementation-level engineering (backends, precision) that
+are not themselves research methods.</p>
 <p>Every method that originates in published research carries a citation;
 in-house derivations are marked as such in the text.</p>
 <div class="toctree-wrapper compound">
@@ -532,6 +548,14 @@ in-house derivations are marked as such in the text.</p>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="eigenmode-analysis.html#d-cavity-eigenmode-solver">3D cavity eigenmode solver</a></li>
 <li class="toctree-l2"><a class="reference internal" href="eigenmode-analysis.html#d-mode-solver">2D mode solver</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="viewer.html#what-is-drawn">What is drawn</a></li>
+<li class="toctree-l2"><a class="reference internal" href="viewer.html#the-cutting-plane">The cutting plane</a></li>
+<li class="toctree-l2"><a class="reference internal" href="viewer.html#rendering-modes">Rendering modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="viewer.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="viewer.html#limitations">Limitations</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a><ul>

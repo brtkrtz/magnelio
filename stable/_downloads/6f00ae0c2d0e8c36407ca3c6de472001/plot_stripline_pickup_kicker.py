@@ -6,7 +6,7 @@ A pair of stripline electrodes in a beam pipe is a workhorse of beam
 instrumentation: read out, it is a broadband *pickup* (a beam position
 monitor); driven, it is a *kicker* that deflects the beam.  Neither
 role is an S-parameter — a port model has no beam — yet both follow
-from one S-parameter simulation.  This tutorial walks the route used
+from one S-parameter simulation.  This guide walks the route used
 to design such devices (Goldberg and Lambertson, *AIP Conf. Proc.*
 249, 537 (1992)):
 
@@ -588,7 +588,7 @@ print(f"  = {0.1 * sens.mean():.1f} %/mm   (ideal {0.1 * sensitivity_ideal:.1f} 
 # Where to go next
 # ----------------
 #
-# Nothing in this tutorial is specific to striplines: any structure
+# Nothing in this guide is specific to striplines: any structure
 # with ports can be driven as a kicker, and the three steps — beam
 # voltage from :math:`E_z` with the particle's phase, transverse kick
 # from its gradient, pickup response from reciprocity — apply to

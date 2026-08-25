@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=5bfaad31"></script>
+    <script src="../_static/documentation_options.js?v=90733dfc"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -147,6 +147,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../tutorials/index.html">
     Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
   </a>
 </li>
 
@@ -274,6 +281,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../tutorials/index.html">
     Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
   </a>
 </li>
 
@@ -550,6 +564,47 @@ plottable instead of becoming <code class="docutils literal notranslate"><span c
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="magnelio.io.Project.deembed">
+<span class="sig-name descname"><span class="pre">deembed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distances</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.deembed" title="Link to this definition">#</a></dt>
+<dd><p>Shift port reference planes; return the de-embedded S-matrix.</p>
+<p>Removes the feed-line propagation between a port plane and its
+new reference plane: <code class="docutils literal notranslate"><span class="pre">result.deembed({&quot;port1&quot;:</span> <span class="pre">d})</span></code> moves
+port1’s reference plane the distance <code class="docutils literal notranslate"><span class="pre">d</span></code> [m] from the port
+plane <em>into</em> the domain, and every S-parameter touching that
+port is multiplied by the inverse line propagation factor over
+<code class="docutils literal notranslate"><span class="pre">d</span></code> — reflections twice, transmissions once per shifted end.
+A negative distance moves the plane outward (adds line
+length); ports not named keep their plane.</p>
+<p>The shift uses the discrete dispersion of the port’s uniform
+feed chain — the same grid propagation the solver applied — so
+de-embedding a uniform feed line removes its phase down to the
+accuracy floor of the run itself, including the
+grid-dispersion part that an analytic <code class="docutils literal notranslate"><span class="pre">exp(-jβd)</span></code> would
+leave behind on coarse meshes.  It assumes the cross-section
+stays that of the port over the shifted length; channels
+without certified discrete line parameters fall back to the
+mode’s continuum <code class="docutils literal notranslate"><span class="pre">γ(f)</span></code>.</p>
+<p>Below its cut-off a channel’s factor grows exponentially with
+distance, so de-embedded values there keep the diagnostic
+character the raw ones have.  Lumped ports carry no feed-line
+dispersion; naming one raises.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>distances</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em>) – Per-port shift distance [m], positive into the domain.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new result referenced at the shifted planes — the
+original is untouched.  It answers <code class="docutils literal notranslate"><span class="pre">S</span></code> / <code class="docutils literal notranslate"><span class="pre">db</span></code> /
+<code class="docutils literal notranslate"><span class="pre">phase</span></code> / <code class="docutils literal notranslate"><span class="pre">plot_s</span></code> and the Touchstone / scikit-rf
+exports.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="post.html#magnelio.post.SParameterResult" title="magnelio.post.SParameterResult">SParameterResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="magnelio.io.Project.energy_trace">
 <span class="sig-name descname"><span class="pre">energy_trace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">excited</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.energy_trace" title="Link to this definition">#</a></dt>
 <dd><p>Stored <code class="docutils literal notranslate"><span class="pre">(step,</span> <span class="pre">time,</span> <span class="pre">energy)</span></code> trace of a run [structured array].</p>
@@ -629,8 +684,8 @@ the arrow scaling).</p></li>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">project</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisEigenmode</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
-<span class="gp">... </span>                                <span class="n">project</span><span class="o">=</span><span class="s2">&quot;cavity&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">export_paraview_eigenmodes</span><span class="p">()[</span><span class="s2">&quot;script&quot;</span><span class="p">]</span>
+<span class="gp">... </span>                                <span class="n">project</span><span class="o">=</span><span class="s2">"cavity"</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">export_paraview_eigenmodes</span><span class="p">()[</span><span class="s2">"script"</span><span class="p">]</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -671,8 +726,10 @@ when the project holds one run.</p>
 <code class="docutils literal notranslate"><span class="pre">mode_in</span></code>), as in <a class="reference internal" href="#magnelio.io.Project.S" title="magnelio.io.Project.S"><code class="xref py py-meth docutils literal notranslate"><span class="pre">S()</span></code></a>.</p></li>
 <li><p><strong>deg</strong> (<em>bool</em><em>, </em><em>default True</em>) – Return degrees; <code class="docutils literal notranslate"><span class="pre">False</span></code> returns radians.</p></li>
 <li><p><strong>unwrap</strong> (<em>bool</em><em>, </em><em>default True</em>) – Unwrap 2π discontinuities along the frequency axis.</p></li>
-<li><p><strong>f_axis</strong> (<em>array-like</em><em>, </em><em>optional</em>) – Custom frequency axis; recomputed from the recorded
-signals like <a class="reference internal" href="#magnelio.io.Project.S" title="magnelio.io.Project.S"><code class="xref py py-meth docutils literal notranslate"><span class="pre">S()</span></code></a>.</p></li>
+<li><p><strong>f_axis</strong> (<em>array-like</em><em>, </em><em>optional</em>) – Custom frequency axis, on hosts whose <a class="reference internal" href="#magnelio.io.Project.S" title="magnelio.io.Project.S"><code class="xref py py-meth docutils literal notranslate"><span class="pre">S()</span></code></a> can
+recompute the spectrum (run results); a plain
+<code class="xref py py-class docutils literal notranslate"><span class="pre">SParameterResult</span></code> holds one fixed axis and
+rejects it.</p></li>
 <li><p><strong>mode_out</strong> (<em>int</em>)</p></li>
 <li><p><strong>mode_in</strong> (<em>int</em>)</p></li>
 </ul>
@@ -1110,7 +1167,7 @@ members, named <code class="docutils literal notranslate"><span class="pre">&lt;
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">Material</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_brep</span>
 
-<span class="n">horn</span> <span class="o">=</span> <span class="n">import_brep</span><span class="p">(</span><span class="s2">&quot;horn.brep&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;mm&quot;</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">())</span>
+<span class="n">horn</span> <span class="o">=</span> <span class="n">import_brep</span><span class="p">(</span><span class="s2">"horn.brep"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"mm"</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">())</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1190,14 +1247,14 @@ larger than the metal thickness.</p>
 <span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_pcb</span>
 
 <span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span>
-    <span class="s2">&quot;fabrication/&quot;</span><span class="p">,</span>
-    <span class="p">{</span><span class="s2">&quot;dielectric_1&quot;</span><span class="p">:</span> <span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;RO4350B&quot;</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">3.66</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)},</span>
+    <span class="s2">"fabrication/"</span><span class="p">,</span>
+    <span class="p">{</span><span class="s2">"dielectric_1"</span><span class="p">:</span> <span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"RO4350B"</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">3.66</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)},</span>
 <span class="p">)</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">GeometryModel</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Inspect the names before assigning anything:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span><span class="s2">&quot;fabrication/&quot;</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span><span class="s2">"fabrication/"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">([</span><span class="n">solid</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">solid</span> <span class="ow">in</span> <span class="n">board</span><span class="o">.</span><span class="n">members</span><span class="p">()])</span>
 </pre></div>
 </div>
@@ -1263,15 +1320,15 @@ shape — a Group is flattened into its members on insertion.</p>
 <span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_step</span>
 
 <span class="n">parts</span> <span class="o">=</span> <span class="n">import_step</span><span class="p">(</span>
-    <span class="s2">&quot;connector.step&quot;</span><span class="p">,</span>
-    <span class="p">{</span><span class="s2">&quot;pin&quot;</span><span class="p">:</span> <span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">(),</span> <span class="s2">&quot;shell&quot;</span><span class="p">:</span> <span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">(),</span>
-     <span class="s2">&quot;insulator&quot;</span><span class="p">:</span> <span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;PTFE&quot;</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">2.1</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)},</span>
+    <span class="s2">"connector.step"</span><span class="p">,</span>
+    <span class="p">{</span><span class="s2">"pin"</span><span class="p">:</span> <span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">(),</span> <span class="s2">"shell"</span><span class="p">:</span> <span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">(),</span>
+     <span class="s2">"insulator"</span><span class="p">:</span> <span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"PTFE"</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">2.1</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)},</span>
 <span class="p">)</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">GeometryModel</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Import first, inspect the names, assign afterwards:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">parts</span> <span class="o">=</span> <span class="n">import_step</span><span class="p">(</span><span class="s2">&quot;connector.step&quot;</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">parts</span> <span class="o">=</span> <span class="n">import_step</span><span class="p">(</span><span class="s2">"connector.step"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">parts</span><span class="o">.</span><span class="n">members</span><span class="p">()])</span>
 </pre></div>
 </div>
@@ -1373,6 +1430,7 @@ recovered verbatim by <a class="reference internal" href="#magnelio.io.read_brep
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.b"><code class="docutils literal notranslate"><span class="pre">Project.b()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.checkpoint_state"><code class="docutils literal notranslate"><span class="pre">Project.checkpoint_state()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.db"><code class="docutils literal notranslate"><span class="pre">Project.db()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.deembed"><code class="docutils literal notranslate"><span class="pre">Project.deembed()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.energy_trace"><code class="docutils literal notranslate"><span class="pre">Project.energy_trace()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.export_paraview"><code class="docutils literal notranslate"><span class="pre">Project.export_paraview()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.export_paraview_eigenmodes"><code class="docutils literal notranslate"><span class="pre">Project.export_paraview_eigenmodes()</span></code></a></li>
