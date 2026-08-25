@@ -16,9 +16,10 @@ major version is 0, minor releases may change the public API.
   toolbar (normal, position slider, flip, undo, reset) that opens every
   solid with capped cuts; with `mesh=` the grid lines appear on the
   domain faces and the cells the cut exposes are shown coloured by the
-  material the mesher assigned.  Thin wires, ports, lumped elements,
-  symmetry planes and the domain box are drawn, lengths are in
-  millimetres, and the camera pans.  The same call opens a window in a
+  material the mesher assigned.  Thin wires, ports (with their names),
+  lumped elements, symmetry planes and the domain box are drawn and
+  follow the cut; a toolbar menu hides or shows each object group;
+  lengths are in millimetres, and the camera pans.  The same call opens a window in a
   script and renders a picture in a documentation build — the tutorials
   now show the 3D view.  Options: `cut`, `flip`, `show_ports`,
   `show_wires`, `show_grid`, `mode` (`"client"` in-browser rendering by

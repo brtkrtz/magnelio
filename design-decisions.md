@@ -12953,6 +12953,17 @@ cell size their production mesh will have (PCB cross-sections use
 
 **Status:** Decided 2026-08-25 after a two-day spike with the developer
 (planning 2026-08-24, browser tests 2026-08-25); implemented 2026-08-25.
+**Amended 2026-08-25** after the developer's browser review of the
+implementation: (a) the cut-cell sheet reached the actor as a
+`vtkRectilinearGrid`, which trame's vtk.js serialiser does not know —
+the widget stayed blank with a JS error whenever a mesh was shown; every
+actor dataset is polydata now, and a test guards it.  (b) Features
+follow the cut (wires clipped, ports/elements/labels hidden when their
+anchor lies in the removed half) — they had stayed in view.  (c) Names
+are flat 3D text (`Text3D` polydata) so they render in every mode; the
+server-only screen labels are gone.  (d) A *Show* menu in the toolbar
+hides or shows object groups (solids, grid lines, cut cells, ports,
+elements, wires, labels, symmetry planes, domain box).
 
 **Problem.**  `GeometryModel.plot()` was pythonocc's `JupyterRenderer`,
 a thin wrapper over pythreejs (2.4.2, unmaintained since 2023).
@@ -13010,11 +13021,11 @@ tutorials only *mention* `model.plot()`).
    the user pinned `PYVISTA_TRAME_JUPYTER_MODE`.  Upstream report
    pending.
 5. **Overlays** as in `plot_cross_section`, same colours: thin wires
-   and discrete ports / lumped elements as tubes (labels only under
-   server rendering — vtk.js has no label mapper), face ports as
-   translucent windows on the domain face, symmetry planes as tinted
+   and discrete ports / lumped elements as tubes, face ports as
+   translucent windows on the domain face, names as flat 3D text
+   (polydata — vtk.js has no label mapper), symmetry planes as tinted
    sheets, the domain box as an outline; display in millimetres
-   (`scale_mm`).
+   (`scale_mm`).  Features follow the cut.
 6. **Process settings** the viewer applies once: the Viskores
    (VTK-m) filter overrides are switched off (they try CUDA first and
    fall back after ~25 s per rectilinear slice), and trame_vtk's

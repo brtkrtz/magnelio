@@ -199,10 +199,91 @@ class TestOverlays:
         assert zlo == pytest.approx(1.0, abs=0.1)
         assert zhi == pytest.approx(6.0, abs=0.1)
 
+    def test_labels_are_polydata_text(self, features_model, coax):
+        pl = features_model.plot(mode="none")
+        labels = [n for n in pl.renderer.actors if n.startswith("label_")]
+        assert len(labels) == 2  # feed, load
+        for n in labels:
+            assert isinstance(_dataset(pl, n), pv.PolyData)
+            assert _dataset(pl, n).n_cells > 0
+        pl = features_model.plot(mode="none", show_labels=False)
+        assert not [n for n in pl.renderer.actors if n.startswith("label_")]
+        # Face ports carry their name on the window.
+        model, _ = coax
+        pl = model.plot(mode="none")
+        assert len([n for n in pl.renderer.actors if n.startswith("label_")]) == 2
+
+    def test_cut_removes_features_in_the_removed_half(self, features_model):
+        # Element at z = 6..7 mm, port at z = 0..1 mm: a cut at z = 4 mm
+        # keeping the lower half removes the element and its label.
+        pl = features_model.plot(mode="none", cut=("z", 4e-3))
+        acts = pl.renderer.actors
+        assert acts["port_0"].GetVisibility()
+        assert not acts["element_0"].GetVisibility()
+        labels = {n: acts[n].GetVisibility() for n in acts if n.startswith("label_")}
+        assert sorted(labels.values()) == [0, 1]
+        # The wire (z = 1..6 mm) is clipped, not hidden.
+        assert acts["wire_0"].GetVisibility()
+        assert _dataset(pl, "wire_0").bounds[5] == pytest.approx(4.0, abs=0.05)
+        pl = features_model.plot(mode="none", cut=("z", 4e-3), flip=True)
+        assert pl.renderer.actors["element_0"].GetVisibility()
+        assert not pl.renderer.actors["port_0"].GetVisibility()
+
+    def test_hidden_groups(self, features_model):
+        scene = plot_3d._build_scene(
+            features_model,
+            mesh=None,
+            cut=None,
+            flip=False,
+            show_ports=True,
+            show_wires=True,
+            show_grid=True,
+            show_labels=True,
+            size=None,
+            render_edges=False,
+            edge_color="#202020",
+            quality=1.0,
+            scale_mm=True,
+            camera="iso",
+            off_screen=True,
+        )
+        assert scene.groups_present() == [
+            "solids",
+            "ports",
+            "elements",
+            "wires",
+            "labels",
+            "symmetry",
+            "domain",
+        ]
+        acts = scene.plotter.renderer.actors
+        scene.hidden_groups = {"ports", "symmetry", "labels"}
+        plot_3d._apply_cut(scene)
+        assert not acts["port_0"].GetVisibility()
+        assert not acts["symmetry_xmin"].GetVisibility()
+        assert not any(acts[n].GetVisibility() for n in acts if n.startswith("label_"))
+        assert acts["wire_0"].GetVisibility()
+        assert acts["element_0"].GetVisibility()
+        scene.hidden_groups = set()
+        plot_3d._apply_cut(scene)
+        assert acts["port_0"].GetVisibility()
+
+    def test_every_actor_dataset_is_polydata(self, coax):
+        # The in-browser renderer serialises polydata only; a
+        # rectilinear grid in the scene left the widget blank.
+        model, mesh = coax
+        pl = model.plot(mesh=mesh, mode="none", cut=("y", 0.0))
+        for name, actor in pl.renderer.actors.items():
+            mapper = getattr(actor, "mapper", None)
+            if mapper is None or getattr(mapper, "dataset", None) is None:
+                continue
+            assert isinstance(mapper.dataset, pv.PolyData), name
+
     def test_toggles(self, features_model):
         pl = features_model.plot(mode="none", show_wires=False, show_ports=False)
         names = set(pl.renderer.actors)
         assert not names & {"wire_0", "port_0", "element_0"}
+        assert not [n for n in names if n.startswith("label_")]
 
     def test_face_port_window(self, coax):
         model, _ = coax
@@ -222,6 +303,48 @@ class TestOverlays:
             pl = model.plot(mode="none")
         assert "shape_1" in pl.renderer.actors
         assert "shape_0" not in pl.renderer.actors
+
+
+class TestBrowserSerialisation:
+    def test_scene_serialises_for_vtkjs(self, coax, caplog):
+        """Every actor of a full scene passes trame's vtk.js serialiser.
+
+        The serialiser logs ``!!!No serializer for <class>`` for anything
+        it cannot ship to the browser; such an actor left the widget
+        blank (a rectilinear-grid sheet did exactly that).
+        """
+        import logging
+
+        serializers = pytest.importorskip("trame_vtk.modules.vtk.serializers")
+        model, mesh = coax
+        pl = model.plot(mesh=mesh, mode="none", cut=("y", 0.0), size=(300, 200))
+        pl.render()
+        serializers.initialize_serializers()
+        ctx = serializers.SynchronizationContext()
+        with caplog.at_level(logging.WARNING):
+            scene = serializers.serialize(
+                None, pl.ren_win, serializers.reference_id(pl.ren_win), ctx, 0
+            )
+        assert scene is not None
+        missing = [r.getMessage() for r in caplog.records if "No serializer" in r.getMessage()]
+        assert not missing, missing
+
+        # Every visible actor made it into the browser scene.
+        def types(node):
+            if isinstance(node, dict):
+                yield node.get("type")
+                for v in node.values():
+                    yield from types(v)
+            elif isinstance(node, list):
+                for v in node:
+                    yield from types(v)
+
+        found = [t for t in types(scene) if t]
+        serialised_actors = sum(1 for t in found if t.endswith("Actor"))
+        visible = [a for a in pl.renderer.actors.values() if a.GetVisibility()]
+        assert serialised_actors >= len(visible) - 1  # the axes widget is no vtkActor
+        datasets = {t for t in found if t.startswith("vtk") and "Data" in t or "Grid" in t}
+        assert datasets == {"vtkPolyData"}, datasets
 
 
 class TestEntryPoints:

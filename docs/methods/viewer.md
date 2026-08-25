@@ -23,8 +23,8 @@ model.plot(mesh=mesh, cut=("y", 0.0))         # opened along y = 0
 | Solids | Material colour of the 2D cross-sections (metals grey, dielectrics tinted by permittivity, air and vacuum as faint translucent shells); imported CAD colours are honoured. |
 | Grid (`mesh=`) | Grid lines on the six domain faces.  On the cutting plane, the exposed cell layer as a sheet of cell faces, each coloured by the material the mesher assigned — the discretised model as the solver sees it. |
 | Thin wires | Tubes in the wire colour. |
-| Discrete ports, lumped elements | Tubes between their two end points (red for ports, green for elements). |
-| Waveguide ports | A translucent red window on the domain face they occupy — the declared sub-window, or the whole face. |
+| Discrete ports, lumped elements | Tubes between their two end points (red for ports, green for elements), with their name beside them. |
+| Waveguide ports | A translucent red window on the domain face they occupy — the declared sub-window, or the whole face — with the port name on it. |
 | Symmetry planes | Tinted sheets on the domain faces declared `SymmetryPEC` / `SymmetryPMC` (blue / green). |
 | Domain | Outline of the bounding box; the grid extent when a mesh is given. |
 
@@ -41,12 +41,16 @@ toolbar:
 - the **position slider** across the domain extent;
 - **Flip** — remove the other half;
 - **undo** (last change) and **reset** (initial state);
-- **Grid** — hide or show the grid lines on the domain faces.
+- **Show** — a menu of the object groups (solids, grid lines, cut
+  cells, ports, lumped elements, wires, labels, symmetry planes, domain
+  box); untick a group to hide it.
 
 A single plane cuts every solid; the openings are capped, so a cut
 metal body reads as solid metal, not as a hollow shell.  With a mesh,
 the cells the cut exposes are laid over the cut faces as a translucent
 sheet — the caps stay visible through it.
+The features follow the cut: a wire is clipped with the solids, and a
+port, element or label in the removed half disappears with it.
 
 `cut=("y", 0.0)` sets the initial state of the plane (and `flip=True`
 the side); it is the only way to place the plane for a screenshot, and
@@ -108,9 +112,9 @@ PyVista documentation.
 
 ## Limitations
 
-- Labels of ports and elements are drawn only under server rendering
-  (`"server"`, `"trame"`); the browser renderer has no text labels.
-  Colours identify the feature class in every mode.
+- Names are flat 3D text placed in the scene (the browser renderer has
+  no screen-space labels); they read best from the default camera and
+  scale with the model.
 - The cutting plane is axis-aligned by design (see above).
 - Field monitors are not yet shown in 3D; use the ParaView export
   ({doc}`sources-monitors`) or the 2D slice plots.

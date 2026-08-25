@@ -17,6 +17,11 @@ The cutting plane is deliberately axis-aligned and slider-driven —
 the way cutting planes work in the EM suites users come from — rather
 than a free plane grabbed in 3D: a FIT grid carries information only on
 its own planes, and a 3D handle competes with the camera for the mouse.
+
+Every dataset that reaches an actor is ``vtkPolyData``: the in-browser
+renderer (vtk.js, through trame) serialises polydata, image data and
+unstructured grids only — a rectilinear grid in the scene leaves the
+widget blank.
 """
 
 from __future__ import annotations
@@ -35,7 +40,6 @@ if TYPE_CHECKING:
 __all__ = ["show_geometry"]
 
 _AXIS_INDEX = {"x": 0, "y": 1, "z": 2}
-_AXES = ("x", "y", "z")
 
 # Display colours shared with the 2D cross-section plots.
 _WIRE_COLOR = "#c8963c"
@@ -59,6 +63,19 @@ _MODES = ("client", "server", "trame", "static", "none")
 # is looked at, not measured, and can afford finer triangles.
 _LINEAR_DEFLECTION = 5e-4
 _ANGULAR_DEFLECTION = 0.15
+
+# Object groups the toolbar can hide, in menu order.
+_GROUPS = (
+    ("solids", "Solids"),
+    ("grid", "Grid lines"),
+    ("cut cells", "Cut cells"),
+    ("ports", "Ports"),
+    ("elements", "Lumped elements"),
+    ("wires", "Wires"),
+    ("labels", "Labels"),
+    ("symmetry", "Symmetry planes"),
+    ("domain", "Domain box"),
+)
 
 
 def _in_notebook() -> bool:
@@ -120,6 +137,23 @@ class _Body:
 
 
 @dataclass
+class _Overlay:
+    """A feature drawn over the solids: tube, window, sheet or label.
+
+    ``anchor`` labels are shown whole or not at all, by which side of
+    the cut their anchor point lies on; everything else is clipped
+    like the solids (open clip, no cap).
+    """
+
+    name: str
+    group: str
+    polydata: Any
+    actor: Any = None
+    anchor: tuple[float, float, float] | None = None
+    clip: bool = True
+
+
+@dataclass
 class _CutState:
     axis: str | None = None  # None = no cut
     position: float = 0.0  # display units
@@ -133,15 +167,27 @@ class _Scene:
     plotter: Any
     bodies: list[_Body]
     bounds: tuple[float, float, float, float, float, float]  # display units
-    grid: Any = None  # pv.RectilinearGrid in display units, or None
-    grid_actor: Any = None  # the cut slab
-    show_grid_faces: bool = True
+    grid: Any = None  # the FIT grid dataset (display units), or None
+    grid_faces_actor: Any = None
+    grid_actor: Any = None  # the cut sheet
+    domain_actor: Any = None
+    overlays: list[_Overlay] = field(default_factory=list)
+    hidden_groups: set[str] = field(default_factory=set)
     cut: _CutState = field(default_factory=_CutState)
     initial_cut: _CutState = field(default_factory=_CutState)
     history: list[_CutState] = field(default_factory=list)
-    edges: bool = False
-    edge_color: str = "#202020"
     unit: str = "mm"
+
+    def groups_present(self) -> list[str]:
+        present = {"solids"} if self.bodies else set()
+        if self.grid_faces_actor is not None:
+            present.add("grid")
+        if self.grid_actor is not None:
+            present.add("cut cells")
+        if self.domain_actor is not None:
+            present.add("domain")
+        present.update(o.group for o in self.overlays)
+        return [key for key, _ in _GROUPS if key in present]
 
 
 def _shape_bodies(shapes, *, unit_scale: float, quality: float) -> list[_Body]:
@@ -206,7 +252,11 @@ def _shape_bodies(shapes, *, unit_scale: float, quality: float) -> list[_Body]:
 
 
 def _grid_dataset(mesh: Mesh, *, unit_scale: float):
-    """The FIT grid as a rectilinear dataset with per-cell material colours."""
+    """The FIT grid as a rectilinear dataset with per-cell material colours.
+
+    Kept as a ``RectilinearGrid`` for slicing; nothing derived from it
+    reaches an actor without being converted to polydata first.
+    """
     import pyvista as pv  # noqa: PLC0415
 
     from magnelio.post._colors import material_color  # noqa: PLC0415
@@ -250,13 +300,17 @@ def _bounds_of(bodies: list[_Body], grid) -> tuple[float, ...]:
 # ---------------------------------------------------------------------------
 
 
-def _clip_body(pd, cut: _CutState):
-    """Clip one closed surface with the cut plane, capping the opening."""
+def _clip_body(pd, cut: _CutState, *, closed: bool = True):
+    """Clip a dataset with the cut plane.
+
+    ``closed`` caps the opening (needs a watertight surface); otherwise
+    the clip stays open — right for tubes, windows and sheets.  Returns
+    ``None`` when nothing of the dataset remains.
+    """
     if cut.axis is None:
         return pd
     axis = _AXIS_INDEX[cut.axis]
     lo, hi = pd.bounds[2 * axis], pd.bounds[2 * axis + 1]
-    # Nothing to cut when the plane misses the body: keep or drop whole.
     keep_positive = cut.flip
     if cut.position <= lo:
         return pd if keep_positive else None
@@ -268,20 +322,26 @@ def _clip_body(pd, cut: _CutState):
     normal[axis] = 1.0 if keep_positive else -1.0
     origin = [0.0, 0.0, 0.0]
     origin[axis] = cut.position
-    # ``clip_closed_surface`` closes the cut with a cap; it needs a
-    # watertight surface, which the cleaned tessellation is.  Fall back
-    # to an open clip otherwise.
-    try:
-        clipped = pd.clip_closed_surface(normal=normal, origin=origin)
-        if clipped.n_cells:
-            return clipped
-    except Exception:
-        pass
-    return pd.clip(normal=normal, origin=origin, invert=False)
+    if closed:
+        try:
+            clipped = pd.clip_closed_surface(normal=normal, origin=origin)
+            if clipped.n_cells:
+                return clipped
+        except Exception:
+            pass
+    clipped = pd.clip(normal=normal, origin=origin, invert=False)
+    return clipped if clipped.n_cells else None
+
+
+def _on_kept_side(point, cut: _CutState) -> bool:
+    if cut.axis is None:
+        return True
+    value = float(point[_AXIS_INDEX[cut.axis]])
+    return value >= cut.position if cut.flip else value <= cut.position
 
 
 def _grid_slab(grid, cut: _CutState):
-    """The grid cells on the cut plane, as a sheet of cell faces.
+    """The grid cells on the cut plane, as a polydata sheet of cell faces.
 
     The sheet carries the material of the cell layer just *behind* the
     plane on the kept side — the cells the cut exposes.  It is offset by
@@ -305,11 +365,22 @@ def _grid_slab(grid, cut: _CutState):
     else:
         k = max(int(np.searchsorted(n, cut.position, side="left")) - 1, 0)
     offset = 1e-3 * (n[k + 1] - n[k]) * (-1.0 if cut.flip else 1.0)
-    coords = [nodes[i] for i in range(3)]
-    coords[axis] = np.array([cut.position + offset])
-    sheet = pv.RectilinearGrid(*coords)
+    u_axis, v_axis = (a for a in range(3) if a != axis)
+    u, v = nodes[u_axis], nodes[v_axis]
+    nu, nv = u.size - 1, v.size - 1
+    # Points with u fastest, then v — the grid's own ordering with the
+    # cut axis removed — so cell (iu, iv) is quad iu + nu*iv, the same
+    # order as the layer's cell ids below.
+    uu, vv = np.meshgrid(u, v, indexing="xy")  # shape (nv+1, nu+1)
+    points = np.empty(((nu + 1) * (nv + 1), 3), dtype=float)
+    points[:, u_axis] = uu.ravel()
+    points[:, v_axis] = vv.ravel()
+    points[:, axis] = cut.position + offset
+    iu, iv = np.meshgrid(np.arange(nu), np.arange(nv), indexing="xy")
+    p0 = (iu + (nu + 1) * iv).ravel()
+    faces = np.column_stack([np.full(p0.size, 4), p0, p0 + 1, p0 + nu + 2, p0 + nu + 1]).ravel()
+    sheet = pv.PolyData(points, faces=faces)
     dims = tuple(len(nodes[i]) - 1 for i in range(3))
-    # Cell ids in the grid's own (Fortran) order, restricted to the layer.
     cell_ids = np.arange(int(np.prod(dims))).reshape(dims, order="F")
     idx = [slice(None)] * 3
     idx[axis] = slice(k, k + 1)
@@ -320,29 +391,48 @@ def _grid_slab(grid, cut: _CutState):
     return sheet
 
 
+def _set_input(actor, dataset, *, rgb: bool = False) -> None:
+    """Swap an actor's dataset, keeping direct RGB colouring if used."""
+    mapper = actor.mapper
+    mapper.SetInputData(dataset)
+    if rgb:
+        # A swapped dataset resets the mapper to lookup-table colouring
+        # of the active scalars; the sheet carries direct RGB colours.
+        mapper.SetScalarModeToUseCellFieldData()
+        mapper.SelectColorArray("color")
+        mapper.SetColorModeToDirectScalars()
+
+
 def _apply_cut(scene: _Scene) -> None:
-    """Refresh all actors for the scene's current cut state."""
+    """Refresh every actor for the scene's cut state and hidden groups."""
+    shown = {key for key, _ in _GROUPS} - scene.hidden_groups
     for body in scene.bodies:
-        clipped = _clip_body(body.polydata, scene.cut)
-        if clipped is None:
-            body.actor.SetVisibility(False)
-            continue
-        body.actor.SetVisibility(True)
-        body.actor.mapper.SetInputData(clipped)
-    slab = _grid_slab(scene.grid, scene.cut)
-    if scene.grid_actor is not None:
-        if slab is None:
-            scene.grid_actor.SetVisibility(False)
+        clipped = _clip_body(body.polydata, scene.cut, closed=True)
+        visible = "solids" in shown and clipped is not None
+        body.actor.SetVisibility(visible)
+        if clipped is not None:
+            _set_input(body.actor, clipped)
+    for ov in scene.overlays:
+        if ov.anchor is not None:
+            visible = _on_kept_side(ov.anchor, scene.cut)
+            dataset = ov.polydata
+        elif ov.clip:
+            dataset = _clip_body(ov.polydata, scene.cut, closed=False)
+            visible = dataset is not None
         else:
-            scene.grid_actor.SetVisibility(True)
-            mapper = scene.grid_actor.mapper
-            mapper.SetInputData(slab)
-            # A swapped dataset resets the mapper to lookup-table
-            # colouring of the active scalars; the sheet carries direct
-            # RGB colours.
-            mapper.SetScalarModeToUseCellFieldData()
-            mapper.SelectColorArray("color")
-            mapper.SetColorModeToDirectScalars()
+            dataset, visible = ov.polydata, True
+        ov.actor.SetVisibility(visible and ov.group in shown)
+        if dataset is not None:
+            _set_input(ov.actor, dataset)
+    if scene.grid_faces_actor is not None:
+        scene.grid_faces_actor.SetVisibility("grid" in shown)
+    if scene.domain_actor is not None:
+        scene.domain_actor.SetVisibility("domain" in shown)
+    if scene.grid_actor is not None:
+        slab = _grid_slab(scene.grid, scene.cut)
+        scene.grid_actor.SetVisibility("cut cells" in shown and slab is not None)
+        if slab is not None:
+            _set_input(scene.grid_actor, slab, rgb=True)
 
 
 # ---------------------------------------------------------------------------
@@ -350,19 +440,64 @@ def _apply_cut(scene: _Scene) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _tube_radius(bounds) -> float:
-    diag = math.dist(bounds[0::2], bounds[1::2])
-    return max(diag * 2.5e-3, 1e-9)
+def _diag(bounds) -> float:
+    return max(math.dist(bounds[0::2], bounds[1::2]), 1e-9)
 
 
-def _add_line(pl, p0, p1, *, color, radius, name):
+def _add_overlay(pl, scene: _Scene, overlay: _Overlay, **kwargs) -> None:
+    overlay.actor = pl.add_mesh(overlay.polydata, name=overlay.name, **kwargs)
+    scene.overlays.append(overlay)
+
+
+def _label_frame(pl) -> np.ndarray:
+    """Rotation whose columns are the camera's right, up and towards-viewer axes.
+
+    Labels are built in the text's own x/y plane and mapped through this
+    frame, so they face the initial camera the right way round — a
+    fixed plane normal reads mirrored from half of the viewpoints.
+    """
+    cam = pl.camera
+    towards = np.asarray(cam.position, dtype=float) - np.asarray(cam.focal_point, dtype=float)
+    towards /= max(np.linalg.norm(towards), 1e-12)
+    up = np.asarray(cam.up, dtype=float)
+    right = np.cross(up, towards)
+    right /= max(np.linalg.norm(right), 1e-12)
+    up = np.cross(towards, right)
+    return np.column_stack([right, up, towards])
+
+
+def _add_label(pl, scene: _Scene, text: str, *, center, height, color) -> None:
+    """A name as flat 3D text facing the initial camera — polydata, so
+    every renderer draws it."""
     import pyvista as pv  # noqa: PLC0415
 
-    line = pv.Line(p0, p1)
-    pl.add_mesh(line.tube(radius=radius, n_sides=12), color=color, name=name, smooth_shading=True)
+    try:
+        mesh = pv.Text3D(text, depth=height * 0.02, height=height)
+    except Exception:
+        return
+    if mesh.n_cells == 0:
+        return
+    matrix = np.eye(4)
+    matrix[:3, :3] = _label_frame(pl)
+    matrix[:3, 3] = np.asarray(center, dtype=float)
+    mesh = mesh.transform(matrix, inplace=False)
+    _add_overlay(
+        pl,
+        scene,
+        _Overlay(f"label_{len(scene.overlays)}", "labels", mesh, anchor=tuple(center)),
+        color=color,
+        lighting=False,
+    )
 
 
-def _add_wires(pl, wires, *, unit_scale, radius, geo_scale) -> None:
+def _add_tube(pl, scene: _Scene, name, group, p0, p1, *, color, radius) -> None:
+    import pyvista as pv  # noqa: PLC0415
+
+    tube = pv.Line(p0, p1).tube(radius=radius, n_sides=12)
+    _add_overlay(pl, scene, _Overlay(name, group, tube), color=color, smooth_shading=True)
+
+
+def _add_wires(pl, scene: _Scene, wires, *, unit_scale, radius, geo_scale) -> None:
     import pyvista as pv  # noqa: PLC0415
 
     from magnelio.geo._occ_backend import sample_wire  # noqa: PLC0415
@@ -377,16 +512,17 @@ def _add_wires(pl, wires, *, unit_scale, radius, geo_scale) -> None:
             continue
         path = pv.lines_from_points(pts * unit_scale)
         r = max(float(getattr(wire, "radius", 0.0)) * unit_scale, radius)
-        pl.add_mesh(
-            path.tube(radius=r, n_sides=12),
+        _add_overlay(
+            pl,
+            scene,
+            _Overlay(f"wire_{i}", "wires", path.tube(radius=r, n_sides=12)),
             color=_WIRE_COLOR,
-            name=f"wire_{i}",
             smooth_shading=True,
         )
 
 
-def _face_port_window(port, bounds):
-    """Corner points (display units) of a domain-face port window."""
+def _face_port_window(port, bounds, unit_scale):
+    """Face axis, face position and the (u, v) extents of a port window."""
     from magnelio.mesh.mesher import _normalize_port_face  # noqa: PLC0415
 
     face = _normalize_port_face(port.plane)
@@ -395,16 +531,6 @@ def _face_port_window(port, bounds):
     hi = list(bounds[1::2])
     face_pos = hi[p_axis] if face.is_max else lo[p_axis]
     extent = {a: [lo[a], hi[a]] for a in range(3) if a != p_axis}
-    return p_axis, face_pos, extent
-
-
-def _add_face_port(pl, port, *, bounds, unit_scale, name) -> None:
-    import pyvista as pv  # noqa: PLC0415
-
-    try:
-        p_axis, face_pos, extent = _face_port_window(port, bounds)
-    except Exception:
-        return
     window = getattr(port, "corners", None)
     if window is not None:
         p, q = window
@@ -412,6 +538,16 @@ def _add_face_port(pl, port, *, bounds, unit_scale, name) -> None:
             a = float("-inf") if p[axis] is None else float(p[axis]) * unit_scale
             b = float("inf") if q[axis] is None else float(q[axis]) * unit_scale
             extent[axis] = [max(extent[axis][0], min(a, b)), min(extent[axis][1], max(a, b))]
+    return p_axis, face_pos, extent
+
+
+def _add_face_port(pl, scene: _Scene, port, *, bounds, unit_scale, index, name, labels) -> None:
+    import pyvista as pv  # noqa: PLC0415
+
+    try:
+        p_axis, face_pos, extent = _face_port_window(port, bounds, unit_scale)
+    except Exception:
+        return
     (u, (u0, u1)), (v, (v0, v1)) = sorted(extent.items())
     if not (u0 < u1 and v0 < v1):
         return
@@ -423,11 +559,31 @@ def _add_face_port(pl, port, *, bounds, unit_scale, name) -> None:
         pt[v] = cv
         corners.append(pt)
     quad = pv.PolyData(np.asarray(corners), faces=[4, 0, 1, 2, 3])
-    pl.add_mesh(quad, color=_PORT_COLOR, opacity=0.2, lighting=False, name=name)
-    pl.add_mesh(quad.extract_feature_edges(), color=_PORT_COLOR, line_width=3, name=name + "_edge")
+    _add_overlay(
+        pl,
+        scene,
+        _Overlay(f"port_{index}", "ports", quad),
+        color=_PORT_COLOR,
+        opacity=0.25,
+        lighting=False,
+    )
+    _add_overlay(
+        pl,
+        scene,
+        _Overlay(f"port_{index}_edge", "ports", quad.extract_feature_edges()),
+        color=_PORT_COLOR,
+        line_width=3,
+    )
+    if labels:
+        center = [0.0, 0.0, 0.0]
+        center[p_axis] = face_pos
+        center[u] = 0.5 * (u0 + u1)
+        center[v] = 0.5 * (v0 + v1)
+        height = min(0.06 * _diag(bounds), 0.3 * min(u1 - u0, v1 - v0))
+        _add_label(pl, scene, name, center=center, height=height, color=_PORT_COLOR)
 
 
-def _add_symmetry_planes(pl, boundary_conditions, *, bounds) -> None:
+def _add_symmetry_planes(pl, scene: _Scene, boundary_conditions, *, bounds) -> None:
     """Translucent sheets on the domain faces declared as symmetry planes."""
     import pyvista as pv  # noqa: PLC0415
 
@@ -442,20 +598,21 @@ def _add_symmetry_planes(pl, boundary_conditions, *, bounds) -> None:
         pos = bounds[2 * axis + 1] if face.endswith("max") else bounds[2 * axis]
         b = list(bounds)
         b[2 * axis] = b[2 * axis + 1] = pos
-        pl.add_mesh(
-            pv.Box(b),
+        _add_overlay(
+            pl,
+            scene,
+            _Overlay(f"symmetry_{face}", "symmetry", pv.Box(b)),
             color=_SYMMETRY_COLORS.get(kind, "#888888"),
             opacity=0.2,
             lighting=False,
-            name=f"symmetry_{face}",
         )
 
 
 def _add_overlays(
     pl,
+    scene: _Scene,
     geometry,
     *,
-    bounds,
     unit_scale,
     show_wires: bool,
     show_ports: bool,
@@ -465,7 +622,10 @@ def _add_overlays(
 
     from magnelio.geo.wire import ThinWire  # noqa: PLC0415
 
-    radius = _tube_radius(bounds)
+    bounds = scene.bounds
+    diag = _diag(bounds)
+    radius = diag * 2.5e-3
+    label_height = 0.035 * diag
     shapes = list(geometry)
     wires = [s for s in shapes if isinstance(s, ThinWire)]
     if show_wires and wires:
@@ -474,41 +634,42 @@ def _add_overlays(
             from magnelio.geo._scaling import model_scale  # noqa: PLC0415
 
             geo_scale = model_scale(shapes)
-        _add_wires(pl, wires, unit_scale=unit_scale, radius=radius, geo_scale=geo_scale)
+        _add_wires(pl, scene, wires, unit_scale=unit_scale, radius=radius, geo_scale=geo_scale)
 
-    label_points: list[list[float]] = []
-    label_texts: list[str] = []
+    def line_feature(index, group, name, start, end, color):
+        p0 = np.asarray(start, dtype=float) * unit_scale
+        p1 = np.asarray(end, dtype=float) * unit_scale
+        actor_name = f"{'port' if group == 'ports' else 'element'}_{index}"
+        _add_tube(pl, scene, actor_name, group, p0, p1, color=color, radius=radius)
+        if labels:
+            # Beside the tube, offset along the camera's right axis.
+            center = 0.5 * (p0 + p1) + _label_frame(pl)[:, 0] * (3.0 * radius)
+            _add_label(pl, scene, name, center=center, height=label_height, color=color)
+
     if show_ports:
         for i, port in enumerate(getattr(geometry, "ports", ())):
             name = str(getattr(port, "name", None) or f"port{i + 1}")
             if hasattr(port, "start") and hasattr(port, "end"):
-                p0 = np.asarray(port.start, dtype=float) * unit_scale
-                p1 = np.asarray(port.end, dtype=float) * unit_scale
-                _add_line(pl, p0, p1, color=_PORT_COLOR, radius=radius, name=f"port_{i}")
-                label_points.append(list(0.5 * (p0 + p1)))
-                label_texts.append(name)
+                line_feature(i, "ports", name, port.start, port.end, _PORT_COLOR)
             elif hasattr(port, "plane"):
-                _add_face_port(pl, port, bounds=bounds, unit_scale=unit_scale, name=f"port_{i}")
+                _add_face_port(
+                    pl,
+                    scene,
+                    port,
+                    bounds=bounds,
+                    unit_scale=unit_scale,
+                    index=i,
+                    name=name,
+                    labels=labels,
+                )
         for i, element in enumerate(getattr(geometry, "elements", ())):
-            p0 = np.asarray(element.start, dtype=float) * unit_scale
-            p1 = np.asarray(element.end, dtype=float) * unit_scale
-            _add_line(pl, p0, p1, color=_ELEMENT_COLOR, radius=radius, name=f"element_{i}")
-            label_points.append(list(0.5 * (p0 + p1)))
-            label_texts.append(str(getattr(element, "name", None) or f"element{i + 1}"))
+            name = str(getattr(element, "name", None) or f"element{i + 1}")
+            line_feature(i, "elements", name, element.start, element.end, _ELEMENT_COLOR)
 
-    if labels and label_points:
-        pl.add_point_labels(
-            np.asarray(label_points),
-            label_texts,
-            font_size=12,
-            point_size=1,
-            shape=None,
-            always_visible=True,
-            name="labels",
-        )
-
-    _add_symmetry_planes(pl, getattr(geometry, "boundary_conditions", None), bounds=bounds)
-    pl.add_mesh(pv.Box(bounds).outline(), color=_DOMAIN_COLOR, line_width=1, name="domain")
+    _add_symmetry_planes(pl, scene, getattr(geometry, "boundary_conditions", None), bounds=bounds)
+    scene.domain_actor = pl.add_mesh(
+        pv.Box(bounds).outline(), color=_DOMAIN_COLOR, line_width=1, name="domain"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -523,8 +684,10 @@ def _attach_controls(scene: _Scene, server) -> Any:
     key = f"mio3d_{id(scene)}"
     k_axis, k_pos, k_flip = f"{key}_axis", f"{key}_pos", f"{key}_flip"
     k_min, k_max, k_step = f"{key}_min", f"{key}_max", f"{key}_step"
-    k_reset, k_undo, k_grid = f"{key}_reset", f"{key}_undo", f"{key}_grid"
+    k_reset, k_undo, k_show = f"{key}_reset", f"{key}_undo", f"{key}_show"
     state, ctrl = server.state, server.controller
+    groups = scene.groups_present()
+    titles = dict(_GROUPS)
 
     def slider_range(axis: str | None) -> tuple[float, float, float]:
         if axis is None:
@@ -539,9 +702,8 @@ def _attach_controls(scene: _Scene, server) -> Any:
     state[k_pos] = scene.cut.position
     state[k_flip] = scene.cut.flip
     state[k_min], state[k_max], state[k_step] = lo, hi, step
-    state[k_grid] = scene.grid_actor is not None
-    state[f"{key}_has_grid"] = scene.grid is not None
-    state[f"{key}_unit"] = scene.unit
+    state[k_show] = [g for g in groups if g not in scene.hidden_groups]
+    state[f"{key}_groups"] = [{"title": titles[g], "value": g} for g in groups]
 
     def refresh() -> None:
         _apply_cut(scene)
@@ -594,14 +756,13 @@ def _attach_controls(scene: _Scene, server) -> Any:
         push_state(_CutState(scene.cut.axis, scene.cut.position, flip))
         refresh()
 
-    @state.change(k_grid)
-    def _on_grid(**kwargs):
-        if scene.grid_actor is None:
+    @state.change(k_show)
+    def _on_show(**kwargs):
+        shown = set(kwargs[k_show] or ())
+        hidden = {g for g in groups if g not in shown}
+        if hidden == scene.hidden_groups:
             return
-        scene.show_grid_faces = bool(kwargs[k_grid])
-        actor = scene.plotter.renderer.actors.get("grid_faces")
-        if actor is not None:
-            actor.SetVisibility(scene.show_grid_faces)
+        scene.hidden_groups = hidden
         refresh()
 
     def set_cut(new: _CutState) -> None:
@@ -617,9 +778,8 @@ def _attach_controls(scene: _Scene, server) -> Any:
     @ctrl.set(k_reset)
     def _reset():
         scene.history.append(_CutState(scene.cut.axis, scene.cut.position, scene.cut.flip))
-        set_cut(
-            _CutState(scene.initial_cut.axis, scene.initial_cut.position, scene.initial_cut.flip)
-        )
+        init = scene.initial_cut
+        set_cut(_CutState(init.axis, init.position, init.flip))
 
     @ctrl.set(k_undo)
     def _undo():
@@ -661,14 +821,16 @@ def _attach_controls(scene: _Scene, server) -> Any:
         with vuetify.VBtn(icon=True, size="small", variant="text", click=ctrl[k_reset]):
             vuetify.VIcon("mdi-backup-restore")
             vuetify.VTooltip("Reset cut", activator="parent", location="bottom")
-        if scene.grid is not None:
-            vuetify.VCheckbox(
-                v_model=(k_grid, state[k_grid]),
-                label="Grid",
-                density="compact",
-                hide_details=True,
-                style="margin-left: 8px;",
-            )
+        vuetify.VSelect(
+            v_model=(k_show, state[k_show]),
+            items=(f"{key}_groups", state[f"{key}_groups"]),
+            label="Show",
+            multiple=True,
+            density="compact",
+            hide_details=True,
+            variant="plain",
+            style="width: 150px; margin-left: 8px;",
+        )
 
     return menu_items
 
@@ -687,13 +849,13 @@ def _build_scene(
     show_ports,
     show_wires,
     show_grid,
+    show_labels,
     size,
     render_edges,
     edge_color,
     quality,
     scale_mm,
     camera,
-    labels,
     off_screen,
 ) -> _Scene:
     import pyvista as pv  # noqa: PLC0415
@@ -740,8 +902,6 @@ def _build_scene(
         grid=grid,
         cut=cut_state,
         initial_cut=_CutState(cut_state.axis, cut_state.position, cut_state.flip),
-        edges=render_edges,
-        edge_color=edge_color,
         unit=unit,
     )
 
@@ -753,7 +913,7 @@ def _build_scene(
             faces = grid.extract_surface(algorithm="dataset_surface")
         except TypeError:  # older pyvista without the keyword
             faces = grid.extract_surface()
-        pl.add_mesh(
+        scene.grid_faces_actor = pl.add_mesh(
             faces,
             style="wireframe",
             color="#b0b0b0",
@@ -761,10 +921,9 @@ def _build_scene(
             opacity=0.25,
             name="grid_faces",
         )
-        scene.show_grid_faces = show_grid
-        pl.renderer.actors["grid_faces"].SetVisibility(show_grid)
-        slab = _grid_slab(grid, cut_state)
-        seed = slab if slab is not None else _grid_slab(grid, _CutState("z", bounds[4]))
+        if not show_grid:
+            scene.hidden_groups.add("grid")
+        seed = _grid_slab(grid, cut_state) or _grid_slab(grid, _CutState("z", bounds[4]))
         if seed is not None:
             scene.grid_actor = pl.add_mesh(
                 seed,
@@ -777,24 +936,26 @@ def _build_scene(
                 lighting=False,
                 name="grid_cut",
             )
-            scene.grid_actor.SetVisibility(slab is not None)
+
+    # The camera is fixed before the overlays so that labels can face it.
+    pl.enable_parallel_projection()
+    if camera is not None:
+        pl.camera_position = camera
+    pl.reset_camera()
 
     _add_overlays(
         pl,
+        scene,
         geometry,
-        bounds=bounds,
         unit_scale=unit_scale,
         show_wires=show_wires,
         show_ports=show_ports,
-        labels=labels,
+        labels=show_labels,
     )
 
     _apply_cut(scene)
     pl.add_axes()
-    pl.enable_parallel_projection()
     pl.enable_anti_aliasing("ssaa") if off_screen else pl.enable_anti_aliasing("msaa")
-    if camera is not None:
-        pl.camera_position = camera
     pl.reset_camera()
     return scene
 
@@ -808,6 +969,7 @@ def show_geometry(
     show_ports: bool = True,
     show_wires: bool = True,
     show_grid: bool = True,
+    show_labels: bool = True,
     mode: str | None = None,
     size: tuple[int, int] | None = None,
     render_edges: bool = False,
@@ -827,8 +989,10 @@ def show_geometry(
 
     The cutting plane is axis-aligned.  In the notebook widget it is
     driven from the toolbar (normal axis, position slider, flip side,
-    undo, reset); ``cut`` sets its initial state, and is the only way
-    to place it for a screenshot.
+    undo, reset), which also hides or shows object groups; ``cut``
+    sets the plane's initial state, and is the only way to place it
+    for a screenshot.  The cut applies to the features as well: a port
+    or element in the removed half disappears with it.
 
     Parameters
     ----------
@@ -849,6 +1013,8 @@ def show_geometry(
     show_grid : bool, default True
         With ``mesh``: draw the grid lines on the domain faces.  The
         grid cells on the cut are always shown when a cut is active.
+    show_labels : bool, default True
+        Write the names of ports and lumped elements next to them.
     mode : str, optional
         Where to render in a notebook: ``"client"`` (default) renders
         in the browser and needs no OpenGL in the kernel; ``"server"``
@@ -905,13 +1071,13 @@ def show_geometry(
         show_ports=show_ports,
         show_wires=show_wires,
         show_grid=show_grid,
+        show_labels=show_labels,
         size=size,
         render_edges=render_edges,
         edge_color=edge_color,
         quality=quality,
         scale_mm=scale_mm,
         camera=camera,
-        labels=not (notebook and mode == "client"),
         off_screen=off_screen or (notebook and mode not in (None, "none")),
     )
     pl = scene.plotter
