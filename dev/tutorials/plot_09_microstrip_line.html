@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=6fba94d8"></script>
+    <script src="../_static/documentation_options.js?v=b35bd353"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -558,13 +558,16 @@ structure and the excitation must both respect it.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">plot_cross_section</span><span class="p">(</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">L</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"microstrip cross-section"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_09_microstrip_line_001.png" srcset="../_images/sphx_glr_plot_09_microstrip_line_001.png" alt="microstrip cross-section" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>grid: 14 x 27 x 52 cells
+<img src="../_images/sphx_glr_plot_09_microstrip_line_001.png" srcset="../_images/sphx_glr_plot_09_microstrip_line_001.png" alt="microstrip cross-section" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>grid: 14 x 23 x 52 cells
 </pre></div>
 </div>
 <p>The cross-section plot shows the mesher at work on thin layers: the
 0.8 mm substrate and the 0.2 mm trace anchor grid planes at their
 material boundaries, so the y-cells grade from fine around the
-trace to coarse in the air above.  Nobody meshed this by hand — the
+trace to coarse in the air above — coarse at the <em>air</em> wavelength:
+the bulk cell size is set per slab by the densest material in it,
+so the substrate does not dictate the mesh of the air above it.
+Nobody meshed this by hand — the
 geometry <em>is</em> the meshing instruction.  It also shows the symmetry
 plane doing its work: the drawn structure still spans the full
 width, but the grid covers only the right half of it.</p>
@@ -591,9 +594,9 @@ the 2D cross-section problem numerically, before any time stepping:</p>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Port 'port1' — 1 mode(s)
   cut by symmetry plane(s) xmin (PMC) — impedances are full-model values
-  z_line = 51.54 Ω (numerical)
-  [0] QTEM_lap00   TEM f_c = 0.0000 GHz  z_line = 51.54 Ω
-eps_eff (quasi-static): 2.987
+  z_line = 51.52 Ω (numerical)
+  [0] QTEM_lap00   TEM f_c = 0.0000 GHz  z_line = 51.52 Ω
+eps_eff (quasi-static): 2.985
 </pre></div>
 </div>
 <p>Two numbers to hold on to.  The line impedance comes out at
@@ -641,7 +644,7 @@ everything should go through, nothing should come back.</p>
 </pre></div>
 </div>
 <img src="../_images/sphx_glr_plot_09_microstrip_line_003.png" srcset="../_images/sphx_glr_plot_09_microstrip_line_003.png" alt="straight 50 Ω microstrip" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>|S21|: min -0.00 dB
-|S11|: max -32.8 dB
+|S11|: max -32.9 dB
 </pre></div>
 </div>
 <p>Transmission hugs 0 dB.  The reflection sits near −32 dB at its
@@ -682,9 +685,9 @@ accumulates φ = −β L, so β — and with it
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"eps_eff(</span><span class="si">{</span><span class="n">f_probe</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> GHz) = </span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.interp.html#numpy.interp" title="numpy.interp" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">interp</span></a><span class="p">(</span><span class="n">f_probe</span><span class="p">,</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a><span class="p">,</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">eps_eff_td</span></a><span class="p">))</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_09_microstrip_line_004.png" srcset="../_images/sphx_glr_plot_09_microstrip_line_004.png" alt="microstrip dispersion" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>eps_eff(5 GHz) = 3.031
-eps_eff(10 GHz) = 3.140
-eps_eff(15 GHz) = 3.276
+<img src="../_images/sphx_glr_plot_09_microstrip_line_004.png" srcset="../_images/sphx_glr_plot_09_microstrip_line_004.png" alt="microstrip dispersion" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>eps_eff(5 GHz) = 3.030
+eps_eff(10 GHz) = 3.139
+eps_eff(15 GHz) = 3.275
 </pre></div>
 </div>
 <p>The curve starts at the quasi-static value and rises to ≈ 3.3 at
@@ -705,7 +708,7 @@ and dispersion extracted from the S21 phase.  The next tutorial
 bends this line around corners and builds a real component out of
 it — a Wilkinson power divider, including its lumped isolation
 resistor.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 4.304 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 3.815 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-09-microstrip-line-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/ece9595c24bada77761a617e20b4f479/plot_09_microstrip_line.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_09_microstrip_line.ipynb</span></code></a></p>

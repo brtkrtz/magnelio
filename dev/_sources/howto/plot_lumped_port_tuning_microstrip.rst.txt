@@ -197,7 +197,7 @@ behind the trace end as they would in a real layout.
 
  .. code-block:: none
 
-    line impedance on this grid: 50.27 Ohm
+    line impedance on this grid: 50.23 Ohm
 
 
 
@@ -286,9 +286,9 @@ of 180° at the low end of the band.
  .. code-block:: none
 
     --- current settings — tune until this meets your spec ---
-    worst |S11| in band :  -14.6 dB
-    |S11| < -20 dB up to:   6.19 GHz
-    max |phase error|   :  23.33 deg
+    worst |S11| in band :  -14.4 dB
+    |S11| < -20 dB up to:   5.97 GHz
+    max |phase error|   :  23.73 deg
 
 
 
@@ -332,7 +332,7 @@ resolution or band changes, run this page again.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 4.395 seconds)
+   **Total running time of the script:** (0 minutes 3.750 seconds)
 
 
 .. _sphx_glr_download_howto_plot_lumped_port_tuning_microstrip.py:

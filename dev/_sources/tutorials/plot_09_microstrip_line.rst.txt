@@ -158,17 +158,20 @@ structure and the excitation must both respect it.
 
  .. code-block:: none
 
-    grid: 14 x 27 x 52 cells
+    grid: 14 x 23 x 52 cells
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 113-132
+.. GENERATED FROM PYTHON SOURCE LINES 113-135
 
 The cross-section plot shows the mesher at work on thin layers: the
 0.8 mm substrate and the 0.2 mm trace anchor grid planes at their
 material boundaries, so the y-cells grade from fine around the
-trace to coarse in the air above.  Nobody meshed this by hand — the
+trace to coarse in the air above — coarse at the *air* wavelength:
+the bulk cell size is set per slab by the densest material in it,
+so the substrate does not dictate the mesh of the air above it.
+Nobody meshed this by hand — the
 geometry *is* the meshing instruction.  It also shows the symmetry
 plane doing its work: the drawn structure still spans the full
 width, but the grid covers only the right half of it.
@@ -185,7 +188,7 @@ properties set by a weighted compromise between the two dielectrics.
 There is no textbook formula for that compromise; the port solves
 the 2D cross-section problem numerically, before any time stepping:
 
-.. GENERATED FROM PYTHON SOURCE LINES 132-142
+.. GENERATED FROM PYTHON SOURCE LINES 135-145
 
 .. code-block:: Python
 
@@ -209,14 +212,14 @@ the 2D cross-section problem numerically, before any time stepping:
 
     Port 'port1' — 1 mode(s)
       cut by symmetry plane(s) xmin (PMC) — impedances are full-model values
-      z_line = 51.54 Ω (numerical)
-      [0] QTEM_lap00   TEM f_c = 0.0000 GHz  z_line = 51.54 Ω
-    eps_eff (quasi-static): 2.987
+      z_line = 51.52 Ω (numerical)
+      [0] QTEM_lap00   TEM f_c = 0.0000 GHz  z_line = 51.52 Ω
+    eps_eff (quasi-static): 2.985
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 143-166
+.. GENERATED FROM PYTHON SOURCE LINES 146-169
 
 Two numbers to hold on to.  The line impedance comes out at
 **51.5 Ω** — the trace width was picked to land near 50 Ω, and it
@@ -242,7 +245,7 @@ the substrate under the trace, with a fringing skirt in the air.
 It is drawn across the full width: only half of it was solved, and
 the mirror image is filled in for the picture.
 
-.. GENERATED FROM PYTHON SOURCE LINES 166-170
+.. GENERATED FROM PYTHON SOURCE LINES 169-173
 
 .. code-block:: Python
 
@@ -268,7 +271,7 @@ the mirror image is filled in for the picture.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 171-176
+.. GENERATED FROM PYTHON SOURCE LINES 174-179
 
 Running the line and reading the S-parameters
 ---------------------------------------------
@@ -276,7 +279,7 @@ Running the line and reading the S-parameters
 A matched straight line is the simplest possible S-parameter test:
 everything should go through, nothing should come back.
 
-.. GENERATED FROM PYTHON SOURCE LINES 176-187
+.. GENERATED FROM PYTHON SOURCE LINES 179-190
 
 .. code-block:: Python
 
@@ -305,12 +308,12 @@ everything should go through, nothing should come back.
  .. code-block:: none
 
     |S21|: min -0.00 dB
-    |S11|: max -32.8 dB
+    |S11|: max -32.9 dB
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 188-209
+.. GENERATED FROM PYTHON SOURCE LINES 191-212
 
 Transmission hugs 0 dB.  The reflection sits near −32 dB at its
 worst — and it is worth understanding what that number *is*.  It is
@@ -334,7 +337,7 @@ instrument to extract it: over a line of length L, the mode
 accumulates φ = −β L, so β — and with it
 ε_eff = (c₀ β / ω)² — can be read off per frequency:
 
-.. GENERATED FROM PYTHON SOURCE LINES 209-227
+.. GENERATED FROM PYTHON SOURCE LINES 212-230
 
 .. code-block:: Python
 
@@ -369,14 +372,14 @@ accumulates φ = −β L, so β — and with it
 
  .. code-block:: none
 
-    eps_eff(5 GHz) = 3.031
-    eps_eff(10 GHz) = 3.140
-    eps_eff(15 GHz) = 3.276
+    eps_eff(5 GHz) = 3.030
+    eps_eff(10 GHz) = 3.139
+    eps_eff(15 GHz) = 3.275
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 228-247
+.. GENERATED FROM PYTHON SOURCE LINES 231-250
 
 The curve starts at the quasi-static value and rises to ≈ 3.3 at
 15 GHz — a 10 % walk toward εᵣ across the band, right in the range
@@ -401,7 +404,7 @@ resistor.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 4.304 seconds)
+   **Total running time of the script:** (0 minutes 3.815 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_09_microstrip_line.py:
