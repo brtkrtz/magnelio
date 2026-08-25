@@ -31,6 +31,7 @@ dependencies = [
     "scipy>=1.12",
     "h5py>=3.10",
     "vtk>=9.3",
+    "pyvista>=0.44",
     "matplotlib>=3.8",
     "numba>=0.59",
 ]
@@ -50,6 +51,13 @@ dev = [
 ]
 interop = [
     "scikit-rf",
+]
+jupyter = [
+    "trame>=3.5",
+    "trame-vtk>=2.8",
+    "trame-vuetify>=2.4",
+    "nest_asyncio2",
+    "ipywidgets>=8.0",
 ]
 gpu = [
     "cupy-cuda12x>=13.0",

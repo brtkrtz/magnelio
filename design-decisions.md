@@ -12948,3 +12948,100 @@ cell size their production mesh will have (PCB cross-sections use
 `examples/howto/plot_lumped_port_tuning_microstrip.py`,
 `examples/howto/plot_lumped_port_tuning_cpw.py`,
 `docs/methods/lumped-elements.md` (pointer).
+
+## DD-190 — The 3D view moves from pythonocc's pythreejs renderer to PyVista, with an axis-aligned cutting plane
+
+**Status:** Decided 2026-08-25 after a two-day spike with the developer
+(planning 2026-08-24, browser tests 2026-08-25); implemented 2026-08-25.
+
+**Problem.**  `GeometryModel.plot()` was pythonocc's `JupyterRenderer`,
+a thin wrapper over pythreejs (2.4.2, unmaintained since 2023).
+Magnelio already replaced its scene assembly (`_display_renderer`) to
+survive metre-scale geometry, and the camera could not pan at all —
+pythreejs's `CombinedCamera` only impersonates an orthographic camera,
+so `OrbitControls` computed the pan from undefined fields (fixed on
+2026-08-24 by a real `OrthographicCamera`, `f6836a0`).  Nothing beyond
+orbit/zoom was reachable: no cutting plane, no grid, no ports or wires
+in 3D, and no way to render the view into the documentation (the
+tutorials only *mention* `model.plot()`).
+
+**Decision.**
+
+1. **Backend: PyVista** (`pyvista` becomes a core dependency; VTK
+   already was one for the ParaView export).  The scene is the same
+   VTK data the export writes: solids as `PolyData` from the shared
+   tessellator (`io/paraview.py::_tessellate_shape`, extended by an
+   angular deflection), the FIT grid as a `RectilinearGrid` with the
+   mesher's per-cell material as cell data.  Field monitors reach the
+   viewer on the same path later (out of scope here).
+2. **Cutting plane: axis-aligned, slider-driven** — normal `x/y/z`,
+   position, flip side, undo, reset in the widget toolbar; `cut=`
+   sets the initial state (and is the only handle in a screenshot).
+   One plane cuts *every* solid (closed caps via
+   `clip_closed_surface`) and exposes the grid cells on the cut as a
+   sheet of cell faces coloured by assigned material, offset a hair
+   into the removed half so it never fights the caps for depth.
+   A free plane grabbed in 3D (PyVista's `add_mesh_clip_plane`) was
+   tried and rejected on developer review: the handle competes with
+   the camera for the mouse, has no reset, exists only under
+   server-side rendering, and an oblique grid cut carries no
+   information.  This is also how the cutting plane of the EM suites
+   users come from behaves.
+3. **Rendering mode: client-side by default** (`mode="client"`,
+   vtk.js in the browser).  Verified in the developer's browser as the
+   crisper picture, and it needs no OpenGL in the kernel.  Server
+   rendering (`"server"`, `"trame"`) stays available for scenes too
+   large for the browser.  Outside a notebook the same call opens a
+   VTK window (scripts) or yields a screenshot (Sphinx-Gallery via
+   PyVista's scraper — the tutorials now show the 3D view).
+4. **Transport: trame's own websocket, never the Jupyter comm
+   extension.**  JupyterLab ≥ 4.5 / Notebook 7 execute comm messages
+   in kernel subshells (setting `commsOverSubshells`, default
+   `perCommTarget`) and ipykernel ≥ 7 runs those in a separate
+   thread; `trame-jupyter-extension` carries wslink over such a comm,
+   so VTK rendered from a thread without the GL context — black
+   frames, and a kernel abort whenever the uninitialised
+   `GL_MAX_DRAW_BUFFERS` read came back negative
+   (`vtkOpenGLFramebufferObject::ActivateDrawBuffers`,
+   `bad_array_new_length`).  Proven by replaying the comm transport
+   through `jupyter_client` with and without a `subshell_id` header
+   (internal record `investigations/viewer3d/`).  The viewer sets
+   `pv.global_theme.trame.jupyter_extension_enabled = False` unless
+   the user pinned `PYVISTA_TRAME_JUPYTER_MODE`.  Upstream report
+   pending.
+5. **Overlays** as in `plot_cross_section`, same colours: thin wires
+   and discrete ports / lumped elements as tubes (labels only under
+   server rendering — vtk.js has no label mapper), face ports as
+   translucent windows on the domain face, symmetry planes as tinted
+   sheets, the domain box as an outline; display in millimetres
+   (`scale_mm`).
+6. **Process settings** the viewer applies once: the Viskores
+   (VTK-m) filter overrides are switched off (they try CUDA first and
+   fall back after ~25 s per rectilinear slice), and trame_vtk's
+   VTK 9.6 deprecation chatter is filtered.
+7. **API.**  `model.plot(mesh=None, *, cut, flip, show_ports,
+   show_wires, show_grid, mode, size, render_edges, edge_color,
+   quality, scale_mm, camera)`; the four legacy keywords keep their
+   meaning.  Returns the `pyvista.Plotter` for `mode="none"`, otherwise
+   displays and returns `None`.  `plots.show_geometry` is the same
+   function; `post.plot_3d` is its home.
+
+**Consequences.**  pythreejs and the pythonocc renderer are gone from
+the code path (pythonocc still depends on pythreejs; nothing to
+uninstall).  `pyvista` joins the core dependencies (pure Python, VTK
+was already there); the widget needs the `[jupyter]` extra
+(`trame`, `trame-vtk`, `trame-vuetify`, `nest_asyncio2`).  The
+conda-forge recipe must follow (feedstock PR).  CI and the docs build
+render off-screen (`PYVISTA_OFF_SCREEN`).  KB-026 (empty boolean
+aborts `plot()`) closes as a side effect: a shape without extent is
+skipped with a warning instead of reaching the tessellator.
+
+**Not done here (follow-ups).**  3D field views (`MonitorResult`,
+eigenmodes) on the same datasets the ParaView export builds; a
+`Mesh.plot()` without CAD (the discretised model alone); interactive
+`.vtksz` scenes in the docs (`DynamicScraper`) once PNGs are in.
+
+**Measurements** (developer machine, RTX 4070 SUPER, 2026-08-24/25):
+coax + 80k-cell grid scene 0.9 s to build; 27 M-cell rectilinear
+grid: slice 0.5 s, re-render 11 ms; `glyph(tolerance=…)` 17 s (point
+merging — never use it, subsample instead: 10 ms).

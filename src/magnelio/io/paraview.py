@@ -150,12 +150,14 @@ def _occ_deflection(shape, rel: float) -> float:
     return max(rel * diag, 1e-12)
 
 
-def _tessellate_shape(occ_shape, deflection: float | None):
+def _tessellate_shape(occ_shape, deflection: float | None, angular_deflection: float = 0.5):
     """Triangulate one TopoDS shape into ``(points, triangles)`` arrays.
 
     Returns ``None`` when the shape yields no triangulation (e.g. an
     empty compound).  Face orientation is honoured so outward normals
-    survive into the ``.vtp`` blocks.
+    survive into the ``.vtp`` blocks.  ``angular_deflection`` [rad]
+    bounds the angle between neighbouring facets on curved faces (the
+    OCC default 0.5 leaves visible facets on cylinders).
     """
     from OCC.Core.BRep import BRep_Tool  # noqa: PLC0415
     from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh  # noqa: PLC0415
@@ -165,7 +167,7 @@ def _tessellate_shape(occ_shape, deflection: float | None):
     from OCC.Core.TopoDS import topods  # noqa: PLC0415
 
     defl = deflection if deflection is not None else _occ_deflection(occ_shape, 2e-3)
-    BRepMesh_IncrementalMesh(occ_shape, defl)
+    BRepMesh_IncrementalMesh(occ_shape, defl, False, angular_deflection, True)
 
     points: list[np.ndarray] = []
     tris: list[np.ndarray] = []

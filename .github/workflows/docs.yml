@@ -81,6 +81,7 @@ jobs:
         shell: bash -el {0}
         env:
           MAGNELIO_DOCS_CHANNEL: ${{ steps.target.outputs.channel }}
+          PYVISTA_OFF_SCREEN: "true"
 
       # Everything the publish needs, and nothing else: the built HTML
       # and the switcher list that goes to the site root.

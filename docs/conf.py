@@ -68,7 +68,16 @@ extensions = [
     "sphinx_gallery.gen_gallery",
 ]
 
+# 3D views (``model.plot()``) become screenshots in the gallery: PyVista's
+# scraper collects every plotter a script showed.  Off-screen rendering is
+# forced so the build never asks for a display.
+import pyvista  # noqa: E402
+
+pyvista.BUILDING_GALLERY = True
+pyvista.OFF_SCREEN = True
+
 sphinx_gallery_conf = {
+    "image_scrapers": ("matplotlib", "pyvista"),
     # Gallery sources are runnable scripts in the public examples tree;
     # the HTML pages and .ipynb downloads are generated from them.
     # Tutorials are the ordered curriculum; how-to guides are

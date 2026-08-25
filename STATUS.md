@@ -31,10 +31,10 @@ the developer's reference model): symmetry-plane end-gap port — strip
 ends an end gap short of the ground behind it, lumped port bridges it
 longitudinally on the ``SymmetryPMC`` plane, PMC lid, coax knobs;
 position optimum ≈ **+16·s beyond** the plane (21.4° → 0.74°, sign
-opposite to coax/MS).  Side find: empty boolean results crash
-`plot()` via uncaught C++ exception → KB-026.
-Unit suite 2170
-passed / 3 skipped.  Before that: released v0.4.2 (issue-#2
+opposite to coax/MS).  Side find: empty boolean results crashed
+`plot()` via uncaught C++ exception → KB-026, closed by DD-190.
+Unit suite 2188
+passed / 3 skipped (2026-08-25, after DD-190).  Before that: released v0.4.2 (issue-#2
 boilerplate cuts DD-185/186 + DD-184 export fix) and v0.4.3 (hotfix:
 `Loft` missed the DD-185 name resolution); new versioning rule in
 CLAUDE.md — while 0.x, PATCH covers everything backwards-compatible,
@@ -73,6 +73,7 @@ The plane-wave tutorial remains deferred.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-190** (2026-08-25) — `model.plot()` rebuilt on PyVista: axis-aligned cutting plane from the widget toolbar (normal / slider / flip / undo / reset) that caps every solid and lays the exposed grid cells, coloured by assigned material, over the cut; grid lines on the domain faces; wires, ports, elements, symmetry planes and the domain box overlaid in mm; browser-side rendering by default (`mode=`), a VTK window in scripts, screenshots in the gallery (tutorials 01/02 now show the 3D view).  Transport is trame's own websocket — JupyterLab ≥ 4.5 executes comm messages in ipykernel-7 subshell threads, and VTK rendered there gave black frames / kernel aborts (proven by replaying the comm transport).  `pyvista` is a core dependency, `[jupyter]` extra for the widget; pythreejs path gone; closes KB-026 as a side effect.
 * **DD-189** (2026-08-24, three amendments) — lumped-port termination guides, four pages: *Lumped ports: investigations* (principle + sweeps for all three line types) plus a compact *Lumped port tuning* tool each for coax/microstrip/CPW.  Waveguide port as instrument, WG–WG reference run as grid-exact phase ruler (no closed-form dispersion), phase polarity normalised to n·180° at the low band edge, knobs = end-gap geometry / position / port impedance as geometric re-run sweeps (de-embedding, the single overloaded page, and the CPW slot-port+resistor scheme all dropped on developer review).  CPW = coax picture on the symmetry plane: longitudinal end-gap port (`SymmetryPMC` half model, PMC lid), position optimum +16·s *beyond* the plane.  Kept as general (non-guide) knowledge: `elements=` for post-mesh lumped elements, single-mode test shields.  All three line types shipped; side find KB-026 (empty boolean crashes plot()).
 * **DD-188** (2026-08-24) — second sphinx-gallery "How-to guides" (`examples/howto/` → `docs/howto/`, unnumbered pages, own toctree caption): task recipes separated from the numbered curriculum; stripline page moved out of the tutorials (old URL lapses), filter capstone re-anchored as the close of tutorials 01–12; renumbering the tutorials rejected (URL + prose breakage).
 * **DD-187** (2026-08-24) — post-hoc reference-plane shift `result.deembed({"port": d})` on the exact discrete chain dispersion: `lambda^{-d/dz}` evaluated on the unit circle (passband magnitudes exactly untouched; the off-circle `lambda_symbol` offset would bias by `O(1e-8·d/dz)`), continuum `γ(ω)` fallback for uncertified channels, lumped ports raise; measured to cancel a uniform line to the run's own floor with zero reference-plane offset; `phase`/`plot_s` moved to `SDerivedAccessors`, shared by run results and `SParameterResult`.
