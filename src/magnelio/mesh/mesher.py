@@ -23,7 +23,7 @@ from magnelio.mesh._quality import check_grading_undershoot, check_quality
 from magnelio.mesh.grid import GridLines
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Sequence
 
     from magnelio.geo._subcell import EdgeMaterialData, FaceMaterialData
     from magnelio.materials.material import Material
@@ -38,8 +38,13 @@ class MeshControl:
     The mesher uses two cell-size scales per axis:
 
     * ``h_max`` (bulk) is wavelength-based,
-      ``h_max = λ_min / min_nodes_per_wavelength``.  Cells in regions
-      far from material interfaces are capped at ``h_max``.
+      ``h_max = λ / min_nodes_per_wavelength``.  Cells in regions
+      far from material interfaces are capped at ``h_max``.  With the
+      default ``wavelength_rule="local"`` the wavelength is that of
+      the densest material *in the slab* an axis interval spans, so
+      air around a small dielectric is meshed at the air wavelength;
+      ``"global"`` uses the densest material of the whole model
+      everywhere.
     * ``h_fine`` (interface) is feature-based and **per axis**,
       ``h_fine = min_gap / min_cells_per_feature`` where
       ``min_gap`` is the smallest distance between adjacent material
@@ -106,6 +111,16 @@ class MeshControl:
         time step follows the smallest cell, so the ratio also bounds
         the runtime cost of resolving small edges.  ``0`` disables
         edge planes altogether (material faces and silhouettes only).
+    wavelength_rule : {"local", "global"}, default "local"
+        Which wavelength sets the bulk cell size.  ``"local"``: each
+        axis interval between grid planes is a slab of the domain, and
+        the densest material whose bounding box reaches into that slab
+        sets its bulk size — the air box around a small ceramic or a
+        thin substrate is meshed at the air wavelength, the dielectric
+        at its own.  ``"global"``: the densest material anywhere in the
+        model sets one bulk size for the whole domain.  Feature
+        refinement, grading and the edge floor are the same under both
+        rules; the rules differ only far from material interfaces.
     """
 
     # Design: WP-M4 (per-axis feature-based h_fine).
@@ -120,10 +135,15 @@ class MeshControl:
     dey_mittra_eta: float = 0.4
     min_feature_gap: float | None = None
     max_edge_refinement: float = 4.0
+    wavelength_rule: str = "local"
 
     def __post_init__(self) -> None:
         if self.growth_factor <= 1.0:
             raise ValueError(f"growth_factor must be > 1.0, got {self.growth_factor}")
+        if self.wavelength_rule not in ("local", "global"):
+            raise ValueError(
+                f"wavelength_rule must be 'local' or 'global', got {self.wavelength_rule!r}"
+            )
         if self.max_edge_refinement < 0.0:
             raise ValueError(
                 f"max_edge_refinement must be >= 0 (0 disables edge planes), "
@@ -166,6 +186,78 @@ def resolve_feature_gap(control: MeshControl, shapes) -> float:
     if not math.isfinite(diag) or diag <= 0.0:
         return 1e-6
     return 1e-5 * diag
+
+
+def _refractive_index(material) -> float | None:
+    """``sqrt(max εr · max μr)`` of a propagating material; ``None`` for PEC / no material."""
+    if material is None or material.is_pec:
+        return None
+    return math.sqrt(max(material.epsilon) * max(material.mu))
+
+
+def _local_bulk_sizes(
+    axis_planes: dict[str, list[float]],
+    shapes,
+    background,
+    f_max: float,
+    control: MeshControl,
+    tol: float,
+) -> dict[str, list[float]]:
+    """Bulk cell size per axis interval (DD-192).
+
+    ``wavelength_rule="global"``: every interval takes
+    ``λ(n_max) / min_nodes_per_wavelength`` — the densest material
+    anywhere sets one bulk size for the whole domain.
+
+    ``wavelength_rule="local"``: an interval ``[p0, p1]`` on one axis is
+    a slab of the domain.  The densest material whose analytic bounding
+    box reaches into the slab by more than ``tol`` sets the slab's
+    wavelength.  The background fills whatever no shape covers and so
+    counts in every slab; a shape without an analytic bounding box
+    counts everywhere (conservative — the slab is never meshed coarser
+    than the material in it).  The bounding box is exact for bricks and
+    conservative for curved or rotated bodies, which keeps the rule on
+    the safe side there too.
+    """
+    from magnelio.constants import C0 as c0  # noqa: PLC0415
+    from magnelio.geo._scaling import analytic_bbox  # noqa: PLC0415
+
+    axes = ("x", "y", "z")
+    n_floor = _refractive_index(background) or 1.0
+    entries: list[tuple[float, tuple | None]] = []  # (n, bbox) — bbox None = everywhere
+    for shape in shapes:
+        n_shape = _refractive_index(shape.material)
+        if n_shape is None or n_shape <= n_floor:
+            continue
+        try:
+            box = analytic_bbox(shape)
+        except Exception:  # noqa: BLE001 — exotic shape: counts everywhere
+            box = None
+        entries.append((n_shape, box))
+    n_global = max([n_floor] + [n for n, _ in entries])
+
+    def _h(n: float) -> float:
+        return c0 / f_max / n / control.min_nodes_per_wavelength
+
+    out: dict[str, list[float]] = {}
+    for ax_i, axis in enumerate(axes):
+        planes = axis_planes.get(axis, [])
+        n_intervals = max(0, len(planes) - 1)
+        if control.wavelength_rule == "global" or not entries:
+            out[axis] = [_h(n_global)] * n_intervals
+            continue
+        sizes = []
+        for k in range(n_intervals):
+            p0, p1 = planes[k], planes[k + 1]
+            n_slab = n_floor
+            for n_shape, box in entries:
+                if n_shape <= n_slab:
+                    continue
+                if box is None or (box[0][ax_i] < p1 - tol and box[1][ax_i] > p0 + tol):
+                    n_slab = n_shape
+            sizes.append(_h(n_slab))
+        out[axis] = sizes
+    return out
 
 
 @dataclass
@@ -625,22 +717,23 @@ class Mesh:
 
         from magnelio.constants import C0 as c0  # noqa: PLC0415
 
-        # Determine max refractive index n = sqrt(εr·μr) from all shapes.
-        # This sets the minimum wavelength: λ_min = c₀ / (f_max · n_max).
-        # PEC materials are excluded (they have σ→∞, not a propagating medium).
-        n_max_sq = 1.0  # n² = εr·μr; default = vacuum
-        for shape in shapes:
-            mat = shape.material
-            if mat.is_pec:
-                continue
-            eps_r = max(mat.epsilon)  # worst-case component
-            mu_r = max(mat.mu)
-            n_max_sq = max(n_max_sq, eps_r * mu_r)
-        lambda_min = c0 / f_max / math.sqrt(n_max_sq)
+        # Determine max refractive index n = sqrt(εr·μr) over all shapes
+        # and the background.  This sets the minimum wavelength:
+        # λ_min = c₀ / (f_max · n_max).  PEC materials are excluded (they
+        # have σ→∞, not a propagating medium).
+        n_max = 1.0  # n = sqrt(εr·μr); floor = vacuum
+        for mat in [s.material for s in shapes] + [bg_material]:
+            n_mat = _refractive_index(mat)
+            if n_mat is not None:
+                n_max = max(n_max, n_mat)
+        lambda_min = c0 / f_max / n_max
         h_wavelength = lambda_min / control.min_nodes_per_wavelength
 
-        # Bulk cell-size cap (wavelength-based, applies everywhere far
-        # from material interfaces).
+        # Finest bulk cell size (the densest material's wavelength).
+        # Under the local rule (DD-192) the per-interval bulk sizes are
+        # derived below, once the grid planes are final; this global
+        # value stays the reference for the edge floor, the feature
+        # sentinel of h_fine and the undershoot check.
         h_max = h_wavelength
 
         # DD-191: the floor for edge planes.  h_max / ratio bounds the
@@ -702,6 +795,19 @@ class Mesh:
                     _absorbed_planes[axis] = absorbed
         if _dropped_edges:
             _warn_dropped_edge_planes(_dropped_edges, edge_floor, h_max, control)
+
+        # DD-192: bulk cell size per axis interval.  An interval is a
+        # slab of the domain; the densest material reaching into it
+        # sets the wavelength the slab is meshed for.  ("global": every
+        # interval takes h_wavelength.)
+        h_max_axis = _local_bulk_sizes(
+            axis_planes,
+            shapes,
+            bg_material,
+            f_max,
+            control,
+            feature_gap,
+        )
 
         # Step 2: Generate grid lines for each axis
 
@@ -767,7 +873,7 @@ class Mesh:
                 end_floor["hi"] = feature_end_floor
             grid_lines[axis] = _generate_axis_lines(
                 axis_planes[axis],
-                h_max=h_max,
+                h_max=h_max_axis[axis],
                 h_fine=h_fine_axis[axis],
                 control=control,
                 buffer_ends=buffer_ends[axis],
@@ -831,9 +937,12 @@ class Mesh:
             # size.  If the boundary cells are smaller (due to feature
             # resolution), use MORE cells at the boundary cell size to
             # maintain the same physical depth without a cell-size jump.
-            d_pml_target = pml_thickness_cells * h_wavelength
             for face in pml_faces:
                 axis, side = _face_axis[face]
+                # DD-192: the depth follows the bulk size of the
+                # boundary slab the absorber continues.
+                h_bulk_face = h_max_axis[axis][-1 if side == "max" else 0]
+                d_pml_target = pml_thickness_cells * h_bulk_face
                 nodes = grid_lines[axis]
                 if side == "max":
                     h_bnd = nodes[-1] - nodes[-2]
@@ -1977,9 +2086,21 @@ def _normalize_port_face(plane) -> "BoxFace":
     )
 
 
+def _per_interval(h_max, n_intervals: int) -> list[float]:
+    """Broadcast a scalar bulk size to one value per interval."""
+    if isinstance(h_max, (int, float)):
+        return [float(h_max)] * n_intervals
+    values = [float(h) for h in h_max]
+    if len(values) != n_intervals:
+        raise ValueError(
+            f"per-interval bulk sizes: expected {n_intervals} values, got {len(values)}"
+        )
+    return values
+
+
 def _generate_axis_lines(
     critical_planes: list[float],
-    h_max: float,
+    h_max: "float | Sequence[float]",
     h_fine: float,
     control: MeshControl,
     buffer_ends: tuple[str, ...] = ("lo", "hi"),
@@ -1991,6 +2112,8 @@ def _generate_axis_lines(
     by smallest geometry feature) and grow geometrically by
     ``control.growth_factor`` until they reach ``h_max`` (the bulk size,
     set by the wavelength criterion).  Beyond that, cells are uniform.
+    ``h_max`` is one value for the whole axis or one per interval
+    (DD-192: the slab's own wavelength).
 
     - Interior intervals (both endpoints are material interfaces): ramp
       from both ends, uniform middle when the interval is wide enough.
@@ -2009,6 +2132,7 @@ def _generate_axis_lines(
     n_intervals = len(critical_planes) - 1
     g = control.growth_factor
     min_cell = control.min_cell_size or 0.0
+    h_max_list = _per_interval(h_max, n_intervals)
 
     for i in range(n_intervals):
         p0 = critical_planes[i]
@@ -2019,7 +2143,7 @@ def _generate_axis_lines(
             continue
 
         # Per-interval h_max / h_fine, respecting MeshControl clamps.
-        h_max_eff = min(h_max, interval)
+        h_max_eff = min(h_max_list[i], interval)
         h_fine_eff = min(h_fine, h_max_eff)
         if control.max_cell_size is not None:
             h_max_eff = min(h_max_eff, control.max_cell_size)
@@ -2071,7 +2195,7 @@ def _generate_axis_lines(
     return _enforce_boundary_buffer(
         nodes,
         critical_planes,
-        h_max,
+        h_max_list,
         h_fine,
         control,
         buffer_ends=buffer_ends,
@@ -2094,13 +2218,16 @@ def _axis_end_buffered(widths: "np.ndarray", end: str) -> bool:
 def _enforce_boundary_buffer(
     nodes: list[float],
     critical_planes: list[float],
-    h_max: float,
+    h_max: "float | Sequence[float]",
     h_fine: float,
     control: MeshControl,
     buffer_ends: tuple[str, ...] = ("lo", "hi"),
     end_floor: dict[str, float] | None = None,
 ) -> list[float]:
     """DD-107 post-pass: guarantee the domain-face cell buffer.
+
+    ``h_max`` is the axis bulk size or one value per interval; a
+    regenerated boundary interval uses its own (DD-192).
 
     ``end_floor`` maps an end (``"lo"`` / ``"hi"``) to an additional
     cell floor for its boundary interval — the DD-191 edge floor when
@@ -2133,10 +2260,12 @@ def _enforce_boundary_buffer(
     g = control.growth_factor
     min_cell = control.min_cell_size or 0.0
     n_buf = _BOUNDARY_BUFFER_CELLS
+    h_max_list = _per_interval(h_max, len(critical_planes) - 1)
 
     def _regen_interval(p0: float, p1: float, fine_at_hi: bool, min_cell: float):
         interval = p1 - p0
-        h_max_eff = min(h_max, interval)
+        # fine_at_hi marks the low boundary interval (wall at p0).
+        h_max_eff = min(h_max_list[0] if fine_at_hi else h_max_list[-1], interval)
         h_fine_eff = min(h_fine, h_max_eff)
         if control.max_cell_size is not None:
             h_max_eff = min(h_max_eff, control.max_cell_size)
@@ -2345,7 +2474,12 @@ def _grade_then_uniform(
             widths = _tailed_widths(interval, h_fine, g, min_cell, n_buf)
             return _widths_to_nodes(widths, p_fine, p_coarse)
         n_legacy = _n_one_sided(interval, h_fine, g, min_cell=min_cell)
-        return _one_sided_subdivision(p_fine, p_coarse, n_legacy, g)
+        # DD-193: keep the fine-end cell at h_fine and relax the ratio
+        # instead of letting the integer count push h0 below h_fine.
+        g_eff = g
+        if _h0_one_sided(interval, n_legacy, g) < h_fine * (1.0 - 1e-9):
+            g_eff = _ratio_for_exact_fill(interval, h_fine, n_legacy, g, symmetric=False)
+        return _one_sided_subdivision(p_fine, p_coarse, n_legacy, g_eff)
 
     rest = interval - ramp_sum
     widths: list[float]
@@ -2481,7 +2615,11 @@ def _grade_symmetric_to_uniform(
         if min_cell > 0:
             while n > 1 and _h0_symmetric(interval, n, g) < min_cell * (1.0 - 1e-12):
                 n -= 1
-        return _graded_subdivision(p0, p1, n, g)
+        # DD-193: fine-end cells stay at h_fine; the ratio relaxes.
+        g_eff = g
+        if _h0_symmetric(interval, n, g) < h_fine * (1.0 - 1e-9):
+            g_eff = _ratio_for_exact_fill(interval, h_fine, n, g, symmetric=True)
+        return _graded_subdivision(p0, p1, n, g_eff)
 
     nodes = [p0]
     x = p0
@@ -2557,6 +2695,48 @@ def _graded_subdivision(p0: float, p1: float, n: int, g: float) -> list[float]:
     nodes[-1] = p1
 
     return nodes
+
+
+def _ratio_for_exact_fill(interval: float, h0: float, n: int, g: float, symmetric: bool) -> float:
+    """Growth ratio ``g' in [1, g]`` with which *n* cells starting at ``h0``
+    fill *interval* exactly (DD-193).
+
+    The integer-count refits (``_n_one_sided`` / the symmetric scan)
+    fix the ratio at ``g`` and let the fine-end cell fall out of the
+    count, anywhere between ``h_fine / g`` and ``h_fine`` — an
+    undershoot of up to ``1 − 1/g`` that costs time steps and buys no
+    resolution (DD-105).  Keeping ``h0 = h_fine`` and relaxing the
+    ratio instead fills the interval with the same count, no fine-end
+    undershoot and every neighbour ratio ``≤ g``.  Bisection on the
+    monotone series sum; returns ``g`` when even ratio ``g`` cannot
+    fill the interval from ``h0`` (the caller keeps its refit), and
+    ``1`` when uniform cells of ``h0`` already overfill it.
+    """
+
+    def _total(r: float) -> float:
+        if abs(r - 1.0) < 1e-12:
+            return h0 * n
+        if symmetric:
+            n_half = n // 2
+            series = (r**n_half - 1.0) / (r - 1.0)
+            centre = (r**n_half) if (n % 2 == 1) else 0.0
+            return h0 * (2.0 * series + centre)
+        return h0 * (r**n - 1.0) / (r - 1.0)
+
+    if _total(g) < interval:
+        return g
+    if _total(1.0) >= interval:
+        return 1.0
+    lo, hi = 1.0, g
+    for _ in range(200):
+        mid = 0.5 * (lo + hi)
+        if _total(mid) < interval:
+            lo = mid
+        else:
+            hi = mid
+        if hi - lo < 1e-14:
+            break
+    return hi
 
 
 def _h0_symmetric(interval: float, n: int, g: float) -> float:

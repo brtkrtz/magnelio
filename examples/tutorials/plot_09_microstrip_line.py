@@ -113,7 +113,10 @@ fig, ax = model.plot_cross_section("z", L / 2, mesh=mesh, title="microstrip cros
 # The cross-section plot shows the mesher at work on thin layers: the
 # 0.8 mm substrate and the 0.2 mm trace anchor grid planes at their
 # material boundaries, so the y-cells grade from fine around the
-# trace to coarse in the air above.  Nobody meshed this by hand — the
+# trace to coarse in the air above — coarse at the *air* wavelength:
+# the bulk cell size is set per slab by the densest material in it,
+# so the substrate does not dictate the mesh of the air above it.
+# Nobody meshed this by hand — the
 # geometry *is* the meshing instruction.  It also shows the symmetry
 # plane doing its work: the drawn structure still spans the full
 # width, but the grid covers only the right half of it.

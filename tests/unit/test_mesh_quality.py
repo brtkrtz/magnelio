@@ -259,15 +259,39 @@ class TestUndershootEndToEnd:
         assert min(gap) >= 2.5e-4 * (1.0 - 1e-9)
 
     def test_warning_reaches_the_production_path(self, monkeypatch):
-        # Same geometry with the slack removed: one more cell per gap,
-        # and the mesher says so.
+        # Same geometry with the slack removed AND the DD-193 exact fill
+        # disabled (ratio stays at g): one more cell per gap pushes the
+        # fine-end cell below h_fine, and the mesher says so.
         monkeypatch.setattr(mesher, "_H_FINE_TOL", 0.0)
+        monkeypatch.setattr(
+            mesher, "_ratio_for_exact_fill", lambda interval, h0, n, g, symmetric: g
+        )
         with pytest.warns(UserWarning, match="below the .* this interval asked for"):
             Mesh.from_geometry(
                 self._model(),
                 MeshControl(min_nodes_per_wavelength=10),
                 f_max=2e9,
             )
+
+    def test_exact_fill_replaces_the_undershoot(self, monkeypatch):
+        # DD-193: with the slack removed the gap takes seven cells, but
+        # the fine-end cell stays at h_fine and the ratio relaxes — no
+        # undershoot, no warning.
+        monkeypatch.setattr(mesher, "_H_FINE_TOL", 0.0)
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            mesh = Mesh.from_geometry(
+                self._model(),
+                MeshControl(min_nodes_per_wavelength=10),
+                f_max=2e9,
+            )
+        assert not [w for w in caught if "interval asked for" in str(w.message)]
+        y = mesh.grid.y
+        gap = mesh.grid.dy[(y[:-1] >= 6e-3 - 1e-9) & (y[:-1] < 8e-3 - 1e-9)]
+        assert len(gap) == 7
+        assert min(gap) >= 2.5e-4 * (1.0 - 1e-9)
+        ratios = gap[1:] / gap[:-1]
+        assert max(ratios.max(), (1.0 / ratios).max()) <= 1.3 * (1.0 + 1e-9)
 
     def test_min_cell_size_floors_every_cell(self):
         mesh = Mesh.from_geometry(

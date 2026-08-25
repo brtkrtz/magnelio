@@ -21,6 +21,35 @@ accuracy trade-offs of local grading are standard FDTD/FIT practice
 {cite}`taflovehagness2005`; the specific fixpoint,
 plane-clustering and thin-sheet heuristics are in-house engineering.
 
+### Which wavelength sets the bulk cell size
+
+The bulk cell size is `λ / min_nodes_per_wavelength`, and on a
+tensor-product grid the question is *which* λ.  A grid line spans the
+whole domain, so the finest sensible resolution is per *slab*: each
+interval between two grid planes on an axis is a slab of the domain,
+and the densest material whose bounding box reaches into that slab
+sets the slab's wavelength (DD-192, the default
+`MeshControl(wavelength_rule="local")`).  The air box around a small
+ceramic is meshed at the air wavelength on every axis interval the
+ceramic does not reach; the slabs the ceramic occupies — and every
+slab of an axis the ceramic spans entirely, such as the in-plane
+axes of a full-width substrate — stay at the ceramic's wavelength.
+The background material fills whatever no solid covers and counts in
+every slab.  The bounding box is exact for bricks and conservative
+for curved or rotated bodies, so a slab is never meshed coarser than
+the material in it.  `wavelength_rule="global"` restores the older
+rule — the densest material anywhere sets one bulk size for the
+whole domain.
+
+The two rules differ only far from material interfaces.  Feature
+refinement (`min_cells_per_feature`), the geometric grading from an
+interface into the bulk, the DD-107 domain-face buffer and the edge
+floor below are the same under both; the edge floor keeps the
+densest material's wavelength as its reference, because it bounds
+the time step, and the time step follows the smallest cell anywhere.
+This is the rule hex-mesh generators apply as per-material mesh
+settings; the slab-wise form is its consequence on a tensor grid.
+
 ### Which geometry gets a grid plane
 
 Grid planes come from two passes over the CAD model.  The *face* pass

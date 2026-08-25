@@ -7,6 +7,40 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Added
+
+- The mesher's bulk cell size now follows the wavelength of the
+  material *in the slab*, not of the densest material in the model:
+  each interval between grid planes on an axis is meshed for the
+  densest material whose bounding box reaches into it, so the air
+  around a small ceramic or above a thin substrate is meshed at the
+  air wavelength while the dielectric keeps its own.  A 10 × 10 × 2 mm
+  ε_r = 4.3 block in an 80 mm air box drops from 1.43 M to 254 k cells
+  at the same resolution inside the block.  Feature refinement,
+  grading and the edge floor are unchanged; the new
+  `MeshControl(wavelength_rule="global")` restores the previous rule.
+  A dense background material now counts toward the wavelength as
+  well (it was ignored before).
+
+### Fixed
+
+- An interval too short for the full ramp from the interface cell to
+  the bulk cell no longer lets its integer cell count push the
+  interface cell below the size the geometry asked for (up to 23 %
+  at the default growth factor, which set the time step for the
+  whole model).  The interface cell now stays at its requested size
+  and the growth ratio relaxes instead; neighbouring cells still
+  differ by at most `growth_factor`.
+
+### Changed
+
+- Meshes differ from 0.4.5: coarser far from a dielectric in models
+  with more than one material (the slab rule above), and slightly
+  coarser in short graded intervals (the fix above); cell counts and
+  results quoted in the tutorials are updated accordingly.
+
 ## [0.4.5] - 2026-08-25
 
 ### Added
