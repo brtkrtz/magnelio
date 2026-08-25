@@ -31,6 +31,11 @@ jobs:
           environment-file: environment.yml
           init-shell: bash
           cache-environment: true
+      # The 3D viewer renders screenshots through VTK, which needs an
+      # OpenGL context.  GPU-less runners have neither an EGL device nor
+      # libOSMesa, so a virtual X display with Mesa's software GL is
+      # provided (the same setup PyVista's own CI uses).
+      - uses: pyvista/setup-headless-display-action@v5
       # GPU-gated tests skip on their own without a CUDA device.
       - run: python -m pytest tests/unit -q --no-header
         env:

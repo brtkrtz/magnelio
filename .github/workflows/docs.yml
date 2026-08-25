@@ -77,6 +77,11 @@ jobs:
       # pickles per build — nothing a browser ever asks for, but the
       # publish below would commit all of it, and pickles change
       # wholesale from build to build.
+      # The 3D viewer renders screenshots through VTK, which needs an
+      # OpenGL context.  GPU-less runners have neither an EGL device nor
+      # libOSMesa, so a virtual X display with Mesa's software GL is
+      # provided (the same setup PyVista's own CI uses).
+      - uses: pyvista/setup-headless-display-action@v5
       - run: sphinx-build -b html -d docs/_build/doctrees docs docs/_build/html
         shell: bash -el {0}
         env:
