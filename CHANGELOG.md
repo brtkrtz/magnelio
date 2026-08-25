@@ -7,7 +7,7 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
-## [Unreleased]
+## [0.4.5] - 2026-08-25
 
 ### Added
 
@@ -22,6 +22,14 @@ major version is 0, minor releases may change the public API.
   be finer than `h_max / 4` (or than `min_cell_size`) is dropped, and
   the mesher warns which feature is below the grid and which parameter
   resolves it.  `max_edge_refinement=0` restores the previous meshes.
+- New how-to *Mesh convergence: a ladder around your simulation*: two
+  code blocks to paste before and after your own mesh generation and
+  analysis run the model on a ladder of mesh resolutions and report,
+  per rung, the largest change of any complex S-parameter over the
+  band, with a stop rule (below 0.02 on two consecutive rungs) and the
+  same recipe for eigenfrequencies including an
+  extrapolation to the infinitely fine mesh.  Demonstrated on a microstrip with a capacitive patch
+  and on a pillbox cavity.
 
 ### Changed
 
