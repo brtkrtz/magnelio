@@ -83,7 +83,12 @@ class ScatteringResultMixin(SDerivedAccessors):
         leave behind on coarse meshes.  It assumes the cross-section
         stays that of the port over the shifted length; channels
         without certified discrete line parameters fall back to the
-        mode's continuum ``γ(f)``.
+        mode's continuum ``γ(f)``.  For quasi-TEM channels (microstrip,
+        CPW — inhomogeneous cross-sections on modal Mur) that ``γ`` is
+        the quasi-static one with a frequency-flat ``ε_eff``, so the
+        line's physical dispersion is not removed and remains in the
+        de-embedded matrix; it grows with frequency, shift distance
+        and substrate thickness.
 
         Below its cut-off a channel's factor grows exponentially with
         distance, so de-embedded values there keep the diagnostic

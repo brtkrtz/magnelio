@@ -16,8 +16,41 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Two entries are open as of 2026-08-25: KB-022 and KB-023.**
+**Three entries are open as of 2026-08-25: KB-022, KB-023 and KB-027.**
 Everything else is struck through and resolved.
+
+## KB-027: De-embedding a quasi-TEM feed leaves the line's physical dispersion behind — Open (2026-08-25)
+
+`result.deembed` removes the *discrete* chain propagation only on
+channels the run certified with line parameters `(r, q)` — the DTBC
+channels of homogeneous lines.  A quasi-TEM channel (microstrip, CPW,
+any inhomogeneous cross-section) is terminated by modal Mur in the
+default pipeline, carries no line parameters, and falls back to the
+mode's continuum `γ(ω)`.  That `γ` is the **quasi-static** one of the
+2D Laplace solve: `ε_eff = C'/C'_0` is frequency-flat, so the
+fallback removes a dispersion-free phase from a line whose real
+propagation constant rises with frequency.  The difference stays in
+the de-embedded S-matrix and is attributed to the device under test.
+
+Measured (internal record `investigations/port-deembedding/`): a
+16 mm shielded microstrip (w = 1.2 mm, t = 0.2 mm on 0.8 mm ε_r = 4.3,
+box 8 × 5 mm, PMC symmetry) de-embedded over its full length at
+`min_nodes_per_wavelength = 32` leaves a residual S21 phase of
+−1.1° / −7.9° / −22.4° at 5 / 10 / 15 GHz.  The residual is physics,
+not grid: it is unchanged across the ladder 16 → 48 nodes/λ (−24.4 →
+−22.0°, a 1/N² tail on top of a −21.6° limit), it vanishes for ε_r = 1
+(−0.13° at 15 GHz, the mechanism itself is exact), and it scales with
+the substrate — 12.7° / 22.4° / 39.9° at h = 0.4 / 0.8 / 1.6 mm — the
+signature of microstrip dispersion (Getsinger's ε_eff(f) predicts the
+same order and the same saturation with h).  The same quasi-static
+`γ` sets the Mur reflection coefficient of the channel, which is part
+of why QTEM channels sit at the −26…−39 dB floor.
+
+Consequences: keep quasi-TEM feed lines short when de-embedding, or
+judge mesh convergence on the raw S-matrix (the mesh-convergence
+how-to does).  Closing it means a frequency-dependent quasi-TEM mode —
+a full-wave 2D eigen-solve per frequency, or the band pipeline's
+tracked mode families carrying their own `γ(ω)` into the shift.
 
 ## KB-026: ~~An empty boolean result crashes plot() with a C++ abort~~ — Resolved (2026-08-25)
 

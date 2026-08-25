@@ -14,7 +14,9 @@ port boundary is built from, so de-embedding removes exactly the
 propagation the grid applied — including the numerical-dispersion part
 that the continuum ``exp(-γd)`` would leave behind on coarse meshes.
 Channels without certified line parameters fall back to the mode's
-continuum ``γ(ω)``.
+continuum ``γ(ω)`` — for quasi-TEM channels the quasi-static one
+(frequency-flat ``ε_eff``), which leaves the line's physical
+dispersion in the de-embedded matrix.
 
 Users reach this through ``result.deembed(...)`` on any scattering
 result; this module is the shared implementation behind it.

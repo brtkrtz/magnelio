@@ -471,6 +471,14 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   like a polar vector (magnitude right, mirrored-half arrow sign
   inverted).  CPML min/max faces are not mirror images (KB-023) —
   full-vs-half parity of resonant open structures floors at ~1e-2.
+* **Quasi-TEM de-embedding is quasi-static (KB-027).**  Channels on
+  modal Mur carry no certified line parameters, so `result.deembed`
+  removes `exp(jβd)` with the frequency-flat `ε_eff = C'/C'_0` of the
+  Laplace mode and leaves the line's physical dispersion in the
+  de-embedded matrix — measured 22° of S21 phase over 16 mm of
+  0.8 mm FR4 microstrip at 15 GHz, growing with substrate thickness,
+  zero for ε_r = 1.  Needs a frequency-dependent quasi-TEM mode to
+  close; until then keep quasi-TEM feeds short or compare raw S.
 * **Mesh-build speed.**  DD-101 (`compute_edge_pec_fractions`:
   face-bbox slab prefilter + cached intersectors) and DD-102
   (`compute_face_material_areas`: exact planar section engine, OCC
