@@ -662,11 +662,18 @@ is the magnetic one (tutorial 09).</p>
 <span class="p">)</span>
 <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
 
-<span class="n">mesh</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">mio</span><span class="o">.</span><span class="n">MeshControl</span><span class="p">(</span><span class="n">max_cell_size</span><span class="o">=</span><span class="mf">4e-3</span><span class="p">),</span> <span class="n">f_max</span><span class="o">=</span><span class="mf">1.5e9</span><span class="p">)</span>
+<span class="c1"># The revolved profile's arc junctions and the iris circles get grid</span>
+<span class="c1"># planes of their own; two of them sit 5.6 mm apart, which a 4 mm cell</span>
+<span class="c1"># cannot fill evenly.  Without the floor the mesher splits that gap</span>
+<span class="c1"># into two 2.8 mm cells — and, since the time step follows the smallest</span>
+<span class="c1"># cell, warns about it.  The floor keeps it one cell.</span>
+
+<span class="n">mesh_control</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">MeshControl</span><span class="p">(</span><span class="n">max_cell_size</span><span class="o">=</span><span class="mf">4e-3</span><span class="p">,</span> <span class="n">min_cell_size</span><span class="o">=</span><span class="mf">2.8e-3</span><span class="p">)</span>
+<span class="n">mesh</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">mesh_control</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="mf">1.5e9</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"grid: </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Nx</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Ny</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Nz</span><span class="si">}</span><span class="s2"> cells"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>grid: 26 x 26 x 29 cells
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>grid: 26 x 26 x 30 cells
 </pre></div>
 </div>
 </section>
@@ -683,7 +690,7 @@ nothing periodic about them:</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">lowest_mode</span><span class="p">(</span><span class="n">bcs</span><span class="p">):</span>
     <span class="n">half</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span><span class="n">background</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">,</span> <span class="n">boundary_conditions</span><span class="o">=</span><span class="n">bcs</span><span class="p">)</span>
     <span class="n">half</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
-    <span class="n">m</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span><span class="n">half</span><span class="p">,</span> <span class="n">mio</span><span class="o">.</span><span class="n">MeshControl</span><span class="p">(</span><span class="n">max_cell_size</span><span class="o">=</span><span class="mf">4e-3</span><span class="p">),</span> <span class="n">f_max</span><span class="o">=</span><span class="mf">1.5e9</span><span class="p">)</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span><span class="n">half</span><span class="p">,</span> <span class="n">mesh_control</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="mf">1.5e9</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisEigenmode</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span><span class="o">.</span><span class="n">frequencies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
 
@@ -694,8 +701,8 @@ nothing periodic about them:</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"magnetic walls on the iris planes (pi-mode): </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">f_pi_walls</span></a><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> GHz"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>electric walls on the iris planes (0-mode):  1.2766 GHz
-magnetic walls on the iris planes (pi-mode): 1.3007 GHz
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>electric walls on the iris planes (0-mode):  1.2776 GHz
+magnetic walls on the iris planes (pi-mode): 1.3018 GHz
 </pre></div>
 </div>
 </section>
@@ -719,13 +726,13 @@ without anything to configure.</p>
 <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">freqs</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">freqs</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>phase advance   0.0 deg: 1.2766 GHz
-phase advance  30.0 deg: 1.2782 GHz
-phase advance  60.0 deg: 1.2826 GHz
-phase advance  90.0 deg: 1.2887 GHz
-phase advance 120.0 deg: 1.2948 GHz
-phase advance 150.0 deg: 1.2993 GHz
-phase advance 180.0 deg: 1.3010 GHz
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>phase advance   0.0 deg: 1.2776 GHz
+phase advance  30.0 deg: 1.2792 GHz
+phase advance  60.0 deg: 1.2836 GHz
+phase advance  90.0 deg: 1.2897 GHz
+phase advance 120.0 deg: 1.2959 GHz
+phase advance 150.0 deg: 1.3005 GHz
+phase advance 180.0 deg: 1.3021 GHz
 </pre></div>
 </div>
 </section>
@@ -776,8 +783,8 @@ published values are 1.300 GHz for the <span class="math notranslate nohighlight
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_18_periodic_tesla_cell_002.png" srcset="../_images/sphx_glr_plot_18_periodic_tesla_cell_002.png" alt="TM$_{010}$ passband of the TESLA mid-cell" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>pi-mode:              1.3010 GHz (design 1.3000 GHz)
-cell-to-cell coupling: 1.89 % (published 1.87 %)
+<img src="../_images/sphx_glr_plot_18_periodic_tesla_cell_002.png" srcset="../_images/sphx_glr_plot_18_periodic_tesla_cell_002.png" alt="TM$_{010}$ passband of the TESLA mid-cell" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>pi-mode:              1.3021 GHz (design 1.3000 GHz)
+cell-to-cell coupling: 1.90 % (published 1.87 %)
 </pre></div>
 </div>
 <p>The band edges from the periodic solves land on the wall-type solves
@@ -821,7 +828,7 @@ travelling wave is not, and no combination of walls would produce it.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_18_periodic_tesla_cell_003.png" srcset="../_images/sphx_glr_plot_18_periodic_tesla_cell_003.png" alt="$\pi$-mode (standing wave), 1.3010 GHz, $2\pi/3$-mode (travelling wave), 1.2948 GHz" class = "sphx-glr-single-img"/></section>
+<img src="../_images/sphx_glr_plot_18_periodic_tesla_cell_003.png" srcset="../_images/sphx_glr_plot_18_periodic_tesla_cell_003.png" alt="$\pi$-mode (standing wave), 1.3021 GHz, $2\pi/3$-mode (travelling wave), 1.2959 GHz" class = "sphx-glr-single-img"/></section>
 <section id="where-to-go-next">
 <h2>Where to go next<a class="headerlink" href="#where-to-go-next" title="Link to this heading">#</a></h2>
 <p>New in this tutorial: a <code class="docutils literal notranslate"><span class="pre">&quot;Periodic&quot;</span></code> face pair and
@@ -833,7 +840,7 @@ parameter table leaves implicit.  The same pair of declarations
 serves any periodic structure whose unit cell fits in a box —
 disk-loaded waveguides, photonic-crystal slabs, frequency-selective
 surfaces at normal incidence.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (3 minutes 50.347 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (4 minutes 14.441 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-18-periodic-tesla-cell-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/784a329cd82bda387fe74c6dd69b284a/plot_18_periodic_tesla_cell.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_18_periodic_tesla_cell.ipynb</span></code></a></p>

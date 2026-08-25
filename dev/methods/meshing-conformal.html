@@ -473,6 +473,37 @@ grading between them, DD-028).  Graded Cartesian meshes and the
 accuracy trade-offs of local grading are standard FDTD/FIT practice
 <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>; the specific fixpoint,
 plane-clustering and thin-sheet heuristics are in-house engineering.</p>
+<section id="which-geometry-gets-a-grid-plane">
+<h3>Which geometry gets a grid plane<a class="headerlink" href="#which-geometry-gets-a-grid-plane" title="Link to this heading">#</a></h3>
+<p>Grid planes come from two passes over the CAD model.  The <em>face</em> pass
+places a plane on every planar face with an axis-parallel normal and
+on the axis-normal tangent positions of cylinders and spheres — the
+material boundaries.  The <em>edge</em> pass (DD-191) places a plane wherever
+a B-rep edge lies flat in an axis-normal plane: the circle where a
+chamfer cone meets a cylinder, the straight line where a fillet leaves
+a box face, the section curves of a loft, the iris and equator
+circles of a revolved profile.  These are the positions where a
+body’s cross-section changes character along an axis, and they are
+invisible to the face pass (a chamfer is a cone; a fillet is a quarter
+cylinder whose tangent positions lie outside its trimmed extent).
+Only sharp edges count: seam edges, degenerated edges and the split
+lines a Boolean leaves between two faces of one surface contribute
+nothing — a cylinder’s seam is a straight line through its axis and
+would put a phantom plane there.</p>
+<p>Edge planes are a <em>soft</em> class.  They never move or outrank a material
+plane, and they ask for one cell across the interval they bound —
+enough for the cell’s midplane to see the feature — rather than the
+<code class="docutils literal notranslate"><span class="pre">min_cells_per_feature</span></code> a material gap gets.  They are floored:
+an edge plane whose cell would be smaller than
+<code class="docutils literal notranslate"><span class="pre">h_max</span> <span class="pre">/</span> <span class="pre">max_edge_refinement</span></code> (default 4), or than <code class="docutils literal notranslate"><span class="pre">min_cell_size</span></code>,
+is dropped and reported by a warning that names the coarsest dropped
+position, the cell it would have created and the ratio that keeps it.  The ratio
+bounds the time-step cost of resolving small edges (the explicit
+loop takes one step bounded by the smallest cell anywhere);
+<code class="docutils literal notranslate"><span class="pre">max_edge_refinement=0</span></code> switches the edge pass off.</p>
+<p>Why a feature below the grid is <em>silent</em> rather than approximately
+represented is a property of the conformal material matrices, next.</p>
+</section>
 </section>
 <section id="conformal-sub-cell-material-matrices-partially-filled-cells">
 <h2>Conformal sub-cell material matrices (partially filled cells)<a class="headerlink" href="#conformal-sub-cell-material-matrices-partially-filled-cells" title="Link to this heading">#</a></h2>
@@ -486,6 +517,18 @@ This family of techniques — retaining the standard leapfrog update and
 encoding sub-cell geometry purely in the material matrices — was
 introduced for FIT by Krietenstein, Schuhmann, Thoma and Weiland
 <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id15" title="Bernd Krietenstein, Rolf Schuhmann, Peter Thoma, and Thomas Weiland. The perfect boundary approximation technique facing the big challenge of high precision field computation. In Proceedings of the XIX International Linear Accelerator Conference (LINAC 98), 860–862. Chicago, IL, 1998.">7</a>]</span>.</p>
+<p>The average is taken over the dual face <em>transverse</em> to the edge; it
+does not integrate along the edge.  A boundary that crosses the grid
+edges is therefore resolved continuously — moving a cylinder’s radius
+by a twentieth of a cell moves a resonance by a proportionate,
+linearly scaling amount — while a feature that varies <em>along</em> the
+edges inside one cell layer has no lever at all until it reaches the
+layer’s midplane.  A chamfer or a shallow recess on a face that is
+smaller than half a cell contributes exactly nothing, and then
+switches on in one step when it crosses the midplane.  This is the
+reason for the edge pass above: with a grid plane at the chamfer’s
+onset the chamfer occupies a cell layer of its own, whose dual faces
+see it.  Where the edge floor drops that plane, the mesher says so.</p>
 <p>For perfectly conducting boundaries the classifier additionally
 shortens partially-PEC edges (free-length weighting), which is the
 conformal-PEC idea of Dey and Mittra <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id16" title="Supriyo Dey and Raj Mittra. A locally conformal finite-difference time-domain (FDTD) algorithm for modeling three-dimensional perfectly conducting objects. IEEE Microwave and Guided Wave Letters, 7(9):273–275, 1997. doi:10.1109/75.622536.">8</a>]</span>
@@ -538,8 +581,8 @@ square-lattice Green’s function, as given in the thin-wire literature
 <h2>Mesh quality safeguards<a class="headerlink" href="#mesh-quality-safeguards" title="Link to this heading">#</a></h2>
 <p>Hard minimum cell size with floor-aware refits and a longitudinal
 series-<span class="math notranslate nohighlight">\(\varepsilon\)</span> correction (DD-060), per-axis fine resolution
-(DD-061) and a permanent 30-case stress sentinel (DD-062) are
-in-house engineering.</p>
+(DD-061), a permanent 30-case stress sentinel (DD-062) and the
+reported edge floor (DD-191) are in-house engineering.</p>
 </section>
 </section>
 
@@ -591,7 +634,10 @@ in-house engineering.</p>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#geometry-kernel-and-material-filling">Geometry kernel and material filling</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#graded-cartesian-mesh">Graded Cartesian mesh</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#graded-cartesian-mesh">Graded Cartesian mesh</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#which-geometry-gets-a-grid-plane">Which geometry gets a grid plane</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#conformal-sub-cell-material-matrices-partially-filled-cells">Conformal sub-cell material matrices (partially filled cells)</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#thin-conducting-sheets">Thin conducting sheets</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#thin-wire-sub-cell-model">Thin-wire sub-cell model</a></li>

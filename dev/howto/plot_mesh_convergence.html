@@ -1,0 +1,941 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Mesh convergence: a ladder around your simulation &#8212; Magnelio Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+
+    <script src="../_static/documentation_options.js?v=92caab9e"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'howto/plot_mesh_convergence';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/dev/howto/plot_mesh_convergence.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Striplines as pickups and kickers: beam-coupling figures from S-parameter runs" href="plot_stripline_pickup_kicker.html" />
+    <link rel="prev" title="Lumped port tuning: microstrip" href="plot_lumped_port_tuning_microstrip.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Magnelio Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../methods/index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../methods/index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_investigations.html">Lumped ports: investigations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_coax.html">Lumped port tuning: coaxial line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_cpw.html">Lumped port tuning: coplanar waveguide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_microstrip.html">Lumped port tuning: microstrip</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Mesh convergence: a ladder around your simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_stripline_pickup_kicker.html">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">How-to guides</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Mesh convergence: a ladder around your simulation</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-howto-plot-mesh-convergence-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code.</p>
+</div>
+<section class="sphx-glr-example-title" id="mesh-convergence-a-ladder-around-your-simulation">
+<span id="sphx-glr-howto-plot-mesh-convergence-py"></span><h1>Mesh convergence: a ladder around your simulation<a class="headerlink" href="#mesh-convergence-a-ladder-around-your-simulation" title="Link to this heading">#</a></h1>
+<p>Nothing inside a single run tells you how far its result is from the
+converged one.  The instrument that does is a <em>ladder</em>: the same
+model on successively finer meshes, one number read off each rung,
+and a stop rule for the number.  Commercial suites hide this loop
+behind an “adaptive mesh refinement” button; this page is the loop,
+written out, so it wraps around whatever you are simulating.</p>
+<p>Three blocks.  <strong>Before</strong> your simulation: one function that turns a
+rung number into a <code class="docutils literal notranslate"><span class="pre">MeshControl</span></code>.  <strong>Your simulation</strong>: unchanged,
+except that it takes that <code class="docutils literal notranslate"><span class="pre">MeshControl</span></code> instead of a hard-coded
+one.  <strong>After</strong> it: record the quantity you design with, compare it
+with the previous rung, stop when the change is below your tolerance
+twice in a row.  The first half of the page does this for
+S-parameters, the second for a resonance frequency; both blocks copy
+into any script.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.jn_zeros.html#scipy.special.jn_zeros" title="scipy.special.jn_zeros" class="sphx-glr-backref-module-scipy-special sphx-glr-backref-type-py-function"><span class="n">jn_zeros</span></a>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span><span class="p">,</span> <span class="n">ports</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">C0</span>
+</pre></div>
+</div>
+<section id="block-1-before-one-number-drives-both-mesh-scales">
+<h2>Block 1 — before: one number drives both mesh scales<a class="headerlink" href="#block-1-before-one-number-drives-both-mesh-scales" title="Link to this heading">#</a></h2>
+<p>The mesh has two knobs: <code class="docutils literal notranslate"><span class="pre">min_nodes_per_wavelength</span></code> sets the bulk
+cell, <code class="docutils literal notranslate"><span class="pre">min_cells_per_feature</span></code> the cell at material interfaces.  A
+ladder must scale <em>both</em>, in a fixed ratio — a ladder over the
+wavelength knob alone produces the same grid rung after rung as
+long as the interface cells dominate it, then jumps.  Any other
+mesh setting your model needs (<code class="docutils literal notranslate"><span class="pre">min_cell_size</span></code>,
+<code class="docutils literal notranslate"><span class="pre">max_edge_refinement</span></code>, …) goes in here too and stays fixed.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">rung</span><span class="p">(</span><span class="n">mnpw</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""MeshControl for one rung: four bulk cells per interface cell."""</span>
+    <span class="k">return</span> <span class="n">mio</span><span class="o">.</span><span class="n">MeshControl</span><span class="p">(</span>
+        <span class="n">min_nodes_per_wavelength</span><span class="o">=</span><span class="n">mnpw</span><span class="p">,</span>
+        <span class="n">min_cells_per_feature</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">mnpw</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="n">LADDER</span> <span class="o">=</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">48</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="your-simulation-wrapped-in-a-function">
+<h2>Your simulation — wrapped in a function<a class="headerlink" href="#your-simulation-wrapped-in-a-function" title="Link to this heading">#</a></h2>
+<p>Whatever the script normally does between building the geometry
+and reading the result goes into one function that takes the
+<code class="docutils literal notranslate"><span class="pre">MeshControl</span></code> and returns the mesh and the result object.  The example is a
+50 Ω microstrip (the cross-section of tutorial 09, half-modelled
+on its symmetry plane) with a rectangular patch widening the trace
+in the middle: a shunt capacitance that reflects a good deal more
+than the −30 dB termination floor of a quasi-TEM port, so the
+S-parameters are the device’s, not the port’s.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">h_sub</span><span class="p">,</span> <span class="n">w_strip</span><span class="p">,</span> <span class="n">t_strip</span> <span class="o">=</span> <span class="mf">0.8e-3</span><span class="p">,</span> <span class="mf">1.2e-3</span><span class="p">,</span> <span class="mf">0.2e-3</span>
+<span class="n">W_box</span><span class="p">,</span> <span class="n">H_box</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="mf">8.0e-3</span><span class="p">,</span> <span class="mf">5.0e-3</span><span class="p">,</span> <span class="mf">16.0e-3</span>
+<span class="n">w_patch</span><span class="p">,</span> <span class="n">l_patch</span> <span class="o">=</span> <span class="mf">4.0e-3</span><span class="p">,</span> <span class="mf">3.0e-3</span>
+<span class="n">F_MAX</span> <span class="o">=</span> <span class="mf">15.0e9</span>
+<span class="n">fr4</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Material</span><span class="o">.</span><span class="n">from_isotropic</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"FR4"</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">4.3</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">simulate</span><span class="p">(</span><span class="n">mesh_control</span><span class="p">):</span>
+    <span class="n">substrate</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="n">W_box</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">W_box</span><span class="p">,</span> <span class="n">h_sub</span><span class="p">,</span> <span class="n">L</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="n">fr4</span><span class="p">)</span>
+    <span class="n">air</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="n">W_box</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">h_sub</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">W_box</span><span class="p">,</span> <span class="n">H_box</span> <span class="o">-</span> <span class="n">h_sub</span><span class="p">,</span> <span class="n">L</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span><span class="p">)</span>
+    <span class="n">strip</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="n">w_strip</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">h_sub</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">w_strip</span><span class="p">,</span> <span class="n">t_strip</span><span class="p">,</span> <span class="n">L</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+    <span class="n">patch</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span>
+        <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="n">w_patch</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">h_sub</span><span class="p">,</span> <span class="p">(</span><span class="n">L</span> <span class="o">-</span> <span class="n">l_patch</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
+        <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">w_patch</span><span class="p">,</span> <span class="n">t_strip</span><span class="p">,</span> <span class="n">l_patch</span><span class="p">),</span>
+        <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">trace</span> <span class="o">=</span> <span class="n">strip</span> <span class="o">+</span> <span class="n">patch</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span><span class="n">boundary_conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">"xmin"</span><span class="p">:</span> <span class="s2">"SymmetryPMC"</span><span class="p">})</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">substrate</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">air</span> <span class="o">-</span> <span class="n">trace</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">trace</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add_port</span><span class="p">(</span><span class="n">ports</span><span class="o">.</span><span class="n">PortWaveguide</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"port1"</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s2">"zmin"</span><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add_port</span><span class="p">(</span><span class="n">ports</span><span class="o">.</span><span class="n">PortWaveguide</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"port2"</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s2">"zmax"</span><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">mesh</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">mesh_control</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="n">F_MAX</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mesh</span><span class="p">,</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">excited</span><span class="o">=</span><span class="p">[</span><span class="s2">"port1"</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+<section id="block-2-after-the-number-and-the-stop-rule">
+<h2>Block 2 — after: the number and the stop rule<a class="headerlink" href="#block-2-after-the-number-and-the-stop-rule" title="Link to this heading">#</a></h2>
+<p>Every rung has its own frequency axis, so the S-parameters are
+first put on one common axis.  The number compared is the largest
+magnitude of the <em>complex</em> difference between two consecutive
+rungs, over the band and over all S-parameters you care about:</p>
+<div class="math notranslate nohighlight">
+\[\Delta S = \max_{f,\,ij} \; \bigl| S_{ij}^{(k)}(f) - S_{ij}^{(k-1)}(f) \bigr|\]</div>
+<p>and the stop rule is: <span class="math notranslate nohighlight">\(\Delta S\)</span> below a threshold on two
+consecutive rungs.  0.02 is the customary threshold.  It is the
+same scale a bench measurement lives on — 0.02 is a return-loss
+uncertainty of −34 dB, or 0.17 dB on a transmission near 0 dB —
+and, unlike a difference in decibels, it neither blows up at a
+transmission zero nor vanishes where a curve happens to be flat.
+The <em>first</em> rung of the passing pair is your production mesh: it
+is within tolerance of the next finer one, and the rung after that
+confirms the agreement was not a coincidence.  <code class="docutils literal notranslate"><span class="pre">converged_rung</span></code>
+below is that rule.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">F_COMMON</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.linspace.html#numpy.linspace" title="numpy.linspace" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">linspace</span></a><span class="p">(</span><span class="mf">1.0e9</span><span class="p">,</span> <span class="n">F_MAX</span><span class="p">,</span> <span class="mi">141</span><span class="p">)</span>
+<span class="n">PAIRS</span> <span class="o">=</span> <span class="p">[(</span><span class="s2">"port1"</span><span class="p">,</span> <span class="s2">"port1"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"port2"</span><span class="p">,</span> <span class="s2">"port1"</span><span class="p">)]</span>
+<span class="n">TOL</span> <span class="o">=</span> <span class="mf">0.02</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">s_table</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Complex S-parameters of `PAIRS` on the common axis, shape (pairs, f)."""</span>
+    <span class="k">return</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">([</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.interp.html#numpy.interp" title="numpy.interp" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">interp</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">F_COMMON</span></a><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">f_axis</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">S</span></a><span class="p">(</span><span class="o">*</span><span class="n">p</span><span class="p">))</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">PAIRS</span><span class="p">])</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">converged_rung</span><span class="p">(</span><span class="n">changes</span><span class="p">,</span> <span class="n">tol</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Index of the first rung whose change *and* the next rung's are below tol.</span>
+
+<span class="sd">    ``changes[k]`` is the change from rung k-1 to rung k (``nan`` for</span>
+<span class="sd">    the first rung).  Returns ``None`` when the ladder never settles.</span>
+<span class="sd">    """</span>
+    <span class="n">ok</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="o">&lt;</span> <span class="n">tol</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">changes</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ok</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ok</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="ow">and</span> <span class="n">ok</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">k</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="n">history</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># (mnpw, S-table, ΔS to the previous rung)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"mnpw   cells    time    max |ΔS|   max Δ|S|"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">mnpw</span> <span class="ow">in</span> <span class="n">LADDER</span><span class="p">:</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+    <span class="n">mesh</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="n">simulate</span><span class="p">(</span><span class="n">rung</span><span class="p">(</span><span class="n">mnpw</span><span class="p">))</span>
+    <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">S</span></a> <span class="o">=</span> <span class="n">s_table</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="n">cells</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">Nx</span> <span class="o">*</span> <span class="n">mesh</span><span class="o">.</span><span class="n">Ny</span> <span class="o">*</span> <span class="n">mesh</span><span class="o">.</span><span class="n">Nz</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mnpw</span><span class="si">:</span><span class="s2">4d</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">cells</span><span class="si">:</span><span class="s2">6d</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">t</span><span class="si">:</span><span class="s2">5.1f</span><span class="si">}</span><span class="s2"> s"</span>
+    <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">delta</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.nan" title="numpy.nan" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">nan</span></a>
+    <span class="k">if</span> <span class="n">history</span><span class="p">:</span>
+        <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">delta</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">S</span></a> <span class="o">-</span> <span class="n">history</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">delta_mag</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">S</span></a><span class="p">)</span> <span class="o">-</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><span class="n">history</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">line</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"   </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">delta</span></a><span class="si">:</span><span class="s2">8.4f</span><span class="si">}</span><span class="s2">   </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">delta_mag</span></a><span class="si">:</span><span class="s2">8.4f</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="s1">'ok'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">delta</span></a><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">TOL</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2">"</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+    <span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">mnpw</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">S</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">delta</span></a><span class="p">))</span>
+
+<span class="n">k</span> <span class="o">=</span> <span class="n">converged_rung</span><span class="p">([</span><span class="n">h</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">history</span><span class="p">],</span> <span class="n">TOL</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">k</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"not converged within the ladder (ΔS &lt; </span><span class="si">{</span><span class="n">TOL</span><span class="si">}</span><span class="s2"> on two consecutive rungs)"</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"converged: mnpw </span><span class="si">{</span><span class="n">history</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> (ΔS &lt; </span><span class="si">{</span><span class="n">TOL</span><span class="si">}</span><span class="s2"> on this rung and the next)"</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>mnpw   cells    time    max |ΔS|   max Δ|S|
+   8    2805    1.0 s
+  12    6600    1.7 s     0.1321     0.0246
+  16   10800    2.4 s     0.0372     0.0120
+  24   26460    5.1 s     0.0448     0.0120
+  32   47250    9.3 s     0.0143     0.0036  ok
+  48  119232   36.7 s     0.0173     0.0046  ok
+converged: mnpw 32 (ΔS &lt; 0.02 on this rung and the next)
+</pre></div>
+</div>
+</section>
+<section id="the-curves-behind-the-number">
+<h2>The curves behind the number<a class="headerlink" href="#the-curves-behind-the-number" title="Link to this heading">#</a></h2>
+<p>Top: the return loss of every rung on one axis — the family closes
+up as the ladder climbs.  Bottom: <span class="math notranslate nohighlight">\(|\Delta S|\)</span> against
+frequency for each pair of rungs, with the threshold drawn in.
+Where the deviation sits tells you what still moves.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <span class="p">(</span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax_s</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax_d</span></a><span class="p">)</span> <span class="o">=</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">6.4</span><span class="p">,</span> <span class="mf">6.6</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">mnpw</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">S</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">_</span></a> <span class="ow">in</span> <span class="n">history</span><span class="p">:</span>
+    <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html#matplotlib.axes.Axes.plot" title="matplotlib.axes.Axes.plot" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax_s</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">F_COMMON</span></a> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <span class="mi">20</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">S</span></a><span class="p">[</span><span class="mi">0</span><span class="p">])),</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"mnpw </span><span class="si">{</span><span class="n">mnpw</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_ylabel.html#matplotlib.axes.Axes.set_ylabel" title="matplotlib.axes.Axes.set_ylabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax_s</span><span class="o">.</span><span class="n">set_ylabel</span></a><span class="p">(</span><span class="s2">"|S11| [dB]"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax_s</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">"capacitive patch on a microstrip, across the ladder"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.grid.html#matplotlib.axes.Axes.grid" title="matplotlib.axes.Axes.grid" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax_s</span><span class="o">.</span><span class="n">grid</span></a><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax_s</span><span class="o">.</span><span class="n">legend</span></a><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<span class="k">for</span> <span class="p">(</span><span class="n">m0</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">S0</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">_</span></a><span class="p">),</span> <span class="p">(</span><span class="n">m1</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">S1</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">_</span></a><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">history</span><span class="p">,</span> <span class="n">history</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+    <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html#matplotlib.axes.Axes.plot" title="matplotlib.axes.Axes.plot" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax_d</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">F_COMMON</span></a> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">S1</span></a> <span class="o">-</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">S0</span></a><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">m0</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">m1</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.axhline.html#matplotlib.axes.Axes.axhline" title="matplotlib.axes.Axes.axhline" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax_d</span><span class="o">.</span><span class="n">axhline</span></a><span class="p">(</span><span class="n">TOL</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"k"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">"--"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"threshold </span><span class="si">{</span><span class="n">TOL</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_yscale.html#matplotlib.axes.Axes.set_yscale" title="matplotlib.axes.Axes.set_yscale" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax_d</span><span class="o">.</span><span class="n">set_yscale</span></a><span class="p">(</span><span class="s2">"log"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_xlabel.html#matplotlib.axes.Axes.set_xlabel" title="matplotlib.axes.Axes.set_xlabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax_d</span><span class="o">.</span><span class="n">set_xlabel</span></a><span class="p">(</span><span class="s2">"frequency [GHz]"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_ylabel.html#matplotlib.axes.Axes.set_ylabel" title="matplotlib.axes.Axes.set_ylabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax_d</span><span class="o">.</span><span class="n">set_ylabel</span></a><span class="p">(</span><span class="s2">"max |ΔS| over S11, S21"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.grid.html#matplotlib.axes.Axes.grid" title="matplotlib.axes.Axes.grid" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax_d</span><span class="o">.</span><span class="n">grid</span></a><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s2">"both"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax_d</span><span class="o">.</span><span class="n">legend</span></a><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_mesh_convergence_001.png" srcset="../_images/sphx_glr_plot_mesh_convergence_001.png" alt="capacitive patch on a microstrip, across the ladder" class = "sphx-glr-single-img"/></section>
+<section id="what-the-number-sees">
+<h2>What the number sees<a class="headerlink" href="#what-the-number-sees" title="Link to this heading">#</a></h2>
+<p>Two things to know before trusting it.</p>
+<p>The deviation grows towards the top of the band and lives in the
+<em>phase</em> of S21: the magnitude-only column of the table is several
+times smaller than the complex one.  That is the numerical
+dispersion of the feed lines — 16 mm of line is one and a half
+wavelengths at 15 GHz, and the grid propagates a wave a little too
+slowly on a coarse mesh.  A ladder on the bare line without the
+patch gives nearly the same <span class="math notranslate nohighlight">\(\Delta S\)</span> as this one.  The
+complex criterion is right to count phase (a filter or a coupler
+depends on it), but it means that long leads to the ports set the
+rung, not the device.  Keep the leads as short as the ports allow.</p>
+<p>The ladder is not monotone: the deviation went <em>up</em> from the
+12 → 16 pair to the 16 → 24 pair.  On a conformal grid the error
+depends on where the grid lines happen to cut the trace edges and
+the substrate, and that changes from rung to rung.  This is why
+the stop rule asks for two consecutive passes and not for one.</p>
+<p>And a caveat that belongs to strongly resonant structures: a small
+shift of a resonance moves the S-parameters at that frequency by a
+lot, so <span class="math notranslate nohighlight">\(\Delta S\)</span> stays large long after the <em>resonance
+frequency</em> has converged to a fraction of a percent.  A resonator or
+a narrow-band filter is judged on its frequencies — the second
+half of this page.</p>
+</section>
+<section id="the-same-ladder-around-a-resonance">
+<h2>The same ladder around a resonance<a class="headerlink" href="#the-same-ladder-around-a-resonance" title="Link to this heading">#</a></h2>
+<p>Blocks 1 and 2 again, with the number now a frequency and the stop
+rule its relative change.  The model is a cylindrical metal cavity
+(pillbox), because its lowest mode has a closed form to hold the
+ladder against: <span class="math notranslate nohighlight">\(f_{010} = 2.4048\,c_0 / (2\pi R)\)</span>,
+independent of the height.  The curved wall is where the grid has
+to work — it is represented by the conformal sub-cell treatment of
+partially filled cells, not by a staircase.  The ladder starts at
+12 because a driven run tolerates a coarser grid than an eigenmode
+of a curved cavity.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">R_CAV</span><span class="p">,</span> <span class="n">H_CAV</span> <span class="o">=</span> <span class="mf">10e-3</span><span class="p">,</span> <span class="mf">6e-3</span>
+<span class="n">F_EXACT</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.jn_zeros.html#scipy.special.jn_zeros" title="scipy.special.jn_zeros" class="sphx-glr-backref-module-scipy-special sphx-glr-backref-type-py-function"><span class="n">jn_zeros</span></a><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">C0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">*</span> <span class="n">R_CAV</span><span class="p">)</span>
+<span class="n">TOL_F</span> <span class="o">=</span> <span class="mf">1e-2</span>  <span class="c1"># relative change in f0 that your specification allows</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">simulate_cavity</span><span class="p">(</span><span class="n">mesh_control</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span><span class="n">background</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">Cylinder</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">radius</span><span class="o">=</span><span class="n">R_CAV</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">H_CAV</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span><span class="p">))</span>
+    <span class="n">mesh</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">mesh_control</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="mf">14e9</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisEigenmode</span><span class="p">(</span>
+        <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">*</span> <span class="mf">11e9</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">frequencies</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">mesh</span><span class="o">.</span><span class="n">Nx</span> <span class="o">*</span> <span class="n">mesh</span><span class="o">.</span><span class="n">Ny</span> <span class="o">*</span> <span class="n">mesh</span><span class="o">.</span><span class="n">Nz</span>
+
+
+<span class="n">ladder_f</span> <span class="o">=</span> <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">48</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f0</span></a><span class="p">,</span> <span class="n">changes</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"exact TM010: </span><span class="si">{</span><span class="n">F_EXACT</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> GHz"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"mnpw   f0 [GHz]   cells   time   change    error"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">mnpw</span> <span class="ow">in</span> <span class="n">ladder_f</span><span class="p">:</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+    <span class="n">f</span><span class="p">,</span> <span class="n">cells</span> <span class="o">=</span> <span class="n">simulate_cavity</span><span class="p">(</span><span class="n">rung</span><span class="p">(</span><span class="n">mnpw</span><span class="p">))</span>
+    <span class="n">change</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.nan" title="numpy.nan" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">nan</span></a> <span class="k">if</span> <span class="ow">not</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f0</span></a> <span class="k">else</span> <span class="nb">abs</span><span class="p">(</span><span class="n">f</span> <span class="o">-</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f0</span></a><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f0</span></a><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mnpw</span><span class="si">:</span><span class="s2">4d</span><span class="si">}</span><span class="s2">   </span><span class="si">{</span><span class="n">f</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">8.4f</span><span class="si">}</span><span class="s2">   </span><span class="si">{</span><span class="n">cells</span><span class="si">:</span><span class="s2">6d</span><span class="si">}</span><span class="s2">   </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">t</span><span class="si">:</span><span class="s2">4.1f</span><span class="si">}</span><span class="s2"> s   "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">''</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f0</span></a><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">change</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> %'</span><span class="si">:</span><span class="s2">8s</span><span class="si">}</span><span class="s2"> "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="p">(</span><span class="n">f</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">F_EXACT</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">F_EXACT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2"> %  </span><span class="si">{</span><span class="s1">'ok'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">change</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">TOL_F</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2">"</span>
+    <span class="p">)</span>
+    <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f0</span><span class="o">.</span><span class="n">append</span></a><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="n">changes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">change</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f0</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f0</span></a><span class="p">)</span>
+
+<span class="n">k</span> <span class="o">=</span> <span class="n">converged_rung</span><span class="p">(</span><span class="n">changes</span><span class="p">,</span> <span class="n">TOL_F</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">k</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"not converged within the ladder (</span><span class="si">{</span><span class="n">TOL_F</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> % on two consecutive rungs)"</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"converged: mnpw </span><span class="si">{</span><span class="n">ladder_f</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="si">}</span><span class="s2"> at </span><span class="si">{</span><span class="n">TOL_F</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> % — "</span>
+        <span class="sa">f</span><span class="s2">"its actual error is </span><span class="si">{</span><span class="nb">abs</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f0</span></a><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">F_EXACT</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">F_EXACT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> %"</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>exact TM010: 11.4743 GHz
+mnpw   f0 [GHz]   cells   time   change    error
+  12    11.4057      576    0.3 s            -0.60 %
+  16    11.2897     1125    0.4 s   1.02 %   -1.61 %
+  24    11.3902     3703    0.9 s   0.89 %   -0.73 %  ok
+  32    11.4487     8100    2.9 s   0.51 %   -0.22 %  ok
+  48    11.4889    28350   43.5 s   0.35 %   +0.13 %  ok
+converged: mnpw 24 at 1.0 % — its actual error is 0.73 %
+</pre></div>
+</div>
+</section>
+<section id="reading-the-ladder-and-extrapolating-it">
+<h2>Reading the ladder — and extrapolating it<a class="headerlink" href="#reading-the-ladder-and-extrapolating-it" title="Link to this heading">#</a></h2>
+<p>The <em>change between rungs</em> against your tolerance is the criterion,
+as before — and here the exact value checks the rule: at a 1 %
+tolerance it settles on rung 24, whose actual error is 0.7 %.  A
+resonance ladder offers one thing more: a
+second-order scheme converges like <span class="math notranslate nohighlight">\(h^2\)</span>, so plotting the
+frequency against <span class="math notranslate nohighlight">\(1/N^2\)</span> (<span class="math notranslate nohighlight">\(N\)</span> the nodes per
+wavelength) gives a straight line once the mesh is in the
+asymptotic regime, and the intercept at <span class="math notranslate nohighlight">\(1/N^2 \to 0\)</span> is an
+estimate of the converged value.  Here the exact value is known,
+so the plot also shows how good that estimate is — and it is a
+caution as much as a demonstration: the coarse rungs wobble with
+the way the grid lines cut the curved wall, the fine rungs approach
+from below and slightly overshoot, and the extrapolation lands a
+few tenths of a percent off.  A conformal boundary carries an
+error component that does not scale as <span class="math notranslate nohighlight">\(h^2\)</span>.  Take the
+extrapolation as an estimate and the change between rungs as the
+criterion.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.asarray.html#numpy.asarray" title="numpy.asarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">asarray</span></a><span class="p">(</span><span class="n">ladder_f</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+<a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">slope</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">intercept</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.polyfit.html#numpy.polyfit" title="numpy.polyfit" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">polyfit</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:],</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f0</span></a><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:],</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># fit the three finest rungs</span>
+
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">6.4</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">))</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html#matplotlib.axes.Axes.plot" title="matplotlib.axes.Axes.plot" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f0</span></a> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <span class="s2">"o-"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"ladder"</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">xx</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.linspace.html#numpy.linspace" title="numpy.linspace" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">linspace</span></a><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x</span></a><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="mi">50</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html#matplotlib.axes.Axes.plot" title="matplotlib.axes.Axes.plot" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">xx</span></a><span class="p">,</span> <span class="p">(</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">slope</span></a> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">xx</span></a> <span class="o">+</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">intercept</span></a><span class="p">)</span> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <span class="s2">"--"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"fit through the three finest rungs"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html#matplotlib.axes.Axes.plot" title="matplotlib.axes.Axes.plot" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">intercept</span></a> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <span class="s2">"s"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"extrapolated </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">intercept</span></a><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> GHz"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.axhline.html#matplotlib.axes.Axes.axhline" title="matplotlib.axes.Axes.axhline" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">axhline</span></a><span class="p">(</span><span class="n">F_EXACT</span> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"k"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"exact </span><span class="si">{</span><span class="n">F_EXACT</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> GHz"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_xlabel.html#matplotlib.axes.Axes.set_xlabel" title="matplotlib.axes.Axes.set_xlabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span></a><span class="p">(</span><span class="s2">"1 / (nodes per wavelength)²"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_ylabel.html#matplotlib.axes.Axes.set_ylabel" title="matplotlib.axes.Axes.set_ylabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span></a><span class="p">(</span><span class="s2">"f₀ [GHz]"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">"TM₀₁₀ of a pillbox versus resolution"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.grid.html#matplotlib.axes.Axes.grid" title="matplotlib.axes.Axes.grid" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">grid</span></a><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">"extrapolated f0: </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">intercept</span></a><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> GHz (</span><span class="si">{</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">intercept</span></a><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">F_EXACT</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">F_EXACT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e6</span><span class="si">:</span><span class="s2">+.0f</span><span class="si">}</span><span class="s2"> ppm)"</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_mesh_convergence_002.png" srcset="../_images/sphx_glr_plot_mesh_convergence_002.png" alt="TM₀₁₀ of a pillbox versus resolution" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>extrapolated f0: 11.5223 GHz (+4184 ppm)
+</pre></div>
+</div>
+<p>Two more things a resonance ladder teaches.  A high-contrast
+dielectric body (a ceramic puck with εᵣ = 45) run through the same
+rungs moves by ±3 % <em>in either direction</em> between them — no line
+to extrapolate, and the spread across the rungs is the honest error
+of its absolute frequency.  And a <em>ratio</em> of two results from the
+same mesh — a coupling coefficient from two eigenfrequencies, a Q,
+a relative bandwidth — converges much faster than either of them,
+because both carry nearly the same discretisation error.  Tutorial
+13 designs a filter on that basis.  Run the ladder on the quantity
+you actually design with, and read it against that quantity’s own
+tolerance.</p>
+</section>
+<section id="what-the-ladder-cannot-see">
+<h2>What the ladder cannot see<a class="headerlink" href="#what-the-ladder-cannot-see" title="Link to this heading">#</a></h2>
+<p>A ladder finds errors that <em>shrink</em> with the cell size.  It is blind
+to a feature the grid does not contain at all: a chamfer or fillet
+smaller than half a cell has no effect on the result, then appears
+in one step when a rung finally resolves it — the ladder shows a
+jump, not a trend.  The mesher places grid planes on such edges so
+the feature occupies a cell layer of its own, and warns when an edge
+would need a cell finer than <code class="docutils literal notranslate"><span class="pre">h_max</span> <span class="pre">/</span> <span class="pre">max_edge_refinement</span></code> and is
+dropped.  Read those warnings before trusting a ladder; the remedy
+they name (<code class="docutils literal notranslate"><span class="pre">MeshControl(max_edge_refinement=...)</span></code>) belongs into
+<code class="docutils literal notranslate"><span class="pre">rung()</span></code> as a fixed setting, not into the resolution.</p>
+<p>The flip side: a feature layer the mesher <em>does</em> resolve keeps its
+size — one cell across the chamfer, whatever the rung — so the grid
+is no longer refined uniformly and the <span class="math notranslate nohighlight">\(h^2\)</span> trend is
+disturbed.  Run the ladder on the sharp-edged model to judge the
+resolution, then add the features back.  The mechanism is explained
+under <a class="reference internal" href="../methods/meshing-conformal.html"><span class="doc">Mesh generation and conformal geometry</span></a>.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.show.html#matplotlib.pyplot.show" title="matplotlib.pyplot.show" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">show</span></a><span class="p">()</span>
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 44.752 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-mesh-convergence-py">
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/54afa4040a53bfa87fc500f6dd90c432/plot_mesh_convergence.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_mesh_convergence.ipynb</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/b906f7c870bff40bbf3187395c6b443c/plot_mesh_convergence.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_mesh_convergence.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-zip docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/24310641088b06a65f704019685887e8/plot_mesh_convergence.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">zipped:</span> <span class="pre">plot_mesh_convergence.zip</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="plot_lumped_port_tuning_microstrip.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Lumped port tuning: microstrip</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="plot_stripline_pickup_kicker.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#block-1-before-one-number-drives-both-mesh-scales">Block 1 — before: one number drives both mesh scales</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#your-simulation-wrapped-in-a-function">Your simulation — wrapped in a function</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#block-2-after-the-number-and-the-stop-rule">Block 2 — after: the number and the stop rule</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-curves-behind-the-number">The curves behind the number</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-the-number-sees">What the number sees</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-same-ladder-around-a-resonance">The same ladder around a resonance</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reading-the-ladder-and-extrapolating-it">Reading the ladder — and extrapolating it</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-the-ladder-cannot-see">What the ladder cannot see</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/howto/plot_mesh_convergence.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Bernd Breitkreutz.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
