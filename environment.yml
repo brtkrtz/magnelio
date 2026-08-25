@@ -11,6 +11,8 @@ dependencies:
   - matplotlib>=3.8
   - vtk>=9.3  # ParaView export (DD-115): geometry.vtm, frequency .vtr series
   - pyvista>=0.44  # 3D viewer (DD-190): model.plot(), screenshots in the docs
+  - mesalib  # libOSMesa: off-screen software rendering for the viewer's screenshots
+            # (CI runners and docs builds have no GPU/EGL device; VTK segfaults without it)
 
   # CAD / geometry
   - pythonocc-core  # conda-forge only
