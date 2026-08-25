@@ -28,9 +28,14 @@ resolved on both, f0 moves 0.8 % (40 % of the passband) and k 0.8 %
 (of the bandwidth) between the default grid and (mnpw 24, mcpf 6) — the tutorial is re-based on a grid pair that scales
 both mesh knobs and argues from tolerances, not from "ratios are
 converged".  New how-to
-`plot_mesh_convergence.py` (global resolution ladders for an
-eigenfrequency and for S-parameters — the developer's answer to
-"adaptive refinement", as a recipe rather than a mesher feature).
+`plot_mesh_convergence.py`: the convergence loop as a drop-in recipe
+(rung → `MeshControl` before the user's simulation, complex-ΔS stop
+rule with 0.02 on two consecutive rungs after it; capacitive-patch
+microstrip converges at mnpw 32, pillbox TM010 at 1 % on rung 24 with
+0.7 % true error) — the answer to "adaptive refinement" as a recipe,
+not a mesher feature.  Measured: on a 16 mm feed the complex ΔS is
+S21 *phase* (grid dispersion), a bare-line ladder gives the same
+numbers; magnitude-only Δ|S| is 3–4× smaller.
 Previous: post-hoc de-embedding
 (DD-187, branch `feat/port-deembedding`, merged): `result.deembed(
 {"port": d})` shifts reference planes on the exact discrete chain
