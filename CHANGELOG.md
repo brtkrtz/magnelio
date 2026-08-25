@@ -43,6 +43,11 @@ major version is 0, minor releases may change the public API.
   whole model).  The interface cell now stays at its requested size
   and the growth ratio relaxes instead; neighbouring cells still
   differ by at most `growth_factor`.
+- An eigenmode solve with an explicit `sigma` that found fewer modes
+  than requested because most of the Krylov vectors converged on the
+  curl-curl null space now grows its request at the same shift
+  (twice at most) instead of returning short; the factorisation is
+  shared between the attempts.
 
 ### Changed
 

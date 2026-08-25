@@ -21,7 +21,10 @@ sets the time step, so the factor redistributes resolution rather
 than buying accuracy (at fixed `MeshControl` the error drops 2.5–4×,
 at fixed cost nothing changes).  Certificate
 `validation/singularity_refinement_certificate.py`; factor 1 is
-bit-identical to the DD-193 state.  Previous: **the bulk cell size
+bit-identical to the DD-193 state.  Side fix **DD-195**: a
+pinned-shift eigenmode solve grows its ARPACK request at the same
+shift when null-space artefacts crowd it (tutorial 13 at factor 2
+returned 2 of 3 modes).  Previous: **the bulk cell size
 follows the slab's wavelength** (DD-192, branch
 `feat/local-wavelength-rule`, unmerged): `Mesh.from_geometry` used one bulk size from the densest
 material anywhere, so the air box around a small ceramic or above a
@@ -115,8 +118,8 @@ longitudinally on the ``SymmetryPMC`` plane, PMC lid, coax knobs;
 position optimum ≈ **+16·s beyond** the plane (21.4° → 0.74°, sign
 opposite to coax/MS).  Side find: empty boolean results crashed
 `plot()` via uncaught C++ exception → KB-026, closed by DD-190.
-Unit suite 2285
-passed / 3 skipped (DD-194 added 35, DD-193 16, DD-192 18).  **Released v0.4.5
+Unit suite 2288
+passed / 3 skipped (DD-195 added 3, DD-194 35, DD-193 16).  **Released v0.4.5
 (2026-08-25)** with DD-191 and the mesh-convergence how-to; before
 that v0.4.4 (2026-08-25) with DD-190, whose merge
 had turned CI and Docs red first — VTK segfaults on GPU-less runners
@@ -161,6 +164,7 @@ The plane-wave tutorial remains deferred.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-195** (2026-08-26) — eigenmode solver grows the ARPACK request at the same shift by the null-space artefact count (≤ 2 grows, one shared SuperLU factorisation via `OPinv`) before/instead of moving the shift; a pinned `sigma` no longer under-delivers when tiny conformal edges swell the residual null space (tutorial 13 at `singularity_refinement=2`: 5 of 7 vectors were artefacts).
 * **DD-194** (2026-08-25) — singularity refinement at conductor edges: `MeshControl(singularity_refinement=k)` grades the planes holding a singular metal edge (convex metal edge, or concave edge of a vacuum body with metal outside; kernel offset analysis, 5° tangency) from `h_fine / k` on both sides; per-plane fine sizes, asymmetric two-ramp / tent profile; default 1 (off) — on the S-parameter ladder the factor is cost-neutral (edge cell sets dt), it pays for impedance / ε_eff and under a `min_cell_size` floor.
 * **DD-193** (2026-08-25) — short-interval grading keeps the fine-end cell at `h_fine` and relaxes the growth ratio (`_ratio_for_exact_fill`) instead of letting the integer count push it up to 23 % below (DD-105 undershoot, made common by DD-192's air slabs above thin traces); buffered profile untouched; meshes with short graded intervals change.
 * **DD-192** (2026-08-25) — bulk cell size per axis interval from the wavelength of the densest material whose bounding box reaches into that slab (`MeshControl(wavelength_rule="local")`, default; `"global"` = old rule), background counted; feature refinement, grading, buffer and edge floor unchanged; ceramic-in-air 1.43 M → 254 k cells; tutorials 09/10/13/17 −11…−34 %, the homogeneous ones identical.

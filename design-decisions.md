@@ -13428,7 +13428,9 @@ rungs) fires at mnpw 32 for factor 1 with an actual error of 0.031
 against the refined reference, and at mnpw 16 for factor 3 with 0.032:
 the rule's blind spot is the same for both.  Tutorial re-run at
 factor 2: 09 +68 % cells and half the time step, 10 +19 %, 12 +4–17 %,
-06/07 unchanged in count (floored); the homogeneous models identical.
+13 +30–42 % (iris rims), 17 +27 %; 06/07 unchanged in count (floored);
+the homogeneous models identical.  Tutorial 13's fine coupled pair at
+factor 2 under-delivered eigenmodes at its pinned shift — DD-195.
 
 So the factor is a *tool*, not a default: it pays where the impedance
 or the effective permittivity is the quantity of interest (port
@@ -13470,3 +13472,43 @@ edge per shape; models without any metal skip the pass entirely.
 `validation/singularity_refinement_certificate.py`,
 `tests/unit/test_mesh_singularity.py`,
 `docs/methods/meshing-conformal.md`, `spec.md` §2.6 / §6, `CHANGELOG.md`.
+
+## DD-195 — The ARPACK request grows at one shift when null-space artefacts crowd it
+
+**Status:** Implemented 2026-08-26, on the DD-194 branch.
+
+**Problem.**  The 3D eigenmode solver asks ARPACK for
+`n_modes + 4` vectors around the shift and keeps those above the 1 MHz
+null-space floor.  The KB-011 ladder raises the shift and grows the
+request on under-delivery — but only on the *auto* path; a
+user-given `sigma` is a one-rung ladder by design (the shift is the
+user's decision), so a request in which most vectors converge on the
+curl-curl null space simply returned fewer modes, with the warning
+that tells the user to pin a shift they had already pinned.  DD-194
+exposed it: tutorial 13's coupled resonator pair at
+`singularity_refinement=2` (104 × 60 × 12 cells, edge cells 83 µm at
+the iris rims) returned 5 null-space artefacts among the 7 vectors
+and 2 of 3 modes, where the unrefined grid (96 × 52 × 12) returned 3
+of 3 with none — the tree-cotree gauge leaves a residual null space
+that grows with the number of tiny conformal edges.
+
+**Decision.**  Before moving the shift, grow the request at the
+*same* shift: after an attempt that discarded `n_null` artefacts and
+still lacks modes, ask for `k + n_null + 2` vectors, at most
+`_NULL_GROW_RETRIES = 2` times per rung, keeping the union of physical
+eigenpairs as the ladder does.  The SuperLU factorisation of
+`A − σB` is built once per rung (`_arpack_op_inv`) and handed to
+`eigsh` as `OPinv`, so the grows cost Lanczos iterations, not
+factorisations (the physical eigenvalues agree with the
+self-factorising call to 1e-8; the null residues differ, they are
+noise at 1e-14 of the physical scale).  The under-delivery warning
+stays for the case that even the grown requests fall short.
+
+**Consequences.**  Solves that delivered in one request are
+unchanged (same factorisation, same first request).  Under-delivering
+solves at a pinned shift now cost one or two more Lanczos runs and
+return the modes.  Tutorial 13 at factor 2 passes its own guard.
+
+**Files:** `src/magnelio/solver/_eigenmode_3d.py`
+(`_NULL_GROW_RETRIES`, `_arpack_op_inv`, grow loop in `solve`),
+`tests/unit/test_eigen_null_grow.py`, `CHANGELOG.md`.
