@@ -1,8 +1,7 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-25.*  Latest work: **singularity refinement at
-conductor edges** (DD-194, branch `feat/metal-edge-refinement` on top
-of the unmerged `feat/local-wavelength-rule`):
+*Last updated: 2026-08-26.*  Latest work: **singularity refinement at
+conductor edges** (DD-194, merged 2026-08-26, released 0.4.6):
 `MeshControl(singularity_refinement=k)` starts the grading at the grid
 planes holding a singular metal edge at `h_fine / k` on both sides.
 Edges are classified from the CAD model with the kernel's offset
@@ -26,7 +25,7 @@ pinned-shift eigenmode solve grows its ARPACK request at the same
 shift when null-space artefacts crowd it (tutorial 13 at factor 2
 returned 2 of 3 modes).  Previous: **the bulk cell size
 follows the slab's wavelength** (DD-192, branch
-`feat/local-wavelength-rule`, unmerged): `Mesh.from_geometry` used one bulk size from the densest
+`feat/local-wavelength-rule`, merged 2026-08-26, released 0.4.6): `Mesh.from_geometry` used one bulk size from the densest
 material anywhere, so the air box around a small ceramic or above a
 thin substrate was meshed at the ceramic's wavelength.  Now each axis
 interval between grid planes — a slab of the domain — is meshed for
@@ -119,9 +118,11 @@ position optimum ≈ **+16·s beyond** the plane (21.4° → 0.74°, sign
 opposite to coax/MS).  Side find: empty boolean results crashed
 `plot()` via uncaught C++ exception → KB-026, closed by DD-190.
 Unit suite 2288
-passed / 3 skipped (DD-195 added 3, DD-194 35, DD-193 16).  **Released v0.4.5
-(2026-08-25)** with DD-191 and the mesh-convergence how-to; before
-that v0.4.4 (2026-08-25) with DD-190, whose merge
+passed / 3 skipped (DD-195 added 3, DD-194 35, DD-193 16).  **Released v0.4.6
+(2026-08-26)** with DD-192…DD-195 (slab wavelength rule, exact
+short-interval fill, singularity refinement, grown ARPACK request)
+and the KB-027 de-embedding note; before that v0.4.5 (2026-08-25)
+with DD-191 and the mesh-convergence how-to, v0.4.4 (2026-08-25) with DD-190, whose merge
 had turned CI and Docs red first — VTK segfaults on GPU-less runners
 (no EGL device, no libOSMesa; conda-forge `mesalib` is an empty
 metapackage), fixed by `pyvista/setup-headless-display-action` in both

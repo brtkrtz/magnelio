@@ -7,7 +7,7 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
-## [Unreleased]
+## [0.4.6] - 2026-08-26
 
 ### Added
 
@@ -51,6 +51,12 @@ major version is 0, minor releases may change the public API.
 
 ### Changed
 
+- The ports page and the `deembed` reference now say what a
+  reference-plane shift on a quasi-TEM port can and cannot remove:
+  the shift uses the port's quasi-static propagation constant, so
+  the line's own frequency dispersion (about 22° over 16 mm of
+  0.8 mm FR4 at 15 GHz) stays in the de-embedded phase — keep feeds
+  short, or compare raw S-parameters between meshes.
 - Meshes differ from 0.4.5: coarser far from a dielectric in models
   with more than one material (the slab rule above), and slightly
   coarser in short graded intervals (the fix above); cell counts and
