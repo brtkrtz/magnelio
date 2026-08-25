@@ -185,6 +185,18 @@ coarse meshes, silently attributed to the device under test.
 Channels without certified line parameters fall back to the mode's
 continuum $\gamma(\omega)$.
 
+For a **quasi-TEM channel** — microstrip, CPW, any inhomogeneous
+cross-section, terminated by modal Mur in the default pipeline — that
+fallback is the quasi-static $\gamma$ of the 2D Laplace mode,
+$\varepsilon_{\text{eff}} = C'/C'_0$ taken frequency-flat.  The
+physical dispersion of the line (its $\varepsilon_{\text{eff}}$
+rising with frequency) is therefore *not* removed and stays in the
+de-embedded matrix: on a 16 mm microstrip on 0.8 mm
+$\varepsilon_r = 4.3$ the residual S21 phase after de-embedding the
+full length is about 1°, 8° and 22° at 5, 10 and 15 GHz, growing with
+substrate thickness.  Keep quasi-TEM feed lines short when the
+reference plane matters, or compare raw S-parameters.
+
 The shift assumes the port cross-section continues over the shifted
 length.  Below its cut-off a channel's factor grows as $e^{+\alpha
 d}$; those bins keep the diagnostic character the raw values have.

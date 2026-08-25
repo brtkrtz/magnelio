@@ -583,7 +583,12 @@ grid-dispersion part that an analytic <code class="docutils literal notranslate"
 leave behind on coarse meshes.  It assumes the cross-section
 stays that of the port over the shifted length; channels
 without certified discrete line parameters fall back to the
-mode’s continuum <code class="docutils literal notranslate"><span class="pre">γ(f)</span></code>.</p>
+mode’s continuum <code class="docutils literal notranslate"><span class="pre">γ(f)</span></code>.  For quasi-TEM channels (microstrip,
+CPW — inhomogeneous cross-sections on modal Mur) that <code class="docutils literal notranslate"><span class="pre">γ</span></code> is
+the quasi-static one with a frequency-flat <code class="docutils literal notranslate"><span class="pre">ε_eff</span></code>, so the
+line’s physical dispersion is not removed and remains in the
+de-embedded matrix; it grows with frequency, shift distance
+and substrate thickness.</p>
 <p>Below its cut-off a channel’s factor grows exponentially with
 distance, so de-embedded values there keep the diagnostic
 character the raw ones have.  Lumped ports carry no feed-line
