@@ -12,8 +12,7 @@ serves three situations:
 
 ```python
 model.plot()                                  # geometry only
-model.plot(mesh=mesh)                         # with the grid on the domain faces
-model.plot(mesh=mesh, cut=("y", 0.0))         # opened along y = 0
+model.plot(mesh=mesh, cut=("y", 0.0))         # opened along y = 0, grid cells on the cut
 ```
 
 ## What is drawn
@@ -21,10 +20,10 @@ model.plot(mesh=mesh, cut=("y", 0.0))         # opened along y = 0
 | Item | Appearance |
 |---|---|
 | Solids | Material colour of the 2D cross-sections (metals grey, dielectrics tinted by permittivity, air and vacuum as faint translucent shells); imported CAD colours are honoured. |
-| Grid (`mesh=`) | Grid lines on the six domain faces.  On the cutting plane, the exposed cell layer as a sheet of cell faces, each coloured by the material the mesher assigned — the discretised model as the solver sees it. |
+| Grid (`mesh=`) | On the cutting plane, the exposed cell layer as a sheet of cell faces, each coloured by the material the mesher assigned — the discretised model as the solver sees it.  The grid is shown nowhere else: a wireframe of the domain faces was tried and dropped, its foreshortened lines in front of the cut confused more than they informed. |
 | Thin wires | Tubes in the wire colour. |
 | Discrete ports, lumped elements | Tubes between their two end points (red for ports, green for elements), with their name beside them. |
-| Waveguide ports | A translucent red window on the domain face they occupy — the declared sub-window, or the whole face — with the port name on it. |
+| Waveguide ports | A translucent red window on the domain face they occupy — the declared sub-window, or the whole face — with the port name written in the window's plane. |
 | Symmetry planes | Tinted sheets on the domain faces declared `SymmetryPEC` / `SymmetryPMC` (blue / green). |
 | Domain | Outline of the bounding box; the grid extent when a mesh is given. |
 
@@ -41,9 +40,9 @@ toolbar:
 - the **position slider** across the domain extent;
 - **Flip** — remove the other half;
 - **undo** (last change) and **reset** (initial state);
-- **Show** — a menu of the object groups (solids, grid lines, cut
-  cells, ports, lumped elements, wires, labels, symmetry planes, domain
-  box); untick a group to hide it.
+- **Show** — a menu of the object groups (solids, grid on cut, ports,
+  lumped elements, wires, labels, symmetry planes, domain box); untick
+  a group to hide it.
 
 A single plane cuts every solid; the openings are capped, so a cut
 metal body reads as solid metal, not as a hollow shell.  With a mesh,
@@ -113,8 +112,8 @@ PyVista documentation.
 ## Limitations
 
 - Names are flat 3D text placed in the scene (the browser renderer has
-  no screen-space labels); they read best from the default camera and
-  scale with the model.
+  no screen-space labels): port names lie in the port plane, element
+  names face the initial camera; both scale with the model.
 - The cutting plane is axis-aligned by design (see above).
 - Field monitors are not yet shown in 3D; use the ParaView export
   ({doc}`sources-monitors`) or the 2D slice plots.

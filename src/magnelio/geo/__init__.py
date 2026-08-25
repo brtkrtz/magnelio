@@ -356,9 +356,8 @@ class GeometryModel:
         Parameters
         ----------
         mesh : Mesh, optional
-            Show this mesh's grid with the geometry: grid lines on the
-            domain faces, and the grid cells — coloured by assigned
-            material — on the cutting plane.
+            Show this mesh's grid with the geometry: the grid cells —
+            coloured by assigned material — on the cutting plane.
         **kwargs
             Forwarded (``cut``, ``flip``, ``show_ports``, ``show_wires``,
             ``show_grid``, ``mode``, ``size``, ``render_edges``,

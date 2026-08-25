@@ -14,9 +14,8 @@ major version is 0, minor releases may change the public API.
 - `model.plot()` is a new 3D viewer built on PyVista.  In a notebook
   it is a widget with an axis-aligned cutting plane driven from its
   toolbar (normal, position slider, flip, undo, reset) that opens every
-  solid with capped cuts; with `mesh=` the grid lines appear on the
-  domain faces and the cells the cut exposes are shown coloured by the
-  material the mesher assigned.  Thin wires, ports (with their names),
+  solid with capped cuts; with `mesh=` the cells the cut exposes are
+  shown coloured by the material the mesher assigned.  Thin wires, ports (with their names),
   lumped elements, symmetry planes and the domain box are drawn and
   follow the cut; a toolbar menu hides or shows each object group;
   lengths are in millimetres, and the camera pans.  The same call opens a window in a

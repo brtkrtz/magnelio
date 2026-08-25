@@ -129,13 +129,12 @@ class TestScene:
 
 
 class TestGrid:
-    def test_grid_faces_and_cut_sheet(self, coax):
+    def test_cut_sheet(self, coax):
         model, mesh = coax
         pl = model.plot(mesh=mesh, mode="none", cut=("y", 0.0))
-        faces = _dataset(pl, "grid_faces")
-        # Grid lines on the domain faces: exactly the surface cells.
-        nx, ny, nz = mesh.Nx, mesh.Ny, mesh.Nz
-        assert faces.n_cells == 2 * (nx * ny + ny * nz + nx * nz)
+        # No grid "cage" on the domain faces: the grid shows on the cut only.
+        assert "grid_faces" not in pl.renderer.actors
+        nx, nz = mesh.Nx, mesh.Nz
         sheet = _dataset(pl, "grid_cut")
         assert pl.renderer.actors["grid_cut"].GetVisibility()
         assert sheet.n_cells == nx * nz
@@ -169,10 +168,11 @@ class TestGrid:
         sheet = plot_3d._grid_slab(g, plot_3d._CutState("y", y[k], flip=True))
         np.testing.assert_array_equal(sheet.cell_data["material_id"], expected)
 
-    def test_no_cut_hides_sheet_and_show_grid_false_hides_faces(self, coax):
+    def test_no_cut_or_show_grid_false_hides_sheet(self, coax):
         model, mesh = coax
-        pl = model.plot(mesh=mesh, mode="none", show_grid=False)
-        assert not pl.renderer.actors["grid_faces"].GetVisibility()
+        pl = model.plot(mesh=mesh, mode="none")
+        assert not pl.renderer.actors["grid_cut"].GetVisibility()
+        pl = model.plot(mesh=mesh, mode="none", cut=("y", 0.0), show_grid=False)
         assert not pl.renderer.actors["grid_cut"].GetVisibility()
 
     def test_material_colours_follow_the_2d_palette(self, coax):
@@ -208,10 +208,15 @@ class TestOverlays:
             assert _dataset(pl, n).n_cells > 0
         pl = features_model.plot(mode="none", show_labels=False)
         assert not [n for n in pl.renderer.actors if n.startswith("label_")]
-        # Face ports carry their name on the window.
+        # Face ports carry their name on the window, lying in its plane.
         model, _ = coax
         pl = model.plot(mode="none")
-        assert len([n for n in pl.renderer.actors if n.startswith("label_")]) == 2
+        labels = [n for n in pl.renderer.actors if n.startswith("label_")]
+        assert len(labels) == 2
+        for n in labels:
+            b = _dataset(pl, n).bounds
+            assert b[5] - b[4] < 0.05 * (b[1] - b[0])  # flat in z: the zmin/zmax faces
+            assert min(abs(b[4]), abs(b[4] - 10.0)) < 0.05
 
     def test_cut_removes_features_in_the_removed_half(self, features_model):
         # Element at z = 6..7 mm, port at z = 0..1 mm: a cut at z = 4 mm

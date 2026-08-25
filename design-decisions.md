@@ -12964,6 +12964,10 @@ are flat 3D text (`Text3D` polydata) so they render in every mode; the
 server-only screen labels are gone.  (d) A *Show* menu in the toolbar
 hides or shows object groups (solids, grid lines, cut cells, ports,
 elements, wires, labels, symmetry planes, domain box).
+**Amended again 2026-08-25** (third review): the grid wireframe on the
+six domain faces — a cage around the model — is dropped; the grid shows
+on the cutting plane only (still a *Show* toggle).  Port names lie in
+the port plane; element names keep facing the initial camera.
 
 **Problem.**  `GeometryModel.plot()` was pythonocc's `JupyterRenderer`,
 a thin wrapper over pythreejs (2.4.2, unmaintained since 2023).

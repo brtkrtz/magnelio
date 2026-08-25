@@ -67,8 +67,7 @@ _ANGULAR_DEFLECTION = 0.15
 # Object groups the toolbar can hide, in menu order.
 _GROUPS = (
     ("solids", "Solids"),
-    ("grid", "Grid lines"),
-    ("cut cells", "Cut cells"),
+    ("cut cells", "Grid on cut"),
     ("ports", "Ports"),
     ("elements", "Lumped elements"),
     ("wires", "Wires"),
@@ -168,7 +167,6 @@ class _Scene:
     bodies: list[_Body]
     bounds: tuple[float, float, float, float, float, float]  # display units
     grid: Any = None  # the FIT grid dataset (display units), or None
-    grid_faces_actor: Any = None
     grid_actor: Any = None  # the cut sheet
     domain_actor: Any = None
     overlays: list[_Overlay] = field(default_factory=list)
@@ -180,8 +178,6 @@ class _Scene:
 
     def groups_present(self) -> list[str]:
         present = {"solids"} if self.bodies else set()
-        if self.grid_faces_actor is not None:
-            present.add("grid")
         if self.grid_actor is not None:
             present.add("cut cells")
         if self.domain_actor is not None:
@@ -424,8 +420,6 @@ def _apply_cut(scene: _Scene) -> None:
         ov.actor.SetVisibility(visible and ov.group in shown)
         if dataset is not None:
             _set_input(ov.actor, dataset)
-    if scene.grid_faces_actor is not None:
-        scene.grid_faces_actor.SetVisibility("grid" in shown)
     if scene.domain_actor is not None:
         scene.domain_actor.SetVisibility("domain" in shown)
     if scene.grid_actor is not None:
@@ -466,9 +460,31 @@ def _label_frame(pl) -> np.ndarray:
     return np.column_stack([right, up, towards])
 
 
-def _add_label(pl, scene: _Scene, text: str, *, center, height, color) -> None:
-    """A name as flat 3D text facing the initial camera — polydata, so
-    every renderer draws it."""
+def _plane_frame(pl, axis: int) -> np.ndarray:
+    """Like :func:`_label_frame`, but with the text lying in the plane
+    normal to ``axis`` — for names written onto a port window.
+
+    The plane normal is signed towards the camera so the text is not
+    mirrored, and the text's up direction follows the camera's up.
+    """
+    camera = _label_frame(pl)
+    towards = camera[:, 2]
+    normal = np.zeros(3)
+    normal[axis] = 1.0 if towards[axis] >= 0.0 else -1.0
+    up = camera[:, 1] - np.dot(camera[:, 1], normal) * normal
+    if np.linalg.norm(up) < 1e-6:  # camera up along the normal: use the right axis
+        up = camera[:, 0] - np.dot(camera[:, 0], normal) * normal
+    up /= max(np.linalg.norm(up), 1e-12)
+    right = np.cross(up, normal)
+    return np.column_stack([right, up, normal])
+
+
+def _add_label(pl, scene: _Scene, text: str, *, center, height, color, frame=None) -> None:
+    """A name as flat 3D text — polydata, so every renderer draws it.
+
+    ``frame`` (columns: right, up, normal) places the text; default is
+    a billboard facing the initial camera.
+    """
     import pyvista as pv  # noqa: PLC0415
 
     try:
@@ -478,7 +494,7 @@ def _add_label(pl, scene: _Scene, text: str, *, center, height, color) -> None:
     if mesh.n_cells == 0:
         return
     matrix = np.eye(4)
-    matrix[:3, :3] = _label_frame(pl)
+    matrix[:3, :3] = _label_frame(pl) if frame is None else frame
     matrix[:3, 3] = np.asarray(center, dtype=float)
     mesh = mesh.transform(matrix, inplace=False)
     _add_overlay(
@@ -580,7 +596,15 @@ def _add_face_port(pl, scene: _Scene, port, *, bounds, unit_scale, index, name, 
         center[u] = 0.5 * (u0 + u1)
         center[v] = 0.5 * (v0 + v1)
         height = min(0.06 * _diag(bounds), 0.3 * min(u1 - u0, v1 - v0))
-        _add_label(pl, scene, name, center=center, height=height, color=_PORT_COLOR)
+        _add_label(
+            pl,
+            scene,
+            name,
+            center=center,
+            height=height,
+            color=_PORT_COLOR,
+            frame=_plane_frame(pl, p_axis),
+        )
 
 
 def _add_symmetry_planes(pl, scene: _Scene, boundary_conditions, *, bounds) -> None:
@@ -906,23 +930,12 @@ def _build_scene(
     )
 
     if grid is not None:
-        # Grid lines on the domain faces: the surface cells of the
-        # rectilinear grid, drawn as edges only — the volume stays
-        # transparent so the geometry remains visible.
-        try:
-            faces = grid.extract_surface(algorithm="dataset_surface")
-        except TypeError:  # older pyvista without the keyword
-            faces = grid.extract_surface()
-        scene.grid_faces_actor = pl.add_mesh(
-            faces,
-            style="wireframe",
-            color="#b0b0b0",
-            line_width=1,
-            opacity=0.25,
-            name="grid_faces",
-        )
+        # The grid shows on the cutting plane only.  A wireframe of the
+        # domain faces (a "cage" around the model) was tried and
+        # rejected: its perspective foreshortening in front of the cut
+        # confused more than it informed.
         if not show_grid:
-            scene.hidden_groups.add("grid")
+            scene.hidden_groups.add("cut cells")
         seed = _grid_slab(grid, cut_state) or _grid_slab(grid, _CutState("z", bounds[4]))
         if seed is not None:
             scene.grid_actor = pl.add_mesh(
@@ -983,9 +996,8 @@ def show_geometry(
     Solids are coloured by material (air and vacuum bodies are drawn as
     faint translucent shells), thin wires, ports, lumped elements and
     symmetry planes are overlaid, and the domain box is outlined.  With
-    a ``mesh`` the grid lines appear on the domain faces and a cutting
-    plane exposes the grid cells — each coloured by the material the
-    mesher assigned — on the cut.
+    a ``mesh`` a cutting plane exposes the grid cells — each coloured by
+    the material the mesher assigned — on the cut.
 
     The cutting plane is axis-aligned.  In the notebook widget it is
     driven from the toolbar (normal axis, position slider, flip side,
@@ -1011,8 +1023,7 @@ def show_geometry(
     show_ports, show_wires : bool, default True
         Draw ports and lumped elements, and thin wires.
     show_grid : bool, default True
-        With ``mesh``: draw the grid lines on the domain faces.  The
-        grid cells on the cut are always shown when a cut is active.
+        With ``mesh``: draw the grid cells on the cutting plane.
     show_labels : bool, default True
         Write the names of ports and lumped elements next to them.
     mode : str, optional
