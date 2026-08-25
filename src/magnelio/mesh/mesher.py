@@ -2474,7 +2474,12 @@ def _grade_then_uniform(
             widths = _tailed_widths(interval, h_fine, g, min_cell, n_buf)
             return _widths_to_nodes(widths, p_fine, p_coarse)
         n_legacy = _n_one_sided(interval, h_fine, g, min_cell=min_cell)
-        return _one_sided_subdivision(p_fine, p_coarse, n_legacy, g)
+        # DD-193: keep the fine-end cell at h_fine and relax the ratio
+        # instead of letting the integer count push h0 below h_fine.
+        g_eff = g
+        if _h0_one_sided(interval, n_legacy, g) < h_fine * (1.0 - 1e-9):
+            g_eff = _ratio_for_exact_fill(interval, h_fine, n_legacy, g, symmetric=False)
+        return _one_sided_subdivision(p_fine, p_coarse, n_legacy, g_eff)
 
     rest = interval - ramp_sum
     widths: list[float]
@@ -2610,7 +2615,11 @@ def _grade_symmetric_to_uniform(
         if min_cell > 0:
             while n > 1 and _h0_symmetric(interval, n, g) < min_cell * (1.0 - 1e-12):
                 n -= 1
-        return _graded_subdivision(p0, p1, n, g)
+        # DD-193: fine-end cells stay at h_fine; the ratio relaxes.
+        g_eff = g
+        if _h0_symmetric(interval, n, g) < h_fine * (1.0 - 1e-9):
+            g_eff = _ratio_for_exact_fill(interval, h_fine, n, g, symmetric=True)
+        return _graded_subdivision(p0, p1, n, g_eff)
 
     nodes = [p0]
     x = p0
@@ -2686,6 +2695,48 @@ def _graded_subdivision(p0: float, p1: float, n: int, g: float) -> list[float]:
     nodes[-1] = p1
 
     return nodes
+
+
+def _ratio_for_exact_fill(interval: float, h0: float, n: int, g: float, symmetric: bool) -> float:
+    """Growth ratio ``g' in [1, g]`` with which *n* cells starting at ``h0``
+    fill *interval* exactly (DD-193).
+
+    The integer-count refits (``_n_one_sided`` / the symmetric scan)
+    fix the ratio at ``g`` and let the fine-end cell fall out of the
+    count, anywhere between ``h_fine / g`` and ``h_fine`` — an
+    undershoot of up to ``1 − 1/g`` that costs time steps and buys no
+    resolution (DD-105).  Keeping ``h0 = h_fine`` and relaxing the
+    ratio instead fills the interval with the same count, no fine-end
+    undershoot and every neighbour ratio ``≤ g``.  Bisection on the
+    monotone series sum; returns ``g`` when even ratio ``g`` cannot
+    fill the interval from ``h0`` (the caller keeps its refit), and
+    ``1`` when uniform cells of ``h0`` already overfill it.
+    """
+
+    def _total(r: float) -> float:
+        if abs(r - 1.0) < 1e-12:
+            return h0 * n
+        if symmetric:
+            n_half = n // 2
+            series = (r**n_half - 1.0) / (r - 1.0)
+            centre = (r**n_half) if (n % 2 == 1) else 0.0
+            return h0 * (2.0 * series + centre)
+        return h0 * (r**n - 1.0) / (r - 1.0)
+
+    if _total(g) < interval:
+        return g
+    if _total(1.0) >= interval:
+        return 1.0
+    lo, hi = 1.0, g
+    for _ in range(200):
+        mid = 0.5 * (lo + hi)
+        if _total(mid) < interval:
+            lo = mid
+        else:
+            hi = mid
+        if hi - lo < 1e-14:
+            break
+    return hi
 
 
 def _h0_symmetric(interval: float, n: int, g: float) -> float:

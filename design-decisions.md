@@ -13297,3 +13297,42 @@ entry).
 `h_max` in `_generate_axis_lines` / `_enforce_boundary_buffer`, PML
 depth), `tests/unit/test_mesh_local_wavelength.py`,
 `docs/methods/meshing-conformal.md`, `CHANGELOG.md`.
+
+## DD-193 — Short-interval grading keeps the fine-end cell at `h_fine` and relaxes the growth ratio
+
+**Status:** Implemented 2026-08-25, on the DD-192 branch.
+
+**Problem.**  An interval too short for the full ramp from `h_fine`
+to `h_max` was refit with a fixed ratio `g` and an integer cell count
+(`_n_one_sided` / the symmetric scan): the smallest count whose
+fine-end cell lands at or below `h_fine · (1 + 5 %)`.  The fine-end
+cell then falls out of the count — anywhere between `h_fine / g` and
+`h_fine`, i.e. up to 23 % below what the interval asked for at the
+default `g = 1.3`.  That is the DD-105 undershoot: it sets the time
+step model-wide and buys no resolution.  DD-192 made the case common:
+with the air slab above a thin trace meshed for the *air* wavelength,
+the ramp no longer reaches `h_max` inside the interval, and the
+mesh-convergence how-to warned on two of its rungs (19 % and 18 %
+below the requested 66.7 µm / 50 µm).
+
+**Decision.**  Keep the count, keep `h0 = h_fine`, and solve the
+ratio `g' ∈ [1, g]` with which those cells fill the interval exactly
+(`_ratio_for_exact_fill`, bisection on the monotone series sum;
+one-sided and symmetric forms).  Applied only where the fixed-ratio
+refit *would* undershoot (`h0 < h_fine`); a refit landing inside the
+5 % overshoot band is kept as it was.  Every neighbour ratio stays
+`≤ g` by construction.  The DD-107 buffered profile (`_tailed_widths`)
+already kept `h0` at the tolerance and is untouched.  Measured on the
+how-to microstrip, rungs 8…32: first cell above the strip = `h_fine`
+exactly, maximum ratio 1.27–1.30, zero warnings.
+
+**Consequences.**  Meshes change wherever a short interval used to
+undershoot — homogeneous models included, so this is the change that
+breaks bit-identity with 0.4.5 beyond DD-192's mixed-dielectric
+scope (bit-identity is preferred when free, not a constraint).  The
+cells in such intervals are slightly larger and the time step
+slightly longer; nothing gets finer.
+
+**Files:** `src/magnelio/mesh/mesher.py` (`_ratio_for_exact_fill`,
+short branches of `_grade_then_uniform` and
+`_grade_symmetric_to_uniform`), `tests/unit/test_mesh_exact_fill.py`.

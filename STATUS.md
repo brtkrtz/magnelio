@@ -14,7 +14,12 @@ floor (global reference) are unchanged; the PML depth follows the
 boundary slab.  Measured: a 10 × 10 × 2 mm ε_r = 4.3 block in an
 80 mm air box, 20 nodes/λ at 10 GHz: 1.43 M → 254 k cells, identical
 cells inside the block.  A dense background now enters the wavelength
-(it was silently ignored).  Tutorial re-run: see the DD-192 line.
+(it was silently ignored).  Side fix **DD-193**: the air slab above
+a thin trace is now too short for the ramp to reach the air bulk
+size, which exposed the DD-105 integer-count undershoot (the how-to
+warned on two rungs, 19 %); short intervals now keep the fine-end
+cell at `h_fine` and relax the growth ratio.  Tutorial re-run: see
+the DD-192 line.
 Previous: **geometry-edge planes**
 (DD-191, released 0.4.5): the mesher's
 face pass reads planes, cylinders and spheres, so a chamfer (a cone) or
@@ -130,6 +135,7 @@ The plane-wave tutorial remains deferred.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-193** (2026-08-25) — short-interval grading keeps the fine-end cell at `h_fine` and relaxes the growth ratio (`_ratio_for_exact_fill`) instead of letting the integer count push it up to 23 % below (DD-105 undershoot, made common by DD-192's air slabs above thin traces); buffered profile untouched; meshes with short graded intervals change.
 * **DD-192** (2026-08-25) — bulk cell size per axis interval from the wavelength of the densest material whose bounding box reaches into that slab (`MeshControl(wavelength_rule="local")`, default; `"global"` = old rule), background counted; feature refinement, grading, buffer and edge floor unchanged; ceramic-in-air 1.43 M → 254 k cells.
 * **DD-191** (2026-08-25) — geometry-edge planes: a grid plane wherever a sharp B-rep edge lies flat in an axis-normal plane (chamfer/fillet onsets, loft sections, iris circles), as a soft class — one cell per feature layer, floored at `h_max / max_edge_refinement` (default 4) and `min_cell_size`, dropped edges reported once per mesh with the coarsest position and the ratio that keeps it, `0` = the old meshes.  Closes the DR-filter worksheet's invisible-chamfer artefact (M4/M4a: dual-face averaging is transverse-only — a feature varying *along* the edges has no lever until it crosses the cell midplane).  Traps recorded: Boolean-fuse split lines between coplanar sub-faces are not edges; the thin-sheet far face re-enters through the imprint's edges; the DD-107 buffer would triple a single-cell feature interval.
 * **DD-190** (2026-08-25) — `model.plot()` rebuilt on PyVista: axis-aligned cutting plane from the widget toolbar (normal / slider / flip / undo / reset) that caps every solid and lays the exposed grid cells, coloured by assigned material, over the cut (the grid shows nowhere else); wires, ports, elements, symmetry planes and the domain box overlaid in mm; browser-side rendering by default (`mode=`), a VTK window in scripts, screenshots in the gallery (tutorials 01/02 now show the 3D view).  Transport is trame's own websocket — JupyterLab ≥ 4.5 executes comm messages in ipykernel-7 subshell threads, and VTK rendered there gave black frames / kernel aborts (proven by replaying the comm transport).  `pyvista` is a core dependency, `[jupyter]` extra for the widget; pythreejs path gone; closes KB-026 as a side effect.

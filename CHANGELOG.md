@@ -24,12 +24,22 @@ major version is 0, minor releases may change the public API.
   A dense background material now counts toward the wavelength as
   well (it was ignored before).
 
+### Fixed
+
+- An interval too short for the full ramp from the interface cell to
+  the bulk cell no longer lets its integer cell count push the
+  interface cell below the size the geometry asked for (up to 23 %
+  at the default growth factor, which set the time step for the
+  whole model).  The interface cell now stays at its requested size
+  and the growth ratio relaxes instead; neighbouring cells still
+  differ by at most `growth_factor`.
+
 ### Changed
 
-- Meshes of models with more than one dielectric — or with a
-  dielectric in air — differ from 0.4.5 (coarser far from the
-  dielectric); cell counts and results quoted in the tutorials are
-  updated accordingly.
+- Meshes differ from 0.4.5: coarser far from a dielectric in models
+  with more than one material (the slab rule above), and slightly
+  coarser in short graded intervals (the fix above); cell counts and
+  results quoted in the tutorials are updated accordingly.
 
 ## [0.4.5] - 2026-08-25
 

@@ -467,6 +467,10 @@ Output: GridLines(x, y, z)
         densest material of the whole model for every interval.
         The global λ_min / N_wl stays the reference for the edge
         floor, the h_fine sentinel and the undershoot check.
+        Intervals too short for the full ramp keep h0 = h_fine and
+        relax the growth ratio to g' ≤ g so the count fills the
+        interval exactly (DD-193); the integer count never pushes the
+        fine-end cell below h_fine.
       - h_fine = min_gap / min_cells_per_feature
         where min_gap is the smallest interior gap on any axis;
         a feature plane contributes its adjacent interval widths with
