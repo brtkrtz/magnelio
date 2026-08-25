@@ -596,8 +596,8 @@ zero — it is nearly invisible to the E-arm, not exactly invisible.
 
  .. code-block:: none
 
-    bare tee    isolation |S43|  -162.8 dB   E-arm match |S44|  -4.98 dB
-    with post   isolation |S43|  -158.2 dB   E-arm match |S44|  -3.85 dB
+    bare tee    isolation |S43|  -158.5 dB   E-arm match |S44|  -4.98 dB
+    with post   isolation |S43|  -170.9 dB   E-arm match |S44|  -3.85 dB
 
 
 
@@ -634,7 +634,7 @@ above lets you estimate before you commit to it.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (3 minutes 15.318 seconds)
+   **Total running time of the script:** (2 minutes 38.914 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_12_sweep_optimize.py:
