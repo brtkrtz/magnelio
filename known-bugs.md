@@ -16,10 +16,18 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Three entries are open as of 2026-08-24: KB-022, KB-023 and
-KB-026.**  Everything else is struck through and resolved.
+**Two entries are open as of 2026-08-25: KB-022 and KB-023.**
+Everything else is struck through and resolved.
 
-## KB-026: An empty boolean result crashes plot() with a C++ abort — Open (2026-08-24)
+## KB-026: ~~An empty boolean result crashes plot() with a C++ abort~~ — Resolved (2026-08-25)
+
+**Resolution (DD-190).**  The rebuilt 3D viewer checks each shape's
+bounding box before tessellating and skips a shape without extent with
+a warning naming it; `plot()` no longer reaches the OCC call that
+threw.  The mesher-side symptom (`GridLines.x must be a 1D array …`)
+and the wish for validation at `add()` stand as recorded below.
+
+*Original record:*
 
 `GeometryModel.add(a - b)` accepts a `Difference` whose result is
 empty (subtrahend covers the minuend, e.g. two equal bricks), and the

@@ -40,6 +40,9 @@ large grids stay tractable.
   lumped RLC networks
 - Field monitors (time/frequency domain, flux, wall loss), plane-wave
   source (TF/SF), 3D eigenmode solver
+- Interactive 3D viewer of geometry and mesh: a Jupyter widget with an
+  axis-aligned cutting plane that opens every solid and shows the grid
+  cells on the cut; the same call opens a window in a script
 - Antennas: near-to-far-field transform recorded on a Huygens box the
   monitor places by itself, with image theory for ground planes and
   symmetry planes — directivity, gain, realized gain, radiated power

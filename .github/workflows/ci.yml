@@ -33,4 +33,6 @@ jobs:
           cache-environment: true
       # GPU-gated tests skip on their own without a CUDA device.
       - run: python -m pytest tests/unit -q --no-header
+        env:
+          PYVISTA_OFF_SCREEN: "true"
         shell: bash -el {0}

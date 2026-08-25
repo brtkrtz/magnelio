@@ -147,6 +147,13 @@ model.add_port(
 mesh = mio.Mesh.from_geometry(model, mio.MeshControl(max_cell_size=0.12e-3), f_max=f_max)
 print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 
+# %%
+# The 3D view shows the line opened along its axis, the grid cells on
+# the cut coloured by material, and the two port windows on the domain
+# faces.
+
+model.plot(mesh=mesh, cut=("y", 0.0))
+
 # Two cuts: across the cable, and along it.  The longitudinal cut
 # shows that the grid is uniform along the line — nothing varies in
 # z, so nothing there needs resolving.

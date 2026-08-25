@@ -10,6 +10,7 @@ dependencies:
   - h5py>=3.10
   - matplotlib>=3.8
   - vtk>=9.3  # ParaView export (DD-115): geometry.vtm, frequency .vtr series
+  - pyvista>=0.44  # 3D viewer (DD-190): model.plot(), screenshots in the docs
 
   # CAD / geometry
   - pythonocc-core  # conda-forge only
@@ -18,10 +19,15 @@ dependencies:
   # dispatch — Numba CPU fused / CUDA fused / NumPy-CuPy stencil fallback)
   - numba>=0.59
 
-  # Jupyter kernel (slider etc.)
+  # Jupyter kernel and the interactive 3D viewer widget (DD-190; mirrors
+  # the pyproject [jupyter] extra).  trame-jupyter-extension is deliberately
+  # absent: the viewer uses trame's own websocket transport.
   - ipykernel
   - ipywidgets
-  - pythreejs
+  - trame>=3.5
+  - trame-vtk>=2.8
+  - trame-vuetify>=2.4
+  - nest-asyncio2
 
   # Dev tools
   - pytest

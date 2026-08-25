@@ -11,6 +11,19 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- `model.plot()` is a new 3D viewer built on PyVista.  In a notebook
+  it is a widget with an axis-aligned cutting plane driven from its
+  toolbar (normal, position slider, flip, undo, reset) that opens every
+  solid with capped cuts; with `mesh=` the cells the cut exposes are
+  shown coloured by the material the mesher assigned.  Thin wires, ports (with their names),
+  lumped elements, symmetry planes and the domain box are drawn and
+  follow the cut; a toolbar menu hides or shows each object group;
+  lengths are in millimetres, and the camera pans.  The same call opens a window in a
+  script and renders a picture in a documentation build — the tutorials
+  now show the 3D view.  Options: `cut`, `flip`, `show_ports`,
+  `show_wires`, `show_grid`, `mode` (`"client"` in-browser rendering by
+  default, `"server"`, `"trame"`, `"static"`, `"none"`), `scale_mm`,
+  `camera`; the previous keywords keep their meaning.
 - New documentation section **How-to guides**: task-oriented recipes
   meant to be downloaded and adapted.  First content: lumped-port
   termination guides — *Lumped ports: investigations* walks the
@@ -31,6 +44,9 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- `model.plot()` no longer aborts the process on a shape without
+  volume (an empty boolean result): the shape is skipped with a
+  warning naming it.
 - `GeometryModel.plot()`: the 3D view can now be panned (right-drag or
   shift + left-drag).  Panning had silently done nothing because the
   orthographic camera the viewer used only impersonated one and left
@@ -38,6 +54,12 @@ major version is 0, minor releases may change the public API.
 
 ### Changed
 
+- `pyvista` is a new core dependency; the notebook 3D widget needs the
+  new `magnelio[jupyter]` extra (`trame`, `trame-vtk`, `trame-vuetify`,
+  `nest_asyncio2`).  pythreejs is no longer used.
+- `model.plot()` returns `None` after displaying the view (it used to
+  return the pythonocc renderer); `mode="none"` returns the
+  `pyvista.Plotter` instead of displaying.
 - The stripline pickup/kicker page moved from the tutorials (former
   tutorial 19) into the new How-to guides section; its content is
   unchanged, but the old `tutorials/plot_19_…` documentation URL no

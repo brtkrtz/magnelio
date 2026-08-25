@@ -345,28 +345,33 @@ class GeometryModel:
 
         return _plot_cross_section(self, normal, position, **kwargs)
 
-    def plot(self, **kwargs):
-        """Interactive 3D view in Jupyter via pythonocc.
+    def plot(self, mesh=None, **kwargs):
+        """Interactive 3D view of the model.
 
         Thin wrapper around
-        :func:`~magnelio.post.plot_geometry.show_geometry`.
-        All keyword arguments are forwarded.
+        :func:`~magnelio.post.plot_3d.show_geometry`.  In a notebook the
+        view is a widget with an axis-aligned cutting plane driven from
+        its toolbar; in a script it opens a window.
 
         Parameters
         ----------
+        mesh : Mesh, optional
+            Show this mesh's grid with the geometry: the grid cells —
+            coloured by assigned material — on the cutting plane.
         **kwargs
-            Forwarded (``size``, ``render_edges``, ``edge_color``,
-            ``quality``).
+            Forwarded (``cut``, ``flip``, ``show_ports``, ``show_wires``,
+            ``show_grid``, ``mode``, ``size``, ``render_edges``,
+            ``edge_color``, ``quality``, ``scale_mm``, ``camera``).
 
         Returns
         -------
-        JupyterRenderer
+        pyvista.Plotter or None
+            The plotter for ``mode="none"``; otherwise the view is
+            displayed and ``None`` is returned.
         """
-        from magnelio.post.plot_geometry import (  # noqa: PLC0415
-            show_geometry as _show_geometry,
-        )
+        from magnelio.post.plot_3d import show_geometry as _show_geometry  # noqa: PLC0415
 
-        return _show_geometry(self, **kwargs)
+        return _show_geometry(self, mesh=mesh, **kwargs)
 
     # ------------------------------------------------------------------
     # Validation

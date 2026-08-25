@@ -131,10 +131,18 @@ mesh = mio.Mesh.from_geometry(
 print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 
 # %%
-# Cross-sections of geometry and mesh are one call each — useful as a
-# sanity check before spending any solver time.  (For an interactive
-# 3D view, call ``model.plot()`` in the notebook version of this
-# tutorial — it renders the model as a rotatable widget.)
+# Looking at geometry and mesh before spending any solver time is one
+# call each.  ``model.plot()`` is the 3D view: the model opened along a
+# cutting plane, with the grid cells the cut exposes coloured by the
+# material the mesher assigned.  In the notebook version of this
+# tutorial it is an interactive widget (orbit, pan, zoom, and the
+# cutting plane in its toolbar); here it is rendered as a picture.
+
+model.plot(mesh=mesh, cut=("y", 0.0))
+
+# %%
+# The 2D cross-section is the exact companion — a section through the
+# CAD model with the grid lines overlaid.
 
 fig, ax = plots.plot_cross_section(model, "z", 0.0, mesh=mesh, title="Port cross-section (z = 0)")
 
