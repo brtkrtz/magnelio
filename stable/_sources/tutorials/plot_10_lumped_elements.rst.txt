@@ -186,16 +186,25 @@ mesher notes that a sheet this thin cannot register a wall-loss
 surface — accurate, and irrelevant here, because the metal is
 lossless PEC anyway.
 
-.. GENERATED FROM PYTHON SOURCE LINES 156-166
+.. GENERATED FROM PYTHON SOURCE LINES 156-175
 
 .. code-block:: Python
 
 
-    mesh = mio.Mesh.from_geometry(
-        model,
-        mio.MeshControl(min_nodes_per_wavelength=25, min_cells_per_feature=10, min_cell_size=51e-6),
-        f_max=f_max,
+    # One more knob: where a line's side wall meets the ring, the geometry
+    # has an edge 0.15 mm from the ring's own tangent plane.  The mesher
+    # gives such edges a grid plane of their own but drops those that would
+    # need a cell finer than ``h_max / max_edge_refinement`` (default 4) —
+    # and says so.  Allowing 5 keeps these junction planes; the strip's own
+    # cells are finer anyway, so the time step does not change.
+
+    mesh_control = mio.MeshControl(
+        min_nodes_per_wavelength=25,
+        min_cells_per_feature=10,
+        min_cell_size=51e-6,
+        max_edge_refinement=5,
     )
+    mesh = mio.Mesh.from_geometry(model, mesh_control, f_max=f_max)
     print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 
     fig, ax = model.plot_cross_section("y", h_sub + t_met / 2, mesh=mesh, title="Wilkinson layout")
@@ -213,12 +222,12 @@ lossless PEC anyway.
 
  .. code-block:: none
 
-    grid: 95 x 19 x 50 cells
+    grid: 95 x 19 x 58 cells
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 167-184
+.. GENERATED FROM PYTHON SOURCE LINES 176-193
 
 The top view shows the racetrack as meshed: feed from the bottom,
 the two arms, the gap at the top with the output stubs beside it,
@@ -238,7 +247,7 @@ circuit and are not terminated by the single-mode ports, so we stop
 the analysis at 9 GHz — from DC up to a safe margin below that
 ceiling.
 
-.. GENERATED FROM PYTHON SOURCE LINES 184-189
+.. GENERATED FROM PYTHON SOURCE LINES 193-198
 
 .. code-block:: Python
 
@@ -262,14 +271,14 @@ ceiling.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 190-194
+.. GENERATED FROM PYTHON SOURCE LINES 199-203
 
 The feed resolves at 49.1 Ω — the trimmed 50 Ω line of the previous
 tutorial, now on the thinner RO4003 stackup.  Time to run.  Exciting
 port 1 measures the split; exciting port 2 measures output match and
 isolation:
 
-.. GENERATED FROM PYTHON SOURCE LINES 194-223
+.. GENERATED FROM PYTHON SOURCE LINES 203-232
 
 .. code-block:: Python
 
@@ -316,12 +325,12 @@ isolation:
  .. code-block:: none
 
     @5 GHz: S21 -3.07 dB, S31 -3.03 dB
-            S11 -21.5 dB, S22 -21.8 dB, S23 -37.4 dB
+            S11 -21.0 dB, S22 -22.4 dB, S23 -43.8 dB
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 224-239
+.. GENERATED FROM PYTHON SOURCE LINES 233-248
 
 Both outputs sit on the −3 dB line across the whole band (the two
 curves are indistinguishable — the geometry is exactly mirror
@@ -339,7 +348,7 @@ and the resistor might as well not exist.  Its job only shows in the
 *output* quantities — and the cleanest way to see that is to build
 the same divider again without it:
 
-.. GENERATED FROM PYTHON SOURCE LINES 239-264
+.. GENERATED FROM PYTHON SOURCE LINES 248-273
 
 .. code-block:: Python
 
@@ -347,7 +356,7 @@ the same divider again without it:
     model_bare = build_divider(with_resistor=False)
     mesh_bare = mio.Mesh.from_geometry(
         model_bare,
-        mio.MeshControl(min_nodes_per_wavelength=25, min_cells_per_feature=10, min_cell_size=51e-6),
+        mesh_control,
         f_max=f_max,
     )
     result_bare = mio.AnalysisScatteringTD(mesh=mesh_bare, verbose=False).run(excited=["port2"])
@@ -386,7 +395,7 @@ the same divider again without it:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 265-292
+.. GENERATED FROM PYTHON SOURCE LINES 274-301
 
 This is the whole point of the component.  Without the resistor the
 divider is just a lossless three-port, and the theorem from the
@@ -419,7 +428,7 @@ next tutorial's subject.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 51.648 seconds)
+   **Total running time of the script:** (1 minutes 0.515 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_10_lumped_elements.py:

@@ -299,12 +299,13 @@ once more without changing the mode.
 
  .. code-block:: none
 
-    h = 5 mm: Z_strip =  40.2 ohm (sum)   39.2 ohm (difference)
-    h = 6 mm: Z_strip =  44.6 ohm (sum)   43.3 ohm (difference)
-    h = 7 mm: Z_strip =  48.5 ohm (sum)   46.9 ohm (difference)
-    h = 8 mm: Z_strip =  53.3 ohm (sum)   51.5 ohm (difference)
-    h = 9 mm: Z_strip =  55.3 ohm (sum)   53.3 ohm (difference)
-    strip height for a 50 ohm strip in the difference mode: 7.69 mm
+    UserWarning: 2 geometry-edge planes (1 on x, 1 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0225167 m, would create a 0.000866 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=8.7) keeps it, or refine the mesh.
+    h = 5 mm: Z_strip =  40.8 ohm (sum)   39.7 ohm (difference)
+    h = 6 mm: Z_strip =  45.3 ohm (sum)   43.9 ohm (difference)
+    h = 7 mm: Z_strip =  48.8 ohm (sum)   47.2 ohm (difference)
+    h = 8 mm: Z_strip =  51.5 ohm (sum)   49.7 ohm (difference)
+    h = 9 mm: Z_strip =  54.1 ohm (sum)   52.1 ohm (difference)
+    strip height for a 50 ohm strip in the difference mode: 8.14 mm
 
 
 
@@ -334,7 +335,7 @@ impedances for the design follow, together with the mode itself:
 
  .. code-block:: none
 
-    design: Z_strip = 49.6 ohm (sum), 48.0 ohm (difference)
+    design: Z_strip = 51.7 ohm (sum), 50.0 ohm (difference)
 
 
 
@@ -425,9 +426,10 @@ actually landed on.
 
  .. code-block:: none
 
-    grid: 41 x 44 x 209 cells
-    coax port impedance on the grid: 52.7 ohm
-    field line recorded at y = 0.95 mm, 209 points
+    UserWarning: 4 geometry-edge planes (1 on x, 1 on y, 2 on z) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at z = 0.149896 m, would create a 0.00175 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=4.3) keeps it, or refine the mesh.
+    grid: 41 x 50 x 209 cells
+    coax port impedance on the grid: 52.3 ohm
+    field line recorded at y = 0.98 mm, 209 points
 
 
 
@@ -749,10 +751,10 @@ the distance between the two feeds, not the strip's own length.
  .. code-block:: none
 
     at 0.5 GHz:
-      K_par  = 0.409  (ideal 0.455)
-      K_perp = 2.825  (ideal 3.261)
-      R_par T^2  =    8.8 ohm  (ideal   10.9 ohm)
-      R_perp T^2 =  420.2 ohm  (ideal  560.1 ohm)
+      K_par  = 0.392  (ideal 0.466)
+      K_perp = 2.730  (ideal 3.339)
+      R_par T^2  =    8.0 ohm  (ideal   11.4 ohm)
+      R_perp T^2 =  389.9 ohm  (ideal  583.0 ohm)
 
 
 
@@ -835,8 +837,8 @@ frequency.
 
  .. code-block:: none
 
-    position sensitivity over 0.25-0.75 GHz: 72 ... 73 /m
-      = 7.2 %/mm   (ideal 7.6 %/mm)
+    position sensitivity over 0.25-0.75 GHz: 73 ... 73 /m
+      = 7.3 %/mm   (ideal 7.6 %/mm)
 
 
 
@@ -859,7 +861,7 @@ that move the real device toward, or away from, the ideal stripline.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (4 minutes 48.579 seconds)
+   **Total running time of the script:** (2 minutes 39.960 seconds)
 
 
 .. _sphx_glr_download_howto_plot_stripline_pickup_kicker.py:

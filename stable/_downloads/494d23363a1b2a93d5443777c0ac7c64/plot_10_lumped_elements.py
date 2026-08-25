@@ -154,11 +154,20 @@ model = build_divider()
 # surface — accurate, and irrelevant here, because the metal is
 # lossless PEC anyway.
 
-mesh = mio.Mesh.from_geometry(
-    model,
-    mio.MeshControl(min_nodes_per_wavelength=25, min_cells_per_feature=10, min_cell_size=51e-6),
-    f_max=f_max,
+# One more knob: where a line's side wall meets the ring, the geometry
+# has an edge 0.15 mm from the ring's own tangent plane.  The mesher
+# gives such edges a grid plane of their own but drops those that would
+# need a cell finer than ``h_max / max_edge_refinement`` (default 4) —
+# and says so.  Allowing 5 keeps these junction planes; the strip's own
+# cells are finer anyway, so the time step does not change.
+
+mesh_control = mio.MeshControl(
+    min_nodes_per_wavelength=25,
+    min_cells_per_feature=10,
+    min_cell_size=51e-6,
+    max_edge_refinement=5,
 )
+mesh = mio.Mesh.from_geometry(model, mesh_control, f_max=f_max)
 print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 
 fig, ax = model.plot_cross_section("y", h_sub + t_met / 2, mesh=mesh, title="Wilkinson layout")
@@ -240,7 +249,7 @@ fig.tight_layout()
 model_bare = build_divider(with_resistor=False)
 mesh_bare = mio.Mesh.from_geometry(
     model_bare,
-    mio.MeshControl(min_nodes_per_wavelength=25, min_cells_per_feature=10, min_cell_size=51e-6),
+    mesh_control,
     f_max=f_max,
 )
 result_bare = mio.AnalysisScatteringTD(mesh=mesh_bare, verbose=False).run(excited=["port2"])

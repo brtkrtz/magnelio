@@ -21,6 +21,39 @@ accuracy trade-offs of local grading are standard FDTD/FIT practice
 {cite}`taflovehagness2005`; the specific fixpoint,
 plane-clustering and thin-sheet heuristics are in-house engineering.
 
+### Which geometry gets a grid plane
+
+Grid planes come from two passes over the CAD model.  The *face* pass
+places a plane on every planar face with an axis-parallel normal and
+on the axis-normal tangent positions of cylinders and spheres — the
+material boundaries.  The *edge* pass (DD-191) places a plane wherever
+a B-rep edge lies flat in an axis-normal plane: the circle where a
+chamfer cone meets a cylinder, the straight line where a fillet leaves
+a box face, the section curves of a loft, the iris and equator
+circles of a revolved profile.  These are the positions where a
+body's cross-section changes character along an axis, and they are
+invisible to the face pass (a chamfer is a cone; a fillet is a quarter
+cylinder whose tangent positions lie outside its trimmed extent).
+Only sharp edges count: seam edges, degenerated edges and the split
+lines a Boolean leaves between two faces of one surface contribute
+nothing — a cylinder's seam is a straight line through its axis and
+would put a phantom plane there.
+
+Edge planes are a *soft* class.  They never move or outrank a material
+plane, and they ask for one cell across the interval they bound —
+enough for the cell's midplane to see the feature — rather than the
+`min_cells_per_feature` a material gap gets.  They are floored:
+an edge plane whose cell would be smaller than
+`h_max / max_edge_refinement` (default 4), or than `min_cell_size`,
+is dropped and reported by a warning that names the coarsest dropped
+position, the cell it would have created and the ratio that keeps it.  The ratio
+bounds the time-step cost of resolving small edges (the explicit
+loop takes one step bounded by the smallest cell anywhere);
+`max_edge_refinement=0` switches the edge pass off.
+
+Why a feature below the grid is *silent* rather than approximately
+represented is a property of the conformal material matrices, next.
+
 ## Conformal sub-cell material matrices (partially filled cells)
 
 Material boundaries that cut through grid cells are represented by
@@ -33,6 +66,19 @@ This family of techniques — retaining the standard leapfrog update and
 encoding sub-cell geometry purely in the material matrices — was
 introduced for FIT by Krietenstein, Schuhmann, Thoma and Weiland
 {cite}`krietenstein1998`.
+
+The average is taken over the dual face *transverse* to the edge; it
+does not integrate along the edge.  A boundary that crosses the grid
+edges is therefore resolved continuously — moving a cylinder's radius
+by a twentieth of a cell moves a resonance by a proportionate,
+linearly scaling amount — while a feature that varies *along* the
+edges inside one cell layer has no lever at all until it reaches the
+layer's midplane.  A chamfer or a shallow recess on a face that is
+smaller than half a cell contributes exactly nothing, and then
+switches on in one step when it crosses the midplane.  This is the
+reason for the edge pass above: with a grid plane at the chamfer's
+onset the chamfer occupies a cell layer of its own, whose dual faces
+see it.  Where the edge floor drops that plane, the mesher says so.
 
 For perfectly conducting boundaries the classifier additionally
 shortens partially-PEC edges (free-length weighting), which is the
@@ -86,5 +132,5 @@ square-lattice Green's function, as given in the thin-wire literature
 
 Hard minimum cell size with floor-aware refits and a longitudinal
 series-$\varepsilon$ correction (DD-060), per-axis fine resolution
-(DD-061) and a permanent 30-case stress sentinel (DD-062) are
-in-house engineering.
+(DD-061), a permanent 30-case stress sentinel (DD-062) and the
+reported edge floor (DD-191) are in-house engineering.

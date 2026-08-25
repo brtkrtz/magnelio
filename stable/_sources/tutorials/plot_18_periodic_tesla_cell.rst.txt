@@ -246,7 +246,7 @@ interest have their electric field in the r-z plane, which is
 *tangential* to the planes x = 0 and y = 0, so the correct wall there
 is the magnetic one (tutorial 09).
 
-.. GENERATED FROM PYTHON SOURCE LINES 178-193
+.. GENERATED FROM PYTHON SOURCE LINES 178-200
 
 .. code-block:: Python
 
@@ -262,7 +262,14 @@ is the magnetic one (tutorial 09).
     )
     model.add(cell)
 
-    mesh = mio.Mesh.from_geometry(model, mio.MeshControl(max_cell_size=4e-3), f_max=1.5e9)
+    # The revolved profile's arc junctions and the iris circles get grid
+    # planes of their own; two of them sit 5.6 mm apart, which a 4 mm cell
+    # cannot fill evenly.  Without the floor the mesher splits that gap
+    # into two 2.8 mm cells — and, since the time step follows the smallest
+    # cell, warns about it.  The floor keeps it one cell.
+
+    mesh_control = mio.MeshControl(max_cell_size=4e-3, min_cell_size=2.8e-3)
+    mesh = mio.Mesh.from_geometry(model, mesh_control, f_max=1.5e9)
     print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 
 
@@ -273,12 +280,12 @@ is the magnetic one (tutorial 09).
 
  .. code-block:: none
 
-    grid: 26 x 26 x 29 cells
+    grid: 26 x 26 x 30 cells
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 194-205
+.. GENERATED FROM PYTHON SOURCE LINES 201-212
 
 Band edges the classical way
 ----------------------------
@@ -292,7 +299,7 @@ flips sign from cell to cell, :math:`E_z` is *odd* across the iris
 plane and the wall there is magnetic.  Two ordinary cavity solves,
 nothing periodic about them:
 
-.. GENERATED FROM PYTHON SOURCE LINES 205-220
+.. GENERATED FROM PYTHON SOURCE LINES 212-227
 
 .. code-block:: Python
 
@@ -301,7 +308,7 @@ nothing periodic about them:
     def lowest_mode(bcs):
         half = mio.GeometryModel(background="pec", boundary_conditions=bcs)
         half.add(cell)
-        m = mio.Mesh.from_geometry(half, mio.MeshControl(max_cell_size=4e-3), f_max=1.5e9)
+        m = mio.Mesh.from_geometry(half, mesh_control, f_max=1.5e9)
         return mio.AnalysisEigenmode(mesh=m, n_modes=1, verbose=False).run().frequencies[0]
 
 
@@ -319,13 +326,13 @@ nothing periodic about them:
 
  .. code-block:: none
 
-    electric walls on the iris planes (0-mode):  1.2766 GHz
-    magnetic walls on the iris planes (pi-mode): 1.3007 GHz
+    electric walls on the iris planes (0-mode):  1.2776 GHz
+    magnetic walls on the iris planes (pi-mode): 1.3018 GHz
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 221-231
+.. GENERATED FROM PYTHON SOURCE LINES 228-238
 
 The sweep
 ---------
@@ -338,7 +345,7 @@ problem is real; in between the mode fields are complex — travelling
 waves — and the solver switches to a complex Hermitian formulation
 without anything to configure.
 
-.. GENERATED FROM PYTHON SOURCE LINES 231-242
+.. GENERATED FROM PYTHON SOURCE LINES 238-249
 
 .. code-block:: Python
 
@@ -361,18 +368,18 @@ without anything to configure.
 
  .. code-block:: none
 
-    phase advance   0.0 deg: 1.2766 GHz
-    phase advance  30.0 deg: 1.2782 GHz
-    phase advance  60.0 deg: 1.2826 GHz
-    phase advance  90.0 deg: 1.2887 GHz
-    phase advance 120.0 deg: 1.2948 GHz
-    phase advance 150.0 deg: 1.2993 GHz
-    phase advance 180.0 deg: 1.3010 GHz
+    phase advance   0.0 deg: 1.2776 GHz
+    phase advance  30.0 deg: 1.2792 GHz
+    phase advance  60.0 deg: 1.2836 GHz
+    phase advance  90.0 deg: 1.2897 GHz
+    phase advance 120.0 deg: 1.2959 GHz
+    phase advance 150.0 deg: 1.3005 GHz
+    phase advance 180.0 deg: 1.3021 GHz
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 243-258
+.. GENERATED FROM PYTHON SOURCE LINES 250-265
 
 The dispersion diagram
 ----------------------
@@ -390,7 +397,7 @@ parameters to the computed points checks the curve's *shape*; the
 published values are 1.300 GHz for the :math:`\pi`-mode and
 :math:`k = 1.87\,\%`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 258-294
+.. GENERATED FROM PYTHON SOURCE LINES 265-301
 
 .. code-block:: Python
 
@@ -443,13 +450,13 @@ published values are 1.300 GHz for the :math:`\pi`-mode and
 
  .. code-block:: none
 
-    pi-mode:              1.3010 GHz (design 1.3000 GHz)
-    cell-to-cell coupling: 1.89 % (published 1.87 %)
+    pi-mode:              1.3021 GHz (design 1.3000 GHz)
+    cell-to-cell coupling: 1.90 % (published 1.87 %)
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 295-322
+.. GENERATED FROM PYTHON SOURCE LINES 302-329
 
 The band edges from the periodic solves land on the wall-type solves
 — the same two numbers by two routes, to a fraction of a permille
@@ -479,7 +486,7 @@ the real snapshot of its electric field next to the
 The standing wave is symmetric about the cell's mid-plane; the
 travelling wave is not, and no combination of walls would produce it.
 
-.. GENERATED FROM PYTHON SOURCE LINES 322-337
+.. GENERATED FROM PYTHON SOURCE LINES 329-344
 
 .. code-block:: Python
 
@@ -502,7 +509,7 @@ travelling wave is not, and no combination of walls would produce it.
 
 
 .. image-sg:: /tutorials/images/sphx_glr_plot_18_periodic_tesla_cell_003.png
-   :alt: $\pi$-mode (standing wave), 1.3010 GHz, $2\pi/3$-mode (travelling wave), 1.2948 GHz
+   :alt: $\pi$-mode (standing wave), 1.3021 GHz, $2\pi/3$-mode (travelling wave), 1.2959 GHz
    :srcset: /tutorials/images/sphx_glr_plot_18_periodic_tesla_cell_003.png
    :class: sphx-glr-single-img
 
@@ -510,7 +517,7 @@ travelling wave is not, and no combination of walls would produce it.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 338-350
+.. GENERATED FROM PYTHON SOURCE LINES 345-357
 
 Where to go next
 ----------------
@@ -528,7 +535,7 @@ surfaces at normal incidence.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (3 minutes 45.591 seconds)
+   **Total running time of the script:** (2 minutes 11.209 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_18_periodic_tesla_cell.py:

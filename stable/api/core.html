@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=90733dfc"></script>
+    <script src="../_static/documentation_options.js?v=340bb9e5"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -2056,7 +2056,7 @@ mapping.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.MeshControl">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.</span></span><span class="sig-name descname"><span class="pre">MeshControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_nodes_per_wavelength</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_cells_per_feature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">growth_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cell_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_cell_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forced_planes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conformal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dey_mittra_eta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_feature_gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.MeshControl" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.</span></span><span class="sig-name descname"><span class="pre">MeshControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_nodes_per_wavelength</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_cells_per_feature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">growth_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cell_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_cell_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forced_planes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conformal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dey_mittra_eta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_feature_gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_edge_refinement</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.MeshControl" title="Link to this definition">#</a></dt>
 <dd><p>Parameters controlling grid-line generation.</p>
 <p>The mesher uses two cell-size scales per axis:</p>
 <ul class="simple">
@@ -2105,6 +2105,20 @@ resolves to <code class="docutils literal notranslate"><span class="pre">1e-5</s
 CSG float wiggle this tolerance absorbs is <em>relative</em>, so the
 default scales with the model, from meter-scale structures
 down to micron-scale optics.</p></li>
+<li><p><strong>max_edge_refinement</strong> (<em>float</em><em>, </em><em>default 4.0</em>) – Geometry edges — the onset of a chamfer or fillet, a loft
+section, the equator or iris circle of a revolved profile —
+get a grid plane of their own wherever the edge lies flat in
+an axis-normal plane, so the feature occupies at least one
+cell layer and the cell’s material average can see it.  A
+feature that varies <em>along</em> the grid edges inside one cell has
+no effect at all until it reaches the cell’s midplane (a
+chamfer below half a cell height is invisible).  This ratio
+caps the refinement: an edge plane whose cell would be smaller
+than <code class="docutils literal notranslate"><span class="pre">h_max</span> <span class="pre">/</span> <span class="pre">max_edge_refinement</span></code> (or than
+<code class="docutils literal notranslate"><span class="pre">min_cell_size</span></code>) is dropped with a warning naming it.  The
+time step follows the smallest cell, so the ratio also bounds
+the runtime cost of resolving small edges.  <code class="docutils literal notranslate"><span class="pre">0</span></code> disables
+edge planes altogether (material faces and silhouettes only).</p></li>
 </ul>
 </dd>
 </dl>
@@ -2131,6 +2145,11 @@ down to micron-scale optics.</p></li>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="magnelio.MeshControl.max_cell_size">
 <span class="sig-name descname"><span class="pre">max_cell_size</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#magnelio.MeshControl.max_cell_size" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.MeshControl.max_edge_refinement">
+<span class="sig-name descname"><span class="pre">max_edge_refinement</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4.0</span></span><a class="headerlink" href="#magnelio.MeshControl.max_edge_refinement" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -2400,6 +2419,7 @@ watchdog.  Not inherited — each segment gets its own.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.MeshControl.forced_planes"><code class="docutils literal notranslate"><span class="pre">MeshControl.forced_planes</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.MeshControl.growth_factor"><code class="docutils literal notranslate"><span class="pre">MeshControl.growth_factor</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.MeshControl.max_cell_size"><code class="docutils literal notranslate"><span class="pre">MeshControl.max_cell_size</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.MeshControl.max_edge_refinement"><code class="docutils literal notranslate"><span class="pre">MeshControl.max_edge_refinement</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.MeshControl.min_cell_size"><code class="docutils literal notranslate"><span class="pre">MeshControl.min_cell_size</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.MeshControl.min_cells_per_feature"><code class="docutils literal notranslate"><span class="pre">MeshControl.min_cells_per_feature</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.MeshControl.min_feature_gap"><code class="docutils literal notranslate"><span class="pre">MeshControl.min_feature_gap</span></code></a></li>

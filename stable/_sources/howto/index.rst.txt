@@ -92,6 +92,23 @@ the tutorials instead.
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="Nothing inside a single run tells you how far its result is from the converged one.  The instrument that does is a ladder: the same model on successively finer meshes, one number read off each rung, and a stop rule for the number.  Commercial suites hide this loop behind an &quot;adaptive mesh refinement&quot; button; this page is the loop, written out, so it wraps around whatever you are simulating.">
+
+.. only:: html
+
+  .. image:: /howto/images/thumb/sphx_glr_plot_mesh_convergence_thumb.png
+    :alt:
+
+  :doc:`/howto/plot_mesh_convergence`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Mesh convergence: a ladder around your simulation</div>
+    </div>
+
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="A pair of stripline electrodes in a beam pipe is a workhorse of beam instrumentation: read out, it is a broadband pickup (a beam position monitor); driven, it is a kicker that deflects the beam.  Neither role is an S-parameter — a port model has no beam — yet both follow from one S-parameter simulation.  This guide walks the route used to design such devices (Goldberg and Lambertson, AIP Conf. Proc. 249, 537 (1992)):">
 
 .. only:: html
@@ -121,6 +138,7 @@ the tutorials instead.
    /howto/plot_lumped_port_tuning_coax
    /howto/plot_lumped_port_tuning_cpw
    /howto/plot_lumped_port_tuning_microstrip
+   /howto/plot_mesh_convergence
    /howto/plot_stripline_pickup_kicker
 
 

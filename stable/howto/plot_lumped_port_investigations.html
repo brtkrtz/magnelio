@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=90733dfc"></script>
+    <script src="../_static/documentation_options.js?v=340bb9e5"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -381,6 +381,7 @@
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_coax.html">Lumped port tuning: coaxial line</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_cpw.html">Lumped port tuning: coplanar waveguide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_microstrip.html">Lumped port tuning: microstrip</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_mesh_convergence.html">Mesh convergence: a ladder around your simulation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_stripline_pickup_kicker.html">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</a></li>
 </ul>
 </div>
@@ -624,7 +625,7 @@ reactance is what reflects at the top of the band.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_lumped_port_investigations_001.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_001.png" alt="Coax: gap length moves the reflection level" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f98d3d5efd0&gt;
+<img src="../_images/sphx_glr_plot_lumped_port_investigations_001.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_001.png" alt="Coax: gap length moves the reflection level" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f8c4daf0590&gt;
 </pre></div>
 </div>
 <p><strong>Gap position</strong> moves the phase error.  The termination does not
@@ -653,7 +654,7 @@ coax, gap start at -1·gap: max |phase error|  17.40 deg
 coax, gap start at -2·gap: max |phase error|   5.83 deg
 coax, gap start at -3·gap: max |phase error|   5.74 deg
 
-&lt;matplotlib.legend.Legend object at 0x7f986f3c4150&gt;
+&lt;matplotlib.legend.Legend object at 0x7f8c180c4910&gt;
 </pre></div>
 </div>
 <p><strong>Port impedance</strong> sets the low-frequency floor: the constant
@@ -678,7 +679,7 @@ mismatch.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_lumped_port_investigations_003.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_003.png" alt="Coax: port impedance sets the low-frequency floor" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f985639e490&gt;
+<img src="../_images/sphx_glr_plot_lumped_port_investigations_003.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_003.png" alt="Coax: port impedance sets the low-frequency floor" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f8c1833f4d0&gt;
 </pre></div>
 </div>
 </section>
@@ -791,7 +792,7 @@ microstrip, trace end at -0.5·h_sub: max |phase error|  10.19 deg
 microstrip, trace end at -1.0·h_sub: max |phase error|   2.93 deg
 microstrip, trace end at -1.5·h_sub: max |phase error|  16.03 deg
 
-&lt;matplotlib.legend.Legend object at 0x7f98a01f7d90&gt;
+&lt;matplotlib.legend.Legend object at 0x7f8c4d9b7390&gt;
 </pre></div>
 </div>
 </section>
@@ -960,7 +961,7 @@ catalogue value leaves a visible broadband pedestal.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_lumped_port_investigations_006.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_006.png" alt="CPW: impedance mismatch floor" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f9856bdc710&gt;
+<img src="../_images/sphx_glr_plot_lumped_port_investigations_006.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_006.png" alt="CPW: impedance mismatch floor" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f8c187e3550&gt;
 </pre></div>
 </div>
 </section>
@@ -1003,7 +1004,7 @@ worst |S11| in band :  -26.6 dB
 max |phase error|   :  21.35 deg
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 43.736 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 48.546 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-lumped-port-investigations-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/c9ef743082ff880408b55ba207ef6782/plot_lumped_port_investigations.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_lumped_port_investigations.ipynb</span></code></a></p>

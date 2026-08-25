@@ -261,16 +261,22 @@ permittivity.
 
 Always check how many modes actually came back.
 
-.. GENERATED FROM PYTHON SOURCE LINES 195-223
+.. GENERATED FROM PYTHON SOURCE LINES 195-229
 
 .. code-block:: Python
 
 
 
-    def eigenfrequencies(model, *, n_modes=3, f_shift=2.6e9, f_max=3.5e9, mnpw=12):
-        """Resonant frequencies [Hz] of a closed structure, lowest first."""
+    def eigenfrequencies(model, *, n_modes=3, f_shift=2.6e9, f_max=3.5e9, mnpw=12, mcpf=4):
+        """Resonant frequencies [Hz] of a closed structure, lowest first.
+
+        ``mnpw`` sets the bulk cell (nodes per wavelength), ``mcpf`` the cell
+        at material boundaries (cells per feature); a finer grid scales both.
+        """
         mesh = mio.Mesh.from_geometry(
-            model, mio.MeshControl(min_nodes_per_wavelength=mnpw), f_max=f_max
+            model,
+            mio.MeshControl(min_nodes_per_wavelength=mnpw, min_cells_per_feature=mcpf),
+            f_max=f_max,
         )
         result = mio.AnalysisEigenmode(
             mesh=mesh,
@@ -285,8 +291,8 @@ Always check how many modes actually came back.
         return f, cells
 
 
-    f_coarse, cells_coarse = eigenfrequencies(single_resonator(), mnpw=10)
-    f_fine, cells_fine = eigenfrequencies(single_resonator(), mnpw=16)
+    f_coarse, cells_coarse = eigenfrequencies(single_resonator())
+    f_fine, cells_fine = eigenfrequencies(single_resonator(), mnpw=24, mcpf=6)
 
     print(f"coarse ({cells_coarse:6d} cells):  f0 = {f_coarse[0] / 1e9:.4f} GHz")
     print(f"fine   ({cells_fine:6d} cells):  f0 = {f_fine[0] / 1e9:.4f} GHz")
@@ -301,30 +307,36 @@ Always check how many modes actually came back.
 
  .. code-block:: none
 
-    coarse (  3920 cells):  f0 = 2.3278 GHz
-    fine   (  8192 cells):  f0 = 2.5593 GHz
-    next mode is at 4.67 GHz — the band is clear
-    drift between the two grids: +9.9 %
+    coarse (  7056 cells):  f0 = 2.5780 GHz
+    fine   ( 22188 cells):  f0 = 2.5986 GHz
+    next mode is at 4.73 GHz — the band is clear
+    drift between the two grids: +0.8 %
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 224-236
+.. GENERATED FROM PYTHON SOURCE LINES 230-248
 
 The uncomfortable observation
 -----------------------------
 
-The resonant frequency is *not* converged.  Refining the grid moves
-it by percent, and it is still moving.  That is not a defect of the
-solver: a high-permittivity puck concentrates the field in a small
-volume with a strong discontinuity at its surface, which is exactly
-the situation a finite grid resolves slowly.
+The resonant frequency is *not* converged.  Refining the grid — both
+of its scales together, the bulk cell and the cell at the ceramic
+boundary — moves it by a percent, and not even monotonically: a
+high-permittivity puck concentrates the field in a small volume with
+a strong discontinuity at its surface, and on a conformal grid the
+result depends on how the grid lines happen to cut that surface.
+That is not a defect of the solver; it is what a finite grid does
+with such a body, and the how-to *Mesh convergence* shows the same
+behaviour on a ladder of grids.
 
-If the design depended on hitting an absolute frequency, this would
-be fatal — and it is why filters are not designed that way.  What
-follows shows the alternative, and why it works.
+A percent sounds small.  This filter is 2 % wide, so a percent of
+:math:`f_0` is half the passband.  If the design depended on hitting
+an absolute frequency it would be fatal — and it is why filters are
+not designed that way.  What follows shows the alternative, and why
+it works.
 
-.. GENERATED FROM PYTHON SOURCE LINES 238-260
+.. GENERATED FROM PYTHON SOURCE LINES 250-275
 
 Stage 2: coupling between the resonators
 ----------------------------------------
@@ -339,9 +351,12 @@ separation,
    k = \frac{f_2^2 - f_1^2}{f_2^2 + f_1^2}
 
 and it is *a ratio of frequencies*.  Both modes live in the same
-mesh and carry nearly the same discretisation error, so it largely
-cancels — which is what makes this quantity, unlike :math:`f_0`,
-usable on a grid one can afford.
+mesh and share most of their discretisation error, so the common
+part cancels.  What remains is an error of a fraction of a percent
+*of k* — and since :math:`k` sets the bandwidth, that is a fraction
+of a percent of a 2 % bandwidth.  The tolerance on :math:`k` is loose
+where the tolerance on :math:`f_0` is tight, and a grid one can
+afford meets the first and misses the second.
 
 Two pucks sitting in one open cavity couple far too strongly for a
 2 % filter, by roughly an order of magnitude.  The control is a wall
@@ -349,7 +364,7 @@ between them with a window cut in it: below the window's cut-off the
 fields reach through evanescently, and the window width sets how
 much.
 
-.. GENERATED FROM PYTHON SOURCE LINES 260-298
+.. GENERATED FROM PYTHON SOURCE LINES 275-313
 
 .. code-block:: Python
 
@@ -403,20 +418,22 @@ much.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 299-301
+.. GENERATED FROM PYTHON SOURCE LINES 314-316
 
 Sweeping the window
 -------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 301-316
+.. GENERATED FROM PYTHON SOURCE LINES 316-333
 
 .. code-block:: Python
 
 
 
-    def coupling_of(iris_window, mnpw=12):
+    def coupling_of(iris_window, mnpw=12, mcpf=4):
         """Coupling coefficient k from the even/odd mode pair."""
-        f, _ = eigenfrequencies(coupled_pair(iris_window), n_modes=3, f_shift=2.3e9, mnpw=mnpw)
+        f, _ = eigenfrequencies(
+            coupled_pair(iris_window), n_modes=3, f_shift=2.3e9, mnpw=mnpw, mcpf=mcpf
+        )
         f1, f2 = f[0], f[1]
         return (f2**2 - f1**2) / (f2**2 + f1**2), 0.5 * (f1 + f2)
 
@@ -435,27 +452,30 @@ Sweeping the window
 
  .. code-block:: none
 
-    window  4.0 mm ->  k = 0.00808,  centre 2.6322 GHz
-    window  6.0 mm ->  k = 0.03085,  centre 2.6519 GHz
-    window  8.0 mm ->  k = 0.06354,  centre 2.5137 GHz
-    window 10.0 mm ->  k = 0.10320,  centre 2.5229 GHz
+    window  4.0 mm ->  k = 0.00806,  centre 2.8863 GHz
+    window  6.0 mm ->  k = 0.03092,  centre 2.8351 GHz
+    window  8.0 mm ->  k = 0.06457,  centre 2.7546 GHz
+    window 10.0 mm ->  k = 0.10421,  centre 2.6956 GHz
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 317-321
+.. GENERATED FROM PYTHON SOURCE LINES 334-341
 
-The ratio is robust where the frequency is not
-----------------------------------------------
+The ratio meets its tolerance where the frequency does not
+----------------------------------------------------------
 
 Re-run one window on the finer grid and compare both quantities.
+Read the two numbers against what the design can absorb: the change
+in :math:`k` is that same fraction of the bandwidth, the change in
+the pair's frequency is a fraction of the passband.
 
-.. GENERATED FROM PYTHON SOURCE LINES 321-345
+.. GENERATED FROM PYTHON SOURCE LINES 341-365
 
 .. code-block:: Python
 
 
-    k_fine, fc_fine = coupling_of(6.0e-3, mnpw=16)
+    k_fine, fc_fine = coupling_of(6.0e-3, mnpw=24, mcpf=6)
     i6 = int(np.argmin(np.abs(windows - 6.0e-3)))
     print(f"window 6.0 mm, coarse grid:  k = {k_values[i6]:.5f}, f = {f_centres[i6] / 1e9:.4f} GHz")
     print(f"window 6.0 mm, fine grid:    k = {k_fine:.5f}, f = {fc_fine / 1e9:.4f} GHz")
@@ -491,16 +511,16 @@ Re-run one window on the finer grid and compare both quantities.
 
  .. code-block:: none
 
-    window 6.0 mm, coarse grid:  k = 0.03085, f = 2.6519 GHz
-    window 6.0 mm, fine grid:    k = 0.03098, f = 2.8114 GHz
-    k moves 0.4 %, f moves 6.0 %
+    window 6.0 mm, coarse grid:  k = 0.03092, f = 2.8351 GHz
+    window 6.0 mm, fine grid:    k = 0.03116, f = 2.8557 GHz
+    k moves 0.8 %, f moves 0.7 %
 
-    window for k = 0.0332: 6.14 mm
-
-
+    window for k = 0.0332: 6.13 mm
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 346-361
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 366-381
 
 Stage 3: how hard the outside world pulls
 -----------------------------------------
@@ -518,7 +538,7 @@ the lid is one large metal sheet with a small hole in it.  A
 :class:`~magnelio.ports.PortLumped` across the gap is the natural
 feed, the same one the monopole tutorial used.
 
-.. GENERATED FROM PYTHON SOURCE LINES 361-386
+.. GENERATED FROM PYTHON SOURCE LINES 381-406
 
 .. code-block:: Python
 
@@ -554,7 +574,7 @@ feed, the same one the monopole tutorial used.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 387-410
+.. GENERATED FROM PYTHON SOURCE LINES 407-430
 
 Two ways to read Q, and why both are printed
 --------------------------------------------
@@ -580,7 +600,7 @@ ever reaching the noise floor.  When the two agree the window was
 long enough; when they diverge it was not.  That is worth more than
 either number alone.
 
-.. GENERATED FROM PYTHON SOURCE LINES 410-465
+.. GENERATED FROM PYTHON SOURCE LINES 430-485
 
 .. code-block:: Python
 
@@ -647,14 +667,14 @@ either number alone.
 
  .. code-block:: none
 
-    probe at 6.0 mm:  f0 = 2.9720 GHz,  Qe = 14.6 (group delay) / 14.3 (ring-down)
-    probe at 7.0 mm:  f0 = 2.9200 GHz,  Qe = 22.8 (group delay) / 22.7 (ring-down)
-    probe at 8.0 mm:  f0 = 2.8862 GHz,  Qe = 37.0 (group delay) / 36.8 (ring-down)
+    probe at 6.0 mm:  f0 = 2.9775 GHz,  Qe = 14.6 (group delay) / 14.3 (ring-down)
+    probe at 7.0 mm:  f0 = 2.9255 GHz,  Qe = 22.8 (group delay) / 22.7 (ring-down)
+    probe at 8.0 mm:  f0 = 2.8915 GHz,  Qe = 37.0 (group delay) / 36.8 (ring-down)
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 466-474
+.. GENERATED FROM PYTHON SOURCE LINES 486-494
 
 External Q rises exponentially with distance
 --------------------------------------------
@@ -665,7 +685,7 @@ so :math:`\ln Q_e` is a straight line in the probe radius.  Two
 points would in principle place the design; three show that the line
 is real.
 
-.. GENERATED FROM PYTHON SOURCE LINES 474-489
+.. GENERATED FROM PYTHON SOURCE LINES 494-509
 
 .. code-block:: Python
 
@@ -703,7 +723,7 @@ is real.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 490-499
+.. GENERATED FROM PYTHON SOURCE LINES 510-519
 
 Stage 4: the filter itself
 --------------------------
@@ -715,7 +735,7 @@ the second half from the first: the filter is symmetric about
 :math:`x = 0`, and saying so in the geometry means it cannot drift
 out of symmetry through a typo.
 
-.. GENERATED FROM PYTHON SOURCE LINES 499-518
+.. GENERATED FROM PYTHON SOURCE LINES 519-538
 
 .. code-block:: Python
 
@@ -750,7 +770,7 @@ out of symmetry through a typo.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 519-525
+.. GENERATED FROM PYTHON SOURCE LINES 539-545
 
 One excitation is enough
 ------------------------
@@ -759,7 +779,7 @@ The structure is symmetric about the iris, so :math:`S_{22} = S_{11}`
 and :math:`S_{12} = S_{21}`.  Driving the second port would cost a
 full run and add nothing.
 
-.. GENERATED FROM PYTHON SOURCE LINES 525-563
+.. GENERATED FROM PYTHON SOURCE LINES 545-583
 
 .. code-block:: Python
 
@@ -809,12 +829,12 @@ full run and add nothing.
 
  .. code-block:: none
 
-    grid: 92 x 44 x 12 = 48576 cells
+    grid: 92 x 44 x 13 = 52624 cells
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 564-579
+.. GENERATED FROM PYTHON SOURCE LINES 584-599
 
 The yardstick: the response the synthesis promised
 --------------------------------------------------
@@ -832,7 +852,7 @@ bandwidth.  For a Chebyshev the two differ by a fixed factor,
 which is 2.34 here.  Reading the −3 dB width as the design width
 would make this filter look more than twice too wide.
 
-.. GENERATED FROM PYTHON SOURCE LINES 579-607
+.. GENERATED FROM PYTHON SOURCE LINES 599-627
 
 .. code-block:: Python
 
@@ -872,20 +892,20 @@ would make this filter look more than twice too wide.
 
  .. code-block:: none
 
-    band centre     2.8924 GHz   (target 2.90 GHz)
-    ripple bandwidth 2.14 %      (target 2.00 %)
-    worst in-band insertion loss 0.062 dB
-    deviation from the synthesised response: max 0.02 dB
+    band centre     2.8977 GHz   (target 2.90 GHz)
+    ripple bandwidth 2.12 %      (target 2.00 %)
+    worst in-band insertion loss 0.058 dB
+    deviation from the synthesised response: max 0.01 dB
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 608-610
+.. GENERATED FROM PYTHON SOURCE LINES 628-630
 
 The result
 ----------
 
-.. GENERATED FROM PYTHON SOURCE LINES 610-625
+.. GENERATED FROM PYTHON SOURCE LINES 630-645
 
 .. code-block:: Python
 
@@ -916,7 +936,7 @@ The result
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 626-673
+.. GENERATED FROM PYTHON SOURCE LINES 646-693
 
 Looking inside: how the filter passes power
 -------------------------------------------
@@ -966,7 +986,7 @@ monitor recorded three frequencies across the band, so that claim
 can simply be read off it: sum :math:`E_z` over each half of the
 housing and compare the phases.
 
-.. GENERATED FROM PYTHON SOURCE LINES 673-684
+.. GENERATED FROM PYTHON SOURCE LINES 693-704
 
 .. code-block:: Python
 
@@ -990,14 +1010,14 @@ housing and compare the phases.
  .. code-block:: none
 
       f [GHz]   phase L    phase R   difference
-       2.8705     +51.1°    +120.0°     +68.9°
-       2.8924     +50.3°    +146.7°     +96.4°
-       2.9143     +51.0°    +173.1°    +122.1°
+       2.8705     +49.7°    +112.5°     +62.8°
+       2.8924     +51.4°    +140.3°     +88.9°
+       2.9143     +50.2°    +166.2°    +116.0°
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 685-697
+.. GENERATED FROM PYTHON SOURCE LINES 705-717
 
 A steady drift of tens of degrees, not the 0° or 180° a standing
 even/odd pair would show — and nothing in between is available to a
@@ -1012,7 +1032,7 @@ both resonators are near their peaks — at phase zero, one of them
 happens to be near a zero crossing and the render looks like a
 half-empty filter.
 
-.. GENERATED FROM PYTHON SOURCE LINES 699-731
+.. GENERATED FROM PYTHON SOURCE LINES 719-753
 
 What this shows
 ---------------
@@ -1025,10 +1045,12 @@ designing through :math:`k` and :math:`Q_e`.
 
 It also works despite the resonant frequency itself being the least
 converged quantity in the whole exercise.  The coupling quantities
-are ratios and differences of frequencies computed in the same mesh,
-and the discretisation error largely cancels in them.  A real build
-handles the residual frequency offset the same way the simulation
-would: with a tuning screw.
+are ratios and differences of frequencies computed in the same mesh;
+the common part of the discretisation error cancels in them, and
+what remains is small against *their* tolerance — a fraction of the
+bandwidth — where the same grid error on :math:`f_0` is a fraction of
+the passband.  A real build handles the residual frequency offset the
+same way the simulation would: with a tuning screw.
 
 Three things generalise beyond this device:
 
@@ -1050,7 +1072,7 @@ and mirror one more chamber into the housing.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (6 minutes 37.283 seconds)
+   **Total running time of the script:** (4 minutes 59.053 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_13_dielectric_filter.py:
