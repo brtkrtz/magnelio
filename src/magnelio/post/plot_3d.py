@@ -387,16 +387,35 @@ def _grid_slab(grid, cut: _CutState):
     return sheet
 
 
-def _set_input(actor, dataset, *, rgb: bool = False) -> None:
-    """Swap an actor's dataset, keeping direct RGB colouring if used."""
+def _set_input(actor, dataset) -> None:
+    """Swap an actor's dataset (single-colour actors only)."""
+    actor.mapper.SetInputData(dataset)
+
+
+def _add_sheet(pl, sheet):
+    """(Re)create the cut-sheet actor; replaces one of the same name."""
+    actor = pl.add_mesh(
+        sheet,
+        scalars="color",
+        rgb=True,
+        show_edges=True,
+        # Dark enough to read on the dielectric tints through the
+        # sheet's translucency; light grey vanished on blue.
+        edge_color="#606060",
+        line_width=1,
+        opacity=0.7,
+        lighting=False,
+        name="grid_cut",
+        reset_camera=False,
+        render=False,
+    )
+    # Name the colour array explicitly: the browser renderer receives
+    # the mapper's array selection, not VTK's "active scalars" notion.
     mapper = actor.mapper
-    mapper.SetInputData(dataset)
-    if rgb:
-        # A swapped dataset resets the mapper to lookup-table colouring
-        # of the active scalars; the sheet carries direct RGB colours.
-        mapper.SetScalarModeToUseCellFieldData()
-        mapper.SelectColorArray("color")
-        mapper.SetColorModeToDirectScalars()
+    mapper.SetScalarModeToUseCellFieldData()
+    mapper.SelectColorArray("color")
+    mapper.SetColorModeToDirectScalars()
+    return actor
 
 
 def _apply_cut(scene: _Scene) -> None:
@@ -422,11 +441,18 @@ def _apply_cut(scene: _Scene) -> None:
             _set_input(ov.actor, dataset)
     if scene.domain_actor is not None:
         scene.domain_actor.SetVisibility("domain" in shown)
-    if scene.grid_actor is not None:
+    if scene.grid is not None:
         slab = _grid_slab(scene.grid, scene.cut)
-        scene.grid_actor.SetVisibility("cut cells" in shown and slab is not None)
         if slab is not None:
-            _set_input(scene.grid_actor, slab, rgb=True)
+            # Rebuilt rather than swapped: the browser renderer keys a
+            # mapper's dataset by the mapper, so a swapped-in sheet
+            # arrived under the old identity and was dropped there.  A
+            # fresh actor carries fresh identities for actor, mapper
+            # and data.
+            scene.grid_actor = _add_sheet(scene.plotter, slab)
+            scene.grid_actor.SetVisibility("cut cells" in shown)
+        elif scene.grid_actor is not None:
+            scene.grid_actor.SetVisibility(False)
 
 
 # ---------------------------------------------------------------------------
@@ -936,21 +962,12 @@ def _build_scene(
         # confused more than it informed.
         if not show_grid:
             scene.hidden_groups.add("cut cells")
-        seed = _grid_slab(grid, cut_state) or _grid_slab(grid, _CutState("z", bounds[4]))
+        # The sheet actor is created (and re-created) by ``_apply_cut``;
+        # without a cut, a hidden placeholder keeps the group listed.
+        seed = _grid_slab(grid, _CutState("z", bounds[4]))
         if seed is not None:
-            scene.grid_actor = pl.add_mesh(
-                seed,
-                scalars="color",
-                rgb=True,
-                show_edges=True,
-                # Dark enough to read on the dielectric tints through
-                # the sheet's translucency; light grey vanished on blue.
-                edge_color="#606060",
-                line_width=1,
-                opacity=0.7,
-                lighting=False,
-                name="grid_cut",
-            )
+            scene.grid_actor = _add_sheet(pl, seed)
+            scene.grid_actor.SetVisibility(False)
 
     # The camera is fixed before the overlays so that labels can face it.
     pl.enable_parallel_projection()
