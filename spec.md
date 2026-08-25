@@ -195,6 +195,7 @@ Rationale for SoA: see `design-decisions.md` DD-002.
 @dataclass
 class MeshControl:
     min_nodes_per_wavelength: int = 20      # dimensionless — N_wl
+    wavelength_rule: str = "local"          # "local" (per slab) | "global"
     min_cells_per_feature: int = 4          # dimensionless — cells per smallest gap
     growth_factor: float = 1.3             # max ratio h_{i+1}/h_i > 1
     max_cell_size: float | None = None     # absolute cap [meters]
@@ -458,7 +459,14 @@ Output: GridLines(x, y, z)
       dropped and reported (one warning per axis); the rest join as
       non-material planes.  Feature planes never move a material plane.
    b. Determine the two cell-size scales (DD-028):
-      - h_max  = λ_min / N_wl  with λ_min = c₀ / f_max / sqrt(max(εr·μr))
+      - h_max  = λ_slab / N_wl per axis interval (DD-192): the interval
+        [p_i, p_{i+1}] is a slab of the domain, and λ_slab =
+        c₀ / f_max / n_slab with n_slab = sqrt(εr·μr) of the densest
+        material (background included) whose analytic bounding box
+        reaches into the slab; wavelength_rule="global" uses the
+        densest material of the whole model for every interval.
+        The global λ_min / N_wl stays the reference for the edge
+        floor, the h_fine sentinel and the undershoot check.
       - h_fine = min_gap / min_cells_per_feature
         where min_gap is the smallest interior gap on any axis;
         a feature plane contributes its adjacent interval widths with
@@ -501,7 +509,8 @@ Output: GridLines(x, y, z)
 
 | Parameter                   | Type              | Default | Unit       | Description |
 |-----------------------------|-------------------|---------|------------|-------------|
-| `min_nodes_per_wavelength`  | `int`             | 20      | —          | Minimum cells per λ_min |
+| `min_nodes_per_wavelength`  | `int`             | 20      | —          | Minimum cells per wavelength of the slab's densest material |
+| `wavelength_rule`           | `str`             | "local" | —          | "local": per-slab wavelength; "global": densest material everywhere |
 | `min_cells_per_feature`     | `int`             | 4       | —          | Cells across the smallest geometry gap (0 disables) |
 | `growth_factor`             | `float`           | 1.3     | —          | Max ratio h_{i+1}/h_i |
 | `max_cell_size`             | `float \| None`   | None    | meters     | Absolute upper bound on cell size |

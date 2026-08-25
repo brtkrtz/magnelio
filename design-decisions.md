@@ -13224,3 +13224,76 @@ mesh).
 `tests/unit/test_mesh.py` (`TestMergeFeaturePlanes`,
 `TestEdgePlanesInTheMesh`, `TestEdgePlaneBoundaryBuffer`),
 `docs/methods/meshing-conformal.md`, `spec.md` §6.1, `CHANGELOG.md`.
+
+## DD-192 — The bulk cell size follows the wavelength of the slab, not of the model (`wavelength_rule="local"`)
+
+**Status:** Decided 2026-08-25 with the developer (second item of the
+mesh-generation plan after DD-191: local wavelength rule before
+metal-edge refinement); implemented 2026-08-25.  Developer choices in
+the planning discussion: default on (not opt-in), slab occupancy by
+analytic bounding box (not by exact section), the wavelength from the
+static `max(ε)` also for dispersive materials (as before).
+
+**Problem.**  `Mesh.from_geometry` derived *one* bulk cell size
+`h_max = c₀ / (f_max · n_max) / min_nodes_per_wavelength` from the
+densest material anywhere in the model and applied it to every axis
+interval.  A 10 × 10 × 2 mm ε_r = 4.3 block in an 80 mm air box
+meshed the whole box at the ceramic wavelength — 2.07× finer per
+axis than the air needs, 1.43 M cells where 254 k carry the same
+resolution inside the block (measured, 20 nodes/λ at 10 GHz).  The
+same penalty sits above every thin substrate and around every
+electrically small dielectric.  A second, silent defect: the
+background material never entered `n_max` — a model with a dense
+background and only PEC solids meshed at the vacuum wavelength.
+
+**Decision.**  The bulk size is per axis *interval*.  On a tensor
+grid a grid line spans the whole domain, so the finest sensible
+resolution is per slab: an interval `[p0, p1]` on one axis is the
+slab of the domain between those two planes, and the densest
+material whose analytic bounding box reaches into the slab by more
+than the clustering tolerance sets its wavelength.  The background
+counts in every slab.  A shape without an analytic box counts
+everywhere (conservative).  `_local_bulk_sizes` builds
+`{axis: [h_max per interval]}` once the grid planes are final;
+`_generate_axis_lines` and `_enforce_boundary_buffer` take a scalar
+or a per-interval list (the profiles already worked per interval).
+The PML depth follows the boundary slab's bulk size.  Everything
+else keeps the *global* `h_wavelength` as its reference: the DD-191
+edge floor (bounds the time step, which follows the smallest cell
+anywhere), the feature sentinel of `h_fine` and the DD-105
+undershoot check.  `MeshControl(wavelength_rule="global")` restores
+the old rule; `"local"` is the default — the rule is the general
+case, the old one a special case of it.
+
+**Consequences.**  Axes a dielectric spans entirely gain nothing
+(the in-plane axes of a full-width substrate); the axis normal to it
+gains in every slab outside the dielectric.  Interfaces keep their
+`h_fine` ramps on both sides, so the jump between a dielectric slab
+and an air slab is bounded by the growth factor.  The bounding box
+is exact for bricks and conservative for spheres, cylinders, lofts —
+the slab is never meshed coarser than the material in it, at the
+price of some over-refinement in the box corners of a curved body.
+Meshes of every model with mixed dielectrics change; the tutorial
+numbers are updated from a re-run (internal record in the STATUS
+entry).
+
+**Rejected.**
+- *Opt-in*: the rule is what a user of a per-material hex mesher
+  expects; leaving it off would keep the penalty as the default.
+- *Exact section occupancy* (OCC slab ∩ shape): tighter for curved
+  bodies, but it brings the DD-167/DD-168 section machinery into the
+  bulk-size decision and costs mesh time on every build; the
+  bounding box is deterministic and cheap, and the conservative
+  side is the safe side.
+- *ε(f_max) for dispersive materials*: a Pole–Residue evaluation in
+  the mesher plus a rule for Lorentz overshoot below `f_max`; the
+  static `max(ε)` is conservative for relaxation models and was the
+  rule before.
+- *Per-cell (octree-like) local wavelength*: not expressible on a
+  tensor grid.
+
+**Files:** `src/magnelio/mesh/mesher.py` (`MeshControl.wavelength_rule`,
+`_refractive_index`, `_local_bulk_sizes`, `_per_interval`, per-interval
+`h_max` in `_generate_axis_lines` / `_enforce_boundary_buffer`, PML
+depth), `tests/unit/test_mesh_local_wavelength.py`,
+`docs/methods/meshing-conformal.md`, `CHANGELOG.md`.
