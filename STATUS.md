@@ -33,8 +33,12 @@ longitudinally on the ``SymmetryPMC`` plane, PMC lid, coax knobs;
 position optimum ≈ **+16·s beyond** the plane (21.4° → 0.74°, sign
 opposite to coax/MS).  Side find: empty boolean results crashed
 `plot()` via uncaught C++ exception → KB-026, closed by DD-190.
-Unit suite 2188
-passed / 3 skipped (2026-08-25, after DD-190).  Before that: released v0.4.2 (issue-#2
+Unit suite 2194
+passed / 3 skipped.  **Released v0.4.4 (2026-08-25)** with DD-190; the merge
+had turned CI and Docs red first — VTK segfaults on GPU-less runners
+(no EGL device, no libOSMesa; conda-forge `mesalib` is an empty
+metapackage), fixed by `pyvista/setup-headless-display-action` in both
+workflows.  Before that: released v0.4.2 (issue-#2
 boilerplate cuts DD-185/186 + DD-184 export fix) and v0.4.3 (hotfix:
 `Loft` missed the DD-185 name resolution); new versioning rule in
 CLAUDE.md — while 0.x, PATCH covers everything backwards-compatible,
