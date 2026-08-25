@@ -7,6 +7,29 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Added
+
+- The mesher now places grid planes on geometry edges: wherever an
+  edge of a solid lies flat in an axis-normal plane — the onset of a
+  chamfer or fillet, a loft section, the iris or equator circle of a
+  revolved profile — the grid gets a plane, so the feature occupies a
+  cell layer of its own and is seen by the cell's material average.
+  Previously a chamfer smaller than half a cell had no effect at all
+  and then switched on in one step.  Edge planes are floored by the
+  new `MeshControl(max_edge_refinement=4.0)`: an edge whose cell would
+  be finer than `h_max / 4` (or than `min_cell_size`) is dropped, and
+  the mesher warns which feature is below the grid and which parameter
+  resolves it.  `max_edge_refinement=0` restores the previous meshes.
+
+### Changed
+
+- Meshes of models with chamfers, fillets, profile solids or other
+  non-axis-aligned edges differ from 0.4.4 (more planes, usually a
+  smaller time step near the feature); cell counts and results quoted
+  in the tutorials are updated accordingly.
+
 ## [0.4.4] - 2026-08-25
 
 ### Added

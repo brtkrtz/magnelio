@@ -91,6 +91,21 @@ class MeshControl:
         CSG float wiggle this tolerance absorbs is *relative*, so the
         default scales with the model, from meter-scale structures
         down to micron-scale optics.
+    max_edge_refinement : float, default 4.0
+        Geometry edges — the onset of a chamfer or fillet, a loft
+        section, the equator or iris circle of a revolved profile —
+        get a grid plane of their own wherever the edge lies flat in
+        an axis-normal plane, so the feature occupies at least one
+        cell layer and the cell's material average can see it.  A
+        feature that varies *along* the grid edges inside one cell has
+        no effect at all until it reaches the cell's midplane (a
+        chamfer below half a cell height is invisible).  This ratio
+        caps the refinement: an edge plane whose cell would be smaller
+        than ``h_max / max_edge_refinement`` (or than
+        ``min_cell_size``) is dropped with a warning naming it.  The
+        time step follows the smallest cell, so the ratio also bounds
+        the runtime cost of resolving small edges.  ``0`` disables
+        edge planes altogether (material faces and silhouettes only).
     """
 
     # Design: WP-M4 (per-axis feature-based h_fine).
@@ -104,10 +119,16 @@ class MeshControl:
     conformal: bool = True
     dey_mittra_eta: float = 0.4
     min_feature_gap: float | None = None
+    max_edge_refinement: float = 4.0
 
     def __post_init__(self) -> None:
         if self.growth_factor <= 1.0:
             raise ValueError(f"growth_factor must be > 1.0, got {self.growth_factor}")
+        if self.max_edge_refinement < 0.0:
+            raise ValueError(
+                f"max_edge_refinement must be >= 0 (0 disables edge planes), "
+                f"got {self.max_edge_refinement}"
+            )
         if self.min_nodes_per_wavelength < 2:
             raise ValueError(
                 f"min_nodes_per_wavelength must be >= 2, got {self.min_nodes_per_wavelength}"
@@ -383,7 +404,10 @@ class Mesh:
             resolve_boundary_conditions,
             symmetry_entries,
         )
-        from magnelio.geo._occ_backend import extract_critical_planes_per_shape
+        from magnelio.geo._occ_backend import (
+            extract_critical_planes_per_shape,
+            extract_feature_planes_per_shape,
+        )
         from magnelio.mesh.indexing import build_pec_mask_faces
 
         # Collect shapes early (GeometryModel or plain list) — the
@@ -489,6 +513,25 @@ class Mesh:
                     critical_raw[axis].append((spec.position, True))
                 else:
                     critical_raw[axis].extend(shape_planes[axis])
+        # Step 1b (DD-191): geometry-edge planes — where a B-rep edge
+        # lies flat in an axis-normal plane the body's cross-section
+        # changes character along that axis (chamfer/fillet onset,
+        # loft section, iris circle).  The face pass above cannot see
+        # them (a chamfer is a cone), and a feature varying *along*
+        # the grid edges inside one cell has no lever in the dual-face
+        # material average until it crosses the cell's midplane.  They
+        # are merged as a separate, soft class below: one cell per
+        # feature, floored by max_edge_refinement, never outranking a
+        # material plane.  A thin sheet's thin axis is exempt — the
+        # sheet is ONE plane by construction.
+        feature_raw: dict[str, list[float]] = {"x": [], "y": [], "z": []}
+        if control.max_edge_refinement > 0 and shapes:
+            for shape, shape_edges in extract_feature_planes_per_shape(shapes, scale=geo_scale):
+                spec = _thin_by_shape.get(id(shape))
+                for axis in ("x", "y", "z"):
+                    if spec is not None and axis == spec.axis:
+                        continue
+                    feature_raw[axis].extend(shape_edges[axis])
         # A thin wire contributes its curve's OCC vertex coordinates
         # (plus bbox extents) as material planes: every axis-aligned
         # polyline segment then lies exactly on grid lines — the wire's
@@ -521,6 +564,12 @@ class Mesh:
                 if abs(p - spec.far_position) > tol_drop or abs(p - spec.position) <= tol_drop
             ]
             critical_raw[spec.axis].append((spec.position, True))
+            # The far face comes back through the imprint's *edges* too
+            # (DD-191) — same global drop, or the edge floor would
+            # report the sheet the mesher itself chose not to resolve.
+            feature_raw[spec.axis] = [
+                p for p in feature_raw[spec.axis] if abs(p - spec.far_position) > tol_drop
+            ]
         # Anchors = user-forced planes + thin-sheet planes: both must
         # survive every merge stage verbatim (the sheet mask and any
         # user reference land on these exact nodes).
@@ -559,6 +608,7 @@ class Mesh:
 
             critical_raw[axis] = [(p, e) for (p, e) in critical_raw[axis] if _kept(p)]
             critical_raw[axis].append((sym_pos, True))
+            feature_raw[axis] = [p for p in feature_raw[axis] if _kept(p)]
             if side == "min":
                 beyond = [p for p in axis_anchors[axis] if p < sym_pos]
             else:
@@ -573,33 +623,6 @@ class Mesh:
                 )
                 axis_anchors[axis] = [p for p in axis_anchors[axis] if p not in beyond]
 
-        axis_planes: dict[str, list[float]] = {}
-        axis_is_material: dict[str, list[bool]] = {}
-        _absorbed_planes: dict[str, list[float]] = {}
-        for axis in ("x", "y", "z"):
-            axis_planes[axis], axis_is_material[axis] = _merge_axis_planes(
-                critical_raw.get(axis, []),
-                axis_anchors[axis],
-                feature_gap,
-            )
-            # WP-M3 (a): the hard floor is a merge stage — no two
-            # surviving planes closer than min_cell_size (anchor pairs
-            # excepted, verbatim + warning).  Sub-floor PEC layers were
-            # already converted to thin sheets in step 0; absorbed
-            # dielectric boundaries are recorded so the classifier can
-            # apply the longitudinal (series/harmonic) eps correction
-            # on edges crossing them.
-            if control.min_cell_size is not None:
-                (axis_planes[axis], axis_is_material[axis], absorbed) = _floor_merge_planes(
-                    axis_planes[axis],
-                    axis_is_material[axis],
-                    axis_anchors[axis],
-                    control.min_cell_size,
-                )
-                if absorbed:
-                    _absorbed_planes[axis] = absorbed
-
-        # Step 2: Generate grid lines for each axis
         from magnelio.constants import C0 as c0  # noqa: PLC0415
 
         # Determine max refractive index n = sqrt(εr·μr) from all shapes.
@@ -619,6 +642,68 @@ class Mesh:
         # Bulk cell-size cap (wavelength-based, applies everywhere far
         # from material interfaces).
         h_max = h_wavelength
+
+        # DD-191: the floor for edge planes.  h_max / ratio bounds the
+        # time-step cost of resolving small edges; the hard floor
+        # (when set) is a lower bound on every cell anyway.
+        edge_floor = 0.0
+        if control.max_edge_refinement > 0:
+            edge_floor = h_max / control.max_edge_refinement
+            if control.min_cell_size is not None:
+                edge_floor = max(edge_floor, control.min_cell_size)
+
+        axis_planes: dict[str, list[float]] = {}
+        axis_is_material: dict[str, list[bool]] = {}
+        axis_is_feature: dict[str, list[bool]] = {}
+        _absorbed_planes: dict[str, list[float]] = {}
+        _dropped_edges: dict[str, list[tuple[float, float]]] = {}
+        for axis in ("x", "y", "z"):
+            axis_planes[axis], axis_is_material[axis] = _merge_axis_planes(
+                critical_raw.get(axis, []),
+                axis_anchors[axis],
+                feature_gap,
+            )
+            # DD-191: edge planes join as a soft class — dropped where
+            # they duplicate a plane, where they would create a cell
+            # below the edge floor, or where two of them crowd each
+            # other (keep-first).  Every drop is reported: a feature
+            # the grid cannot see must not vanish silently.
+            (axis_planes[axis], axis_is_material[axis], axis_is_feature[axis], dropped) = (
+                _merge_feature_planes(
+                    axis_planes[axis],
+                    axis_is_material[axis],
+                    feature_raw[axis],
+                    feature_gap,
+                    edge_floor,
+                )
+            )
+            if dropped:
+                _dropped_edges[axis] = dropped
+            # WP-M3 (a): the hard floor is a merge stage — no two
+            # surviving planes closer than min_cell_size (anchor pairs
+            # excepted, verbatim + warning).  Sub-floor PEC layers were
+            # already converted to thin sheets in step 0; absorbed
+            # dielectric boundaries are recorded so the classifier can
+            # apply the longitudinal (series/harmonic) eps correction
+            # on edges crossing them.
+            if control.min_cell_size is not None:
+                feature_set = {p for p, f in zip(axis_planes[axis], axis_is_feature[axis]) if f}
+                (axis_planes[axis], axis_is_material[axis], absorbed) = _floor_merge_planes(
+                    axis_planes[axis],
+                    axis_is_material[axis],
+                    axis_anchors[axis],
+                    control.min_cell_size,
+                )
+                # Edge planes sit >= edge_floor >= min_cell_size from
+                # every other plane, so the floor merge keeps them
+                # verbatim; re-derive the flag on the survivors.
+                axis_is_feature[axis] = [p in feature_set for p in axis_planes[axis]]
+                if absorbed:
+                    _absorbed_planes[axis] = absorbed
+        if _dropped_edges:
+            _warn_dropped_edge_planes(_dropped_edges, edge_floor, h_max, control)
+
+        # Step 2: Generate grid lines for each axis
 
         # Feature-based fine size for cells touching material interfaces
         # (DD-028): ensure the smallest geometry gap gets at least
@@ -647,16 +732,46 @@ class Mesh:
                 if min_gap < float("inf"):
                     h_feature = min_gap / control.min_cells_per_feature
                     h_fine_axis[axis] = min(h_fine_axis[axis], h_feature)
+        # DD-191: an edge plane asks for ONE cell across each interval it
+        # bounds — enough for the cell's midplane to see the feature.
+        # It enters the shared per-axis h_fine so the neighbouring
+        # intervals ramp from that size (the generator grades from a
+        # common h_fine, not from the adjacent interval's cell).
+        for axis in ("x", "y", "z"):
+            planes = axis_planes[axis]
+            for k, is_feat in enumerate(axis_is_feature[axis]):
+                if not is_feat:
+                    continue
+                for j in (k - 1, k + 1):
+                    if 0 <= j < len(planes):
+                        gap = abs(planes[j] - planes[k])
+                        if gap > 0:
+                            h_fine_axis[axis] = min(h_fine_axis[axis], gap)
 
+        ports_declared = bool(getattr(geometry, "ports", ()))
         buffer_ends = _port_buffer_ends(getattr(geometry, "ports", ()))
         grid_lines = {}
         for axis in ("x", "y", "z"):
+            # DD-191: a boundary interval bounded by an edge plane holds
+            # one cell by design.  At a declared port face the DD-107
+            # buffer still wins (the port needs its three equidistant
+            # cells; the edge floor bounds them); at the port-blind
+            # fallback faces the buffer is skipped there — tripling a
+            # single-cell interval nobody asked to refine.
+            feat = axis_is_feature[axis]
+            end_floor: dict[str, float] = {}
+            feature_end_floor = edge_floor if ports_declared else math.inf
+            if len(feat) > 2 and feat[1]:
+                end_floor["lo"] = feature_end_floor
+            if len(feat) > 2 and feat[-2]:
+                end_floor["hi"] = feature_end_floor
             grid_lines[axis] = _generate_axis_lines(
                 axis_planes[axis],
                 h_max=h_max,
                 h_fine=h_fine_axis[axis],
                 control=control,
                 buffer_ends=buffer_ends[axis],
+                end_floor=end_floor,
             )
 
         # WP-M4 hard gate: a generated cell below min_feature_gap means
@@ -696,7 +811,7 @@ class Mesh:
             h_max,
             control,
             buffer_ends=buffer_ends,
-            ports_declared=bool(getattr(geometry, "ports", ())),
+            ports_declared=ports_declared,
             buffer_cells=_BOUNDARY_BUFFER_CELLS,
         )
 
@@ -1688,6 +1803,99 @@ def _floor_merge_planes(
     return kept, kept_material, sorted(absorbed)
 
 
+def _merge_feature_planes(
+    planes: list[float],
+    is_material: list[bool],
+    feature: "Iterable[float]",
+    tol: float,
+    floor: float,
+) -> tuple[list[float], list[bool], list[bool], list[tuple[float, float]]]:
+    """Merge geometry-edge planes into an axis plane list (DD-191).
+
+    ``planes`` / ``is_material`` are the merged material + forced
+    planes of :func:`_merge_axis_planes`.  Edge planes are a *soft*
+    class: they never move or outrank an existing plane.  Candidates
+    within ``tol`` of each other cluster to their midpoint first
+    (the same float-wiggle absorption as :func:`_snap_planes`); a
+    candidate within ``tol`` of an existing plane is that plane and
+    is silently absorbed; a candidate closer than ``floor`` to *any*
+    existing plane, or to a previously kept edge plane (keep-first in
+    ascending order), is dropped and reported.  Candidates outside
+    the axis extent are dropped silently (the domain does not grow
+    for an edge).
+
+    Returns ``(planes, is_material, is_feature, dropped)`` with the
+    three lists parallel and strictly ascending, and ``dropped`` a
+    list of ``(position, gap)`` pairs — the cell size the dropped
+    plane would have created — for the caller's warning.
+    """
+    cand = _snap_planes(sorted((float(p), True) for p in feature), tol)
+    if not cand or not planes:
+        return list(planes), list(is_material), [False] * len(planes), []
+    fixed = np.asarray(planes, dtype=float)
+    lo, hi = float(fixed[0]), float(fixed[-1])
+    kept: list[float] = []
+    dropped: list[tuple[float, float]] = []
+    for p in cand:
+        if p < lo or p > hi:
+            continue
+        j = int(np.searchsorted(fixed, p))
+        d_fixed = min(abs(p - float(fixed[c])) for c in (j - 1, j) if 0 <= c < fixed.size)
+        if d_fixed <= tol:
+            continue  # duplicates a material / forced plane
+        d_kept = p - kept[-1] if kept else math.inf
+        gap = min(d_fixed, d_kept)
+        if gap < floor:
+            dropped.append((p, gap))
+            continue
+        kept.append(p)
+    merged = [(p, m, False) for p, m in zip(planes, is_material)]
+    merged += [(p, False, True) for p in kept]
+    merged.sort()
+    return (
+        [p for p, _m, _f in merged],
+        [m for _p, m, _f in merged],
+        [f for _p, _m, f in merged],
+        dropped,
+    )
+
+
+def _warn_dropped_edge_planes(
+    dropped: dict[str, list[tuple[float, float]]],
+    edge_floor: float,
+    h_max: float,
+    control: MeshControl,
+) -> None:
+    """One warning per mesh for the edge planes the floor removed (DD-191).
+
+    Names the *coarsest* dropped plane — the one nearest to being
+    resolved, and the one whose feature matters most — with the ratio
+    that would keep it; the finer ones are counted.
+    """
+    axis, (pos, gap) = max(
+        ((ax, item) for ax, items in dropped.items() for item in items),
+        key=lambda t: t[1][1],
+    )
+    n = sum(len(v) for v in dropped.values())
+    per_axis = ", ".join(f"{len(dropped[ax])} on {ax}" for ax in ("x", "y", "z") if ax in dropped)
+    if control.min_cell_size is not None and control.min_cell_size >= edge_floor:
+        binding = f"min_cell_size = {control.min_cell_size:.3g} m"
+        remedy = "lower MeshControl(min_cell_size=...)"
+    else:
+        binding = f"h_max / max_edge_refinement = {h_max:.3g} m / {control.max_edge_refinement:g}"
+        remedy = f"MeshControl(max_edge_refinement={math.ceil(h_max / gap * 10) / 10:g}) keeps it"
+    warnings.warn(
+        f"{n} geometry-edge plane{'s' if n != 1 else ''} ({per_axis}) below the "
+        f"edge floor {edge_floor:.3g} m ({binding}) dropped.  The coarsest, at "
+        f"{axis} = {pos:.6g} m, would create a {gap:.3g} m cell: the feature "
+        f"there — a chamfer, fillet or section curve — is below the grid and "
+        f"has no effect on the result until it spans half a cell; {remedy}, "
+        f"or refine the mesh.",
+        UserWarning,
+        stacklevel=3,
+    )
+
+
 def _snap_planes(planes: list[tuple[float, bool]], tol: float) -> list[float]:
     """Cluster adjacent critical planes within ``tol`` to a single position.
 
@@ -1775,6 +1983,7 @@ def _generate_axis_lines(
     h_fine: float,
     control: MeshControl,
     buffer_ends: tuple[str, ...] = ("lo", "hi"),
+    end_floor: dict[str, float] | None = None,
 ) -> list[float]:
     """Generate node positions for one axis from critical planes.
 
@@ -1866,6 +2075,7 @@ def _generate_axis_lines(
         h_fine,
         control,
         buffer_ends=buffer_ends,
+        end_floor=end_floor,
     )
 
 
@@ -1888,8 +2098,17 @@ def _enforce_boundary_buffer(
     h_fine: float,
     control: MeshControl,
     buffer_ends: tuple[str, ...] = ("lo", "hi"),
+    end_floor: dict[str, float] | None = None,
 ) -> list[float]:
     """DD-107 post-pass: guarantee the domain-face cell buffer.
+
+    ``end_floor`` maps an end (``"lo"`` / ``"hi"``) to an additional
+    cell floor for its boundary interval — the DD-191 edge floor when
+    that interval is bounded by a geometry-edge plane and a port is
+    declared on the face (the buffer yields to it like to
+    ``min_cell_size``), or ``inf`` to leave the interval alone (the
+    port-blind fallback: a single-cell feature interval is not
+    tripled for a port that does not exist).
 
     The buffer is a property of the axis' outermost CELLS, not of its
     outermost interval — a forced-planes grid can satisfy §2.4 across
@@ -1915,7 +2134,7 @@ def _enforce_boundary_buffer(
     min_cell = control.min_cell_size or 0.0
     n_buf = _BOUNDARY_BUFFER_CELLS
 
-    def _regen_interval(p0: float, p1: float, fine_at_hi: bool):
+    def _regen_interval(p0: float, p1: float, fine_at_hi: bool, min_cell: float):
         interval = p1 - p0
         h_max_eff = min(h_max, interval)
         h_fine_eff = min(h_fine, h_max_eff)
@@ -1958,12 +2177,15 @@ def _enforce_boundary_buffer(
         widths = np.diff(result)
         if _axis_end_buffered(widths, end):
             continue
+        min_cell_end = max(min_cell, (end_floor or {}).get(end, 0.0))
+        if not math.isfinite(min_cell_end):
+            continue
         if end == "lo":
             p0, p1 = critical_planes[0], critical_planes[1]
-            sub = _regen_interval(p0, p1, fine_at_hi=True)
+            sub = _regen_interval(p0, p1, fine_at_hi=True, min_cell=min_cell_end)
         else:
             p0, p1 = critical_planes[-2], critical_planes[-1]
-            sub = _regen_interval(p0, p1, fine_at_hi=False)
+            sub = _regen_interval(p0, p1, fine_at_hi=False, min_cell=min_cell_end)
         if sub is None:
             continue
         sub_w = np.diff(np.asarray(sub))

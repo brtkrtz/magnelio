@@ -595,6 +595,169 @@ def _face_critical_planes(occ_shape) -> dict[str, list[float]]:
     return planes
 
 
+def extract_feature_planes_per_shape(
+    geometry,
+    scale: float = 1.0,
+) -> list[tuple[object, dict[str, list[float]]]]:
+    """Per-shape geometry-edge planes (DD-191).
+
+    Returns ``[(shape, {'x': [pos, ...], 'y': [...], 'z': [...]}), ...]``
+    in meters — one entry per axis-normal plane in which a B-rep edge
+    of the shape lies flat (see :func:`_edge_feature_planes`).  These
+    are the loci where a body's cross-section changes character along
+    an axis: the onset of a chamfer or fillet, a loft section, the
+    equator or iris circle of a revolved profile.  The face pass of
+    :func:`extract_critical_planes_per_shape` cannot see them — a
+    chamfer is a cone, a fillet a quarter cylinder whose tangent
+    positions lie outside its trimmed extent — and a feature that
+    varies *along* a grid edge inside one cell has no lever in the
+    dual-face material average until it crosses the cell's midplane.
+
+    Shapes the kernel cannot handle contribute nothing (the caller's
+    face/bbox planes still cover their silhouettes).
+    """
+    result: list[tuple[object, dict[str, list[float]]]] = []
+    shapes = list(geometry) if hasattr(geometry, "__iter__") else [geometry]
+    for shape in shapes:
+        try:
+            planes = _edge_feature_planes(shape._occ_shape(scale))
+        except ImportError:
+            raise
+        except Exception:  # noqa: BLE001 — exotic shape, no edge planes
+            continue
+        # Scaled model units back to meters (power-of-two, lossless).
+        result.append((shape, {ax: [p / scale for p in planes[ax]] for ax in ("x", "y", "z")}))
+    return result
+
+
+def _edge_feature_planes(occ_shape) -> dict[str, list[float]]:
+    """Axis-normal planes in which the sharp edges of an OCC shape lie flat.
+
+    An edge contributes the coordinate ``a`` on axis ``k`` when the
+    whole edge lies in the plane ``x_k = a``:
+
+    * a straight edge — every axis on which both end points agree
+      (an axis-parallel edge yields its two transverse coordinates, an
+      edge in a tilted plane yields the plane's axis, a skew edge
+      nothing);
+    * a circle or ellipse — the axis its normal is parallel to, at the
+      centre's coordinate (exact analytic position);
+    * any other curve — every axis along which its geometry-only
+      bounding box has zero extent (a planar spline in an axis-normal
+      plane), at that extent.
+
+    Only *sharp* edges count — edges where the surface normal jumps.
+    Skipped are seam edges (``BRep_Tool.IsClosed(edge, face)``: a
+    cylinder's seam is a straight line through ``(R, 0)`` and would
+    put a phantom plane through the cylinder axis; a sphere's seam
+    meridian lies in an axis-normal plane through its centre),
+    degenerated edges, and edges between two faces of the *same*
+    analytic surface (a Boolean fuse leaves coplanar sub-faces
+    unmerged; the line between them lies in the middle of a flat
+    wall and is not geometry).
+
+    Positions are in the shape's build units; the absolute epsilons act
+    in the DD-120-scaled regime like those of
+    :func:`_face_critical_planes`.  Duplicates are removed.
+    """
+    occ = _require_occ()
+    from OCC.Core.BRep import BRep_Tool  # noqa: PLC0415
+    from OCC.Core.BRepAdaptor import BRepAdaptor_Curve, BRepAdaptor_Surface  # noqa: PLC0415
+    from OCC.Core.GeomAbs import (  # noqa: PLC0415
+        GeomAbs_Circle,
+        GeomAbs_Cylinder,
+        GeomAbs_Ellipse,
+        GeomAbs_Line,
+        GeomAbs_Plane,
+        GeomAbs_Sphere,
+    )
+    from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_FACE  # noqa: PLC0415
+    from OCC.Core.TopExp import topexp  # noqa: PLC0415
+    from OCC.Core.TopoDS import topods  # noqa: PLC0415
+    from OCC.Core.TopTools import TopTools_IndexedDataMapOfShapeListOfShape  # noqa: PLC0415
+
+    align_tol = 1.0 - 1e-9  # |cos| threshold for "axis-parallel"
+
+    def _same_surface(f1, f2) -> bool:
+        """Two faces on one analytic surface (plane / cylinder / sphere)."""
+        s1, s2 = BRepAdaptor_Surface(f1), BRepAdaptor_Surface(f2)
+        t1, t2 = s1.GetType(), s2.GetType()
+        if t1 != t2:
+            return False
+        if t1 == GeomAbs_Plane:
+            p1, p2 = s1.Plane(), s2.Plane()
+            n1, n2 = p1.Axis().Direction(), p2.Axis().Direction()
+            if abs(n1.Dot(n2)) < align_tol:
+                return False
+            d = p1.Distance(p2.Location())
+            return d <= 1e-9 * (1.0 + abs(p2.Location().Distance(p1.Location())))
+        if t1 == GeomAbs_Cylinder:
+            c1, c2 = s1.Cylinder(), s2.Cylinder()
+            if abs(c1.Radius() - c2.Radius()) > 1e-9 * (1.0 + c1.Radius()):
+                return False
+            a1, a2 = c1.Axis(), c2.Axis()
+            if abs(a1.Direction().Dot(a2.Direction())) < align_tol:
+                return False
+            return a1.Distance(a2.Location()) <= 1e-9 * (1.0 + c1.Radius())
+        if t1 == GeomAbs_Sphere:
+            k1, k2 = s1.Sphere(), s2.Sphere()
+            return abs(k1.Radius() - k2.Radius()) <= 1e-9 * (
+                1.0 + k1.Radius()
+            ) and k1.Location().Distance(k2.Location()) <= 1e-9 * (1.0 + k1.Radius())
+        return False
+
+    found: dict[str, set[float]] = {"x": set(), "y": set(), "z": set()}
+    emap = TopTools_IndexedDataMapOfShapeListOfShape()
+    topexp.MapShapesAndAncestors(occ_shape, TopAbs_EDGE, TopAbs_FACE, emap)
+    for i in range(emap.Size()):
+        edge = topods.Edge(emap.FindKey(i + 1))
+        if BRep_Tool.Degenerated(edge):
+            continue
+        faces = [topods.Face(f) for f in emap.FindFromIndex(i + 1)]
+        if any(BRep_Tool.IsClosed(edge, f) for f in faces):
+            continue  # seam
+        if len(faces) == 2 and _same_surface(faces[0], faces[1]):
+            continue  # split line inside one surface, not an edge
+        curve = BRepAdaptor_Curve(edge)
+        ctype = curve.GetType()
+        # "Same coordinate" at the edge's own tolerance: OCC's notion
+        # of coincidence for this edge (1e-7 by default).
+        tol = max(BRep_Tool.Tolerance(edge), 1e-12)
+        if ctype == GeomAbs_Line:
+            p1 = curve.Value(curve.FirstParameter())
+            p2 = curve.Value(curve.LastParameter())
+            a = (p1.X(), p1.Y(), p1.Z())
+            b = (p2.X(), p2.Y(), p2.Z())
+            for k, (axis, _) in enumerate(_AXIS_DIRS):
+                if abs(a[k] - b[k]) <= tol:
+                    found[axis].add(0.5 * (a[k] + b[k]))
+        elif ctype in (GeomAbs_Circle, GeomAbs_Ellipse):
+            conic = curve.Circle() if ctype == GeomAbs_Circle else curve.Ellipse()
+            d = conic.Axis().Direction()
+            c = conic.Location()
+            d_xyz = (d.X(), d.Y(), d.Z())
+            c_xyz = (c.X(), c.Y(), c.Z())
+            for k, (axis, _) in enumerate(_AXIS_DIRS):
+                if abs(d_xyz[k]) >= align_tol:
+                    found[axis].add(c_xyz[k])
+        else:
+            box = occ["Bnd_Box"]()
+            # Geometry-only box (no triangulation) — KB-012.
+            occ["brepbndlib"].Add(edge, box, False)
+            if box.IsVoid():
+                continue
+            lo = box.CornerMin()
+            hi = box.CornerMax()
+            gap = box.GetGap()
+            lo_xyz = (lo.X() + gap, lo.Y() + gap, lo.Z() + gap)
+            hi_xyz = (hi.X() - gap, hi.Y() - gap, hi.Z() - gap)
+            for k, (axis, _) in enumerate(_AXIS_DIRS):
+                if hi_xyz[k] - lo_xyz[k] <= tol:
+                    found[axis].add(0.5 * (lo_xyz[k] + hi_xyz[k]))
+
+    return {axis: sorted(found[axis]) for axis in ("x", "y", "z")}
+
+
 # ---------------------------------------------------------------------------
 # Transforms
 # ---------------------------------------------------------------------------

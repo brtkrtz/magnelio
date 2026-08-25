@@ -3819,3 +3819,109 @@ class TestMissingOccSurfaces:
 
         monkeypatch.setattr(_scaling, "analytic_bbox", _exotic)
         assert resolve_feature_gap(MeshControl(), [object()]) == 1e-6
+
+
+# ── Geometry-edge planes (DD-191) ────────────────────────────────────────────
+
+
+class TestEdgeFeaturePlanes:
+    """An edge lying flat in an axis-normal plane yields a grid plane there.
+
+    The face pass reads planes, cylinders and spheres; a chamfer is a
+    cone and a fillet a quarter cylinder whose tangent positions fall
+    outside its trimmed extent — both were invisible to the mesher
+    (the dielectric-resonator worksheet's plateau-and-jump artefact).
+    Seam and degenerated edges must contribute nothing: a cylinder's
+    seam would put a phantom plane through its axis.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _occ(self):
+        return pytest.importorskip("OCC.Core.BRepPrimAPI")
+
+    @staticmethod
+    def _planes(shape):
+        from magnelio.geo._occ_backend import (
+            extract_critical_planes_per_shape,
+            extract_feature_planes_per_shape,
+        )
+
+        ((_s, faces),) = extract_critical_planes_per_shape([shape])
+        ((_s, edges),) = extract_feature_planes_per_shape([shape])
+        face_pos = {ax: sorted({p for p, _e in faces[ax]}) for ax in "xyz"}
+        return face_pos, edges
+
+    @staticmethod
+    def _new(face_pos, edges, axis, tol=1e-9):
+        return [p for p in edges[axis] if all(abs(p - f) > tol for f in face_pos[axis])]
+
+    def test_chamfered_annulus_gets_its_chamfer_layers_on_z_only(self):
+        from magnelio.geo.primitives import Cylinder
+
+        R, r, H, c = 4e-3, 2e-3, 6e-3, 0.5e-3
+        body = Cylinder(origin=(0, 0, 0), radius=R, height=H, axis="z", material="air")
+        bore = Cylinder(origin=(0, 0, 0), radius=r, height=H, axis="z", material="air")
+        puck = (body - bore).chamfered(edges="all", distance=c)
+        faces, edges = self._planes(puck)
+        assert self._new(faces, edges, "z") == pytest.approx([c, H - c], abs=1e-12)
+        # The chamfer's inner circles are tangent extrema, not edge planes.
+        assert self._new(faces, edges, "x") == []
+        assert self._new(faces, edges, "y") == []
+
+    def test_filleted_brick_gets_the_fillet_onsets(self):
+        from magnelio.geo.primitives import Brick
+
+        L, W, H, r = 10e-3, 8e-3, 6e-3, 1e-3
+        box = Brick(origin=(0, 0, 0), size=(L, W, H), material="air").filleted(
+            edges="all", radius=r
+        )
+        faces, edges = self._planes(box)
+        for axis, ext in (("x", L), ("y", W), ("z", H)):
+            new = sorted(set(round(p, 12) for p in self._new(faces, edges, axis)))
+            assert new == pytest.approx([r, ext - r], abs=1e-12)
+
+    def test_seams_and_poles_contribute_nothing(self):
+        from magnelio.geo.primitives import Cylinder, Sphere, Torus
+
+        for shape in (
+            Sphere(center=(1e-3, 2e-3, 3e-3), radius=4e-3, material="air"),
+            Cylinder(origin=(1e-3, 2e-3, 0), radius=4e-3, height=6e-3, axis="z", material="air"),
+            Torus(center=(0, 0, 0), major_radius=5e-3, minor_radius=1e-3, material="air"),
+        ):
+            faces, edges = self._planes(shape)
+            for axis in "xyz":
+                assert self._new(faces, edges, axis) == [], (type(shape).__name__, axis)
+
+    def test_tilted_cylinder_contributes_nothing(self):
+        from magnelio.geo.primitives import Cylinder
+
+        cyl = Cylinder(origin=(0, 0, 0), radius=4e-3, height=6e-3, axis="z", material="air")
+        faces, edges = self._planes(cyl.rotated((1, 0, 0), 30.0))
+        for axis in "xyz":
+            assert self._new(faces, edges, axis) == []
+
+    def test_brick_edges_duplicate_its_faces(self):
+        from magnelio.geo.primitives import Brick
+
+        box = Brick(origin=(1e-3, 2e-3, 3e-3), size=(4e-3, 5e-3, 6e-3), material="air")
+        faces, edges = self._planes(box)
+        for axis in "xyz":
+            assert self._new(faces, edges, axis) == []
+            assert set(edges[axis]) == set(faces[axis])
+
+    def test_fused_coplanar_faces_leave_no_split_line(self):
+        """A Boolean fuse keeps coplanar sub-faces apart; the line between
+        them is not an edge of the geometry (tutorial 06's tee grew a
+        phantom plane at y = 0 through the junction before the filter)."""
+        from magnelio.geo.operations import Union
+        from magnelio.geo.primitives import Brick
+
+        a, b, arm = 22.86e-3, 10.16e-3, 30e-3
+        collinear = Brick(origin=(-(a / 2 + arm), -a / 2, 0.0), size=(a + 2 * arm, a, b))
+        h_arm = Brick(origin=(-a / 2, 0.0, 0.0), size=(a, a / 2 + arm, b))
+        e_arm = Brick(origin=(-b / 2, -a / 2, 0.0), size=(b, a, b + arm))
+        tee = Union(collinear, h_arm, e_arm)
+        faces, edges = self._planes(tee)
+        for axis in "xyz":
+            assert self._new(faces, edges, axis) == []
+        assert 0.0 not in edges["y"]

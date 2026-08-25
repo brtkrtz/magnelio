@@ -1,7 +1,43 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-24.*  Latest work: post-hoc de-embedding
-(DD-187, branch `feat/port-deembedding`, unmerged): `result.deembed(
+*Last updated: 2026-08-25.*  Latest work: **geometry-edge planes**
+(DD-191, branch `feat/edge-feature-planes`, unmerged): the mesher's
+face pass reads planes, cylinders and spheres, so a chamfer (a cone) or
+a fillet (a quarter cylinder whose tangents lie outside its trim) never
+produced a grid plane, and — because the DD-051 material average is
+taken over the dual face *transverse* to the edge — a feature varying
+*along* the edges inside one cell layer had no effect until it crossed
+the layer's midplane (the DR-filter worksheet's plateau-and-16-%-jump
+chamfer, M4/M4a).  Now every sharp B-rep edge lying flat in an
+axis-normal plane yields a *soft* plane: one cell across the feature
+layer, floored at `h_max / MeshControl(max_edge_refinement=4)` (and at
+`min_cell_size`), never outranking a material plane, one warning per
+mesh naming the coarsest dropped edge and the ratio that keeps it;
+`max_edge_refinement=0` gives the 0.4.4 meshes bit-exactly.  Excluded:
+seams, degenerated edges and the split lines a Boolean fuse leaves
+between coplanar sub-faces; a thin sheet's far face is dropped from
+the edge pass as from the face pass; the DD-107 buffer no longer
+triples a single-cell feature interval at a port-blind face.
+Certificate `validation/edge_plane_chamfer_certificate.py` reproduces
+M4 with the pass off and gives monotone f0 with it on.  Cost on the
+tutorials: 13 +50–80 % cells (dz 1.0 → 0.49 mm at the chamfer), 18
++10 %, 10 +20 % (line/ring junction edges), the rest unchanged.
+**Side finding:** tutorial 13's "f0 drifts 9.9 %, k 0.4 %" was mostly
+the chamfer switching on between its two grids; with the chamfer
+resolved on both, f0 moves 0.8 % (40 % of the passband) and k 0.8 %
+(of the bandwidth) between the default grid and (mnpw 24, mcpf 6) — the tutorial is re-based on a grid pair that scales
+both mesh knobs and argues from tolerances, not from "ratios are
+converged".  New how-to
+`plot_mesh_convergence.py`: the convergence loop as a drop-in recipe
+(rung → `MeshControl` before the user's simulation, complex-ΔS stop
+rule with 0.02 on two consecutive rungs after it; capacitive-patch
+microstrip converges at mnpw 32, pillbox TM010 at 1 % on rung 24 with
+0.7 % true error) — the answer to "adaptive refinement" as a recipe,
+not a mesher feature.  Measured: on a 16 mm feed the complex ΔS is
+S21 *phase* (grid dispersion), a bare-line ladder gives the same
+numbers; magnitude-only Δ|S| is 3–4× smaller.
+Previous: post-hoc de-embedding
+(DD-187, branch `feat/port-deembedding`, merged): `result.deembed(
 {"port": d})` shifts reference planes on the exact discrete chain
 dispersion — the on-circle `lambda^{-d/dz}` from the certified
 `(r, q, dz)` line records — and cancels a uniform feed line to the
@@ -33,8 +69,8 @@ longitudinally on the ``SymmetryPMC`` plane, PMC lid, coax knobs;
 position optimum ≈ **+16·s beyond** the plane (21.4° → 0.74°, sign
 opposite to coax/MS).  Side find: empty boolean results crashed
 `plot()` via uncaught C++ exception → KB-026, closed by DD-190.
-Unit suite 2194
-passed / 3 skipped.  **Released v0.4.4 (2026-08-25)** with DD-190; the merge
+Unit suite 2216
+passed / 3 skipped (DD-191 added 22).  **Released v0.4.4 (2026-08-25)** with DD-190; the merge
 had turned CI and Docs red first — VTK segfaults on GPU-less runners
 (no EGL device, no libOSMesa; conda-forge `mesalib` is an empty
 metapackage), fixed by `pyvista/setup-headless-display-action` in both
@@ -77,6 +113,7 @@ The plane-wave tutorial remains deferred.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-191** (2026-08-25) — geometry-edge planes: a grid plane wherever a sharp B-rep edge lies flat in an axis-normal plane (chamfer/fillet onsets, loft sections, iris circles), as a soft class — one cell per feature layer, floored at `h_max / max_edge_refinement` (default 4) and `min_cell_size`, dropped edges reported once per mesh with the coarsest position and the ratio that keeps it, `0` = the old meshes.  Closes the DR-filter worksheet's invisible-chamfer artefact (M4/M4a: dual-face averaging is transverse-only — a feature varying *along* the edges has no lever until it crosses the cell midplane).  Traps recorded: Boolean-fuse split lines between coplanar sub-faces are not edges; the thin-sheet far face re-enters through the imprint's edges; the DD-107 buffer would triple a single-cell feature interval.
 * **DD-190** (2026-08-25) — `model.plot()` rebuilt on PyVista: axis-aligned cutting plane from the widget toolbar (normal / slider / flip / undo / reset) that caps every solid and lays the exposed grid cells, coloured by assigned material, over the cut (the grid shows nowhere else); wires, ports, elements, symmetry planes and the domain box overlaid in mm; browser-side rendering by default (`mode=`), a VTK window in scripts, screenshots in the gallery (tutorials 01/02 now show the 3D view).  Transport is trame's own websocket — JupyterLab ≥ 4.5 executes comm messages in ipykernel-7 subshell threads, and VTK rendered there gave black frames / kernel aborts (proven by replaying the comm transport).  `pyvista` is a core dependency, `[jupyter]` extra for the widget; pythreejs path gone; closes KB-026 as a side effect.
 * **DD-189** (2026-08-24, three amendments) — lumped-port termination guides, four pages: *Lumped ports: investigations* (principle + sweeps for all three line types) plus a compact *Lumped port tuning* tool each for coax/microstrip/CPW.  Waveguide port as instrument, WG–WG reference run as grid-exact phase ruler (no closed-form dispersion), phase polarity normalised to n·180° at the low band edge, knobs = end-gap geometry / position / port impedance as geometric re-run sweeps (de-embedding, the single overloaded page, and the CPW slot-port+resistor scheme all dropped on developer review).  CPW = coax picture on the symmetry plane: longitudinal end-gap port (`SymmetryPMC` half model, PMC lid), position optimum +16·s *beyond* the plane.  Kept as general (non-guide) knowledge: `elements=` for post-mesh lumped elements, single-mode test shields.  All three line types shipped; side find KB-026 (empty boolean crashes plot()).
 * **DD-188** (2026-08-24) — second sphinx-gallery "How-to guides" (`examples/howto/` → `docs/howto/`, unnumbered pages, own toctree caption): task recipes separated from the numbered curriculum; stripline page moved out of the tutorials (old URL lapses), filter capstone re-anchored as the close of tutorials 01–12; renumbering the tutorials rejected (URL + prose breakage).
