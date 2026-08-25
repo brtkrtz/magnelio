@@ -194,10 +194,16 @@ fig, ax = plots.plot_cross_section(
 # Always check how many modes actually came back.
 
 
-def eigenfrequencies(model, *, n_modes=3, f_shift=2.6e9, f_max=3.5e9, mnpw=12):
-    """Resonant frequencies [Hz] of a closed structure, lowest first."""
+def eigenfrequencies(model, *, n_modes=3, f_shift=2.6e9, f_max=3.5e9, mnpw=12, mcpf=4):
+    """Resonant frequencies [Hz] of a closed structure, lowest first.
+
+    ``mnpw`` sets the bulk cell (nodes per wavelength), ``mcpf`` the cell
+    at material boundaries (cells per feature); a finer grid scales both.
+    """
     mesh = mio.Mesh.from_geometry(
-        model, mio.MeshControl(min_nodes_per_wavelength=mnpw), f_max=f_max
+        model,
+        mio.MeshControl(min_nodes_per_wavelength=mnpw, min_cells_per_feature=mcpf),
+        f_max=f_max,
     )
     result = mio.AnalysisEigenmode(
         mesh=mesh,
@@ -212,8 +218,8 @@ def eigenfrequencies(model, *, n_modes=3, f_shift=2.6e9, f_max=3.5e9, mnpw=12):
     return f, cells
 
 
-f_coarse, cells_coarse = eigenfrequencies(single_resonator(), mnpw=10)
-f_fine, cells_fine = eigenfrequencies(single_resonator(), mnpw=16)
+f_coarse, cells_coarse = eigenfrequencies(single_resonator())
+f_fine, cells_fine = eigenfrequencies(single_resonator(), mnpw=24, mcpf=6)
 
 print(f"coarse ({cells_coarse:6d} cells):  f0 = {f_coarse[0] / 1e9:.4f} GHz")
 print(f"fine   ({cells_fine:6d} cells):  f0 = {f_fine[0] / 1e9:.4f} GHz")
@@ -224,15 +230,21 @@ print(f"drift between the two grids: {100 * (f_fine[0] / f_coarse[0] - 1):+.1f} 
 # The uncomfortable observation
 # -----------------------------
 #
-# The resonant frequency is *not* converged.  Refining the grid moves
-# it by percent, and it is still moving.  That is not a defect of the
-# solver: a high-permittivity puck concentrates the field in a small
-# volume with a strong discontinuity at its surface, which is exactly
-# the situation a finite grid resolves slowly.
+# The resonant frequency is *not* converged.  Refining the grid — both
+# of its scales together, the bulk cell and the cell at the ceramic
+# boundary — moves it by a percent, and not even monotonically: a
+# high-permittivity puck concentrates the field in a small volume with
+# a strong discontinuity at its surface, and on a conformal grid the
+# result depends on how the grid lines happen to cut that surface.
+# That is not a defect of the solver; it is what a finite grid does
+# with such a body, and the how-to *Mesh convergence* shows the same
+# behaviour on a ladder of grids.
 #
-# If the design depended on hitting an absolute frequency, this would
-# be fatal — and it is why filters are not designed that way.  What
-# follows shows the alternative, and why it works.
+# A percent sounds small.  This filter is 2 % wide, so a percent of
+# :math:`f_0` is half the passband.  If the design depended on hitting
+# an absolute frequency it would be fatal — and it is why filters are
+# not designed that way.  What follows shows the alternative, and why
+# it works.
 
 # %%
 # Stage 2: coupling between the resonators
@@ -248,9 +260,12 @@ print(f"drift between the two grids: {100 * (f_fine[0] / f_coarse[0] - 1):+.1f} 
 #    k = \frac{f_2^2 - f_1^2}{f_2^2 + f_1^2}
 #
 # and it is *a ratio of frequencies*.  Both modes live in the same
-# mesh and carry nearly the same discretisation error, so it largely
-# cancels — which is what makes this quantity, unlike :math:`f_0`,
-# usable on a grid one can afford.
+# mesh and share most of their discretisation error, so the common
+# part cancels.  What remains is an error of a fraction of a percent
+# *of k* — and since :math:`k` sets the bandwidth, that is a fraction
+# of a percent of a 2 % bandwidth.  The tolerance on :math:`k` is loose
+# where the tolerance on :math:`f_0` is tight, and a grid one can
+# afford meets the first and misses the second.
 #
 # Two pucks sitting in one open cavity couple far too strongly for a
 # 2 % filter, by roughly an order of magnitude.  The control is a wall
@@ -300,9 +315,11 @@ fig, ax = plots.plot_cross_section(
 # -------------------
 
 
-def coupling_of(iris_window, mnpw=12):
+def coupling_of(iris_window, mnpw=12, mcpf=4):
     """Coupling coefficient k from the even/odd mode pair."""
-    f, _ = eigenfrequencies(coupled_pair(iris_window), n_modes=3, f_shift=2.3e9, mnpw=mnpw)
+    f, _ = eigenfrequencies(
+        coupled_pair(iris_window), n_modes=3, f_shift=2.3e9, mnpw=mnpw, mcpf=mcpf
+    )
     f1, f2 = f[0], f[1]
     return (f2**2 - f1**2) / (f2**2 + f1**2), 0.5 * (f1 + f2)
 
@@ -314,12 +331,15 @@ for w, k, fc in zip(windows, k_values, f_centres):
     print(f"window {w * 1e3:4.1f} mm ->  k = {k:.5f},  centre {fc / 1e9:.4f} GHz")
 
 # %%
-# The ratio is robust where the frequency is not
-# ----------------------------------------------
+# The ratio meets its tolerance where the frequency does not
+# ----------------------------------------------------------
 #
 # Re-run one window on the finer grid and compare both quantities.
+# Read the two numbers against what the design can absorb: the change
+# in :math:`k` is that same fraction of the bandwidth, the change in
+# the pair's frequency is a fraction of the passband.
 
-k_fine, fc_fine = coupling_of(6.0e-3, mnpw=16)
+k_fine, fc_fine = coupling_of(6.0e-3, mnpw=24, mcpf=6)
 i6 = int(np.argmin(np.abs(windows - 6.0e-3)))
 print(f"window 6.0 mm, coarse grid:  k = {k_values[i6]:.5f}, f = {f_centres[i6] / 1e9:.4f} GHz")
 print(f"window 6.0 mm, fine grid:    k = {k_fine:.5f}, f = {fc_fine / 1e9:.4f} GHz")
@@ -707,10 +727,12 @@ for i, f in enumerate(pattern.f):
 #
 # It also works despite the resonant frequency itself being the least
 # converged quantity in the whole exercise.  The coupling quantities
-# are ratios and differences of frequencies computed in the same mesh,
-# and the discretisation error largely cancels in them.  A real build
-# handles the residual frequency offset the same way the simulation
-# would: with a tuning screw.
+# are ratios and differences of frequencies computed in the same mesh;
+# the common part of the discretisation error cancels in them, and
+# what remains is small against *their* tolerance — a fraction of the
+# bandwidth — where the same grid error on :math:`f_0` is a fraction of
+# the passband.  A real build handles the residual frequency offset the
+# same way the simulation would: with a tuning screw.
 #
 # Three things generalise beyond this device:
 #

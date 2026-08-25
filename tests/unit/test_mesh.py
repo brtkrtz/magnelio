@@ -1,10 +1,14 @@
 """Unit tests for GridLines and MeshControl."""
 
+import warnings
+
 import numpy as np
 import pytest
 
+from magnelio.geo import GeometryModel
 from magnelio.mesh.grid import GridLines
 from magnelio.mesh.mesher import (
+    Mesh,
     MeshControl,
     _generate_axis_lines,
     _merge_axis_planes,
@@ -1227,3 +1231,181 @@ class TestFromGeometryEmptyModel:
         )
         with pytest.raises(ValueError, match="contains no shapes"):
             Mesh.from_geometry(model, MeshControl(), f_max=1e9)
+
+
+# ── Geometry-edge planes as a soft class (DD-191) ────────────────────────────
+
+
+class TestMergeFeaturePlanes:
+    """Edge planes never move a plane, never crowd one, and report drops."""
+
+    TOL = 1e-6
+    FLOOR = 0.25e-3
+
+    @classmethod
+    def _merge(cls, planes, feature, is_material=None, floor=None):
+        from magnelio.mesh.mesher import _merge_feature_planes
+
+        if is_material is None:
+            is_material = [True] * len(planes)
+        return _merge_feature_planes(
+            planes, is_material, feature, cls.TOL, cls.FLOOR if floor is None else floor
+        )
+
+    def test_inserted_as_feature_between_material_planes(self):
+        planes, mat, feat, dropped = self._merge([0.0, 6e-3], [0.5e-3, 5.5e-3])
+        assert planes == [0.0, 0.5e-3, 5.5e-3, 6e-3]
+        assert mat == [True, False, False, True]
+        assert feat == [False, True, True, False]
+        assert dropped == []
+
+    def test_duplicate_of_a_material_plane_is_absorbed_silently(self):
+        planes, _mat, feat, dropped = self._merge([0.0, 6e-3], [6e-3 + 3e-7, 0.0])
+        assert planes == [0.0, 6e-3]
+        assert feat == [False, False]
+        assert dropped == []
+
+    def test_below_floor_is_dropped_and_reported_with_its_cell(self):
+        planes, _mat, _feat, dropped = self._merge([0.0, 6e-3], [0.2e-3, 5.8e-3])
+        assert planes == [0.0, 6e-3]
+        assert dropped == [(0.2e-3, pytest.approx(0.2e-3)), (5.8e-3, pytest.approx(0.2e-3))]
+
+    def test_two_features_crowding_each_other_keep_first(self):
+        planes, _mat, feat, dropped = self._merge([0.0, 6e-3], [1.0e-3, 1.1e-3])
+        assert planes == [0.0, 1.0e-3, 6e-3]
+        assert feat == [False, True, False]
+        assert dropped == [(1.1e-3, pytest.approx(0.1e-3))]
+
+    def test_outside_the_axis_extent_is_ignored(self):
+        planes, _mat, _feat, dropped = self._merge([0.0, 6e-3], [-1e-3, 7e-3])
+        assert planes == [0.0, 6e-3]
+        assert dropped == []
+
+    def test_floats_within_tol_cluster_before_the_floor_test(self):
+        a = 2e-3
+        planes, _mat, feat, dropped = self._merge([0.0, 6e-3], [a - 2e-7, a + 2e-7])
+        assert planes == [0.0, pytest.approx(a, abs=1e-15), 6e-3]
+        assert feat == [False, True, False]
+        assert dropped == []
+
+    def test_no_features_passthrough(self):
+        planes, mat, feat, dropped = self._merge([0.0, 3e-3, 6e-3], [], [True, False, True])
+        assert planes == [0.0, 3e-3, 6e-3]
+        assert mat == [True, False, True]
+        assert feat == [False, False, False]
+        assert dropped == []
+
+
+class TestEdgePlanesInTheMesh:
+    """End to end on the dielectric-resonator worksheet's coarse grid."""
+
+    R, r, H, W = 4e-3, 2e-3, 6e-3, 20e-3
+    F_MAX, MNPW = 3.5e9, 12  # h_max = 1.064 mm
+
+    @pytest.fixture(autouse=True)
+    def _occ(self):
+        return pytest.importorskip("OCC.Core.BRepPrimAPI")
+
+    def _model(self, chamfer):
+        from magnelio.geo.primitives import Brick, Cylinder
+        from magnelio.materials.material import Material
+
+        ceramic = Material("ceramic", epsilon=(45.0,) * 3)
+        body = Cylinder(origin=(0, 0, 0), radius=self.R, height=self.H, axis="z", material=ceramic)
+        bore = Cylinder(origin=(0, 0, 0), radius=self.r, height=self.H, axis="z", material="air")
+        puck = body - bore
+        if chamfer > 0:
+            puck = puck.chamfered(edges="all", distance=chamfer)
+        box = Brick(
+            origin=(-self.W / 2, -self.W / 2, 0), size=(self.W, self.W, self.H), material="air"
+        )
+        model = GeometryModel(background="pec")
+        model.add(box - puck)
+        model.add(puck)
+        return model
+
+    def _mesh(self, chamfer, **kw):
+        control = MeshControl(min_nodes_per_wavelength=self.MNPW, **kw)
+        return Mesh.from_geometry(self._model(chamfer), control, f_max=self.F_MAX)
+
+    def test_resolved_chamfer_is_one_cell_layer_top_and_bottom(self):
+        c = 0.5e-3
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            mesh = self._mesh(c)
+        z = np.asarray(mesh.grid.z)
+        assert np.any(np.abs(z - c) < 1e-12) and np.any(np.abs(z - (self.H - c)) < 1e-12)
+        dz = np.diff(z)
+        # One cell in each chamfer layer (no DD-107 buffer tripling —
+        # no port is declared on the housing faces), smooth grading.
+        assert dz[0] == pytest.approx(c) and dz[-1] == pytest.approx(c)
+        ratios = dz[1:] / dz[:-1]
+        assert ratios.max() < 1.5 and ratios.min() > 1 / 1.5
+
+    def test_sub_floor_chamfer_warns_and_leaves_the_grid_untouched(self):
+        c = 0.2e-3  # below h_max / 4 = 0.266 mm
+        with pytest.warns(UserWarning, match="geometry-edge plane.*max_edge_refinement"):
+            mesh = self._mesh(c)
+        legacy = self._mesh(c, max_edge_refinement=0.0)
+        assert np.array_equal(mesh.grid.z, legacy.grid.z)
+        assert not np.any(np.abs(np.asarray(mesh.grid.z) - c) < 1e-12)
+
+    def test_raising_the_ratio_resolves_it(self):
+        c = 0.2e-3
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            mesh = self._mesh(c, max_edge_refinement=8.0)
+        z = np.asarray(mesh.grid.z)
+        assert np.any(np.abs(z - c) < 1e-12)
+        # The ramp's integer cell count may undershoot h_fine by a few
+        # percent (DD-105 slack); the feature layer itself is exactly c.
+        assert np.diff(z).min() >= 0.85 * c
+        assert np.diff(z)[0] == pytest.approx(c)
+
+    def test_min_cell_size_binds_and_is_named(self):
+        c = 0.5e-3
+        with pytest.warns(UserWarning, match="min_cell_size"):
+            mesh = self._mesh(c, min_cell_size=0.6e-3)
+        assert not np.any(np.abs(np.asarray(mesh.grid.z) - c) < 1e-12)
+
+    def test_zero_disables_edge_planes_bit_exactly(self):
+        plain = self._mesh(0.0)
+        off = self._mesh(0.5e-3, max_edge_refinement=0.0)
+        for axis in "xyz":
+            assert np.array_equal(getattr(plain.grid, axis), getattr(off.grid, axis))
+
+    def test_negative_ratio_is_rejected(self):
+        with pytest.raises(ValueError, match="max_edge_refinement"):
+            MeshControl(max_edge_refinement=-1.0)
+
+
+class TestEdgePlaneBoundaryBuffer:
+    """A feature-bounded boundary interval: buffer only for a declared port."""
+
+    def _lines(self, end_floor):
+        from magnelio.mesh.mesher import _generate_axis_lines
+
+        planes = [0.0, 0.5e-3, 5.5e-3, 6e-3]
+        return np.asarray(
+            _generate_axis_lines(
+                planes,
+                h_max=1e-3,
+                h_fine=0.5e-3,
+                control=MeshControl(),
+                buffer_ends=("lo", "hi"),
+                end_floor=end_floor,
+            )
+        )
+
+    def test_fallback_faces_keep_the_single_cell(self):
+        d = np.diff(self._lines({"lo": np.inf, "hi": np.inf}))
+        assert d[0] == pytest.approx(0.5e-3) and d[-1] == pytest.approx(0.5e-3)
+
+    def test_declared_port_face_gets_its_buffer_within_the_floor(self):
+        d = np.diff(self._lines({"lo": 0.1e-3, "hi": 0.1e-3}))
+        assert d[:3] == pytest.approx(np.full(3, 0.5e-3 / 3))
+        assert d[-3:] == pytest.approx(np.full(3, 0.5e-3 / 3))
+
+    def test_declared_port_face_yields_to_the_floor(self):
+        d = np.diff(self._lines({"lo": 0.2e-3, "hi": 0.2e-3}))
+        assert d[0] == pytest.approx(0.5e-3) and d[-1] == pytest.approx(0.5e-3)

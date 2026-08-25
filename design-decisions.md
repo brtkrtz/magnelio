@@ -13060,3 +13060,167 @@ eigenmodes) on the same datasets the ParaView export builds; a
 coax + 80k-cell grid scene 0.9 s to build; 27 M-cell rectilinear
 grid: slice 0.5 s, re-render 11 ms; `glyph(tolerance=…)` 17 s (point
 merging — never use it, subsample instead: 10 ms).
+
+---
+
+## DD-191 — Geometry-edge planes: a grid plane wherever a B-rep edge lies flat in an axis-normal plane, floored by `max_edge_refinement`
+
+**Status:** Decided 2026-08-25 with the developer (planning discussion on
+mesh generation: which of the rule-based, wavelength-local, edge-refinement
+and adaptive strategies to pursue; this is the first); implemented
+2026-08-25.
+
+**Problem.**  The dielectric-resonator worksheet (internal record
+`investigations/dr_filter/MEASUREMENTS.md`, M4/M4a) found the chamfer of
+a ceramic puck to have *no* effect on its eigenfrequency — three
+bit-identical values for 0 / 0.2 / 0.5 mm on a 1 mm grid, then a 16 %
+jump at 0.8 mm.  M4a cleared the conformal material matrices: a radius
+change of a twentieth of a cell moves f0 by a clean, linearly scaling
+19 MHz.  The DD-051 entry `M_eps = eps_bar * A_dual / L_primal` averages
+over the dual face *transverse* to the edge; a feature that thins the
+puck *along* the z-edges inside the top and bottom cell layer has no
+lever until it reaches the layer's midplane, and then switches on in one
+step.  That is the construction, not a defect — but it means the mesher
+must put a plane where the feature starts, and it never did:
+`_face_critical_planes` reads planes, cylinders and spheres, a chamfer
+is a cone, and the circle where the cone meets the cylinder is an edge.
+No warning either: the feature vanished silently.  The developer knew
+the artefact from no commercial suite; those meshers place fixpoints on
+every CAD edge and vertex and prune them by a cell-ratio limit.
+
+**Decision.**  A second, *edge* pass over the B-rep, and a soft plane
+class with a reported floor.
+
+1. **Which edges.**  An edge contributes the coordinate `a` on axis `k`
+   iff the whole edge lies in the plane `x_k = a`: a straight edge on
+   every axis where its end points agree (an axis-parallel edge yields
+   its two transverse coordinates, an edge in a tilted plane the plane's
+   axis, a skew edge nothing); a circle or ellipse on the axis its
+   normal is parallel to, at the centre's coordinate (exact analytic
+   position); any other curve on every axis along which its
+   geometry-only bounding box has zero extent.  Only *sharp* edges count.  Skipped are seam edges
+   (`BRep_Tool.IsClosed(edge, face)`: a cylinder's seam is a straight
+   line through `(R, 0)` and would put a phantom plane through the
+   axis; a sphere's seam meridian lies in an axis-normal plane through
+   its centre), degenerated edges, and edges between two faces of the
+   *same* analytic surface — a Boolean fuse leaves coplanar sub-faces
+   unmerged, and the split line between them is not geometry (found on
+   tutorial 06's magic tee: a plane at `y = 0` through the junction,
+   in the middle of a flat wall).  Measured on the test bodies: chamfered annulus → `z = c, H − c` and nothing on x/y;
+   filleted brick → the fillet onsets on all three axes; sphere,
+   torus, cone, axis-aligned and tilted cylinders, brick → nothing new.
+   Deliberately *not* the in-plane tangent extrema of the feature
+   circles (`±(R − c)`): they are second-order refinements of a
+   transverse boundary the conformal average already resolves; the
+   plane normal to the edge's own plane is the one that ends the
+   along-edge blindness.
+
+2. **Soft class.**  Edge planes join after `_merge_axis_planes`
+   (material + forced) in `_merge_feature_planes`: a candidate within
+   the clustering tolerance of an existing plane *is* that plane
+   (absorbed silently); one closer than the edge floor to *any*
+   material/forced plane or to a previously kept edge plane
+   (keep-first, ascending) is dropped and recorded; the rest join with
+   `is_material = False`, `is_feature = True`.  They never move a
+   material plane (KB-013 stays intact) and never drive
+   `min_cells_per_feature`: an edge plane asks for **one** cell across
+   each interval it bounds — enough for the cell's midplane to see the
+   feature — entered into the shared per-axis `h_fine` so the
+   neighbouring intervals ramp from that size (the generator grades
+   from a common `h_fine`, DD-061 contract I4).  A thin sheet's thin
+   axis is exempt for the sheet's own shape, and the sheet's far face
+   — which re-enters through the *edges* of the imprint in the
+   surrounding dielectric just as it does through its faces — is
+   dropped globally before the merge (tutorial 10's 17 µm
+   metallisation came back as a "dropped edge plane" warning until it
+   was).
+
+3. **Floor and warning.**  `edge_floor = max(h_max /
+   max_edge_refinement, min_cell_size)`, new
+   `MeshControl.max_edge_refinement = 4.0` (`0` disables the pass —
+   the 0.4.4 meshes bit-exactly).  The ratio bounds the time-step cost
+   of resolving small edges (one explicit step, bounded by the smallest
+   cell anywhere).  Drops are reported by **one warning per mesh**
+   with the count per axis and the *coarsest* dropped plane — the one
+   nearest to being resolved, whose feature matters most — with the
+   cell it would have created, the floor, the binding parameter and
+   the `max_edge_refinement` that keeps it.  (The first version named
+   the finest drop per axis: on tutorial 10's ring divider that was a
+   43 µm sliver where a line's side wall meets the ring, 43 µm from
+   the ring's own tangent plane — noise that trains the reader to
+   ignore the message M4 lacked.)
+
+4. **Domain-face buffer.**  A boundary interval bounded by an edge
+   plane holds one cell by design.  The DD-107 buffer (three
+   equidistant cells at a domain face) would triple it: at a *declared*
+   port face it still may, floored by the edge floor (the port needs
+   its cells); at the port-blind fallback faces it is skipped there
+   (measured before the rule: a 0.5 mm chamfer layer at the housing
+   wall became three 0.167 mm cells and a growth-ratio warning, for a
+   port that does not exist).
+
+**Measured** (`validation/edge_plane_chamfer_certificate.py`, the
+worksheet's coarse grid, mnpw 12 at 3.5 GHz, h_max 1.064 mm, lowest
+mode; 2026-08-25):
+
+| chamfer | ratio 0 (0.4.4) | ratio 4 (default) | ratio 8 |
+|---|---|---|---|
+| 0.0 mm | 2.32784 GHz, 4704 cells | same | same |
+| 0.1 mm | 2.32784 (invisible) | 2.32784, **warned** | 2.32784, warned |
+| 0.2 mm | 2.32784 (invisible) | 2.32784, **warned** | 2.47076, 11760 cells |
+| 0.3 mm | 2.32784 (invisible) | 2.50288, 9408 | 2.50288 |
+| 0.5 mm | 2.32784 (invisible) | 2.57799, 7056 | 2.57799 |
+| 0.8 mm | 2.70978 (jump) | 2.74736, 5488 | 2.74736 |
+
+The legacy column reproduces M4 to the digit.  Resolved chamfers move
+f0 monotonically; the steps are uneven (the first tenths of a
+millimetre matter most — M4a saw the same on its fine grid), so the
+certificate checks monotonicity and that no single step carries the
+legacy jump, not evenness.  Dropped chamfers give the plain-puck grid
+bit-for-bit (unit test) and the plain-puck f0 to solver noise.
+DD-062 sentinel 30/30, unit suite green.
+
+**Side finding — tutorial 13's "9.9 % drift" was mostly this
+artefact.**  The filter capstone compared its single resonator on two
+grids (mnpw 10 and 16) and read a +9.9 % move of f0 as the general
+non-convergence of a high-permittivity puck.  On the coarse grid
+(dz = 1.2 mm) the 0.5 mm chamfer was invisible, on the finer one
+(dz = 0.75 mm, half-cell 0.375 mm < 0.5 mm) it had switched on: the
+drift was the chamfer appearing, not the resolution.  With the edge
+pass both grids resolve the chamfer and — since the 0.5 mm feature
+layer now sets `h_fine` on both — come out nearly identical (drift
+−0.0 %).  The tutorial is re-based on a grid pair that scales both
+mesh knobs (see the how-to *Mesh convergence*), and its text no longer
+quotes the ten percent.  Cost of the pass on the tutorials: 13
++50–80 % cells (dz 1.0 → 0.49 mm), 18 +10 % (iris/equator circles),
+10 +20 % (line/ring junctions; the tutorial now sets
+`max_edge_refinement=5` to keep the last junction plane instead of
+printing the warning), 01–09, 11, 12, 15–17 unchanged (14 does not
+mesh).
+
+**Rejected.**
+- *Counting edge planes as material gaps* (`min_cells_per_feature`
+  across the chamfer layer): a 0.2 mm chamfer would force 0.05 mm
+  cells; one cell is what the dual-face argument needs.
+- *Vertices as fixpoints* (the commercial rule): identical to the
+  straight-edge rule for axis-parallel edges and contaminated by seam
+  vertices otherwise.
+- *A posteriori (energy-based) refinement* for this defect class: a
+  feature below the grid has zero effect on the coarse solution, hence
+  zero energy signature — no a-posteriori indicator can find it.  Only
+  a rule that reads the CAD model can.  (Global ΔS convergence loops
+  are a how-to recipe, not a mesher feature.)
+- *Averaging ε over the dual volume along the edge* (subpixel
+  smoothing) instead of a mesher rule: makes chamfers continuous without
+  planes but rewrites DD-051 and every port/slab certificate.
+
+**Files:** `src/magnelio/geo/_occ_backend.py`
+(`_edge_feature_planes`, `extract_feature_planes_per_shape`),
+`src/magnelio/mesh/mesher.py` (`MeshControl.max_edge_refinement`,
+`_merge_feature_planes`, `_warn_dropped_edge_planes`, `end_floor` in
+`_generate_axis_lines` / `_enforce_boundary_buffer`),
+`validation/edge_plane_chamfer_certificate.py`,
+`tests/unit/test_geometry.py` (`TestEdgeFeaturePlanes`),
+`tests/unit/test_mesh.py` (`TestMergeFeaturePlanes`,
+`TestEdgePlanesInTheMesh`, `TestEdgePlaneBoundaryBuffer`),
+`docs/methods/meshing-conformal.md`, `spec.md` §6.1, `CHANGELOG.md`.

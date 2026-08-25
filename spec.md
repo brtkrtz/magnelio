@@ -440,16 +440,29 @@ Input:  GeometryModel, MeshControl, f_max
 Output: GridLines(x, y, z)
 
 1. Extract critical planes from OCC geometry:
-   - All unique x, y, z coordinates of geometry face bounding boxes
-   - Edges parallel to axes → force grid lines at their endpoints
-   - Result: sets Px, Py, Pz of critical plane positions
+   - Face pass: axis-normal planar faces, tangent positions of
+     axis-aligned cylinders and spheres, shape bounding-box extents
+     (material planes)
+   - Edge pass (DD-191): every B-rep edge lying flat in an axis-normal
+     plane — chamfer/fillet onsets, loft sections, iris circles —
+     excluding seam and degenerated edges (soft "feature" planes)
+   - Result: sets Px, Py, Pz of material planes plus Fx, Fy, Fz of
+     feature planes
 
 2. For each axis independently:
    a. Sort critical planes
+   a'. Merge the feature planes (DD-191): a feature plane within the
+      clustering tolerance of a material plane is that plane; one
+      closer than max(h_max / max_edge_refinement, min_cell_size) to
+      any material plane or to a previously kept feature plane is
+      dropped and reported (one warning per axis); the rest join as
+      non-material planes.  Feature planes never move a material plane.
    b. Determine the two cell-size scales (DD-028):
       - h_max  = λ_min / N_wl  with λ_min = c₀ / f_max / sqrt(max(εr·μr))
       - h_fine = min_gap / min_cells_per_feature
-        where min_gap is the smallest interior gap on any axis
+        where min_gap is the smallest interior gap on any axis;
+        a feature plane contributes its adjacent interval widths with
+        divisor 1 (one cell across the feature layer)
    c. For each interval [p_i, p_{i+1}]:
       - Boundary intervals: ramp from h_fine at the interior interface,
         grow by factor g = MeshControl.growth_factor toward h_max, then

@@ -187,7 +187,14 @@ model = mio.GeometryModel(
 )
 model.add(cell)
 
-mesh = mio.Mesh.from_geometry(model, mio.MeshControl(max_cell_size=4e-3), f_max=1.5e9)
+# The revolved profile's arc junctions and the iris circles get grid
+# planes of their own; two of them sit 5.6 mm apart, which a 4 mm cell
+# cannot fill evenly.  Without the floor the mesher splits that gap
+# into two 2.8 mm cells — and, since the time step follows the smallest
+# cell, warns about it.  The floor keeps it one cell.
+
+mesh_control = mio.MeshControl(max_cell_size=4e-3, min_cell_size=2.8e-3)
+mesh = mio.Mesh.from_geometry(model, mesh_control, f_max=1.5e9)
 print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 
 # %%
@@ -207,7 +214,7 @@ print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 def lowest_mode(bcs):
     half = mio.GeometryModel(background="pec", boundary_conditions=bcs)
     half.add(cell)
-    m = mio.Mesh.from_geometry(half, mio.MeshControl(max_cell_size=4e-3), f_max=1.5e9)
+    m = mio.Mesh.from_geometry(half, mesh_control, f_max=1.5e9)
     return mio.AnalysisEigenmode(mesh=m, n_modes=1, verbose=False).run().frequencies[0]
 
 
