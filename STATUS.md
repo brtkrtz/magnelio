@@ -18,8 +18,13 @@ cells inside the block.  A dense background now enters the wavelength
 a thin trace is now too short for the ramp to reach the air bulk
 size, which exposed the DD-105 integer-count undershoot (the how-to
 warned on two rungs, 19 %); short intervals now keep the fine-end
-cell at `h_fine` and relax the growth ratio.  Tutorial re-run: see
-the DD-192 line.
+cell at `h_fine` and relax the growth ratio.  Tutorial re-run
+(local vs global rule, DD-193 on both): 09 −15 % cells (y 27 → 23),
+10 −11 % (y 19 → 17), 13 −3…−34 % per grid (the air box around the
+pucks), 17 −27 % (z 15 → 11); every other tutorial identical — the
+coax, waveguide, sphere-in-PEC and TESLA models are homogeneous.
+The mesh-convergence how-to keeps its verdicts (S-parameters at
+mnpw 32, pillbox at rung 24) with the same cell counts per rung.
 Previous: **geometry-edge planes**
 (DD-191, released 0.4.5): the mesher's
 face pass reads planes, cylinders and spheres, so a chamfer (a cone) or
@@ -89,8 +94,8 @@ longitudinally on the ``SymmetryPMC`` plane, PMC lid, coax knobs;
 position optimum ≈ **+16·s beyond** the plane (21.4° → 0.74°, sign
 opposite to coax/MS).  Side find: empty boolean results crashed
 `plot()` via uncaught C++ exception → KB-026, closed by DD-190.
-Unit suite 2234
-passed / 3 skipped (DD-192 added 18, DD-191 22).  **Released v0.4.5
+Unit suite 2250
+passed / 3 skipped (DD-193 added 16, DD-192 18, DD-191 22).  **Released v0.4.5
 (2026-08-25)** with DD-191 and the mesh-convergence how-to; before
 that v0.4.4 (2026-08-25) with DD-190, whose merge
 had turned CI and Docs red first — VTK segfaults on GPU-less runners
@@ -136,7 +141,7 @@ The plane-wave tutorial remains deferred.
 Newest first, one line each; the full record is the DD entry.
 
 * **DD-193** (2026-08-25) — short-interval grading keeps the fine-end cell at `h_fine` and relaxes the growth ratio (`_ratio_for_exact_fill`) instead of letting the integer count push it up to 23 % below (DD-105 undershoot, made common by DD-192's air slabs above thin traces); buffered profile untouched; meshes with short graded intervals change.
-* **DD-192** (2026-08-25) — bulk cell size per axis interval from the wavelength of the densest material whose bounding box reaches into that slab (`MeshControl(wavelength_rule="local")`, default; `"global"` = old rule), background counted; feature refinement, grading, buffer and edge floor unchanged; ceramic-in-air 1.43 M → 254 k cells.
+* **DD-192** (2026-08-25) — bulk cell size per axis interval from the wavelength of the densest material whose bounding box reaches into that slab (`MeshControl(wavelength_rule="local")`, default; `"global"` = old rule), background counted; feature refinement, grading, buffer and edge floor unchanged; ceramic-in-air 1.43 M → 254 k cells; tutorials 09/10/13/17 −11…−34 %, the homogeneous ones identical.
 * **DD-191** (2026-08-25) — geometry-edge planes: a grid plane wherever a sharp B-rep edge lies flat in an axis-normal plane (chamfer/fillet onsets, loft sections, iris circles), as a soft class — one cell per feature layer, floored at `h_max / max_edge_refinement` (default 4) and `min_cell_size`, dropped edges reported once per mesh with the coarsest position and the ratio that keeps it, `0` = the old meshes.  Closes the DR-filter worksheet's invisible-chamfer artefact (M4/M4a: dual-face averaging is transverse-only — a feature varying *along* the edges has no lever until it crosses the cell midplane).  Traps recorded: Boolean-fuse split lines between coplanar sub-faces are not edges; the thin-sheet far face re-enters through the imprint's edges; the DD-107 buffer would triple a single-cell feature interval.
 * **DD-190** (2026-08-25) — `model.plot()` rebuilt on PyVista: axis-aligned cutting plane from the widget toolbar (normal / slider / flip / undo / reset) that caps every solid and lays the exposed grid cells, coloured by assigned material, over the cut (the grid shows nowhere else); wires, ports, elements, symmetry planes and the domain box overlaid in mm; browser-side rendering by default (`mode=`), a VTK window in scripts, screenshots in the gallery (tutorials 01/02 now show the 3D view).  Transport is trame's own websocket — JupyterLab ≥ 4.5 executes comm messages in ipykernel-7 subshell threads, and VTK rendered there gave black frames / kernel aborts (proven by replaying the comm transport).  `pyvista` is a core dependency, `[jupyter]` extra for the widget; pythreejs path gone; closes KB-026 as a side effect.
 * **DD-189** (2026-08-24, three amendments) — lumped-port termination guides, four pages: *Lumped ports: investigations* (principle + sweeps for all three line types) plus a compact *Lumped port tuning* tool each for coax/microstrip/CPW.  Waveguide port as instrument, WG–WG reference run as grid-exact phase ruler (no closed-form dispersion), phase polarity normalised to n·180° at the low band edge, knobs = end-gap geometry / position / port impedance as geometric re-run sweeps (de-embedding, the single overloaded page, and the CPW slot-port+resistor scheme all dropped on developer review).  CPW = coax picture on the symmetry plane: longitudinal end-gap port (`SymmetryPMC` half model, PMC lid), position optimum +16·s *beyond* the plane.  Kept as general (non-guide) knowledge: `elements=` for post-mesh lumped elements, single-mode test shields.  All three line types shipped; side find KB-026 (empty boolean crashes plot()).
