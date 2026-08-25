@@ -23,6 +23,16 @@ major version is 0, minor releases may change the public API.
   `MeshControl(wavelength_rule="global")` restores the previous rule.
   A dense background material now counts toward the wavelength as
   well (it was ignored before).
+- `MeshControl(singularity_refinement=k)`: grading at the grid planes
+  that hold a conductor edge — the edges of a strip, a patch, an
+  iris, where the field is singular — starts at `h_fine / k` on both
+  sides of the plane.  Edges are read from the CAD model (convex
+  edges of metal bodies, and concave edges of vacuum bodies cut out
+  of a metal background); cavity corners, fillet onsets and
+  dielectric edges are not refined.  Off by default (`1`): the edge
+  cell bounds the time step, so the factor trades bulk resolution
+  for edge resolution rather than buying accuracy for free — see the
+  meshing page for when it pays.
 
 ### Fixed
 
@@ -33,6 +43,11 @@ major version is 0, minor releases may change the public API.
   whole model).  The interface cell now stays at its requested size
   and the growth ratio relaxes instead; neighbouring cells still
   differ by at most `growth_factor`.
+- An eigenmode solve with an explicit `sigma` that found fewer modes
+  than requested because most of the Krylov vectors converged on the
+  curl-curl null space now grows its request at the same shift
+  (twice at most) instead of returning short; the factorisation is
+  shared between the attempts.
 
 ### Changed
 

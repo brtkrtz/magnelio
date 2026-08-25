@@ -630,23 +630,9 @@ def extract_feature_planes_per_shape(
     return result
 
 
-def _edge_feature_planes(occ_shape) -> dict[str, list[float]]:
-    """Axis-normal planes in which the sharp edges of an OCC shape lie flat.
+def _sharp_edges(occ_shape):
+    """Yield ``(edge, faces)`` for the edges of *occ_shape* that are geometry.
 
-    An edge contributes the coordinate ``a`` on axis ``k`` when the
-    whole edge lies in the plane ``x_k = a``:
-
-    * a straight edge — every axis on which both end points agree
-      (an axis-parallel edge yields its two transverse coordinates, an
-      edge in a tilted plane yields the plane's axis, a skew edge
-      nothing);
-    * a circle or ellipse — the axis its normal is parallel to, at the
-      centre's coordinate (exact analytic position);
-    * any other curve — every axis along which its geometry-only
-      bounding box has zero extent (a planar spline in an axis-normal
-      plane), at that extent.
-
-    Only *sharp* edges count — edges where the surface normal jumps.
     Skipped are seam edges (``BRep_Tool.IsClosed(edge, face)``: a
     cylinder's seam is a straight line through ``(R, 0)`` and would
     put a phantom plane through the cylinder axis; a sphere's seam
@@ -654,20 +640,13 @@ def _edge_feature_planes(occ_shape) -> dict[str, list[float]]:
     degenerated edges, and edges between two faces of the *same*
     analytic surface (a Boolean fuse leaves coplanar sub-faces
     unmerged; the line between them lies in the middle of a flat
-    wall and is not geometry).
-
-    Positions are in the shape's build units; the absolute epsilons act
-    in the DD-120-scaled regime like those of
-    :func:`_face_critical_planes`.  Duplicates are removed.
+    wall and is not geometry).  Shared by the DD-191 edge planes and
+    the DD-194 singular-edge planes.
     """
-    occ = _require_occ()
     from OCC.Core.BRep import BRep_Tool  # noqa: PLC0415
-    from OCC.Core.BRepAdaptor import BRepAdaptor_Curve, BRepAdaptor_Surface  # noqa: PLC0415
+    from OCC.Core.BRepAdaptor import BRepAdaptor_Surface  # noqa: PLC0415
     from OCC.Core.GeomAbs import (  # noqa: PLC0415
-        GeomAbs_Circle,
         GeomAbs_Cylinder,
-        GeomAbs_Ellipse,
-        GeomAbs_Line,
         GeomAbs_Plane,
         GeomAbs_Sphere,
     )
@@ -706,7 +685,6 @@ def _edge_feature_planes(occ_shape) -> dict[str, list[float]]:
             ) and k1.Location().Distance(k2.Location()) <= 1e-9 * (1.0 + k1.Radius())
         return False
 
-    found: dict[str, set[float]] = {"x": set(), "y": set(), "z": set()}
     emap = TopTools_IndexedDataMapOfShapeListOfShape()
     topexp.MapShapesAndAncestors(occ_shape, TopAbs_EDGE, TopAbs_FACE, emap)
     for i in range(emap.Size()):
@@ -718,34 +696,58 @@ def _edge_feature_planes(occ_shape) -> dict[str, list[float]]:
             continue  # seam
         if len(faces) == 2 and _same_surface(faces[0], faces[1]):
             continue  # split line inside one surface, not an edge
-        curve = BRepAdaptor_Curve(edge)
-        ctype = curve.GetType()
-        # "Same coordinate" at the edge's own tolerance: OCC's notion
-        # of coincidence for this edge (1e-7 by default).
-        tol = max(BRep_Tool.Tolerance(edge), 1e-12)
-        if ctype == GeomAbs_Line:
-            p1 = curve.Value(curve.FirstParameter())
-            p2 = curve.Value(curve.LastParameter())
-            a = (p1.X(), p1.Y(), p1.Z())
-            b = (p2.X(), p2.Y(), p2.Z())
-            for k, (axis, _) in enumerate(_AXIS_DIRS):
-                if abs(a[k] - b[k]) <= tol:
-                    found[axis].add(0.5 * (a[k] + b[k]))
-        elif ctype in (GeomAbs_Circle, GeomAbs_Ellipse):
-            conic = curve.Circle() if ctype == GeomAbs_Circle else curve.Ellipse()
-            d = conic.Axis().Direction()
-            c = conic.Location()
-            d_xyz = (d.X(), d.Y(), d.Z())
-            c_xyz = (c.X(), c.Y(), c.Z())
-            for k, (axis, _) in enumerate(_AXIS_DIRS):
-                if abs(d_xyz[k]) >= align_tol:
-                    found[axis].add(c_xyz[k])
-        else:
-            box = occ["Bnd_Box"]()
-            # Geometry-only box (no triangulation) — KB-012.
-            occ["brepbndlib"].Add(edge, box, False)
-            if box.IsVoid():
-                continue
+        yield edge, faces
+
+
+def _edge_flat_planes(edge) -> dict[str, set[float]]:
+    """Axis-normal planes in which one OCC edge lies flat (DD-191 rule).
+
+    * a straight edge — every axis on which both end points agree
+      (an axis-parallel edge yields its two transverse coordinates, an
+      edge in a tilted plane yields the plane's axis, a skew edge
+      nothing);
+    * a circle or ellipse — the axis its normal is parallel to, at the
+      centre's coordinate (exact analytic position);
+    * any other curve — every axis along which its geometry-only
+      bounding box has zero extent (a planar spline in an axis-normal
+      plane), at that extent.
+
+    Positions are in the shape's build units.
+    """
+    occ = _require_occ()
+    from OCC.Core.BRep import BRep_Tool  # noqa: PLC0415
+    from OCC.Core.BRepAdaptor import BRepAdaptor_Curve  # noqa: PLC0415
+    from OCC.Core.GeomAbs import GeomAbs_Circle, GeomAbs_Ellipse, GeomAbs_Line  # noqa: PLC0415
+
+    align_tol = 1.0 - 1e-9  # |cos| threshold for "axis-parallel"
+    found: dict[str, set[float]] = {"x": set(), "y": set(), "z": set()}
+    curve = BRepAdaptor_Curve(edge)
+    ctype = curve.GetType()
+    # "Same coordinate" at the edge's own tolerance: OCC's notion
+    # of coincidence for this edge (1e-7 by default).
+    tol = max(BRep_Tool.Tolerance(edge), 1e-12)
+    if ctype == GeomAbs_Line:
+        p1 = curve.Value(curve.FirstParameter())
+        p2 = curve.Value(curve.LastParameter())
+        a = (p1.X(), p1.Y(), p1.Z())
+        b = (p2.X(), p2.Y(), p2.Z())
+        for k, (axis, _) in enumerate(_AXIS_DIRS):
+            if abs(a[k] - b[k]) <= tol:
+                found[axis].add(0.5 * (a[k] + b[k]))
+    elif ctype in (GeomAbs_Circle, GeomAbs_Ellipse):
+        conic = curve.Circle() if ctype == GeomAbs_Circle else curve.Ellipse()
+        d = conic.Axis().Direction()
+        c = conic.Location()
+        d_xyz = (d.X(), d.Y(), d.Z())
+        c_xyz = (c.X(), c.Y(), c.Z())
+        for k, (axis, _) in enumerate(_AXIS_DIRS):
+            if abs(d_xyz[k]) >= align_tol:
+                found[axis].add(c_xyz[k])
+    else:
+        box = occ["Bnd_Box"]()
+        # Geometry-only box (no triangulation) — KB-012.
+        occ["brepbndlib"].Add(edge, box, False)
+        if not box.IsVoid():
             lo = box.CornerMin()
             hi = box.CornerMax()
             gap = box.GetGap()
@@ -754,8 +756,154 @@ def _edge_feature_planes(occ_shape) -> dict[str, list[float]]:
             for k, (axis, _) in enumerate(_AXIS_DIRS):
                 if hi_xyz[k] - lo_xyz[k] <= tol:
                     found[axis].add(0.5 * (lo_xyz[k] + hi_xyz[k]))
+    return found
 
+
+def _edge_feature_planes(occ_shape) -> dict[str, list[float]]:
+    """Axis-normal planes in which the sharp edges of an OCC shape lie flat.
+
+    An edge contributes the coordinate ``a`` on axis ``k`` when the
+    whole edge lies in the plane ``x_k = a`` (:func:`_edge_flat_planes`).
+    Only *sharp* edges count — edges where the surface normal jumps;
+    seams, degenerated edges and split lines inside one analytic
+    surface are skipped (:func:`_sharp_edges`).
+
+    Positions are in the shape's build units; the absolute epsilons act
+    in the DD-120-scaled regime like those of
+    :func:`_face_critical_planes`.  Duplicates are removed.
+    """
+    _require_occ()
+    found: dict[str, set[float]] = {"x": set(), "y": set(), "z": set()}
+    for edge, _faces in _sharp_edges(occ_shape):
+        for axis, positions in _edge_flat_planes(edge).items():
+            found[axis] |= positions
     return {axis: sorted(found[axis]) for axis in ("x", "y", "z")}
+
+
+# Dihedral tolerance below which an edge counts as tangential — a fillet
+# onset, a loft seam between near-coplanar sections — and carries no
+# field singularity (DD-194).
+_SINGULAR_EDGE_ANGLE_DEG = 5.0
+
+
+def extract_singular_edge_planes(
+    geometry,
+    background=None,
+    scale: float = 1.0,
+) -> dict[str, list[float]]:
+    """Axis-normal planes holding a conductor edge with a field singularity.
+
+    At an edge where a conductor forms a wedge of interior angle
+    ``α < 180°`` the field and the surface current behave like
+    ``r^(π/(2π−α) − 1)`` — ``r^(−1/3)`` at a 90° edge, ``r^(−1/2)`` at
+    a knife edge (DD-194).  Returns ``{'x': [pos, ...], 'y': [...],
+    'z': [...]}`` in meters: every axis-normal plane in which such an
+    edge lies flat (the DD-191 rule of :func:`_edge_flat_planes`).
+
+    A sharp edge is singular when the wedge of angle below 180° at it
+    is metal: a *convex* edge of a shape whose material ``is_pec``
+    (PEC or a lossy metal), or a *concave* edge of a non-metal shape
+    whose surroundings at the edge are metal (a vacuum body cut out of
+    a PEC background — the iris rim of a cavity, the walls of a
+    ridged guide).  Concave metal edges (the corners of a cavity) are
+    regular and contribute nothing, and so do tangential edges (the
+    onset of a fillet) and dielectric edges.  Convexity comes from
+    ``BRepOffset_Analyse`` (the kernel's own offset classification);
+    the surroundings of a concave edge are probed a short way into
+    the open wedge along the bisector of the two outward normals.
+
+    Shapes the kernel cannot analyse contribute nothing.
+    """
+    occ = _require_occ()
+    import math  # noqa: PLC0415
+
+    from OCC.Core.BRepAdaptor import BRepAdaptor_Curve, BRepAdaptor_Curve2d  # noqa: PLC0415
+    from OCC.Core.BRepGProp import BRepGProp_Face  # noqa: PLC0415
+    from OCC.Core.BRepOffset import BRepOffset_Analyse  # noqa: PLC0415
+    from OCC.Core.ChFiDS import ChFiDS_Concave, ChFiDS_Convex  # noqa: PLC0415
+    from OCC.Core.GCPnts import GCPnts_AbscissaPoint  # noqa: PLC0415
+
+    shapes = list(geometry) if hasattr(geometry, "__iter__") else [geometry]
+
+    def _is_metal(material) -> bool:
+        return material is not None and bool(getattr(material, "is_pec", False))
+
+    metal_outside_possible = _is_metal(background) or any(
+        _is_metal(getattr(s, "material", None)) for s in shapes
+    )
+
+    def _material_at(point_scaled, exclude) -> object:
+        """Material of the shape containing *point_scaled* (else background)."""
+        point_m = tuple(c / scale for c in point_scaled)
+        for other in shapes:
+            if other is exclude:
+                continue
+            try:
+                inside = point_in_shape(other._occ_shape(scale), point_m, scale=scale)
+            except Exception:  # noqa: BLE001 — exotic shape: cannot contain the probe
+                continue
+            if inside:
+                return getattr(other, "material", None)
+        return background
+
+    def _open_wedge_probe(edge, faces):
+        """A point a short way into the open (non-shape) wedge at the edge."""
+        curve = BRepAdaptor_Curve(edge)
+        u_mid = 0.5 * (curve.FirstParameter() + curve.LastParameter())
+        p = curve.Value(u_mid)
+        bisector = [0.0, 0.0, 0.0]
+        for face in faces:
+            pcurve = BRepAdaptor_Curve2d(edge, face)
+            uv = pcurve.Value(0.5 * (pcurve.FirstParameter() + pcurve.LastParameter()))
+            pnt, normal = occ["gp_Pnt"](), occ["gp_Vec"]()
+            BRepGProp_Face(face).Normal(uv.X(), uv.Y(), pnt, normal)
+            bisector[0] += normal.X()
+            bisector[1] += normal.Y()
+            bisector[2] += normal.Z()
+        norm = math.sqrt(sum(c * c for c in bisector))
+        if norm <= 1e-12:
+            return None
+        length = GCPnts_AbscissaPoint.Length(curve)
+        delta = 1e-2 * length
+        return tuple(p.Coord(k + 1) + delta * bisector[k] / norm for k in range(3))
+
+    found: dict[str, set[float]] = {"x": set(), "y": set(), "z": set()}
+    angle = math.radians(_SINGULAR_EDGE_ANGLE_DEG)
+    for shape in shapes:
+        material = getattr(shape, "material", None)
+        metal = _is_metal(material)
+        if not metal and not metal_outside_possible:
+            continue
+        try:
+            occ_shape = shape._occ_shape(scale)
+            analyse = BRepOffset_Analyse(occ_shape, angle)
+            edges = list(_sharp_edges(occ_shape))
+        except ImportError:
+            raise
+        except Exception:  # noqa: BLE001 — exotic shape, no singular edges
+            continue
+        for edge, faces in edges:
+            if len(faces) != 2:
+                continue
+            kinds = analyse.Type(edge)
+            if kinds.Size() == 0:
+                continue
+            kind = kinds.First().Type()
+            if metal:
+                singular = kind == ChFiDS_Convex
+            elif kind == ChFiDS_Concave:
+                try:
+                    probe = _open_wedge_probe(edge, faces)
+                except Exception:  # noqa: BLE001 — no usable normals
+                    probe = None
+                singular = probe is not None and _is_metal(_material_at(probe, shape))
+            else:
+                singular = False
+            if not singular:
+                continue
+            for axis, positions in _edge_flat_planes(edge).items():
+                found[axis] |= positions
+    return {axis: sorted(p / scale for p in found[axis]) for axis in ("x", "y", "z")}
 
 
 # ---------------------------------------------------------------------------

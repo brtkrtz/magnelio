@@ -196,6 +196,7 @@ Rationale for SoA: see `design-decisions.md` DD-002.
 class MeshControl:
     min_nodes_per_wavelength: int = 20      # dimensionless — N_wl
     wavelength_rule: str = "local"          # "local" (per slab) | "global"
+    singularity_refinement: float = 1.0     # h_fine / k at conductor-edge planes (1 = off)
     min_cells_per_feature: int = 4          # dimensionless — cells per smallest gap
     growth_factor: float = 1.3             # max ratio h_{i+1}/h_i > 1
     max_cell_size: float | None = None     # absolute cap [meters]
@@ -471,6 +472,15 @@ Output: GridLines(x, y, z)
         relax the growth ratio to g' ≤ g so the count fills the
         interval exactly (DD-193); the integer count never pushes the
         fine-end cell below h_fine.
+        The fine size is per plane (DD-194): planes holding a
+        singular conductor edge (convex edge of a metal shape, or a
+        concave edge of a non-metal shape with metal in the open
+        wedge; domain end planes excluded) take
+        h_fine / singularity_refinement.  An interior interval whose
+        ends differ grades from each end at its own size — both ramps
+        plus a uniform middle when they fit, else a tent with the
+        smaller size pinned and one ratio r ≤ g up and down, the
+        coarse end free between the pinned size and 1.05 h_fine.
       - h_fine = min_gap / min_cells_per_feature
         where min_gap is the smallest interior gap on any axis;
         a feature plane contributes its adjacent interval widths with
@@ -515,6 +525,7 @@ Output: GridLines(x, y, z)
 |-----------------------------|-------------------|---------|------------|-------------|
 | `min_nodes_per_wavelength`  | `int`             | 20      | —          | Minimum cells per wavelength of the slab's densest material |
 | `wavelength_rule`           | `str`             | "local" | —          | "local": per-slab wavelength; "global": densest material everywhere |
+| `singularity_refinement`    | `float`           | 1.0     | —          | Grading at conductor-edge planes starts at h_fine / k (1 = off) |
 | `min_cells_per_feature`     | `int`             | 4       | —          | Cells across the smallest geometry gap (0 disables) |
 | `growth_factor`             | `float`           | 1.3     | —          | Max ratio h_{i+1}/h_i |
 | `max_cell_size`             | `float \| None`   | None    | meters     | Absolute upper bound on cell size |

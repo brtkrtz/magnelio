@@ -68,6 +68,7 @@ def check_grading_undershoot(
     buffer_ends: dict[str, tuple[str, ...]] | None = None,
     ports_declared: bool = False,
     buffer_cells: int = 3,
+    h_fine_planes: dict[str, list[float]] | None = None,
 ) -> None:
     """Warn when the time-step-setting cell is finer than anything asked for.
 
@@ -118,6 +119,12 @@ def check_grading_undershoot(
         reported when a plain fill would have held fewer cells than
         this — otherwise the undershoot is ordinary integer rounding,
         which the wavelength skip deliberately tolerates.
+    h_fine_planes : dict, optional
+        Per-axis fine size at each critical plane (the mesher's
+        singularity refinement, which starts the grading at a
+        conductor edge below ``h_fine`` by design); an interval is
+        measured against the finer of its two ends.  ``None`` means
+        ``h_fine_axis`` at every plane.
     """
     site = None  # (h_actual, axis, node_lo, node_hi)
     for axis in ("x", "y", "z"):
@@ -166,7 +173,12 @@ def check_grading_undershoot(
     if wavelength_driven and not buffered_faces:
         return
 
-    h_wanted = min(h_fine_axis[axis], p1 - p0)
+    h_fine_here = h_fine_axis[axis]
+    if h_fine_planes is not None and axis in h_fine_planes:
+        fine = h_fine_planes[axis]
+        if len(fine) == planes.size:
+            h_fine_here = min(fine[k], fine[k + 1])
+    h_wanted = min(h_fine_here, p1 - p0)
     if control.max_cell_size is not None:
         h_wanted = min(h_wanted, control.max_cell_size)
     h_wanted = max(h_wanted, min_cell)

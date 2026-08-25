@@ -77,6 +77,9 @@ _AMG_THRESHOLD = 50_000  # switch to AMG above this many free DOFs
 # with the shift raised by this factor, up to the ε_r = 1 estimate
 # (the corresponding upper bound).
 _SIGMA_RETRY_FACTOR = 4.0
+# DD-195: how often the Krylov request may grow at one shift when
+# null-space artefacts crowd out the physical modes.
+_NULL_GROW_RETRIES = 2
 
 
 def _has_pyamg() -> bool:
@@ -719,41 +722,70 @@ class EigenmodeSolver3D:
             ladder = self._sigma_ladder(grid, mesh)
             for attempt, sigma in enumerate(ladder):
                 k_request = min(self.n_modes + 4 + 6 * attempt, n_free - 2)
-                if solver_key == "arpack-cholmod":
-                    vals, vecs = self._solve_arpack_cholmod(
-                        A_f,
-                        B_f,
-                        sigma,
-                        n_free,
-                        k_request,
-                        grid,
-                        free_idx,
+                # DD-195: null-space artefacts crowd the Krylov subspace
+                # out of proportion on grids with many tiny conformal
+                # edges (the singularity refinement of DD-194 exposed
+                # it on the dielectric-filter tutorial: 5 of 7 vectors
+                # below 1 MHz at a user-pinned shift).  Before moving
+                # the shift — which a user-given sigma forbids — grow
+                # the request at the SAME shift by the artefact count;
+                # the SuperLU factorisation is shared across the grows.
+                op_inv = None
+                if solver_key not in ("arpack-cholmod", "arpack-amg"):
+                    op_inv = self._arpack_op_inv(A_f, B_f, sigma)
+                for grow in range(_NULL_GROW_RETRIES + 1):
+                    if solver_key == "arpack-cholmod":
+                        vals, vecs = self._solve_arpack_cholmod(
+                            A_f,
+                            B_f,
+                            sigma,
+                            n_free,
+                            k_request,
+                            grid,
+                            free_idx,
+                        )
+                    elif solver_key == "arpack-amg":
+                        vals, vecs = self._solve_arpack_amg(
+                            A_f,
+                            B_f,
+                            sigma,
+                            n_free,
+                            k_request,
+                        )
+                    else:
+                        vals, vecs = self._solve_arpack(
+                            A_f,
+                            B_f,
+                            sigma,
+                            n_free,
+                            k_request,
+                            op_inv=op_inv,
+                        )
+                    eigenvalues, eigenvectors_free = _merge_physical_modes(
+                        eigenvalues,
+                        eigenvectors_free,
+                        vals,
+                        vecs,
+                        b_diag,
                     )
-                elif solver_key == "arpack-amg":
-                    vals, vecs = self._solve_arpack_amg(
-                        A_f,
-                        B_f,
-                        sigma,
-                        n_free,
-                        k_request,
-                    )
-                else:
-                    vals, vecs = self._solve_arpack(
-                        A_f,
-                        B_f,
-                        sigma,
-                        n_free,
-                        k_request,
-                    )
-                eigenvalues, eigenvectors_free = _merge_physical_modes(
-                    eigenvalues,
-                    eigenvectors_free,
-                    vals,
-                    vecs,
-                    b_diag,
-                )
-                freq_new = np.sqrt(np.maximum(np.asarray(vals).real, 0.0)) / (2.0 * np.pi)
-                n_null_seen += int(np.count_nonzero(freq_new < _F_PHYSICAL_MIN))
+                    freq_new = np.sqrt(np.maximum(np.asarray(vals).real, 0.0)) / (2.0 * np.pi)
+                    n_null_new = int(np.count_nonzero(freq_new < _F_PHYSICAL_MIN))
+                    n_null_seen += n_null_new
+                    if (
+                        eigenvalues.size >= self.n_modes
+                        or n_null_new == 0
+                        or k_request >= n_free - 2
+                        or grow == _NULL_GROW_RETRIES
+                    ):
+                        break
+                    k_request = min(k_request + n_null_new + 2, n_free - 2)
+                    if self.verbose:
+                        print(
+                            f"  {eigenvalues.size}/{self.n_modes} physical "
+                            f"modes, {n_null_new} null-space artefacts at "
+                            f"sigma={sigma:.3e}; growing the request to "
+                            f"k={k_request}"
+                        )
                 if eigenvalues.size >= self.n_modes:
                     break
                 if self.verbose and attempt + 1 < len(ladder):
@@ -895,7 +927,22 @@ class EigenmodeSolver3D:
 
     # ── ARPACK + SuperLU (small problems) ───────────────────────────────────
 
-    def _solve_arpack(self, A_f, B_f, sigma, n_free, k_request):
+    @staticmethod
+    def _arpack_op_inv(A_f, B_f, sigma):
+        """``(A − σB)⁻¹`` as a linear operator over one SuperLU factorisation.
+
+        ``eigsh`` factorises the shifted operator itself when given
+        only ``sigma``; handing it the factorisation lets several
+        requests at one shift share it (DD-195).
+        """
+        from scipy.sparse.linalg import splu  # noqa: PLC0415
+
+        shifted = (A_f - sigma * B_f).tocsc()
+        lu = splu(shifted)
+        dtype = np.result_type(shifted.dtype, np.float64)
+        return LinearOperator(shifted.shape, matvec=lu.solve, dtype=dtype)
+
+    def _solve_arpack(self, A_f, B_f, sigma, n_free, k_request, op_inv=None):
         """Solve via ARPACK eigsh with SuperLU direct factorisation."""
         if self.verbose:
             print(f"ARPACK (SuperLU): n_free={n_free:,d}, k={k_request}, sigma={sigma:.3e}")
@@ -906,6 +953,7 @@ class EigenmodeSolver3D:
             k=k_request,
             which="LM",
             sigma=sigma,
+            OPinv=op_inv,
         )
         return eigenvalues, eigenvectors_free
 
