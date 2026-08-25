@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=0d091d8f"></script>
+    <script src="../_static/documentation_options.js?v=92caab9e"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -700,25 +700,64 @@ directivity).</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="magnelio.plots.show_geometry">
-<span class="sig-prename descclassname"><span class="pre">magnelio.plots.</span></span><span class="sig-name descname"><span class="pre">show_geometry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">geometry</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(800,</span> <span class="pre">500)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">render_edges</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'#202020'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.plots.show_geometry" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">magnelio.plots.</span></span><span class="sig-name descname"><span class="pre">show_geometry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">geometry</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cut</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_ports</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_wires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">render_edges</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'#202020'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'iso'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.plots.show_geometry" title="Link to this definition">#</a></dt>
 <dd><p>Interactive 3D view of a <a class="reference internal" href="core.html#magnelio.GeometryModel" title="magnelio.geo.GeometryModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeometryModel</span></code></a>.</p>
-<p>Uses the pythonocc <code class="docutils literal notranslate"><span class="pre">JupyterRenderer</span></code> widget.  Each shape is
-coloured according to its material (same palette as
-<a class="reference internal" href="#magnelio.plots.plot_cross_section" title="magnelio.plots.plot_cross_section"><code class="xref py py-func docutils literal notranslate"><span class="pre">plot_cross_section()</span></code></a>).  Air/vacuum shapes are rendered
-semi-transparent so that internal structure is visible.</p>
-<p>Calling this function directly displays the widget as a side-effect
-via <code class="docutils literal notranslate"><span class="pre">IPython.display</span></code>; the return value is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+<p>Solids are coloured by material (air and vacuum bodies are drawn as
+faint translucent shells), thin wires, ports, lumped elements and
+symmetry planes are overlaid, and the domain box is outlined.  With
+a <code class="docutils literal notranslate"><span class="pre">mesh</span></code> a cutting plane exposes the grid cells — each coloured by
+the material the mesher assigned — on the cut.</p>
+<p>The cutting plane is axis-aligned.  In the notebook widget it is
+driven from the toolbar (normal axis, position slider, flip side,
+undo, reset), which also hides or shows object groups; <code class="docutils literal notranslate"><span class="pre">cut</span></code>
+sets the plane’s initial state, and is the only way to place it
+for a screenshot.  The cut applies to the features as well: a port
+or element in the removed half disappears with it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>geometry</strong> (<a class="reference internal" href="core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><em>GeometryModel</em></a><em> or </em><em>list</em><em> of </em><em>shapes</em>) – The geometry to display.</p></li>
-<li><p><strong>size</strong> (<em>(</em><em>int</em><em>, </em><em>int</em><em>)</em>) – Widget size in pixels <code class="docutils literal notranslate"><span class="pre">(width,</span> <span class="pre">height)</span></code>.</p></li>
-<li><p><strong>render_edges</strong> (<em>bool</em>) – Draw tessellation edges on every shape.</p></li>
-<li><p><strong>edge_color</strong> (<em>str</em>) – Hex colour for edges.</p></li>
-<li><p><strong>quality</strong> (<em>float</em>) – Tessellation quality (higher = finer mesh, slower).</p></li>
+<li><p><strong>geometry</strong> (<a class="reference internal" href="core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><em>GeometryModel</em></a><em> or </em><em>iterable</em><em> of </em><em>shapes</em>) – The geometry to display.  A <a class="reference internal" href="core.html#magnelio.GeometryModel" title="magnelio.geo.GeometryModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeometryModel</span></code></a>
+contributes its ports, lumped elements and boundary declaration.</p></li>
+<li><p><strong>mesh</strong> (<a class="reference internal" href="core.html#magnelio.Mesh" title="magnelio.Mesh"><em>Mesh</em></a><em>, </em><em>optional</em>) – Show this mesh’s grid with the geometry.</p></li>
+<li><p><strong>cut</strong> (<em>(</em><em>str</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – Initial cutting plane as <code class="docutils literal notranslate"><span class="pre">(normal,</span> <span class="pre">position)</span></code> with the normal
+<code class="docutils literal notranslate"><span class="pre">'x'</span></code>, <code class="docutils literal notranslate"><span class="pre">'y'</span></code> or <code class="docutils literal notranslate"><span class="pre">'z'</span></code> and the position in metres, e.g.
+<code class="docutils literal notranslate"><span class="pre">(&quot;y&quot;,</span> <span class="pre">0.0)</span></code>.  <code class="docutils literal notranslate"><span class="pre">None</span></code> (default) starts uncut.</p></li>
+<li><p><strong>flip</strong> (<em>bool</em><em>, </em><em>default False</em>) – Which half the cut removes: by default the side the normal
+points to; <code class="docutils literal notranslate"><span class="pre">True</span></code> removes the other side.</p></li>
+<li><p><strong>show_ports</strong> (<em>bool</em><em>, </em><em>default True</em>) – Draw ports and lumped elements, and thin wires.</p></li>
+<li><p><strong>show_wires</strong> (<em>bool</em><em>, </em><em>default True</em>) – Draw ports and lumped elements, and thin wires.</p></li>
+<li><p><strong>show_grid</strong> (<em>bool</em><em>, </em><em>default True</em>) – With <code class="docutils literal notranslate"><span class="pre">mesh</span></code>: draw the grid cells on the cutting plane.</p></li>
+<li><p><strong>show_labels</strong> (<em>bool</em><em>, </em><em>default True</em>) – Write the names of ports and lumped elements next to them.</p></li>
+<li><p><strong>mode</strong> (<em>str</em><em>, </em><em>optional</em>) – Where to render in a notebook: <code class="docutils literal notranslate"><span class="pre">&quot;client&quot;</span></code> (default) renders
+in the browser and needs no OpenGL in the kernel; <code class="docutils literal notranslate"><span class="pre">&quot;server&quot;</span></code>
+renders in the kernel and streams images; <code class="docutils literal notranslate"><span class="pre">&quot;trame&quot;</span></code> offers
+both with a toggle; <code class="docutils literal notranslate"><span class="pre">&quot;static&quot;</span></code> embeds a screenshot;
+<code class="docutils literal notranslate"><span class="pre">&quot;none&quot;</span></code> builds the scene without showing it and returns the
+plotter.  Outside a notebook the value is ignored: a script
+opens an interactive window, a documentation build takes a
+screenshot.</p></li>
+<li><p><strong>size</strong> (<em>(</em><em>int</em><em>, </em><em>int</em><em>)</em><em>, </em><em>optional</em>) – Widget or window size in pixels.  Default: full cell width.</p></li>
+<li><p><strong>render_edges</strong> (<em>bool</em><em>, </em><em>default False</em>) – Draw the tessellation edges on every solid.</p></li>
+<li><p><strong>edge_color</strong> (<em>str</em><em>, </em><em>default &quot;#202020&quot;</em>) – Colour of those edges.</p></li>
+<li><p><strong>quality</strong> (<em>float</em><em>, </em><em>default 1.0</em>) – Tessellation fineness; values above 1 give finer triangles.</p></li>
+<li><p><strong>scale_mm</strong> (<em>bool</em><em>, </em><em>default True</em>) – Display in millimetres (<code class="docutils literal notranslate"><span class="pre">False</span></code>: metres).</p></li>
+<li><p><strong>camera</strong> (<em>str</em><em> or </em><em>sequence</em><em>, </em><em>default &quot;iso&quot;</em>) – Initial camera: a PyVista preset (<code class="docutils literal notranslate"><span class="pre">&quot;iso&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;xy&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;xz&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&quot;yz&quot;</span></code>) or an explicit <code class="docutils literal notranslate"><span class="pre">[position,</span> <span class="pre">focal_point,</span> <span class="pre">view_up]</span></code>.</p></li>
 </ul>
 </dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The plotter when <code class="docutils literal notranslate"><span class="pre">mode=&quot;none&quot;</span></code>; otherwise the view is displayed
+as a side effect and <code class="docutils literal notranslate"><span class="pre">None</span></code> is returned.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyvista.Plotter or None</p>
+</dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>The widget needs the <code class="docutils literal notranslate"><span class="pre">trame</span></code> stack (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">magnelio[jupyter]</span></code>
+or the conda-forge packages <code class="docutils literal notranslate"><span class="pre">trame</span></code>, <code class="docutils literal notranslate"><span class="pre">trame-vtk</span></code>,
+<code class="docutils literal notranslate"><span class="pre">trame-vuetify</span></code>).  Without it the view falls back to a static
+image with a warning.</p>
 </dd></dl>
 
 </section>

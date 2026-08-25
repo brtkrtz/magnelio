@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=0d091d8f"></script>
+    <script src="../_static/documentation_options.js?v=92caab9e"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -911,8 +911,8 @@ construction body.</p></li>
 <p class="rubric">Examples</p>
 <p>A 35 um copper feed line ending square at both ports:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">line</span> <span class="o">=</span> <span class="n">route</span><span class="o">.</span><span class="n">traced</span><span class="p">(</span>
-    <span class="n">width</span><span class="o">=</span><span class="mf">0.6e-3</span><span class="p">,</span> <span class="n">thickness</span><span class="o">=</span><span class="mf">35e-6</span><span class="p">,</span> <span class="n">caps</span><span class="o">=</span><span class="s2">&quot;flat&quot;</span><span class="p">,</span>
-    <span class="n">normal</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">copper</span><span class="p">,</span>
+    <span class="n">width</span><span class="o">=</span><span class="mf">0.6e-3</span><span class="p">,</span> <span class="n">thickness</span><span class="o">=</span><span class="mf">35e-6</span><span class="p">,</span> <span class="n">caps</span><span class="o">=</span><span class="s2">"flat"</span><span class="p">,</span>
+    <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">copper</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -1233,9 +1233,9 @@ to inherit.</p></li>
 </dl>
 <p class="rubric">Examples</p>
 <p>A horn flaring from a square throat to a wider square mouth:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">throat</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Face</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">points</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">],</span> <span class="n">position</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
-<span class="n">mouth</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Face</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">points</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">],</span> <span class="n">position</span><span class="o">=</span><span class="mf">60e-3</span><span class="p">)</span>
-<span class="n">horn</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Loft</span><span class="p">(</span><span class="n">throat</span><span class="p">,</span> <span class="n">mouth</span><span class="p">,</span> <span class="n">blend</span><span class="o">=</span><span class="s2">&quot;ruled&quot;</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">pec</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">throat</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Face</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">points</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">],</span> <span class="n">position</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+<span class="n">mouth</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Face</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">points</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">],</span> <span class="n">position</span><span class="o">=</span><span class="mf">60e-3</span><span class="p">)</span>
+<span class="n">horn</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Loft</span><span class="p">(</span><span class="n">throat</span><span class="p">,</span> <span class="n">mouth</span><span class="p">,</span> <span class="n">blend</span><span class="o">=</span><span class="s2">"ruled"</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">pec</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1325,7 +1325,7 @@ perpendicular to it.</p></li>
 </dl>
 <p class="rubric">Examples</p>
 <p>The rounded end of a slot, turning about <code class="docutils literal notranslate"><span class="pre">z</span></code>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">path</span><span class="o">.</span><span class="n">arc_to</span><span class="p">((</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1e-3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">center</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">normal</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">path</span><span class="o">.</span><span class="n">arc_to</span><span class="p">((</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1e-3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">center</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1410,7 +1410,7 @@ way round):</p>
     <span class="p">(</span><span class="mf">0.035</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.012</span><span class="p">),</span>
     <span class="n">center</span><span class="o">=</span><span class="p">(</span><span class="mf">0.054</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.012</span><span class="p">),</span>
     <span class="n">semi_axes</span><span class="o">=</span><span class="p">(</span><span class="mf">0.012</span><span class="p">,</span> <span class="mf">0.019</span><span class="p">),</span>
-    <span class="n">major_axis</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span>
+    <span class="n">major_axis</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span>
     <span class="n">normal</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
 <span class="p">)</span>
 </pre></div>
@@ -1473,7 +1473,7 @@ something to instantiate directly.</p>
 shape; the receiver is never modified.  That is what makes the calls
 chainable:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pin</span> <span class="o">=</span> <span class="n">Cylinder</span><span class="p">(</span><span class="n">radius</span><span class="o">=</span><span class="mf">0.5e-3</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mf">4e-3</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">pec</span><span class="p">)</span>
-<span class="n">part</span> <span class="o">=</span> <span class="n">pin</span><span class="o">.</span><span class="n">rotated</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="mf">90.0</span><span class="p">)</span><span class="o">.</span><span class="n">translated</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">))</span> <span class="o">-</span> <span class="n">hole</span>
+<span class="n">part</span> <span class="o">=</span> <span class="n">pin</span><span class="o">.</span><span class="n">rotated</span><span class="p">(</span><span class="s2">"y"</span><span class="p">,</span> <span class="mf">90.0</span><span class="p">)</span><span class="o">.</span><span class="n">translated</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">))</span> <span class="o">-</span> <span class="n">hole</span>
 </pre></div>
 </div>
 <p><strong>Materials follow the base operand.</strong>  A Boolean result takes the
@@ -1662,7 +1662,7 @@ normals and eventually overshoot into a bulge.</p></li>
 meeting both at a right angle:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">transition</span> <span class="o">=</span> <span class="n">electrode</span><span class="o">.</span><span class="n">lofted</span><span class="p">(</span>
     <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">45.5e-3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">inner</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">48e-3</span><span class="p">,</span> <span class="o">-</span><span class="mf">10e-3</span><span class="p">),</span>
-    <span class="n">material</span><span class="o">=</span><span class="n">pec</span><span class="p">,</span> <span class="n">blend</span><span class="o">=</span><span class="s2">&quot;tangent&quot;</span><span class="p">,</span>
+    <span class="n">material</span><span class="o">=</span><span class="n">pec</span><span class="p">,</span> <span class="n">blend</span><span class="o">=</span><span class="s2">"tangent"</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -1717,11 +1717,11 @@ if requested.</p>
 </dl>
 <p class="rubric">Examples</p>
 <p>Complete a half-modelled power divider into one solid:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">full</span> <span class="o">=</span> <span class="n">half</span><span class="o">.</span><span class="n">mirrored</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">unite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">full</span> <span class="o">=</span> <span class="n">half</span><span class="o">.</span><span class="n">mirrored</span><span class="p">(</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">unite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Mirror a feed line onto the far side of a board:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">far</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">mirrored</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="n">h</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">far</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">mirrored</span><span class="p">(</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="n">h</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1786,7 +1786,7 @@ otherwise a list — or a <code class="docutils literal notranslate"><span class
 </dl>
 <p class="rubric">Examples</p>
 <p>Four posts at 90° spacing around the z axis:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">posts</span> <span class="o">=</span> <span class="n">post</span><span class="o">.</span><span class="n">rotated</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="mf">90.0</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">posts</span> <span class="o">=</span> <span class="n">post</span><span class="o">.</span><span class="n">rotated</span><span class="p">(</span><span class="s2">"z"</span><span class="p">,</span> <span class="mf">90.0</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>

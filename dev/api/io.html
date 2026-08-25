@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=0d091d8f"></script>
+    <script src="../_static/documentation_options.js?v=92caab9e"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -684,8 +684,8 @@ the arrow scaling).</p></li>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">project</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisEigenmode</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
-<span class="gp">... </span>                                <span class="n">project</span><span class="o">=</span><span class="s2">&quot;cavity&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">export_paraview_eigenmodes</span><span class="p">()[</span><span class="s2">&quot;script&quot;</span><span class="p">]</span>
+<span class="gp">... </span>                                <span class="n">project</span><span class="o">=</span><span class="s2">"cavity"</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">project</span><span class="o">.</span><span class="n">export_paraview_eigenmodes</span><span class="p">()[</span><span class="s2">"script"</span><span class="p">]</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1167,7 +1167,7 @@ members, named <code class="docutils literal notranslate"><span class="pre">&lt;
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">Material</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_brep</span>
 
-<span class="n">horn</span> <span class="o">=</span> <span class="n">import_brep</span><span class="p">(</span><span class="s2">&quot;horn.brep&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;mm&quot;</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">())</span>
+<span class="n">horn</span> <span class="o">=</span> <span class="n">import_brep</span><span class="p">(</span><span class="s2">"horn.brep"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"mm"</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">())</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1247,14 +1247,14 @@ larger than the metal thickness.</p>
 <span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_pcb</span>
 
 <span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span>
-    <span class="s2">&quot;fabrication/&quot;</span><span class="p">,</span>
-    <span class="p">{</span><span class="s2">&quot;dielectric_1&quot;</span><span class="p">:</span> <span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;RO4350B&quot;</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">3.66</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)},</span>
+    <span class="s2">"fabrication/"</span><span class="p">,</span>
+    <span class="p">{</span><span class="s2">"dielectric_1"</span><span class="p">:</span> <span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"RO4350B"</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">3.66</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)},</span>
 <span class="p">)</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">GeometryModel</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Inspect the names before assigning anything:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span><span class="s2">&quot;fabrication/&quot;</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span><span class="s2">"fabrication/"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">([</span><span class="n">solid</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">solid</span> <span class="ow">in</span> <span class="n">board</span><span class="o">.</span><span class="n">members</span><span class="p">()])</span>
 </pre></div>
 </div>
@@ -1320,15 +1320,15 @@ shape — a Group is flattened into its members on insertion.</p>
 <span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_step</span>
 
 <span class="n">parts</span> <span class="o">=</span> <span class="n">import_step</span><span class="p">(</span>
-    <span class="s2">&quot;connector.step&quot;</span><span class="p">,</span>
-    <span class="p">{</span><span class="s2">&quot;pin&quot;</span><span class="p">:</span> <span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">(),</span> <span class="s2">&quot;shell&quot;</span><span class="p">:</span> <span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">(),</span>
-     <span class="s2">&quot;insulator&quot;</span><span class="p">:</span> <span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;PTFE&quot;</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">2.1</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)},</span>
+    <span class="s2">"connector.step"</span><span class="p">,</span>
+    <span class="p">{</span><span class="s2">"pin"</span><span class="p">:</span> <span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">(),</span> <span class="s2">"shell"</span><span class="p">:</span> <span class="n">Material</span><span class="o">.</span><span class="n">pec</span><span class="p">(),</span>
+     <span class="s2">"insulator"</span><span class="p">:</span> <span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"PTFE"</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">2.1</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)},</span>
 <span class="p">)</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">GeometryModel</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Import first, inspect the names, assign afterwards:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">parts</span> <span class="o">=</span> <span class="n">import_step</span><span class="p">(</span><span class="s2">&quot;connector.step&quot;</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">parts</span> <span class="o">=</span> <span class="n">import_step</span><span class="p">(</span><span class="s2">"connector.step"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">parts</span><span class="o">.</span><span class="n">members</span><span class="p">()])</span>
 </pre></div>
 </div>

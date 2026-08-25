@@ -233,13 +233,39 @@ size is dictated entirely by the geometry: the grid has to resolve
 the annulus.  A 0.12 mm cap gives about nine cells across the
 dielectric gap.
 
-.. GENERATED FROM PYTHON SOURCE LINES 146-162
+.. GENERATED FROM PYTHON SOURCE LINES 146-150
 
 .. code-block:: Python
 
 
     mesh = mio.Mesh.from_geometry(model, mio.MeshControl(max_cell_size=0.12e-3), f_max=f_max)
     print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
+
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    grid: 25 x 25 x 67 cells
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 151-154
+
+The 3D view shows the line opened along its axis, the grid cells on
+the cut coloured by material, and the two port windows on the domain
+faces.
+
+.. GENERATED FROM PYTHON SOURCE LINES 154-169
+
+.. code-block:: Python
+
+
+    model.plot(mesh=mesh, cut=("y", 0.0))
 
     # Two cuts: across the cable, and along it.  The longitudinal cut
     # shows that the grid is uniform along the line — nothing varies in
@@ -261,17 +287,16 @@ dielectric gap.
    :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_001.png
    :class: sphx-glr-single-img
 
-
-.. rst-class:: sphx-glr-script-out
-
- .. code-block:: none
-
-    grid: 25 x 25 x 67 cells
+.. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_002.png
+   :alt: plot 02 coax line
+   :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_002.png
+   :class: sphx-glr-single-img
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 163-169
+
+.. GENERATED FROM PYTHON SOURCE LINES 170-176
 
 The circle is rendered on a rectangular grid as a staircase, with
 partially filled cells treated by conformal material matrices — keep
@@ -280,7 +305,7 @@ this picture in mind when reading the port report below.
 Numerical mode vs. analytical reference
 ---------------------------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 169-180
+.. GENERATED FROM PYTHON SOURCE LINES 176-187
 
 .. code-block:: Python
 
@@ -312,7 +337,7 @@ Numerical mode vs. analytical reference
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 181-194
+.. GENERATED FROM PYTHON SOURCE LINES 188-201
 
 The two impedances answer different questions.  The *reference* is
 the closed-form value of the ideal circular line — the design
@@ -328,7 +353,7 @@ strongest at the inner conductor.  Passing the geometry model
 overlays the port-plane cross-section — the grey disc is the inner
 conductor, the tinted annulus the dielectric:
 
-.. GENERATED FROM PYTHON SOURCE LINES 194-197
+.. GENERATED FROM PYTHON SOURCE LINES 201-204
 
 .. code-block:: Python
 
@@ -338,21 +363,21 @@ conductor, the tinted annulus the dielectric:
 
 
 
-.. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_002.png
+.. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_003.png
    :alt: Coax TEM mode, transverse E
-   :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_002.png
+   :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_003.png
    :class: sphx-glr-single-img
 
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 198-200
+.. GENERATED FROM PYTHON SOURCE LINES 205-207
 
 Run and S-parameters
 --------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 200-218
+.. GENERATED FROM PYTHON SOURCE LINES 207-225
 
 .. code-block:: Python
 
@@ -377,9 +402,9 @@ Run and S-parameters
 
 
 
-.. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_003.png
+.. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_004.png
    :alt: RG-58 class coax, 8 mm
-   :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_003.png
+   :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_004.png
    :class: sphx-glr-single-img
 
 
@@ -387,12 +412,12 @@ Run and S-parameters
 
  .. code-block:: none
 
-    max |S11| in band: -110.5 dB
+    max |S11| in band: -109.9 dB
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 219-230
+.. GENERATED FROM PYTHON SOURCE LINES 226-237
 
 As for every uniform matched line, ``|S21|`` sits at 0 dB and
 ``|S11|`` at the numerical floor — around -110 dB here.  Note what that floor
@@ -406,7 +431,7 @@ The transmission phase must follow the dielectric-loaded electrical
 length :math:`\beta L` with
 :math:`\beta = 2 \pi f \sqrt{\varepsilon_r} / c_0`:
 
-.. GENERATED FROM PYTHON SOURCE LINES 230-246
+.. GENERATED FROM PYTHON SOURCE LINES 237-253
 
 .. code-block:: Python
 
@@ -429,9 +454,9 @@ length :math:`\beta L` with
 
 
 
-.. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_004.png
+.. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_005.png
    :alt: Transmission phase vs. analytic
-   :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_004.png
+   :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_005.png
    :class: sphx-glr-single-img
 
 
@@ -444,7 +469,7 @@ length :math:`\beta L` with
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 247-259
+.. GENERATED FROM PYTHON SOURCE LINES 254-266
 
 Where to go next
 ----------------
@@ -462,7 +487,7 @@ interest.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 7.566 seconds)
+   **Total running time of the script:** (0 minutes 5.490 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_02_coax_line.py:

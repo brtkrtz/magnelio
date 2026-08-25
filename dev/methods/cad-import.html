@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
 
-    <script src="../_static/documentation_options.js?v=0d091d8f"></script>
+    <script src="../_static/documentation_options.js?v=92caab9e"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -387,6 +387,7 @@
 <li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
 </ul>
 </div>
@@ -504,7 +505,7 @@ assignment (below).</p>
 native dump; it round-trips a shape without any conversion at all, but
 because it states no unit, <a class="reference internal" href="../api/io.html#magnelio.io.import_brep" title="magnelio.io.import_brep"><code class="xref py py-func docutils literal notranslate"><span class="pre">import_brep()</span></code></a> demands one
 from the caller:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">horn</span> <span class="o">=</span> <span class="n">import_brep</span><span class="p">(</span><span class="s2">&quot;horn.brep&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;mm&quot;</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">pec</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">horn</span> <span class="o">=</span> <span class="n">import_brep</span><span class="p">(</span><span class="s2">"horn.brep"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"mm"</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">pec</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Getting that argument wrong scales the model by a factor of a thousand
@@ -530,11 +531,11 @@ solids in the CAD system first.</p>
 <p><code class="docutils literal notranslate"><span class="pre">materials</span></code> accepts a single material, applied to every solid, or a
 dict keyed by the names the solids carry in the file:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">parts</span> <span class="o">=</span> <span class="n">import_step</span><span class="p">(</span>
-    <span class="s2">&quot;connector.step&quot;</span><span class="p">,</span>
+    <span class="s2">"connector.step"</span><span class="p">,</span>
     <span class="p">{</span>
-        <span class="s2">&quot;shell&quot;</span><span class="p">:</span> <span class="n">pec</span><span class="p">,</span>
-        <span class="s2">&quot;pin&quot;</span><span class="p">:</span> <span class="n">pec</span><span class="p">,</span>
-        <span class="s2">&quot;insulator*&quot;</span><span class="p">:</span> <span class="n">ptfe</span><span class="p">,</span>   <span class="c1"># shell wildcards are allowed</span>
+        <span class="s2">"shell"</span><span class="p">:</span> <span class="n">pec</span><span class="p">,</span>
+        <span class="s2">"pin"</span><span class="p">:</span> <span class="n">pec</span><span class="p">,</span>
+        <span class="s2">"insulator*"</span><span class="p">:</span> <span class="n">ptfe</span><span class="p">,</span>   <span class="c1"># shell wildcards are allowed</span>
     <span class="p">},</span>
 <span class="p">)</span>
 </pre></div>
@@ -558,7 +559,7 @@ rejects them at
 half-mapped assembly should not mesh as if the unmapped parts were
 vacuum.  Importing without any mapping is the way to see what is in a
 file:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">solid</span> <span class="ow">in</span> <span class="n">import_step</span><span class="p">(</span><span class="s2">&quot;connector.step&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">members</span><span class="p">():</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">solid</span> <span class="ow">in</span> <span class="n">import_step</span><span class="p">(</span><span class="s2">"connector.step"</span><span class="p">)</span><span class="o">.</span><span class="n">members</span><span class="p">():</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">solid</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">solid</span><span class="o">.</span><span class="n">bounding_box</span><span class="p">())</span>
 </pre></div>
 </div>
