@@ -943,7 +943,9 @@ def _build_scene(
                 scalars="color",
                 rgb=True,
                 show_edges=True,
-                edge_color="#a6a6a6",
+                # Dark enough to read on the dielectric tints through
+                # the sheet's translucency; light grey vanished on blue.
+                edge_color="#606060",
                 line_width=1,
                 opacity=0.7,
                 lighting=False,
