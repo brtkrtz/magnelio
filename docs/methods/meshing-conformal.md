@@ -80,6 +80,47 @@ bounds the time-step cost of resolving small edges (the explicit
 loop takes one step bounded by the smallest cell anywhere);
 `max_edge_refinement=0` switches the edge pass off.
 
+### Refining the conductor edges
+
+Where a conductor forms a wedge of less than 180° — the edges of a
+strip, a patch, an iris — the field and the surface current are
+singular: $r^{-1/3}$ at a 90° edge, $r^{-1/2}$ at a knife edge.  A
+grid cannot represent that, and everything that integrates the edge
+field — the line impedance, the effective permittivity and with them
+the phase of $S_{21}$ and the resonant frequency of a patch —
+converges only about first order in the cell that holds the edge,
+however fine the bulk is.  Measured on a 50 Ω microstrip: the
+impedance the port solver reads off the grid is 51.5, 52.2 and
+52.6 Ω for edge cells of 50, 25 and 12.5 µm (limit about 52.9 Ω), and
+three grids with the same 12.5 µm edge cell agree within 0.1 Ω
+although their cell counts differ by almost two.
+
+`MeshControl(singularity_refinement=k)` starts the grading at the
+planes that hold such an edge at `h_fine / k` instead of `h_fine`, on
+both sides of the plane, and grows by `growth_factor` from there.
+Which edges count is read from the CAD model: a convex edge of a
+metal body (PEC or lossy metal), or a concave edge of a non-metal
+body whose surroundings at the edge are metal — a vacuum body cut
+out of a PEC background, where the iris rim is the sharp metal wedge.
+The corners of a cavity are concave metal edges and regular; a
+fillet's onset is tangential; dielectric edges are much weaker and
+not refined.  The refinement never adds a plane (the edge's plane is
+a material face or an edge plane already), never touches the domain's
+own end planes, and stops at `min_cell_size`.
+
+The factor is off by default, and the reason is the time step.  The
+edge cell bounds it, so a factor of 2 halves the step and adds the
+cells of the two ramps: on the mesh-convergence how-to's structure
+the factors 1, 2 and 3 lie on one cost-versus-error curve — the
+factor moves resolution from the bulk to the edges, it does not buy
+accuracy for free.  It pays where the impedance or the effective
+permittivity is the quantity of interest, where the time step is
+bound by a `min_cell_size` floor or by another axis anyway (then the
+edge cells are free), and where memory rather than time is the
+limit: at equal edge cell the refined grids of the microstrip need a
+third fewer cells.  Model-wide refinement is still what
+`min_nodes_per_wavelength` is for.
+
 Why a feature below the grid is *silent* rather than approximately
 represented is a property of the conformal material matrices, next.
 

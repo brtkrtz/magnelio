@@ -121,6 +121,20 @@ class MeshControl:
         model sets one bulk size for the whole domain.  Feature
         refinement, grading and the edge floor are the same under both
         rules; the rules differ only far from material interfaces.
+    singularity_refinement : float, default 1.0
+        Refinement factor at conductor edges.  Where a metal body
+        forms a wedge of less than 180° — the edges of a strip, a
+        patch, an iris — the field and the surface current are
+        singular (``r^(−1/3)`` at a 90° edge, ``r^(−1/2)`` at a knife
+        edge) and the error of impedances and S-parameters converges
+        only slowly with the cell size there.  The grid planes holding
+        such an edge start their grading on both sides at
+        ``h_fine / singularity_refinement`` instead of ``h_fine`` and
+        grow by ``growth_factor`` from there.  Concave metal edges (the
+        corners of a cavity), tangential edges (a fillet's onset) and
+        dielectric edges are regular and not refined.  ``1`` disables
+        the refinement.  The finer edge cells bound the time step:
+        expect the run time to scale roughly with the factor.
     """
 
     # Design: WP-M4 (per-axis feature-based h_fine).
@@ -136,10 +150,16 @@ class MeshControl:
     min_feature_gap: float | None = None
     max_edge_refinement: float = 4.0
     wavelength_rule: str = "local"
+    singularity_refinement: float = 1.0
 
     def __post_init__(self) -> None:
         if self.growth_factor <= 1.0:
             raise ValueError(f"growth_factor must be > 1.0, got {self.growth_factor}")
+        if not self.singularity_refinement >= 1.0:
+            raise ValueError(
+                f"singularity_refinement must be >= 1 (1 disables the refinement), "
+                f"got {self.singularity_refinement}"
+            )
         if self.wavelength_rule not in ("local", "global"):
             raise ValueError(
                 f"wavelength_rule must be 'local' or 'global', got {self.wavelength_rule!r}"
@@ -624,6 +644,19 @@ class Mesh:
                     if spec is not None and axis == spec.axis:
                         continue
                     feature_raw[axis].extend(shape_edges[axis])
+        # Step 1c (DD-194): conductor edges with a field singularity —
+        # the sharp metal wedges of the model.  The planes holding one
+        # are flagged after the merges below; their grading starts at
+        # h_fine / singularity_refinement.  Positions only: an edge
+        # never adds a plane of its own here (its plane is a material
+        # face or a DD-191 edge plane already).
+        singular_raw: dict[str, list[float]] = {"x": [], "y": [], "z": []}
+        if control.singularity_refinement > 1.0 and shapes:
+            from magnelio.geo._occ_backend import (  # noqa: PLC0415
+                extract_singular_edge_planes,
+            )
+
+            singular_raw = extract_singular_edge_planes(shapes, bg_material, scale=geo_scale)
         # A thin wire contributes its curve's OCC vertex coordinates
         # (plus bbox extents) as material planes: every axis-aligned
         # polyline segment then lies exactly on grid lines — the wire's
@@ -661,6 +694,11 @@ class Mesh:
             # report the sheet the mesher itself chose not to resolve.
             feature_raw[spec.axis] = [
                 p for p in feature_raw[spec.axis] if abs(p - spec.far_position) > tol_drop
+            ]
+            # The sheet's knife edge is singular around the sheet
+            # plane itself; the far face has no plane to flag.
+            singular_raw[spec.axis] = [
+                p for p in singular_raw[spec.axis] if abs(p - spec.far_position) > tol_drop
             ]
         # Anchors = user-forced planes + thin-sheet planes: both must
         # survive every merge stage verbatim (the sheet mask and any
@@ -701,6 +739,7 @@ class Mesh:
             critical_raw[axis] = [(p, e) for (p, e) in critical_raw[axis] if _kept(p)]
             critical_raw[axis].append((sym_pos, True))
             feature_raw[axis] = [p for p in feature_raw[axis] if _kept(p)]
+            singular_raw[axis] = [p for p in singular_raw[axis] if _kept(p)]
             if side == "min":
                 beyond = [p for p in axis_anchors[axis] if p < sym_pos]
             else:
@@ -796,6 +835,23 @@ class Mesh:
         if _dropped_edges:
             _warn_dropped_edge_planes(_dropped_edges, edge_floor, h_max, control)
 
+        # DD-194: which of the final planes hold a singular conductor
+        # edge.  Matched by position at the clustering tolerance (the
+        # edge's plane is a material face or an edge plane that may
+        # have been snapped); the domain's own end planes never — a
+        # metal edge on a port face is the truncation, not geometry,
+        # and the DD-107 buffer owns that interval.
+        axis_is_singular: dict[str, list[bool]] = {}
+        for axis in ("x", "y", "z"):
+            planes = axis_planes[axis]
+            marks = np.asarray(singular_raw[axis], dtype=float)
+            axis_is_singular[axis] = [
+                0 < i < len(planes) - 1
+                and marks.size > 0
+                and bool(np.min(np.abs(marks - p)) <= feature_gap)
+                for i, p in enumerate(planes)
+            ]
+
         # DD-192: bulk cell size per axis interval.  An interval is a
         # slab of the domain; the densest material reaching into it
         # sets the wavelength the slab is meshed for.  ("global": every
@@ -854,6 +910,17 @@ class Mesh:
                         if gap > 0:
                             h_fine_axis[axis] = min(h_fine_axis[axis], gap)
 
+        # DD-194: the fine size per plane — h_fine everywhere, divided
+        # by the singularity factor on the planes holding a conductor
+        # edge.  The generator grades each interval from its two ends'
+        # own sizes.
+        h_fine_planes: dict[str, list[float]] = {}
+        for axis in ("x", "y", "z"):
+            h_fine_planes[axis] = [
+                h_fine_axis[axis] / control.singularity_refinement if s else h_fine_axis[axis]
+                for s in axis_is_singular[axis]
+            ]
+
         ports_declared = bool(getattr(geometry, "ports", ()))
         buffer_ends = _port_buffer_ends(getattr(geometry, "ports", ()))
         grid_lines = {}
@@ -878,6 +945,7 @@ class Mesh:
                 control=control,
                 buffer_ends=buffer_ends[axis],
                 end_floor=end_floor,
+                h_fine_planes=h_fine_planes[axis],
             )
 
         # WP-M4 hard gate: a generated cell below min_feature_gap means
@@ -919,6 +987,7 @@ class Mesh:
             buffer_ends=buffer_ends,
             ports_declared=ports_declared,
             buffer_cells=_BOUNDARY_BUFFER_CELLS,
+            h_fine_planes=h_fine_planes,
         )
 
         _face_axis = {
@@ -2105,6 +2174,7 @@ def _generate_axis_lines(
     control: MeshControl,
     buffer_ends: tuple[str, ...] = ("lo", "hi"),
     end_floor: dict[str, float] | None = None,
+    h_fine_planes: "Sequence[float] | None" = None,
 ) -> list[float]:
     """Generate node positions for one axis from critical planes.
 
@@ -2113,7 +2183,9 @@ def _generate_axis_lines(
     ``control.growth_factor`` until they reach ``h_max`` (the bulk size,
     set by the wavelength criterion).  Beyond that, cells are uniform.
     ``h_max`` is one value for the whole axis or one per interval
-    (DD-192: the slab's own wavelength).
+    (DD-192: the slab's own wavelength).  ``h_fine_planes`` (DD-194)
+    gives the fine size per plane — an interval grades from each end
+    at that end's own size; ``None`` means ``h_fine`` at every plane.
 
     - Interior intervals (both endpoints are material interfaces): ramp
       from both ends, uniform middle when the interval is wide enough.
@@ -2133,6 +2205,7 @@ def _generate_axis_lines(
     g = control.growth_factor
     min_cell = control.min_cell_size or 0.0
     h_max_list = _per_interval(h_max, n_intervals)
+    fine_at = _fine_per_plane(h_fine, h_fine_planes, len(critical_planes))
 
     for i in range(n_intervals):
         p0 = critical_planes[i]
@@ -2143,14 +2216,23 @@ def _generate_axis_lines(
             continue
 
         # Per-interval h_max / h_fine, respecting MeshControl clamps.
-        h_max_eff = min(h_max_list[i], interval)
-        h_fine_eff = min(h_fine, h_max_eff)
+        h_max_raw = min(h_max_list[i], interval)
+
+        def _fine_eff(h: float, _h_max_raw=h_max_raw) -> float:
+            h_eff = min(h, _h_max_raw)
+            if control.max_cell_size is not None:
+                h_eff = min(h_eff, control.max_cell_size)
+            if min_cell > 0:
+                h_eff = max(h_eff, min_cell)
+            return h_eff
+
+        h_max_eff = h_max_raw
         if control.max_cell_size is not None:
             h_max_eff = min(h_max_eff, control.max_cell_size)
-            h_fine_eff = min(h_fine_eff, control.max_cell_size)
         if min_cell > 0:
             h_max_eff = max(h_max_eff, min_cell)
-            h_fine_eff = max(h_fine_eff, min_cell)
+        h_lo_eff = _fine_eff(fine_at[i])
+        h_hi_eff = _fine_eff(fine_at[i + 1])
 
         is_first = i == 0
         is_last = i == n_intervals - 1
@@ -2164,7 +2246,7 @@ def _generate_axis_lines(
             sub_nodes = _grade_then_uniform(
                 p_fine=p1,
                 p_coarse=p0,
-                h_fine=h_fine_eff,
+                h_fine=h_hi_eff,
                 h_max=h_max_eff,
                 g=g,
                 min_cell=min_cell,
@@ -2174,17 +2256,29 @@ def _generate_axis_lines(
             sub_nodes = _grade_then_uniform(
                 p_fine=p0,
                 p_coarse=p1,
-                h_fine=h_fine_eff,
+                h_fine=h_lo_eff,
+                h_max=h_max_eff,
+                g=g,
+                min_cell=min_cell,
+            )
+        elif h_lo_eff == h_hi_eff:
+            # Both ends are interior interfaces → symmetric ramps.
+            sub_nodes = _grade_symmetric_to_uniform(
+                p0=p0,
+                p1=p1,
+                h_fine=h_lo_eff,
                 h_max=h_max_eff,
                 g=g,
                 min_cell=min_cell,
             )
         else:
-            # Both ends are interior interfaces → symmetric ramps.
-            sub_nodes = _grade_symmetric_to_uniform(
+            # Interior interval with a singular edge on one end only
+            # (DD-194): ramps of different start sizes.
+            sub_nodes = _grade_asymmetric_to_uniform(
                 p0=p0,
                 p1=p1,
-                h_fine=h_fine_eff,
+                h_lo=h_lo_eff,
+                h_hi=h_hi_eff,
                 h_max=h_max_eff,
                 g=g,
                 min_cell=min_cell,
@@ -2200,7 +2294,21 @@ def _generate_axis_lines(
         control,
         buffer_ends=buffer_ends,
         end_floor=end_floor,
+        h_fine_planes=fine_at,
     )
+
+
+def _fine_per_plane(
+    h_fine: float, h_fine_planes: "Sequence[float] | None", n_planes: int
+) -> list[float]:
+    """Per-plane fine sizes: ``h_fine_planes`` verbatim, or ``h_fine``
+    broadcast over the ``n_planes`` planes (DD-194)."""
+    if h_fine_planes is None:
+        return [float(h_fine)] * n_planes
+    fine = [float(h) for h in h_fine_planes]
+    if len(fine) != n_planes:
+        raise ValueError(f"h_fine_planes has {len(fine)} entries for {n_planes} planes")
+    return fine
 
 
 def _axis_end_buffered(widths: "np.ndarray", end: str) -> bool:
@@ -2223,11 +2331,14 @@ def _enforce_boundary_buffer(
     control: MeshControl,
     buffer_ends: tuple[str, ...] = ("lo", "hi"),
     end_floor: dict[str, float] | None = None,
+    h_fine_planes: "Sequence[float] | None" = None,
 ) -> list[float]:
     """DD-107 post-pass: guarantee the domain-face cell buffer.
 
     ``h_max`` is the axis bulk size or one value per interval; a
-    regenerated boundary interval uses its own (DD-192).
+    regenerated boundary interval uses its own (DD-192), and grades
+    from its interior plane's own fine size when ``h_fine_planes``
+    is given (DD-194).
 
     ``end_floor`` maps an end (``"lo"`` / ``"hi"``) to an additional
     cell floor for its boundary interval — the DD-191 edge floor when
@@ -2261,12 +2372,13 @@ def _enforce_boundary_buffer(
     min_cell = control.min_cell_size or 0.0
     n_buf = _BOUNDARY_BUFFER_CELLS
     h_max_list = _per_interval(h_max, len(critical_planes) - 1)
+    fine_at = _fine_per_plane(h_fine, h_fine_planes, len(critical_planes))
 
     def _regen_interval(p0: float, p1: float, fine_at_hi: bool, min_cell: float):
         interval = p1 - p0
         # fine_at_hi marks the low boundary interval (wall at p0).
         h_max_eff = min(h_max_list[0] if fine_at_hi else h_max_list[-1], interval)
-        h_fine_eff = min(h_fine, h_max_eff)
+        h_fine_eff = min(fine_at[1] if fine_at_hi else fine_at[-2], h_max_eff)
         if control.max_cell_size is not None:
             h_max_eff = min(h_max_eff, control.max_cell_size)
             h_fine_eff = min(h_fine_eff, control.max_cell_size)
@@ -2628,6 +2740,151 @@ def _grade_symmetric_to_uniform(
         nodes.append(x)
     nodes[-1] = p1
     return nodes
+
+
+def _full_ramp(h_fine: float, h_max: float, g: float) -> list[float]:
+    """Cell widths ``h_fine, h_fine·g, …`` up to and including ``h_max``."""
+    ramp: list[float] = [h_fine]
+    while ramp[-1] < h_max * (1.0 - 1e-10):
+        nxt = ramp[-1] * g
+        if nxt >= h_max:
+            ramp.append(h_max)
+            break
+        ramp.append(nxt)
+    return ramp
+
+
+def _grade_asymmetric_to_uniform(
+    p0: float,
+    p1: float,
+    h_lo: float,
+    h_hi: float,
+    h_max: float,
+    g: float,
+    min_cell: float = 0.0,
+) -> list[float]:
+    """Ramps of different start sizes from both ends to h_max, uniform
+    middle (DD-194: one end of the interval holds a singular edge).
+
+    The long-interval profile is that of
+    :func:`_grade_symmetric_to_uniform` with each ramp starting at its
+    own size; a remainder below half a bulk cell is absorbed into the
+    innermost ramp cells.  A short interval — the two full ramps do
+    not fit — is filled by the tent of :func:`_two_ramp_fill`.
+    ``min_cell`` is the hard cell-size floor (WP-M3).
+    """
+    interval = p1 - p0
+    if interval <= 0:
+        return [p0, p1]
+
+    h_lo = min(h_lo, h_max)
+    h_hi = min(h_hi, h_max)
+    if h_lo == h_hi:
+        return _grade_symmetric_to_uniform(p0, p1, h_lo, h_max, g, min_cell=min_cell)
+    if g <= 1.0 + 1e-10:
+        n = _n_uniform_floor(interval, h_max, min_cell)
+        return list(np.linspace(p0, p1, n + 1))
+
+    ramp_lo = _full_ramp(h_lo, h_max, g)
+    ramp_hi = _full_ramp(h_hi, h_max, g)
+    middle = interval - sum(ramp_lo) - sum(ramp_hi)
+
+    if middle >= 0.5 * h_max and middle >= min_cell:
+        n_middle = _n_uniform_floor(middle, h_max, min_cell)
+        widths = ramp_lo + [middle / n_middle] * n_middle + list(reversed(ramp_hi))
+    elif middle >= 0.0:
+        # Both ramps fit but the remainder is below half a bulk cell
+        # (or the floor): absorb it into the two innermost ramp cells
+        # — each grows by less than a quarter cell, within the ratio.
+        ramp_lo[-1] += 0.5 * middle
+        ramp_hi[-1] += 0.5 * middle
+        widths = ramp_lo + list(reversed(ramp_hi))
+    else:
+        widths = _two_ramp_fill(interval, h_lo, h_hi, g, min_cell)
+
+    nodes = [p0]
+    x = p0
+    for w in widths:
+        x += w
+        nodes.append(x)
+    nodes[-1] = p1
+    return nodes
+
+
+def _two_ramp_fill(
+    interval: float,
+    h_lo: float,
+    h_hi: float,
+    g: float,
+    min_cell: float = 0.0,
+) -> list[float]:
+    """Cell widths (ascending position) of a short interval whose two
+    ends ask for different fine sizes (DD-194).
+
+    A tent: the smaller fine size is pinned exactly, the cells grow
+    from it by one common ratio ``r ≤ g`` to a peak and shrink by the
+    same ratio back to the other end, whose cell may be anything from
+    the pinned size up to the DD-105 tolerance above its own — the
+    time step is bound by the pinned cell already, so a smaller cell
+    at the coarse end costs nothing.  The smallest count with such a
+    profile wins; among its splits the one ending closest to the
+    coarse end's own size.  Intervals below two pinned cells are one
+    cell; where no tent fits exactly (a count gap), the one-sided
+    ratio-``g`` refit from the pinned end applies (DD-193 rules).
+    ``min_cell`` is the hard floor; every tent cell is at least the
+    pinned size, which the caller has floored.
+    """
+    if h_lo > h_hi:
+        return list(reversed(_two_ramp_fill(interval, h_hi, h_lo, g, min_cell)))
+    if interval < 2.0 * h_lo:
+        return [interval]
+    cap = h_hi * (1.0 + _H_FINE_TOL)
+
+    def _sum(n_lo: int, n_hi: int, r: float) -> float:
+        if abs(r - 1.0) < 1e-12:
+            return h_lo * (n_lo + n_hi)
+        up = h_lo * (r**n_lo - 1.0) / (r - 1.0)
+        peak = h_lo * r ** (n_lo - 1)
+        down = peak * (1.0 - r ** (-n_hi)) / (r - 1.0) if n_hi else 0.0
+        return up + down
+
+    n_max = int(math.ceil(interval / h_lo)) + 1
+    for n in range(2, n_max + 1):
+        feasible = []
+        for n_hi in range(0, n):
+            n_lo = n - n_hi
+            m = n_lo - 1 - n_hi  # coarse-end cell = h_lo · r^m
+            if m < 0:
+                continue
+            if _sum(n_lo, n_hi, g) < interval or _sum(n_lo, n_hi, 1.0) > interval:
+                continue
+            lo, hi = 1.0, g
+            for _ in range(200):
+                mid = 0.5 * (lo + hi)
+                if _sum(n_lo, n_hi, mid) < interval:
+                    lo = mid
+                else:
+                    hi = mid
+                if hi - lo < 1e-14:
+                    break
+            r = hi
+            a_hi = h_lo * r**m
+            if a_hi > cap:
+                continue
+            feasible.append((a_hi, n_hi, r))
+        if feasible:
+            _a_hi, n_hi, r = max(feasible)
+            n_lo = n - n_hi
+            widths = [h_lo * r**i for i in range(n_lo)]
+            peak = widths[-1]
+            widths += [peak * r ** (-(j + 1)) for j in range(n_hi)]
+            return widths
+
+    n = _n_one_sided(interval, h_lo, g, min_cell=min_cell)
+    g_eff = g
+    if _h0_one_sided(interval, n, g) < h_lo * (1.0 - 1e-9):
+        g_eff = _ratio_for_exact_fill(interval, h_lo, n, g, symmetric=False)
+    return list(np.diff(_one_sided_subdivision(0.0, interval, n, g_eff)))
 
 
 def _graded_subdivision(p0: float, p1: float, n: int, g: float) -> list[float]:

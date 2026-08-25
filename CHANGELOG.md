@@ -23,6 +23,16 @@ major version is 0, minor releases may change the public API.
   `MeshControl(wavelength_rule="global")` restores the previous rule.
   A dense background material now counts toward the wavelength as
   well (it was ignored before).
+- `MeshControl(singularity_refinement=k)`: grading at the grid planes
+  that hold a conductor edge — the edges of a strip, a patch, an
+  iris, where the field is singular — starts at `h_fine / k` on both
+  sides of the plane.  Edges are read from the CAD model (convex
+  edges of metal bodies, and concave edges of vacuum bodies cut out
+  of a metal background); cavity corners, fillet onsets and
+  dielectric edges are not refined.  Off by default (`1`): the edge
+  cell bounds the time step, so the factor trades bulk resolution
+  for edge resolution rather than buying accuracy for free — see the
+  meshing page for when it pays.
 
 ### Fixed
 

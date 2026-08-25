@@ -13336,3 +13336,137 @@ slightly longer; nothing gets finer.
 **Files:** `src/magnelio/mesh/mesher.py` (`_ratio_for_exact_fill`,
 short branches of `_grade_then_uniform` and
 `_grade_symmetric_to_uniform`), `tests/unit/test_mesh_exact_fill.py`.
+
+## DD-194 — Singularity refinement at conductor edges (`MeshControl.singularity_refinement`)
+
+**Status:** Decided 2026-08-25 with the developer (third item of the
+mesh-generation plan after DD-191 and DD-192); implemented
+2026-08-25.  Developer choices in the planning discussion: metal
+edges only (dielectric edges deferred), parameter name
+`singularity_refinement` (the DD-191 ratio already owns the words
+"edge refinement").  Default **1 (off)** — see the measurement.
+
+**Problem.**  Where a conductor forms a wedge of interior angle
+`α < 180°` the field and the surface current behave like
+`r^(π/(2π−α) − 1)` — `r^(−1/3)` at the 90° edge of a strip, a patch or
+an iris, `r^(−1/2)` at a knife edge.  A grid cannot represent the
+singularity; the error of everything that integrates the edge field
+— line impedance, effective permittivity, hence S-parameter phase and
+resonant frequencies — converges roughly first order in the cell that
+holds the edge, however fine the bulk is.  Measured on the how-to's
+microstrip port mode (`validation/singularity_refinement_certificate.py`):
+Z0 = 51.50 / 52.23 / 52.61 Ω at edge cells 50 / 25 / 12.5 µm, limit
+≈ 52.95 Ω; three grids with the *same* 12.5 µm edge cell and cell
+counts 1452 / 984 / 840 agree within 0.08 Ω.  The mesher graded every
+plane from the axis-wide `h_fine`, blind to which planes hold an
+edge.  Hex meshers of the commercial suites carry an edge-refinement
+factor for exactly this.
+
+**Decision.**
+
+- *Which edges.*  `extract_singular_edge_planes` (geometry backend)
+  walks the sharp edges of every shape (the DD-191 filter: no seams,
+  no degenerated edges, no split lines inside one analytic surface)
+  and classifies them with the kernel's own offset analysis
+  (`BRepOffset_Analyse`, 5° tangency tolerance): a *convex* edge of a
+  shape whose material `is_pec` (PEC and lossy metal) is singular; a
+  *concave* edge of a non-metal shape is singular when the material in
+  the open wedge — probed a short way along the bisector of the two
+  outward normals, shape lookup with background fallback — is metal
+  (a vacuum body in a PEC background: iris rims and ridges yes,
+  cavity corners no).  Tangential edges (fillet onsets) and dielectric
+  edges contribute nothing.  Each singular edge yields the axis-normal
+  planes it lies flat in (`_edge_flat_planes`, the DD-191 rule).
+- *Which planes.*  After all merges the final planes within the
+  clustering tolerance of a singular position are flagged
+  (`axis_is_singular`); the domain's own end planes never — a metal
+  edge on a port face is the truncation, and the DD-107 buffer owns
+  that interval.  Thin sheets: the far face is dropped as in DD-191,
+  the sheet plane itself stays singular (knife edge).  Symmetry clip
+  as for the other plane classes.
+- *Profile.*  The fine size becomes per plane (`h_fine_planes`,
+  `h_fine / k` on singular planes); `_generate_axis_lines` and the
+  DD-107 regeneration grade each interval from its two ends' own
+  sizes.  Boundary intervals use the interior plane's size in the
+  existing one-sided profile; interior intervals with equal ends take
+  the symmetric profile unchanged; unequal ends take
+  `_grade_asymmetric_to_uniform`: both full ramps plus a uniform
+  middle when they fit (a remainder below half a bulk cell is
+  absorbed into the innermost ramp cells), otherwise the *tent* of
+  `_two_ramp_fill` — the smaller fine size pinned exactly, one common
+  ratio `r ≤ g` up to a peak and back down, the coarse-end cell free
+  between the pinned size and 5 % above its own.  The coarse end may
+  undershoot its `h_fine` because the time step is bound by the
+  pinned cell already; a first attempt that pinned *both* ends and
+  balanced the seam for ratio `g` produced seam jumps up to 1.7 after
+  the DD-193 relaxation.  The hard floor `min_cell_size` caps the
+  refinement (tutorial 06's `min_cell_size = 1.59 mm` leaves its
+  grids at the floor).  `check_grading_undershoot` takes the per-plane
+  sizes so the deliberate edge cells are not reported.
+- *Factor 1 is bit-identical* to the DD-193 state (four models
+  checked against a worktree of `d18bf7f`).
+
+**Measurement (why the default is off).**  Two ladders on the
+mesh-convergence how-to's structures, 2026-08-25.
+
+*Port-mode Z0* (2D, no time step): the error is a function of the
+edge cell alone (above); at equal edge cell the refined grids need
+32 % / 42 % fewer cells (factor 2 / 4).
+
+*Patch-microstrip S-parameters* (the how-to's ladder, reference
+factor 3 at mnpw 48; `max|ΔS|` to it): factor 1 — 0.093 / 0.047 /
+0.031 / 0.015 at mnpw 16 / 24 / 32 / 48; factor 2 — 0.047 / 0.021 /
+0.0125 / 0.004; factor 3 — 0.032 / 0.015 / 0.007 / 0.  At a fixed
+`MeshControl` the factor cuts the error 2.5–4×.  But the edge cell
+sets the time step: with cost = cells / smallest cell, factor 1 at
+mnpw 32 (41 850 cells, 25 µm, error 0.031), factor 3 at mnpw 16
+(36 540 cells, 16.7 µm, 0.032) and factor 2 at mnpw 24 (48 300 cells,
+16.7 µm, 0.021) lie on **one cost-versus-error curve** — the factor
+redistributes resolution from the bulk to the edges, it does not
+buy accuracy for free.  The how-to's stop rule (ΔS < 0.02 on two
+rungs) fires at mnpw 32 for factor 1 with an actual error of 0.031
+against the refined reference, and at mnpw 16 for factor 3 with 0.032:
+the rule's blind spot is the same for both.  Tutorial re-run at
+factor 2: 09 +68 % cells and half the time step, 10 +19 %, 12 +4–17 %,
+06/07 unchanged in count (floored); the homogeneous models identical.
+
+So the factor is a *tool*, not a default: it pays where the impedance
+or the effective permittivity is the quantity of interest (port
+normalisation, line dispersion, resonators bounded by metal edges),
+where the time step is bound by a `min_cell_size` floor or by another
+axis anyway (then the edge refinement is free), and where memory
+rather than time is the limit.  A default of 2 would make every
+microstrip model about three times slower for an accuracy the user
+can buy equally with `min_nodes_per_wavelength`.
+
+**Consequences.**  Opt-in; no mesh changes at the default.  With a
+factor set, the DD-105 check knows the edge cells; the DD-107 buffer
+at a domain face may trim the innermost singular cell within the
+legacy refit class.  Dielectric edges (exponent −0.1…−0.2 for ε_r
+4…10) stay unrefined — a later opt-in if a case shows the need.  The
+edge probe for concave edges costs one `point_in_shape` per concave
+edge per shape; models without any metal skip the pass entirely.
+
+**Rejected.**
+- *Refining only the outside of the metal* (the field lives there):
+  on a tensor grid the plane's cells on the metal side are the
+  resolution above and below the strip next to its edge, where the
+  field is singular too.
+- *Static singularity correction of the material coefficients at
+  the edge* (the published FDTD edge-correction schemes): rewrites
+  the DD-051 conformal matrices and every port certificate; the
+  mesher rule is what the hex meshers of the commercial suites do.
+- *A default of 2* — see the measurement.
+- *Both fine cells pinned in the short profile* — seam jumps after
+  the ratio relaxation; the tent pins only the cell that bounds the
+  time step.
+
+**Files:** `src/magnelio/geo/_occ_backend.py` (`_sharp_edges`,
+`_edge_flat_planes`, `extract_singular_edge_planes`),
+`src/magnelio/mesh/mesher.py` (`MeshControl.singularity_refinement`,
+`axis_is_singular`, `h_fine_planes`, `_fine_per_plane`,
+`_grade_asymmetric_to_uniform`, `_two_ramp_fill`, `_full_ramp`),
+`src/magnelio/mesh/_quality.py` (`h_fine_planes`),
+`validation/singularity_refinement_certificate.py`,
+`tests/unit/test_mesh_singularity.py`,
+`docs/methods/meshing-conformal.md`, `spec.md` §2.6 / §6, `CHANGELOG.md`.
