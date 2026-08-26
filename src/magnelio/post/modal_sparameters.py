@@ -343,8 +343,17 @@ def compute_s_parameters(
     taper_signals: bool = False,
     port_normal_dx: dict[str, float] | None = None,
     port_line_params: dict[tuple[str, int], tuple[float, float]] | None = None,
+    return_incident: bool = False,
 ) -> dict[tuple[str, int], np.ndarray]:
     """Compute power-wave S-parameters from recorded V/I time-series.
+
+    With ``return_incident=True`` the result is the pair ``(S, a)`` where
+    ``a`` is the incident power-wave spectrum of the excited channel on
+    ``f_axis`` [√W · s] — the actual incident wave the run launched,
+    which the monitors' "per 1 W incident" normalisation refers to (a
+    TE/TM channel's wave impedance varies with frequency, so a
+    frequency-flat excitation waveform does not launch frequency-flat
+    incident power).
 
     Parameters
     ----------
@@ -544,7 +553,8 @@ def compute_s_parameters(
     a_peak = float(np.max(np.abs(a_excited)))
     if a_peak == 0.0:
         # Fully zero excitation: S is undefined everywhere.
-        return {key: np.full_like(f_axis, np.nan, dtype=complex) for key in recorder_signals}
+        S_nan = {key: np.full_like(f_axis, np.nan, dtype=complex) for key in recorder_signals}
+        return (S_nan, a_excited) if return_incident else S_nan
 
     valid = np.abs(a_excited) >= (a_threshold * a_peak)
     safe_a = np.where(valid, a_excited, 1.0 + 0j)
@@ -554,7 +564,7 @@ def compute_s_parameters(
         S_k = b / safe_a
         S_k = np.where(valid, S_k, np.nan + 1j * np.nan)
         S[key] = S_k
-    return S
+    return (S, a_excited) if return_incident else S
 
 
 def compute_band_s_parameters(

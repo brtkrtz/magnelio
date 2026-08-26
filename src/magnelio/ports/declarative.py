@@ -49,6 +49,7 @@ from magnelio.ports._modal.factory import (
     PortSpecNumerical,
     PortSpecRectWG,
     _pec_faces_from_mask,
+    validate_absorbing_face_window,
 )
 from magnelio.ports._modal.port_plane import (
     BoxFace,
@@ -190,6 +191,15 @@ class PortWaveguide:
         so a port embedded in a PEC wall gets a PEC frame, which also
         counts as a conductor (ground) in the mode-path detection.
         ``None`` (default) covers the whole face.
+
+        On an **absorbing (CPML) face** a port is the end of a
+        conductor-enclosed guide reaching the wall — the neck of a
+        horn, a coax entering the box: the window is required and must
+        be enclosed by conductor on the port slab (align its corners
+        with the guide's inner walls), and the absorber is switched
+        off in the columns behind it so the port's own termination is
+        what the guided wave meets.  A whole-face port on an absorbing
+        face, or a window whose ring lies in free space, is rejected.
     n_modes : int, default 1
         Number of modes to solve on the port.
     """
@@ -379,6 +389,9 @@ def resolve_declarative_port(
     )
     window = None if port.corners is None else window_from_corners(face, port.corners)
     plane = PortPlane.from_mesh(face, detection_mesh, window=window)
+    # Early, on the declarative object the user wrote (the factory
+    # repeats the check on the spec it builds).
+    validate_absorbing_face_window(face, plane, mesh, whole_face=window is None)
     extra_mask = None
     if window is not None:
         edge_pec = resolve_port_edge_pec(

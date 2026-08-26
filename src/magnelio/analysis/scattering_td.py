@@ -175,6 +175,32 @@ def _scattering_run_name(excited_chan: tuple[str, int]) -> str:
     return f"{excited_chan[0]}_mode{excited_chan[1]}"
 
 
+def incident_amplitude_ratio(reference_signal, f_axis, a_incident, port_modes, excited):
+    """``|a(f)| / |W(f)|`` of a TE/TM-fed run, ``None`` otherwise (DD-198).
+
+    The incident power wave the run launched per unit excitation
+    waveform.  Channels with a frequency-flat wave impedance (lumped,
+    TEM, quasi-TEM) launch exactly the waveform in √W, so the ratio is
+    unity by construction and is not derived — their monitors stay
+    bit-identical.  A TE/TM channel's ``Z(f)`` makes the launched power
+    vary across the band, and the monitors' "per 1 W incident"
+    normalisation needs this ratio as a second divisor.
+    """
+    from magnelio.ports._modal.mode import ModeType  # noqa: PLC0415
+
+    try:
+        mode = port_modes[excited[0]][excited[1]]
+    except (KeyError, IndexError, TypeError):
+        return None
+    if getattr(mode, "mode_type", None) not in (ModeType.TE, ModeType.TM):
+        return None
+    f_axis = np.asarray(f_axis, dtype=float)
+    w_ref = np.abs(np.asarray(reference_signal.at_frequencies(f_axis)))
+    a_abs = np.abs(np.asarray(a_incident))
+    live = (w_ref > 1e-300) & np.isfinite(a_abs)
+    return np.where(live, a_abs / np.where(live, w_ref, 1.0), 1.0)
+
+
 def _excitation_scale(op) -> float:
     """Injection amplitude scale for full-model power semantics (DD-155).
 
@@ -1266,6 +1292,7 @@ class AnalysisScatteringTD:
         # accounting — point the monitors at the spec before any solver
         # attaches them (WP-D5; a no-op on the perturbative default).
         self._wire_wall_monitors()
+        self._wire_far_field_ports()
 
         bc_objects = self._resolve_bc()
 
@@ -1611,7 +1638,7 @@ class AnalysisScatteringTD:
         reference_signal = _sampled_excitation(waveform_fn, n_actual, dt)
         _renormalize_freq_monitors(self.monitors, reference_signal)
 
-        s_dict = compute_s_parameters(
+        s_dict, a_incident = compute_s_parameters(
             recorder_signals=signals,
             port_modes=port_modes,
             excited=excited_chan,
@@ -1620,11 +1647,15 @@ class AnalysisScatteringTD:
             taper_signals=taper_signals,
             port_normal_dx=port_normal_dx,
             port_line_params=port_line_params,
+            return_incident=True,
         )
         s_params = SParameterResult.from_single_excitation(
             s_dict,
             excited_chan,
             f_axis,
+        )
+        self._wire_incident_amplitude(
+            reference_signal, f_axis, a_incident, port_modes, excited_chan
         )
         self._wire_far_field_monitors(s_dict, f_axis)
         energy_trace = getattr(solver, "_energy_trace", None)
@@ -2538,6 +2569,64 @@ class AnalysisScatteringTD:
                 fits=fits,
             )
         return self._sibc_spec_cache
+
+    def _wire_incident_amplitude(
+        self, reference_signal, f_axis, a_incident, port_modes, excited
+    ) -> None:
+        """Hand the run's launched incident wave to the field monitors.
+
+        The monitors divide their bins by the excitation waveform's
+        spectrum, which equals the incident power wave where the
+        excited channel's wave impedance is frequency-flat — lumped,
+        TEM and quasi-TEM ports, for which the ratio is unity by
+        construction and nothing is wired (their results stay
+        bit-identical).  A TE/TM channel launches ``|a(f)|² =
+        |W(f)|²·Z(f_calc)/Z(f)`` per unit waveform, so "fields per 1 W
+        incident" needs the ratio ``|a(f)| / |W(f)|`` as a second
+        divisor.  The recorder reads the waves at full-model scale
+        (DD-155), so no symmetry factor enters here.
+        """
+        ratio = incident_amplitude_ratio(reference_signal, f_axis, a_incident, port_modes, excited)
+        if ratio is None:
+            return
+        for mon in self.monitors:
+            setter = getattr(mon, "_set_incident_amplitude", None)
+            if setter is not None:
+                setter(f_axis, ratio)
+
+    def _wire_far_field_ports(self) -> None:
+        """Tell far-field monitors where feed guides cross absorbing faces.
+
+        A waveguide port in a CPML face (DD-198) sits at the end of a
+        guide that the Huygens box cuts; the monitor leaves the guide's
+        interior out of the equivalent surface.  Runtime wiring like the
+        accepted-power curve — refreshed per run, not serialised.
+        """
+        from magnelio.monitors.far_field import MonitorFarField  # noqa: PLC0415
+        from magnelio.ports._modal.port_plane import PortPlane  # noqa: PLC0415
+
+        ff = [m for m in self.monitors if isinstance(m, MonitorFarField)]
+        if not ff:
+            return
+        types = bc_type_entries(self.boundary_conditions)
+        footprints: dict[str, list[dict]] = {}
+        for spec in self.ports:
+            face = getattr(spec, "plane", None)
+            value = getattr(face, "value", None)
+            if not isinstance(value, str):
+                continue
+            key = value.replace("_", "")
+            if types.get(key) != "CPML" or getattr(spec, "window", None) is None:
+                continue
+            plane = PortPlane.from_mesh(face, self.mesh, window=spec.window)
+            footprints.setdefault(key, []).append(
+                {
+                    int(face.u_axis): tuple(int(i) for i in plane.u_node_window),
+                    int(face.v_axis): tuple(int(i) for i in plane.v_node_window),
+                }
+            )
+        for mon in ff:
+            mon._port_footprints = footprints
 
     def _wire_far_field_monitors(self, s_dict, f_axis) -> None:
         """Hand the run's accepted-power curve to far-field monitors.

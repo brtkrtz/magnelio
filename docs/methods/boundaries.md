@@ -99,3 +99,16 @@ intended.
 Waveguide ports are not PML-backed (a PML-terminated port was
 evaluated and rejected, DD-031/DD-043): port faces carry their own
 transparent terminations, described in the [ports chapter](ports.md).
+
+A port *window* may sit in an absorbing face (DD-198) — the way a horn
+or an open-ended guide is fed from the wall of an open box.  The window
+must be the cross-section of a conductor-enclosed guide reaching the
+face; behind it the absorber is switched off over its whole depth
+(``σ = 0, κ = 1`` in those columns), so the guided wave meets the
+port's own termination, while the rest of the face keeps absorbing.
+The lateral edge of that switch-off falls on the guide's walls, which
+is why the enclosure is required rather than recommended.  The mesher
+continues a conductor that touches an absorbing face through the
+absorber layer — cell materials and, since DD-198, the conformal
+sub-cell classification alike — so the guide is uniform up to the
+port plane.

@@ -127,6 +127,11 @@ class MonitorFieldFrequency:
     _e_components: list[str] = field(default_factory=list, repr=False, init=False)
     _h_components: list[str] = field(default_factory=list, repr=False, init=False)
     _source_spectrum: np.ndarray | None = field(default=None, repr=False, init=False)
+    # |a(f)| / |W(f)| of the excited channel on the monitor frequencies:
+    # the incident power wave the run launched per unit excitation
+    # waveform (1 for lumped and TEM ports, Z(f_calc)/Z(f)-shaped for
+    # TE/TM ports).  Runtime wiring by the analysis, kept in the dump.
+    _incident_amplitude: np.ndarray | None = field(default=None, repr=False, init=False)
     _step_stride: int | None = field(default=None, repr=False, init=False)
     # Symmetry planes the region touches (DD-154) — plots mirror the
     # recorded half across them on read.
@@ -328,6 +333,11 @@ class MonitorFieldFrequency:
             "grid_y": np.asarray(r.yc, dtype=float),
             "grid_z": np.asarray(r.zc, dtype=float),
             "bins": {comp: self._accumulators[comp].result for comp in self._components},
+            "incident_amplitude": (
+                np.ones(len(self.freqs))
+                if self._incident_amplitude is None
+                else np.asarray(self._incident_amplitude, dtype=float)
+            ),
         }
 
     def load_result_dump(self, dump: dict) -> None:
@@ -341,6 +351,8 @@ class MonitorFieldFrequency:
         for comp in self._components:
             if comp in bins:
                 self._accumulators[comp]._bins[...] = np.asarray(bins[comp])
+        if "incident_amplitude" in dump:
+            self._incident_amplitude = np.asarray(dump["incident_amplitude"], dtype=float)
 
     # ------------------------------------------------------------------
     # Source renormalization
@@ -356,10 +368,14 @@ class MonitorFieldFrequency:
 
         Divides each DFT frequency bin by the source-waveform spectrum.
         The excitation waveform *is* the incident power-wave
-        amplitude ``a(t)`` in √W, so the renormalised fields are exactly
-        the fields of a **1 W CW excitation** at each monitor frequency
-        (gated by ``test_port_units.py::
-        test_frequency_monitor_fields_per_1w_cw``).
+        amplitude ``a(t)`` in √W for lumped, TEM and quasi-TEM feeds, so
+        the renormalised fields are exactly the fields of a **1 W CW
+        excitation** at each monitor frequency (gated by
+        ``test_port_units.py::test_frequency_monitor_fields_per_1w_cw``).
+        A TE/TM feed launches a frequency-dependent power per unit
+        waveform (its wave impedance varies across the band); the
+        analysis wires that ratio into the monitor after the run so the
+        same statement holds there.
 
         The source spectrum is computed in the same Fourier convention
         as the internal DFT accumulator (``exp(+jωt)`` with ``dt``
@@ -400,8 +416,23 @@ class MonitorFieldFrequency:
         return arr
 
     def _apply_renorm(self, arr: np.ndarray) -> np.ndarray:
-        """Divide *arr* (freq axis 0) by the source spectrum."""
-        return divide_by_spectrum(arr, self._source_spectrum)
+        """Divide *arr* (freq axis 0) by the source spectrum.
+
+        And by the launched incident amplitude ratio where the analysis
+        wired one — the per-1-W reference of a TE/TM-fed run.
+        """
+        out = divide_by_spectrum(arr, self._source_spectrum)
+        if self._incident_amplitude is not None:
+            ratio = np.asarray(self._incident_amplitude, dtype=float)
+            out = out / ratio.reshape(-1, *([1] * (out.ndim - 1)))
+        return out
+
+    def _set_incident_amplitude(self, f_axis, ratio) -> None:
+        # Runtime wiring by the analysis: |a(f)| / |W(f)| of the excited
+        # channel interpolated onto the monitor frequencies.
+        self._incident_amplitude = np.interp(
+            self.freqs, np.asarray(f_axis, dtype=float), np.asarray(ratio, dtype=float)
+        )
 
     @property
     def f(self) -> np.ndarray:

@@ -77,6 +77,23 @@ port; degenerate multi-TEM subspaces are orthonormalised through a
 Gram eigenbasis, and multi-channel projections use the dual basis
 (Gram inverse) (DD-066).  Standard linear algebra.
 
+### Ports in absorbing walls
+
+A radiating structure is fed through a guide that reaches the domain
+wall: the neck of a horn, a coax entering the box.  The wall is
+absorbing, the port sits in the guide's cross-section on it (a window
+port with ``corners``), and two things make that consistent (DD-198).
+The absorber is switched off in the columns behind the window over its
+whole depth, so the mode injected at the port travels a uniform,
+lossless guide into the domain and the reflected wave meets the port's
+own termination — the transparent-boundary assumptions above hold
+because the feed *is* uniform there.  And the window must be enclosed
+by conductor on the port slab: the lateral edge of the absorber
+switch-off then lies on metal, where it cannot scatter.  A port that
+covers the whole absorbing face, or a window whose ring lies in free
+space, is refused with a pointer to these rules.  The far-field
+monitor knows about such feeds (far-field chapter).
+
 ## Exact discrete transparent boundary conditions (DTBC)
 
 ### Scalar DTBC on uniform feed lines (TEM: DD-054, TE/TM: DD-055)

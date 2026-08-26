@@ -72,11 +72,37 @@ sits a fraction of a cell outside the outermost grid line; the
 mirrored surface inherits that sub-cell gap, a second-order effect on
 the pattern.
 
+## Feed guides crossing the box
+
+A waveguide-fed antenna — a horn, an open-ended guide, a coax entering
+the domain — has its port on an absorbing face (see the ports chapter),
+and the guide runs from that wall into the box.  The Huygens surface
+cannot avoid it.  The monitor treats the crossing the way such antennas
+are usually handled (in-house convention): the box face the guide
+crosses is sampled at the absorber interface itself, so as little of
+the guide as possible lies outside the box; the patches inside the
+guide's cross-section are left out — the guided wave there is the
+feed, not an external source, and the equivalent surface closes over
+the guide's outer wall instead; and patches whose sampled cells are
+conductor on both sides carry nothing.  What the surface cannot see
+are the currents on the guide's outer wall *beyond* the box face,
+inside the absorber, where they decay with the absorber profile.
+Measured on an open-ended 20 × 10 mm tube at 10 GHz, the radiated
+power balances the accepted power to 3 %; the same tube with an
+infinite flange (a PEC face, exact image theory) balances to 9 %,
+because the port window then punches a hole into the image plane —
+the absorbing face is the better model of an unflanged feed.
+
 ## Normalisation, gain and radiated power
 
 All frequency-domain quantities of the library are effective (RMS)
 phasors normalised per √W of incident power, and the far field is no
-exception: the radiation intensity is
+exception.  The reference is the incident power wave the run actually
+launched: for lumped, TEM and quasi-TEM feeds that is the excitation
+waveform itself, for a TE/TM feed — whose wave impedance varies across
+the band — the incident wave $a(f)$ that the S-parameter extraction
+separates at the port, so a horn's gain does not inherit the shape of
+$Z_{\mathrm{TE}}(f)$.  The radiation intensity is
 $U = \bigl(|E_\theta|^2 + |E_\varphi|^2\bigr)/\eta_0$ with no further
 factor, and
 

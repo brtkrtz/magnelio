@@ -168,3 +168,55 @@ class TestMaterializeBoundary:
         grid = _grid()
         with pytest.raises(ValueError, match="Mur"):
             materialize_boundary("ymin", "Mur", grid)
+
+
+class TestCPMLPortWindows:
+    """DD-198: the absorber is switched off behind waveguide-port windows."""
+
+    def _bc(self, face="xmin"):
+        from magnelio.boundaries.cpml import CPMLBoundary
+
+        grid = _grid(Nx=12, Ny=10, Nz=8)
+        bc = CPMLBoundary(face, grid, thickness_cells=4)
+        bc.initialize(dt=1e-12)
+        return bc
+
+    def test_no_windows_keeps_the_broadcast_coefficients(self):
+        bc = self._bc()
+        bc.set_port_windows([])
+        assert bc._c_E1 is bc._c_3d and bc._ck_H2 is bc._ck_3d
+
+    def test_footprint_zeroes_c_and_ck_over_the_full_depth(self):
+        bc = self._bc("xmin")
+        # Window: y nodes 3..6, z nodes 2..5 (inclusive node windows).
+        bc.set_port_windows([{1: (3, 6), 2: (2, 5)}])
+        c = np.asarray(bc._c_E1)  # psi_Ey: (n, Ny, Nz+1) — cell-sampled along y
+        assert c.shape == (4, 10, 9)
+        assert np.all(c[:, 3:6, 2:6] == 0.0)
+        assert np.all(c[:, :3, :] == np.asarray(bc._c_3d)[:, :, :])
+        assert np.all(c[:, 6:, :] == np.asarray(bc._c_3d)[:, :, :])
+        ck = np.asarray(bc._ck_E2)  # psi_Ez: (n, Ny+1, Nz) — node-sampled along y
+        assert np.all(ck[:, 3:7, 2:5] == 0.0)
+        assert np.all(ck[:, :3, :] == np.asarray(bc._ck_3d))
+        h1 = np.asarray(bc._c_H1)  # psi_Hy: (n, Ny+1, Nz)
+        assert np.all(h1[:, 3:7, 2:5] == 0.0)
+        assert np.all(h1[:, 7:, :] == np.asarray(bc._c_3d))
+
+    def test_psi_stays_zero_inside_the_footprint(self):
+        bc = self._bc("xmin")
+        bc.set_port_windows([{1: (3, 6), 2: (2, 5)}])
+        fields = _fields(12, 10, 8)
+        rng = np.random.default_rng(0)
+        for name in ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz"):
+            arr = getattr(fields, name)
+            arr[...] = rng.standard_normal(arr.shape)
+        n_E = fields.Ex.size + fields.Ey.size + fields.Ez.size
+        n_H = fields.Hx.size + fields.Hy.size + fields.Hz.size
+        for _ in range(3):
+            bc.update_E(fields, np.full(n_E, 1e-3))
+            bc.update_H(fields, np.full(n_H, 1e-3))
+        assert np.all(bc._psi_Ey[:, 3:6, 2:6] == 0.0)
+        assert np.all(bc._psi_Ez[:, 3:7, 2:5] == 0.0)
+        assert np.all(bc._psi_Hy[:, 3:7, 2:5] == 0.0)
+        assert np.all(bc._psi_Hz[:, 3:6, 2:6] == 0.0)
+        assert np.any(bc._psi_Ey[:, :3, :] != 0.0)
