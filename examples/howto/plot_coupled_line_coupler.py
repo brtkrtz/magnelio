@@ -189,10 +189,12 @@ fig.tight_layout()
 #
 # Each line is one path: from its port on the box wall, straight in,
 # a 90° arc onto the coupled section, along it, an arc back out and
-# straight to the second port.  ``traced`` widens the centreline into
-# copper of thickness ``t_cu`` on top of the substrate; ``caps="flat"``
-# ends the tracks square on the port planes.  Line A (ports 1 and 2)
-# runs along the ``ymin`` wall, line B (ports 3 and 4) along ``ymax``.
+# straight to the second port (given only a centre, ``arc_to`` draws
+# the shorter of the two arcs — the quarter turn, on either line).
+# ``traced`` widens the centreline into copper of thickness ``t_cu``
+# on top of the substrate; ``caps="flat"`` ends the tracks square on
+# the port planes.  Line A (ports 1 and 2) runs along the ``ymin``
+# wall, line B (ports 3 and 4) along ``ymax``.
 
 r_bend = 1.5e-3  # bend radius (centreline)
 feed = 5.0e-3  # straight feed between the bend and the wall
@@ -209,11 +211,9 @@ def line_track(side):
     centreline = (
         geo.Path((-x_port, wall, z))
         .line_to((-x_port, yc + side * r_bend, z))
-        .arc_to((-length / 2, yc, z), center=(-length / 2, yc + side * r_bend, z), normal="z")
+        .arc_to((-length / 2, yc, z), center=(-length / 2, yc + side * r_bend, z))
         .line_to((length / 2, yc, z))
-        .arc_to(
-            (x_port, yc + side * r_bend, z), center=(length / 2, yc + side * r_bend, z), normal="z"
-        )
+        .arc_to((x_port, yc + side * r_bend, z), center=(length / 2, yc + side * r_bend, z))
         .line_to((x_port, wall, z))
         .curve()
     )

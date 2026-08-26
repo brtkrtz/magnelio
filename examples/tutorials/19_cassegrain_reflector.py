@@ -28,8 +28,11 @@ a 2 λ subreflector, where a real system has 20 λ and more — so its
 pattern is diffraction-dominated; the point of the page is the
 construction.  The script runs for minutes (a 2 M-cell mesh and a
 GPU-sized time-domain run), so the gallery renders it without
-executing it; the numbers quoted below are from a measured run.
+executing it; the figures and the numbers quoted below are from a
+measured run.
 """
+
+# sphinx_gallery_thumbnail_path = '_static/tutorial_19_geometry.png'
 
 # %%
 # The optics
@@ -292,18 +295,34 @@ print(f"box: {np.round((hi - lo) * 1e3, 0)} mm")
 model.plot()
 
 # %%
+# The assembled antenna — horn on the left, the subreflector on its
+# axis, the dish behind and below it, the beam leaving obliquely
+# upward:
+#
+# .. image:: /_static/tutorial_19_geometry.png
+#    :width: 90 %
+#    :alt: Offset Cassegrain antenna: horn, subreflector and dish in the open box
+
+# %%
 # Mesh
 # ----
 #
 # Free-form surfaces give the mesher nothing to hold on to — no
 # feature planes, only their bounding boxes — so the resolution across
 # the reflectors is the wavelength rule's: about 1.7 mm at the 12 GHz
-# band edge, 2 M cells for this box, about a minute to mesh.  The
-# 5 mm shells are three cells thick, comfortably above the two-cell
-# rule of the geometry chapter.
+# band edge.  The horn is the opposite case: its walls and loft rims
+# are edges a millimetre or two apart, and honouring every one of them
+# refines the grid to that scale across the whole box — ten times the
+# cells.  A floor of half a cell drops those planes (with a warning
+# naming them); the wall of a perfect conductor needs no cells of its
+# own.  2 M cells for this box, about a minute to mesh.  The 5 mm
+# shells are three cells thick, comfortably above the two-cell rule of
+# the geometry chapter.
 
 f_max = 12.0e9
-mesh = mio.Mesh.from_geometry(model, mio.MeshControl(max_cell_size=5e-3), f_max=f_max)
+mesh = mio.Mesh.from_geometry(
+    model, mio.MeshControl(max_cell_size=5e-3, min_cell_size=2.5e-3), f_max=f_max
+)
 print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 
 # %%
@@ -357,6 +376,15 @@ print(f"radiated / accepted power: {pattern.P_rad / (1 - np.interp(f0, f_axis, s
 
 fig, ax = pattern.plot_cut(plane="phi", angle=0.0, title="pattern in the plane of the tilt")
 fig, ax = pattern.plot_3d(title="Cassegrain radiation surface")
+
+# %%
+# .. image:: /_static/tutorial_19_pattern_cut.png
+#    :width: 80 %
+#    :alt: Directivity cut in the plane of the tilt
+#
+# .. image:: /_static/tutorial_19_pattern_3d.png
+#    :width: 80 %
+#    :alt: Three-dimensional radiation surface of the Cassegrain antenna
 
 # %%
 # The measured run

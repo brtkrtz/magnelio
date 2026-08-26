@@ -80,9 +80,18 @@ extensions = [
 # A script opts out with ``PYVISTA_GALLERY_FORCE_STATIC = True``.
 import pyvista  # noqa: E402
 from pyvista.plotting.utilities.sphinx_gallery import DynamicScraper  # noqa: E402
+from sphinx_gallery.sorting import FileNameSortKey  # noqa: E402
 
 pyvista.BUILDING_GALLERY = True
 pyvista.OFF_SCREEN = True
+
+
+class _CurriculumOrder(FileNameSortKey):
+    """Order gallery scripts by file name without the ``plot_`` prefix."""
+
+    def __call__(self, filename: str) -> str:
+        return filename.removeprefix("plot_")
+
 
 sphinx_gallery_conf = {
     "image_scrapers": ("matplotlib", DynamicScraper()),
@@ -97,8 +106,10 @@ sphinx_gallery_conf = {
     "filename_pattern": r"/plot_",
     "download_all_examples": False,
     # The tutorials are a numbered curriculum: order by file name, not
-    # by the default code-line count.
-    "within_subsection_order": "FileNameSortKey",
+    # by the default code-line count.  The key skips the ``plot_``
+    # prefix, so a tutorial that is not executed keeps its place in
+    # the sequence.
+    "within_subsection_order": _CurriculumOrder,
     # Strip sphinx_gallery_* config comments (thumbnail selection etc.)
     # from the rendered code blocks.
     "remove_config_comments": True,
