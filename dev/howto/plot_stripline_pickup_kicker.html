@@ -611,16 +611,16 @@ impedance of the strip, and the strip should match its 50 Ω feeds.</p>
 <p>A geometry of this complexity — revolved faces, lofts, mirrors and a
 half-turn copy — is best assembled in a notebook, where every
 intermediate body can be looked at in the interactive 3D view before
-the next operation builds on it:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span><span class="n">background</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+the next operation builds on it.  The assembled device, at a
+provisional strip height (the port solver settles the real one
+below):</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span><span class="n">background</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">body</span> <span class="ow">in</span> <span class="n">build_coupler</span><span class="p">(</span><span class="mf">7.5e-3</span><span class="p">):</span>
     <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">body</span><span class="p">)</span>
 <span class="n">model</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="../_images/tutorial_19_notebook_model_plot.png"><img alt="The stripline pair with its four coaxial feeds in a notebook's 3D view" src="../_images/tutorial_19_notebook_model_plot.png" style="width: 70%;" />
-</a>
-</section>
+<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_001.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_001.png" alt="plot stripline pickup kicker" class = "sphx-glr-single-img"/></section>
 <section id="dimensioning-the-strip-with-the-port-solver">
 <h2>Dimensioning the strip with the port solver<a class="headerlink" href="#dimensioning-the-strip-with-the-port-solver" title="Link to this heading">#</a></h2>
 <p>The strip and its pit form a TEM line, and the port solver computes
@@ -690,7 +690,7 @@ once more without changing the mode.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_001.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_001.png" alt="Strip impedance from the port solver" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>UserWarning: 2 geometry-edge planes (1 on x, 1 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0225167 m, would create a 0.000866 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=8.7) keeps it, or refine the mesh.
+<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_002.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_002.png" alt="Strip impedance from the port solver" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>UserWarning: 2 geometry-edge planes (1 on x, 1 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0225167 m, would create a 0.000866 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=8.7) keeps it, or refine the mesh.
 h = 5 mm: Z_strip =  40.8 ohm (sum)   39.7 ohm (difference)
 h = 6 mm: Z_strip =  45.3 ohm (sum)   43.9 ohm (difference)
 h = 7 mm: Z_strip =  48.8 ohm (sum)   47.2 ohm (difference)
@@ -777,7 +777,7 @@ actually landed on.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_002.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_002.png" alt="Mid-plane of the half model (x = 0)" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>UserWarning: 4 geometry-edge planes (1 on x, 1 on y, 2 on z) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at z = 0.149896 m, would create a 0.00175 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=4.3) keeps it, or refine the mesh.
+<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_003.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_003.png" alt="Mid-plane of the half model (x = 0)" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>UserWarning: 4 geometry-edge planes (1 on x, 1 on y, 2 on z) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at z = 0.149896 m, would create a 0.00175 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=4.3) keeps it, or refine the mesh.
 grid: 41 x 50 x 209 cells
 coax port impedance on the grid: 52.3 ohm
 field line recorded at y = 0.98 mm, 209 points
@@ -793,7 +793,7 @@ upstream loads have to absorb the full drive power.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_003.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_003.png" alt="Differentially driven pair" class = "sphx-glr-single-img"/><p>The field picture shows what the beam will see: the drive enters at
+<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_004.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_004.png" alt="Differentially driven pair" class = "sphx-glr-single-img"/><p>The field picture shows what the beam will see: the drive enters at
 the right, and the longitudinal field that does the kicking is
 concentrated at the two strip ends, where the strip voltage steps
 from its line value to the grounded pit.  Along the strip itself the
@@ -806,7 +806,7 @@ field is transverse — a TEM line has no <span class="math notranslate nohighli
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_004.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_004.png" alt="$E_z$ at 500 MHz on the mid-plane, difference mode" class = "sphx-glr-single-img"/></section>
+<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_005.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_005.png" alt="$E_z$ at 500 MHz on the mid-plane, difference mode" class = "sphx-glr-single-img"/></section>
 <section id="beam-voltage-and-kicker-constant">
 <h2>Beam voltage and kicker constant<a class="headerlink" href="#beam-voltage-and-kicker-constant" title="Link to this heading">#</a></h2>
 <p>A particle of charge <span class="math notranslate nohighlight">\(e\)</span> and velocity <span class="math notranslate nohighlight">\(\beta c\)</span> crossing
@@ -850,7 +850,7 @@ strip — and <span class="math notranslate nohighlight">\(Z_c\)</span> the feed
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_005.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_005.png" alt="Beam voltage off axis, difference mode" class = "sphx-glr-single-img"/><p>The two directions are not equivalent.  A particle running <em>against</em>
+<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_006.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_006.png" alt="Beam voltage off axis, difference mode" class = "sphx-glr-single-img"/><p>The two directions are not equivalent.  A particle running <em>against</em>
 the drive wave collects the kicks of both strip ends in phase at the
 design frequency; one running <em>with</em> the wave, at the wave’s own
 speed, sees the second end cancel the first — the same directivity
@@ -975,7 +975,7 @@ the distance between the two feeds, not the strip’s own length.</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  R_perp T^2 = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">r_perp</span></a><span class="p">[</span><span class="n">i0</span><span class="p">]</span><span class="si">:</span><span class="s2">6.1f</span><span class="si">}</span><span class="s2"> ohm  (ideal </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">r_perp_ideal</span></a><span class="p">[</span><span class="n">i0</span><span class="p">]</span><span class="si">:</span><span class="s2">6.1f</span><span class="si">}</span><span class="s2"> ohm)"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_006.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_006.png" alt="Longitudinal shunt impedance, Transverse shunt impedance" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>at 0.5 GHz:
+<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_007.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_007.png" alt="Longitudinal shunt impedance, Transverse shunt impedance" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>at 0.5 GHz:
   K_par  = 0.392  (ideal 0.466)
   K_perp = 2.730  (ideal 3.339)
   R_par T^2  =    8.0 ohm  (ideal   11.4 ohm)
@@ -1036,7 +1036,7 @@ frequency.</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  = </span><span class="si">{</span><span class="mf">0.1</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sens</span></a><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> %/mm   (ideal </span><span class="si">{</span><span class="mf">0.1</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">sensitivity_ideal</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> %/mm)"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_007.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_007.png" alt="Pickup: sum signal, Pickup: difference signal" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>position sensitivity over 0.25-0.75 GHz: 73 ... 73 /m
+<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_008.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_008.png" alt="Pickup: sum signal, Pickup: difference signal" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>position sensitivity over 0.25-0.75 GHz: 73 ... 73 /m
   = 7.3 %/mm   (ideal 7.6 %/mm)
 </pre></div>
 </div>
@@ -1052,7 +1052,7 @@ particle velocity enters only through <span class="math notranslate nohighlight"
 one and watch the lobes shift down in frequency and the transverse
 response change), and the pit depth and feed offsets are the knobs
 that move the real device toward, or away from, the ideal stripline.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (4 minutes 54.774 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (4 minutes 53.619 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-stripline-pickup-kicker-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/4f45f16660f9674c2e4e6eb9a377a83f/plot_stripline_pickup_kicker.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_stripline_pickup_kicker.ipynb</span></code></a></p>

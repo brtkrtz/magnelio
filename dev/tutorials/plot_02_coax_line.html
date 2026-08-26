@@ -545,19 +545,18 @@ surface is exactly the dielectric boundary at <code class="docutils literal notr
 </section>
 <section id="looking-at-the-model-in-three-dimensions">
 <h2>Looking at the model in three dimensions<a class="headerlink" href="#looking-at-the-model-in-three-dimensions" title="Link to this heading">#</a></h2>
-<p>The cross-sections used throughout these pages are flat by
-necessity — they render into a static document.  In a Jupyter
-notebook, <code class="docutils literal notranslate"><span class="pre">model.plot()</span></code> opens the model as a rotatable,
-zoomable 3D view instead, which is the faster way to check that a
-boolean did what you meant.  Every tutorial can be downloaded as a
-notebook (the link at the bottom of the page), so this is one call
-away at any point:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<p><code class="docutils literal notranslate"><span class="pre">model.plot()</span></code> shows the model in three dimensions.  On this page
+it is a picture; in a Jupyter notebook the same call opens a
+rotatable, zoomable view with a cutting plane driven from its
+toolbar — the fastest way to check that a boolean did what you
+meant.  Every tutorial can be downloaded as a notebook (the link at
+the bottom of the page), so this is one call away at any point.
+Here the model is opened along its axis to show the annulus around
+the inner conductor.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cut</span><span class="o">=</span><span class="p">(</span><span class="s2">"y"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
 </pre></div>
 </div>
-<a class="reference internal image-reference" href="../_images/tutorial_02_notebook_model_plot.png"><img alt="The coaxial model as an interactive 3D view in a notebook" src="../_images/tutorial_02_notebook_model_plot.png" style="width: 70%;" />
-</a>
-</section>
+<img src="../_images/sphx_glr_plot_02_coax_line_001.png" srcset="../_images/sphx_glr_plot_02_coax_line_001.png" alt="plot 02 coax line" class = "sphx-glr-single-img"/></section>
 <section id="the-coax-port">
 <h2>The coax port<a class="headerlink" href="#the-coax-port" title="Link to this heading">#</a></h2>
 <p>In the first tutorial, <a class="reference internal" href="../api/ports.html#magnelio.ports.PortWaveguide" title="magnelio.ports.PortWaveguide"><code class="xref py py-class docutils literal notranslate"><span class="pre">PortWaveguide</span></code></a> simply
@@ -623,7 +622,7 @@ faces.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_02_coax_line_001.png" srcset="../_images/sphx_glr_plot_02_coax_line_001.png" alt="Coax cross-section with mesh, Longitudinal cut (x = 0)" class = "sphx-glr-single-img"/><img src="../_images/sphx_glr_plot_02_coax_line_002.png" srcset="../_images/sphx_glr_plot_02_coax_line_002.png" alt="plot 02 coax line" class = "sphx-glr-single-img"/><p>The circle is rendered on a rectangular grid as a staircase, with
+<img src="../_images/sphx_glr_plot_02_coax_line_002.png" srcset="../_images/sphx_glr_plot_02_coax_line_002.png" alt="Coax cross-section with mesh, Longitudinal cut (x = 0)" class = "sphx-glr-single-img"/><img src="../_images/sphx_glr_plot_02_coax_line_003.png" srcset="../_images/sphx_glr_plot_02_coax_line_003.png" alt="plot 02 coax line" class = "sphx-glr-single-img"/><p>The circle is rendered on a rectangular grid as a staircase, with
 partially filled cells treated by conformal material matrices — keep
 this picture in mind when reading the port report below.</p>
 </section>
@@ -662,7 +661,7 @@ conductor, the tinted annulus the dielectric:</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">report</span><span class="o">.</span><span class="n">modes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">field</span><span class="o">=</span><span class="s2">"E"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Coax TEM mode, transverse E"</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_02_coax_line_003.png" srcset="../_images/sphx_glr_plot_02_coax_line_003.png" alt="Coax TEM mode, transverse E" class = "sphx-glr-single-img"/></section>
+<img src="../_images/sphx_glr_plot_02_coax_line_004.png" srcset="../_images/sphx_glr_plot_02_coax_line_004.png" alt="Coax TEM mode, transverse E" class = "sphx-glr-single-img"/></section>
 <section id="run-and-s-parameters">
 <h2>Run and S-parameters<a class="headerlink" href="#run-and-s-parameters" title="Link to this heading">#</a></h2>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">excited</span><span class="o">=</span><span class="p">[(</span><span class="s2">"port1"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)])</span>
@@ -683,7 +682,7 @@ conductor, the tinted annulus the dielectric:</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"max |S11| in band: </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11_db</span></a><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">6.1f</span><span class="si">}</span><span class="s2"> dB"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_02_coax_line_004.png" srcset="../_images/sphx_glr_plot_02_coax_line_004.png" alt="RG-58 class coax, 8 mm" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S11| in band: -110.5 dB
+<img src="../_images/sphx_glr_plot_02_coax_line_005.png" srcset="../_images/sphx_glr_plot_02_coax_line_005.png" alt="RG-58 class coax, 8 mm" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S11| in band: -110.5 dB
 </pre></div>
 </div>
 <p>As for every uniform matched line, <code class="docutils literal notranslate"><span class="pre">|S21|</span></code> sits at 0 dB and
@@ -712,7 +711,7 @@ length <span class="math notranslate nohighlight">\(\beta L\)</span> with
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"max phase deviation: </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">degrees</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">phase_sim</span></a><span class="w"> </span><span class="o">-</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">phase_ref</span></a><span class="p">))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> deg"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_02_coax_line_005.png" srcset="../_images/sphx_glr_plot_02_coax_line_005.png" alt="Transmission phase vs. analytic" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max phase deviation: 0.099 deg
+<img src="../_images/sphx_glr_plot_02_coax_line_006.png" srcset="../_images/sphx_glr_plot_02_coax_line_006.png" alt="Transmission phase vs. analytic" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max phase deviation: 0.099 deg
 </pre></div>
 </div>
 </section>
@@ -727,7 +726,7 @@ numerical-vs-reference reading of a port report.  The next tutorial
 excites <em>both</em> ports of this line and assembles the full S-matrix —
 including what to check when a device has more ports than modes of
 interest.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 7.856 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 7.237 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-02-coax-line-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/ce2371532972a7a4335b8427c05db663/plot_02_coax_line.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_02_coax_line.ipynb</span></code></a></p>
