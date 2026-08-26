@@ -637,11 +637,12 @@ def _sharp_edges(occ_shape):
     cylinder's seam is a straight line through ``(R, 0)`` and would
     put a phantom plane through the cylinder axis; a sphere's seam
     meridian lies in an axis-normal plane through its centre),
-    degenerated edges, and edges between two faces of the *same*
-    analytic surface (a Boolean fuse leaves coplanar sub-faces
-    unmerged; the line between them lies in the middle of a flat
-    wall and is not geometry).  Shared by the DD-191 edge planes and
-    the DD-194 singular-edge planes.
+    degenerated edges, and edges at which every adjacent analytic
+    surface continues on both sides (a Boolean fuse leaves coplanar
+    sub-faces unmerged, and a cylinder touching a flat face is split
+    along the touching line together with that face; neither line is
+    geometry).  Shared by the DD-191 edge planes and the DD-194
+    singular-edge planes.
     """
     from OCC.Core.BRep import BRep_Tool  # noqa: PLC0415
     from OCC.Core.BRepAdaptor import BRepAdaptor_Surface  # noqa: PLC0415
@@ -650,6 +651,7 @@ def _sharp_edges(occ_shape):
         GeomAbs_Plane,
         GeomAbs_Sphere,
     )
+    from OCC.Core.gp import gp_Lin  # noqa: PLC0415
     from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_FACE  # noqa: PLC0415
     from OCC.Core.TopExp import topexp  # noqa: PLC0415
     from OCC.Core.TopoDS import topods  # noqa: PLC0415
@@ -677,7 +679,8 @@ def _sharp_edges(occ_shape):
             a1, a2 = c1.Axis(), c2.Axis()
             if abs(a1.Direction().Dot(a2.Direction())) < align_tol:
                 return False
-            return a1.Distance(a2.Location()) <= 1e-9 * (1.0 + c1.Radius())
+            # gp_Ax1 has no point distance; the line through it has.
+            return gp_Lin(a1).Distance(a2.Location()) <= 1e-9 * (1.0 + c1.Radius())
         if t1 == GeomAbs_Sphere:
             k1, k2 = s1.Sphere(), s2.Sphere()
             return abs(k1.Radius() - k2.Radius()) <= 1e-9 * (
@@ -694,8 +697,27 @@ def _sharp_edges(occ_shape):
         faces = [topods.Face(f) for f in emap.FindFromIndex(i + 1)]
         if any(BRep_Tool.IsClosed(edge, f) for f in faces):
             continue  # seam
-        if len(faces) == 2 and _same_surface(faces[0], faces[1]):
-            continue  # split line inside one surface, not an edge
+        # Group the ancestor faces by analytic surface.  An edge at
+        # which EVERY surface continues on both sides — two coplanar
+        # halves of one wall, two quarters of one cylinder — is a
+        # split line, not geometry: the plain fuse line (one surface,
+        # two faces) and the tangency cusp of a closed surface against
+        # a flat face (a cylinder touching a box wall: the Boolean
+        # splits wall and cylinder alike along the touching line, four
+        # faces on one edge whose transverse coordinate is the
+        # cylinder's axis — the phantom plane the seam rule exists to
+        # keep out).  A fillet onset keeps its plane: the flat face
+        # and the fillet each sit on ONE side of it.
+        groups: list[list] = []
+        for f in faces:
+            for g in groups:
+                if _same_surface(g[0], f):
+                    g.append(f)
+                    break
+            else:
+                groups.append([f])
+        if all(len(g) >= 2 for g in groups):
+            continue  # every surface passes through the edge
         yield edge, faces
 
 

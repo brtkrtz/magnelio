@@ -16,8 +16,8 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Four entries are open as of 2026-08-26: KB-022, KB-023, KB-027 and
-KB-028.**  Everything else is struck through and resolved.
+**Three entries are open as of 2026-08-26: KB-022, KB-023 and
+KB-027.**  Everything else is struck through and resolved.
 
 ## KB-031: ~~Hollow conductors lost the conformal correction at their inner walls~~ — Resolved (DD-199, 2026-08-26)
 
@@ -63,34 +63,29 @@ were correct.  Step 3d now copies the first fully interior slab's
 sub-cell data into the extension — the same translation-invariant
 continuation the materials already had.
 
-## KB-028: Four conformal reference tests fail since the DD-191 / DD-192 mesh changes — Open (2026-08-26)
+## KB-028: ~~Four conformal reference tests fail since the DD-191 / DD-192 mesh changes~~ — Resolved (DD-191 amendment / DD-193 note, 2026-08-26)
 
-Found while running the full integration suite for DD-196 (both
-failures reproduce on `main` before that change, bisected with
-`git bisect --first-parent`):
+Found while running the full integration suite for DD-196, bisected
+with `git bisect --first-parent`, settled the same day — one
+regression, one re-pin:
 
-- `tests/integration/test_conformal_coax_sparams.py::test_conformal_coax_port_floor_and_impedance`
-  reports the conformal coax line impedance at 48.941 Ω against the
-  pinned 48.12 Ω ± 1 % (DD-053 measurement).  First bad commit:
-  a188229, *Merge feat/local-wavelength-rule* (DD-192 bulk cell size
-  per slab, DD-193 short-interval fill) — the coax mesh changed, and
-  with it the staircase/conformal line impedance by 1.7 %.
-- `tests/integration/test_conformal_convergence.py::TestDeyMittraTM010::
-  test_dm_improves_over_conformal`, `::test_dm_improves_over_staircase`
-  and `::TestDeyMittraConvergence::test_dm_preserves_convergence_order`
-  fail since 6ca4049, *Merge feat/edge-feature-planes* (DD-191) — the
-  cavity meshes gained edge planes and the TM010 error ordering the
-  tests pin (Dey–Mittra < conformal < staircase, second-order
-  convergence) no longer holds on the new grids.
-
-Not yet investigated: whether the new grids are *worse* (a mesher
-regression — a coarser cell at the coax conductor, an edge plane
-that breaks the DD-107 buffer) or merely *different* (the pinned
-numbers belong to the old grids and the tests need re-pinning with a
-fresh convergence run).  The v0.4.6 release note counts the unit
-suite only; the integration suite was not green at release.  Until
-settled, the four tests are the known red set of the integration
-suite.
+- The three Dey–Mittra TM010 tests of `test_conformal_convergence.py`
+  failed since 6ca4049 (DD-191): the cylindrical cavity is inscribed
+  in its PEC block, the Boolean splits wall and cylinder along the
+  four touching lines, and the "two faces on one surface" skip of the
+  edge pass let those four-face edges through as geometry — a plane
+  through the cylinder axis, 7 × 7 → 8 × 8 cells with grid nodes on
+  the tangency cusps, DM error 3.7 → 6.0 %.  A **mesher regression**;
+  the edge pass now skips every edge at which each adjacent surface
+  continues on both sides (DD-191 amendment; a latent `gp_Ax1.Distance`
+  error in the coaxial-split test fixed alongside), the grids are
+  bit-identical to 0.4.4 again.
+- `test_conformal_coax_sparams.py` reported z_line 48.94 Ω against the
+  pinned 48.12 since a188229 (DD-192 merge, but the mover is DD-193):
+  the exact-fill grading turns the 0.121 / 0.168 / 0.121 mm ramp
+  inside the inner conductor into 3 × 0.137 mm cells.  Closer to the
+  analytic 49.97 Ω, port floor −131 → −135.6 dB — **merely different,
+  and better**; re-pinned.
 
 ## KB-027: De-embedding a quasi-TEM feed leaves the line's physical dispersion behind — Open (2026-08-25)
 

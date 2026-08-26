@@ -16,6 +16,14 @@ z_line 48.12 Ohm (staircase reference at the same resolution: -45.3 /
 site-0 acceptance: staircase-level port floor WITH conformal impedance
 accuracy.  Doubled resolution reaches -56.3 / -73.6 dB at z_line
 49.60 Ohm (not exercised here for runtime).
+
+Since the short-interval grading keeps the fine-end cell at ``h_fine``
+(DD-193, v0.4.6) the three cells spanning the inner conductor are
+3 x 0.137 mm instead of the former 0.121 / 0.168 / 0.121 mm ramp; the
+rest of the grid is unchanged.  Re-measured on that grid: z_line
+48.94 Ohm (closer to the analytic 49.97), max |S11| = -135.6 dB,
+median -153.9 (CPU backend, 2026-08-26).  The pinned impedance below
+is that value; the staircase 44.73 Ohm still fails the 1 % bound.
 """
 
 from __future__ import annotations
@@ -67,23 +75,24 @@ def _build_analysis() -> AnalysisScatteringTD:
 
 
 def test_conformal_coax_port_floor_and_impedance():
-    """max |S11| < -110 dB, z_line within 1 % of 48.12 Ohm.
+    """max |S11| < -110 dB, z_line within 1 % of 48.94 Ohm.
 
     DD-053 measurement (19x19x25): max -44.06 dB, median -61.42,
     z_line 48.116 Ohm.  WP-R2 (exact DTBC termination + discrete
     de-stagger; the DD-053 pair coupling makes the conformal section
     pass the DTBC pair-product gate): max |S11| = -131.0 dB at
     unchanged z_line — the former floor was absorber- and
-    measurement-chain-limited, not conformal-geometric.  The z_line
-    bound still guards the *conformal* half of the acceptance — a
-    staircase-level impedance (44.7 Ohm) must fail.
+    measurement-chain-limited, not conformal-geometric.  DD-193 grid
+    (see module docstring): z_line 48.94 Ohm, max |S11| = -135.6 dB.
+    The z_line bound still guards the *conformal* half of the
+    acceptance — a staircase-level impedance (44.7 Ohm) must fail.
     """
     analysis = _build_analysis()
 
     reports = analysis.solve_ports()
     z_line = reports["port1"].z_line_num
-    assert abs(z_line - 48.12) / 48.12 < 0.01, (
-        f"conformal z_line regression: {z_line:.3f} Ohm (expect ~48.12)"
+    assert abs(z_line - 48.94) / 48.94 < 0.01, (
+        f"conformal z_line regression: {z_line:.3f} Ohm (expect ~48.94)"
     )
 
     f_axis = np.linspace(F_MAX / 40, F_MAX, 81)

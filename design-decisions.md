@@ -13221,6 +13221,33 @@ quotes the ten percent.  Cost of the pass on the tutorials: 13
 printing the warning), 01–09, 11, 12, 15–17 unchanged (14 does not
 mesh).
 
+**Amendment 2026-08-26 (KB-028).**  The integration suite found the
+"same analytic surface" skip too narrow: it tested *two* faces on one
+surface.  A closed surface touching a flat face — the cylindrical
+cavity of `test_conformal_convergence.py`, inscribed in its PEC block
+— is split by the Boolean along the touching line *together with the
+flat face*, so that straight edge carries four faces (two coplanar
+wall halves, two coaxial cylinder quarters) and passed as geometry,
+contributing its transverse coordinate: the plane through the
+cylinder axis the seam rule exists to keep out.  The 5 mm cavity grid
+went 7 × 7 × 5 → 8 × 8 × 5 with nodes on the tangency cusps, and the
+Dey–Mittra TM010 error 3.7 % → 6.0 % (staircase 11.4 % → 4.1 %; the
+same 8 × 8 grid pre-dates the change as the 4 mm fixture, with the
+same numbers — DM on cusp-node grids is a separate, older observation).
+The rule now groups the ancestor faces by analytic surface and skips
+an edge at which *every* group has two or more members — every
+surface continues across it.  Found on the way: the cylinder branch
+of `_same_surface` called `gp_Ax1.Distance` (no such method); the
+per-shape `except Exception` of the edge pass had hidden it, so a
+shape whose first cylinder-split edge reached that branch silently
+contributed *no* edge planes at all.  Now `gp_Lin(axis).Distance`.  A fillet onset keeps its plane (flat
+face and fillet each sit on one side); a fuse line crossing an onset
+splits the onset into two-face edges that are kept.  The cavity
+grids are bit-identical to 0.4.4 again; the DD-194 singular-edge
+pass shares the rule (tangency cusps on a domain face never counted
+there anyway).  Gate:
+`TestEdgeFeaturePlanes::test_tangency_cusps_of_an_inscribed_cylinder_contribute_nothing`.
+
 **Rejected.**
 - *Counting edge planes as material gaps* (`min_cells_per_feature`
   across the chamfer layer): a 0.2 mm chamfer would force 0.05 mm
@@ -13355,6 +13382,16 @@ breaks bit-identity with 0.4.5 beyond DD-192's mixed-dielectric
 scope (bit-identity is preferred when free, not a constraint).  The
 cells in such intervals are slightly larger and the time step
 slightly longer; nothing gets finer.
+
+**Measured cost (2026-08-26, KB-028).**  The DD-053 conformal coax
+certificate (19 × 19 × 25) is such a short interval: the three cells
+spanning the 0.41 mm inner conductor were 0.121 / 0.168 / 0.121 mm
+(ratio 1.39, fine end 12 % under `h_fine` = 0.137 mm) and are now
+3 × 0.137 mm; nothing else in the grid moves.  The dual faces at the
+conductor surface reach deeper into the metal, and the conformal line
+impedance moves 48.12 → 48.94 Ω (analytic 49.97), the port floor
+−131 → −135.6 dB (median −153.9).  The integration test is re-pinned
+to 48.94 Ω; the DD-053 table keeps its historical grid.
 
 **Files:** `src/magnelio/mesh/mesher.py` (`_ratio_for_exact_fill`,
 short branches of `_grade_then_uniform` and
