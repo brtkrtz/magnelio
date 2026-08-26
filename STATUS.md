@@ -1,33 +1,25 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-26 (night).*  On `main` since the release:
-multi-conductor quasi-TEM ports return the modal (even/odd) basis
-(DD-196), `geo.Surface.parametric` builds curved sheets that
-`extruded()` turns into reflector shells (DD-197), waveguide-port
-windows may sit in absorbing faces — with the conformal sub-cell data
-continued into the PML (KB-029) and TE/TM-fed monitors normalised to
-the launched incident power (KB-030) — (DD-198); how-to *coupled-line
-coupler* and tutorial 19 *offset Cassegrain* (rendered, not executed).
-Merged today (DD-199): free-form
-faces are sectioned on a lifted triangulation (Cassegrain mesh 372 s →
-58 s) and section contours are wound by nesting parity — hollow
-conductors had lost the conformal correction at their inner walls
-(KB-031).  Unit suite 2350 passed / 3 skipped; the integration suite
-carries four known red tests since the DD-191/192 mesh changes (KB-028).
-**Released v0.4.6** (2026-08-26): the
-bulk cell size follows the slab's wavelength (DD-192), short graded
-intervals keep the interface cell at `h_fine` (DD-193), opt-in
-singularity refinement at conductor edges (DD-194 — default off: the
-edge cell bounds the time step, so on an S-parameter ladder the
-factor is cost-neutral; it pays for impedance/ε_eff work and under a
-`min_cell_size` floor), the eigenmode solver grows its ARPACK request
-at a pinned shift (DD-195), and the ports page states that quasi-TEM
-de-embedding is quasi-static (KB-027).  Unit suite 2288 passed /
-3 skipped.  Channels: GitHub, PyPI, conda-forge, docs (`/stable/` =
-tag, `/dev/` = main).  On `main` since the release: every gallery 3D
-view carries an "Interactive Scene" tab (vtk.js, DD-190 update),
-GitHub Discussions is the feedback channel, `SECURITY.md` names the
-private report routes.
+*Last updated: 2026-08-26 (night).*  **Released v0.4.7**
+(2026-08-26): multi-conductor quasi-TEM ports return the modal
+(even/odd) basis (DD-196), `geo.Surface.parametric` builds curved
+sheets that `extruded()` turns into reflector shells (DD-197),
+waveguide-port windows may sit in absorbing faces — with the conformal
+sub-cell data continued into the PML (KB-029) and TE/TM-fed monitors
+normalised to the launched incident power (KB-030) — (DD-198),
+free-form faces are sectioned on a lifted triangulation (Cassegrain
+mesh 372 s → 58 s, DD-199) and section contours are wound by nesting
+parity — hollow conductors had lost the conformal correction at their
+inner walls (KB-031); how-to *coupled-line coupler* and tutorial 19
+*offset Cassegrain* (rendered, not executed; figures of a measured run
+embedded), every gallery 3D view carries an "Interactive Scene" tab,
+GitHub Discussions is the feedback channel.  Unit suite 2350 passed /
+3 skipped; the integration suite carries four known red tests since
+the DD-191/192 mesh changes (KB-028).  Previous release v0.4.6
+(2026-08-26): slab wavelength rule (DD-192), short-interval fit
+(DD-193), opt-in singularity refinement (DD-194), ARPACK request growth
+(DD-195).  Channels: GitHub, PyPI, conda-forge, docs (`/stable/` =
+tag, `/dev/` = main).
 
 This file states what *is*.  The chronology is `git log
 --first-parent main` (one feature per merge), the reasoning is

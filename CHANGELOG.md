@@ -7,7 +7,7 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
-## [Unreleased]
+## [0.4.7] - 2026-08-26
 
 ### Added
 
@@ -76,7 +76,6 @@ major version is 0, minor releases may change the public API.
   a minute instead of six, and the section polygons follow the exact
   surface more closely than the kernel's tessellation did.  Planar
   and analytic curved faces are handled as before.
-
 - Tutorial 02, tutorial 06 and the stripline how-to show the model in
   the live 3D view (`model.plot()`) instead of a notebook screenshot;
   the magic tee gets a 3D view before its cross-sections.
