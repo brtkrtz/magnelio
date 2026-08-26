@@ -1,6 +1,16 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-26.*  **Released v0.4.6** (2026-08-26): the
+*Last updated: 2026-08-26 (evening).*  On `main` since the release:
+multi-conductor quasi-TEM ports return the modal (even/odd) basis
+(DD-196), `geo.Surface.parametric` builds curved sheets that
+`extruded()` turns into reflector shells (DD-197), waveguide-port
+windows may sit in absorbing faces — with the conformal sub-cell data
+continued into the PML (KB-029) and TE/TM-fed monitors normalised to
+the launched incident power (KB-030) — (DD-198); how-to *coupled-line
+coupler* and tutorial 19 *offset Cassegrain* (rendered, not executed).
+Unit suite 2332 passed / 3 skipped; the integration suite carries four
+known red tests since the DD-191/192 mesh changes (KB-028).
+**Released v0.4.6** (2026-08-26): the
 bulk cell size follows the slab's wavelength (DD-192), short graded
 intervals keep the interface cell at `h_fine` (DD-193), opt-in
 singularity refinement at conductor edges (DD-194 — default off: the
@@ -25,6 +35,9 @@ certificates named in their DD entries.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-198** (2026-08-26) — waveguide-port windows in absorbing (CPML) faces: the mesher copies the first interior slab's sub-cell data into the PML extension (KB-029 — every conductor touching a CPML face had lost its PEC mask there), the CPML zeroes its stretching coefficients behind each window (per-component arrays, bit-identical without windows), the enclosure rule (window ring = conductor) is enforced in the solver setup and on `PortWaveguide`, the far-field monitor samples the feed face at the absorber interface and leaves the guide interior out, and TE/TM-fed monitors divide by `|a(f)|/|W(f)|` (KB-030; measured `P_rad/P_acc` 0.79 → 0.97 on an open-ended tube).
+* **DD-197** (2026-08-26) — `geo.Surface.parametric(fn, u=, v=, samples=)`: B-spline interpolation of a sampled map (pole rows allowed), `Sheet` → `PlanarSheet` marker hierarchy, `extruded()` on curved sheets (prism, robust), `thickened()` on curved sheets as a guarded offset cascade (volume check catches the kernel's folds), transforms keep the sheet marker (`Face.rotated().thickened()` works); methods chapter *Geometry construction*.
+* **DD-196** (2026-08-26) — K > 2 quasi-TEM ports solve `C v = ε_eff C₀ v` on the capacitance matrices of the per-conductor Laplace fields: channels are the line's modes (even/odd of a symmetric pair, each with its own `ε_eff` and `Z_0`, descending `ε_eff`), orthogonal in the capacitance-corrected mass, dual-basis projections for every multi-channel QTEM port; K = 2 bit-identical; `ModeReport.epsilon_eff`.
 * **DD-195** (2026-08-26) — eigenmode solver grows the ARPACK request at the same shift by the null-space artefact count (≤ 2 grows, one shared SuperLU factorisation via `OPinv`) before/instead of moving the shift; a pinned `sigma` no longer under-delivers when tiny conformal edges swell the residual null space (tutorial 13 at `singularity_refinement=2`: 5 of 7 vectors were artefacts).
 * **DD-194** (2026-08-25) — singularity refinement at conductor edges: `MeshControl(singularity_refinement=k)` grades the planes holding a singular metal edge (convex metal edge, or concave edge of a vacuum body with metal outside; kernel offset analysis, 5° tangency) from `h_fine / k` on both sides; per-plane fine sizes, asymmetric two-ramp / tent profile; default 1 (off) — on the S-parameter ladder the factor is cost-neutral (edge cell sets dt), it pays for impedance / ε_eff and under a `min_cell_size` floor.
 * **DD-193** (2026-08-25) — short-interval grading keeps the fine-end cell at `h_fine` and relaxes the growth ratio (`_ratio_for_exact_fill`) instead of letting the integer count push it up to 23 % below (DD-105 undershoot, made common by DD-192's air slabs above thin traces); buffered profile untouched; meshes with short graded intervals change.
@@ -33,8 +46,6 @@ Newest first, one line each; the full record is the DD entry.
 * **DD-190** (2026-08-25) — `model.plot()` rebuilt on PyVista: axis-aligned cutting plane from the widget toolbar (normal / slider / flip / undo / reset) that caps every solid and lays the exposed grid cells, coloured by assigned material, over the cut (the grid shows nowhere else); wires, ports, elements, symmetry planes and the domain box overlaid in mm; browser-side rendering by default (`mode=`), a VTK window in scripts, in the gallery a two-tab figure — screenshot plus the scene as a rotatable vtk.js view (`DynamicScraper`, since 2026-08-26).  Transport is trame's own websocket — JupyterLab ≥ 4.5 executes comm messages in ipykernel-7 subshell threads, and VTK rendered there gave black frames / kernel aborts (proven by replaying the comm transport).  `pyvista` is a core dependency, `[jupyter]` extra for the widget; pythreejs path gone; closes KB-026 as a side effect.
 * **DD-189** (2026-08-24, three amendments) — lumped-port termination guides, four pages: *Lumped ports: investigations* (principle + sweeps for all three line types) plus a compact *Lumped port tuning* tool each for coax/microstrip/CPW.  Waveguide port as instrument, WG–WG reference run as grid-exact phase ruler (no closed-form dispersion), phase polarity normalised to n·180° at the low band edge, knobs = end-gap geometry / position / port impedance as geometric re-run sweeps (de-embedding, the single overloaded page, and the CPW slot-port+resistor scheme all dropped on developer review).  CPW = coax picture on the symmetry plane: longitudinal end-gap port (`SymmetryPMC` half model, PMC lid), position optimum +16·s *beyond* the plane.  Kept as general (non-guide) knowledge: `elements=` for post-mesh lumped elements, single-mode test shields.  All three line types shipped; side find KB-026 (empty boolean crashes plot()).
 * **DD-188** (2026-08-24) — second sphinx-gallery "How-to guides" (`examples/howto/` → `docs/howto/`, unnumbered pages, own toctree caption): task recipes separated from the numbered curriculum; stripline page moved out of the tutorials (old URL lapses), filter capstone re-anchored as the close of tutorials 01–12; renumbering the tutorials rejected (URL + prose breakage).
-* **DD-187** (2026-08-24) — post-hoc reference-plane shift `result.deembed({"port": d})` on the exact discrete chain dispersion: `lambda^{-d/dz}` evaluated on the unit circle (passband magnitudes exactly untouched; the off-circle `lambda_symbol` offset would bias by `O(1e-8·d/dz)`), continuum `γ(ω)` fallback for uncertified channels, lumped ports raise; measured to cancel a uniform line to the run's own floor with zero reference-plane offset; `phase`/`plot_s` moved to `SDerivedAccessors`, shared by run results and `SParameterResult`.
-* **DD-186** (2026-08-24) — the mesh carries the f_max it was built for: `Mesh.from_geometry` records it, `AnalysisScatteringTD(f_max=None)` defaults to it, an explicit value above it warns (undersampled grid), `from_grid` meshes keep requiring an explicit value; rejected the issue's session-global "last used f_max" buffer (execution-order-dependent).
 Older decisions: `design-decisions.md`.
 
 ## Working practices earned the hard way
@@ -139,7 +150,9 @@ dispersive modes — uses the exact discrete wave impedance
 2D eigenproblem is the exact restriction ``build_2d_tm_curl_curl``
 (DD-055; the former lumped node-Laplace was metric-inconsistent).
 ``PortSpecNumerical(mode_type=None)`` = unified multi-mode port (TE +
-TM merged by cut-off in one operator).  Inhomogeneous QTEM/hybrid
+TM merged by cut-off in one operator); K > 2 line modes are the modal
+basis (Gram eigenbasis for TEM, capacitance pencil for QTEM, DD-196).
+Inhomogeneous QTEM/hybrid
 lines measured **CW** use the per-frequency true-mode port (DD-056,
 ``build_cw_true_mode_port``): channels = eigenpairs of the quadratic
 ζ-pencil built from the production matrices at the port
@@ -347,50 +360,40 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   n = 100; pythonocc SWIG never releases the GIL, so processes only),
   with two measured caveats: it inherits the same ~5 s spawn floor,
   and on a 60-post row the function is not dominant, so the case has
-  to be made per geometry class; (2) quadric extension of the planar
-  engine (plane × cylinder sections are exact circles or line pairs)
-  if curved-geometry meshing ever dominates; (3) a bin/BVH over face
-  boxes if geometries grow another order of magnitude.
+  to be made per geometry class; (2) quadric/free-form extension of
+  the planar engine — **now measured to dominate**: the tutorial-19
+  Cassegrain (two B-spline reflector shells, 2.1 M cells) meshes in
+  371 s, every section through a B-spline face going through the
+  kernel; (3) a bin/BVH over face boxes if geometries grow another
+  order of magnitude.
+* **Four red integration tests (KB-028).**  Conformal coax `z_line`
+  48.94 vs the pinned 48.12 Ω since the DD-192 merge; three
+  Dey–Mittra TM010 ordering/convergence tests since the DD-191
+  merge.  Bisected, not investigated: re-pin after a fresh convergence
+  run, or a mesher regression — undecided.
 
-Closed construction sites are tombstoned where they were decided —
-the DD entry (DD-095/096/100/107/122/138/142) and `known-bugs.md`
-(KB-003, KB-008…KB-011) — and are not repeated here.
+Closed construction sites are tombstoned where they were decided (the
+DD entry and `known-bugs.md`) and are not repeated here.
 
 ## Deferred / nice-to-have
 
-* **Time-domain power waves on band results** — the band port's
-  recorded channels are fixed subspace projections; a calibrated
-  a/b time series needs per-frequency phasor synthesis (e.g.
-  interpolated over the tracking grid).  ``result.a()/b()`` raise
-  with guidance on band results today (DD-063).
+* **Time-domain power waves on band results** — band channels are
+  fixed subspace projections; calibrated a/b series need per-frequency
+  phasor synthesis.  ``result.a()/b()`` raise with guidance (DD-063).
 * **Cheap single-profile QTEM port upgrade** — refuted at the DD-064
-  state (mid-band profile + scalar DTBC gains 5–20 dB in-band, loses
-  at the lower edge, pollutes |S21| by 1.2 dB).  Candidates: cut-off-
-  free symbol fit, edge-aware fit, 2–3 profiles; derive-then-measure.
+  state (gains 5–20 dB in-band, loses at the lower edge, pollutes
+  |S21| by 1.2 dB).  Candidates: cut-off-free or edge-aware symbol fit.
 * **Pulsed band-edge S-parameters on dispersive lines** are
-  record-truncation limited (~+10 dB per 10× run length — a
-  measurement bound, not a port defect); candidate: late-time
-  autoregressive estimation.  Certified today: CW lock-in
-  (``validation/kg_dtbc_wg_port_floors.py``).
-* **A third compute backend** — assessed, nothing built (DD-180).
-  Blocker is `xp is not np` as the solver's capability test, not the
-  204 CUDA lines.  Metal rejected (shared memory, no FP64); CuPy on
-  ROCm is the candidate, but launch geometry is measured on one Ada
-  card and CI runs `tests/unit` only — every cross-backend gate is a
-  local run on real hardware.
-* **Residual GPU small-grid floor** — ~0.41 ms/step at 10k cells is
-  per-port feedback round trips plus the Python loop rest, not kernel
-  time.  Needs port-hook restructuring (DD-092).
-* **`wall_model="sibc"` as the default** — its own decision now that
-  the DD-091 validation record exists; today the perturbative
-  DD-082/DD-087/DD-098 chain is the default and SIBC is opt-in.
-* **Tensor (gyrotropic) μ** — the DD-089 H-side ADE is scalar per
-  axis; a full tensor needs a different update topology.
-* **Off-Yee field-monitor interpolation** — monitors sample on the Yee
-  positions; arbitrary observation points would need interpolation
-  that preserves the DD-085 physical units.
-* **Far-field accepted-power wiring on the streamed path** — DD-173
-  wires ``1 − Σ|S|²`` into ``MonitorFarField`` after each in-RAM run;
-  a store-streamed run serves ``realized_gain``/``directivity`` but
-  ``gain`` raises until the reader wires accepted power (DD-070
-  follow-up).
+  record-truncation limited (~+10 dB per 10× run length); candidate:
+  late-time autoregressive estimation.  CW lock-in is certified.
+* **A third compute backend** — assessed, nothing built (DD-180);
+  blocker is `xp is not np` as the capability test.  Metal rejected
+  (no FP64); CuPy on ROCm is the candidate, gates are local runs.
+* **Residual GPU small-grid floor** (~0.41 ms/step at 10k cells, port
+  feedback round trips — DD-092); **tensor (gyrotropic) μ** (the DD-089
+  ADE is scalar per axis); **off-Yee field-monitor interpolation**
+  (must preserve the DD-085 units).
+* **Far-field accepted-power wiring on the streamed path** — the
+  reader serves ``realized_gain``/``directivity``; ``gain`` raises until
+  it wires ``1 − Σ|S|²`` (DD-070 follow-up; the incident-amplitude
+  ratio of DD-198 *is* derived on read).
