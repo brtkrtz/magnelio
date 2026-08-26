@@ -52,6 +52,14 @@ class CPMLBoundary:
     alpha_max : float
         Maximum frequency-shift parameter (default 0.02).
         Improves low-frequency absorption and late-time stability.
+
+    Notes
+    -----
+    A waveguide port embedded in this face owns the columns behind its
+    window: :meth:`set_port_windows` (wired by the solver) sets the
+    stretching coefficients to ``σ = 0, κ = 1`` there over the whole
+    layer depth, so the guided wave reaches the port's own termination
+    unabsorbed while the rest of the face keeps absorbing.
     """
 
     _FACE_AXIS = {
@@ -192,6 +200,14 @@ class CPMLBoundary:
         self._air_H1 = None
         self._air_H2 = None
 
+        # Per-component stretching coefficients (DD-198): the 1D
+        # broadcasts unless set_port_windows() zeroes a footprint.
+        self._xp = xp
+        self._dtype = dtype
+        self._c_E1 = self._c_E2 = self._c_H1 = self._c_H2 = self._c_3d
+        self._ck_E1 = self._ck_E2 = self._ck_H1 = self._ck_H2 = self._ck_3d
+        self._port_windows: list = []
+
         self._initialized = True
 
     def state_dict(self) -> dict:
@@ -309,6 +325,76 @@ class CPMLBoundary:
         self._air_H1 = xp.asarray(airH1)
         self._air_H2 = xp.asarray(airH2)
 
+    def set_port_windows(self, windows, *, xp=None) -> None:
+        """Switch the absorber off behind waveguide-port windows (DD-198).
+
+        A modal port embedded in this absorbing face owns the columns
+        behind its window: the mode enters the domain through a
+        conductor-enclosed guide that the mesher continued through the
+        absorbing layer, and the port's own termination — not the
+        absorber — must be what the guided wave meets.  Every ψ
+        component gets per-cell stretching coefficients that are the
+        face's 1D profile outside the footprints and ``σ = 0, κ = 1``
+        (``c = 0``, ``ck = 0``) inside them, over the whole layer depth.
+        With ``c = 0`` the recursion keeps ψ ≡ 0 there, with ``ck = 0``
+        the κ term vanishes: the update is the plain leapfrog.
+
+        Parameters
+        ----------
+        windows : list of dict
+            One footprint per port window, ``{tangential axis: (lo,
+            hi)}`` with inclusive *node* indices along each of the two
+            tangential axes (global axis numbers 0/1/2).  The footprint
+            covers the cells ``lo … hi − 1`` for cell-sampled directions
+            and the nodes ``lo … hi`` for node-sampled ones, so the
+            window ring — conductor edges by construction — is included.
+        xp : array module, optional
+            Backend for the coefficient arrays; defaults to the one
+            :meth:`initialize` was given.
+        """
+        if not self._initialized:
+            raise RuntimeError("CPMLBoundary.initialize() must be called first.")
+        xp = xp if xp is not None else self._xp
+        windows = [dict(w) for w in windows]
+        self._port_windows = windows
+        axis = {"x": 0, "y": 1, "z": 2}[self._axis]
+        N = (self.grid.Nx, self.grid.Ny, self.grid.Nz)
+        b, c, ck = self._b, self._c, self._ck
+        bshape = [1, 1, 1]
+        bshape[axis] = -1
+        c3 = c.reshape(bshape)
+        ck3 = ck.reshape(bshape)
+        del b
+
+        def footprint(shape):
+            keep = np.ones(shape, dtype=float)
+            for win in windows:
+                sl = [slice(None)] * 3
+                for t, (lo, hi) in win.items():
+                    t = int(t)
+                    if t == axis:
+                        continue
+                    lo, hi = int(lo), int(hi)
+                    sl[t] = slice(lo, hi) if shape[t] == N[t] else slice(lo, hi + 1)
+                keep[tuple(sl)] = 0.0
+            return keep
+
+        if self._axis == "x":
+            comps = (self._psi_Ey, self._psi_Ez, self._psi_Hy, self._psi_Hz)
+        elif self._axis == "y":
+            comps = (self._psi_Ex, self._psi_Ez, self._psi_Hx, self._psi_Hz)
+        else:
+            comps = (self._psi_Ex, self._psi_Ey, self._psi_Hx, self._psi_Hy)
+        names = ("E1", "E2", "H1", "H2")
+        for name, psi in zip(names, comps):
+            if not windows:
+                setattr(self, f"_c_{name}", self._c_3d)
+                setattr(self, f"_ck_{name}", self._ck_3d)
+                continue
+            keep = footprint(tuple(int(n) for n in psi.shape))
+            setattr(self, f"_c_{name}", xp.asarray(c3 * keep, dtype=self._dtype))
+            setattr(self, f"_ck_{name}", xp.asarray(ck3 * keep, dtype=self._dtype))
+
     # ------------------------------------------------------------------
     # Update methods (called every time step)
     # ------------------------------------------------------------------
@@ -358,7 +444,8 @@ class CPMLBoundary:
         axis = self._axis
         k0 = self._k0
         n = self._n_pml
-        b3, c3, ck3 = self._b_3d, self._c_3d, self._ck_3d
+        b3 = self._b_3d
+        c_1, ck_1, c_2, ck_2 = self._c_E1, self._ck_E1, self._c_E2, self._ck_E2
 
         n_Ex = Nx * (Ny + 1) * (Nz + 1)
         n_Ey = (Nx + 1) * Ny * (Nz + 1)
@@ -382,16 +469,16 @@ class CPMLBoundary:
                 dHx = fields.Hx[:, :, k0 : k0 + n] - fields.Hx[:, :, k0 - 1 : k0 + n - 1]
 
             self._psi_Ex *= b3
-            self._psi_Ex += c3 * dHy
+            self._psi_Ex += c_1 * dHy
             if air1 is not None:
                 self._psi_Ex *= air1
-            fields.Ex[:, :, k0 : k0 + n] += bE_Ex[:, :, k0 : k0 + n] * (ck3 * dHy + self._psi_Ex)
+            fields.Ex[:, :, k0 : k0 + n] += bE_Ex[:, :, k0 : k0 + n] * (ck_1 * dHy + self._psi_Ex)
 
             self._psi_Ey *= b3
-            self._psi_Ey += c3 * dHx
+            self._psi_Ey += c_2 * dHx
             if air2 is not None:
                 self._psi_Ey *= air2
-            fields.Ey[:, :, k0 : k0 + n] -= bE_Ey[:, :, k0 : k0 + n] * (ck3 * dHx + self._psi_Ey)
+            fields.Ey[:, :, k0 : k0 + n] -= bE_Ey[:, :, k0 : k0 + n] * (ck_2 * dHx + self._psi_Ey)
 
         elif axis == "x":
             if self._side == "min":
@@ -404,16 +491,16 @@ class CPMLBoundary:
                 dHy = fields.Hy[k0 : k0 + n, :, :] - fields.Hy[k0 - 1 : k0 + n - 1, :, :]
 
             self._psi_Ey *= b3
-            self._psi_Ey += c3 * dHz
+            self._psi_Ey += c_1 * dHz
             if air1 is not None:
                 self._psi_Ey *= air1
-            fields.Ey[k0 : k0 + n, :, :] += bE_Ey[k0 : k0 + n, :, :] * (ck3 * dHz + self._psi_Ey)
+            fields.Ey[k0 : k0 + n, :, :] += bE_Ey[k0 : k0 + n, :, :] * (ck_1 * dHz + self._psi_Ey)
 
             self._psi_Ez *= b3
-            self._psi_Ez += c3 * dHy
+            self._psi_Ez += c_2 * dHy
             if air2 is not None:
                 self._psi_Ez *= air2
-            fields.Ez[k0 : k0 + n, :, :] -= bE_Ez[k0 : k0 + n, :, :] * (ck3 * dHy + self._psi_Ez)
+            fields.Ez[k0 : k0 + n, :, :] -= bE_Ez[k0 : k0 + n, :, :] * (ck_2 * dHy + self._psi_Ez)
 
         elif axis == "y":
             if self._side == "min":
@@ -426,16 +513,16 @@ class CPMLBoundary:
                 dHx = fields.Hx[:, k0 : k0 + n, :] - fields.Hx[:, k0 - 1 : k0 + n - 1, :]
 
             self._psi_Ex *= b3
-            self._psi_Ex += c3 * dHz
+            self._psi_Ex += c_1 * dHz
             if air1 is not None:
                 self._psi_Ex *= air1
-            fields.Ex[:, k0 : k0 + n, :] -= bE_Ex[:, k0 : k0 + n, :] * (ck3 * dHz + self._psi_Ex)
+            fields.Ex[:, k0 : k0 + n, :] -= bE_Ex[:, k0 : k0 + n, :] * (ck_1 * dHz + self._psi_Ex)
 
             self._psi_Ez *= b3
-            self._psi_Ez += c3 * dHx
+            self._psi_Ez += c_2 * dHx
             if air2 is not None:
                 self._psi_Ez *= air2
-            fields.Ez[:, k0 : k0 + n, :] += bE_Ez[:, k0 : k0 + n, :] * (ck3 * dHx + self._psi_Ez)
+            fields.Ez[:, k0 : k0 + n, :] += bE_Ez[:, k0 : k0 + n, :] * (ck_2 * dHx + self._psi_Ez)
 
     def update_H(self, fields, beta_H: np.ndarray) -> None:
         """Update ψ_H and apply additive correction to H-field (PML region only).
@@ -454,7 +541,8 @@ class CPMLBoundary:
         axis = self._axis
         k0 = self._k0
         n = self._n_pml
-        b3, c3, ck3 = self._b_3d, self._c_3d, self._ck_3d
+        b3 = self._b_3d
+        c_1, ck_1, c_2, ck_2 = self._c_H1, self._ck_H1, self._c_H2, self._ck_H2
 
         n_Hx = (Nx + 1) * Ny * Nz
         n_Hy = Nx * (Ny + 1) * Nz
@@ -472,48 +560,48 @@ class CPMLBoundary:
             dEx = fields.Ex[:, :, k0 + 1 : k0 + n + 1] - fields.Ex[:, :, k0 : k0 + n]
 
             self._psi_Hx *= b3
-            self._psi_Hx += c3 * dEy
+            self._psi_Hx += c_1 * dEy
             if airH1 is not None:
                 self._psi_Hx *= airH1
-            fields.Hx[:, :, k0 : k0 + n] -= bH_Hx[:, :, k0 : k0 + n] * (ck3 * dEy + self._psi_Hx)
+            fields.Hx[:, :, k0 : k0 + n] -= bH_Hx[:, :, k0 : k0 + n] * (ck_1 * dEy + self._psi_Hx)
 
             self._psi_Hy *= b3
-            self._psi_Hy += c3 * dEx
+            self._psi_Hy += c_2 * dEx
             if airH2 is not None:
                 self._psi_Hy *= airH2
-            fields.Hy[:, :, k0 : k0 + n] += bH_Hy[:, :, k0 : k0 + n] * (ck3 * dEx + self._psi_Hy)
+            fields.Hy[:, :, k0 : k0 + n] += bH_Hy[:, :, k0 : k0 + n] * (ck_2 * dEx + self._psi_Hy)
 
         elif axis == "x":
             dEz = fields.Ez[k0 + 1 : k0 + n + 1, :, :] - fields.Ez[k0 : k0 + n, :, :]
             dEy = fields.Ey[k0 + 1 : k0 + n + 1, :, :] - fields.Ey[k0 : k0 + n, :, :]
 
             self._psi_Hy *= b3
-            self._psi_Hy += c3 * dEz
+            self._psi_Hy += c_1 * dEz
             if airH1 is not None:
                 self._psi_Hy *= airH1
-            fields.Hy[k0 : k0 + n, :, :] -= bH_Hy[k0 : k0 + n, :, :] * (ck3 * dEz + self._psi_Hy)
+            fields.Hy[k0 : k0 + n, :, :] -= bH_Hy[k0 : k0 + n, :, :] * (ck_1 * dEz + self._psi_Hy)
 
             self._psi_Hz *= b3
-            self._psi_Hz += c3 * dEy
+            self._psi_Hz += c_2 * dEy
             if airH2 is not None:
                 self._psi_Hz *= airH2
-            fields.Hz[k0 : k0 + n, :, :] += bH_Hz[k0 : k0 + n, :, :] * (ck3 * dEy + self._psi_Hz)
+            fields.Hz[k0 : k0 + n, :, :] += bH_Hz[k0 : k0 + n, :, :] * (ck_2 * dEy + self._psi_Hz)
 
         elif axis == "y":
             dEz = fields.Ez[:, k0 + 1 : k0 + n + 1, :] - fields.Ez[:, k0 : k0 + n, :]
             dEx = fields.Ex[:, k0 + 1 : k0 + n + 1, :] - fields.Ex[:, k0 : k0 + n, :]
 
             self._psi_Hx *= b3
-            self._psi_Hx += c3 * dEz
+            self._psi_Hx += c_1 * dEz
             if airH1 is not None:
                 self._psi_Hx *= airH1
-            fields.Hx[:, k0 : k0 + n, :] += bH_Hx[:, k0 : k0 + n, :] * (ck3 * dEz + self._psi_Hx)
+            fields.Hx[:, k0 : k0 + n, :] += bH_Hx[:, k0 : k0 + n, :] * (ck_1 * dEz + self._psi_Hx)
 
             self._psi_Hz *= b3
-            self._psi_Hz += c3 * dEx
+            self._psi_Hz += c_2 * dEx
             if airH2 is not None:
                 self._psi_Hz *= airH2
-            fields.Hz[:, k0 : k0 + n, :] -= bH_Hz[:, k0 : k0 + n, :] * (ck3 * dEx + self._psi_Hz)
+            fields.Hz[:, k0 : k0 + n, :] -= bH_Hz[:, k0 : k0 + n, :] * (ck_2 * dEx + self._psi_Hz)
 
     @property
     def sigma_per_cell(self) -> np.ndarray:

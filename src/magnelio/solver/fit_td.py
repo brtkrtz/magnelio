@@ -587,10 +587,51 @@ class FITTimeDomainSolver:
         if self._sibc is not None:
             self._sibc.bind(self._beta_H, xp)  # WP-D4
 
+        # Determine which faces host a modal port (DD-021).
+        # PEC is skipped on these faces; the modal operator's
+        # ``update_e`` writes the field there from the mode expansion.
+        # An absorbing face hands the columns behind each port window
+        # to the port (DD-198): the CPML is switched off there.
+        self._port_faces = set()
+        port_windows: dict[str, list[dict]] = {}
+        for op in self.ports:
+            plane = getattr(op, "plane", None)
+            face = getattr(plane, "face", None)
+            value = getattr(face, "value", None)
+            if isinstance(value, str):
+                # BoxFace values are "x_min" etc.; BC keys are "xmin".
+                key = value.replace("_", "")
+                self._port_faces.add(key)
+                u_win = getattr(plane, "u_node_window", None)
+                v_win = getattr(plane, "v_node_window", None)
+                if u_win is not None and v_win is not None:
+                    bc = self.boundary_conditions.get(key)
+                    if hasattr(bc, "set_port_windows"):
+                        from magnelio.ports._modal.factory import (  # noqa: PLC0415
+                            validate_absorbing_face_window,
+                        )
+
+                        n_cells = (Nx, Ny, Nz)
+                        whole = (
+                            u_win[0] == 0
+                            and u_win[1] == n_cells[int(face.u_axis)]
+                            and v_win[0] == 0
+                            and v_win[1] == n_cells[int(face.v_axis)]
+                        )
+                        validate_absorbing_face_window(
+                            face, plane, mesh, whole_face=whole, absorbing=True
+                        )
+                    port_windows.setdefault(key, []).append(
+                        {
+                            int(face.u_axis): tuple(int(i) for i in u_win),
+                            int(face.v_axis): tuple(int(i) for i in v_win),
+                        }
+                    )
+
         # Initialize CPML and pass PEC mask for PEC-in-PML stability.
         # xp is forwarded so CPML state lives on this solver's backend
         # (the module-global get_xp() is no longer consulted here).
-        for bc in self.boundary_conditions.values():
+        for face_key, bc in self.boundary_conditions.items():
             if hasattr(bc, "initialize"):
                 bc.initialize(dt, xp=xp, dtype=real_dtype)
             if hasattr(bc, "set_pec_mask"):
@@ -603,6 +644,8 @@ class FITTimeDomainSolver:
                     material_library=mesh.material_library,
                     xp=xp,
                 )
+            if hasattr(bc, "set_port_windows") and port_windows.get(face_key):
+                bc.set_port_windows(port_windows[face_key], xp=xp)
 
         # Attach sources (TF/SF plane wave needs solver coefficients)
         for src in self.sources:
@@ -618,17 +661,6 @@ class FITTimeDomainSolver:
         for mon in self.monitors:
             if hasattr(mon, "attach"):
                 mon.attach(mesh)
-
-        # Determine which faces host a modal port (DD-021).
-        # PEC is skipped on these faces; the modal operator's
-        # ``update_e`` writes the field there from the mode expansion.
-        self._port_faces = set()
-        for op in self.ports:
-            face = getattr(getattr(op, "plane", None), "face", None)
-            value = getattr(face, "value", None)
-            if isinstance(value, str):
-                # BoxFace values are "x_min" etc.; BC keys are "xmin".
-                self._port_faces.add(value.replace("_", ""))
 
     _ALL_FACES = frozenset({"xmin", "xmax", "ymin", "ymax", "zmin", "zmax"})
 

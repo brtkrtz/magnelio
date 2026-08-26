@@ -11,6 +11,12 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- Waveguide ports may sit in absorbing (CPML) faces: a window port in
+  the cross-section of a conductor-enclosed guide that reaches the
+  wall — the neck of a horn, a coax entering an open box.  The
+  absorber is switched off behind the window, the far-field monitor
+  leaves the feed guide out of its Huygens surface, and a whole-face
+  port or a window in free space is refused with guidance.
 - `geo.Surface.parametric(fn, u=, v=, samples=)` samples a parametric
   map (u, v) → (x, y, z) into a curved sheet — a paraboloid dish, a
   hyperboloid sub-reflector, a shaped surface given by a formula or a
@@ -28,6 +34,19 @@ major version is 0, minor releases may change the public API.
 - Every 3D view in the tutorials and how-to guides now has an
   "Interactive Scene" tab next to the screenshot: the same scene,
   rotatable and zoomable in the browser.
+
+### Fixed
+
+- A conductor touching an absorbing (CPML) face lost its PEC surface
+  mask inside the absorber layer on conformal meshes (the classifier
+  saw the solids end at the bounding box); the layer now carries the
+  interior cross-section exactly.
+- Far-field and frequency monitors of a run fed by a TE/TM waveguide
+  port are now normalised to the incident power the run launched at
+  each frequency rather than to the excitation waveform; gain and
+  radiated power of horn-type feeds no longer carry the shape of the
+  mode's wave impedance.  Lumped, TEM and quasi-TEM feeds are
+  unchanged.
 
 ### Changed
 

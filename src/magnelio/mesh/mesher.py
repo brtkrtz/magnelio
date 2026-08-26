@@ -1304,6 +1304,22 @@ class Mesh:
             # PEC mask from the sub-cell classifier (no post-hoc correction)
             pec_mask = edge_material_data.pec_mask
 
+            # Step 3d (DD-198): the classifier saw the B-rep solids, which
+            # end at the nominal bbox — inside the PML extension every
+            # edge and face read as free space and a conductor touching
+            # the absorbing wall lost its PEC mask there (KB-029).  Mirror
+            # step 3b: the extension slabs take the first fully interior
+            # slab's sub-cell data, the same translation-invariant
+            # continuation the material ids already have.
+            if _pml_cells:
+                from magnelio.mesh._pml_extend import (  # noqa: PLC0415
+                    extend_subcell_data_into_pml,
+                )
+
+                extend_subcell_data_into_pml(
+                    pec_mask, edge_material_data, face_material_data, grid, _pml_cells
+                )
+
         # Step 4: Build PEC masks (staircase fallback if no conformal)
         if pec_mask is None:
             pec_mask = build_pec_mask_faces(grid, material_id, material_library)

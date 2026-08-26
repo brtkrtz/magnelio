@@ -13683,3 +13683,138 @@ without trimming), thin-sheet physics, curved `revolved()`/`swept()`.
 `tests/unit/test_geo_surface.py` (new), `tests/unit/test_scaling.py`
 (zoo), `tests/unit/test_geometry.py`, `docs/methods/geometry.md` (new),
 `docs/methods/index.md`, `CHANGELOG.md`.
+
+## DD-198 — Waveguide-port windows in absorbing faces
+
+**Status:** Implemented 2026-08-26, on the `feat/port-window-cpml` branch.
+
+**Problem.**  A radiating structure fed through a guide — a horn's
+neck, a coax entering an open box — puts its port on a wall that must
+otherwise absorb.  Nothing refused a `PortWaveguide` on a CPML face,
+and the result was silently wrong in three independent ways.  (1) The
+mesher grows a CPML face outward by `n_pml` cells and continues the
+cell materials (step 3b), so the port sits at the outer end of the
+absorber; the CPML `update_E/update_H` kept running there (only
+`apply_E/H` are skipped on port faces, DD-021), the guided wave was
+absorbed between the domain and the port, and the DTBC/Mur assumption
+of a lossless uniform continuation behind the port plane was violated
+— the slab certificate (`_port_chain_slab_defect`) checks masses only
+and was blind to it.  (2) On the conformal path the sub-cell
+classifier works against the B-rep solids, which end at the nominal
+bbox: inside the extension the guide's walls read as free space and
+the Cat-2 un-mask dropped their PEC mask (KB-029; measured 156 of 284
+Ey PEC edges left in slab 0 of a 20 × 10 mm tube on a 2 mm grid) — a
+defect for *every* conductor touching an absorbing face, ports or
+not.  (3) `MonitorFarField` cut the guide with its Huygens box and
+integrated the guided wave as if it were an external source.  A
+fourth defect surfaced while measuring: monitors fed by a TE/TM port
+were normalised to the excitation waveform, not to the launched
+incident power (KB-030; `P_rad/P_acc` = 0.77 with an exact image-plane
+flange).
+
+**Decision.**  Four bounded pieces, no change to the port plane's
+position or to the port-face flatten.
+
+*Step 0 — mesher.*  `mesh/_pml_extend.py::extend_subcell_data_into_pml`
+mirrors step 3b for the sub-cell data (step 3d, before the wall masks):
+the extension slabs take the first fully interior slab — node-sampled
+quantities the plane one cell inside the interface (the interface
+plane's own dual cell straddles the extension), cell-sampled ones the
+first interior cell — for the PEC mask, `EdgeMaterialData` and
+`FaceMaterialData`; enlarged-cell donor links are re-pointed within the
+copied slab and dropped where they crossed slabs.  Meshes without a
+conductor at an absorbing face are bit-identical (their slabs were
+already equal).
+
+*Step 1 — absorber.*  `CPMLBoundary.set_port_windows(windows)` builds
+per-component stretching coefficients `_c_E1/_c_E2/_c_H1/_c_H2` and
+`_ck_*` that equal the face's 1D profile outside the window footprints
+and are zero inside them over the whole layer depth — literally
+σ = 0, κ = 1 in those columns (`c = 0` keeps ψ ≡ 0, `ck = 0` removes
+the κ term); the twelve update sites read the per-component arrays,
+the default is the old broadcast (bit-identical without windows, no
+extra multiply, CUDA-graph neutral).  Footprint rule per tangential
+dimension: cell-sampled → `lo:hi`, node-sampled → `lo:hi+1` (the ring
+included — it is conductor).  `FITTimeDomainSolver.setup` collects the
+windows of the modal operators per face and wires them.
+
+*Step 2 — validation.*  `validate_absorbing_face_window` (factory),
+enforced where port and absorber meet — `FITTimeDomainSolver.setup`
+for every modal operator on a CPML face, and `resolve_declarative_port`
+for an early message on the `PortWaveguide` the user wrote: on a CPML
+face a modal port needs a window, and every edge of the window ring
+must be a PEC edge of the mesh on the port slab — the enclosure rule.
+A port-only mode solve at the spec level is not gated: an open
+cross-section with CPML side faces is a legitimate 2D problem (the
+symmetry-declaration tests use it as a mesher device).  Physics: a port in an
+absorbing wall is meaningful only as a shielded guide end, and the
+lateral σ edge of the switch-off then falls on metal.  The 2D mode
+solve needs no change: the Dirichlet ring comes from the material
+mask (correct after step 0); `resolve_port_edge_pec` still says
+"Neumann" for interior ring edges of a non-PEC face, which is inert.
+
+*Step 3 — far field.*  The analysis hands the port windows on CPML
+faces to `MonitorFarField` (`_wire_far_field_ports`, runtime wiring).
+The face a feed crosses is sampled at the absorber interface (margin
+0 — every cell of guide outside the box carries wall currents the
+surface cannot see); patches inside a footprint and patches whose two
+sampled cells are both conductor get zero area (`_BoxFace.keep`,
+carried in the dump).  The remaining approximation — the outer-wall
+currents inside the absorber — is the usual one for waveguide-fed
+radiators.
+
+*Step 4 — incident normalisation (KB-030).*  `compute_s_parameters(
+return_incident=True)` hands back the separated incident wave `a(f)`
+of the excited channel; `incident_amplitude_ratio` forms
+`|a(f)|/|W(f)|` and the analysis (in-RAM run) and the project reader
+(streamed/resumed run, alongside the S-matrix it derives) wire it into
+far-field and frequency monitors as a second divisor.  Gated on the
+excited channel's `mode_type ∈ {TE, TM}`: for lumped, TEM and QTEM
+channels the ratio is unity by construction and nothing is wired, so
+their monitors stay bit-identical (the store round-trip tests at
+1e-10 pin that).  The recorder reads waves at full-model scale
+(DD-155), so no symmetry factor enters.
+
+**Measured** (`tests/integration/test_port_window_cpml.py`, PEC tube
+20 × 10 mm bore, 3 mm walls, 2 mm grid, 8.6–11.8 GHz).  Through-tube
+with the CPML-face port and a PEC-face port: |S21| > −0.5 dB, |S11| <
+−40 dB in band, TE10 cut-off within 2 % of c/2a — without step 1 the
+absorber eats S21, without step 0 the cut-off and S11 are off.
+Open-ended tube in a CPML box: |S11| −13.5 dB, `P_rad/P_acc` 0.97 at
+10 GHz (0.79 before step 4, 0.79 → 0.79 with the interface sampling
+alone — the deficit was the normalisation); flanged variant (PEC face)
+0.91, the image plane having a hole where the port window is; S11 of
+the two variants within 3 dB.
+
+**Consequences.**  Existing CPML runs without a conductor at the face
+are unchanged; runs *with* one (a ground plane into the absorber)
+change their absorber-slab masks — for the better.  TE/TM-fed monitor
+results change by the impedance ratio; everything else is bit-identical.
+`CPMLBoundary.apply` (the documented PEC backing) is still never
+called by the solver — the outer plane of an absorbing face runs in the
+free stencil; unchanged here, noted for the record.  `_resolve_bc`
+builds the CPML with the declared thickness (8) while the mesher may
+have appended more cells (`mesh.pml_cells`); the footprint follows the
+CPML's own `_n_pml`, the extra cells are lossless continuation —
+harmless.  Not in scope: curved guide necks (the window snaps to grid
+nodes and the enclosure rule refuses when a wall falls between nodes —
+the message says so), thin sheets and thin wires (not continued into
+the absorber), the band pipeline's separate spectrum path.
+
+**Files:** `src/magnelio/mesh/_pml_extend.py` (new),
+`src/magnelio/mesh/mesher.py` (step 3d), `src/magnelio/boundaries/cpml.py`
+(`set_port_windows`, per-component coefficients),
+`src/magnelio/solver/fit_td.py` (wiring), `src/magnelio/ports/_modal/factory.py`
+(`validate_absorbing_face_window`), `src/magnelio/ports/declarative.py`,
+`src/magnelio/monitors/far_field.py` (`keep`, footprints, incident
+ratio), `src/magnelio/monitors/field_frequency.py`,
+`src/magnelio/post/modal_sparameters.py` (`return_incident`),
+`src/magnelio/analysis/scattering_td.py` (`incident_amplitude_ratio`,
+`_wire_far_field_ports`, `_wire_incident_amplitude`),
+`src/magnelio/io/project.py` (dump keys, reader ratio),
+`tests/unit/test_pml_extension.py`, `tests/unit/test_boundaries.py`,
+`tests/unit/test_monitor_far_field.py`,
+`tests/integration/test_port_window_cpml.py`, `docs/methods/ports.md`,
+`docs/methods/boundaries.md`, `docs/methods/far-field.md`,
+`docs/methods/sources-monitors.md`, `known-bugs.md` (KB-029, KB-030),
+`CHANGELOG.md`.

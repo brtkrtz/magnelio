@@ -19,6 +19,33 @@ dedicated DD keep their record here.
 **Four entries are open as of 2026-08-26: KB-022, KB-023, KB-027 and
 KB-028.**  Everything else is struck through and resolved.
 
+## KB-030: ~~Monitors fed by a TE/TM port were normalised to the waveform, not to the incident power~~ — Resolved (DD-198, 2026-08-26)
+
+The far-field and frequency monitors divided their bins by the
+excitation waveform's spectrum, which equals the incident power wave
+only for feeds with a frequency-flat wave impedance (lumped, TEM,
+quasi-TEM).  A TE/TM port launches ``|a(f)|² = |W(f)|² Z(f_calc)/Z(f)``
+per unit waveform, so gain and radiated power carried the shape of the
+mode impedance: an open-ended 20 × 10 mm tube at 10 GHz reported
+``P_rad / P_acc = 0.77`` with a PEC flange and 0.82 in an absorbing
+box.  DD-198 wires the ratio ``|a(f)| / |W(f)|`` of the separated
+incident wave into the monitors (0.91 / 0.97 afterwards, the remainder
+being the feed-guide approximation of the far-field chapter); feeds
+with flat impedance are untouched by construction.
+
+## KB-029: ~~A conductor touching an absorbing face lost its PEC mask inside the absorber~~ — Resolved (DD-198, 2026-08-26)
+
+The mesher continues the cell materials into the CPML extension slabs
+(step 3b), but the conformal classifier works against the B-rep solids,
+which end at the nominal bounding box: inside the extension every edge
+read as free space, and the Cat-2 un-mask dropped the PEC mask of a
+conductor's surface exactly in the slabs the absorber occupies
+(measured on a 20 × 10 mm PEC tube, 2 mm grid: 156 of 284 Ey PEC edges
+left in slab 0).  Staircase meshes and ``background="pec"`` (DD-049)
+were correct.  Step 3d now copies the first fully interior slab's
+sub-cell data into the extension — the same translation-invariant
+continuation the materials already had.
+
 ## KB-028: Four conformal reference tests fail since the DD-191 / DD-192 mesh changes — Open (2026-08-26)
 
 Found while running the full integration suite for DD-196 (both

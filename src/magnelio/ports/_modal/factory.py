@@ -741,6 +741,64 @@ def _complement_absorber_arrays(
     )
 
 
+def validate_absorbing_face_window(
+    face, plane: PortPlane, mesh: Mesh, *, whole_face: bool, absorbing: bool | None = None
+) -> None:
+    """Reject a modal port on an absorbing face unless it is a guide end.
+
+    A port embedded in a CPML face is meaningful only as the end of a
+    conductor-enclosed guide — the waveguide neck of a horn, a coax
+    entering the box — because the absorber is switched off in the
+    columns behind the window (DD-198) and the lateral edge of that
+    switch-off must fall on conductor, not on free space, where it would
+    scatter.  Two rules follow: the port needs a window, and every edge
+    of the window ring must be a PEC edge of the mesh on the port slab.
+    Faces that are not absorbing pass unchanged.
+
+    Enforced where port and absorber meet — the time-domain solver's
+    setup and the declarative ``PortWaveguide`` resolution; a port-only
+    mode solve on an open cross-section (spec level) is not affected.
+    *absorbing* may be given by a caller that already knows the face's
+    boundary type; otherwise it is read from the mesh.
+    """
+    from magnelio.boundaries.boundary_conditions import bc_type_entries  # noqa: PLC0415
+
+    key = face.value.replace("_", "")
+    if absorbing is None:
+        bc = getattr(mesh, "boundary_conditions", None)
+        if bc is None:
+            return
+        try:
+            absorbing = bc_type_entries(bc).get(key) == "CPML"
+        except (TypeError, ValueError):
+            return
+    if not absorbing:
+        return
+    if whole_face:
+        raise ValueError(
+            f"port on the absorbing (CPML) face {key!r} covers the whole face. "
+            f"A waveguide port in an absorbing wall must be the end of a "
+            f"conductor-enclosed guide: give the port a window (corners=) "
+            f"that matches the guide's cross-section, or declare the face "
+            f"PEC."
+        )
+    ring = build_port_edge_pec_mask(
+        plane, {"u_min": True, "u_max": True, "v_min": True, "v_max": True}
+    )
+    conductor = _flat_pec_on(mesh, np.concatenate([plane.e_u_indices, plane.e_v_indices]))
+    missing = int(np.count_nonzero(ring & ~conductor))
+    if missing:
+        raise ValueError(
+            f"port window on the absorbing (CPML) face {key!r} is not enclosed "
+            f"by conductor: {missing} of {int(ring.sum())} window-ring edges "
+            f"lie in free space.  The absorber is switched off behind the "
+            f"window, so its lateral edge must fall on the guide's walls — "
+            f"align the window corners with the conductor walls that reach "
+            f"the face (the window snaps to grid nodes; refine the mesh if "
+            f"a wall falls between nodes), or declare the face PEC."
+        )
+
+
 def _flat_pec_on(mesh: Mesh, indices: np.ndarray) -> np.ndarray:
     """Slice ``mesh.pec_mask_edges`` (flat-E ordering) at ``indices``."""
     Nx, Ny, Nz = mesh.Nx, mesh.Ny, mesh.Nz

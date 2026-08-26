@@ -59,6 +59,7 @@ class _BoxFace:
     c2: np.ndarray
     w1: np.ndarray  # patch widths along t1 [m]
     w2: np.ndarray
+    keep: np.ndarray | None = None  # (c1, c2) patch weights: 0 = excluded
 
 
 @dataclass
@@ -77,6 +78,16 @@ class MonitorFarField:
     complete it.  For a plain PEC/PMC boundary the pattern is masked
     to the physical half-space; a symmetry plane keeps the full
     sphere.
+
+    A feed guide that crosses the box — a waveguide port in an
+    absorbing face — is handled the way a waveguide-fed antenna is
+    usually treated: the box face it crosses is sampled at the
+    absorber interface, the patches inside the guide (no external
+    source) and inside conductors are left out, and the currents on
+    the guide's outer wall beyond the box, which the absorber removes,
+    are the approximation.  The normalisation is to the incident power
+    the run actually launched at each frequency, which for a TE/TM feed
+    differs from the excitation waveform by the mode's wave impedance.
 
     Parameters
     ----------
@@ -102,8 +113,17 @@ class MonitorFarField:
     _grid: object = field(default=None, repr=False, init=False)
     _faces: list = field(default_factory=list, repr=False, init=False)
     _image_planes: list = field(default_factory=list, repr=False, init=False)
+    # Footprints of waveguide-port windows on absorbing faces, per face
+    # name: ``[{axis: (lo, hi)}]`` inclusive node windows (DD-198).
+    # Set by the analysis before attach; the guide interior is no
+    # external source and is left out of the Huygens surface.
+    _port_footprints: dict = field(default_factory=dict, repr=False, init=False)
     _acc: dict = field(default_factory=dict, repr=False, init=False)
     _source_spectrum: Optional[np.ndarray] = field(default=None, repr=False, init=False)
+    # |a(f)| / |W(f)|: the incident power wave the run launched per unit
+    # excitation waveform, on the monitor frequencies (1 where the
+    # excited channel's impedance is frequency-flat).  Runtime wiring.
+    _incident_amplitude: Optional[np.ndarray] = field(default=None, repr=False, init=False)
     _accepted_power: Optional[np.ndarray] = field(default=None, repr=False, init=False)
 
     def __post_init__(self) -> None:
@@ -150,7 +170,13 @@ class MonitorFarField:
                 # Absorber depth: mesher-extended cells, or the declared
                 # in-domain thickness on a hand-built grid.
                 n_abs = pml.get(face) or cpml_thickness_of(bc)
-                idx = n_abs + self.margin_cells
+                # A face that a feed guide crosses (DD-198) is sampled at
+                # the absorber interface itself: every cell of guide
+                # outside the box carries wall currents the surface
+                # cannot see, and inside the absorber those currents die
+                # with the profile.
+                margin = 0 if face in self._port_footprints else self.margin_cells
+                idx = n_abs + margin
                 if at_low:
                     lo_n[axis] = idx
                 else:
@@ -220,12 +246,51 @@ class MonitorFarField:
                 )
             )
 
+        self._exclude_metal_and_feeds(mesh, lo_n)
+
         self._acc = {}
         for bf in self._faces:
             shape = (bf.c1.size, bf.c2.size)
             self._acc[bf.name] = {
                 comp: DFTAccumulator(self.freqs, shape) for comp in _TANGENTIALS[bf.axis]
             }
+
+    def _exclude_metal_and_feeds(self, mesh, lo_n) -> None:
+        """Zero the patch weights inside conductors and feed guides.
+
+        A Huygens face cuts through whatever the model puts there.  A
+        patch whose sampled cells are perfect conductor on both sides
+        of the face carries no field and no source; a patch inside the
+        footprint of a waveguide-port window on an absorbing face
+        (DD-198) samples the guided wave of the feed, which is not an
+        external source — the equivalent surface is closed by the
+        guide's outer wall instead, whose currents beyond the box the
+        absorber removes.  Both are left out; the remaining surface is
+        the usual approximation for a waveguide-fed radiator.
+        """
+        material_id = getattr(mesh, "material_id", None)
+        library = getattr(mesh, "material_library", None) or {}
+        pec_ids = [mid for mid, mat in library.items() if getattr(mat, "is_pec", False)]
+        for bf in self._faces:
+            keep = np.ones((bf.c1.size, bf.c2.size), dtype=float)
+            t1, t2 = bf.tangent_axes
+            if material_id is not None and pec_ids:
+                inner = list(bf.slab)
+                outer = list(bf.slab)
+                nn = bf.slab[bf.axis].stop - 1
+                inner[bf.axis] = nn - 1
+                outer[bf.axis] = nn
+                pec_in = np.isin(material_id[tuple(inner)], pec_ids)
+                pec_out = np.isin(material_id[tuple(outer)], pec_ids)
+                keep[pec_in & pec_out] = 0.0
+            for win in self._port_footprints.get(bf.name, ()):
+                sl = [slice(None), slice(None)]
+                for pos, t in enumerate((t1, t2)):
+                    if t in win:
+                        lo, hi = (int(v) for v in win[t])
+                        sl[pos] = slice(max(lo - lo_n[t], 0), max(hi - lo_n[t], 0))
+                keep[tuple(sl)] = 0.0
+            bf.keep = keep if (keep < 1.0).any() else None
 
     def record(self, fields, n: int, t: float, dt: float) -> None:
         """Accumulate this step's surface DFT contribution.
@@ -273,6 +338,14 @@ class MonitorFarField:
         """Whether the 1 W renormalization has been applied."""
         return self._source_spectrum is not None
 
+    def _set_incident_amplitude(self, f_axis, ratio) -> None:
+        # Runtime wiring by the analysis: |a(f)| / |W(f)| of the excited
+        # channel, so the per-1-W normalisation refers to the incident
+        # power actually launched at each frequency (TE/TM ports).
+        self._incident_amplitude = np.interp(
+            self.freqs, np.asarray(f_axis, dtype=float), np.asarray(ratio, dtype=float)
+        )
+
     def _set_accepted_power(self, f_axis, accepted) -> None:
         # Runtime wiring by the analysis (not part of the recipe): the
         # run's accepted-power curve, interpolated onto the monitor
@@ -316,11 +389,13 @@ class MonitorFarField:
                 "call renormalize(reference_signal) for a hand-driven run."
             )
         spectrum = self._source_spectrum[idx : idx + 1]
+        incident = 1.0 if self._incident_amplitude is None else float(self._incident_amplitude[idx])
         sets = []
         for bf in self._faces:
             comps = _TANGENTIALS[bf.axis]
             vals = {
                 c: divide_by_spectrum(self._acc[bf.name][c].result[idx : idx + 1], spectrum)[0]
+                / incident
                 for c in comps
             }
             g1, g2 = np.meshgrid(bf.c1, bf.c2, indexing="ij")
@@ -331,7 +406,10 @@ class MonitorFarField:
             centers[:, bf.tangent_axes[1]] = g2.ravel()
             normals = np.zeros((n_p, 3))
             normals[:, bf.axis] = bf.sign
-            areas = np.outer(bf.w1, bf.w2).ravel()
+            areas = np.outer(bf.w1, bf.w2)
+            if bf.keep is not None:
+                areas = areas * bf.keep
+            areas = areas.ravel()
             E = np.zeros((n_p, 3), dtype=complex)
             H = np.zeros((n_p, 3), dtype=complex)
             E[:, bf.tangent_axes[0]] = vals[comps[0]].ravel()
@@ -421,6 +499,7 @@ class MonitorFarField:
                     "c2": np.asarray(bf.c2),
                     "w1": np.asarray(bf.w1),
                     "w2": np.asarray(bf.w2),
+                    "keep": (np.ones((bf.c1.size, bf.c2.size)) if bf.keep is None else bf.keep),
                     "bins": {
                         comp: np.asarray(self._acc[bf.name][comp].result)
                         for comp in _TANGENTIALS[bf.axis]
@@ -448,6 +527,8 @@ class MonitorFarField:
             dump["source_spectrum"] = np.asarray(self._source_spectrum)
         if self._accepted_power is not None:
             dump["accepted_power"] = np.asarray(self._accepted_power)
+        if self._incident_amplitude is not None:
+            dump["incident_amplitude"] = np.asarray(self._incident_amplitude)
         return dump
 
     @classmethod
@@ -483,6 +564,7 @@ class MonitorFarField:
                 c2=c2,
                 w1=np.asarray(saved["w1"], dtype=float),
                 w2=np.asarray(saved["w2"], dtype=float),
+                keep=(None if "keep" not in saved else np.asarray(saved["keep"], dtype=float)),
             )
             mon._faces.append(bf)
             mon._acc[name] = {}
@@ -504,6 +586,8 @@ class MonitorFarField:
             mon._source_spectrum = np.asarray(dump["source_spectrum"])
         if "accepted_power" in dump:
             mon._accepted_power = np.asarray(dump["accepted_power"])
+        if "incident_amplitude" in dump:
+            mon._incident_amplitude = np.asarray(dump["incident_amplitude"])
         return mon
 
     def load_result_dump(self, dump: dict) -> None:
@@ -520,6 +604,8 @@ class MonitorFarField:
             self._source_spectrum = np.asarray(dump["source_spectrum"])
         if "accepted_power" in dump:
             self._accepted_power = np.asarray(dump["accepted_power"])
+        if "incident_amplitude" in dump:
+            self._incident_amplitude = np.asarray(dump["incident_amplitude"])
 
     def __repr__(self) -> str:
         n_freqs = self.freqs.size

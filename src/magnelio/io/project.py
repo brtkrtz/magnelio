@@ -1733,7 +1733,7 @@ class _LoadedFreqMonitor:
     reuse its plotting machinery.
     """
 
-    def __init__(self, run_dir: Path, name: str, reference=None, grid=None) -> None:
+    def __init__(self, run_dir: Path, name: str, reference=None, grid=None, incident=None) -> None:
         import h5py  # noqa: PLC0415
 
         from magnelio.monitors.base import _corners_from_array  # noqa: PLC0415
@@ -1747,7 +1747,10 @@ class _LoadedFreqMonitor:
         # Signal1D, or a callable returning one — the reader stays lazy so
         # listing a project's monitors costs no run-results read.
         self._reference = reference
+        self._incident = incident
         self._spectrum = None
+        self._incident_ratio = None
+        self._incident_loaded = False
         with h5py.File(self._run_dir / "fields_freq.h5", "r") as f:
             g = f[name]
             self._components = json.loads(g.attrs["components"])
@@ -1815,7 +1818,39 @@ class _LoadedFreqMonitor:
                 f"reference, so its DFT bins cannot be expressed as fields "
                 f"per 1 W CW.  Read .data_raw for the raw bins."
             )
-        return self._squeeze_spatial(divide_by_spectrum(self._read_bins(comp), src))
+        out = divide_by_spectrum(self._read_bins(comp), src)
+        ratio = self._incident_amplitude()
+        if ratio is not None:
+            out = out / np.asarray(ratio, dtype=float).reshape(-1, *([1] * (out.ndim - 1)))
+        return self._squeeze_spatial(out)
+
+    def _incident_amplitude(self) -> np.ndarray | None:
+        """|a(f)| / |W(f)| on the monitor frequencies (DD-198), or None.
+
+        Read from the file when the run wrote it, else derived from the
+        stored port signals through the run's incident-ratio callable.
+        """
+        import h5py  # noqa: PLC0415
+
+        if self._incident_loaded:
+            return self._incident_ratio
+        self._incident_loaded = True
+        with h5py.File(self._run_dir / "fields_freq.h5", "r") as f:
+            if "incident_amplitude" in f[self.name]:
+                self._incident_ratio = np.asarray(
+                    f[self.name]["incident_amplitude"][()], dtype=float
+                )
+                return self._incident_ratio
+        if self._incident is not None:
+            ratio = self._incident()
+            if ratio is not None:
+                f_axis, values = ratio
+                self._incident_ratio = np.interp(
+                    np.asarray(self.freqs, dtype=float),
+                    np.asarray(f_axis, dtype=float),
+                    np.asarray(values, dtype=float),
+                )
+        return self._incident_ratio
 
     @property
     def data(self) -> dict:
@@ -1856,17 +1891,23 @@ class _LoadedFreqMonitor:
             ndim=ndim,
         )
         mon._accumulators = {}
+        incident = None
         with h5py.File(self._run_dir / "fields_freq.h5", "r") as f:
             bg = f[self.name]["bins"]
             for comp in self._components:
                 acc = DFTAccumulator(self.freqs, (nx, ny, nz))
                 acc._bins[...] = bg[comp][()]
                 mon._accumulators[comp] = acc
+            if "incident_amplitude" in f[self.name]:
+                incident = np.asarray(f[self.name]["incident_amplitude"][()], dtype=float)
         mon._mirrors = self._mirrors
         mon._grid = self._grid
         # Carry the run's reference across, or the hydrated monitor would
         # refuse to hand out data it cannot put a unit on.
         mon._source_spectrum = self._source_spectrum()
+        ratio = incident if incident is not None else self._incident_amplitude()
+        if ratio is not None:
+            mon._incident_amplitude = np.asarray(ratio, dtype=float)
         return mon
 
     def plot(self, *args, **kwargs):
@@ -2002,6 +2043,10 @@ def _write_freq_result_h5(path, dumps: dict, n_completed: int) -> None:
                 g.attrs["symmetry"] = json.dumps(dump["symmetry"])
             for key in ("freqs", "corners", "grid_x", "grid_y", "grid_z"):
                 g.create_dataset(key, data=np.asarray(dump[key]))
+            # Schema-additive (DD-198): the launched incident wave per
+            # unit excitation waveform; absent means 1 (lumped/TEM feed).
+            if dump.get("incident_amplitude") is not None:
+                g.create_dataset("incident_amplitude", data=np.asarray(dump["incident_amplitude"]))
             bg = g.create_group("bins")
             for comp, arr in dump["bins"].items():
                 bg.create_dataset(comp, data=np.asarray(arr))
@@ -2147,7 +2192,7 @@ def _write_far_field_h5(path, dumps: dict, n_completed: int) -> None:
             g.attrs["margin_cells"] = int(dump["margin_cells"])
             g.attrs["image_planes"] = json.dumps(dump["image_planes"])
             g.create_dataset("freqs", data=np.asarray(dump["freqs"]))
-            for key in ("source_spectrum", "accepted_power"):
+            for key in ("source_spectrum", "accepted_power", "incident_amplitude"):
                 if key in dump:
                     g.create_dataset(key, data=np.asarray(dump[key]))
             fg = g.create_group("faces")
@@ -2177,7 +2222,7 @@ def _read_far_field_dump(run_dir: Path, name: str) -> dict:
             "image_planes": json.loads(g.attrs["image_planes"]),
             "faces": [],
         }
-        for key in ("source_spectrum", "accepted_power"):
+        for key in ("source_spectrum", "accepted_power", "incident_amplitude"):
             if key in g:
                 dump[key] = g[key][()]
         for face_name, sg in g["faces"].items():
@@ -2216,10 +2261,11 @@ class _LoadedFarFieldMonitor:
     :attr:`f`, :meth:`result` and the pattern plots.
     """
 
-    def __init__(self, run_dir: Path, name: str, reference=None):
+    def __init__(self, run_dir: Path, name: str, reference=None, incident=None):
         self._run_dir = Path(run_dir)
         self.name = name
         self._reference = reference
+        self._incident = incident
         self._monitor = None
 
     def _hydrate(self):
@@ -2234,6 +2280,12 @@ class _LoadedFarFieldMonitor:
                 # supplies the divisor on read (the _LoadedFreqMonitor
                 # pattern).
                 self._monitor.renormalize(self._reference())
+            if self._monitor._incident_amplitude is None and self._incident is not None:
+                # DD-198: the launched incident wave per unit waveform,
+                # derived from the stored port signals like the S-matrix.
+                ratio = self._incident()
+                if ratio is not None:
+                    self._monitor._set_incident_amplitude(*ratio)
         return self._monitor
 
     @property
@@ -2969,6 +3021,7 @@ class Project(ScatteringResultMixin):
                 name,
                 reference=lambda rn=run_name: self._load_run(rn)["reference"],
                 grid=self.grid,
+                incident=lambda rn=run_name: self._incident_ratio(rn),
             )
         for name in _list_run_wall_loss(run_dir):
             out[name] = _LoadedMonitorWallLoss(run_dir, name)
@@ -2977,8 +3030,50 @@ class Project(ScatteringResultMixin):
                 run_dir,
                 name,
                 reference=lambda rn=run_name: self._load_run(rn)["reference"],
+                incident=lambda rn=run_name: self._incident_ratio(rn),
             )
         return out
+
+    def _incident_ratio(self, run_name: str):
+        """``(f_axis, |a(f)| / |W(f)|)`` of a run's excited channel (DD-198).
+
+        The incident power wave the run launched per unit excitation
+        waveform, derived from the stored port signals exactly as the
+        S-matrix is; ``None`` when the run has no port signals.
+        """
+        from magnelio.post.modal_sparameters import (  # noqa: PLC0415
+            compute_s_parameters,
+        )
+
+        cache = self.__dict__.setdefault("_incident_cache", {})
+        if run_name in cache:
+            return cache[run_name]
+        d = self._load_run(run_name)
+        signals = d.get("signals")
+        if not signals or d.get("reference") is None:
+            cache[run_name] = None
+            return None
+        f_axis = np.asarray(d["f_axis"], dtype=float)
+        _, a_inc = compute_s_parameters(
+            recorder_signals=signals,
+            port_modes=d["port_modes"],
+            excited=d["excited"],
+            reference_signal=d["reference"],
+            f_axis=f_axis,
+            taper_signals=bool(self.runs.get(run_name, {}).get("taper_signals", False)),
+            port_normal_dx=d["port_normal_dx"],
+            port_line_params=d["port_line_params"],
+            return_incident=True,
+        )
+        from magnelio.analysis.scattering_td import (  # noqa: PLC0415
+            incident_amplitude_ratio,
+        )
+
+        ratio = incident_amplitude_ratio(
+            d["reference"], f_axis, a_inc, d["port_modes"], d["excited"]
+        )
+        cache[run_name] = None if ratio is None else (f_axis, ratio)
+        return cache[run_name]
 
     @property
     def monitors(self) -> dict:

@@ -210,3 +210,45 @@ class TestPersistence:
                 np.testing.assert_allclose(
                     second._acc[bf_name][comp].result, acc.result, rtol=1e-12
                 )
+
+
+class TestFeedFootprintsAndMetal:
+    """DD-198: patches inside feed guides and conductors are left out."""
+
+    def test_footprint_face_sits_at_the_absorber_interface_and_is_masked(self):
+        mon = MonitorFarField(freqs=[1e9], margin_cells=1)
+        mon._port_footprints = {"xmin": [{1: (3, 6), 2: (2, 5)}]}
+        mon.attach(_mesh(pml_cells=2))
+        xmin = next(bf for bf in mon._faces if bf.name == "xmin")
+        assert xmin.plane == pytest.approx(2 * H)  # no margin on the feed face
+        other = next(bf for bf in mon._faces if bf.name == "xmax")
+        assert other.plane == pytest.approx((N - 3) * H)
+        assert xmin.keep is not None
+        # The box's tangential cell range starts at lo_n = 3 (2 + margin);
+        # the window cells 3..5 (y) x 2..4 (z) map to local 0..2 x -1..1.
+        assert np.all(xmin.keep[0:3, 0:2] == 0.0)
+        assert np.all(xmin.keep[3:, :] == 1.0)
+        assert other.keep is None
+
+    def test_masked_patches_carry_no_area(self):
+        mon = MonitorFarField(freqs=[1e9], margin_cells=1)
+        mon._port_footprints = {"xmin": [{1: (3, 6), 2: (2, 5)}]}
+        mon.attach(_mesh(pml_cells=2))
+        mon.renormalize(Signal1D(t=np.arange(4) * 1e-12, values=np.ones(4), dt=1e-12))
+        sets = mon._patch_sets(0)
+        xmin = next(bf for bf in mon._faces if bf.name == "xmin")
+        idx = [bf.name for bf in mon._faces].index("xmin")
+        areas = sets[idx].areas.reshape(xmin.keep.shape)
+        assert np.all(areas[xmin.keep == 0.0] == 0.0)
+        assert np.all(areas[xmin.keep == 1.0] > 0.0)
+
+    def test_dump_round_trip_keeps_the_weights_and_the_incident_ratio(self):
+        mon = MonitorFarField(freqs=[1e9, 2e9], margin_cells=1)
+        mon._port_footprints = {"xmin": [{1: (3, 6), 2: (2, 5)}]}
+        mon.attach(_mesh(pml_cells=2))
+        mon._set_incident_amplitude([0.5e9, 3e9], [0.8, 1.2])
+        back = MonitorFarField.from_result_dump(mon.result_dump())
+        a = next(bf for bf in mon._faces if bf.name == "xmin")
+        b = next(bf for bf in back._faces if bf.name == "xmin")
+        np.testing.assert_array_equal(a.keep, b.keep)
+        np.testing.assert_allclose(back._incident_amplitude, mon._incident_amplitude)
