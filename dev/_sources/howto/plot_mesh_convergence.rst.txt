@@ -233,12 +233,12 @@ below is that rule.
  .. code-block:: none
 
     mnpw   cells    time    max |ΔS|   max Δ|S|
-       8    2805    0.7 s
-      12    6930    1.2 s     0.1289     0.0216  
-      16   10368    1.7 s     0.0431     0.0114  
-      24   23814    3.6 s     0.0458     0.0129  
-      32   41850    6.8 s     0.0158     0.0036  ok
-      48   98496   23.9 s     0.0164     0.0050  ok
+       8    2805    1.0 s
+      12    6930    1.8 s     0.1289     0.0216  
+      16   10368    2.5 s     0.0431     0.0114  
+      24   23814    4.8 s     0.0458     0.0129  
+      32   41850    8.8 s     0.0158     0.0036  ok
+      48   98496   29.2 s     0.0164     0.0050  ok
     converged: mnpw 32 (ΔS < 0.02 on this rung and the next)
 
 
@@ -390,11 +390,11 @@ of a curved cavity.
 
     exact TM010: 11.4743 GHz
     mnpw   f0 [GHz]   cells   time   change    error
-      12    11.4057      576    0.2 s            -0.60 %  
-      16    11.2897     1125    0.3 s   1.02 %   -1.61 %  
-      24    11.3902     3703    0.7 s   0.89 %   -0.73 %  ok
-      32    11.4487     8100    2.2 s   0.51 %   -0.22 %  ok
-      48    11.4889    28350   32.6 s   0.35 %   +0.13 %  ok
+      12    11.4057      576    0.3 s            -0.60 %  
+      16    11.2897     1125    0.4 s   1.02 %   -1.61 %  
+      24    11.3902     3703    1.0 s   0.89 %   -0.73 %  ok
+      32    11.4487     8100    3.0 s   0.51 %   -0.22 %  ok
+      48    11.4889    28350   41.6 s   0.35 %   +0.13 %  ok
     converged: mnpw 24 at 1.0 % — its actual error is 0.73 %
 
 
@@ -518,7 +518,7 @@ under :doc:`../methods/meshing-conformal`.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 14.156 seconds)
+   **Total running time of the script:** (1 minutes 34.762 seconds)
 
 
 .. _sphx_glr_download_howto_plot_mesh_convergence.py:
