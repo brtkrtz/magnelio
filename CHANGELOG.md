@@ -11,6 +11,12 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- Tutorial 19 *Offset Cassegrain reflector*: paraboloid and
+  hyperboloid built as parametric surfaces (the subreflector patch
+  from a map that solves the quadric), turned into metal shells,
+  fed by a pyramidal horn through a port window in an absorbing wall,
+  with the far-field pattern of the tilted beam.  Rendered without
+  execution in the gallery — the free-form mesh takes minutes.
 - How-to guide *Coupled-line directional coupler*: a −10 dB microstrip
   coupler dimensioned with the port solver alone — a port across both
   lines returns the even and odd modes with their impedances and
