@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**08:20.825** total execution time for 6 files **from howto**:
+**07:01.219** total execution time for 6 files **from howto**:
 
 .. container::
 
@@ -33,20 +33,20 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_howto_plot_stripline_pickup_kicker.py` (``plot_stripline_pickup_kicker.py``)
-     - 04:53.115
+     - 03:57.896
      - 0.0
    * - :ref:`sphx_glr_howto_plot_mesh_convergence.py` (``plot_mesh_convergence.py``)
-     - 01:36.102
+     - 01:26.474
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_investigations.py` (``plot_lumped_port_investigations.py``)
-     - 01:32.738
+     - 01:20.634
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_tuning_cpw.py` (``plot_lumped_port_tuning_cpw.py``)
-     - 00:11.670
+     - 00:10.045
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_tuning_microstrip.py` (``plot_lumped_port_tuning_microstrip.py``)
-     - 00:03.750
+     - 00:03.246
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_tuning_coax.py` (``plot_lumped_port_tuning_coax.py``)
-     - 00:03.449
+     - 00:02.923
      - 0.0

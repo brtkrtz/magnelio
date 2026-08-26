@@ -252,7 +252,7 @@ reactance is what reflects at the top of the band.
  .. code-block:: none
 
 
-    <matplotlib.legend.Legend object at 0x7fb9bffb1410>
+    <matplotlib.legend.Legend object at 0x7facb30f86d0>
 
 
 
@@ -302,7 +302,7 @@ whole band; hold that thought for the microstrip section.
     coax, gap start at -2·gap: max |phase error|   5.83 deg
     coax, gap start at -3·gap: max |phase error|   5.74 deg
 
-    <matplotlib.legend.Legend object at 0x7fb9c4bac990>
+    <matplotlib.legend.Legend object at 0x7facb2e63590>
 
 
 
@@ -349,7 +349,7 @@ mismatch.
  .. code-block:: none
 
 
-    <matplotlib.legend.Legend object at 0x7fb9bfe1f690>
+    <matplotlib.legend.Legend object at 0x7fac7d402fd0>
 
 
 
@@ -501,7 +501,7 @@ of the band that matters most in your application.
     microstrip, trace end at -1.0·h_sub: max |phase error|   2.53 deg
     microstrip, trace end at -1.5·h_sub: max |phase error|  15.63 deg
 
-    <matplotlib.legend.Legend object at 0x7fb9fa09fa10>
+    <matplotlib.legend.Legend object at 0x7fac7d49afd0>
 
 
 
@@ -732,7 +732,7 @@ catalogue value leaves a visible broadband pedestal.
  .. code-block:: none
 
 
-    <matplotlib.legend.Legend object at 0x7fb9bfe3f010>
+    <matplotlib.legend.Legend object at 0x7fac7c3ae5d0>
 
 
 
@@ -796,7 +796,7 @@ quantities of your production model, run, and read the scoreboard.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 32.738 seconds)
+   **Total running time of the script:** (1 minutes 20.634 seconds)
 
 
 .. _sphx_glr_download_howto_plot_lumped_port_investigations.py:

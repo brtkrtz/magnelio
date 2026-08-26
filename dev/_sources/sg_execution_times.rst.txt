@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**29:07.463** total execution time for 24 files **from all galleries**:
+**24:31.213** total execution time for 24 files **from all galleries**:
 
 .. container::
 
@@ -33,74 +33,74 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_tutorials_plot_13_dielectric_filter.py` (``../examples/tutorials/plot_13_dielectric_filter.py``)
-     - 07:59.967
+     - 06:36.897
      - 0.0
    * - :ref:`sphx_glr_howto_plot_stripline_pickup_kicker.py` (``../examples/howto/plot_stripline_pickup_kicker.py``)
-     - 04:53.115
+     - 03:57.896
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_18_periodic_tesla_cell.py` (``../examples/tutorials/plot_18_periodic_tesla_cell.py``)
-     - 04:25.419
+     - 03:40.800
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_12_sweep_optimize.py` (``../examples/tutorials/plot_12_sweep_optimize.py``)
-     - 03:04.064
+     - 02:32.484
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_10_lumped_elements.py` (``../examples/tutorials/plot_10_lumped_elements.py``)
-     - 01:46.504
+     - 01:39.112
      - 0.0
    * - :ref:`sphx_glr_howto_plot_mesh_convergence.py` (``../examples/howto/plot_mesh_convergence.py``)
-     - 01:36.102
+     - 01:26.474
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_investigations.py` (``../examples/howto/plot_lumped_port_investigations.py``)
-     - 01:32.738
+     - 01:20.634
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_05_eigenmode_sphere.py` (``../examples/tutorials/plot_05_eigenmode_sphere.py``)
-     - 00:31.541
-     - 0.0
-   * - :ref:`sphx_glr_tutorials_plot_07_project_store.py` (``../examples/tutorials/plot_07_project_store.py``)
-     - 00:27.758
+     - 00:31.603
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_15_dipole_farfield.py` (``../examples/tutorials/plot_15_dipole_farfield.py``)
-     - 00:26.266
+     - 00:24.167
+     - 0.0
+   * - :ref:`sphx_glr_tutorials_plot_07_project_store.py` (``../examples/tutorials/plot_07_project_store.py``)
+     - 00:23.535
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_11_losses.py` (``../examples/tutorials/plot_11_losses.py``)
-     - 00:25.533
-     - 0.0
-   * - :ref:`sphx_glr_tutorials_plot_01_parallel_plate.py` (``../examples/tutorials/plot_01_parallel_plate.py``)
-     - 00:21.114
+     - 00:22.562
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_06_field_monitors.py` (``../examples/tutorials/plot_06_field_monitors.py``)
-     - 00:17.920
+     - 00:14.718
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_08_open_boundary.py` (``../examples/tutorials/plot_08_open_boundary.py``)
-     - 00:14.987
+     - 00:12.988
+     - 0.0
+   * - :ref:`sphx_glr_tutorials_plot_01_parallel_plate.py` (``../examples/tutorials/plot_01_parallel_plate.py``)
+     - 00:12.565
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_04_higher_modes.py` (``../examples/tutorials/plot_04_higher_modes.py``)
-     - 00:13.590
+     - 00:11.587
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_03_coax_smatrix.py` (``../examples/tutorials/plot_03_coax_smatrix.py``)
-     - 00:12.598
+     - 00:10.872
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_tuning_cpw.py` (``../examples/howto/plot_lumped_port_tuning_cpw.py``)
-     - 00:11.670
+     - 00:10.045
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_02_coax_line.py` (``../examples/tutorials/plot_02_coax_line.py``)
-     - 00:07.298
+     - 00:05.927
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_16_cad_import.py` (``../examples/tutorials/plot_16_cad_import.py``)
-     - 00:05.132
+     - 00:04.140
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_09_microstrip_line.py` (``../examples/tutorials/plot_09_microstrip_line.py``)
-     - 00:03.815
+     - 00:03.293
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_tuning_microstrip.py` (``../examples/howto/plot_lumped_port_tuning_microstrip.py``)
-     - 00:03.750
+     - 00:03.246
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_tuning_coax.py` (``../examples/howto/plot_lumped_port_tuning_coax.py``)
-     - 00:03.449
+     - 00:02.923
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_17_pcb_import.py` (``../examples/tutorials/plot_17_pcb_import.py``)
-     - 00:02.662
+     - 00:02.379
      - 0.0
    * - :ref:`sphx_glr_tutorials_plot_14_profile_geometry.py` (``../examples/tutorials/plot_14_profile_geometry.py``)
-     - 00:00.472
+     - 00:00.365
      - 0.0

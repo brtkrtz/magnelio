@@ -270,7 +270,7 @@ exists above its cut-off:
  .. code-block:: none
 
 
-    <matplotlib.legend.Legend object at 0x7fba2c05dad0>
+    <matplotlib.legend.Legend object at 0x7facb323ec10>
 
 
 
@@ -338,7 +338,7 @@ non-degenerate modes, and on this uniform line it is absent:
 
  .. code-block:: none
 
-    worst TE11 -> TEM conversion above cut-off: -171.6 dB
+    worst TE11 -> TEM conversion above cut-off: -169.7 dB
     TE11 power balance: min sum |S|^2 = 0.9997
 
 
@@ -427,7 +427,7 @@ closed cavity.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 13.590 seconds)
+   **Total running time of the script:** (0 minutes 11.587 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_04_higher_modes.py:

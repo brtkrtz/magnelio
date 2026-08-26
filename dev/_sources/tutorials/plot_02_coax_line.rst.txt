@@ -412,7 +412,7 @@ Run and S-parameters
 
  .. code-block:: none
 
-    max |S11| in band: -110.5 dB
+    max |S11| in band: -109.9 dB
 
 
 
@@ -487,7 +487,7 @@ interest.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 7.298 seconds)
+   **Total running time of the script:** (0 minutes 5.927 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_02_coax_line.py:

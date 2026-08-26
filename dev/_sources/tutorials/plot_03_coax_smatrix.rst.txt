@@ -259,8 +259,8 @@ numerical precision:
 
  .. code-block:: none
 
-    max |S12 - S21| (reciprocity): 7.60e-08
-    max |S11 - S22| (symmetry)   : 4.54e-07
+    max |S12 - S21| (reciprocity): 9.70e-08
+    max |S11 - S22| (symmetry)   : 2.40e-07
 
 
 
@@ -399,7 +399,7 @@ top of the port indices.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 12.598 seconds)
+   **Total running time of the script:** (0 minutes 10.872 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_03_coax_smatrix.py:
