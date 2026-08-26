@@ -1,5 +1,11 @@
 blank_issues_enabled: true
 contact_links:
+  - name: Questions, ideas, feedback
+    url: https://github.com/brtkrtz/magnelio/discussions
+    about: Not a defect? Ask, suggest or show what you built in Discussions.
+  - name: Security report
+    url: https://github.com/brtkrtz/magnelio/security/advisories/new
+    about: Report a vulnerability privately (see SECURITY.md).
   - name: Documentation
     url: https://brtkrtz.github.io/magnelio/stable/
     about: Tutorials, method chapters and the API reference.

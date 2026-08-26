@@ -1,5 +1,15 @@
 # Contributing to Magnelio
 
+## Asking, suggesting, showing
+
+[GitHub Discussions](https://github.com/brtkrtz/magnelio/discussions) is the place for questions (*Q&A*),
+feature ideas (*Ideas*), models and results you want to share (*Show
+and tell*) and anything else that is not a defect.  If you are unsure
+whether something is a bug, ask there first — a discussion can be
+turned into an issue, and the other way round.  Security-relevant
+findings go through the private route in `SECURITY.md`, not through a
+public thread.
+
 ## Reporting a bug
 
 File it in the [issue tracker](https://github.com/brtkrtz/magnelio/issues);

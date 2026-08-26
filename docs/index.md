@@ -32,6 +32,10 @@ This documentation has five pillars:
 
 5. **Bibliography.** The works cited throughout the documentation.
 
+Questions, ideas and feedback of any size go to
+[GitHub Discussions](https://github.com/brtkrtz/magnelio/discussions); wrong results, crashes and refused valid
+input to the [issue tracker](https://github.com/brtkrtz/magnelio/issues).
+
 ```{toctree}
 :maxdepth: 1
 :caption: Tutorials

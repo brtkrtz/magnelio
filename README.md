@@ -133,6 +133,15 @@ pip install -e .[docs]
 sphinx-build -b html docs docs/_build/html
 ```
 
+## Questions and feedback
+
+Questions, ideas, things that were harder than they should have been,
+and models you built with Magnelio all go to
+[GitHub Discussions](https://github.com/brtkrtz/magnelio/discussions) — the lowest-threshold channel there is,
+and the one the author reads first.  Nothing is too small: a confusing
+error message or a tutorial step that did not work as described is
+exactly the kind of feedback that shapes the next release.
+
 ## Reporting bugs
 
 Wrong results, crashes and refused valid input belong in the
@@ -144,6 +153,9 @@ that reproduces the behaviour is what turns a report into a test case.
 the developer's record of investigated defects, with the measurements
 that pin them down, kept in the repository so a code comment can point
 at an entry.
+
+Security-relevant findings take a private route — see
+[`SECURITY.md`](SECURITY.md).
 
 ## Development
 

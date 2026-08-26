@@ -143,6 +143,18 @@ html_theme_options = {
         "version_match": docs_channel,
     },
     "navbar_end": ["version-switcher", "theme-switcher", "navbar-icon-links"],
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/brtkrtz/magnelio",
+            "icon": "fa-brands fa-github",
+        },
+        {
+            "name": "Discussions",
+            "url": "https://github.com/brtkrtz/magnelio/discussions",
+            "icon": "fa-regular fa-comments",
+        },
+    ],
     # The banner is meant for the dev channel, to tell the reader it
     # documents unreleased code.  It cannot decide that by itself: the
     # theme compares this build's ``release`` against the ``version``

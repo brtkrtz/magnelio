@@ -40,6 +40,8 @@ dependencies = [
 Homepage = "https://github.com/brtkrtz/magnelio"
 Repository = "https://github.com/brtkrtz/magnelio"
 Issues = "https://github.com/brtkrtz/magnelio/issues"
+Discussions = "https://github.com/brtkrtz/magnelio/discussions"
+Documentation = "https://brtkrtz.github.io/magnelio/stable/"
 
 [project.optional-dependencies]
 dev = [
