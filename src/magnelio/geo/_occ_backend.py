@@ -4315,6 +4315,184 @@ def make_face(normal: str, offset: float, points, scale: float = 1.0):
     return mkface.Face()
 
 
+def make_bspline_surface(points, scale: float = 1.0):
+    """Build a curved OCC face interpolating a grid of sample points.
+
+    ``GeomAPI_PointsToBSplineSurface.Interpolate`` passes a degree-3
+    B-spline surface exactly through the samples; a row collapsed onto
+    one point (a polar pole) is accepted and closes the surface there.
+
+    Parameters
+    ----------
+    points : sequence of sequence of (float, float, float)
+        ``nu`` rows of ``nv`` points [m], at least 2 × 2.
+
+    Returns
+    -------
+    TopoDS_Face
+        The interpolated face, bounded by the grid's edge rows.
+    """
+    occ = _require_occ()
+    try:
+        from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace  # noqa: PLC0415
+        from OCC.Core.GeomAPI import GeomAPI_PointsToBSplineSurface  # noqa: PLC0415
+        from OCC.Core.Precision import precision  # noqa: PLC0415
+        from OCC.Core.TColgp import TColgp_Array2OfPnt  # noqa: PLC0415
+    except ImportError as exc:
+        raise ImportError(
+            "pythonocc-core is required for surface construction. "
+            "Install via: conda install -c conda-forge pythonocc-core"
+        ) from exc
+
+    rows = [list(row) for row in points]
+    nu, nv = len(rows), len(rows[0])
+    flat = [p for row in rows for p in row]
+    lo = [min(p[i] for p in flat) for i in range(3)]
+    hi = [max(p[i] for p in flat) for i in range(3)]
+    _check_dimensions("Surface", scale, extent=math.dist(lo, hi))
+
+    arr = TColgp_Array2OfPnt(1, nu, 1, nv)
+    for i, row in enumerate(rows, 1):
+        for j, p in enumerate(row, 1):
+            arr.SetValue(i, j, occ["gp_Pnt"](*_scale3(p, scale)))
+    api = GeomAPI_PointsToBSplineSurface()
+    try:
+        api.Interpolate(arr)
+        surface = api.Surface()
+    except RuntimeError as exc:
+        raise ValueError(
+            "OCC could not interpolate a surface through the sample grid — "
+            "coincident rows or columns away from a pole, or a grid that "
+            "folds back on itself?"
+        ) from exc
+    mkface = BRepBuilderAPI_MakeFace(surface, precision.Confusion())
+    if not mkface.IsDone():
+        raise ValueError("OCC could not build a face from the interpolated surface.")
+    return mkface.Face()
+
+
+def is_planar_face(face) -> bool:
+    """Whether an OCC face lies on a plane."""
+    try:
+        from OCC.Core.BRepAdaptor import BRepAdaptor_Surface  # noqa: PLC0415
+        from OCC.Core.GeomAbs import GeomAbs_Plane  # noqa: PLC0415
+    except ImportError as exc:
+        raise ImportError("pythonocc-core is required for face queries.") from exc
+
+    return BRepAdaptor_Surface(face).GetType() == GeomAbs_Plane
+
+
+def _face_forward_sign(face) -> float:
+    """+1 if the face's oriented normal at its middle points 'forward'.
+
+    'Forward' is the canonical direction of :func:`face_plane_normal`:
+    the largest component of the normal positive.  The sign lets an
+    offset of a curved face follow the same convention as the prism of
+    a planar one, whichever way OCC happened to orient the face.
+    """
+    from OCC.Core.BRepAdaptor import BRepAdaptor_Surface  # noqa: PLC0415
+    from OCC.Core.BRepLProp import BRepLProp_SLProps  # noqa: PLC0415
+    from OCC.Core.TopAbs import TopAbs_REVERSED  # noqa: PLC0415
+
+    surf = BRepAdaptor_Surface(face)
+    u = 0.5 * (surf.FirstUParameter() + surf.LastUParameter())
+    v = 0.5 * (surf.FirstVParameter() + surf.LastVParameter())
+    props = BRepLProp_SLProps(surf, u, v, 1, 1e-9)
+    if not props.IsNormalDefined():
+        raise ValueError("The surface normal is undefined at the sheet's middle.")
+    n = props.Normal()
+    normal = [n.X(), n.Y(), n.Z()]
+    if face.Orientation() == TopAbs_REVERSED:
+        normal = [-c for c in normal]
+    dominant = max(range(3), key=lambda i: abs(normal[i]))
+    return 1.0 if normal[dominant] >= 0.0 else -1.0
+
+
+def make_thick_face(face, thickness: float, direction: str, scale: float = 1.0):
+    """Grow a curved OCC face into a solid of constant thickness.
+
+    ``BRepOffsetAPI_MakeThickSolid.MakeThickSolidBySimple`` offsets the
+    face along its normal and closes the rim.  The offset direction
+    follows the convention of :func:`face_plane_normal` (``"forward"``
+    = the normal's largest component positive), so a curved sheet
+    thickens the same way a planar one does.  ``"symmetric"`` is not
+    available for curved sheets.
+
+    The kernel's offset can produce an invalid body at coarse sample
+    grids or where the thickness approaches the curvature radius; the
+    result is checked and rejected with a pointer to
+    :meth:`~magnelio.geo.Shape.extruded`, which is always robust.
+    """
+    try:
+        from OCC.Core.BRepCheck import BRepCheck_Analyzer  # noqa: PLC0415
+        from OCC.Core.BRepGProp import brepgprop  # noqa: PLC0415
+        from OCC.Core.BRepOffset import BRepOffset_MakeSimpleOffset  # noqa: PLC0415
+        from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakeThickSolid  # noqa: PLC0415
+        from OCC.Core.GProp import GProp_GProps  # noqa: PLC0415
+        from OCC.Core.ShapeFix import ShapeFix_Shape  # noqa: PLC0415
+    except ImportError as exc:
+        raise ImportError("pythonocc-core is required for thicken.") from exc
+
+    if direction == "symmetric":
+        raise ValueError(
+            "thickened(direction='symmetric') is available for planar sheets "
+            "only; a curved sheet grows 'forward' or 'backward' from its "
+            "surface."
+        )
+    _check_dimensions("Thicken", scale, thickness=thickness)
+    offset = (
+        _face_forward_sign(face) * (1.0 if direction == "forward" else -1.0) * thickness * scale
+    )
+    failure = (
+        f"Thickening the curved sheet by {thickness:.3e} m failed: the "
+        f"offset surface is not a valid body (too coarse or too fine a "
+        f"sample grid for the kernel's offset, or a thickness near the "
+        f"curvature radius).  Try another sample count, a thinner sheet, or "
+        f"extruded(vector=...) — the prism along a fixed vector is always "
+        f"robust and, for a conductor, physically equivalent."
+    )
+    props = GProp_GProps()
+    brepgprop.SurfaceProperties(face, props)
+    expected_volume = abs(props.Mass() * offset)
+
+    def _acceptable(built):
+        # The kernel's offset fails in two ways: an invalid topology
+        # (caught by the analyzer, sometimes healed by ShapeFix) and a
+        # valid-looking body of absurd volume when the offset surface
+        # folds — the volume against area × thickness catches that.
+        if built is None or built.IsNull():
+            return None
+        if not BRepCheck_Analyzer(built).IsValid():
+            fixer = ShapeFix_Shape(built)
+            fixer.Perform()
+            built = fixer.Shape()
+            if built is None or built.IsNull() or not BRepCheck_Analyzer(built).IsValid():
+                return None
+        if abs(abs(occ_volume(built)) - expected_volume) > 0.1 * expected_volume:
+            return None
+        return built
+
+    def _by_thick_solid():
+        maker = BRepOffsetAPI_MakeThickSolid()
+        maker.MakeThickSolidBySimple(face, offset)
+        return maker.Shape() if maker.IsDone() else None
+
+    def _by_simple_offset():
+        maker = BRepOffset_MakeSimpleOffset(face, offset)
+        maker.SetBuildSolidFlag(True)
+        maker.Perform()
+        return maker.GetResultShape() if maker.IsDone() else None
+
+    for attempt in (_by_thick_solid, _by_simple_offset):
+        try:
+            built = _acceptable(attempt())
+        except RuntimeError:
+            built = None
+        if built is not None:
+            return built
+    raise ValueError(failure)
+
+
 def make_extrude(face, vector, scale: float = 1.0):
     """Extrude an OCC face along a direction vector to produce a solid.
 

@@ -414,8 +414,10 @@ class Shape:
         The result is a **standalone solid**, not fused with the shape it
         came from.  Two input forms:
 
-        - a standalone :class:`~magnelio.geo.Face` — the Face *is* the
-          profile and *face_near* is unused;
+        - a standalone sheet — a :class:`~magnelio.geo.Face`, a covered
+          :class:`~magnelio.geo.Curve` or a curved
+          :class:`~magnelio.geo.Surface` — the sheet *is* the profile and
+          *face_near* is unused;
         - any solid — the face nearest *face_near* is extruded.
 
         Parameters
@@ -427,7 +429,7 @@ class Shape:
             ignored for a Face.
         material : Material, optional
             Material of the extruded solid.  Defaults to this shape's
-            material; required when extruding a construction Face, which
+            material; required when extruding a construction sheet, which
             has none to inherit.
 
         Returns
@@ -539,13 +541,19 @@ class Shape:
         return shell(self, thickness=thickness, opening_face_near=opening_face_near)
 
     def thickened(self, thickness, *, direction="forward", material=None):
-        """Grow this planar sheet into a solid slab.
+        """Grow this sheet into a solid of constant thickness.
 
-        Only a planar sheet — a :class:`~magnelio.geo.Face` or a covered
-        :class:`~magnelio.geo.Curve` — can be thickened.  The slab's
-        footprint is exactly the sheet, which makes this the direct way
-        from a drawn outline to a metallisation of a given thickness,
-        without spelling out the extrusion vector.
+        Only a sheet — a :class:`~magnelio.geo.Face`, a covered
+        :class:`~magnelio.geo.Curve` or a curved
+        :class:`~magnelio.geo.Surface` — can be thickened.  A planar sheet
+        becomes a slab whose footprint is exactly the sheet, which makes
+        this the direct way from a drawn outline to a metallisation of a
+        given thickness, without spelling out the extrusion vector.  A
+        curved sheet is offset along its own normal into a shell of
+        constant thickness; where the kernel cannot build a valid offset
+        (coarse sample grids, thickness near the curvature radius) the
+        call fails with a pointer to :meth:`extruded`, which is always
+        robust and, for a conductor, physically equivalent.
 
         Parameters
         ----------
@@ -554,7 +562,7 @@ class Shape:
         direction : {"forward", "backward", "symmetric"}
             Which side of the sheet to grow on.  ``"symmetric"`` puts
             half the thickness on each side, leaving the sheet as the
-            slab's mid-plane.  ``"forward"`` and ``"backward"`` are
+            slab's mid-plane (planar sheets only).  ``"forward"`` and ``"backward"`` are
             opposite sides of it; which one is "forward" follows from
             the plane and is fixed, so if a slab comes out on the wrong
             side, swap the value.

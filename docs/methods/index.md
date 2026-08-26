@@ -16,6 +16,7 @@ in-house derivations are marked as such in the text.
 :maxdepth: 2
 
 fit-discretization
+geometry
 cad-import
 pcb-import
 meshing-conformal

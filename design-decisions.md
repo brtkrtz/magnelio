@@ -13609,3 +13609,77 @@ docstrings), `src/magnelio/ports/_modal/numerical_2d.py` (docstring),
 `tests/integration/test_unified_multimode_port.py`
 (`TestCoupledMicrostripModalPort`), `docs/methods/ports.md`,
 `docs/references.bib` (`paul2008`), `CHANGELOG.md`.
+
+## DD-197 — Curved sheets: `Surface.parametric` and sheet-preserving transforms
+
+**Status:** Implemented 2026-08-26, on the `feat/parametric-surface` branch.
+
+**Problem.**  Every sheet in the geometry namespace was planar — a
+`Face` polygon or a covered curve — so the only curved metal a model
+could hold came from primitives, lofts, sweeps and revolutions.  A
+reflector antenna needs a *surface given by a formula*: an offset
+paraboloid is a patch of a surface of revolution (buildable, awkwardly,
+as `revolved()` plus a Boolean rim), a hyperboloid sub-reflector the
+same, and a numerically shaped reflector is no surface of revolution at
+all.  Two further gates stood in the way: `thickened()` and the
+`_ExtrudedFaceShape` profile path were typed on `PlanarSheet` and
+`face_plane_normal` refused non-planar faces; and the transform
+wrappers (`_TranslatedShape` & co.) inherit from `Shape`, so even a
+*planar* sheet lost its sheet-ness when moved — `Face(...).rotated(...)
+.thickened(...)` raised `TypeError`.
+
+**Decision.**  A marker hierarchy `Sheet(Shape)` → `PlanarSheet(Sheet)`
+in `geo/_sheet.py`; `extruded()`, `thickened()`, `shelled()`'s refusal
+and the mesher's standalone-sheet rejection gate on `Sheet`,
+`revolved()`/`swept()`/`Loft` sections stay `PlanarSheet` (they need a
+plane).  `geo.Surface` (`geo/surfaces.py`) is a `Sheet` holding a
+sample grid; `Surface.parametric(fn, u=, v=, samples=(32, 32))`
+evaluates the map on a `meshgrid` (array call first, scalar fallback),
+and `make_bspline_surface` interpolates the grid with
+`GeomAPI_PointsToBSplineSurface.Interpolate` (degree 3, exact at the
+samples; a collapsed pole row is accepted).  The class stores points,
+not the callable — a shape is a value, DD-178's rule on parametric
+history holds, the store round-trips it as an `ImportedSolid` like
+everything else.  `_analytic_bbox` = sample hull padded by a quarter
+diagonal (the Loft's spline allowance).  Thickening branches on
+`is_planar_face`: planar → the historical prism (bit-identical); curved
+→ `make_thick_face`, a cascade `MakeThickSolidBySimple` →
+`BRepOffset_MakeSimpleOffset`, each result healed by `ShapeFix_Shape`
+if invalid and accepted only when valid *and* within 10 % of
+area × thickness — the kernel's offset folds silently on dense grids
+(48 × 96: twelve times the volume) and this is the only way to catch
+it; `"symmetric"` is planar-only; the failure text points at
+`extruded()`, which is `BRepPrimAPI_MakePrism` on any face and always
+robust.  Transforms pick a sheet-preserving wrapper class
+(`_wrapper(cls, inner)` builds `cls + marker` subclasses on demand), so
+the marker survives `translated/rotated/scaled/mirrored`.
+
+*Measured* (`investigations/parametric-surface/`, internal record;
+offset paraboloid F = 180 mm, D = 240 mm, x_c = 150 mm in polar
+parametrisation): interpolation 1–2 ms; off-sample deviation 3e-7 m at
+16 × 32, 1.5e-6 m at 32 × 32 (the default), 1.5e-8 m at 32 × 64;
+surface area equal to the closed-form integral to 1e-6; prism volume =
+projected disc × length to 1e-4; `MakeThickSolidBySimple` valid at
+32 × 64, invalid-but-healable at 32 × 32, folded at 48 × 96.
+
+**Consequences.**  Additive API (`Surface` in `geo.__all__`); no
+existing model changes.  `thickened()` on a curved sheet is best-effort
+and loud; the reflector tutorial uses `extruded()`.  The mesher sees a
+B-spline face only through its bounding box (no feature planes,
+DD-106/DD-191 do not apply) and sections it through the kernel
+(DD-102 delegation) — documented in the new methods chapter *Geometry
+construction* (`docs/methods/geometry.md`), which also states the
+"two cells thick" rule for curved shells (the thin-metallisation
+detector, `_conformal.py`, needs a flat bounding box).  Not in scope:
+Booleans on sheets (a polar parametrisation makes the rim exact
+without trimming), thin-sheet physics, curved `revolved()`/`swept()`.
+
+**Files:** `src/magnelio/geo/_sheet.py`, `src/magnelio/geo/surfaces.py`
+(new), `src/magnelio/geo/_occ_backend.py` (`make_bspline_surface`,
+`is_planar_face`, `_face_forward_sign`, `make_thick_face`),
+`src/magnelio/geo/modifications.py`, `src/magnelio/geo/transforms.py`
+(`_wrapper`), `src/magnelio/geo/shape.py` (docstrings),
+`src/magnelio/geo/__init__.py`, `src/magnelio/mesh/mesher.py`,
+`tests/unit/test_geo_surface.py` (new), `tests/unit/test_scaling.py`
+(zoo), `tests/unit/test_geometry.py`, `docs/methods/geometry.md` (new),
+`docs/methods/index.md`, `CHANGELOG.md`.

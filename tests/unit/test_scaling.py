@@ -2,6 +2,7 @@
 
 import math
 
+import numpy as np
 import pytest
 
 from magnelio.geo._scaling import (
@@ -90,6 +91,7 @@ def _shape_zoo():
     from magnelio.geo.modifications import extrude, revolve, sweep
     from magnelio.geo.operations import Difference, Group, Intersection, Union
     from magnelio.geo.primitives import Brick, Cone, Cylinder, Face, Sphere, Torus
+    from magnelio.geo.surfaces import Surface
     from magnelio.geo.transforms import rotate, scale, translate
 
     air = _air()
@@ -104,7 +106,16 @@ def _shape_zoo():
     )
     torus = Torus(center=(0, 0, 0), major_radius=3e-3, minor_radius=0.5e-3, axis="y", material=air)
     face = Face(normal="z", points=((0, 0), (2e-3, 0), (2e-3, 1e-3), (0, 1e-3)), position=0.5e-3)
+    dish = Surface.parametric(
+        lambda r, phi: (r * np.cos(phi), r * np.sin(phi), r * r / 4e-3),
+        u=(0.0, 2e-3),
+        v=(0.0, 2 * np.pi),
+        samples=(12, 24),
+    )
     zoo = [
+        ("surface", dish),
+        ("surface_extruded", extrude(dish, vector=(0, 0, -0.3e-3), material=air)),
+        ("surface_rotated", rotate(dish, "x", 30.0)),
         ("brick", brick),
         ("sphere", sphere),
         ("cylinder_z", cyl_z),

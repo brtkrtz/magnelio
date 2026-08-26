@@ -566,14 +566,14 @@ class Mesh:
         # DD-120: the clustering tolerance scales with the model too.
         feature_gap = resolve_feature_gap(control, shapes + wires)
 
-        # A standalone planar sheet has zero volume — meshing it as a thin
+        # A standalone sheet has zero volume — meshing it as a thin
         # sheet (DD-035) is not yet wired.  Reject it up front, before any
         # grid work fails on the zero-thickness bounding box.
-        from magnelio.geo._sheet import PlanarSheet as _PlanarSheet  # noqa: PLC0415
+        from magnelio.geo._sheet import Sheet as _Sheet  # noqa: PLC0415
 
-        if any(isinstance(s, _PlanarSheet) for s in shapes):
+        if any(isinstance(s, _Sheet) for s in shapes):
             raise NotImplementedError(
-                "A standalone planar sheet (a Face or a covered Curve) "
+                "A standalone sheet (a Face, a covered Curve or a Surface) "
                 "cannot be meshed yet: thin-sheet physics is deferred. Use "
                 "it as a profile for extruded()/revolved()/swept(), grow it "
                 "into a solid with thickened(), or model the sheet as a thin "

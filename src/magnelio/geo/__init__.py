@@ -4,7 +4,10 @@ CSG geometry subsystem.
 - Base class: ``Shape`` — the Boolean operators and the chainable verbs
   every geometry object shares; the documented home of both.
 - Primitives: ``Brick``, ``Sphere``, ``Cylinder``, ``Cone``, ``Torus``,
-  ``Face``; curves: ``Curve`` (polyline / arc / spline / helix).
+  ``Face``; curves: ``Curve`` (polyline / arc / spline / helix);
+  curved sheets: ``Surface`` (``Surface.parametric`` samples a map
+  ``(u, v) -> (x, y, z)`` into a B-spline sheet — a reflector dish before
+  it is extruded into metal).
 - Profiles: ``Path`` draws a chained curve segment by segment;
   ``Curve.joined()`` chains existing curves, ``Curve.covered()`` turns a
   closed one into a planar sheet and ``Curve.traced()`` into a
@@ -37,6 +40,7 @@ from magnelio.geo.operations import Difference, Group, Intersection, Union
 from magnelio.geo.path import Path
 from magnelio.geo.primitives import Brick, Cone, Cylinder, Face, Sphere, Torus
 from magnelio.geo.shape import Shape
+from magnelio.geo.surfaces import Surface
 from magnelio.geo.wire import ThinWire
 
 if TYPE_CHECKING:
@@ -440,6 +444,7 @@ __all__ = [
     "Cone",
     "Torus",
     "Face",
+    "Surface",
     "Curve",
     "Path",
     "Union",
