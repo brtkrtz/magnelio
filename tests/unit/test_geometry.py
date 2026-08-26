@@ -2982,7 +2982,7 @@ class TestCurveCovered:
         _occ()
         model = GeometryModel()
         model.add(self._square().covered(material=_air()))
-        with pytest.raises(NotImplementedError, match="planar sheet"):
+        with pytest.raises(NotImplementedError, match="standalone sheet"):
             Mesh.from_geometry(model, MeshControl(), f_max=10e9)
 
 

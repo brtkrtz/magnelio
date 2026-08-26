@@ -12,7 +12,7 @@ import math
 from dataclasses import dataclass
 
 from magnelio.geo._cache import cached_occ_shape
-from magnelio.geo._sheet import PlanarSheet
+from magnelio.geo._sheet import PlanarSheet, Sheet
 from magnelio.geo._validate import finite, nonzero, point3, positive, vector3
 from magnelio.geo.shape import Shape
 from magnelio.materials.material import resolve_material
@@ -104,10 +104,8 @@ def extrude(shape, *, vector, face_near=None, material=None):
 
     Uses ``BRepPrimAPI_MakePrism``.
     """
-    from magnelio.geo._sheet import PlanarSheet  # noqa: PLC0415
-
     material = resolve_material(material, "extruded(material=...)")
-    if isinstance(shape, PlanarSheet):
+    if isinstance(shape, Sheet):
         if material is None and shape.material is None:
             raise ValueError(
                 "Extruding a construction profile (material=None) requires "
@@ -116,7 +114,7 @@ def extrude(shape, *, vector, face_near=None, material=None):
     elif face_near is None:
         raise ValueError(
             "extrude() on a solid requires face_near= to select the face "
-            "to extrude (only a standalone planar sheet may omit it)."
+            "to extrude (only a standalone sheet may omit it)."
         )
     vector = vector3(vector, "extruded(vector)", nonzero=True)
     return _ExtrudedFaceShape(shape, face_near, vector, material)
@@ -294,9 +292,9 @@ def shell(shape, *, thickness, opening_face_near=None):
 
     Uses ``BRepOffsetAPI_MakeThickSolid`` with an inward offset.
     """
-    if isinstance(shape, PlanarSheet):
+    if isinstance(shape, Sheet):
         raise TypeError(
-            "shelled() hollows a solid, but this is a planar sheet. To "
+            "shelled() hollows a solid, but this is a sheet. To "
             "grow a sheet into a solid slab use thickened()."
         )
     thickness = positive(thickness, "shelled(thickness)")
@@ -306,11 +304,12 @@ def shell(shape, *, thickness, opening_face_near=None):
 def thicken(sheet, *, thickness, direction="forward", material=None):
     """Implementation of :meth:`magnelio.geo.Shape.thickened`.
 
-    A prism along the sheet's own plane normal.
+    A prism along the sheet's own plane normal for a planar sheet, a
+    normal offset for a curved one.
     """
-    if not isinstance(sheet, PlanarSheet):
+    if not isinstance(sheet, Sheet):
         raise TypeError(
-            f"thickened() grows a planar sheet into a solid, but this is a "
+            f"thickened() grows a sheet into a solid, but this is a "
             f"{type(sheet).__name__}. To hollow a solid use shelled()."
         )
     material = resolve_material(material, "thickened(material=...)")
@@ -367,11 +366,15 @@ class _ThickenedSheet(Shape):
     def _occ_shape(self, scale=1.0):
         from magnelio.geo._occ_backend import (  # noqa: PLC0415
             face_plane_normal,
+            is_planar_face,
             make_extrude,
+            make_thick_face,
             occ_translate,
         )
 
         face = self._inner._occ_shape(scale)
+        if not is_planar_face(face):
+            return make_thick_face(face, self._thickness, self._direction, scale=scale)
         normal = face_plane_normal(face)
         if self._direction == "backward":
             normal = tuple(-c for c in normal)
@@ -431,9 +434,9 @@ class _ExtrudedFaceShape(Shape):
             find_nearest_face,
             make_extrude,
         )
-        from magnelio.geo._sheet import PlanarSheet  # noqa: PLC0415
+        from magnelio.geo._sheet import Sheet  # noqa: PLC0415
 
-        if isinstance(self._inner, PlanarSheet):
+        if isinstance(self._inner, Sheet):
             # A standalone sheet _is_ the profile — no face selection needed.
             face = self._inner._occ_shape(scale)
         else:

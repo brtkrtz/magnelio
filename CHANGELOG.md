@@ -11,6 +11,13 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- `geo.Surface.parametric(fn, u=, v=, samples=)` samples a parametric
+  map (u, v) → (x, y, z) into a curved sheet — a paraboloid dish, a
+  hyperboloid sub-reflector, a shaped surface given by a formula or a
+  table — which `extruded()` or `thickened()` turn into a metal body.
+  Moving, rotating, scaling or mirroring a sheet keeps it a sheet, so
+  `Face(...).rotated(...).thickened(...)` works too.  New methods
+  chapter *Geometry construction*.
 - Waveguide ports on coupled lines — two or more signal conductors
   above a ground, such as an edge-coupled microstrip pair — now
   return the line's propagating modes (the even and odd pair of a

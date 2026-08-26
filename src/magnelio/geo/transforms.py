@@ -13,6 +13,34 @@ from magnelio.geo._cache import cached_occ_shape
 from magnelio.geo._validate import count, finite, nonzero, point3, vector3
 from magnelio.geo.shape import Shape
 
+_SHEET_VARIANTS: dict = {}
+
+
+def _wrapper(cls, inner):
+    """The wrapper class to instantiate for *inner*: *cls* itself, or
+    its sheet-preserving variant when *inner* is a sheet.
+
+    A moved, turned, scaled or mirrored sheet is still a sheet — still
+    a profile for ``extruded()``/``thickened()``, and still planar if it
+    was — so the wrapper inherits the marker base of what it wraps.
+    """
+    from magnelio.geo._sheet import PlanarSheet, Sheet  # noqa: PLC0415
+
+    if isinstance(inner, PlanarSheet):
+        marker = PlanarSheet
+    elif isinstance(inner, Sheet):
+        marker = Sheet
+    else:
+        return cls
+    key = (cls, marker)
+    if key not in _SHEET_VARIANTS:
+        _SHEET_VARIANTS[key] = type(
+            f"{cls.__name__}{marker.__name__}",
+            (cls, marker),
+            {"__doc__": f"{cls.__name__} of a {marker.__name__}.", "__module__": __name__},
+        )
+    return _SHEET_VARIANTS[key]
+
 
 def _apply_repeat(shape, make_one, repeat, copy, unite, group=False):
     """Shared logic for repeated transforms.
@@ -112,7 +140,7 @@ def translate(
 
     def make_one(i):
         v = tuple(c * i for c in vector)
-        return _TranslatedShape(shape, v)
+        return _wrapper(_TranslatedShape, shape)(shape, v)
 
     return _apply_repeat(shape, make_one, repeat, copy, unite, group)
 
@@ -147,7 +175,7 @@ def rotate(
         return _apply_repeat(shape, make_one, repeat, copy, unite, group)
 
     def make_one(i):
-        return _RotatedShape(shape, axis, angle_deg * i, origin)
+        return _wrapper(_RotatedShape, shape)(shape, axis, angle_deg * i, origin)
 
     return _apply_repeat(shape, make_one, repeat, copy, unite, group)
 
@@ -164,7 +192,7 @@ def scale(shape, factor: float, center=(0.0, 0.0, 0.0)):
     center = point3(center, "scaled(center)")
     if isinstance(shape, Group):
         return _distribute(shape, lambda m: scale(m, factor, center))
-    return _ScaledShape(shape, factor, center)
+    return _wrapper(_ScaledShape, shape)(shape, factor, center)
 
 
 def mirror(
@@ -204,7 +232,7 @@ def mirror(
         return _apply_repeat(shape, make_one, 1, copy, unite, group)
 
     def make_one(i):
-        return _MirroredShape(shape, normal, position)
+        return _wrapper(_MirroredShape, shape)(shape, normal, position)
 
     return _apply_repeat(shape, make_one, 1, copy, unite, group)
 
