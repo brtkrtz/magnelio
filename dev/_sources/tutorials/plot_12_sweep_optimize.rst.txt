@@ -323,13 +323,13 @@ exact bottom is the optimiser's job.
 
  .. code-block:: none
 
-      y = -8.00 mm ->  -7.81 dB
-      y = -7.00 mm -> -10.03 dB
-      y = -6.00 mm -> -12.99 dB
-      y = -5.00 mm -> -17.43 dB
-      y = -4.00 mm -> -22.92 dB
-      y = -3.00 mm -> -18.34 dB
-      y = -2.00 mm -> -12.78 dB
+      y = -8.00 mm ->  -7.83 dB
+      y = -7.00 mm -> -10.05 dB
+      y = -6.00 mm -> -13.01 dB
+      y = -5.00 mm -> -17.46 dB
+      y = -4.00 mm -> -22.93 dB
+      y = -3.00 mm -> -18.31 dB
+      y = -2.00 mm -> -12.77 dB
       y = -1.00 mm ->  -8.93 dB
 
 
@@ -419,15 +419,15 @@ honest and costs seven evaluations.
 
  .. code-block:: none
 
-      eval y = -5.326 mm -> -15.94 dB
-      eval y = -3.674 mm -> -22.57 dB
-      eval y = -2.652 mm -> -16.06 dB
-      eval y = -3.984 mm -> -22.95 dB
-      eval y = -4.084 mm -> -22.77 dB
-      eval y = -3.884 mm -> -23.02 dB
-      eval y = -3.784 mm -> -22.91 dB
+      eval y = -5.326 mm -> -15.97 dB
+      eval y = -3.674 mm -> -22.55 dB
+      eval y = -2.652 mm -> -16.03 dB
+      eval y = -3.986 mm -> -22.95 dB
+      eval y = -4.086 mm -> -22.77 dB
+      eval y = -3.886 mm -> -23.02 dB
+      eval y = -3.786 mm -> -22.90 dB
 
-    optimum: y = -3.88 mm, mean reflected power -23.02 dB
+    optimum: y = -3.89 mm, mean reflected power -23.02 dB
 
 
 
@@ -596,8 +596,8 @@ zero — it is nearly invisible to the E-arm, not exactly invisible.
 
  .. code-block:: none
 
-    bare tee    isolation |S43|  -159.9 dB   E-arm match |S44|  -4.96 dB
-    with post   isolation |S43|  -158.2 dB   E-arm match |S44|  -3.85 dB
+    bare tee    isolation |S43|  -161.6 dB   E-arm match |S44|  -4.96 dB
+    with post   isolation |S43|  -159.8 dB   E-arm match |S44|  -3.87 dB
 
 
 
@@ -634,7 +634,7 @@ above lets you estimate before you commit to it.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (3 minutes 17.801 seconds)
+   **Total running time of the script:** (2 minutes 40.279 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_12_sweep_optimize.py:

@@ -326,6 +326,23 @@ as a ``.py`` script or a ``.ipynb`` notebook.
     </div>
 
 
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Every reflector so far — there was none.  The geometry chapters built bodies from primitives, profiles and lofts; an antenna dish is a surface given by a formula, a paraboloid, and the subreflector of a Cassegrain system is another one, a hyperboloid.  This tutorial builds an offset Cassegrain antenna from two such surfaces, feeds it with a pyramidal horn from the wall of an open box, and reads its radiation pattern off the far-field monitor.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_19_cassegrain_reflector_thumb.png
+    :alt:
+
+  :doc:`/tutorials/19_cassegrain_reflector`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Offset Cassegrain reflector: parametric surfaces and a horn feed</div>
+    </div>
+
+
 .. thumbnail-parent-div-close
 
 .. raw:: html
@@ -354,6 +371,7 @@ as a ``.py`` script or a ``.ipynb`` notebook.
    /tutorials/plot_16_cad_import
    /tutorials/plot_17_pcb_import
    /tutorials/plot_18_periodic_tesla_cell
+   /tutorials/19_cassegrain_reflector
 
 
 

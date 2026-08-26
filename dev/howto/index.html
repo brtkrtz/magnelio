@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=b35bd353"></script>
+    <script src="../_static/documentation_options.js?v=4e2bec15"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -60,8 +60,8 @@
     <link rel="canonical" href="https://brtkrtz.github.io/magnelio/dev/howto/index.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Lumped ports: investigations" href="plot_lumped_port_investigations.html" />
-    <link rel="prev" title="Periodic structures: the dispersion diagram of a TESLA cell" href="../tutorials/plot_18_periodic_tesla_cell.html" />
+    <link rel="next" title="Coupled-line directional coupler: dimensioning the pair with the port solver" href="plot_coupled_line_coupler.html" />
+    <link rel="prev" title="Offset Cassegrain reflector: parametric surfaces and a horn feed" href="../tutorials/19_cassegrain_reflector.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -429,6 +429,7 @@
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="plot_coupled_line_coupler.html">Coupled-line directional coupler: dimensioning the pair with the port solver</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_investigations.html">Lumped ports: investigations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_coax.html">Lumped port tuning: coaxial line</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_cpw.html">Lumped port tuning: coplanar waveguide</a></li>
@@ -500,7 +501,10 @@ rather than read in order: download it as a <code class="docutils literal notran
 <code class="docutils literal notranslate"><span class="pre">.ipynb</span></code> notebook and edit the parameters at the top for your own
 device.  For a guided introduction to the workflow itself, start with
 the tutorials instead.</p>
-<div id='sg-tag-list' class='sphx-glr-tag-list'></div><div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="A PortLumped terminates a line in a single chain of grid edges — cheap, DC-capable, and available where a waveguide port window does not fit.  The price is that it is not an exact line termination: a residual self-reflection and a phase error remain, and both depend on the grid at the gap, on the gap geometry and position, and on the port impedance.  Rules of thumb exist, but none of them tells you how good your termination is on your mesh, or up to which frequency you can trust it."><img alt="" src="../_images/sphx_glr_plot_lumped_port_investigations_thumb.png" />
+<div id='sg-tag-list' class='sphx-glr-tag-list'></div><div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="Two microstrip lines running side by side for a quarter wavelength form a directional coupler: a fraction of the power entering one line leaves the near end of the other, and — ideally — nothing leaves its far end.  The classic single-section design has two knobs, the gap between the lines and their width, and one number to hit: the coupling at the centre frequency.  This guide sets a −10 dB coupler at 5 GHz on a 0.813 mm substrate and reads the result off a four-port S-parameter run."><img alt="" src="../_images/sphx_glr_plot_coupled_line_coupler_thumb.png" />
+<p><a class="reference internal" href="plot_coupled_line_coupler.html"><span class="doc">Coupled-line directional coupler: dimensioning the pair with the port solver</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Coupled-line directional coupler: dimensioning the pair with the port solver</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="A PortLumped terminates a line in a single chain of grid edges — cheap, DC-capable, and available where a waveguide port window does not fit.  The price is that it is not an exact line termination: a residual self-reflection and a phase error remain, and both depend on the grid at the gap, on the gap geometry and position, and on the port impedance.  Rules of thumb exist, but none of them tells you how good your termination is on your mesh, or up to which frequency you can trust it."><img alt="" src="../_images/sphx_glr_plot_lumped_port_investigations_thumb.png" />
 <p><a class="reference internal" href="plot_lumped_port_investigations.html"><span class="doc">Lumped ports: investigations</span></a></p>
   <div class="sphx-glr-thumbnail-title">Lumped ports: investigations</div>
 </div><div class="sphx-glr-thumbcontainer" tooltip="A pre-flight check for a lumped port terminating a coaxial line: fill in the given quantities of your target model, run, and the scoreboard tells you how good the termination is — worst reflection, usable band, phase error.  Edit the three knobs and re-run until the numbers meet your spec, then carry the settings over."><img alt="" src="../_images/sphx_glr_plot_lumped_port_tuning_coax_thumb.png" />
@@ -534,20 +538,20 @@ the tutorials instead.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../tutorials/plot_18_periodic_tesla_cell.html"
+       href="../tutorials/19_cassegrain_reflector.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Periodic structures: the dispersion diagram of a TESLA cell</p>
+        <p class="prev-next-title">Offset Cassegrain reflector: parametric surfaces and a horn feed</p>
       </div>
     </a>
     <a class="right-next"
-       href="plot_lumped_port_investigations.html"
+       href="plot_coupled_line_coupler.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Lumped ports: investigations</p>
+        <p class="prev-next-title">Coupled-line directional coupler: dimensioning the pair with the port solver</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

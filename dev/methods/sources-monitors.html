@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=b35bd353"></script>
+    <script src="../_static/documentation_options.js?v=4e2bec15"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -432,6 +432,7 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="fit-discretization.html">Spatial discretisation and time integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="geometry.html">Geometry construction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cad-import.html">CAD import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pcb-import.html">Board import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="meshing-conformal.html">Mesh generation and conformal geometry</a></li>
@@ -514,8 +515,8 @@
 corrections on the six box faces inject the incident wave into the
 total-field region while the exterior carries only scattered field
 (<code class="docutils literal notranslate"><span class="pre">sources/plane_wave.py</span></code>, DD-013).  The TF/SF formulation is due to
-Merewether, Fisher and Smith <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id55" title="David E. Merewether, Ronald Fisher, and F. W. Smith. On implementing a numeric Huygens' source scheme in a finite difference program to illuminate scattering bodies. IEEE Transactions on Nuclear Science, 27(6):1829–1833, 1980. doi:10.1109/TNS.1980.4331114.">52</a>]</span> and
-Umashankar and Taflove <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id56" title="Korada Umashankar and Allen Taflove. A novel method to analyze electromagnetic scattering of complex objects. IEEE Transactions on Electromagnetic Compatibility, 24(4):397–405, 1982. doi:10.1109/TEMC.1982.304054.">53</a>]</span>;
+Merewether, Fisher and Smith <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id56" title="David E. Merewether, Ronald Fisher, and F. W. Smith. On implementing a numeric Huygens' source scheme in a finite difference program to illuminate scattering bodies. IEEE Transactions on Nuclear Science, 27(6):1829–1833, 1980. doi:10.1109/TNS.1980.4331114.">53</a>]</span> and
+Umashankar and Taflove <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id57" title="Korada Umashankar and Allen Taflove. A novel method to analyze electromagnetic scattering of complex objects. IEEE Transactions on Electromagnetic Compatibility, 24(4):397–405, 1982. doi:10.1109/TEMC.1982.304054.">54</a>]</span>;
 textbook treatment in <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.
 The incident samples are converted to FIT grid quantities per
 edge/face, so amplitudes are physical (V/m) on any grid — an
@@ -563,7 +564,12 @@ waveform <em>is</em> the incident power-wave amplitude <span class="math notrans
 each monitor frequency — E in V/m, H in A/m, per <span class="math notranslate nohighlight">\(\sqrt{\rm W}\)</span> of
 incident power.  A run performs that division on its own monitors, so
 <code class="docutils literal notranslate"><span class="pre">.data</span></code> is in those units from the moment the run returns; <code class="docutils literal notranslate"><span class="pre">.data_raw</span></code>
-exposes the undivided bins for callers who want the transient itself.</p>
+exposes the undivided bins for callers who want the transient itself.
+For a TE/TM feed the waveform launches a frequency-dependent power —
+the mode’s wave impedance varies across the band — and the run divides
+additionally by the ratio <span class="math notranslate nohighlight">\(|a(f)|/|W(f)|\)</span> of the incident wave it
+separated at the port to the waveform spectrum, so the statement holds
+for every feed type (DD-198).</p>
 </section>
 <section id="project-store-checkpointing-resume">
 <h2>Project store, checkpointing, resume<a class="headerlink" href="#project-store-checkpointing-resume" title="Link to this heading">#</a></h2>

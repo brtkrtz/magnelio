@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=b35bd353"></script>
+    <script src="../_static/documentation_options.js?v=4e2bec15"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -449,6 +449,7 @@
 <li class="toctree-l1"><a class="reference internal" href="plot_16_cad_import.html">Importing a CAD model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_17_pcb_import.html">Importing a circuit board</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_18_periodic_tesla_cell.html">Periodic structures: the dispersion diagram of a TESLA cell</a></li>
+<li class="toctree-l1"><a class="reference internal" href="19_cassegrain_reflector.html">Offset Cassegrain reflector: parametric surfaces and a horn feed</a></li>
 </ul>
 </div>
 </nav></div>
@@ -715,7 +716,7 @@ this picture in mind when reading the port report below.</p>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Port 'port1' — 1 mode(s)
   z_line = 49.67 Ω (numerical), 51.67 Ω (reference, Δ -3.87 %)
-  [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 49.67 Ω
+  [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 49.67 Ω  ε_eff = 2.250
 z_line numerical :   49.67 Ohm  (-3.9 %)
 z_line reference :   51.67 Ohm
 </pre></div>
@@ -756,7 +757,7 @@ conductor, the tinted annulus the dielectric:</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"max |S11| in band: </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11_db</span></a><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">6.1f</span><span class="si">}</span><span class="s2"> dB"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_02_coax_line_005.png" srcset="../_images/sphx_glr_plot_02_coax_line_005.png" alt="RG-58 class coax, 8 mm" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S11| in band: -110.5 dB
+<img src="../_images/sphx_glr_plot_02_coax_line_005.png" srcset="../_images/sphx_glr_plot_02_coax_line_005.png" alt="RG-58 class coax, 8 mm" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S11| in band: -109.6 dB
 </pre></div>
 </div>
 <p>As for every uniform matched line, <code class="docutils literal notranslate"><span class="pre">|S21|</span></code> sits at 0 dB and
@@ -800,7 +801,7 @@ numerical-vs-reference reading of a port report.  The next tutorial
 excites <em>both</em> ports of this line and assembles the full S-matrix —
 including what to check when a device has more ports than modes of
 interest.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 7.934 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 5.657 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-02-coax-line-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/ce2371532972a7a4335b8427c05db663/plot_02_coax_line.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_02_coax_line.ipynb</span></code></a></p>

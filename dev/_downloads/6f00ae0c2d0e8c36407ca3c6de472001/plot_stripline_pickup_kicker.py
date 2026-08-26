@@ -27,7 +27,7 @@ solver alone.  The ideal-stripline formulas of the primer serve as the
 reference.
 """
 
-# sphinx_gallery_thumbnail_number = 4
+# sphinx_gallery_thumbnail_number = 1
 
 # %%
 # The device

@@ -286,7 +286,7 @@ the compromise it settles on.
 
     Port 'port1' — 1 mode(s)
       z_line = 51.97 Ω (numerical)
-      [0] QTEM_lap00   TEM f_c = 0.0000 GHz  z_line = 51.97 Ω
+      [0] QTEM_lap00   TEM f_c = 0.0000 GHz  z_line = 51.97 Ω  ε_eff = 3.171
     eps_eff (quasi-static): 3.171
 
 
@@ -406,7 +406,7 @@ stackups, blind and buried vias, and what is deliberately left out.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 3.118 seconds)
+   **Total running time of the script:** (0 minutes 2.055 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_17_pcb_import.py:

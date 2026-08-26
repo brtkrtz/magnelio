@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=b35bd353"></script>
+    <script src="../_static/documentation_options.js?v=4e2bec15"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -430,6 +430,7 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="fit-discretization.html">Spatial discretisation and time integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="geometry.html">Geometry construction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cad-import.html">CAD import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pcb-import.html">Board import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="meshing-conformal.html">Mesh generation and conformal geometry</a></li>
@@ -511,8 +512,8 @@ citation apparatus of the previous chapters.</p>
 <section id="kernel-dispatch-and-backends">
 <h2>Kernel dispatch and backends<a class="headerlink" href="#kernel-dispatch-and-backends" title="Link to this heading">#</a></h2>
 <p>Three-tier kernel dispatch (DD-032): NumPy reference kernels,
-Numba-JIT CPU stencil kernels <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id63" title="Siu Kwan Lam, Antoine Pitrou, and Stanley Seibert. Numba: a LLVM-based Python JIT compiler. In Proceedings of the Second Workshop on the LLVM Compiler Infrastructure in HPC (LLVM '15). 2015. doi:10.1145/2833157.2833162.">61</a>]</span>, and
-CUDA kernels via CuPy <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id64" title="Ryosuke Okuta, Yuya Unno, Daisuke Nishino, Shohei Hido, and Crissman Loomis. CuPy: a NumPy-compatible library for NVIDIA GPU calculations. In Proceedings of the Workshop on Machine Learning Systems (LearningSys) at NIPS 2017. 2017.">62</a>]</span> with
+Numba-JIT CPU stencil kernels <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id64" title="Siu Kwan Lam, Antoine Pitrou, and Stanley Seibert. Numba: a LLVM-based Python JIT compiler. In Proceedings of the Second Workshop on the LLVM Compiler Infrastructure in HPC (LLVM '15). 2015. doi:10.1145/2833157.2833162.">62</a>]</span>, and
+CUDA kernels via CuPy <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id65" title="Ryosuke Okuta, Yuya Unno, Daisuke Nishino, Shohei Hido, and Crissman Loomis. CuPy: a NumPy-compatible library for NVIDIA GPU calculations. In Proceedings of the Workshop on Machine Learning Systems (LearningSys) at NIPS 2017. 2017.">63</a>]</span> with
 <code class="docutils literal notranslate"><span class="pre">backend=&quot;auto&quot;</span></code> GPU selection (DD-090).  GPU step orchestration
 (device-resident recorder staging, fused port-plane transfers, CUDA
 graph capture of the device phases, DD-092) is performance
@@ -534,7 +535,7 @@ polygon kernels).  Engineering only.</p>
 <h2>Dependencies with numerical relevance<a class="headerlink" href="#dependencies-with-numerical-relevance" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p>NumPy/SciPy: sparse matrices, <code class="docutils literal notranslate"><span class="pre">eigsh</span></code> (ARPACK), <code class="docutils literal notranslate"><span class="pre">spsolve</span></code> (SuperLU),
-<code class="docutils literal notranslate"><span class="pre">nnls</span></code> (Lawson–Hanson <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id44" title="Charles L. Lawson and Richard J. Hanson. Solving Least Squares Problems. Prentice-Hall, 1974. NNLS algorithm (ch. 23); reprinted as SIAM Classics in Applied Mathematics 15, 1995.">46</a>]</span>).</p></li>
+<code class="docutils literal notranslate"><span class="pre">nnls</span></code> (Lawson–Hanson <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id45" title="Charles L. Lawson and Richard J. Hanson. Solving Least Squares Problems. Prentice-Hall, 1974. NNLS algorithm (ch. 23); reprinted as SIAM Classics in Applied Mathematics 15, 1995.">47</a>]</span>).</p></li>
 <li><p>pythonocc-core / Open CASCADE: geometry kernel.</p></li>
 <li><p>h5py/HDF5, VTK, XDMF: storage and visualisation formats.</p></li>
 </ul>

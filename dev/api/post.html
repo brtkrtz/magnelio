@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=b35bd353"></script>
+    <script src="../_static/documentation_options.js?v=4e2bec15"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -1095,8 +1095,15 @@ frequency carry NaN there.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="magnelio.post.compute_s_parameters">
-<span class="sig-prename descclassname"><span class="pre">magnelio.post.</span></span><span class="sig-name descname"><span class="pre">compute_s_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recorder_signals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_modes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excited</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_signal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_axis</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">a_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">taper_signals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_normal_dx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_line_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.post.compute_s_parameters" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">magnelio.post.</span></span><span class="sig-name descname"><span class="pre">compute_s_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recorder_signals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_modes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excited</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_signal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_axis</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">a_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">taper_signals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_normal_dx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_line_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_incident</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.post.compute_s_parameters" title="Link to this definition">#</a></dt>
 <dd><p>Compute power-wave S-parameters from recorded V/I time-series.</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">return_incident=True</span></code> the result is the pair <code class="docutils literal notranslate"><span class="pre">(S,</span> <span class="pre">a)</span></code> where
+<code class="docutils literal notranslate"><span class="pre">a</span></code> is the incident power-wave spectrum of the excited channel on
+<code class="docutils literal notranslate"><span class="pre">f_axis</span></code> [√W · s] — the actual incident wave the run launched,
+which the monitors’ “per 1 W incident” normalisation refers to (a
+TE/TM channel’s wave impedance varies with frequency, so a
+frequency-flat excitation waveform does not launch frequency-flat
+incident power).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1166,6 +1173,7 @@ the continuum impedance misses the discrete wave’s V/I by
 O((ω·dt)², (β·dz)²), a −40…−60 dB measured-<code class="docutils literal notranslate"><span class="pre">|S11|</span></code> cap on
 λ/20 meshes.  Missing channels fall back to the continuum
 forms.</p></li>
+<li><p><strong>return_incident</strong> (<em>bool</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

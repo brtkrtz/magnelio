@@ -24,6 +24,23 @@ the tutorials instead.
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="Two microstrip lines running side by side for a quarter wavelength form a directional coupler: a fraction of the power entering one line leaves the near end of the other, and — ideally — nothing leaves its far end.  The classic single-section design has two knobs, the gap between the lines and their width, and one number to hit: the coupling at the centre frequency.  This guide sets a −10 dB coupler at 5 GHz on a 0.813 mm substrate and reads the result off a four-port S-parameter run.">
+
+.. only:: html
+
+  .. image:: /howto/images/thumb/sphx_glr_plot_coupled_line_coupler_thumb.png
+    :alt:
+
+  :doc:`/howto/plot_coupled_line_coupler`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Coupled-line directional coupler: dimensioning the pair with the port solver</div>
+    </div>
+
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="A PortLumped terminates a line in a single chain of grid edges — cheap, DC-capable, and available where a waveguide port window does not fit.  The price is that it is not an exact line termination: a residual self-reflection and a phase error remain, and both depend on the grid at the gap, on the gap geometry and position, and on the port impedance.  Rules of thumb exist, but none of them tells you how good your termination is on your mesh, or up to which frequency you can trust it.">
 
 .. only:: html
@@ -134,6 +151,7 @@ the tutorials instead.
 .. toctree::
    :hidden:
 
+   /howto/plot_coupled_line_coupler
    /howto/plot_lumped_port_investigations
    /howto/plot_lumped_port_tuning_coax
    /howto/plot_lumped_port_tuning_cpw

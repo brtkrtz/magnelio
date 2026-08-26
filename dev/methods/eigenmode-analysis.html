@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=b35bd353"></script>
+    <script src="../_static/documentation_options.js?v=4e2bec15"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -432,6 +432,7 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="fit-discretization.html">Spatial discretisation and time integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="geometry.html">Geometry construction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cad-import.html">CAD import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pcb-import.html">Board import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="meshing-conformal.html">Mesh generation and conformal geometry</a></li>
@@ -524,7 +525,7 @@ natural boundary condition (DD-065).</p>
 <p>The default backend is <strong>ARPACK shift-invert Lanczos</strong>
 (<code class="docutils literal notranslate"><span class="pre">scipy.sparse.linalg.eigsh</span></code> with a SuperLU factorisation of
 <span class="math notranslate nohighlight">\(A - \sigma B\)</span>; DD-007), i.e. the implicitly restarted Arnoldi/Lanczos
-method of Lehoucq, Sorensen and Yang <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id58" title="Richard B. Lehoucq, Danny C. Sorensen, and Chao Yang. ARPACK Users' Guide: Solution of Large-Scale Eigenvalue Problems with Implicitly Restarted Arnoldi Methods. SIAM, 1998. doi:10.1137/1.9780898719628.">55</a>]</span>.
+method of Lehoucq, Sorensen and Yang <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id59" title="Richard B. Lehoucq, Danny C. Sorensen, and Chao Yang. ARPACK Users' Guide: Solution of Large-Scale Eigenvalue Problems with Implicitly Restarted Arnoldi Methods. SIAM, 1998. doi:10.1137/1.9780898719628.">56</a>]</span>.
 The shift <span class="math notranslate nohighlight">\(\sigma\)</span> is auto-estimated
 boundary-condition-aware, an in-house heuristic (DD-010).</p>
 <p>Two experimental backends exist (DD-033):</p>
@@ -532,10 +533,10 @@ boundary-condition-aware, an in-house heuristic (DD-010).</p>
 <li><p>a CHOLMOD Cholesky path with <strong>tree-cotree gauging</strong> to eliminate
 the gradient null space; tree-cotree/spanning-tree gauging of
 curl-curl systems is established FEM practice, e.g. Albanese and
-Rubinacci <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id59" title="Raffaele Albanese and Guglielmo Rubinacci. Magnetostatic field computations in terms of two-component vector potentials. International Journal for Numerical Methods in Engineering, 29(3):515–532, 1990. doi:10.1002/nme.1620290305.">56</a>]</span> and Manges
-and Cendes <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id60" title="John B. Manges and Zoltan J. Cendes. A generalized tree-cotree gauge for magnetic field computation. IEEE Transactions on Magnetics, 31(3):1342–1347, 1995. doi:10.1109/20.376275.">57</a>]</span>; CHOLMOD is
-<span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id61" title="Yanqing Chen, Timothy A. Davis, William W. Hager, and Sivasankaran Rajamanickam. Algorithm 887: CHOLMOD, supernodal sparse Cholesky factorization and update/downdate. ACM Transactions on Mathematical Software, 35(3):1–14, 2008. doi:10.1145/1391989.1391995.">58</a>]</span>;</p></li>
-<li><p>an AMG-preconditioned path via pyamg <span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id62" title="Nathan Bell, Luke N. Olson, Jacob Schroder, and Ben Southworth. PyAMG: algebraic multigrid solvers in Python. Journal of Open Source Software, 8(87):5495, 2023. doi:10.21105/joss.05495.">59</a>]</span>,
+Rubinacci <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id60" title="Raffaele Albanese and Guglielmo Rubinacci. Magnetostatic field computations in terms of two-component vector potentials. International Journal for Numerical Methods in Engineering, 29(3):515–532, 1990. doi:10.1002/nme.1620290305.">57</a>]</span> and Manges
+and Cendes <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id61" title="John B. Manges and Zoltan J. Cendes. A generalized tree-cotree gauge for magnetic field computation. IEEE Transactions on Magnetics, 31(3):1342–1347, 1995. doi:10.1109/20.376275.">58</a>]</span>; CHOLMOD is
+<span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id62" title="Yanqing Chen, Timothy A. Davis, William W. Hager, and Sivasankaran Rajamanickam. Algorithm 887: CHOLMOD, supernodal sparse Cholesky factorization and update/downdate. ACM Transactions on Mathematical Software, 35(3):1–14, 2008. doi:10.1145/1391989.1391995.">59</a>]</span>;</p></li>
+<li><p>an AMG-preconditioned path via pyamg <span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id63" title="Nathan Bell, Luke N. Olson, Jacob Schroder, and Ben Southworth. PyAMG: algebraic multigrid solvers in Python. Journal of Open Source Software, 8(87):5495, 2023. doi:10.21105/joss.05495.">60</a>]</span>,
 documented as not recommended (scalar
 smoothed-aggregation AMG does not achieve mesh-independent
 convergence on the vector curl-curl operator — a known limitation
@@ -547,7 +548,7 @@ in the literature on AMG for Maxwell problems).</p></li>
 unit-cell problem of an infinite periodic structure.  The field in
 one period leads the next by a <strong>phase advance</strong> <span class="math notranslate nohighlight">\(\varphi\)</span> (Floquet’s
 theorem, in the periodic-waveguide form given by Collin
-<span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id29" title="Robert E. Collin. Field Theory of Guided Waves. IEEE Press, 2nd edition, 1991.">17</a>]</span>): on the far plane of the period the tangential
+<span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id30" title="Robert E. Collin. Field Theory of Guided Waves. IEEE Press, 2nd edition, 1991.">17</a>]</span>): on the far plane of the period the tangential
 electric edge voltages are those of the near plane times
 <span class="math notranslate nohighlight">\(e^{-\mathrm j\varphi}\)</span>.  The solver imposes this by a congruence
 transformation — a projector <span class="math notranslate nohighlight">\(\mathbf P\)</span> identifies every far-plane
@@ -567,13 +568,13 @@ wall-type calculations (electric or magnetic wall at the cell
 boundary), which is the check the implementation is held to, and for
 a chain of electrically coupled cells the curve follows
 <span class="math notranslate nohighlight">\(f^2 = f_{\pi/2}^2 (1 - k\cos\varphi)\)</span> with <span class="math notranslate nohighlight">\(k\)</span> the cell-to-cell
-coupling <span class="bibtex-citation" id="id8">[<a class="reference internal" href="../bibliography.html#id5" title="Thomas P. Wangler. RF Linear Accelerators. Wiley-VCH, Weinheim, 2 edition, 2008. doi:10.1002/9783527623426.">60</a>]</span>.
+coupling <span class="bibtex-citation" id="id8">[<a class="reference internal" href="../bibliography.html#id5" title="Thomas P. Wangler. RF Linear Accelerators. Wiley-VCH, Weinheim, 2 edition, 2008. doi:10.1002/9783527623426.">61</a>]</span>.
 Verified against the discrete dispersion relation of the empty
 periodic box (exact to solver tolerance for <span class="math notranslate nohighlight">\(\varphi\)</span> between 0 and
 180 degrees, <code class="docutils literal notranslate"><span class="pre">tests/integration/test_floquet_eigenmode.py</span></code>).</p>
 <p>Quality factors of eigenmodes are evaluated with the perturbative
 wall-loss route (see <a class="reference internal" href="conductor-losses.html"><span class="std std-doc">conductor losses</span></a>)
-<span class="bibtex-citation" id="id9">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>, <a class="reference internal" href="../bibliography.html#id54" title="John David Jackson. Classical Electrodynamics. Wiley, 3rd edition, 1999.">38</a>]</span>.</p>
+<span class="bibtex-citation" id="id9">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>, <a class="reference internal" href="../bibliography.html#id55" title="John David Jackson. Classical Electrodynamics. Wiley, 3rd edition, 1999.">39</a>]</span>.</p>
 </section>
 </section>
 <section id="d-mode-solver">

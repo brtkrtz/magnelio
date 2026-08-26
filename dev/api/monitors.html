@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=b35bd353"></script>
+    <script src="../_static/documentation_options.js?v=4e2bec15"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -528,6 +528,15 @@ left open there and the mirror images of the recorded surface
 complete it.  For a plain PEC/PMC boundary the pattern is masked
 to the physical half-space; a symmetry plane keeps the full
 sphere.</p>
+<p>A feed guide that crosses the box — a waveguide port in an
+absorbing face — is handled the way a waveguide-fed antenna is
+usually treated: the box face it crosses is sampled at the
+absorber interface, the patches inside the guide (no external
+source) and inside conductors are left out, and the currents on
+the guide’s outer wall beyond the box, which the absorber removes,
+are the approximation.  The normalisation is to the incident power
+the run actually launched at each frequency, which for a TE/TM feed
+differs from the excitation waveform by the mode’s wave impedance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -961,10 +970,14 @@ project store — call this only for a monitor filled by hand, or
 to divide by a reference other than the run’s own excitation.</p>
 <p>Divides each DFT frequency bin by the source-waveform spectrum.
 The excitation waveform <em>is</em> the incident power-wave
-amplitude <code class="docutils literal notranslate"><span class="pre">a(t)</span></code> in √W, so the renormalised fields are exactly
-the fields of a <strong>1 W CW excitation</strong> at each monitor frequency
-(gated by <code class="docutils literal notranslate"><span class="pre">test_port_units.py::</span>
-<span class="pre">test_frequency_monitor_fields_per_1w_cw</span></code>).</p>
+amplitude <code class="docutils literal notranslate"><span class="pre">a(t)</span></code> in √W for lumped, TEM and quasi-TEM feeds, so
+the renormalised fields are exactly the fields of a <strong>1 W CW
+excitation</strong> at each monitor frequency (gated by
+<code class="docutils literal notranslate"><span class="pre">test_port_units.py::test_frequency_monitor_fields_per_1w_cw</span></code>).
+A TE/TM feed launches a frequency-dependent power per unit
+waveform (its wave impedance varies across the band); the
+analysis wires that ratio into the monitor after the run so the
+same statement holds there.</p>
 <p>The source spectrum is computed in the same Fourier convention
 as the internal DFT accumulator (<code class="docutils literal notranslate"><span class="pre">exp(+jωt)</span></code> with <code class="docutils literal notranslate"><span class="pre">dt</span></code>
 integration weight), so the division is consistent.</p>

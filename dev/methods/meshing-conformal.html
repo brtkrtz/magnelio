@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=b35bd353"></script>
+    <script src="../_static/documentation_options.js?v=4e2bec15"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -432,6 +432,7 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="fit-discretization.html">Spatial discretisation and time integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="geometry.html">Geometry construction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cad-import.html">CAD import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pcb-import.html">Board import</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Mesh generation and conformal geometry</a></li>
@@ -516,6 +517,22 @@ queries (solid classification, 3D face–solid intersection, planar
 cross-sections) rather than voxel sampling.  This is engineering
 infrastructure on top of a third-party kernel, not a numerical-methods
 contribution.</p>
+<p>The planar cross-sections that feed the conformal fractions are taken
+three ways.  Planar faces are sectioned exactly by an in-house engine
+(intersection points on straight edges, segments stitched through
+shared edges).  Free-form faces — parametric surfaces, lofts, imported
+B-spline patches — are sectioned on a triangulation of the body at the
+section deflection: the crossing points are lifted back onto the exact
+surface (one Newton step from the interpolated surface parameters,
+which removes the chord error that a shallow cut would otherwise
+amplify), and each segment is refined in-plane until its sagitta is a
+tenth of the deflection.  Analytic curved faces — cylinders, cones,
+spheres, tori — go through the kernel’s Boolean section, whose exact
+curves are tessellated at the deflection.  The deflection is a
+hundredth of the smallest cell for the sub-cell fractions and a tenth
+for the cell classification.  Section contours are wound by nesting
+parity (holes against their outer boundary) before the area kernels
+sum them, whatever path produced them.</p>
 </section>
 <section id="graded-cartesian-mesh">
 <h2>Graded Cartesian mesh<a class="headerlink" href="#graded-cartesian-mesh" title="Link to this heading">#</a></h2>

@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=b35bd353"></script>
+    <script src="../_static/documentation_options.js?v=4e2bec15"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -432,6 +432,7 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="fit-discretization.html">Spatial discretisation and time integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="geometry.html">Geometry construction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cad-import.html">CAD import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pcb-import.html">Board import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="meshing-conformal.html">Mesh generation and conformal geometry</a></li>
@@ -541,7 +542,7 @@ the quasi-TEM effective parameters follow the classic two-capacitance
 construction <span class="math notranslate nohighlight">\(\varepsilon_{\text{eff}} = C'/C'_0\)</span>,
 <span class="math notranslate nohighlight">\(Z_0 = 1/(c\sqrt{C' C'_0})\)</span> — standard quasi-static transmission-line
 theory as found in the microwave-engineering literature
-<span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>, <a class="reference internal" href="../bibliography.html#id29" title="Robert E. Collin. Field Theory of Guided Waves. IEEE Press, 2nd edition, 1991.">17</a>]</span> (the specific
+<span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>, <a class="reference internal" href="../bibliography.html#id30" title="Robert E. Collin. Field Theory of Guided Waves. IEEE Press, 2nd edition, 1991.">17</a>]</span> (the specific
 formulation is textbook material; no single originating paper is
 claimed).  The line-impedance definition used for TEM modes is the
 power–current impedance <span class="math notranslate nohighlight">\(Z_{\pi}\)</span> (DD-025); the coexistence of
@@ -549,6 +550,31 @@ power–current impedance <span class="math notranslate nohighlight">\(Z_{\pi}\)
 theory <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>, <a class="reference internal" href="../bibliography.html#id27" title="Nathan Marcuvitz. Waveguide Handbook. Volume 10 of MIT Radiation Laboratory Series. McGraw-Hill, 1951.">18</a>]</span>.  Analytical
 reference modes for coaxial and rectangular-waveguide ports are
 closed-form textbook solutions <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>]</span>.</p>
+<p><strong>Coupled lines.</strong>  With more than one signal conductor above the
+ground — an edge-coupled microstrip pair, a stripline pickup, a
+multi-wire bus — the per-conductor Laplace solutions are the
+<em>conductor</em> basis of the line, not its <em>mode</em> basis: on an
+inhomogeneous cross-section every voltage pattern travels at its own
+speed, and only the eigen-patterns of the multiconductor telegrapher
+equations propagate without exchanging energy.  The port therefore
+returns those eigen-patterns.  From the per-conductor fields it forms
+the two per-unit-length capacitance matrices — <span class="math notranslate nohighlight">\(\mathbf C\)</span> with the
+actual dielectric and <span class="math notranslate nohighlight">\(\mathbf C_0\)</span> with the conductors in vacuum —
+and solves <span class="math notranslate nohighlight">\(\mathbf C\,\mathbf v = \varepsilon_{\text{eff}}\,
+\mathbf C_0\,\mathbf v\)</span>, the quasi-static form of the modal
+decomposition of <span class="math notranslate nohighlight">\(\mathbf L\mathbf C\)</span> with <span class="math notranslate nohighlight">\(\mathbf L =
+\mu_0\varepsilon_0\mathbf C_0^{-1}\)</span> <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id29" title="Clayton R. Paul. Analysis of Multiconductor Transmission Lines. Wiley-IEEE Press, 2nd edition, 2008.">19</a>]</span>.  Each
+eigenvector is a conductor-voltage pattern (the even and odd modes of
+a symmetric pair), its eigenvalue the modal <span class="math notranslate nohighlight">\(\varepsilon_{\text{eff}}\)</span>,
+and its impedance <span class="math notranslate nohighlight">\(Z_0 = 1/(c\sqrt{C'_v C'_{0,v}})\)</span> with the modal
+capacitances <span class="math notranslate nohighlight">\(C'_v = \mathbf v^\top\mathbf C\,\mathbf v\)</span> for the
+unit-Euclidean pattern <span class="math notranslate nohighlight">\(\mathbf v\)</span> — for a symmetric pair exactly
+<span class="math notranslate nohighlight">\(Z_{0e}\)</span> and <span class="math notranslate nohighlight">\(Z_{0o}\)</span>.  Channels are ordered by descending
+<span class="math notranslate nohighlight">\(\varepsilon_{\text{eff}}\)</span> and are orthogonal in the port’s
+capacitance-corrected mass.  A single signal conductor is the <span class="math notranslate nohighlight">\(1
+\times 1\)</span> case of the same construction.  For a homogeneous filling
+the pencil degenerates (all patterns share one speed), and the
+channels are the capacitance-matrix eigenmodes of DD-066 instead.</p>
 </section>
 <section id="mode-classification-and-multi-mode-merge">
 <h3>Mode classification and multi-mode merge<a class="headerlink" href="#mode-classification-and-multi-mode-merge" title="Link to this heading">#</a></h3>
@@ -556,6 +582,23 @@ closed-form textbook solutions <span class="bibtex-citation" id="id4">[<a class=
 port; degenerate multi-TEM subspaces are orthonormalised through a
 Gram eigenbasis, and multi-channel projections use the dual basis
 (Gram inverse) (DD-066).  Standard linear algebra.</p>
+</section>
+<section id="ports-in-absorbing-walls">
+<h3>Ports in absorbing walls<a class="headerlink" href="#ports-in-absorbing-walls" title="Link to this heading">#</a></h3>
+<p>A radiating structure is fed through a guide that reaches the domain
+wall: the neck of a horn, a coax entering the box.  The wall is
+absorbing, the port sits in the guide’s cross-section on it (a window
+port with <code class="docutils literal notranslate"><span class="pre">corners</span></code>), and two things make that consistent (DD-198).
+The absorber is switched off in the columns behind the window over its
+whole depth, so the mode injected at the port travels a uniform,
+lossless guide into the domain and the reflected wave meets the port’s
+own termination — the transparent-boundary assumptions above hold
+because the feed <em>is</em> uniform there.  And the window must be enclosed
+by conductor on the port slab: the lateral edge of the absorber
+switch-off then lies on metal, where it cannot scatter.  A port that
+covers the whole absorbing face, or a window whose ring lies in free
+space, is refused with a pointer to these rules.  The far-field
+monitor knows about such feeds (far-field chapter).</p>
 </section>
 </section>
 <section id="exact-discrete-transparent-boundary-conditions-dtbc">
@@ -582,12 +625,12 @@ lattice (derivation in DD-054/DD-055; measured port floors −124 to
 transparent boundary conditions</em> — deriving the boundary kernel from
 the discretised interior scheme rather than discretising a continuous
 ABC — is established in the numerical-analysis literature, e.g. by Arnold,
-Ehrhardt and Sofronov <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id22" title="Anton Arnold, Matthias Ehrhardt, and Ivan Sofronov. Discrete transparent boundary conditions for the Schrödinger equation: fast calculation, approximation, and stability. Communications in Mathematical Sciences, 1(3):501–556, 2003.">19</a>]</span> and
+Ehrhardt and Sofronov <span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id22" title="Anton Arnold, Matthias Ehrhardt, and Ivan Sofronov. Discrete transparent boundary conditions for the Schrödinger equation: fast calculation, approximation, and stability. Communications in Mathematical Sciences, 1(3):501–556, 2003.">20</a>]</span> and
 Ehrhardt’s work on discrete TBCs for Schrödinger-type equations
-<span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id23" title="Matthias Ehrhardt. Discrete transparent boundary conditions for general Schrödinger-type equations. VLSI Design, 9(4):325–338, 1999.">20</a>]</span>; discretely nonreflecting
+<span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id23" title="Matthias Ehrhardt. Discrete transparent boundary conditions for general Schrödinger-type equations. VLSI Design, 9(4):325–338, 1999.">21</a>]</span>; discretely nonreflecting
 boundary closures for finite-difference schemes of linear hyperbolic
 systems are constructed by Rowley and Colonius
-<span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id24" title="Clarence W. Rowley and Tim Colonius. Discretely nonreflecting boundary conditions for linear hyperbolic systems. Journal of Computational Physics, 157(2):500–538, 2000. doi:10.1006/jcph.1999.6383.">21</a>]</span>.  None of these antecedents treats modal
+<span class="bibtex-citation" id="id8">[<a class="reference internal" href="../bibliography.html#id24" title="Clarence W. Rowley and Tim Colonius. Discretely nonreflecting boundary conditions for linear hyperbolic systems. Journal of Computational Physics, 157(2):500–538, 2000. doi:10.1006/jcph.1999.6383.">22</a>]</span>.  None of these antecedents treats modal
 FIT/FDTD waveguide ports; that application appears to be original to
 Magnelio.</p>
 </section>
@@ -605,7 +648,7 @@ eigenpairs of the <strong>quadratic ζ-pencil</strong></p>
 (<code class="docutils literal notranslate"><span class="pre">ports/modal/zeta_pencil.py</span></code>), solved by sparse shift-invert ARPACK
 on the linearised pencil.  Quadratic eigenvalue problems and their
 linearisations are covered by the survey of Tisseur and Meerbergen
-<span class="bibtex-citation" id="id8">[<a class="reference internal" href="../bibliography.html#id25" title="Françoise Tisseur and Karl Meerbergen. The quadratic eigenvalue problem. SIAM Review, 43(2):235–286, 2001. doi:10.1137/S0036144500381988.">22</a>]</span>; computing waveguide
+<span class="bibtex-citation" id="id9">[<a class="reference internal" href="../bibliography.html#id25" title="Françoise Tisseur and Karl Meerbergen. The quadratic eigenvalue problem. SIAM Review, 43(2):235–286, 2001. doi:10.1137/S0036144500381988.">23</a>]</span>; computing waveguide
 Bloch/propagation modes from a transfer/period formulation is
 established practice in computational photonics and microwave theory
 (no single originating publication is claimed).
@@ -622,7 +665,7 @@ inheriting the palindromic symmetry that makes the projected lattice
 lossless, and is closed by the exact small-system DTBC kernel
 (<code class="docutils literal notranslate"><span class="pre">ports/modal/band_dtbc.py</span></code>).  Projection-based model order reduction
 (Galerkin projection onto an SVD/POD subspace) is standard numerical
-practice <span class="bibtex-citation" id="id9">[<a class="reference internal" href="../bibliography.html#id26" title="Peter Benner, Serkan Gugercin, and Karen Willcox. A survey of projection-based model reduction methods for parametric dynamical systems. SIAM Review, 57(4):483–531, 2015. doi:10.1137/130932715.">23</a>]</span> (survey reference; the
+practice <span class="bibtex-citation" id="id10">[<a class="reference internal" href="../bibliography.html#id26" title="Peter Benner, Serkan Gugercin, and Karen Willcox. A survey of projection-based model reduction methods for parametric dynamical systems. SIAM Review, 57(4):483–531, 2015. doi:10.1137/130932715.">24</a>]</span> (survey reference; the
 specific passive-by-construction boundary closure is in-house).</p>
 </section>
 <section id="modal-mur-fallback">
@@ -631,11 +674,11 @@ specific passive-by-construction boundary closure is in-house).</p>
 terminated by a <strong>first-order Mur absorbing boundary applied per mode
 in modal-coefficient space</strong>, with the per-mode phase velocity at the
 mode-calculation frequency (<code class="docutils literal notranslate"><span class="pre">ports/modal/operator.py</span></code>).  The ABC is
-Mur’s <span class="bibtex-citation" id="id10">[<a class="reference internal" href="../bibliography.html#id14" title="Gerrit Mur. Absorbing boundary conditions for the finite-difference approximation of the time-domain electromagnetic-field equations. IEEE Transactions on Electromagnetic Compatibility, 23(4):377–382, 1981. doi:10.1109/TEMC.1981.303970.">24</a>]</span>.  The design of the
+Mur’s <span class="bibtex-citation" id="id11">[<a class="reference internal" href="../bibliography.html#id14" title="Gerrit Mur. Absorbing boundary conditions for the finite-difference approximation of the time-domain electromagnetic-field equations. IEEE Transactions on Electromagnetic Compatibility, 23(4):377–382, 1981. doi:10.1109/TEMC.1981.303970.">25</a>]</span>.  The design of the
 modal port
 operator as a co-simulated 1D termination per mode follows the
 modal-absorbing-port literature, specifically Luo and Chen
-<span class="bibtex-citation" id="id11">[<a class="reference internal" href="../bibliography.html#id21" title="Shuiping Luo and Zhizhang Chen. An efficient modal FDTD for absorbing boundary conditions and incident wave generator in waveguide structures. Progress In Electromagnetics Research (PIER), 68:229–246, 2007. doi:10.2528/PIER06090506.">25</a>]</span> (DD-047; higher-order Mur/Higdon
+<span class="bibtex-citation" id="id12">[<a class="reference internal" href="../bibliography.html#id21" title="Shuiping Luo and Zhizhang Chen. An efficient modal FDTD for absorbing boundary conditions and incident wave generator in waveguide structures. Progress In Electromagnetics Research (PIER), 68:229–246, 2007. doi:10.2528/PIER06090506.">26</a>]</span> (DD-047; higher-order Mur/Higdon
 variants were evaluated and rejected, DD-069).</p>
 </section>
 </section>
@@ -646,7 +689,7 @@ plane (DTBC branch) or injects on the port plane (Mur branch); V/I are
 recorded on a single co-located plane (DD-041).  Time signals are
 smooth pulses (Gaussian and derived shapes, <code class="docutils literal notranslate"><span class="pre">signals/waveforms.py</span></code>) —
 standard practice
-<span class="bibtex-citation" id="id12">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.</p>
+<span class="bibtex-citation" id="id13">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.</p>
 </section>
 <section id="s-parameters">
 <h2>S-parameters<a class="headerlink" href="#s-parameters" title="Link to this heading">#</a></h2>
@@ -654,7 +697,7 @@ standard practice
 normalisation, <span class="math notranslate nohighlight">\(a,b = (V \pm Z_0 I)/(2\sqrt{Z_0})\)</span> per mode, from the
 recorded modal V/I after Fourier transform
 (<code class="docutils literal notranslate"><span class="pre">postprocessing/modal_sparameters.py</span></code>, DD-042/DD-078).  The
-power-wave formalism is Kurokawa’s <span class="bibtex-citation" id="id13">[<a class="reference internal" href="../bibliography.html#id20" title="Kaneyuki Kurokawa. Power waves and the scattering matrix. IEEE Transactions on Microwave Theory and Techniques, 13(2):194–202, 1965. doi:10.1109/TMTT.1965.1125964.">26</a>]</span>.
+power-wave formalism is Kurokawa’s <span class="bibtex-citation" id="id14">[<a class="reference internal" href="../bibliography.html#id20" title="Kaneyuki Kurokawa. Power waves and the scattering matrix. IEEE Transactions on Microwave Theory and Techniques, 13(2):194–202, 1965. doi:10.1109/TMTT.1965.1125964.">27</a>]</span>.
 Two discrete-exactness refinements are
 in-house (DD-063, DD-056): the a/b split de-staggers E and H
 with the exact discrete factor <span class="math notranslate nohighlight">\(\lambda^{1/2}(z)\)</span> and uses the exact
@@ -673,7 +716,7 @@ planes shifted a distance <span class="math notranslate nohighlight">\(d\)</span
 shifted port is multiplied by the inverse line propagation factor over
 <span class="math notranslate nohighlight">\(d\)</span> — reflections twice, transmissions once per shifted end.  This is
 the classical reference-plane transformation
-<span class="bibtex-citation" id="id14">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>]</span>; the in-house refinement is <em>which</em> propagation
+<span class="bibtex-citation" id="id15">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>]</span>; the in-house refinement is <em>which</em> propagation
 factor is removed.</p>
 <p>Wherever the run certified a channel’s discrete line parameters, the
 shift uses the <strong>exact discrete dispersion of the feed chain</strong> — the
@@ -793,6 +836,7 @@ path given without an extension gets the matching one, so
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#curl-curl-eigenvalue-problem-te-tm-and-hybrid-modes">Curl-curl eigenvalue problem (TE/TM and hybrid modes)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tem-quasi-tem-laplace-solver">TEM / quasi-TEM Laplace solver</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mode-classification-and-multi-mode-merge">Mode classification and multi-mode merge</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ports-in-absorbing-walls">Ports in absorbing walls</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#exact-discrete-transparent-boundary-conditions-dtbc">Exact discrete transparent boundary conditions (DTBC)</a><ul class="nav section-nav flex-column">
