@@ -27,28 +27,30 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=03f3338f"></script>
+    <script src="../_static/documentation_options.js?v=a78bb796"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/geo';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -232,6 +234,32 @@
   </ul>
 </div></div>
       
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio/discussions" title="Discussions" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-regular fa-comments fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discussions</span></a>
+        </li>
+</ul></div>
+      
     </div>
     
   </div>
@@ -357,6 +385,32 @@
   </ul>
 </div></div>
         
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio/discussions" title="Discussions" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-regular fa-comments fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discussions</span></a>
+        </li>
+</ul></div>
+        
       </div>
     
   </div>
@@ -468,7 +522,10 @@ the classes below describe what each shape <em>is</em>.</p>
 <li><p>Base class: <code class="docutils literal notranslate"><span class="pre">Shape</span></code> — the Boolean operators and the chainable verbs
 every geometry object shares; the documented home of both.</p></li>
 <li><p>Primitives: <code class="docutils literal notranslate"><span class="pre">Brick</span></code>, <code class="docutils literal notranslate"><span class="pre">Sphere</span></code>, <code class="docutils literal notranslate"><span class="pre">Cylinder</span></code>, <code class="docutils literal notranslate"><span class="pre">Cone</span></code>, <code class="docutils literal notranslate"><span class="pre">Torus</span></code>,
-<code class="docutils literal notranslate"><span class="pre">Face</span></code>; curves: <code class="docutils literal notranslate"><span class="pre">Curve</span></code> (polyline / arc / spline / helix).</p></li>
+<code class="docutils literal notranslate"><span class="pre">Face</span></code>; curves: <code class="docutils literal notranslate"><span class="pre">Curve</span></code> (polyline / arc / spline / helix);
+curved sheets: <code class="docutils literal notranslate"><span class="pre">Surface</span></code> (<code class="docutils literal notranslate"><span class="pre">Surface.parametric</span></code> samples a map
+<code class="docutils literal notranslate"><span class="pre">(u,</span> <span class="pre">v)</span> <span class="pre">-&gt;</span> <span class="pre">(x,</span> <span class="pre">y,</span> <span class="pre">z)</span></code> into a B-spline sheet — a reflector dish before
+it is extruded into metal).</p></li>
 <li><p>Profiles: <code class="docutils literal notranslate"><span class="pre">Path</span></code> draws a chained curve segment by segment;
 <code class="docutils literal notranslate"><span class="pre">Curve.joined()</span></code> chains existing curves, <code class="docutils literal notranslate"><span class="pre">Curve.covered()</span></code> turns a
 closed one into a planar sheet and <code class="docutils literal notranslate"><span class="pre">Curve.traced()</span></code> into a
@@ -1557,8 +1614,10 @@ chamfer, a pair <code class="docutils literal notranslate"><span class="pre">(d1
 <p>The result is a <strong>standalone solid</strong>, not fused with the shape it
 came from.  Two input forms:</p>
 <ul class="simple">
-<li><p>a standalone <a class="reference internal" href="#magnelio.geo.Face" title="magnelio.geo.Face"><code class="xref py py-class docutils literal notranslate"><span class="pre">Face</span></code></a> — the Face <em>is</em> the
-profile and <em>face_near</em> is unused;</p></li>
+<li><p>a standalone sheet — a <a class="reference internal" href="#magnelio.geo.Face" title="magnelio.geo.Face"><code class="xref py py-class docutils literal notranslate"><span class="pre">Face</span></code></a>, a covered
+<a class="reference internal" href="#magnelio.geo.Curve" title="magnelio.geo.Curve"><code class="xref py py-class docutils literal notranslate"><span class="pre">Curve</span></code></a> or a curved
+<a class="reference internal" href="#magnelio.geo.Surface" title="magnelio.geo.Surface"><code class="xref py py-class docutils literal notranslate"><span class="pre">Surface</span></code></a> — the sheet <em>is</em> the profile and
+<em>face_near</em> is unused;</p></li>
 <li><p>any solid — the face nearest <em>face_near</em> is extruded.</p></li>
 </ul>
 <dl class="field-list simple">
@@ -1568,7 +1627,7 @@ profile and <em>face_near</em> is unused;</p></li>
 <li><p><strong>face_near</strong> (<em>tuple</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – 3D point near the face to extrude.  Required for a solid,
 ignored for a Face.</p></li>
 <li><p><strong>material</strong> (<a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material"><em>Material</em></a><em>, </em><em>optional</em>) – Material of the extruded solid.  Defaults to this shape’s
-material; required when extruding a construction Face, which
+material; required when extruding a construction sheet, which
 has none to inherit.</p></li>
 </ul>
 </dd>
@@ -1889,19 +1948,25 @@ material; required for a construction profile.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.geo.Shape.thickened">
 <span class="sig-name descname"><span class="pre">thickened</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">thickness</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'forward'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.geo.Shape.thickened" title="Link to this definition">#</a></dt>
-<dd><p>Grow this planar sheet into a solid slab.</p>
-<p>Only a planar sheet — a <a class="reference internal" href="#magnelio.geo.Face" title="magnelio.geo.Face"><code class="xref py py-class docutils literal notranslate"><span class="pre">Face</span></code></a> or a covered
-<a class="reference internal" href="#magnelio.geo.Curve" title="magnelio.geo.Curve"><code class="xref py py-class docutils literal notranslate"><span class="pre">Curve</span></code></a> — can be thickened.  The slab’s
-footprint is exactly the sheet, which makes this the direct way
-from a drawn outline to a metallisation of a given thickness,
-without spelling out the extrusion vector.</p>
+<dd><p>Grow this sheet into a solid of constant thickness.</p>
+<p>Only a sheet — a <a class="reference internal" href="#magnelio.geo.Face" title="magnelio.geo.Face"><code class="xref py py-class docutils literal notranslate"><span class="pre">Face</span></code></a>, a covered
+<a class="reference internal" href="#magnelio.geo.Curve" title="magnelio.geo.Curve"><code class="xref py py-class docutils literal notranslate"><span class="pre">Curve</span></code></a> or a curved
+<a class="reference internal" href="#magnelio.geo.Surface" title="magnelio.geo.Surface"><code class="xref py py-class docutils literal notranslate"><span class="pre">Surface</span></code></a> — can be thickened.  A planar sheet
+becomes a slab whose footprint is exactly the sheet, which makes
+this the direct way from a drawn outline to a metallisation of a
+given thickness, without spelling out the extrusion vector.  A
+curved sheet is offset along its own normal into a shell of
+constant thickness; where the kernel cannot build a valid offset
+(coarse sample grids, thickness near the curvature radius) the
+call fails with a pointer to <a class="reference internal" href="#magnelio.geo.Shape.extruded" title="magnelio.geo.Shape.extruded"><code class="xref py py-meth docutils literal notranslate"><span class="pre">extruded()</span></code></a>, which is always
+robust and, for a conductor, physically equivalent.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>thickness</strong> (<em>float</em>) – Slab thickness [meters], positive.</p></li>
 <li><p><strong>direction</strong> (<em>{&quot;forward&quot;</em><em>, </em><em>&quot;backward&quot;</em><em>, </em><em>&quot;symmetric&quot;}</em>) – Which side of the sheet to grow on.  <code class="docutils literal notranslate"><span class="pre">&quot;symmetric&quot;</span></code> puts
 half the thickness on each side, leaving the sheet as the
-slab’s mid-plane.  <code class="docutils literal notranslate"><span class="pre">&quot;forward&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;backward&quot;</span></code> are
+slab’s mid-plane (planar sheets only).  <code class="docutils literal notranslate"><span class="pre">&quot;forward&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;backward&quot;</span></code> are
 opposite sides of it; which one is “forward” follows from
 the plane and is fixed, so if a slab comes out on the wrong
 side, swap the value.</p></li>
@@ -2014,6 +2079,85 @@ used only as a Boolean operand.</p></li>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.geo.Surface">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.geo.</span></span><span class="sig-name descname"><span class="pre">Surface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.geo.Surface" title="Link to this definition">#</a></dt>
+<dd><p>A curved zero-thickness sheet through a grid of sample points.</p>
+<p>Build one with <a class="reference internal" href="#magnelio.geo.Surface.parametric" title="magnelio.geo.Surface.parametric"><code class="xref py py-meth docutils literal notranslate"><span class="pre">parametric()</span></code></a>; the constructor itself takes the
+point grid, which is what a stored or hand-sampled surface provides.
+The sheet is the B-spline surface interpolating the samples exactly
+(a degree-3 interpolant between them), bounded by the grid’s four
+edge rows.</p>
+<p>Like a <a class="reference internal" href="#magnelio.geo.Face" title="magnelio.geo.Face"><code class="xref py py-class docutils literal notranslate"><span class="pre">Face</span></code></a>, a Surface carries an
+<strong>optional</strong> material: none (default) makes it a <em>construction
+profile</em> — the input to <a class="reference internal" href="#magnelio.geo.Shape.extruded" title="magnelio.geo.Shape.extruded"><code class="xref py py-meth docutils literal notranslate"><span class="pre">extruded()</span></code></a> or
+<a class="reference internal" href="#magnelio.geo.Shape.thickened" title="magnelio.geo.Shape.thickened"><code class="xref py py-meth docutils literal notranslate"><span class="pre">thickened()</span></code></a>, which turn it into a solid;
+a material makes it a <em>thin sheet</em>, whose physics is not wired
+yet, so it cannot be added to a model on its own.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>sequence</em><em> of </em><em>sequence</em><em> of </em><em>(</em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>)</em>) – The sample grid, <code class="docutils literal notranslate"><span class="pre">nu</span></code> rows of <code class="docutils literal notranslate"><span class="pre">nv</span></code> points [meters], at
+least 2 × 2.  Rows follow the first parameter, columns the
+second.  A row may collapse onto one point (the pole of a polar
+parametrisation) — the surface closes there.</p></li>
+<li><p><strong>material</strong> (<a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material"><em>Material</em></a><em> or </em><em>str</em><em>, </em><em>optional</em>) – Material of the thin sheet.  <code class="docutils literal notranslate"><span class="pre">None</span></code> (default) = construction
+profile.</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – Optional label.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.geo.Surface.parametric">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">parametric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(32,</span> <span class="pre">32)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.geo.Surface.parametric" title="Link to this definition">#</a></dt>
+<dd><p>Sample a parametric map <code class="docutils literal notranslate"><span class="pre">(u,</span> <span class="pre">v)</span> <span class="pre">-&gt;</span> <span class="pre">(x,</span> <span class="pre">y,</span> <span class="pre">z)</span></code> into a Surface.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fn</strong> (<em>callable</em>) – The map.  Called once with two NumPy arrays of parameter
+values (shape <code class="docutils literal notranslate"><span class="pre">(nu,</span> <span class="pre">nv)</span></code>) and expected to return the three
+coordinates <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y,</span> <span class="pre">z)</span></code> [meters] — each an array of the
+same shape or a scalar.  A function written for scalars is
+accepted too: if the array call fails, it is evaluated
+point by point.</p></li>
+<li><p><strong>u</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em>) – Parameter intervals <code class="docutils literal notranslate"><span class="pre">(start,</span> <span class="pre">end)</span></code> of the two parameters.</p></li>
+<li><p><strong>v</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em>) – Parameter intervals <code class="docutils literal notranslate"><span class="pre">(start,</span> <span class="pre">end)</span></code> of the two parameters.</p></li>
+<li><p><strong>samples</strong> (<em>(</em><em>int</em><em>, </em><em>int</em><em>)</em>) – Number of sample points along <code class="docutils literal notranslate"><span class="pre">u</span></code> and <code class="docutils literal notranslate"><span class="pre">v</span></code> (default
+<code class="docutils literal notranslate"><span class="pre">(32,</span> <span class="pre">32)</span></code>, at least 2 each).  The interpolant is exact at
+the samples and degree-3 between them, so the count sets
+how closely the sheet follows the map between samples —
+32 × 32 places a 240 mm paraboloid dish to a few micrometres,
+32 × 64 to 1e-8 m.</p></li>
+<li><p><strong>material</strong> (<a class="reference internal" href="core.html#magnelio.Material" title="magnelio.Material"><em>Material</em></a><em> or </em><em>str</em><em>, </em><em>optional</em>) – Material of the thin sheet; <code class="docutils literal notranslate"><span class="pre">None</span></code> (default) makes a
+construction profile.</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – Optional label.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The sampled sheet.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#magnelio.geo.Surface" title="magnelio.geo.Surface">Surface</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>An offset paraboloid dish of focal length <code class="docutils literal notranslate"><span class="pre">F</span></code> and aperture
+<code class="docutils literal notranslate"><span class="pre">D</span></code>, centred <code class="docutils literal notranslate"><span class="pre">x_c</span></code> off the axis, parametrised in polar
+coordinates about the aperture centre so that its rim is a
+circle:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">dish</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">phi</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x_c</span> <span class="o">+</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">F</span><span class="p">)</span>
+
+<span class="n">sheet</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Surface</span><span class="o">.</span><span class="n">parametric</span><span class="p">(</span><span class="n">dish</span><span class="p">,</span> <span class="n">u</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">D</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="n">v</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span>
+<span class="n">reflector</span> <span class="o">=</span> <span class="n">sheet</span><span class="o">.</span><span class="n">extruded</span><span class="p">(</span><span class="n">vector</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">5e-3</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -2216,6 +2360,10 @@ material of the first shape.</p></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Sphere"><code class="docutils literal notranslate"><span class="pre">Sphere</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Surface"><code class="docutils literal notranslate"><span class="pre">Surface</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.Surface.parametric"><code class="docutils literal notranslate"><span class="pre">Surface.parametric()</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.ThinWire"><code class="docutils literal notranslate"><span class="pre">ThinWire</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.ThinWire.bounding_box"><code class="docutils literal notranslate"><span class="pre">ThinWire.bounding_box()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.geo.ThinWire.material"><code class="docutils literal notranslate"><span class="pre">ThinWire.material</span></code></a></li>
@@ -2248,8 +2396,8 @@ material of the first shape.</p></li>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -2283,7 +2431,7 @@ material of the first shape.</p></li>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

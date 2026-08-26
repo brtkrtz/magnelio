@@ -326,8 +326,8 @@ nothing periodic about them:
 
  .. code-block:: none
 
-    electric walls on the iris planes (0-mode):  1.2776 GHz
-    magnetic walls on the iris planes (pi-mode): 1.3018 GHz
+    electric walls on the iris planes (0-mode):  1.2774 GHz
+    magnetic walls on the iris planes (pi-mode): 1.3016 GHz
 
 
 
@@ -368,13 +368,13 @@ without anything to configure.
 
  .. code-block:: none
 
-    phase advance   0.0 deg: 1.2776 GHz
-    phase advance  30.0 deg: 1.2792 GHz
-    phase advance  60.0 deg: 1.2836 GHz
-    phase advance  90.0 deg: 1.2897 GHz
-    phase advance 120.0 deg: 1.2959 GHz
-    phase advance 150.0 deg: 1.3005 GHz
-    phase advance 180.0 deg: 1.3021 GHz
+    phase advance   0.0 deg: 1.2774 GHz
+    phase advance  30.0 deg: 1.2790 GHz
+    phase advance  60.0 deg: 1.2835 GHz
+    phase advance  90.0 deg: 1.2896 GHz
+    phase advance 120.0 deg: 1.2957 GHz
+    phase advance 150.0 deg: 1.3003 GHz
+    phase advance 180.0 deg: 1.3019 GHz
 
 
 
@@ -450,7 +450,7 @@ published values are 1.300 GHz for the :math:`\pi`-mode and
 
  .. code-block:: none
 
-    pi-mode:              1.3021 GHz (design 1.3000 GHz)
+    pi-mode:              1.3019 GHz (design 1.3000 GHz)
     cell-to-cell coupling: 1.90 % (published 1.87 %)
 
 
@@ -509,7 +509,7 @@ travelling wave is not, and no combination of walls would produce it.
 
 
 .. image-sg:: /tutorials/images/sphx_glr_plot_18_periodic_tesla_cell_003.png
-   :alt: $\pi$-mode (standing wave), 1.3021 GHz, $2\pi/3$-mode (travelling wave), 1.2959 GHz
+   :alt: $\pi$-mode (standing wave), 1.3019 GHz, $2\pi/3$-mode (travelling wave), 1.2957 GHz
    :srcset: /tutorials/images/sphx_glr_plot_18_periodic_tesla_cell_003.png
    :class: sphx-glr-single-img
 
@@ -535,7 +535,7 @@ surfaces at normal incidence.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (4 minutes 4.399 seconds)
+   **Total running time of the script:** (4 minutes 6.444 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_18_periodic_tesla_cell.py:

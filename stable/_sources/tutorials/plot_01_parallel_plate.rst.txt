@@ -249,10 +249,32 @@ cutting plane in its toolbar); here it is rendered as a picture.
 
 
 
-.. image-sg:: /tutorials/images/sphx_glr_plot_01_parallel_plate_001.png
-   :alt: plot 01 parallel plate
-   :srcset: /tutorials/images/sphx_glr_plot_01_parallel_plate_001.png
-   :class: sphx-glr-single-img
+
+
+
+
+.. tab-set::
+
+
+
+   .. tab-item:: Static Scene
+
+
+
+            
+     .. image-sg:: /tutorials/images/sphx_glr_plot_01_parallel_plate_001.png
+        :alt: plot 01 parallel plate
+        :srcset: /tutorials/images/sphx_glr_plot_01_parallel_plate_001.png
+        :class: sphx-glr-single-img
+     
+
+
+   .. tab-item:: Interactive Scene
+
+
+
+       .. offlineviewer:: /home/runner/work/magnelio/magnelio/docs/tutorials/images/sphx_glr_plot_01_parallel_plate_001.vtksz
+
 
 
 
@@ -321,7 +343,7 @@ textbook formula.
 
     Port 'port1' — 1 mode(s)
       z_line = 188.37 Ω (numerical)
-      [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 188.37 Ω
+      [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 188.37 Ω  ε_eff = 1.000
     Z_L (port solver):  188.3652 Ohm
     Z_L (eta0 * b/a) :  188.3652 Ohm
     relative deviation: 1.11e-16
@@ -475,7 +497,7 @@ spec matched to its cross-section.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 21.357 seconds)
+   **Total running time of the script:** (0 minutes 19.654 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_01_parallel_plate.py:

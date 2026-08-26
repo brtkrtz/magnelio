@@ -189,25 +189,60 @@ impedance of the strip, and the strip should match its 50 Ω feeds.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 144-159
+.. GENERATED FROM PYTHON SOURCE LINES 144-150
 
 A geometry of this complexity — revolved faces, lofts, mirrors and a
 half-turn copy — is best assembled in a notebook, where every
 intermediate body can be looked at in the interactive 3D view before
-the next operation builds on it:
+the next operation builds on it.  The assembled device, at a
+provisional strip height (the port solver settles the real one
+below):
 
-.. code-block:: python
+.. GENERATED FROM PYTHON SOURCE LINES 150-156
+
+.. code-block:: Python
+
 
     model = mio.GeometryModel(background="pec")
     for body in build_coupler(7.5e-3):
         model.add(body)
     model.plot()
 
-.. image:: /_static/tutorial_19_notebook_model_plot.png
-   :width: 70 %
-   :alt: The stripline pair with its four coaxial feeds in a notebook's 3D view
 
-.. GENERATED FROM PYTHON SOURCE LINES 161-187
+
+
+
+
+
+
+.. tab-set::
+
+
+
+   .. tab-item:: Static Scene
+
+
+
+            
+     .. image-sg:: /howto/images/sphx_glr_plot_stripline_pickup_kicker_001.png
+        :alt: plot stripline pickup kicker
+        :srcset: /howto/images/sphx_glr_plot_stripline_pickup_kicker_001.png
+        :class: sphx-glr-single-img
+     
+
+
+   .. tab-item:: Interactive Scene
+
+
+
+       .. offlineviewer:: /home/runner/work/magnelio/magnelio/docs/howto/images/sphx_glr_plot_stripline_pickup_kicker_001.vtksz
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 157-183
 
 Dimensioning the strip with the port solver
 -------------------------------------------
@@ -236,7 +271,7 @@ strip's own impedance is recovered below with the matching factor.
 A second symmetry plane, the one through both strips, cuts the model
 once more without changing the mode.
 
-.. GENERATED FROM PYTHON SOURCE LINES 187-233
+.. GENERATED FROM PYTHON SOURCE LINES 183-229
 
 .. code-block:: Python
 
@@ -289,9 +324,9 @@ once more without changing the mode.
 
 
 
-.. image-sg:: /howto/images/sphx_glr_plot_stripline_pickup_kicker_001.png
+.. image-sg:: /howto/images/sphx_glr_plot_stripline_pickup_kicker_002.png
    :alt: Strip impedance from the port solver
-   :srcset: /howto/images/sphx_glr_plot_stripline_pickup_kicker_001.png
+   :srcset: /howto/images/sphx_glr_plot_stripline_pickup_kicker_002.png
    :class: sphx-glr-single-img
 
 
@@ -304,13 +339,13 @@ once more without changing the mode.
     h = 6 mm: Z_strip =  45.3 ohm (sum)   43.9 ohm (difference)
     h = 7 mm: Z_strip =  48.8 ohm (sum)   47.2 ohm (difference)
     h = 8 mm: Z_strip =  51.5 ohm (sum)   49.7 ohm (difference)
-    h = 9 mm: Z_strip =  54.1 ohm (sum)   52.1 ohm (difference)
-    strip height for a 50 ohm strip in the difference mode: 8.14 mm
+    h = 9 mm: Z_strip =  53.7 ohm (sum)   51.8 ohm (difference)
+    strip height for a 50 ohm strip in the difference mode: 8.16 mm
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 234-239
+.. GENERATED FROM PYTHON SOURCE LINES 230-235
 
 The two modes differ by a few percent: the strips are shielded from
 each other by the pipe wall and only couple through the aperture.
@@ -318,7 +353,7 @@ The difference mode is the one a transverse kicker or a position
 pickup works in, so :math:`h` is set for 50 Ω there.  The strip
 impedances for the design follow, together with the mode itself:
 
-.. GENERATED FROM PYTHON SOURCE LINES 239-244
+.. GENERATED FROM PYTHON SOURCE LINES 235-240
 
 .. code-block:: Python
 
@@ -335,12 +370,12 @@ impedances for the design follow, together with the mode itself:
 
  .. code-block:: none
 
-    design: Z_strip = 51.7 ohm (sum), 50.0 ohm (difference)
+    design: Z_strip = 51.8 ohm (sum), 50.0 ohm (difference)
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 245-266
+.. GENERATED FROM PYTHON SOURCE LINES 241-262
 
 The kicker model
 ----------------
@@ -364,7 +399,7 @@ transverse analysis below needs its *gradient* — so the line is asked
 for close to the axis, and the monitor reports the cell centre it
 actually landed on.
 
-.. GENERATED FROM PYTHON SOURCE LINES 266-311
+.. GENERATED FROM PYTHON SOURCE LINES 262-307
 
 .. code-block:: Python
 
@@ -416,9 +451,9 @@ actually landed on.
 
 
 
-.. image-sg:: /howto/images/sphx_glr_plot_stripline_pickup_kicker_002.png
+.. image-sg:: /howto/images/sphx_glr_plot_stripline_pickup_kicker_003.png
    :alt: Mid-plane of the half model (x = 0)
-   :srcset: /howto/images/sphx_glr_plot_stripline_pickup_kicker_002.png
+   :srcset: /howto/images/sphx_glr_plot_stripline_pickup_kicker_003.png
    :class: sphx-glr-single-img
 
 
@@ -427,6 +462,8 @@ actually landed on.
  .. code-block:: none
 
     UserWarning: 4 geometry-edge planes (1 on x, 1 on y, 2 on z) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at z = 0.149896 m, would create a 0.00175 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=4.3) keeps it, or refine the mesh.
+    UserWarning: Modal port 'upstream': the feed-chain mass slabs deviate by 2.85e-01 (relative, worst entry) across the first cells behind the port plane — the 2D port modes do not propagate as exact discrete chain modes, so the exact DTBC is withheld and all channels fall back to modal Mur-1st.  Typical causes: a feed that is not translation-invariant along the port normal.
+    UserWarning: Modal port 'downstream': the feed-chain mass slabs deviate by 2.85e-01 (relative, worst entry) across the first cells behind the port plane — the 2D port modes do not propagate as exact discrete chain modes, so the exact DTBC is withheld and all channels fall back to modal Mur-1st.  Typical causes: a feed that is not translation-invariant along the port normal.
     grid: 41 x 50 x 209 cells
     coax port impedance on the grid: 52.3 ohm
     field line recorded at y = 0.98 mm, 209 points
@@ -434,14 +471,14 @@ actually landed on.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 312-316
+.. GENERATED FROM PYTHON SOURCE LINES 308-312
 
 The S-parameters say what a network analyser would: the feeds are
 matched, and the drive power leaves through the *upstream* port of
 the same strip — a stripline is a directional coupler, and a kicker's
 upstream loads have to absorb the full drive power.
 
-.. GENERATED FROM PYTHON SOURCE LINES 316-322
+.. GENERATED FROM PYTHON SOURCE LINES 312-318
 
 .. code-block:: Python
 
@@ -454,16 +491,16 @@ upstream loads have to absorb the full drive power.
 
 
 
-.. image-sg:: /howto/images/sphx_glr_plot_stripline_pickup_kicker_003.png
+.. image-sg:: /howto/images/sphx_glr_plot_stripline_pickup_kicker_004.png
    :alt: Differentially driven pair
-   :srcset: /howto/images/sphx_glr_plot_stripline_pickup_kicker_003.png
+   :srcset: /howto/images/sphx_glr_plot_stripline_pickup_kicker_004.png
    :class: sphx-glr-single-img
 
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 323-328
+.. GENERATED FROM PYTHON SOURCE LINES 319-324
 
 The field picture shows what the beam will see: the drive enters at
 the right, and the longitudinal field that does the kicking is
@@ -471,7 +508,7 @@ concentrated at the two strip ends, where the strip voltage steps
 from its line value to the grounded pit.  Along the strip itself the
 field is transverse — a TEM line has no :math:`E_z`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 328-336
+.. GENERATED FROM PYTHON SOURCE LINES 324-332
 
 .. code-block:: Python
 
@@ -486,16 +523,16 @@ field is transverse — a TEM line has no :math:`E_z`.
 
 
 
-.. image-sg:: /howto/images/sphx_glr_plot_stripline_pickup_kicker_004.png
+.. image-sg:: /howto/images/sphx_glr_plot_stripline_pickup_kicker_005.png
    :alt: $E_z$ at 500 MHz on the mid-plane, difference mode
-   :srcset: /howto/images/sphx_glr_plot_stripline_pickup_kicker_004.png
+   :srcset: /howto/images/sphx_glr_plot_stripline_pickup_kicker_005.png
    :class: sphx-glr-single-img
 
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 337-358
+.. GENERATED FROM PYTHON SOURCE LINES 333-354
 
 Beam voltage and kicker constant
 --------------------------------
@@ -519,7 +556,7 @@ voltage at the kicker's input terminal, :math:`V_K = \sqrt{2 Z_c P}`,
 where :math:`P` is the total drive power — two watts here, one per
 strip — and :math:`Z_c` the feed impedance as the grid sees it.
 
-.. GENERATED FROM PYTHON SOURCE LINES 358-385
+.. GENERATED FROM PYTHON SOURCE LINES 354-381
 
 .. code-block:: Python
 
@@ -553,16 +590,16 @@ strip — and :math:`Z_c` the feed impedance as the grid sees it.
 
 
 
-.. image-sg:: /howto/images/sphx_glr_plot_stripline_pickup_kicker_005.png
+.. image-sg:: /howto/images/sphx_glr_plot_stripline_pickup_kicker_006.png
    :alt: Beam voltage off axis, difference mode
-   :srcset: /howto/images/sphx_glr_plot_stripline_pickup_kicker_005.png
+   :srcset: /howto/images/sphx_glr_plot_stripline_pickup_kicker_006.png
    :class: sphx-glr-single-img
 
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 386-428
+.. GENERATED FROM PYTHON SOURCE LINES 382-424
 
 The two directions are not equivalent.  A particle running *against*
 the drive wave collects the kicks of both strip ends in phase at the
@@ -607,7 +644,7 @@ Lambertson, eqs. 4.7 and 4.11):
 :math:`1/k_B`: at a fixed longitudinal field, a transverse kicker
 gets *weaker* with frequency.
 
-.. GENERATED FROM PYTHON SOURCE LINES 428-435
+.. GENERATED FROM PYTHON SOURCE LINES 424-431
 
 .. code-block:: Python
 
@@ -625,7 +662,7 @@ gets *weaker* with frequency.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 436-448
+.. GENERATED FROM PYTHON SOURCE LINES 432-444
 
 Longitudinal quantities: the sum mode
 -------------------------------------
@@ -640,7 +677,7 @@ constant and shunt impedance are (eqs. 4.1 and 4.10)
     K_\parallel = \frac{|V|}{V_K}, \qquad
     R_\parallel T^2 = Z_c\, |K_\parallel|^2 .
 
-.. GENERATED FROM PYTHON SOURCE LINES 448-454
+.. GENERATED FROM PYTHON SOURCE LINES 444-450
 
 .. code-block:: Python
 
@@ -657,7 +694,7 @@ constant and shunt impedance are (eqs. 4.1 and 4.10)
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 455-493
+.. GENERATED FROM PYTHON SOURCE LINES 451-489
 
 The ideal stripline as the reference
 ------------------------------------
@@ -698,7 +735,7 @@ for the real device?  The field picture above answers it: the kicks
 happen where the strip meets its feed, so the electrical length is
 the distance between the two feeds, not the strip's own length.
 
-.. GENERATED FROM PYTHON SOURCE LINES 493-528
+.. GENERATED FROM PYTHON SOURCE LINES 489-524
 
 .. code-block:: Python
 
@@ -740,9 +777,9 @@ the distance between the two feeds, not the strip's own length.
 
 
 
-.. image-sg:: /howto/images/sphx_glr_plot_stripline_pickup_kicker_006.png
+.. image-sg:: /howto/images/sphx_glr_plot_stripline_pickup_kicker_007.png
    :alt: Longitudinal shunt impedance, Transverse shunt impedance
-   :srcset: /howto/images/sphx_glr_plot_stripline_pickup_kicker_006.png
+   :srcset: /howto/images/sphx_glr_plot_stripline_pickup_kicker_007.png
    :class: sphx-glr-single-img
 
 
@@ -751,15 +788,15 @@ the distance between the two feeds, not the strip's own length.
  .. code-block:: none
 
     at 0.5 GHz:
-      K_par  = 0.392  (ideal 0.466)
-      K_perp = 2.730  (ideal 3.339)
-      R_par T^2  =    8.0 ohm  (ideal   11.4 ohm)
-      R_perp T^2 =  389.9 ohm  (ideal  583.0 ohm)
+      K_par  = 0.401  (ideal 0.466)
+      K_perp = 2.799  (ideal 3.340)
+      R_par T^2  =    8.4 ohm  (ideal   11.4 ohm)
+      R_perp T^2 =  409.7 ohm  (ideal  583.4 ohm)
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 529-560
+.. GENERATED FROM PYTHON SOURCE LINES 525-556
 
 The ideal curves reproduce the shape — the lobes, the maximum near
 the design frequency, the :math:`1/k_B^2` decline of the transverse
@@ -793,7 +830,7 @@ signal per unit displacement, ideally
 :math:`4\sin(\varphi/2) / (\varphi\, b)` and independent of
 frequency.
 
-.. GENERATED FROM PYTHON SOURCE LINES 560-587
+.. GENERATED FROM PYTHON SOURCE LINES 556-583
 
 .. code-block:: Python
 
@@ -827,9 +864,9 @@ frequency.
 
 
 
-.. image-sg:: /howto/images/sphx_glr_plot_stripline_pickup_kicker_007.png
+.. image-sg:: /howto/images/sphx_glr_plot_stripline_pickup_kicker_008.png
    :alt: Pickup: sum signal, Pickup: difference signal
-   :srcset: /howto/images/sphx_glr_plot_stripline_pickup_kicker_007.png
+   :srcset: /howto/images/sphx_glr_plot_stripline_pickup_kicker_008.png
    :class: sphx-glr-single-img
 
 
@@ -837,13 +874,13 @@ frequency.
 
  .. code-block:: none
 
-    position sensitivity over 0.25-0.75 GHz: 73 ... 73 /m
+    position sensitivity over 0.25-0.75 GHz: 72 ... 73 /m
       = 7.3 %/mm   (ideal 7.6 %/mm)
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 588-600
+.. GENERATED FROM PYTHON SOURCE LINES 584-596
 
 Where to go next
 ----------------
@@ -861,7 +898,7 @@ that move the real device toward, or away from, the ideal stripline.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (4 minutes 59.053 seconds)
+   **Total running time of the script:** (6 minutes 15.733 seconds)
 
 
 .. _sphx_glr_download_howto_plot_stripline_pickup_kicker.py:

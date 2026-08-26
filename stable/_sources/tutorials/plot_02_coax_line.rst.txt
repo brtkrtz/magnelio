@@ -151,28 +151,62 @@ surface is exactly the dielectric boundary at ``r_o``.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 87-105
+.. GENERATED FROM PYTHON SOURCE LINES 87-98
 
 Looking at the model in three dimensions
 ----------------------------------------
 
-The cross-sections used throughout these pages are flat by
-necessity — they render into a static document.  In a Jupyter
-notebook, ``model.plot()`` opens the model as a rotatable,
-zoomable 3D view instead, which is the faster way to check that a
-boolean did what you meant.  Every tutorial can be downloaded as a
-notebook (the link at the bottom of the page), so this is one call
-away at any point:
+``model.plot()`` shows the model in three dimensions.  On this page
+it is a picture; in a Jupyter notebook the same call opens a
+rotatable, zoomable view with a cutting plane driven from its
+toolbar — the fastest way to check that a boolean did what you
+meant.  Every tutorial can be downloaded as a notebook (the link at
+the bottom of the page), so this is one call away at any point.
+Here the model is opened along its axis to show the annulus around
+the inner conductor.
 
-.. code-block:: python
+.. GENERATED FROM PYTHON SOURCE LINES 98-101
 
-    model.plot()
+.. code-block:: Python
 
-.. image:: /_static/tutorial_02_notebook_model_plot.png
-   :width: 70 %
-   :alt: The coaxial model as an interactive 3D view in a notebook
 
-.. GENERATED FROM PYTHON SOURCE LINES 107-116
+    model.plot(cut=("y", 0.0))
+
+
+
+
+
+
+
+
+.. tab-set::
+
+
+
+   .. tab-item:: Static Scene
+
+
+
+            
+     .. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_001.png
+        :alt: plot 02 coax line
+        :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_001.png
+        :class: sphx-glr-single-img
+     
+
+
+   .. tab-item:: Interactive Scene
+
+
+
+       .. offlineviewer:: /home/runner/work/magnelio/magnelio/docs/tutorials/images/sphx_glr_plot_02_coax_line_001.vtksz
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 102-111
 
 The coax port
 -------------
@@ -184,7 +218,7 @@ cross-section belongs to a family with a closed-form solution, a
 port still solves its mode on the actual grid — but the report will
 carry the analytical value alongside, as a built-in cross-check.
 
-.. GENERATED FROM PYTHON SOURCE LINES 116-138
+.. GENERATED FROM PYTHON SOURCE LINES 111-133
 
 .. code-block:: Python
 
@@ -223,7 +257,7 @@ carry the analytical value alongside, as a built-in cross-check.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 139-146
+.. GENERATED FROM PYTHON SOURCE LINES 134-141
 
 Mesh
 ----
@@ -233,7 +267,7 @@ size is dictated entirely by the geometry: the grid has to resolve
 the annulus.  A 0.12 mm cap gives about nine cells across the
 dielectric gap.
 
-.. GENERATED FROM PYTHON SOURCE LINES 146-150
+.. GENERATED FROM PYTHON SOURCE LINES 141-145
 
 .. code-block:: Python
 
@@ -254,13 +288,13 @@ dielectric gap.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 151-154
+.. GENERATED FROM PYTHON SOURCE LINES 146-149
 
 The 3D view shows the line opened along its axis, the grid cells on
 the cut coloured by material, and the two port windows on the domain
 faces.
 
-.. GENERATED FROM PYTHON SOURCE LINES 154-169
+.. GENERATED FROM PYTHON SOURCE LINES 149-164
 
 .. code-block:: Python
 
@@ -282,13 +316,8 @@ faces.
 
 
 
-.. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_001.png
-   :alt: Coax cross-section with mesh, Longitudinal cut (x = 0)
-   :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_001.png
-   :class: sphx-glr-single-img
-
 .. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_002.png
-   :alt: plot 02 coax line
+   :alt: Coax cross-section with mesh, Longitudinal cut (x = 0)
    :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_002.png
    :class: sphx-glr-single-img
 
@@ -296,7 +325,34 @@ faces.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 170-176
+.. tab-set::
+
+
+
+   .. tab-item:: Static Scene
+
+
+
+            
+     .. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_003.png
+        :alt: plot 02 coax line
+        :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_003.png
+        :class: sphx-glr-single-img
+     
+
+
+   .. tab-item:: Interactive Scene
+
+
+
+       .. offlineviewer:: /home/runner/work/magnelio/magnelio/docs/tutorials/images/sphx_glr_plot_02_coax_line_003.vtksz
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 165-171
 
 The circle is rendered on a rectangular grid as a staircase, with
 partially filled cells treated by conformal material matrices — keep
@@ -305,7 +361,7 @@ this picture in mind when reading the port report below.
 Numerical mode vs. analytical reference
 ---------------------------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 176-187
+.. GENERATED FROM PYTHON SOURCE LINES 171-182
 
 .. code-block:: Python
 
@@ -330,14 +386,14 @@ Numerical mode vs. analytical reference
 
     Port 'port1' — 1 mode(s)
       z_line = 49.67 Ω (numerical), 51.67 Ω (reference, Δ -3.87 %)
-      [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 49.67 Ω
+      [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 49.67 Ω  ε_eff = 2.250
     z_line numerical :   49.67 Ohm  (-3.9 %)
     z_line reference :   51.67 Ohm
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 188-201
+.. GENERATED FROM PYTHON SOURCE LINES 183-196
 
 The two impedances answer different questions.  The *reference* is
 the closed-form value of the ideal circular line — the design
@@ -353,7 +409,7 @@ strongest at the inner conductor.  Passing the geometry model
 overlays the port-plane cross-section — the grey disc is the inner
 conductor, the tinted annulus the dielectric:
 
-.. GENERATED FROM PYTHON SOURCE LINES 201-204
+.. GENERATED FROM PYTHON SOURCE LINES 196-199
 
 .. code-block:: Python
 
@@ -363,21 +419,21 @@ conductor, the tinted annulus the dielectric:
 
 
 
-.. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_003.png
+.. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_004.png
    :alt: Coax TEM mode, transverse E
-   :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_003.png
+   :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_004.png
    :class: sphx-glr-single-img
 
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 205-207
+.. GENERATED FROM PYTHON SOURCE LINES 200-202
 
 Run and S-parameters
 --------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 207-225
+.. GENERATED FROM PYTHON SOURCE LINES 202-220
 
 .. code-block:: Python
 
@@ -402,9 +458,9 @@ Run and S-parameters
 
 
 
-.. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_004.png
+.. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_005.png
    :alt: RG-58 class coax, 8 mm
-   :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_004.png
+   :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_005.png
    :class: sphx-glr-single-img
 
 
@@ -412,12 +468,12 @@ Run and S-parameters
 
  .. code-block:: none
 
-    max |S11| in band: -110.5 dB
+    max |S11| in band: -109.9 dB
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 226-237
+.. GENERATED FROM PYTHON SOURCE LINES 221-232
 
 As for every uniform matched line, ``|S21|`` sits at 0 dB and
 ``|S11|`` at the numerical floor — around -110 dB here.  Note what that floor
@@ -431,7 +487,7 @@ The transmission phase must follow the dielectric-loaded electrical
 length :math:`\beta L` with
 :math:`\beta = 2 \pi f \sqrt{\varepsilon_r} / c_0`:
 
-.. GENERATED FROM PYTHON SOURCE LINES 237-253
+.. GENERATED FROM PYTHON SOURCE LINES 232-248
 
 .. code-block:: Python
 
@@ -454,9 +510,9 @@ length :math:`\beta L` with
 
 
 
-.. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_005.png
+.. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_006.png
    :alt: Transmission phase vs. analytic
-   :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_005.png
+   :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_006.png
    :class: sphx-glr-single-img
 
 
@@ -469,7 +525,7 @@ length :math:`\beta L` with
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 254-266
+.. GENERATED FROM PYTHON SOURCE LINES 249-261
 
 Where to go next
 ----------------
@@ -487,7 +543,7 @@ interest.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 7.334 seconds)
+   **Total running time of the script:** (0 minutes 8.063 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_02_coax_line.py:

@@ -27,30 +27,32 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=03f3338f"></script>
+    <script src="../_static/documentation_options.js?v=a78bb796"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/plot_18_periodic_tesla_cell';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -60,7 +62,7 @@
     <link rel="canonical" href="https://brtkrtz.github.io/magnelio/stable/tutorials/plot_18_periodic_tesla_cell.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="How-to guides" href="../howto/index.html" />
+    <link rel="next" title="Offset Cassegrain reflector: parametric surfaces and a horn feed" href="19_cassegrain_reflector.html" />
     <link rel="prev" title="Importing a circuit board" href="plot_17_pcb_import.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -234,6 +236,32 @@
   </ul>
 </div></div>
       
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio/discussions" title="Discussions" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-regular fa-comments fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discussions</span></a>
+        </li>
+</ul></div>
+      
     </div>
     
   </div>
@@ -359,6 +387,32 @@
   </ul>
 </div></div>
         
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio/discussions" title="Discussions" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-regular fa-comments fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discussions</span></a>
+        </li>
+</ul></div>
+        
       </div>
     
   </div>
@@ -395,6 +449,7 @@
 <li class="toctree-l1"><a class="reference internal" href="plot_16_cad_import.html">Importing a CAD model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_17_pcb_import.html">Importing a circuit board</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Periodic structures: the dispersion diagram of a TESLA cell</a></li>
+<li class="toctree-l1"><a class="reference internal" href="19_cassegrain_reflector.html">Offset Cassegrain reflector: parametric surfaces and a horn feed</a></li>
 </ul>
 </div>
 </nav></div>
@@ -701,8 +756,8 @@ nothing periodic about them:</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"magnetic walls on the iris planes (pi-mode): </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">f_pi_walls</span></a><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> GHz"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>electric walls on the iris planes (0-mode):  1.2776 GHz
-magnetic walls on the iris planes (pi-mode): 1.3018 GHz
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>electric walls on the iris planes (0-mode):  1.2774 GHz
+magnetic walls on the iris planes (pi-mode): 1.3016 GHz
 </pre></div>
 </div>
 </section>
@@ -726,13 +781,13 @@ without anything to configure.</p>
 <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">freqs</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">freqs</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>phase advance   0.0 deg: 1.2776 GHz
-phase advance  30.0 deg: 1.2792 GHz
-phase advance  60.0 deg: 1.2836 GHz
-phase advance  90.0 deg: 1.2897 GHz
-phase advance 120.0 deg: 1.2959 GHz
-phase advance 150.0 deg: 1.3005 GHz
-phase advance 180.0 deg: 1.3021 GHz
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>phase advance   0.0 deg: 1.2774 GHz
+phase advance  30.0 deg: 1.2790 GHz
+phase advance  60.0 deg: 1.2835 GHz
+phase advance  90.0 deg: 1.2896 GHz
+phase advance 120.0 deg: 1.2957 GHz
+phase advance 150.0 deg: 1.3003 GHz
+phase advance 180.0 deg: 1.3019 GHz
 </pre></div>
 </div>
 </section>
@@ -783,7 +838,7 @@ published values are 1.300 GHz for the <span class="math notranslate nohighlight
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_18_periodic_tesla_cell_002.png" srcset="../_images/sphx_glr_plot_18_periodic_tesla_cell_002.png" alt="TM$_{010}$ passband of the TESLA mid-cell" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>pi-mode:              1.3021 GHz (design 1.3000 GHz)
+<img src="../_images/sphx_glr_plot_18_periodic_tesla_cell_002.png" srcset="../_images/sphx_glr_plot_18_periodic_tesla_cell_002.png" alt="TM$_{010}$ passband of the TESLA mid-cell" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>pi-mode:              1.3019 GHz (design 1.3000 GHz)
 cell-to-cell coupling: 1.90 % (published 1.87 %)
 </pre></div>
 </div>
@@ -828,7 +883,7 @@ travelling wave is not, and no combination of walls would produce it.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_18_periodic_tesla_cell_003.png" srcset="../_images/sphx_glr_plot_18_periodic_tesla_cell_003.png" alt="$\pi$-mode (standing wave), 1.3021 GHz, $2\pi/3$-mode (travelling wave), 1.2959 GHz" class = "sphx-glr-single-img"/></section>
+<img src="../_images/sphx_glr_plot_18_periodic_tesla_cell_003.png" srcset="../_images/sphx_glr_plot_18_periodic_tesla_cell_003.png" alt="$\pi$-mode (standing wave), 1.3019 GHz, $2\pi/3$-mode (travelling wave), 1.2957 GHz" class = "sphx-glr-single-img"/></section>
 <section id="where-to-go-next">
 <h2>Where to go next<a class="headerlink" href="#where-to-go-next" title="Link to this heading">#</a></h2>
 <p>New in this tutorial: a <code class="docutils literal notranslate"><span class="pre">&quot;Periodic&quot;</span></code> face pair and
@@ -840,7 +895,7 @@ parameter table leaves implicit.  The same pair of declarations
 serves any periodic structure whose unit cell fits in a box —
 disk-loaded waveguides, photonic-crystal slabs, frequency-selective
 surfaces at normal incidence.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (4 minutes 4.399 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (4 minutes 6.444 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-18-periodic-tesla-cell-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/784a329cd82bda387fe74c6dd69b284a/plot_18_periodic_tesla_cell.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_18_periodic_tesla_cell.ipynb</span></code></a></p>
@@ -876,11 +931,11 @@ surfaces at normal incidence.</p>
       </div>
     </a>
     <a class="right-next"
-       href="../howto/index.html"
+       href="19_cassegrain_reflector.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">How-to guides</p>
+        <p class="prev-next-title">Offset Cassegrain reflector: parametric surfaces and a horn feed</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -936,8 +991,8 @@ surfaces at normal incidence.</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -971,7 +1026,7 @@ surfaces at normal incidence.</p>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

@@ -1,0 +1,1090 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Offset Cassegrain reflector: parametric surfaces and a horn feed &#8212; Magnelio Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+
+    <script src="../_static/documentation_options.js?v=a78bb796"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/19_cassegrain_reflector';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/stable/tutorials/19_cassegrain_reflector.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How-to guides" href="../howto/index.html" />
+    <link rel="prev" title="Periodic structures: the dispersion diagram of a TESLA cell" href="plot_18_periodic_tesla_cell.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Magnelio Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../methods/index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio/discussions" title="Discussions" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-regular fa-comments fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discussions</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../methods/index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio/discussions" title="Discussions" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-regular fa-comments fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discussions</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="plot_01_parallel_plate.html">Your first simulation: a parallel-plate line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_02_coax_line.html">A coaxial line: solids, booleans, and a coax port</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_03_coax_smatrix.html">Exciting both ports: the full S-matrix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_04_higher_modes.html">Higher-order modes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_05_eigenmode_sphere.html">Eigenmode analysis: a spherical cavity</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_06_field_monitors.html">Field monitors: watching a magic tee work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_07_project_store.html">Using disk storage: monitors at scale, resume, ParaView</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_08_open_boundary.html">Open boundaries: a monopole antenna</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_09_microstrip_line.html">Microstrip lines: quasi-TEM ports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_10_lumped_elements.html">Lumped elements: a Wilkinson power divider</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_11_losses.html">Conductor and dielectric losses</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_12_sweep_optimize.html">Parameter sweeps and optimisation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_13_dielectric_filter.html">Capstone: a two-pole dielectric resonator filter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_14_profile_geometry.html">Profiles: shapes the primitives do not cover</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_15_dipole_farfield.html">Antenna symmetry: a half-wave dipole as a half model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_16_cad_import.html">Importing a CAD model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_17_pcb_import.html">Importing a circuit board</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_18_periodic_tesla_cell.html">Periodic structures: the dispersion diagram of a TESLA cell</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Offset Cassegrain reflector: parametric surfaces and a horn feed</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Offset Cassegrain reflector: parametric surfaces and a horn feed</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-tutorials-19-cassegrain-reflector-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code.</p>
+</div>
+<section class="sphx-glr-example-title" id="offset-cassegrain-reflector-parametric-surfaces-and-a-horn-feed">
+<span id="sphx-glr-tutorials-19-cassegrain-reflector-py"></span><h1>Offset Cassegrain reflector: parametric surfaces and a horn feed<a class="headerlink" href="#offset-cassegrain-reflector-parametric-surfaces-and-a-horn-feed" title="Link to this heading">#</a></h1>
+<p>Every reflector so far — there was none.  The geometry chapters built
+bodies from primitives, profiles and lofts; an antenna dish is a
+<em>surface given by a formula</em>, a paraboloid, and the subreflector of a
+Cassegrain system is another one, a hyperboloid.  This tutorial builds
+an <strong>offset Cassegrain antenna</strong> from two such surfaces, feeds it with
+a pyramidal horn from the wall of an open box, and reads its radiation
+pattern off the far-field monitor.</p>
+<p>Three things are new:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../api/geo.html#magnelio.geo.Surface.parametric" title="magnelio.geo.Surface.parametric"><code class="xref py py-meth docutils literal notranslate"><span class="pre">parametric()</span></code></a> turns any map
+<span class="math notranslate nohighlight">\((u, v) \mapsto (x, y, z)\)</span> into a curved sheet, which
+<a class="reference internal" href="../api/geo.html#magnelio.geo.Shape.extruded" title="magnelio.geo.Shape.extruded"><code class="xref py py-meth docutils literal notranslate"><span class="pre">extruded()</span></code></a> makes into a metal shell — the
+map may be a closed formula or, as for the subreflector here, a
+short computation;</p></li>
+<li><p>a <strong>waveguide port in an absorbing wall</strong>: the horn’s neck ends on
+the <code class="docutils literal notranslate"><span class="pre">xmin</span></code> face, which is CPML like the other five, and the port
+sits in the neck’s cross-section;</p></li>
+<li><p>the far field of a <strong>waveguide-fed</strong> antenna, whose feed guide
+crosses the Huygens box.</p></li>
+</ul>
+<p>The antenna is electrically small for a Cassegrain — an 8 λ dish and
+a 2 λ subreflector, where a real system has 20 λ and more — so its
+pattern is diffraction-dominated; the point of the page is the
+construction.  The script runs for minutes (a 2 M-cell mesh and a
+GPU-sized time-domain run), so the gallery renders it without
+executing it; the figures and the numbers quoted below are from a
+measured run.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<section id="the-optics">
+<h2>The optics<a class="headerlink" href="#the-optics" title="Link to this heading">#</a></h2>
+<p>A Cassegrain antenna is a paraboloid (the <em>main reflector</em>) with a
+hyperboloid (the <em>subreflector</em>) in front of its focus.  Rays leaving
+the dish converge toward the paraboloid’s focus <span class="math notranslate nohighlight">\(F\)</span>; the
+convex hyperboloid intercepts them and, because <span class="math notranslate nohighlight">\(F\)</span> is one of
+<em>its</em> two foci, sends them to the other, <span class="math notranslate nohighlight">\(P\)</span>, where the feed
+sits.  The <em>offset</em> version uses only a patch of the paraboloid that
+lies to one side of its axis, so that neither subreflector nor feed
+stands in the beam.</p>
+<p>The design is a handful of numbers in the paraboloid’s own frame —
+axis along <span class="math notranslate nohighlight">\(z\)</span>, vertex at the origin, focus at
+<span class="math notranslate nohighlight">\((0, 0, F)\)</span>:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>quantity</p></th>
+<th class="head"><p>value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>frequency</p></td>
+<td><p>10 GHz</p></td>
+</tr>
+<tr class="row-odd"><td><p>focal length <span class="math notranslate nohighlight">\(F\)</span></p></td>
+<td><p>180 mm</p></td>
+</tr>
+<tr class="row-even"><td><p>aperture diameter <span class="math notranslate nohighlight">\(D\)</span></p></td>
+<td><p>240 mm (8 λ)</p></td>
+</tr>
+<tr class="row-odd"><td><p>aperture centre offset</p></td>
+<td><p>150 mm</p></td>
+</tr>
+<tr class="row-even"><td><p>subreflector diameter</p></td>
+<td><p>70 mm</p></td>
+</tr>
+<tr class="row-odd"><td><p>subreflector before focus</p></td>
+<td><p>50 mm</p></td>
+</tr>
+<tr class="row-even"><td><p>feed phase centre <span class="math notranslate nohighlight">\(P\)</span></p></td>
+<td><p>(−20, 0, 40) mm</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span><span class="p">,</span> <span class="n">monitors</span><span class="p">,</span> <span class="n">ports</span>
+
+<span class="n">f0</span> <span class="o">=</span> <span class="mf">10.0e9</span>
+<span class="n">wavelength</span> <span class="o">=</span> <span class="mf">3.0e8</span> <span class="o">/</span> <span class="n">f0</span>
+<span class="n">focal</span> <span class="o">=</span> <span class="mf">0.18</span>  <span class="c1"># paraboloid focal length</span>
+<span class="n">diameter</span> <span class="o">=</span> <span class="mf">0.24</span>  <span class="c1"># aperture diameter</span>
+<span class="n">offset</span> <span class="o">=</span> <span class="mf">0.15</span>  <span class="c1"># aperture centre, off the paraboloid axis</span>
+<span class="n">d_sub</span> <span class="o">=</span> <span class="mf">0.07</span>  <span class="c1"># subreflector diameter</span>
+<span class="n">s_from_focus</span> <span class="o">=</span> <span class="mf">0.05</span>  <span class="c1"># subreflector on the central ray, this far before the focus</span>
+<span class="n">p_feed</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">([</span><span class="o">-</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.04</span><span class="p">])</span>  <span class="c1"># feed phase centre</span>
+<span class="n">t_shell</span> <span class="o">=</span> <span class="mf">5.0e-3</span>  <span class="c1"># reflector shell thickness — two cells or more</span>
+
+<span class="n">focus</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">focal</span><span class="p">])</span>
+<span class="n">aperture_centre</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">([</span><span class="n">offset</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">offset</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">focal</span><span class="p">)])</span>
+<span class="n">central_ray</span> <span class="o">=</span> <span class="p">(</span><span class="n">focus</span> <span class="o">-</span> <span class="n">aperture_centre</span><span class="p">)</span> <span class="o">/</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.linalg.norm.html#numpy.linalg.norm" title="numpy.linalg.norm" class="sphx-glr-backref-module-numpy-linalg sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span></a><span class="p">(</span><span class="n">focus</span> <span class="o">-</span> <span class="n">aperture_centre</span><span class="p">)</span>
+<span class="n">hit</span> <span class="o">=</span> <span class="n">focus</span> <span class="o">-</span> <span class="n">s_from_focus</span> <span class="o">*</span> <span class="n">central_ray</span>  <span class="c1"># where the central ray meets the subreflector</span>
+</pre></div>
+</div>
+<p>The hyperboloid follows from its two foci and one point on it: a
+point of the branch nearer <span class="math notranslate nohighlight">\(F\)</span> is <span class="math notranslate nohighlight">\(2a\)</span> closer to
+<span class="math notranslate nohighlight">\(F\)</span> than to <span class="math notranslate nohighlight">\(P\)</span>, with <span class="math notranslate nohighlight">\(2c\)</span> the focal distance.
+The ratio <span class="math notranslate nohighlight">\(e = c/a\)</span> is its eccentricity, and the <em>magnification</em>
+<span class="math notranslate nohighlight">\(M = (e + 1)/(e - 1)\)</span> — how much longer the system’s
+equivalent focal length is than the paraboloid’s — is the number a
+reflector designer quotes.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">c_h</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.linalg.norm.html#numpy.linalg.norm" title="numpy.linalg.norm" class="sphx-glr-backref-module-numpy-linalg sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span></a><span class="p">(</span><span class="n">focus</span> <span class="o">-</span> <span class="n">p_feed</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+<span class="n">a_h</span> <span class="o">=</span> <span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.linalg.norm.html#numpy.linalg.norm" title="numpy.linalg.norm" class="sphx-glr-backref-module-numpy-linalg sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span></a><span class="p">(</span><span class="n">hit</span> <span class="o">-</span> <span class="n">p_feed</span><span class="p">)</span> <span class="o">-</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.linalg.norm.html#numpy.linalg.norm" title="numpy.linalg.norm" class="sphx-glr-backref-module-numpy-linalg sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span></a><span class="p">(</span><span class="n">hit</span> <span class="o">-</span> <span class="n">focus</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span>
+<span class="n">b_h</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.sqrt.html#numpy.sqrt" title="numpy.sqrt" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span></a><span class="p">(</span><span class="n">c_h</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">a_h</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">centre_h</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">p_feed</span> <span class="o">+</span> <span class="n">focus</span><span class="p">)</span>
+<span class="n">axis_h</span> <span class="o">=</span> <span class="p">(</span><span class="n">focus</span> <span class="o">-</span> <span class="n">p_feed</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">c_h</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"hyperboloid: a = </span><span class="si">{</span><span class="n">a_h</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> mm, c = </span><span class="si">{</span><span class="n">c_h</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> mm, e = </span><span class="si">{</span><span class="n">c_h</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">a_h</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"magnification M = </span><span class="si">{</span><span class="p">(</span><span class="n">c_h</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">a_h</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="n">c_h</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">a_h</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="the-main-reflector">
+<h2>The main reflector<a class="headerlink" href="#the-main-reflector" title="Link to this heading">#</a></h2>
+<p>The dish is the paraboloid <span class="math notranslate nohighlight">\(z = (x^2 + y^2)/4F\)</span> over a circular
+aperture centred at <code class="docutils literal notranslate"><span class="pre">offset</span></code>.  Parametrising the map in <strong>polar
+coordinates about the aperture centre</strong> — radius and angle, not
+<span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(y\)</span> — makes the rim of the patch an exact circle
+without any trimming afterwards.  The sheet is sampled on a 32 × 64
+grid and interpolated; the extrusion along −z gives it a thickness.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">paraboloid</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">phi</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">+</span> <span class="n">r</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.cos.html#numpy.cos" title="numpy.cos" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">cos</span></a><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.sin.html#numpy.sin" title="numpy.sin" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">sin</span></a><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">y</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">focal</span><span class="p">)</span>
+
+
+<span class="n">dish_sheet</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Surface</span><span class="o">.</span><span class="n">parametric</span><span class="p">(</span>
+    <span class="n">paraboloid</span><span class="p">,</span> <span class="n">u</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">diameter</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="n">v</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a><span class="p">),</span> <span class="n">samples</span><span class="o">=</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">main_reflector</span> <span class="o">=</span> <span class="n">dish_sheet</span><span class="o">.</span><span class="n">extruded</span><span class="p">(</span><span class="n">vector</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="n">t_shell</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="the-subreflector">
+<h2>The subreflector<a class="headerlink" href="#the-subreflector" title="Link to this heading">#</a></h2>
+<p>The subreflector is a patch of the hyperboloid around the central
+hit.  Its map is again a disc — in the plane tangent to the
+hyperboloid at the hit, spanned by the normal there — but the third
+coordinate is not a formula: each disc point is projected along the
+normal onto the surface by solving the hyperboloid’s quadratic
+equation along that line.  A parametric map may compute; NumPy
+arrays go in, three arrays come out.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">hyperboloid_normal</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">p</span> <span class="o">-</span> <span class="n">centre_h</span>
+    <span class="n">zeta</span> <span class="o">=</span> <span class="n">q</span> <span class="o">@</span> <span class="n">axis_h</span>
+    <span class="n">grad</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">zeta</span> <span class="o">/</span> <span class="n">a_h</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">axis_h</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">q</span> <span class="o">-</span> <span class="n">zeta</span> <span class="o">*</span> <span class="n">axis_h</span><span class="p">)</span> <span class="o">/</span> <span class="n">b_h</span><span class="o">**</span><span class="mi">2</span>
+    <span class="k">return</span> <span class="n">grad</span> <span class="o">/</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.linalg.norm.html#numpy.linalg.norm" title="numpy.linalg.norm" class="sphx-glr-backref-module-numpy-linalg sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span></a><span class="p">(</span><span class="n">grad</span><span class="p">)</span>
+
+
+<span class="n">n_hit</span> <span class="o">=</span> <span class="n">hyperboloid_normal</span><span class="p">(</span><span class="n">hit</span><span class="p">)</span>
+<span class="n">e_y</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+<span class="n">e_t</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.cross.html#numpy.cross" title="numpy.cross" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">cross</span></a><span class="p">(</span><span class="n">e_y</span><span class="p">,</span> <span class="n">n_hit</span><span class="p">)</span>
+<span class="n">e_t</span> <span class="o">/=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.linalg.norm.html#numpy.linalg.norm" title="numpy.linalg.norm" class="sphx-glr-backref-module-numpy-linalg sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span></a><span class="p">(</span><span class="n">e_t</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">hyperboloid_patch</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">phi</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Disc of radius r about the hit, projected along the normal onto the surface."""</span>
+    <span class="n">q0</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">hit</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="o">+</span> <span class="p">(</span><span class="n">r</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.cos.html#numpy.cos" title="numpy.cos" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">cos</span></a><span class="p">(</span><span class="n">phi</span><span class="p">))[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">e_t</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="o">+</span> <span class="p">(</span><span class="n">r</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.sin.html#numpy.sin" title="numpy.sin" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">sin</span></a><span class="p">(</span><span class="n">phi</span><span class="p">))[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">e_y</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="c1"># Points q0 + t n on the hyperboloid  zeta²/a² − rho²/b² = 1, with</span>
+    <span class="c1"># zeta the coordinate along the axis and rho the distance from it.</span>
+    <span class="n">dq</span> <span class="o">=</span> <span class="n">q0</span> <span class="o">-</span> <span class="n">centre_h</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="n">z0</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.einsum.html#numpy.einsum" title="numpy.einsum" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">einsum</span></a><span class="p">(</span><span class="s2">"i,ijk-&gt;jk"</span><span class="p">,</span> <span class="n">axis_h</span><span class="p">,</span> <span class="n">dq</span><span class="p">)</span>
+    <span class="n">zn</span> <span class="o">=</span> <span class="n">n_hit</span> <span class="o">@</span> <span class="n">axis_h</span>
+    <span class="n">rho0</span> <span class="o">=</span> <span class="n">dq</span> <span class="o">-</span> <span class="n">z0</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">axis_h</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="n">rhon</span> <span class="o">=</span> <span class="n">n_hit</span> <span class="o">-</span> <span class="n">zn</span> <span class="o">*</span> <span class="n">axis_h</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">zn</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">a_h</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="n">rhon</span> <span class="o">@</span> <span class="n">rhon</span><span class="p">)</span> <span class="o">/</span> <span class="n">b_h</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">z0</span> <span class="o">*</span> <span class="n">zn</span> <span class="o">/</span> <span class="n">a_h</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.einsum.html#numpy.einsum" title="numpy.einsum" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">einsum</span></a><span class="p">(</span><span class="s2">"ijk,i-&gt;jk"</span><span class="p">,</span> <span class="n">rho0</span><span class="p">,</span> <span class="n">rhon</span><span class="p">)</span> <span class="o">/</span> <span class="n">b_h</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">z0</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">a_h</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.einsum.html#numpy.einsum" title="numpy.einsum" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">einsum</span></a><span class="p">(</span><span class="s2">"ijk,ijk-&gt;jk"</span><span class="p">,</span> <span class="n">rho0</span><span class="p">,</span> <span class="n">rho0</span><span class="p">)</span> <span class="o">/</span> <span class="n">b_h</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mf">1.0</span>
+    <span class="n">root</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.sqrt.html#numpy.sqrt" title="numpy.sqrt" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.maximum.html#numpy.maximum" title="numpy.maximum" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">maximum</span></a><span class="p">(</span><span class="n">B</span> <span class="o">*</span> <span class="n">B</span> <span class="o">-</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">A</span> <span class="o">*</span> <span class="n">C</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+    <span class="n">t1</span><span class="p">,</span> <span class="n">t2</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">B</span> <span class="o">+</span> <span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">A</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="n">B</span> <span class="o">-</span> <span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">A</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.where.html#numpy.where" title="numpy.where" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">where</span></a><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">t1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">t2</span><span class="p">),</span> <span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span>  <span class="c1"># the root next to the tangent plane</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">q0</span> <span class="o">+</span> <span class="n">t</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_hit</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+
+<span class="n">sub_sheet</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Surface</span><span class="o">.</span><span class="n">parametric</span><span class="p">(</span>
+    <span class="n">hyperboloid_patch</span><span class="p">,</span> <span class="n">u</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">d_sub</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="n">v</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a><span class="p">),</span> <span class="n">samples</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">48</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="c1"># The normal at the hit points toward the dish (the convex side); the</span>
+<span class="c1"># shell grows behind the surface, away from the incoming rays.</span>
+<span class="n">behind</span> <span class="o">=</span> <span class="o">-</span><span class="n">n_hit</span> <span class="k">if</span> <span class="n">n_hit</span> <span class="o">@</span> <span class="n">central_ray</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">n_hit</span>
+<span class="n">subreflector</span> <span class="o">=</span> <span class="n">sub_sheet</span><span class="o">.</span><span class="n">extruded</span><span class="p">(</span><span class="n">vector</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">t_shell</span> <span class="o">*</span> <span class="n">behind</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="orientation">
+<h2>Orientation<a class="headerlink" href="#orientation" title="Link to this heading">#</a></h2>
+<p>The feed must enter through a box wall, so the whole assembly is
+turned about <span class="math notranslate nohighlight">\(y\)</span> until the feed axis — from <span class="math notranslate nohighlight">\(P\)</span> to the
+hit on the subreflector — points along +x.  The beam, the
+paraboloid’s +z, then leaves at an angle: that is the <em>oblique</em>
+radiation the pattern will show.  (Rotating a sheet keeps it a
+sheet; here the solids are rotated, which is the same thing one step
+later.)</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">feed_axis</span> <span class="o">=</span> <span class="p">(</span><span class="n">hit</span> <span class="o">-</span> <span class="n">p_feed</span><span class="p">)</span> <span class="o">/</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.linalg.norm.html#numpy.linalg.norm" title="numpy.linalg.norm" class="sphx-glr-backref-module-numpy-linalg sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span></a><span class="p">(</span><span class="n">hit</span> <span class="o">-</span> <span class="n">p_feed</span><span class="p">)</span>
+<span class="n">turn</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.degrees.html#numpy.degrees" title="numpy.degrees" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">degrees</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.arctan2.html#numpy.arctan2" title="numpy.arctan2" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">arctan2</span></a><span class="p">(</span><span class="n">feed_axis</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">feed_axis</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>  <span class="c1"># about y, feed axis -&gt; +x</span>
+<span class="n">rotate</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">shape</span><span class="p">:</span> <span class="n">shape</span><span class="o">.</span><span class="n">rotated</span><span class="p">(</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">turn</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">p_feed</span><span class="p">))</span>  <span class="c1"># noqa: E731</span>
+<span class="n">main_reflector</span> <span class="o">=</span> <span class="n">rotate</span><span class="p">(</span><span class="n">main_reflector</span><span class="p">)</span>
+<span class="n">subreflector</span> <span class="o">=</span> <span class="n">rotate</span><span class="p">(</span><span class="n">subreflector</span><span class="p">)</span>
+<span class="n">beam</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">([</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.sin.html#numpy.sin" title="numpy.sin" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">sin</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.radians.html#numpy.radians" title="numpy.radians" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">radians</span></a><span class="p">(</span><span class="n">turn</span><span class="p">)),</span> <span class="mf">0.0</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.cos.html#numpy.cos" title="numpy.cos" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">cos</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.radians.html#numpy.radians" title="numpy.radians" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">radians</span></a><span class="p">(</span><span class="n">turn</span><span class="p">))])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"assembly turned by </span><span class="si">{</span><span class="n">turn</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> deg; beam direction </span><span class="si">{</span><span class="n">beam</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"beam is </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.degrees.html#numpy.degrees" title="numpy.degrees" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">degrees</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.arccos.html#numpy.arccos" title="numpy.arccos" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">arccos</span></a><span class="p">(</span><span class="n">beam</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> deg off the box's +z axis"</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="the-feed-horn">
+<h2>The feed horn<a class="headerlink" href="#the-feed-horn" title="Link to this heading">#</a></h2>
+<p>A WR-90 neck runs from the <code class="docutils literal notranslate"><span class="pre">xmin</span></code> wall along +x to the throat of a
+pyramidal horn whose mouth is at <span class="math notranslate nohighlight">\(P\)</span> — standard horn numbers,
+not optimised.  Outer and inner lofts make the walls; the neck is a
+pair of bricks.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">a_wg</span><span class="p">,</span> <span class="n">b_wg</span> <span class="o">=</span> <span class="mf">22.86e-3</span><span class="p">,</span> <span class="mf">10.16e-3</span>  <span class="c1"># WR-90</span>
+<span class="n">l_neck</span><span class="p">,</span> <span class="n">l_horn</span> <span class="o">=</span> <span class="mf">30e-3</span><span class="p">,</span> <span class="mf">60e-3</span>
+<span class="n">a_mouth</span><span class="p">,</span> <span class="n">b_mouth</span> <span class="o">=</span> <span class="mf">60e-3</span><span class="p">,</span> <span class="mf">45e-3</span>
+<span class="n">wall</span> <span class="o">=</span> <span class="mf">2e-3</span>
+<span class="n">x_mouth</span> <span class="o">=</span> <span class="n">p_feed</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">x_throat</span> <span class="o">=</span> <span class="n">x_mouth</span> <span class="o">-</span> <span class="n">l_horn</span>
+<span class="n">x_wall</span> <span class="o">=</span> <span class="n">x_throat</span> <span class="o">-</span> <span class="n">l_neck</span>
+<span class="n">yc</span><span class="p">,</span> <span class="n">zc</span> <span class="o">=</span> <span class="n">p_feed</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">p_feed</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">rectangle</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">grow</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">geo</span><span class="o">.</span><span class="n">Face</span><span class="p">(</span>
+        <span class="n">normal</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span>
+        <span class="n">points</span><span class="o">=</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">yc</span> <span class="o">-</span> <span class="n">a</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">grow</span><span class="p">,</span> <span class="n">zc</span> <span class="o">-</span> <span class="n">b</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">grow</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">yc</span> <span class="o">+</span> <span class="n">a</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">grow</span><span class="p">,</span> <span class="n">zc</span> <span class="o">-</span> <span class="n">b</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">grow</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">yc</span> <span class="o">+</span> <span class="n">a</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">grow</span><span class="p">,</span> <span class="n">zc</span> <span class="o">+</span> <span class="n">b</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">grow</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">yc</span> <span class="o">-</span> <span class="n">a</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">grow</span><span class="p">,</span> <span class="n">zc</span> <span class="o">+</span> <span class="n">b</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">grow</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">position</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="n">flare_a</span><span class="p">,</span> <span class="n">flare_b</span> <span class="o">=</span> <span class="p">(</span><span class="n">a_mouth</span> <span class="o">-</span> <span class="n">a_wg</span><span class="p">)</span> <span class="o">/</span> <span class="n">l_horn</span><span class="p">,</span> <span class="p">(</span><span class="n">b_mouth</span> <span class="o">-</span> <span class="n">b_wg</span><span class="p">)</span> <span class="o">/</span> <span class="n">l_horn</span>
+<span class="n">horn_outer</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Loft</span><span class="p">(</span>
+    <span class="n">rectangle</span><span class="p">(</span><span class="n">x_throat</span><span class="p">,</span> <span class="n">a_wg</span><span class="p">,</span> <span class="n">b_wg</span><span class="p">,</span> <span class="n">wall</span><span class="p">),</span>
+    <span class="n">rectangle</span><span class="p">(</span><span class="n">x_mouth</span><span class="p">,</span> <span class="n">a_mouth</span><span class="p">,</span> <span class="n">b_mouth</span><span class="p">,</span> <span class="n">wall</span><span class="p">),</span>
+    <span class="n">blend</span><span class="o">=</span><span class="s2">"ruled"</span><span class="p">,</span>
+    <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">horn_inner</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Loft</span><span class="p">(</span>
+    <span class="n">rectangle</span><span class="p">(</span><span class="n">x_throat</span> <span class="o">-</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="n">a_wg</span> <span class="o">-</span> <span class="mf">1e-3</span> <span class="o">*</span> <span class="n">flare_a</span><span class="p">,</span> <span class="n">b_wg</span> <span class="o">-</span> <span class="mf">1e-3</span> <span class="o">*</span> <span class="n">flare_b</span><span class="p">),</span>
+    <span class="n">rectangle</span><span class="p">(</span><span class="n">x_mouth</span> <span class="o">+</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="n">a_mouth</span> <span class="o">+</span> <span class="mf">1e-3</span> <span class="o">*</span> <span class="n">flare_a</span><span class="p">,</span> <span class="n">b_mouth</span> <span class="o">+</span> <span class="mf">1e-3</span> <span class="o">*</span> <span class="n">flare_b</span><span class="p">),</span>
+    <span class="n">blend</span><span class="o">=</span><span class="s2">"ruled"</span><span class="p">,</span>
+    <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">neck_outer</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span>
+    <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="n">x_wall</span><span class="p">,</span> <span class="n">yc</span> <span class="o">-</span> <span class="n">a_wg</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">wall</span><span class="p">,</span> <span class="n">zc</span> <span class="o">-</span> <span class="n">b_wg</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">wall</span><span class="p">),</span>
+    <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">l_neck</span> <span class="o">+</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="n">a_wg</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">wall</span><span class="p">,</span> <span class="n">b_wg</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">wall</span><span class="p">),</span>
+    <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">neck_inner</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span>
+    <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="n">x_wall</span> <span class="o">-</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="n">yc</span> <span class="o">-</span> <span class="n">a_wg</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">zc</span> <span class="o">-</span> <span class="n">b_wg</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">l_neck</span> <span class="o">+</span> <span class="mf">2e-3</span><span class="p">,</span> <span class="n">a_wg</span><span class="p">,</span> <span class="n">b_wg</span><span class="p">),</span>
+    <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">horn</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Difference</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">Union</span><span class="p">(</span><span class="n">neck_outer</span><span class="p">,</span> <span class="n">horn_outer</span><span class="p">),</span> <span class="n">neck_inner</span><span class="p">,</span> <span class="n">horn_inner</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="the-box-and-the-port">
+<h2>The box and the port<a class="headerlink" href="#the-box-and-the-port" title="Link to this heading">#</a></h2>
+<p>Half a wavelength of clearance around everything, six absorbing
+faces, and the neck ending exactly on <code class="docutils literal notranslate"><span class="pre">xmin</span></code>.  The port is a
+window in that face with the neck’s inner cross-section as its
+corners: a port in an absorbing wall must be the end of a
+conductor-enclosed guide, and the window must match the guide’s
+walls (the ports chapter states the rule).  Behind the window the
+absorber is switched off, so the mode meets the port’s own
+termination.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="n">main_reflector</span><span class="p">,</span> <span class="n">subreflector</span><span class="p">,</span> <span class="n">horn</span><span class="p">]</span>
+<span class="n">lo</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.min.html#numpy.min" title="numpy.min" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">min</span></a><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">bounding_box</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="n">wavelength</span> <span class="o">/</span> <span class="mi">2</span>
+<span class="n">hi</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.max.html#numpy.max" title="numpy.max" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">max</span></a><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">bounding_box</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">wavelength</span> <span class="o">/</span> <span class="mi">2</span>
+<span class="n">lo</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_wall</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span>
+    <span class="n">boundary_conditions</span><span class="o">=</span><span class="p">{</span><span class="n">f</span><span class="p">:</span> <span class="s2">"CPML"</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"xmin"</span><span class="p">,</span> <span class="s2">"xmax"</span><span class="p">,</span> <span class="s2">"ymin"</span><span class="p">,</span> <span class="s2">"ymax"</span><span class="p">,</span> <span class="s2">"zmin"</span><span class="p">,</span> <span class="s2">"zmax"</span><span class="p">)}</span>
+<span class="p">)</span>
+<span class="n">air</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">lo</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">hi</span> <span class="o">-</span> <span class="n">lo</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">Difference</span><span class="p">(</span><span class="n">air</span><span class="p">,</span> <span class="n">main_reflector</span><span class="p">,</span> <span class="n">subreflector</span><span class="p">,</span> <span class="n">horn</span><span class="p">))</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">main_reflector</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">subreflector</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">horn</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add_port</span><span class="p">(</span>
+    <span class="n">ports</span><span class="o">.</span><span class="n">PortWaveguide</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"feed"</span><span class="p">,</span>
+        <span class="n">plane</span><span class="o">=</span><span class="s2">"xmin"</span><span class="p">,</span>
+        <span class="n">corners</span><span class="o">=</span><span class="p">((</span><span class="kc">None</span><span class="p">,</span> <span class="n">yc</span> <span class="o">-</span> <span class="n">a_wg</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">zc</span> <span class="o">-</span> <span class="n">b_wg</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">yc</span> <span class="o">+</span> <span class="n">a_wg</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">zc</span> <span class="o">+</span> <span class="n">b_wg</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)),</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"box: </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.round.html#numpy.round" title="numpy.round" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">round</span></a><span class="p">((</span><span class="n">hi</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">lo</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2"> mm"</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The assembled antenna — horn on the left, the subreflector on its
+axis, the dish behind and below it, the beam leaving obliquely
+upward:</p>
+<a class="reference internal image-reference" href="../_images/tutorial_19_geometry.png"><img alt="Offset Cassegrain antenna: horn, subreflector and dish in the open box" src="../_images/tutorial_19_geometry.png" style="width: 90%;" />
+</a>
+</section>
+<section id="mesh">
+<h2>Mesh<a class="headerlink" href="#mesh" title="Link to this heading">#</a></h2>
+<p>Free-form surfaces give the mesher nothing to hold on to — no
+feature planes, only their bounding boxes — so the resolution across
+the reflectors is the wavelength rule’s: about 1.7 mm at the 12 GHz
+band edge.  The horn is the opposite case: its walls and loft rims
+are edges a millimetre or two apart, and honouring every one of them
+refines the grid to that scale across the whole box — ten times the
+cells.  A floor of half a cell drops those planes (with a warning
+naming them); the wall of a perfect conductor needs no cells of its
+own.  2 M cells for this box, about a minute to mesh.  The 5 mm
+shells are three cells thick, comfortably above the two-cell rule of
+the geometry chapter.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">f_max</span> <span class="o">=</span> <span class="mf">12.0e9</span>
+<span class="n">mesh</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">mio</span><span class="o">.</span><span class="n">MeshControl</span><span class="p">(</span><span class="n">max_cell_size</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span> <span class="n">min_cell_size</span><span class="o">=</span><span class="mf">2.5e-3</span><span class="p">),</span> <span class="n">f_max</span><span class="o">=</span><span class="n">f_max</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"grid: </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Nx</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Ny</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Nz</span><span class="si">}</span><span class="s2"> cells"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The port report shows the neck’s TE10 mode; its cut-off lands
+within a few percent of WR-90’s 6.56 GHz on this coarse neck (13
+cells across the broad wall).</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">f_min</span><span class="o">=</span><span class="mf">8.5e9</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">analysis</span><span class="o">.</span><span class="n">solve_ports</span><span class="p">()[</span><span class="s2">"feed"</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+<section id="run-and-far-field">
+<h2>Run and far field<a class="headerlink" href="#run-and-far-field" title="Link to this heading">#</a></h2>
+<p>One far-field frequency is enough for a pattern.  The monitor knows
+that the feed crosses its box: the <code class="docutils literal notranslate"><span class="pre">xmin</span></code> face is sampled at the
+absorber interface, the neck’s interior is left out of the surface,
+and the normalisation refers to the incident power the TE10 port
+launched at each frequency.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">farfield</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarField</span><span class="p">(</span><span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"farfield"</span><span class="p">)</span>
+<span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">f_min</span><span class="o">=</span><span class="mf">8.5e9</span><span class="p">,</span> <span class="n">monitors</span><span class="o">=</span><span class="p">(</span><span class="n">farfield</span><span class="p">,),</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">f_axis</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.linspace.html#numpy.linspace" title="numpy.linspace" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">linspace</span></a><span class="p">(</span><span class="mf">8.5e9</span><span class="p">,</span> <span class="mf">11.5e9</span><span class="p">,</span> <span class="mi">31</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">f_axis</span><span class="o">=</span><span class="n">f_axis</span><span class="p">,</span> <span class="n">excited</span><span class="o">=</span><span class="p">[</span><span class="s2">"feed"</span><span class="p">])</span>
+
+<span class="n">pattern</span> <span class="o">=</span> <span class="n">farfield</span><span class="o">.</span><span class="n">result</span><span class="p">(</span><span class="n">f0</span><span class="p">)</span>
+<span class="n">directivity</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">directivity</span>
+<span class="n">i_peak</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.unravel_index.html#numpy.unravel_index" title="numpy.unravel_index" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">unravel_index</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.argmax.html#numpy.argmax" title="numpy.argmax" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">argmax</span></a><span class="p">(</span><span class="n">directivity</span><span class="p">),</span> <span class="n">directivity</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">theta_peak</span><span class="p">,</span> <span class="n">phi_peak</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">theta</span><span class="p">[</span><span class="n">i_peak</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">pattern</span><span class="o">.</span><span class="n">phi</span><span class="p">[</span><span class="n">i_peak</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+<span class="n">peak_dir</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">(</span>
+    <span class="p">[</span>
+        <a href="https://numpy.org/doc/stable/reference/generated/numpy.sin.html#numpy.sin" title="numpy.sin" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">sin</span></a><span class="p">(</span><span class="n">theta_peak</span><span class="p">)</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.cos.html#numpy.cos" title="numpy.cos" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">cos</span></a><span class="p">(</span><span class="n">phi_peak</span><span class="p">),</span>
+        <a href="https://numpy.org/doc/stable/reference/generated/numpy.sin.html#numpy.sin" title="numpy.sin" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">sin</span></a><span class="p">(</span><span class="n">theta_peak</span><span class="p">)</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.sin.html#numpy.sin" title="numpy.sin" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">sin</span></a><span class="p">(</span><span class="n">phi_peak</span><span class="p">),</span>
+        <a href="https://numpy.org/doc/stable/reference/generated/numpy.cos.html#numpy.cos" title="numpy.cos" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">cos</span></a><span class="p">(</span><span class="n">theta_peak</span><span class="p">),</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+<span class="n">s11</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s2">"feed"</span><span class="p">,</span> <span class="s2">"feed"</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"peak directivity: </span><span class="si">{</span><span class="mi">10</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.log10.html#numpy.log10" title="numpy.log10" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><span class="n">directivity</span><span class="o">.</span><span class="n">max</span><span class="p">())</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> dBi"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"aperture bound:   </span><span class="si">{</span><span class="mi">10</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.log10.html#numpy.log10" title="numpy.log10" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">((</span><a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">diameter</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">wavelength</span><span class="p">)</span><span class="w"> </span><span class="o">**</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> dBi"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"beam: designed </span><span class="si">{</span><span class="n">beam</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="si">}</span><span class="s2">, measured </span><span class="si">{</span><span class="n">peak_dir</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="si">}</span><span class="s2">, "</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"      </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.degrees.html#numpy.degrees" title="numpy.degrees" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">degrees</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.arccos.html#numpy.arccos" title="numpy.arccos" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">arccos</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.clip.html#numpy.clip" title="numpy.clip" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">clip</span></a><span class="p">(</span><span class="n">peak_dir</span><span class="w"> </span><span class="o">@</span><span class="w"> </span><span class="n">beam</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)))</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> deg apart"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"|S11| at f0: </span><span class="si">{</span><span class="mi">20</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.log10.html#numpy.log10" title="numpy.log10" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.interp.html#numpy.interp" title="numpy.interp" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">interp</span></a><span class="p">(</span><span class="n">f0</span><span class="p">,</span><span class="w"> </span><span class="n">f_axis</span><span class="p">,</span><span class="w"> </span><span class="n">s11</span><span class="p">))</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> dB"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"radiated / accepted power: </span><span class="si">{</span><span class="n">pattern</span><span class="o">.</span><span class="n">P_rad</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.interp.html#numpy.interp" title="numpy.interp" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">interp</span></a><span class="p">(</span><span class="n">f0</span><span class="p">,</span><span class="w"> </span><span class="n">f_axis</span><span class="p">,</span><span class="w"> </span><span class="n">s11</span><span class="p">)</span><span class="w"> </span><span class="o">**</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The pattern: a cut through the plane of the tilt (the <span class="math notranslate nohighlight">\(xz\)</span>
+plane, <span class="math notranslate nohighlight">\(\varphi = 0\)</span>) and the full radiation surface.  The main
+beam sits where the paraboloid’s axis points after the turn; the
+sidelobes and the spillover past the subreflector are what an 8 λ
+dish and a 2 λ subreflector cannot avoid.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">plot_cut</span><span class="p">(</span><span class="n">plane</span><span class="o">=</span><span class="s2">"phi"</span><span class="p">,</span> <span class="n">angle</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"pattern in the plane of the tilt"</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">plot_3d</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">"Cassegrain radiation surface"</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/tutorial_19_pattern_cut.png"><img alt="Directivity cut in the plane of the tilt" src="../_images/tutorial_19_pattern_cut.png" style="width: 80%;" />
+</a>
+<a class="reference internal image-reference" href="../_images/tutorial_19_pattern_3d.png"><img alt="Three-dimensional radiation surface of the Cassegrain antenna" src="../_images/tutorial_19_pattern_3d.png" style="width: 80%;" />
+</a>
+</section>
+<section id="the-measured-run">
+<h2>The measured run<a class="headerlink" href="#the-measured-run" title="Link to this heading">#</a></h2>
+<p>Numbers from the run this page was written against (131 × 122 × 130
+cells; one minute to mesh, under a minute to run on a consumer GPU):</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>quantity</p></th>
+<th class="head"><p>value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>peak directivity</p></td>
+<td><p>19.2 dBi</p></td>
+</tr>
+<tr class="row-odd"><td><p>aperture bound <span class="math notranslate nohighlight">\((\pi D/\lambda)^2\)</span></p></td>
+<td><p>28.0 dBi</p></td>
+</tr>
+<tr class="row-even"><td><p>beam direction, measured vs designed</p></td>
+<td><p>2° apart</p></td>
+</tr>
+<tr class="row-odd"><td><p><a href="#id1"><span class="problematic" id="id2">|S11|</span></a> over 8.5–11.5 GHz</p></td>
+<td><p>−12 … −19 dB</p></td>
+</tr>
+<tr class="row-even"><td><p>radiated / accepted power</p></td>
+<td><p>0.93</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Eight decibels below the aperture bound is what an 8 λ dish with a
+2 λ subreflector and an unoptimised horn does: spillover past the
+small subreflector and diffraction at its rim take the difference.
+The beam points where the construction says it should, which is the
+check that the two parametric surfaces, their orientation and the
+far-field transform agree.  The 7 % of accepted power the far field
+does not account for is the feed-guide approximation of the
+far-field chapter — the currents on the neck’s outer wall inside the
+absorber.</p>
+</section>
+<section id="what-to-take-away">
+<h2>What to take away<a class="headerlink" href="#what-to-take-away" title="Link to this heading">#</a></h2>
+<p>A reflector is a <em>surface with a formula</em>, and
+<a class="reference internal" href="../api/geo.html#magnelio.geo.Surface.parametric" title="magnelio.geo.Surface.parametric"><code class="xref py py-meth docutils literal notranslate"><span class="pre">parametric()</span></code></a> accepts the formula —
+closed-form or computed, in the parametrisation that makes the rim
+come out right.  Extruded into a shell a few cells thick, it is a
+perfect conductor like any other body.  A horn feed enters through
+an absorbing wall as a window port in its neck’s cross-section, and
+the far-field monitor treats the crossing feed for you.  To make the
+antenna behave like a Cassegrain rather than a diffraction
+experiment, scale the dish to 20 λ and the subreflector to 5 λ — and
+budget the cells accordingly.</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-19-cassegrain-reflector-py">
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/d4a59f659acda4d10141535011bb1d42/19_cassegrain_reflector.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">19_cassegrain_reflector.ipynb</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/a67ce6cca300aca31ef45c27aee814b5/19_cassegrain_reflector.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">19_cassegrain_reflector.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-zip docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/57844df495dae1953b01ea9377eebec2/19_cassegrain_reflector.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">zipped:</span> <span class="pre">19_cassegrain_reflector.zip</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="plot_18_periodic_tesla_cell.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Periodic structures: the dispersion diagram of a TESLA cell</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../howto/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">How-to guides</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-optics">The optics</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-main-reflector">The main reflector</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-subreflector">The subreflector</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#orientation">Orientation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-feed-horn">The feed horn</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-box-and-the-port">The box and the port</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mesh">Mesh</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#run-and-far-field">Run and far field</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-measured-run">The measured run</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-to-take-away">What to take away</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/tutorials/19_cassegrain_reflector.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Bernd Breitkreutz.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

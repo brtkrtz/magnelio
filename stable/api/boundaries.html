@@ -27,28 +27,30 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=03f3338f"></script>
+    <script src="../_static/documentation_options.js?v=a78bb796"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/boundaries';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -232,6 +234,32 @@
   </ul>
 </div></div>
       
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio/discussions" title="Discussions" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-regular fa-comments fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discussions</span></a>
+        </li>
+</ul></div>
+      
     </div>
     
   </div>
@@ -357,6 +385,32 @@
   </ul>
 </div></div>
         
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio/discussions" title="Discussions" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-regular fa-comments fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discussions</span></a>
+        </li>
+</ul></div>
+        
       </div>
     
   </div>
@@ -479,6 +533,12 @@ Improves low-frequency absorption and late-time stability.</p></li>
 </ul>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>A waveguide port embedded in this face owns the columns behind its
+window: <a class="reference internal" href="#magnelio.boundaries.CPMLBoundary.set_port_windows" title="magnelio.boundaries.CPMLBoundary.set_port_windows"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_port_windows()</span></code></a> (wired by the solver) sets the
+stretching coefficients to <code class="docutils literal notranslate"><span class="pre">σ</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">κ</span> <span class="pre">=</span> <span class="pre">1</span></code> there over the whole
+layer depth, so the guided wave reaches the port’s own termination
+unabsorbed while the rest of the face keeps absorbing.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.boundaries.CPMLBoundary.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.boundaries.CPMLBoundary.apply" title="Link to this definition">#</a></dt>
@@ -545,6 +605,39 @@ exists inside the PML region (e.g. waveguide walls at port faces).</p>
 <li><p><strong>material_id</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Cell material IDs, shape <code class="docutils literal notranslate"><span class="pre">(Nx,</span> <span class="pre">Ny,</span> <span class="pre">Nz)</span></code>.  Used to derive
 H-field masks.</p></li>
 <li><p><strong>material_library</strong> (<em>dict</em><em>, </em><em>optional</em>) – Maps material ID to Material objects.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.boundaries.CPMLBoundary.set_port_windows">
+<span class="sig-name descname"><span class="pre">set_port_windows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">windows</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">xp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.boundaries.CPMLBoundary.set_port_windows" title="Link to this definition">#</a></dt>
+<dd><p>Switch the absorber off behind waveguide-port windows (DD-198).</p>
+<p>A modal port embedded in this absorbing face owns the columns
+behind its window: the mode enters the domain through a
+conductor-enclosed guide that the mesher continued through the
+absorbing layer, and the port’s own termination — not the
+absorber — must be what the guided wave meets.  Every ψ
+component gets per-cell stretching coefficients that are the
+face’s 1D profile outside the footprints and <code class="docutils literal notranslate"><span class="pre">σ</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">κ</span> <span class="pre">=</span> <span class="pre">1</span></code>
+(<code class="docutils literal notranslate"><span class="pre">c</span> <span class="pre">=</span> <span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">ck</span> <span class="pre">=</span> <span class="pre">0</span></code>) inside them, over the whole layer depth.
+With <code class="docutils literal notranslate"><span class="pre">c</span> <span class="pre">=</span> <span class="pre">0</span></code> the recursion keeps ψ ≡ 0 there, with <code class="docutils literal notranslate"><span class="pre">ck</span> <span class="pre">=</span> <span class="pre">0</span></code>
+the κ term vanishes: the update is the plain leapfrog.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>windows</strong> (<em>list</em><em> of </em><em>dict</em>) – One footprint per port window, <code class="docutils literal notranslate"><span class="pre">{tangential</span> <span class="pre">axis:</span> <span class="pre">(lo,</span>
+<span class="pre">hi)}</span></code> with inclusive <em>node</em> indices along each of the two
+tangential axes (global axis numbers 0/1/2).  The footprint
+covers the cells <code class="docutils literal notranslate"><span class="pre">lo</span> <span class="pre">…</span> <span class="pre">hi</span> <span class="pre">−</span> <span class="pre">1</span></code> for cell-sampled directions
+and the nodes <code class="docutils literal notranslate"><span class="pre">lo</span> <span class="pre">…</span> <span class="pre">hi</span></code> for node-sampled ones, so the
+window ring — conductor edges by construction — is included.</p></li>
+<li><p><strong>xp</strong> (<em>array module</em><em>, </em><em>optional</em>) – Backend for the coefficient arrays; defaults to the one
+<a class="reference internal" href="#magnelio.boundaries.CPMLBoundary.initialize" title="magnelio.boundaries.CPMLBoundary.initialize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">initialize()</span></code></a> was given.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -777,6 +870,7 @@ face as closed.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.boundaries.CPMLBoundary.initialize"><code class="docutils literal notranslate"><span class="pre">CPMLBoundary.initialize()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.boundaries.CPMLBoundary.load_state_dict"><code class="docutils literal notranslate"><span class="pre">CPMLBoundary.load_state_dict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.boundaries.CPMLBoundary.set_pec_mask"><code class="docutils literal notranslate"><span class="pre">CPMLBoundary.set_pec_mask()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.boundaries.CPMLBoundary.set_port_windows"><code class="docutils literal notranslate"><span class="pre">CPMLBoundary.set_port_windows()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.boundaries.CPMLBoundary.state_dict"><code class="docutils literal notranslate"><span class="pre">CPMLBoundary.state_dict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.boundaries.CPMLBoundary.update_E"><code class="docutils literal notranslate"><span class="pre">CPMLBoundary.update_E()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.boundaries.CPMLBoundary.update_H"><code class="docutils literal notranslate"><span class="pre">CPMLBoundary.update_H()</span></code></a></li>
@@ -819,8 +913,8 @@ face as closed.</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -854,7 +948,7 @@ face as closed.</p>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

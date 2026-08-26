@@ -58,6 +58,11 @@ each monitor frequency — E in V/m, H in A/m, per $\sqrt{\rm W}$ of
 incident power.  A run performs that division on its own monitors, so
 `.data` is in those units from the moment the run returns; `.data_raw`
 exposes the undivided bins for callers who want the transient itself.
+For a TE/TM feed the waveform launches a frequency-dependent power —
+the mode's wave impedance varies across the band — and the run divides
+additionally by the ratio $|a(f)|/|W(f)|$ of the incident wave it
+separated at the port to the waveform spectrum, so the statement holds
+for every feed type (DD-198).
 
 ## Project store, checkpointing, resume
 
