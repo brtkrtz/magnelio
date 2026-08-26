@@ -211,10 +211,32 @@ below):
 
 
 
-.. image-sg:: /howto/images/sphx_glr_plot_stripline_pickup_kicker_001.png
-   :alt: plot stripline pickup kicker
-   :srcset: /howto/images/sphx_glr_plot_stripline_pickup_kicker_001.png
-   :class: sphx-glr-single-img
+
+
+
+
+.. tab-set::
+
+
+
+   .. tab-item:: Static Scene
+
+
+
+            
+     .. image-sg:: /howto/images/sphx_glr_plot_stripline_pickup_kicker_001.png
+        :alt: plot stripline pickup kicker
+        :srcset: /howto/images/sphx_glr_plot_stripline_pickup_kicker_001.png
+        :class: sphx-glr-single-img
+     
+
+
+   .. tab-item:: Interactive Scene
+
+
+
+       .. offlineviewer:: /home/runner/work/magnelio/magnelio/docs/howto/images/sphx_glr_plot_stripline_pickup_kicker_001.vtksz
+
 
 
 
@@ -874,7 +896,7 @@ that move the real device toward, or away from, the ideal stripline.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (4 minutes 53.619 seconds)
+   **Total running time of the script:** (4 minutes 47.936 seconds)
 
 
 .. _sphx_glr_download_howto_plot_stripline_pickup_kicker.py:
