@@ -380,7 +380,11 @@ class PortSpecMultiConductor:
     dual-Laplace path (:func:`solve_qtem_laplace`, when ``epsilon_r``
     is ``None`` — the factory builds the vacuum reference mass via
     :func:`build_M_eps_vacuum`).  Returns the ``K − 1`` line modes
-    (``K`` conductor groups), one per signal conductor in input order.
+    (``K`` conductor groups): the single conductor mode for ``K = 2``,
+    the modal basis of the line for ``K > 2`` — the capacitance-matrix
+    eigenmodes (TEM) or the eigen-patterns of ``C v = ε_eff C_0 v``
+    (QTEM), e.g. the even/odd pair of coupled lines, ordered by
+    descending capacitance / ``ε_eff``.
 
     **Unified multi-mode port (WP-U2/WP-U6).**  On a homogeneous
     scalar filling (``epsilon_r`` set), ``n_modes > K − 1`` extends
@@ -1808,9 +1812,13 @@ def build_modal_port(
     # DD-056 machinery) — the hybrid profiles are not
     # M_eps-orthogonal to each other or to the Laplace line modes,
     # so primal projections would cross-talk (the DD-066 instability
-    # class); reconstruction stays primal.
+    # class); reconstruction stays primal.  A K > 2 QTEM port without
+    # hybrids gets the same treatment (DD-196): its modal channels
+    # are orthogonal in the capacitance-corrected mass, which differs
+    # from M_eps only at tangential window edges — the dual basis
+    # absorbs that residual at no cost.
     dual_e_profiles = None
-    if qtem_multimode:
+    if qtem_multimode or (spec.epsilon_r is None and len(discrete) > 1):
         me_u = np.asarray(m_eps, dtype=float)[plane.e_u_indices]
         me_v = np.asarray(m_eps, dtype=float)[plane.e_v_indices]
         prof_u = np.stack([dm.e_u_profile for dm in discrete])
@@ -1904,10 +1912,11 @@ def build_cw_true_mode_port(
     (:func:`~magnelio.ports._modal.zeta_pencil.cw_lockin_phasors` +
     :func:`~magnelio.ports._modal.zeta_pencil.cw_decompose`).
 
-    Channel 0 is the fundamental (tracked from the DC Laplace
-    profile of ``conductors[1]``); further channels are the other
-    modes propagating at ``f_cw``, ordered by descending phase
-    advance.  Multi-channel projection is dual-basis (the true modes
+    Channel 0 is the fundamental (tracked from the first DC Laplace
+    line mode — the conductor mode of a two-conductor line, the
+    largest-``ε_eff`` modal channel of a multi-conductor one); further
+    channels are the other modes propagating at ``f_cw``, ordered by
+    descending phase advance.  Multi-channel projection is dual-basis (the true modes
     are not M_eps-orthogonal), reconstruction primal.
 
     Parameters
@@ -2210,8 +2219,9 @@ def build_band_dtbc_port(
     ``op.band_data`` (:class:`~magnelio.ports._modal.band_dtbc.
     BandPortData`) with everything that decomposition needs.
 
-    Channel 0 records the fundamental (tracked from the DC Laplace
-    profile); further channels record the higher families cut on
+    Channel 0 records the fundamental (tracked from the first DC
+    Laplace line mode, see :func:`build_cw_true_mode_port`); further
+    channels record the higher families cut on
     inside the band, each through a fixed mid-band reference profile
     (dual-basis projection — the per-frequency decomposition resolves
     the frequency dependence).  ``set_excitation(c, waveform)``

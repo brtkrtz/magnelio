@@ -138,12 +138,15 @@ def _microstrip_setup(
     box_factor_z: float = 8.0,
     dy: float = 0.1e-3,
     dz: float = 0.1e-3,
+    strip_centres: tuple[float, ...] = (0.0,),
 ):
     """Build a microstrip QTEM setup on the X_MIN port plane.
 
     Geometry (in the port plane y, z):
     - Ground plane along z = 0 across the full y range.
-    - Strip at z = h, |y| < W/2.
+    - One strip of width W at z = h per entry of ``strip_centres``
+      (the y position of its centre); the default is a single strip
+      at y = 0, two entries make an edge-coupled pair.
     - Substrate of ε_r = ``eps_substrate`` for 0 < z < h.
     - Vacuum elsewhere.
     """
@@ -190,8 +193,11 @@ def _microstrip_setup(
     y_at_node = y_n[J]
     ground = local_idx[K == 0].ravel().astype(np.int64)
     k_strip = int(np.argmin(np.abs(z_n - h)))
-    strip = local_idx[(K == k_strip) & (np.abs(y_at_node) < W / 2 - 1e-9)].ravel().astype(np.int64)
-    return plane, g_2d, m_eps_2d_actual, m_eps_2d_vacuum, [ground, strip], mesh
+    strips = [
+        local_idx[(K == k_strip) & (np.abs(y_at_node - yc) < W / 2 - 1e-9)].ravel().astype(np.int64)
+        for yc in strip_centres
+    ]
+    return plane, g_2d, m_eps_2d_actual, m_eps_2d_vacuum, [ground, *strips], mesh
 
 
 def _hammerstad_jensen(W: float, h: float, eps_r: float) -> tuple[float, float]:
@@ -479,3 +485,118 @@ class TestQTEMLabelHelper:
         assert _qtem_label(0) == "QTEM_lap00"
         assert _qtem_label(7) == "QTEM_lap07"
         assert _qtem_label(15) == "QTEM_lap15"
+
+
+# ---------------------------------------------------------------------
+# 6) Coupled lines: modal basis for K > 2
+# ---------------------------------------------------------------------
+
+
+def _coupled_pair_modes(*, W=1.0e-3, s=0.4e-3, h=0.5e-3, eps_substrate=4.0):
+    plane, g_2d, m_eps_actual, m_eps_vacuum, groups, mesh = _microstrip_setup(
+        W=W,
+        h=h,
+        eps_substrate=eps_substrate,
+        box_factor_y=10.0,
+        box_factor_z=8.0,
+        strip_centres=(-(W + s) / 2, (W + s) / 2),
+    )
+    modes = solve_qtem_laplace(
+        plane,
+        g_2d,
+        m_eps_actual,
+        m_eps_vacuum,
+        groups,
+        grid=mesh.grid,
+        m_mu_flat=build_M_mu(mesh),
+    )
+    return modes, plane, g_2d, m_eps_actual, m_eps_vacuum, groups, mesh
+
+
+class TestCoupledMicrostripModalBasis:
+    """An edge-coupled microstrip pair returns the even/odd modal pair.
+
+    The per-conductor Laplace solutions are the *conductor* basis; the
+    channels a port needs are the eigen-patterns of ``C v = ε_eff C_0 v``
+    — on a symmetric pair exactly the even (1, 1) and odd (1, −1)
+    voltage patterns, each with its own ε_eff and impedance.
+    """
+
+    @pytest.fixture(scope="class")
+    def pair(self):
+        return _coupled_pair_modes()
+
+    def test_two_channels_ordered_by_descending_eps_eff(self, pair):
+        modes = pair[0]
+        assert len(modes) == 2
+        assert [m.name for m in modes] == ["QTEM_lap00", "QTEM_lap01"]
+        assert modes[0].epsilon_r > modes[1].epsilon_r
+
+    def test_even_mode_first_odd_mode_second(self, pair):
+        """Even mode: more field in the substrate → larger ε_eff and Z_0."""
+        modes, plane, g_2d, m_eps_actual, m_eps_vacuum, groups, mesh = pair
+        even, odd = modes
+        assert 1.0 < odd.epsilon_r < even.epsilon_r < 4.0
+        assert even.z_line > odd.z_line > 0.0
+        # Symmetric pair: the odd-mode field is antisymmetric in y, the
+        # even-mode field symmetric — read off the u (= y) component's
+        # mirror image on the port plane.
+        Nz1 = mesh.Nz + 1
+        Ny = mesh.Ny
+        e_u_even = even.discrete_e_u_profile.reshape(Ny, Nz1)
+        e_u_odd = odd.discrete_e_u_profile.reshape(Ny, Nz1)
+        # u-edges along y: mirror j -> Ny-1-j flips the sign of E_y.
+        assert np.allclose(e_u_even, -e_u_even[::-1, :], atol=1e-9 * np.abs(e_u_even).max())
+        assert np.allclose(e_u_odd, e_u_odd[::-1, :], atol=1e-9 * np.abs(e_u_odd).max())
+
+    def test_channels_are_orthogonal_in_the_capacitance_mass(self, pair):
+        modes, plane, g_2d, m_eps_actual, *_ = pair
+        even, odd = modes
+        e_even = np.concatenate([even.discrete_e_u_profile, even.discrete_e_v_profile])
+        e_odd = np.concatenate([odd.discrete_e_u_profile, odd.discrete_e_v_profile])
+        assert abs(e_even @ (m_eps_actual @ e_odd)) < 1e-10
+        assert abs(e_even @ (m_eps_actual @ e_even) - 1.0) < 1e-10
+        assert abs(e_odd @ (m_eps_actual @ e_odd) - 1.0) < 1e-10
+
+    def test_pair_pulled_apart_degenerates_to_single_strip(self):
+        """Far-apart strips: both modes approach the single-strip values."""
+        far = _coupled_pair_modes(s=4.0e-3)[0]
+        plane, g_2d, m_eps_actual, m_eps_vacuum, groups, mesh = _microstrip_setup(
+            W=1.0e-3, h=0.5e-3, eps_substrate=4.0, box_factor_y=10.0, box_factor_z=8.0
+        )
+        single = solve_qtem_laplace(
+            plane,
+            g_2d,
+            m_eps_actual,
+            m_eps_vacuum,
+            groups,
+            grid=mesh.grid,
+            m_mu_flat=build_M_mu(mesh),
+        )[0]
+        for m in far:
+            assert abs(m.epsilon_r / single.epsilon_r - 1.0) < 0.03
+            assert abs(m.z_line / single.z_line - 1.0) < 0.06
+
+    def test_modal_path_reproduces_single_conductor_numbers(self):
+        """The generalised path applied to K = 2 equals the historical path."""
+        from magnelio.ports._modal.tem_laplace import (
+            _correct_boundary_mass,
+            _qtem_modal_channels,
+            _solve_signal_modes_laplace,
+        )
+
+        plane, g_2d, m_eps_actual, m_eps_vacuum, groups, mesh = _microstrip_setup(
+            W=1.0e-3, h=0.5e-3, eps_substrate=4.0, box_factor_y=6.0, box_factor_z=6.0
+        )
+        cap = _correct_boundary_mass(m_eps_actual, plane, mesh.grid, None)
+        cap0 = _correct_boundary_mass(m_eps_vacuum, plane, mesh.grid, None)
+        raw_a = _solve_signal_modes_laplace(plane, g_2d, m_eps_actual, cap, groups)
+        raw_v = _solve_signal_modes_laplace(plane, g_2d, m_eps_vacuum, cap0, groups)
+        (e_mod, c_mod, c0_mod) = _qtem_modal_channels(
+            raw_a, raw_v, m_eps_actual, cap, cap0, float(plane.normal_dx)
+        )[0]
+        e_hist, norm_hist, _ = raw_a[0]
+        _, norm0_hist, _ = raw_v[0]
+        np.testing.assert_allclose(e_mod, e_hist, rtol=0.0, atol=1e-12 * np.abs(e_hist).max())
+        assert abs(c_mod / (norm_hist / plane.normal_dx) - 1.0) < 1e-12
+        assert abs(c0_mod / (norm0_hist / plane.normal_dx) - 1.0) < 1e-12
