@@ -16,7 +16,7 @@ major version is 0, minor releases may change the public API.
   from a map that solves the quadric), turned into metal shells,
   fed by a pyramidal horn through a port window in an absorbing wall,
   with the far-field pattern of the tilted beam.  Rendered without
-  execution in the gallery — the free-form mesh takes minutes.
+  execution in the gallery.
 - How-to guide *Coupled-line directional coupler*: a −10 dB microstrip
   coupler dimensioned with the port solver alone — a port across both
   lines returns the even and odd modes with their impedances and
@@ -51,6 +51,11 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Hollow conductors — tubes, shells, plates with apertures — lost the
+  conformal correction at their inner walls: the section contour of a
+  bore came back with the same winding as the outer boundary and the
+  dual faces at the bore wall were booked fully metallic.  Contours
+  are now wound by nesting parity before the area kernels see them.
 - A conductor touching an absorbing (CPML) face lost its PEC surface
   mask inside the absorber layer on conformal meshes (the classifier
   saw the solids end at the bounding box); the layer now carries the
@@ -63,6 +68,14 @@ major version is 0, minor releases may change the public API.
   unchanged.
 
 ### Changed
+
+- Free-form faces — parametric surfaces, lofts, imported B-spline
+  patches — are sectioned on a triangulation whose section points are
+  lifted back onto the exact surface and refined in-plane, instead of
+  through the kernel Boolean: the Cassegrain tutorial meshes in under
+  a minute instead of six, and the section polygons follow the exact
+  surface more closely than the kernel's tessellation did.  Planar
+  and analytic curved faces are handled as before.
 
 - Tutorial 02, tutorial 06 and the stripline how-to show the model in
   the live 3D view (`model.plot()`) instead of a notebook screenshot;

@@ -19,6 +19,23 @@ dedicated DD keep their record here.
 **Four entries are open as of 2026-08-26: KB-022, KB-023, KB-027 and
 KB-028.**  Everything else is struck through and resolved.
 
+## KB-031: ~~Hollow conductors lost the conformal correction at their inner walls~~ — Resolved (DD-199, 2026-08-26)
+
+The kernel Boolean returns the contours of a section without a
+winding convention — a tube's bore and its rim came back with the same
+sign — and `compute_face_material_areas` sums signed areas per shape.
+A dual face inside the hole was therefore covered by the outer contour
+and by the hole alike, booked fully PEC, and the sub-cell fractions at
+the inner wall of every hollow conductor degraded to the staircase
+value: a PEC tube in air on a 1.5 mm grid had a mean |f_A − exact| of
+0.12 over its z-dual faces, the bore-wall faces at 0.000 against
+0.997.  DD-102 had recorded the independent contour orientation and
+judged it harmless.  DD-199 winds every contour by nesting parity
+before the kernels see it (`orient_nested_contours`); the tube is at
+4e-3 afterwards.  Dielectric bodies with a conductor in their hole
+were shielded by the priority rule (the conductor claims its area
+first), which is why coax-class models did not show it.
+
 ## KB-030: ~~Monitors fed by a TE/TM port were normalised to the waveform, not to the incident power~~ — Resolved (DD-198, 2026-08-26)
 
 The far-field and frequency monitors divided their bins by the

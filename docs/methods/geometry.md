@@ -84,10 +84,10 @@ meshing).  A free-form B-spline face contributes only the six planes of
 its bounding box: the mesher has no analytic handle on it, so the
 resolution *across* a reflector is whatever the wavelength rule and
 `MeshControl(max_cell_size=…)` give.  Set the cell size explicitly for
-such models.  Cross-sections through free-form faces are computed by
-the kernel rather than the exact planar section engine, so meshing a
-model with a large free-form body takes longer than meshing the same
-volume of primitives.
+such models.  Cross-sections through free-form faces are taken on a
+triangulation of the body whose points are lifted back onto the exact
+surface (see the conformal-meshing chapter), so a free-form body
+meshes at about the cost of the same volume of primitives.
 
 The thin-metallisation detection recognises a flat sheet whose
 bounding box is thinner than a cell on one axis; a curved shell is

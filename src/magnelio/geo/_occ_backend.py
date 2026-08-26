@@ -1569,6 +1569,80 @@ def cross_section_polygons(
     return [arr / scale for arr in polygons_scaled]
 
 
+#: Chord-sagitta budget of the facet path's section polygons as a
+#: fraction of the section deflection (see
+#: ``_PlanarSectionEngine._refine_segments``).
+_FACET_REFINE_FRACTION = 0.1
+
+
+def _facet_sections_enabled() -> bool:
+    """``MAGNELIO_FACET_SECTIONS=0`` keeps free-form shapes on the kernel
+    Boolean (A/B runs and the regression gate); anything else enables the
+    facet path."""
+    return os.environ.get("MAGNELIO_FACET_SECTIONS", "").strip() != "0"
+
+
+def _weld_nodes(
+    nodes: np.ndarray, con: np.ndarray, tol: float = 0.0
+) -> tuple[np.ndarray, np.ndarray]:
+    """Merge coincident triangulation nodes; ``tol == 0`` welds exact
+    duplicates only, otherwise every pair closer than *tol*."""
+    uniq, inverse = np.unique(nodes, axis=0, return_inverse=True)
+    inverse = np.asarray(inverse).reshape(-1)
+    if tol > 0.0 and uniq.shape[0] > 1:
+        from scipy.spatial import cKDTree  # noqa: PLC0415
+
+        pairs = cKDTree(uniq).query_pairs(tol, output_type="ndarray")
+        if len(pairs):
+            # Union-find over the close pairs; the representative is
+            # the smallest index of each cluster.
+            parent = np.arange(uniq.shape[0])
+
+            def _find(i: int) -> int:
+                while parent[i] != i:
+                    parent[i] = parent[parent[i]]
+                    i = parent[i]
+                return i
+
+            for a, b in pairs:
+                ra, rb = _find(int(a)), _find(int(b))
+                if ra != rb:
+                    parent[max(ra, rb)] = min(ra, rb)
+            root = np.array([_find(i) for i in range(uniq.shape[0])])
+            keep, relabel = np.unique(root, return_inverse=True)
+            uniq = uniq[keep]
+            inverse = np.asarray(relabel).reshape(-1)[inverse]
+    return uniq, inverse[con]
+
+
+def _facet_edge_table(con: np.ndarray):
+    """Edge table of a triangle set, or ``None`` unless closed manifold.
+
+    Returns ``(keep, con, e_nodes, t_e, e_f)``: the mask of the
+    non-degenerate triangles and those triangles, the node pair of every
+    unique edge, the three edge indices of every triangle (slot ``c``
+    joins corners ``c`` and ``c + 1``) and the two triangles of every
+    edge.
+    """
+    keep = (con[:, 0] != con[:, 1]) & (con[:, 1] != con[:, 2]) & (con[:, 2] != con[:, 0])
+    con = con[keep]
+    m = con.shape[0]
+    if m == 0:
+        return None
+    edges = np.concatenate([con[:, (0, 1)], con[:, (1, 2)], con[:, (2, 0)]], axis=0)
+    e_nodes, inverse, counts = np.unique(
+        np.sort(edges, axis=1), axis=0, return_inverse=True, return_counts=True
+    )
+    if (counts != 2).any():
+        return None
+    inverse = np.asarray(inverse).reshape(-1)
+    t_e = inverse.reshape(3, m).T
+    tri_of = np.tile(np.arange(m), 3)
+    order = np.argsort(inverse, kind="stable")
+    e_f = tri_of[order].reshape(e_nodes.shape[0], 2)
+    return keep, con, e_nodes, np.ascontiguousarray(t_e), e_f
+
+
 class _PlanarSectionEngine:
     """Exact axis-aligned plane sections of planar-faced solid regions.
 
@@ -1609,12 +1683,21 @@ class _PlanarSectionEngine:
     #: ``cross_section_polygons``'s ``_normal_map``.
     _UV = {0: (1, 2), 1: (0, 2), 2: (0, 1)}
 
-    def __init__(self, shape, scale: float = 1.0) -> None:
+    def __init__(self, shape, scale: float = 1.0, deflection: float | None = None) -> None:
         self.enabled = False
         #: DD-120 model scale of the shape: the engine's internal arrays
         #: live entirely in scaled units; ``can_fast``/``section`` take
         #: meter positions and return meter polygons.
         self._scale = float(scale)
+        #: Chordal deflection [scaled units] of the facet triangulation
+        #: (see :meth:`_build_facets`); ``None`` keeps free-form shapes
+        #: on the kernel path.
+        self._deflection = (
+            None if deflection is None else max(float(deflection) * self._scale, 1e-7)
+        )
+        #: Whether the shape is represented by its triangulation
+        #: (free-form faces) rather than by its exact planar faces.
+        self.facetted = False
         #: Face count of the shape (0 until known) — the cost weight of
         #: one delegated OCC section for the pool-work estimate.
         self.face_count = 0
@@ -1632,8 +1715,12 @@ class _PlanarSectionEngine:
         )
         from OCC.Core.BRepBndLib import brepbndlib  # noqa: PLC0415
         from OCC.Core.GeomAbs import (  # noqa: PLC0415
+            GeomAbs_Cone,
+            GeomAbs_Cylinder,
             GeomAbs_Line,
             GeomAbs_Plane,
+            GeomAbs_Sphere,
+            GeomAbs_Torus,
         )
         from OCC.Core.TopAbs import (  # noqa: PLC0415
             TopAbs_EDGE,
@@ -1649,6 +1736,19 @@ class _PlanarSectionEngine:
             TopTools_IndexedMapOfShape,
         )
 
+        # Surface types the kernel Boolean sections without
+        # approximation (their section curves are lines and conics);
+        # everything else — B-spline/Bezier patches, surfaces of
+        # extrusion or revolution, offset surfaces — is free-form and
+        # goes through the facet path when a deflection is known.
+        analytic_types = (
+            GeomAbs_Plane,
+            GeomAbs_Cylinder,
+            GeomAbs_Cone,
+            GeomAbs_Sphere,
+            GeomAbs_Torus,
+        )
+
         fmap = TopTools_IndexedMapOfShape()
         topexp.MapShapes(shape, TopAbs_FACE, fmap)
         n_f = fmap.Size()
@@ -1661,6 +1761,7 @@ class _PlanarSectionEngine:
         f_d = np.zeros(n_f, dtype=np.float64)
         f_lo = np.empty((n_f, 3), dtype=np.float64)
         f_hi = np.empty((n_f, 3), dtype=np.float64)
+        free_form = False
         for i in range(n_f):
             face = topods.Face(fmap.FindKey(i + 1))
             box = Bnd_Box()
@@ -1673,7 +1774,10 @@ class _PlanarSectionEngine:
             if ori not in (TopAbs_FORWARD, TopAbs_REVERSED):
                 continue
             surf = BRepAdaptor_Surface(face, False)
-            if surf.GetType() != GeomAbs_Plane:
+            stype = surf.GetType()
+            if stype not in analytic_types:
+                free_form = True
+            if stype != GeomAbs_Plane:
                 continue
             pln = surf.Plane()
             # Parametric normal XDir × YDir (NOT Axis().Direction():
@@ -1692,6 +1796,10 @@ class _PlanarSectionEngine:
             f_planar[i] = True
             f_n[i] = n
             f_d[i] = n[0] * loc.X() + n[1] * loc.Y() + n[2] * loc.Z()
+
+        if free_form and self._deflection is not None and _facet_sections_enabled():
+            self._build_facets(shape)
+            return
 
         emap = TopTools_IndexedDataMapOfShapeListOfShape()
         topexp.MapShapesAndAncestors(shape, TopAbs_EDGE, TopAbs_FACE, emap)
@@ -1758,6 +1866,391 @@ class _PlanarSectionEngine:
         self._tol = 2.0 * max_tol
         self.enabled = True
 
+    def _build_facets(self, shape) -> None:
+        """Represent *shape* by its triangulation (free-form faces).
+
+        Every face is meshed once at the engine's deflection and the
+        triangles are loaded as planar facets with straight edges, so
+        :meth:`_section_facets` can stitch section segments through
+        shared edge indices exactly as the planar path does.  The
+        triangulation is a closed, consistently oriented 2-manifold or
+        the engine stays disabled: nodes are welded (exactly first, then
+        within the shape tolerance), degenerate triangles dropped, every
+        edge must border exactly two triangles, and the signed volume
+        of the facets must reproduce the kernel volume of the solid.
+
+        The facets carry the topology only.  Each triangle also keeps
+        the parametric (u, v) of its corners on its B-Rep face, so a
+        section point found on a chord can be lifted back onto the
+        exact surface (:meth:`_lift_to_surfaces`) — the chord error of a
+        triangulation is normal to the surface and would otherwise be
+        amplified by 1/sin(cut angle) in the section plane.
+        """
+        from OCC.Core.BRep import BRep_Tool  # noqa: PLC0415
+        from OCC.Core.BRepAdaptor import BRepAdaptor_Surface  # noqa: PLC0415
+        from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh  # noqa: PLC0415
+        from OCC.Core.GeomAbs import GeomAbs_Plane  # noqa: PLC0415
+        from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_REVERSED  # noqa: PLC0415
+        from OCC.Core.TopExp import TopExp_Explorer  # noqa: PLC0415
+        from OCC.Core.TopLoc import TopLoc_Location  # noqa: PLC0415
+        from OCC.Core.TopoDS import topods  # noqa: PLC0415
+
+        # A finer triangulation already attached to the shape (an
+        # earlier engine at a smaller deflection) is kept by OCCT.
+        BRepMesh_IncrementalMesh(shape, self._deflection, False, 0.5, True)
+        points: list[np.ndarray] = []
+        tris: list[np.ndarray] = []
+        tri_face: list[np.ndarray] = []
+        tri_uv: list[np.ndarray] = []
+        surfaces: list = []
+        offset = 0
+        exp = TopExp_Explorer(shape, TopAbs_FACE)
+        while exp.More():
+            face = topods.Face(exp.Current())
+            exp.Next()
+            loc = TopLoc_Location()
+            tri = BRep_Tool.Triangulation(face, loc)
+            if tri is None:
+                return
+            trsf = loc.Transformation()
+            n_nodes = tri.NbNodes()
+            pts = np.empty((n_nodes, 3), dtype=np.float64)
+            for i in range(1, n_nodes + 1):
+                p = tri.Node(i).Transformed(trsf)
+                pts[i - 1] = (p.X(), p.Y(), p.Z())
+            n_tri = tri.NbTriangles()
+            con = np.empty((n_tri, 3), dtype=np.int64)
+            reversed_face = face.Orientation() == TopAbs_REVERSED
+            for i in range(1, n_tri + 1):
+                a, b, c = tri.Triangle(i).Get()
+                con[i - 1] = (c, b, a) if reversed_face else (a, b, c)
+            # Planar faces are exact as facets; every other face keeps
+            # its surface and corner parameters for the lift.
+            lift = BRepAdaptor_Surface(face, False).GetType() != GeomAbs_Plane and tri.HasUVNodes()
+            if lift:
+                uv_nodes = np.empty((n_nodes, 2), dtype=np.float64)
+                for i in range(1, n_nodes + 1):
+                    q = tri.UVNode(i)
+                    uv_nodes[i - 1] = (q.X(), q.Y())
+                tri_uv.append(uv_nodes[con - 1])
+                tri_face.append(np.full(n_tri, len(surfaces), dtype=np.int64))
+                # The one-argument Surface() is the located copy: the
+                # face's location is already applied, unlike the nodes.
+                surfaces.append(BRep_Tool.Surface(face))
+            else:
+                tri_uv.append(np.zeros((n_tri, 3, 2), dtype=np.float64))
+                tri_face.append(np.full(n_tri, -1, dtype=np.int64))
+            points.append(pts)
+            tris.append(con - 1 + offset)
+            offset += n_nodes
+        if not points:
+            return
+        nodes = np.vstack(points)
+        con = np.vstack(tris)
+        t_face = np.concatenate(tri_face)
+        t_uv = np.concatenate(tri_uv)
+
+        # Weld: exact coordinates first (BRepMesh discretises a shared
+        # edge once, so the nodes along it agree bit for bit), then
+        # within the shape tolerance for seams and tolerance-glued
+        # edges.  Degenerate triangles (a collapsed pole edge) drop out
+        # after welding; their two coincident edges leave the real
+        # edge's count at two.
+        nodes, con = _weld_nodes(nodes, con)
+        table = _facet_edge_table(con)
+        if table is None:
+            nodes, con = _weld_nodes(nodes, con, tol=self._tol)
+            table = _facet_edge_table(con)
+            if table is None:
+                return
+        keep, con, e_nodes, t_e, e_f = table
+        t_face = t_face[keep]
+        t_uv = t_uv[keep]
+        p0 = nodes[con[:, 0]]
+        p1 = nodes[con[:, 1]]
+        p2 = nodes[con[:, 2]]
+        n = np.cross(p1 - p0, p2 - p0)
+        norm = np.linalg.norm(n, axis=1)
+        f_planar = norm > 0.0
+        n[f_planar] /= norm[f_planar, None]
+        # Global orientation gate: the signed facet volume must
+        # reproduce the kernel volume — an inconsistently oriented or
+        # non-closed triangulation fails this by O(1).
+        signed = float(np.einsum("ij,ij->i", p0, np.cross(p1, p2)).sum() / 6.0)
+        kernel = occ_volume(shape)
+        if kernel <= 0.0 or abs(abs(signed) - kernel) > 2e-2 * kernel:
+            return
+        if signed < 0.0:
+            n = -n
+
+        self._f_planar = f_planar
+        self._f_n = n
+        self._f_d = np.einsum("ij,ij->i", n, p0)
+        self._f_lo = np.minimum(np.minimum(p0, p1), p2)
+        self._f_hi = np.maximum(np.maximum(p0, p1), p2)
+        self._e_ok = np.ones(len(e_nodes), dtype=np.bool_)
+        self._e_p1 = nodes[e_nodes[:, 0]]
+        self._e_p2 = nodes[e_nodes[:, 1]]
+        self._e_f = e_f
+        self._e_lo = np.minimum(self._e_p1, self._e_p2)
+        self._e_hi = np.maximum(self._e_p1, self._e_p2)
+        self._t_e = t_e
+        self._nodes = nodes
+        self._con = con
+        self._t_face = t_face
+        self._t_uv = t_uv
+        self._surfaces = surfaces
+        # No on-plane band: a vertex on the plane is resolved by the
+        # sign convention of _section_facets, not delegated.
+        self._tol = 0.0
+        self.facetted = True
+        self.enabled = True
+
+    def _surface_points(self, face: np.ndarray, uv: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Exact surface points and (unnormalised) normals at parameters
+        *uv* on the B-Rep faces *face* (every entry ≥ 0)."""
+        from OCC.Core.gp import gp_Pnt, gp_Vec  # noqa: PLC0415
+
+        s_pt = np.empty((face.size, 3), dtype=np.float64)
+        s_n = np.empty((face.size, 3), dtype=np.float64)
+        p = gp_Pnt()
+        du = gp_Vec()
+        dv = gp_Vec()
+        for fi in np.unique(face):
+            surf = self._surfaces[fi]
+            for k in np.nonzero(face == fi)[0]:
+                surf.D1(float(uv[k, 0]), float(uv[k, 1]), p, du, dv)
+                n = du.Crossed(dv)
+                s_pt[k] = (p.X(), p.Y(), p.Z())
+                s_n[k] = (n.X(), n.Y(), n.Z())
+        return s_pt, s_n
+
+    def _lift(
+        self, chord: np.ndarray, s_pt: np.ndarray, s_n: np.ndarray, axis: int
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """One Newton step of chord points onto the exact surface.
+
+        Each point is shifted within the section plane along the
+        in-plane part of the surface normal until it lies on the tangent
+        plane at the surface point ``s_pt`` — the residual is of second
+        order in the chord error.  Points where the plane cuts the
+        surface at less than ~3° (an ill-conditioned lift) or whose
+        shift is far beyond the chord error (parameters that do not
+        describe the point: a seam, a degenerate corner) keep their
+        chord position.  Returns the points and the mask of lifted ones.
+        """
+        n_norm = np.linalg.norm(s_n, axis=1)
+        n_ip = s_n.copy()
+        n_ip[:, axis] = 0.0
+        ip_norm = np.linalg.norm(n_ip, axis=1)
+        ok = (n_norm > 0.0) & (ip_norm > 0.05 * n_norm)
+        lam = np.zeros(chord.shape[0])
+        lam[ok] = np.einsum("ij,ij->i", s_pt[ok] - chord[ok], s_n[ok]) / ip_norm[ok] ** 2
+        shift = lam[:, None] * n_ip
+        bound = 8.0 * self._deflection * n_norm / np.maximum(ip_norm, 1e-300)
+        ok &= np.linalg.norm(shift, axis=1) <= bound
+        out = chord.copy()
+        out[ok] += shift[ok]
+        return out, ok
+
+    def _crossing_uv(self, f: np.ndarray, c0: np.ndarray, axis: int, pos: float) -> np.ndarray:
+        """Face parameters of the plane crossing on corner slot *c0* of
+        the triangles *f* (interpolated along the edge)."""
+        c1 = (c0 + 1) % 3
+        d0 = self._nodes[self._con[f, c0], axis] - pos
+        d1 = self._nodes[self._con[f, c1], axis] - pos
+        t = d0 / (d0 - d1)
+        uv0 = self._t_uv[f, c0]
+        return uv0 + t[:, None] * (self._t_uv[f, c1] - uv0)
+
+    def _lift_to_surfaces(self, e_idx: np.ndarray, pts: np.ndarray, axis: int, pos: float) -> None:
+        """Move the chord crossing points onto the exact surfaces, in
+        place; one adjacent triangle per crossed edge supplies face and
+        parameters (points on planar faces stay: they are exact)."""
+        f = self._e_f[e_idx, 0]
+        face = self._t_face[f]
+        lift = np.nonzero(face >= 0)[0]
+        if lift.size == 0:
+            return
+        f = f[lift]
+        c0 = np.argmax(self._t_e[f] == e_idx[lift][:, None], axis=1)
+        s_pt, s_n = self._surface_points(face[lift], self._crossing_uv(f, c0, axis, pos))
+        pts[lift], _ = self._lift(pts[lift], s_pt, s_n, axis)
+
+    def _refine_segments(
+        self,
+        f_idx: np.ndarray,
+        slot_start: np.ndarray,
+        slot_end: np.ndarray,
+        start: np.ndarray,
+        end: np.ndarray,
+        pts: np.ndarray,
+        axis: int,
+        pos: float,
+    ) -> dict[int, np.ndarray] | None:
+        """Interior polygon vertices of the segments on curved faces.
+
+        A segment joins two crossings of one triangle by a chord of the
+        exact section curve; its sagitta is the size of the triangle,
+        not the deflection.  The chord midpoint is lifted onto the
+        surface, the lift distance *is* the sagitta, and the segment is
+        subdivided into ``ceil(sqrt(sagitta / budget))`` parts whose
+        interior points are lifted likewise, with a budget of a fraction
+        of the deflection: a section polygon has hundreds of chords and
+        their sagittas add up — at the full deflection the area of a
+        convex section came out 1e-3 low, at a tenth the facet path
+        matches the kernel's tessellation.  Returns the
+        interior (u, v) points [scaled units] keyed by the segment's
+        start point, or ``None`` when no segment needed any.
+        """
+        face = self._t_face[f_idx]
+        sel = np.nonzero(face >= 0)[0]
+        if sel.size == 0:
+            return None
+        f = f_idx[sel]
+        face = face[sel]
+        uv_s = self._crossing_uv(f, slot_start[sel], axis, pos)
+        uv_e = self._crossing_uv(f, slot_end[sel], axis, pos)
+        p_s = pts[start[sel]]
+        p_e = pts[end[sel]]
+        chord_mid = 0.5 * (p_s + p_e)
+        s_pt, s_n = self._surface_points(face, 0.5 * (uv_s + uv_e))
+        mid, ok = self._lift(chord_mid, s_pt, s_n, axis)
+        sagitta = np.linalg.norm(mid - chord_mid, axis=1)
+        parts = np.ones(sel.size, dtype=np.int64)
+        budget = _FACET_REFINE_FRACTION * self._deflection
+        parts[ok] = np.clip(np.ceil(np.sqrt(sagitta[ok] / budget)), 1, 32).astype(np.int64)
+        u_idx, v_idx = self._UV[axis]
+        interior: dict[int, np.ndarray] = {}
+        two = np.nonzero(ok & (parts == 2))[0]
+        for k in two:
+            interior[int(start[sel[k]])] = mid[k, (u_idx, v_idx)][None, :]
+        more = np.nonzero(parts > 2)[0]
+        if more.size:
+            counts = parts[more] - 1
+            ks = np.repeat(more, counts)
+            js = np.concatenate([np.arange(1, m) for m in parts[more]]) / np.repeat(
+                parts[more], counts
+            )
+            uv_j = uv_s[ks] + js[:, None] * (uv_e[ks] - uv_s[ks])
+            chord_j = p_s[ks] + js[:, None] * (p_e[ks] - p_s[ks])
+            s_pt, s_n = self._surface_points(face[ks], uv_j)
+            lifted, _ = self._lift(chord_j, s_pt, s_n, axis)
+            bounds = np.concatenate([[0], np.cumsum(counts)])
+            for i, k in enumerate(more):
+                interior[int(start[sel[k]])] = lifted[bounds[i] : bounds[i + 1]][:, (u_idx, v_idx)]
+        return interior or None
+
+    def _screen_facets(self, axis: int, pos: float) -> bool:
+        """Facet-path admission: no candidate facet lies in the plane (a
+        coplanar facet is the DD-087 degenerate case and stays with the
+        kernel)."""
+        cf = (self._f_lo[:, axis] <= pos) & (self._f_hi[:, axis] >= pos)
+        par = cf & self._f_planar & (np.abs(self._f_n[:, axis]) >= 1.0 - 1e-9)
+        if not par.any():
+            return True
+        return not (np.abs(pos * self._f_n[par, axis] - self._f_d[par]) <= 0.0).any()
+
+    def _section_facets(self, axis: int, pos: float) -> list[np.ndarray] | None:
+        """Section of the facet representation at *pos* [scaled units].
+
+        An edge crosses the plane when its endpoints take different
+        signs, a vertex exactly on the plane counting as positive — the
+        consistent tie-break that keeps every crossed triangle at
+        exactly two crossed edges and every crossed edge shared by two
+        crossed triangles, so the stitching below needs no tolerance.
+        The zero-length segments such a vertex produces are removed by
+        the duplicate filter.
+        """
+        d1 = self._e_p1[:, axis] - pos
+        d2 = self._e_p2[:, axis] - pos
+        crossed = (d1 >= 0.0) != (d2 >= 0.0)
+        e_idx = np.nonzero(crossed)[0]
+        if e_idx.size == 0:
+            return []
+        t = d1[e_idx] / (d1[e_idx] - d2[e_idx])
+        pts = self._e_p1[e_idx] + t[:, None] * (self._e_p2[e_idx] - self._e_p1[e_idx])
+        self._lift_to_surfaces(e_idx, pts, axis, pos)
+        pts[:, axis] = pos
+        u_idx, v_idx = self._UV[axis]
+        uv = np.ascontiguousarray(pts[:, (u_idx, v_idx)])
+        point_of_edge = np.full(crossed.size, -1, dtype=np.int64)
+        point_of_edge[e_idx] = np.arange(e_idx.size)
+
+        # Segment orientation is combinatorial: with corners in outward
+        # order, the segment directed along n_plane x n_facet runs from
+        # the crossing on the corner-order edge that leaves the positive
+        # side ("+ -> -") to the crossing on the edge that enters it
+        # ("- -> +").  The shared edge of two neighbouring facets is
+        # traversed in opposite corner orders, so every crossing point
+        # is a start exactly once and an end exactly once — also for the
+        # zero-length segments at a vertex on the plane, where a
+        # geometric ordering would be arbitrary.
+        side = self._nodes[self._con, axis] >= pos
+        leaves = side & ~np.roll(side, -1, axis=1)
+        enters = ~side & np.roll(side, -1, axis=1)
+        n_leave = leaves.sum(axis=1)
+        f_idx = np.nonzero(n_leave)[0]
+        if (n_leave[f_idx] != 1).any() or (enters[f_idx].sum(axis=1) != 1).any():
+            return None
+        slot_start = np.argmax(leaves[f_idx], axis=1)
+        slot_end = np.argmax(enters[f_idx], axis=1)
+        start = point_of_edge[self._t_e[f_idx, slot_start]]
+        end = point_of_edge[self._t_e[f_idx, slot_end]]
+        if (start < 0).any() or (end < 0).any():
+            return None
+        succ = np.full(e_idx.size, -1, dtype=np.int64)
+        succ[start] = end
+        if (succ == -1).any() or np.unique(start).size != start.size:
+            return None
+        if (np.bincount(succ, minlength=e_idx.size) != 1).any():
+            return None
+        interior = self._refine_segments(f_idx, slot_start, slot_end, start, end, pts, axis, pos)
+        return self._chains_to_polygons(uv, succ, interior)
+
+    def _chains_to_polygons(
+        self, uv: np.ndarray, succ: np.ndarray, interior: dict[int, np.ndarray] | None = None
+    ) -> list[np.ndarray] | None:
+        """Follow ``succ`` cycles into closed polygons [m]; ``None`` on an
+        open chain.  *interior* supplies extra vertices between a point
+        and its successor (facet path)."""
+        polygons: list[np.ndarray] = []
+        visited = np.zeros(uv.shape[0], dtype=np.bool_)
+        for start in range(uv.shape[0]):
+            if visited[start]:
+                continue
+            chain = []
+            k = start
+            while not visited[k]:
+                visited[k] = True
+                chain.append(k)
+                k = succ[k]
+            if k != start:
+                return None
+            points = []
+            for c in chain:
+                points.append((float(uv[c, 0]), float(uv[c, 1])))
+                if interior is not None and c in interior:
+                    points.extend((float(q[0]), float(q[1])) for q in interior[c])
+            # Consecutive-duplicate and closing-duplicate filtering,
+            # matching cross_section_polygons.
+            filtered: list[tuple[float, float]] = []
+            for p in points:
+                if not filtered or (
+                    abs(p[0] - filtered[-1][0]) > 1e-12 or abs(p[1] - filtered[-1][1]) > 1e-12
+                ):
+                    filtered.append(p)
+            if len(filtered) >= 3:
+                if (
+                    abs(filtered[0][0] - filtered[-1][0]) < 1e-10
+                    and abs(filtered[0][1] - filtered[-1][1]) < 1e-10
+                ):
+                    filtered.pop()
+                if len(filtered) >= 3:
+                    # Back to meters (lossless power-of-two divide).
+                    polygons.append(np.array(filtered) / self._scale)
+        return polygons
+
     def _screen(self, axis: int, pos: float):
         """Common fast-path admission checks.
 
@@ -1785,12 +2278,18 @@ class _PlanarSectionEngine:
     def can_fast(self, axis: int, pos: float) -> bool:
         """Whether :meth:`section` will (barring stitch anomalies)
         answer this plane (position in meters) without delegating."""
+        if self.facetted:
+            return self._screen_facets(axis, pos * self._scale)
         return self._screen(axis, pos * self._scale) is not None
 
     def section(self, axis: int, pos: float) -> list[np.ndarray] | None:
         """Section polygons [m] for the plane at *pos* [m], or ``None``
         to delegate to the OCC path."""
         pos = pos * self._scale
+        if self.facetted:
+            if not self._screen_facets(axis, pos):
+                return None
+            return self._section_facets(axis, pos)
         screened = self._screen(axis, pos)
         if screened is None:
             return None
@@ -1921,7 +2420,7 @@ def batch_cross_sections(
         occ_shape = shape_obj._occ_shape(scale)
         name = getattr((material_library or {}).get(mat_id), "name", mat_id)
         context = f"the {name!r} solid"
-        engine = _PlanarSectionEngine(occ_shape, scale=scale)
+        engine = _PlanarSectionEngine(occ_shape, scale=scale, deflection=deflection)
         (xmin, ymin, zmin), (xmax, ymax, zmax) = shape_obj.bounding_box(scale)
         bbox_flat = (xmin, ymin, zmin, xmax, ymax, zmax)
 
@@ -2734,6 +3233,16 @@ def _hidden_main_module():
             main.__file__ = saved_file
 
 
+def _annotate_sections(polys: list, annotate) -> list:
+    """Annotate one shape's section contours for the area kernels, wound
+    by nesting parity first (holes against their outer boundaries — the
+    signed-sum kernels rely on it, the kernel Boolean does not provide
+    it)."""
+    from magnelio.geo._polygon_clip import orient_nested_contours  # noqa: PLC0415
+
+    return [annotate(p) for p in orient_nested_contours(polys)]
+
+
 def _sample_and_admit(
     queries: list[tuple[int, float, int]],
     shapes_with_material: list[tuple[object, int]],
@@ -2780,7 +3289,7 @@ def _sample_and_admit(
             nudge=nudge,
             context=contexts[si] if contexts else "",
         )
-        section_cache[(axis, pos, si)] = [annotate(p) for p in polys]
+        section_cache[(axis, pos, si)] = _annotate_sections(polys, annotate)
     elapsed = time.perf_counter() - t0
 
     remaining = [q for i, q in enumerate(queries) if i not in set(sample_idx)]
@@ -2897,7 +3406,7 @@ def _parallel_section_prefill(
                 queries,
                 ex.map(_section_worker, tasks, chunksize=chunk),
             ):
-                section_cache[key] = [annotate(p) for p in polys]
+                section_cache[key] = _annotate_sections(polys, annotate)
     except Exception as exc:
         warnings.warn(
             f"Parallel cross-section prefill failed ({exc!r}); "
@@ -3148,7 +3657,7 @@ def compute_face_material_areas(
     # plane (curved candidates, tangencies, DD-087 degenerate planes)
     # delegates to cross_section_polygons unchanged.
     engines = [
-        _PlanarSectionEngine(shape_obj._occ_shape(scale), scale=scale)
+        _PlanarSectionEngine(shape_obj._occ_shape(scale), scale=scale, deflection=deflection)
         for shape_obj, _ in shapes_with_material
     ]
 
@@ -3315,7 +3824,7 @@ def compute_face_material_areas(
                 annotated = section_cache[cache_key]
             else:
                 polys = _shape_sections(si, axis, pos)
-                annotated = [_annotate(p) for p in polys]
+                annotated = _annotate_sections(polys, _annotate)
                 section_cache[cache_key] = annotated
             per_shape.append(annotated)
         return per_shape

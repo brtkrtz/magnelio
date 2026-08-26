@@ -6605,7 +6605,11 @@ against 142 s at the session-133 baseline.  With areas off the
 critical path, `compute_edge_pec_fractions` dominates again
 (22.8 s of 33.6 s at n=100) — route (b) is the next lever.
 
-**Limitations / follow-ups:** curved faces always delegate — a
+**Limitations / follow-ups** (revised 2026-08-26: DD-199 sections
+free-form faces on a lifted triangulation, and KB-031 showed the
+independent group orientation above was *not* harmless — a rectangle
+inside a hole is covered by hole and outer contour alike; contours are
+now wound by nesting parity)**:** curved faces always delegate — a
 quadric extension (IntAna plane×cylinder sections are exact
 circles/line pairs) would extend the fast path to coax-class
 geometries if their meshing ever dominates; the O(E²) wire
@@ -13818,3 +13822,126 @@ ratio), `src/magnelio/monitors/field_frequency.py`,
 `docs/methods/boundaries.md`, `docs/methods/far-field.md`,
 `docs/methods/sources-monitors.md`, `known-bugs.md` (KB-029, KB-030),
 `CHANGELOG.md`.
+
+## DD-199 — Free-form faces are sectioned on a lifted triangulation
+
+**Status:** Implemented 2026-08-26, on the `feat/facet-section-engine`
+branch.  Extends DD-102; closes KB-031 (found on the way).
+
+**Problem.**  The tutorial-19 Cassegrain (two B-spline reflector
+shells, a ruled-loft horn, 2.08 M cells) meshed in 372 s, 340 s of
+which were 1 597 `BRepAlgoAPI_Section` Booleans at 0.24–0.52 s each:
+every body of the model — the reflectors, the horn (a ruled `Loft`
+yields B-spline faces even where they are geometrically planar) and
+the air complement carrying their faces — delegated every plane to the
+kernel, because the DD-102 engine answers planar faces only.  The
+section pool never fired either: its admission weighs Σ face_count
+(3–30 faces here) against a 150 k gate calibrated at 40–80 µs per
+face, three orders of magnitude below the 0.2–0.5 s a free-form
+section costs; the DD-141 measured-sample admission sits behind that
+gate.  (`investigations/mesh-freeform-speed/` — internal dossier.)
+
+**Decision.**  A shape with at least one free-form face (surface type
+not plane/cylinder/cone/sphere/torus) is represented in the DD-102
+engine by its *triangulation*: `BRepMesh_IncrementalMesh` at the
+section deflection, once per engine, nodes welded (exact first, then
+within the shape tolerance — seams and glued edges), degenerate
+triangles dropped, every edge bordering exactly two triangles, and the
+signed facet volume reproducing the kernel volume within 2 % (an
+inconsistently oriented or open triangulation fails by O(1)).  The
+triangles are planar facets with straight edges, so the engine's
+index-based stitching applies unchanged.  Three things distinguish
+the facet path from a plain triangle-soup section:
+
+1. *Combinatorial orientation.*  A segment runs from the crossing on
+   the corner-order edge that leaves the positive side ("+ → −") to
+   the one that enters it; the shared edge of two neighbours is
+   traversed in opposite corner orders, so every crossing is a start
+   exactly once — also for the zero-length segments of a vertex on the
+   plane (sign convention: on the plane counts as positive), where a
+   geometric ordering would be arbitrary and was (planes through the
+   pole and the seam delegated or failed).  No on-plane tolerance band
+   is needed; a coplanar facet still delegates (DD-087 class).
+2. *Lift onto the exact surface.*  The chord error δ of a
+   triangulation is normal to the surface and reaches the section
+   plane amplified by 1/sin(cut angle).  Each triangle keeps its
+   corners' (u, v) on its B-Rep face; the crossing's parameters are
+   interpolated along the edge, the surface point and normal are
+   evaluated there (`Geom_Surface.D1`, ~2 µs), and the point is moved
+   within the section plane along the in-plane part of the normal
+   onto the tangent plane — one Newton step, second-order residual.
+   Planar faces are exact as facets and skip the lift.  Measured on a
+   paraboloid prism (δ = 1e-4): x-cuts −1e-2 → −1e-4 relative area.
+   (The one-argument `BRep_Tool.Surface(face)` is the *located* copy;
+   applying the face location a second time put the translated bottom
+   face 200 δ off and silently disabled its lift.)
+3. *In-plane refinement.*  Between two crossings the polygon follows
+   a chord whose sagitta is set by the triangle size, not by δ — and
+   a section has hundreds of them, adding up to −1.3e-3 on a convex
+   cut.  The chord midpoint is lifted, its displacement *is* the
+   sagitta, and the segment is split into ⌈√(sagitta/(δ/10))⌉ parts
+   whose interior points are lifted likewise.  At a tenth of δ the
+   facet path lands at ≤ 1.5e-4 of the kernel's untessellated slab
+   reference on every cut of the paraboloid prism, where the kernel's
+   own δ-tessellation is at up to 1.2e-3 (3–5× fewer vertices).
+
+Analytic curved faces keep the kernel path: their sections are exact
+conics tessellated at δ, and the pinned coax/Dey–Mittra results stay
+bit-identical (unit suite unchanged).  `MAGNELIO_FACET_SECTIONS=0`
+keeps free-form shapes on the kernel path (A/B runs).
+
+**Measured.**  Cassegrain mesh 372 s → 58 s (0 kernel sections; the
+remainder is classification, edge fractions and slab bookkeeping);
+10 mm variant 184 s → 23 s.  Per plane: 0.5–2.9 ms facet (before
+lift/refinement) against 14–402 ms kernel.  End-to-end, the tutorial
+run on the facet mesh: peak directivity 19.24 dBi (19.52 on the
+kernel mesh), beam 2.1° from the designed direction (same), |S11|
+−16.7 dB at 10 GHz (−16), `P_rad/P_acc` 0.935 (0.93).  Gates:
+`tests/unit/test_facet_section_engine.py` — |area| multisets within
+δ × perimeter of the kernel path on a paraboloid prism, a Boolean
+with free-form faces and planes through triangulation vertices;
+≤ 5e-4 of the slab reference; a ruled loft exact to 1e-9; the
+dish-shell mesh's z-dual-face fractions against the analytic annulus
+(mean ≤ 5e-3).
+
+**Found on the way — KB-031.**  The dish-shell mesh gate could not
+be run against the kernel path: z-planes cut the shell in an annulus,
+and the kernel's two contours came back with the *same* winding.
+`compute_face_material_areas` sums signed areas per shape, so a dual
+face inside the hole was covered twice and booked fully PEC — the
+conformal correction at the inner wall of every hollow conductor was
+silently lost (PEC tube in air, 1.5 mm grid: mean |f_A − exact| 0.12
+over 1 188 z-dual faces, bore-wall faces 0.000 against 0.997).
+DD-102 had recorded the kernel's independent group orientation and
+judged it harmless ("a face rectangle essentially never spans two
+independently-flipped groups") — a rectangle inside a hole spans
+none and is covered by both.  Fix: `orient_nested_contours`
+(`_polygon_clip.py`) winds every contour by nesting parity (bbox
+containment plus a majority point-in-polygon vote) before the
+kernels see it — outer positive, hole negative, island positive;
+bbox-coincident pairs (the cancelling opposite windings of a
+degenerate tangency band) are left alone.  Applied at the single
+annotation site, so the kernel path, the planar engine and the facet
+path are treated alike.  Tube afterwards: mean 4e-3, max < 5e-2
+(`tests/unit/test_section_contour_orientation.py`).
+
+**Consequences.**  Models with free-form bodies mesh in a fraction of
+the time and their sub-cell fractions are more accurate than before;
+models with hollow conductors (tubes, shells, apertures) change at
+the inner walls — for the better; everything else is bit-identical
+(unit suite green, integration subset unchanged apart from KB-028).
+Not in scope: the analytic quadrics (an exact plane × quadric section
+would be the DD-102 follow-up); `compute_edge_pec_fractions` on
+B-spline faces (`IntCurvesFace`, second-order cost); the pool
+admission for few-face free-form shapes (moot now that they never
+delegate).
+
+**Files:** `src/magnelio/geo/_occ_backend.py` (`_PlanarSectionEngine`
+facet path: `_build_facets`, `_section_facets`, `_lift_to_surfaces`,
+`_refine_segments`, `_weld_nodes`, `_facet_edge_table`,
+`_annotate_sections`), `src/magnelio/geo/_polygon_clip.py`
+(`orient_nested_contours`), `tests/unit/test_facet_section_engine.py`,
+`tests/unit/test_section_contour_orientation.py`,
+`docs/methods/meshing-conformal.md`, `docs/methods/geometry.md`,
+`examples/tutorials/19_cassegrain_reflector.py`, `known-bugs.md`
+(KB-031), `CHANGELOG.md`.
