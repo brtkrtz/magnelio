@@ -9794,7 +9794,7 @@ After the fix and the three fixture recalibrations the unit suite
 
 **Known cost: this is the memory peak of a run** (measured
 2026-08-21, coaxial line with two ports, RSS and `ru_maxrss` per
-phase; internal record `userscripts/fitbench/`).  At 2.58 Mcells the
+phase; internal record `investigations/fit-td-bandwidth/`).  At 2.58 Mcells the
 process peaks at 4.39 GB, of which `spectral_dt` contributes 2.37 GB —
 against 1.30 GB that stays resident and 0.072 GB/Mcell for the field
 arrays the time loop actually iterates.  Meshing (0.57 GB/Mcell) and
@@ -12285,7 +12285,7 @@ cube with PEC walls driving `FITTimeDomainSolver` directly, so no port
 operators or DFT accumulators enter the per-step cost — and derives the
 step cost from a three-point least-squares fit of `t(N) = setup +
 N·cost`, keeping it clear of the second-scale scatter in setup (internal
-record `userscripts/fitbench.py`, results in `userscripts/fitbench/`).
+record `investigations/fit-td-bandwidth/fitbench.py`, results in `investigations/fit-td-bandwidth/`).
 Fit residuals stayed below 0.7 %.
 
 Thread scaling at 4 Mcells, achieved bandwidth [GB/s]:
