@@ -3900,6 +3900,25 @@ class TestEdgeFeaturePlanes:
         for axis in "xyz":
             assert self._new(faces, edges, axis) == []
 
+    def test_tangency_cusps_of_an_inscribed_cylinder_contribute_nothing(self):
+        """KB-028: a cylinder touching a box wall is split along the touching line.
+
+        The Boolean splits the wall face and the cylinder alike at
+        ``(±R, 0)`` / ``(0, ±R)``; the four faces of that straight edge
+        pair off on two surfaces which both continue across it — a
+        split line, and its transverse coordinate is the cylinder's
+        axis (the phantom plane the seam rule keeps out).
+        """
+        from magnelio.geo.primitives import Brick, Cylinder
+
+        R, H = 15e-3, 20e-3
+        block = Brick(origin=(-R, -R, 0), size=(2 * R, 2 * R, H), material="pec")
+        hole = Cylinder(origin=(0, 0, 0), radius=R, height=H, axis="z", material="air")
+        faces, edges = self._planes(block - hole)
+        assert self._new(faces, edges, "x") == []
+        assert self._new(faces, edges, "y") == []
+        assert self._new(faces, edges, "z") == []
+
     def test_brick_edges_duplicate_its_faces(self):
         from magnelio.geo.primitives import Brick
 

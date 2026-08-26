@@ -7,6 +7,15 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Fixed
+
+- A curved body touching a flat face — a cylinder inscribed in a box,
+  a round hole reaching a wall — no longer places a grid plane through
+  its own axis: the Boolean's split line along the touching line is
+  not a geometry edge.  Such meshes are what they were in 0.4.4.
+
 ## [0.4.7] - 2026-08-26
 
 ### Added
