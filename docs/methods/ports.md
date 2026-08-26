@@ -44,6 +44,32 @@ theory {cite}`marcuvitz1951,pozar2012`.  Analytical
 reference modes for coaxial and rectangular-waveguide ports are
 closed-form textbook solutions {cite}`pozar2012`.
 
+**Coupled lines.**  With more than one signal conductor above the
+ground — an edge-coupled microstrip pair, a stripline pickup, a
+multi-wire bus — the per-conductor Laplace solutions are the
+*conductor* basis of the line, not its *mode* basis: on an
+inhomogeneous cross-section every voltage pattern travels at its own
+speed, and only the eigen-patterns of the multiconductor telegrapher
+equations propagate without exchanging energy.  The port therefore
+returns those eigen-patterns.  From the per-conductor fields it forms
+the two per-unit-length capacitance matrices — $\mathbf C$ with the
+actual dielectric and $\mathbf C_0$ with the conductors in vacuum —
+and solves $\mathbf C\,\mathbf v = \varepsilon_{\text{eff}}\,
+\mathbf C_0\,\mathbf v$, the quasi-static form of the modal
+decomposition of $\mathbf L\mathbf C$ with $\mathbf L =
+\mu_0\varepsilon_0\mathbf C_0^{-1}$ {cite}`paul2008`.  Each
+eigenvector is a conductor-voltage pattern (the even and odd modes of
+a symmetric pair), its eigenvalue the modal $\varepsilon_{\text{eff}}$,
+and its impedance $Z_0 = 1/(c\sqrt{C'_v C'_{0,v}})$ with the modal
+capacitances $C'_v = \mathbf v^\top\mathbf C\,\mathbf v$ for the
+unit-Euclidean pattern $\mathbf v$ — for a symmetric pair exactly
+$Z_{0e}$ and $Z_{0o}$.  Channels are ordered by descending
+$\varepsilon_{\text{eff}}$ and are orthogonal in the port's
+capacitance-corrected mass.  A single signal conductor is the $1
+\times 1$ case of the same construction.  For a homogeneous filling
+the pencil degenerates (all patterns share one speed), and the
+channels are the capacitance-matrix eigenmodes of DD-066 instead.
+
 ### Mode classification and multi-mode merge
 
 TE/TM and TEM/QTEM branches are merged into one unified multi-mode

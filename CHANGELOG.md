@@ -11,6 +11,13 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- Waveguide ports on coupled lines — two or more signal conductors
+  above a ground, such as an edge-coupled microstrip pair — now
+  return the line's propagating modes (the even and odd pair of a
+  symmetric pair, each with its own effective permittivity and
+  impedance) instead of one mode per conductor.  Reading the
+  even- and odd-mode impedances off the port report is the design
+  step of a coupled-line coupler.
 - Every 3D view in the tutorials and how-to guides now has an
   "Interactive Scene" tab next to the screenshot: the same scene,
   rotatable and zoomable in the browser.

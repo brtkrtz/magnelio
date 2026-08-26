@@ -13,8 +13,15 @@ problem entirely:
     φ_k =  0 V           on all other conductors
 
 For ``K`` conductor groups (groups[0] = ground, groups[1..K-1] = signal
-conductors) both functions return ``K - 1`` independent modes, one per
-non-ground conductor, with ``ê_k = -∇φ_k`` on the primal 2D edges.
+conductors) both functions return ``K - 1`` independent modes spanning
+the space of the per-conductor solutions ``ê_k = -∇φ_k`` on the primal
+2D edges.  For ``K = 2`` that is the single conductor mode; for
+``K > 2`` the channels are the *modal* basis of the line — the
+capacitance-matrix eigenmodes (TEM, :func:`solve_tem_laplace`) or the
+eigen-patterns of ``C v = ε_eff C_0 v`` (QTEM,
+:func:`_qtem_modal_channels`) — because the per-conductor patterns are
+neither orthogonal in the port mass nor, on an inhomogeneous
+cross-section, propagating modes at all.
 
 FIT discrete form: with ``G_2d`` the 2D primal-gradient (nodes → edges,
 ±1) and ``M_ε,2D`` the 2D ε-mass on primal 2D edges, the Laplace
@@ -38,7 +45,11 @@ Two public entry points:
   vacuum).  Returns Mode objects with ``epsilon_r = ε_eff`` and
   ``z_line = Z_0 = 1 / (c · √(C' · C'_0))``, where ``ε_eff = C' / C'_0``
   and the H profiles use the effective wave impedance
-  ``Z_TEM_eff = η₀/√ε_eff``.  Labels ``"QTEM_lap{i:02d}"``.
+  ``Z_TEM_eff = η₀/√ε_eff``.  With several signal conductors ``C'``
+  and ``C'_0`` are the modal capacitances of each eigen-pattern of
+  the multiconductor line, so every channel carries its own
+  ``ε_eff`` (even/odd pair of coupled lines).  Labels
+  ``"QTEM_lap{i:02d}"``, ordered by descending ``ε_eff``.
 
 Output convention matches :class:`Numerical2DModeSolver` (Phase 2a step
 3) so the downstream pipeline (``discretize_modes`` pass-through →
@@ -91,6 +102,7 @@ import math
 
 import numpy as np
 import scipy.sparse as sp
+from scipy.linalg import eigh
 from scipy.sparse.linalg import spsolve
 
 from magnelio.constants import C0, ETA0, MU0
@@ -507,6 +519,12 @@ def solve_qtem_laplace(
     is used as the field profile; H is baked in via
     ``Z_TEM_eff = η₀/√ε_eff``.
 
+    With more than one signal conductor the returned channels are the
+    modal basis of the multiconductor line (generalised eigenproblem
+    of the two capacitance matrices, see :func:`_qtem_modal_channels`)
+    rather than the per-conductor solutions; the single-conductor case
+    is untouched.
+
     Parameters
     ----------
     plane, g_2d, conductor_node_groups
@@ -530,16 +548,19 @@ def solve_qtem_laplace(
     Returns
     -------
     list[Mode]
-        ``K - 1`` QTEM modes.  Each carries:
+        ``K - 1`` QTEM modes, ordered by descending ``ε_eff``.  Each
+        carries:
         - ``mode_type = ModeType.TEM`` (QTEM is treated as TEM with
           effective parameters; magnelio's ``ModeType`` does not have a
           dedicated QTEM value),
         - ``omega_c = 0.0``,
-        - ``epsilon_r = ε_eff,k``,
-        - ``z_line = Z_0,k``,
+        - ``epsilon_r = ε_eff,k`` (modal, one per channel),
+        - ``z_line = Z_0,k`` (referred to the channel's unit-Euclidean
+          conductor-voltage pattern),
         - ``field_evaluator = None``,
         - ``discrete_*_profile`` arrays from the *actual*-ε solve,
-          M_ε-orthonormalised against the actual mass.
+          M_ε-normalised against the actual mass; for ``K > 2``
+          mutually orthogonal in the capacitance-corrected mass.
         Labels: ``"QTEM_lap00"``, ``"QTEM_lap01"``, ...
 
     Raises
@@ -578,18 +599,26 @@ def solve_qtem_laplace(
     n_u = int(plane.e_u_indices.size)
     n_v = int(plane.e_v_indices.size)
 
-    # NOTE (WP-U2 finding): for K > 2 the per-conductor QTEM modes are
-    # mutually non-orthogonal in M_ε, like the TEM ones — but each
-    # carries its own ε_eff, so the TEM Gram-eigenbasis mixing does
-    # not transfer.  Multi-signal QTEM channel bases are WP-U6
-    # territory (ζ-pencil true modes); until then a K > 2 QTEM port
-    # inherits the non-orthogonal basis and its modal-port caveats.
+    if len(raw_actual) == 1:
+        # Single signal conductor: the historical path, bit-identical.
+        channels = [
+            (e_actual, raw_norm_actual / normal_dx, raw_norm_vacuum / normal_dx)
+            for (e_actual, raw_norm_actual, _raw_a), (_e_vacuum, raw_norm_vacuum, _raw_v) in zip(
+                raw_actual, raw_vacuum
+            )
+        ]
+    else:
+        channels = _qtem_modal_channels(
+            raw_actual,
+            raw_vacuum,
+            m_eps_2d,
+            m_eps_2d_cap,
+            m_eps_2d_vacuum_cap,
+            normal_dx,
+        )
+
     modes: list[Mode] = []
-    for i, ((e_actual, raw_norm_actual, _raw_a), (_e_vacuum, raw_norm_vacuum, _raw_v)) in enumerate(
-        zip(raw_actual, raw_vacuum)
-    ):
-        c_per_length = raw_norm_actual / normal_dx
-        c_per_length_vacuum = raw_norm_vacuum / normal_dx
+    for i, (e_actual, c_per_length, c_per_length_vacuum) in enumerate(channels):
         if c_per_length_vacuum <= 0.0:
             raise RuntimeError(
                 f"QTEM mode {i}: vacuum capacitance is non-positive ({c_per_length_vacuum:.3e})."
@@ -637,13 +666,99 @@ def solve_qtem_laplace(
 # ---------------------------------------------------------------------
 
 
+def _qtem_modal_channels(
+    raw_actual: list[tuple[np.ndarray, float, np.ndarray]],
+    raw_vacuum: list[tuple[np.ndarray, float, np.ndarray]],
+    m_eps_2d: sp.csr_matrix,
+    m_eps_2d_cap: sp.csr_matrix,
+    m_eps_2d_vacuum_cap: sp.csr_matrix,
+    normal_dx: float,
+) -> list[tuple[np.ndarray, float, float]]:
+    """Modal channel basis of a K > 2 quasi-TEM line (coupled lines).
+
+    The per-conductor Laplace solutions (gauge ``V_k = +1 V``, the
+    others grounded) are the *conductor* basis of the line, not its
+    *mode* basis: on an inhomogeneous cross-section every voltage
+    pattern travels at its own speed, and only the eigen-patterns of
+    the multiconductor telegrapher equations propagate without
+    exchanging energy.  Those follow from the two per-unit-length
+    capacitance matrices — the Maxwell capacitance matrix ``C`` of the
+    actual dielectric and ``C_0`` of the same conductors in vacuum,
+    which the energy form of the per-conductor fields yields directly
+    (``C_jk = ∫ ε ∇φ_j · ∇φ_k dA / normal_dx``) — as the generalised
+    eigenproblem
+
+        C v = ε_eff C_0 v,
+
+    the quasi-static form of ``L C v = (ε_eff / c²) v`` with
+    ``L = μ_0 ε_0 C_0⁻¹``.  Each eigenvector ``v`` is a conductor-
+    voltage pattern (the exact even/odd pair on a symmetric coupled
+    pair), its eigenvalue the modal ``ε_eff``, and its field the
+    superposition ``Σ v_k ê_k`` of the per-conductor solutions.  The
+    eigenvectors are ``C``- and ``C_0``-orthogonal, so the modal fields
+    are exactly orthogonal in the capacitance-corrected port mass — the
+    property the downstream projections and per-channel terminations
+    assume, and which the per-conductor basis lacks.
+
+    Conventions (shared with the TEM Gram eigenbasis of
+    :func:`solve_tem_laplace`): channels ordered by descending
+    ``ε_eff`` (on a microstrip pair the even mode first), the leading
+    near-maximal entry of the voltage pattern positive, ``C'`` and
+    ``C'_0`` of a channel are the quadratic forms over its
+    unit-Euclidean voltage pattern — so ``Z_0`` refers to that pattern,
+    exactly as ``z_line`` of the TEM channels does.
+
+    Returns
+    -------
+    list of (e_normalised, c_per_length, c_per_length_vacuum)
+        One entry per channel: the M_ε-normalised field and the modal
+        per-length capacitances with the actual dielectric and in
+        vacuum, in the units of the single-conductor path.
+    """
+    e_a = np.stack([raw for (_, _, raw) in raw_actual], axis=1)
+    e_v = np.stack([raw for (_, _, raw) in raw_vacuum], axis=1)
+    # Maxwell capacitance matrices (energy form; off-diagonals negative
+    # by construction) and the FIT-metric Gram for the normalisation.
+    cap = (e_a.T @ (m_eps_2d_cap @ e_a)) / normal_dx
+    cap0 = (e_v.T @ (m_eps_2d_vacuum_cap @ e_v)) / normal_dx
+    cap = 0.5 * (cap + cap.T)
+    cap0 = 0.5 * (cap0 + cap0.T)
+    gram_fit = e_a.T @ (m_eps_2d @ e_a)
+    eigvals, V = eigh(cap, cap0)
+    order = np.argsort(eigvals)[::-1]  # descending ε_eff, deterministic
+    V = V[:, order]
+    channels: list[tuple[np.ndarray, float, float]] = []
+    for m in range(V.shape[1]):
+        v = V[:, m]
+        v = v / float(np.linalg.norm(v))
+        # Deterministic gauge, see solve_tem_laplace: the leading
+        # near-maximal entry positive, with a tolerance so that the
+        # equal-magnitude entries of a symmetric pair do not tie-break
+        # on rounding noise.
+        av = np.abs(v)
+        lead = int(np.flatnonzero(av >= (1.0 - 1e-9) * av.max())[0])
+        if v[lead] < 0.0:
+            v = -v
+        e_field = e_a @ v
+        norm_sq = float(v @ gram_fit @ v)
+        if norm_sq <= 0.0:
+            raise RuntimeError(
+                f"QTEM mode {m}: modal field has non-positive M_ε norm ({norm_sq:.3e})."
+            )
+        e_normalised = e_field / math.sqrt(norm_sq)
+        c_per_length = float(v @ cap @ v)
+        c_per_length_vacuum = float(v @ cap0 @ v)
+        channels.append((e_normalised, c_per_length, c_per_length_vacuum))
+    return channels
+
+
 def _solve_signal_modes_laplace(
     plane: PortPlane,
     g_2d: sp.csr_matrix,
     m_eps_2d: sp.csr_matrix,
     m_eps_2d_capacitance: sp.csr_matrix,
     conductor_node_groups: list[np.ndarray],
-) -> list[tuple[np.ndarray, float]]:
+) -> list[tuple[np.ndarray, float, np.ndarray]]:
     """Solve K-1 signal modes via the FIT 2D Laplace.
 
     Internal helper shared by :func:`solve_tem_laplace` (Phase 2b
@@ -735,7 +850,7 @@ def _solve_signal_modes_laplace(
         cursor += gn
 
     n_signals = len(conductor_node_groups) - 1
-    out: list[tuple[np.ndarray, float]] = []
+    out: list[tuple[np.ndarray, float, np.ndarray]] = []
     for k in range(1, n_signals + 1):
         phi_fixed = np.where(group_of_fixed == k, 1.0, 0.0)
         rhs = -L_fb @ phi_fixed

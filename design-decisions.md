@@ -3547,6 +3547,8 @@ channel refers to its unit-Euclidean conductor-voltage pattern.
 Single-signal cross-sections keep the historical path bit-identically.
 K > 2 QTEM retains the non-orthogonal per-conductor basis (per-mode
 ε_eff forbids mixing) — a WP-U6 prerequisite, documented in code.
+*(Revised by DD-196: the per-mode ε_eff is the eigenvalue of the
+generalised capacitance pencil, not an obstacle to mixing.)*
 **Degenerate-pair gauge (WP-U4).**
 ``_fix_degenerate_polarisation_gauge``: same-family numerical modes
 with cut-offs within the degeneracy rtol are rotated to the
@@ -3736,7 +3738,9 @@ cross-sections (microstrip & friends) are non-degenerate.
 K > 2 QTEM line modes keep the non-orthogonal per-conductor basis
 *between themselves* (per-mode ε_eff forbids the DD-066 Gram
 mixing) — but the WP-U6 dual-basis projections now cover them too
-whenever the port is multi-mode.
+whenever the port is multi-mode.  *(Revised by DD-196: K > 2 QTEM
+line modes are the modal basis of the capacitance pencil, and the
+dual-basis projections cover every multi-channel QTEM port.)*
 **Files.**  ``ports/modal/factory.py`` (``_qtem_zeta_hybrid_modes``,
 QTEM-branch extension, dual-basis projector construction);
 ``ports/declarative.py`` + spec docstrings (uniform layer-a
@@ -13527,3 +13531,81 @@ return the modes.  Tutorial 13 at factor 2 passes its own guard.
 **Files:** `src/magnelio/solver/_eigenmode_3d.py`
 (`_NULL_GROW_RETRIES`, `_arpack_op_inv`, grow loop in `solve`),
 `tests/unit/test_eigen_null_grow.py`, `CHANGELOG.md`.
+
+## DD-196 — Multi-conductor QTEM ports return the modal basis of the capacitance pencil
+
+**Status:** Implemented 2026-08-26, on the `feat/qtem-modal-basis` branch.
+
+**Problem.**  `solve_qtem_laplace` returned, for K > 2 conductor
+groups, the per-conductor Laplace solutions (V_k = +1 V, the others
+grounded) with ε_eff,k = C_kk/C_0,kk — the *conductor* basis of the
+line, which DD-066 and DD-068 had left in place on the argument that
+"per-mode ε_eff forbids the Gram mixing".  On coupled lines that
+basis is not a set of modes: the patterns are not orthogonal in the
+port mass, and on an inhomogeneous cross-section each of them is a
+superposition of modes travelling at different speeds, so the
+reported ε_eff and Z_line describe nothing that propagates.  Two
+consequences.  A `PortWaveguide(n_modes=2)` on ground + two strips
+(K = 3, `n_modes == K − 1`) did not raise `qtem_multimode`, so the
+DD-068 dual-basis projections were *not* built and the port ran
+primal projections over a non-orthogonal basis — the DD-066
+instability class (measured there as a DTBC feedback blow-up to
+1e64).  And the channel order of two identical strips hung on the
+label tie-break of `auto_conductors` (descending node count, equal
+by construction).  The coupled-line coupler how-to needs the
+even-/odd-mode impedances from `solve_ports()`; that number did not
+exist.
+
+**Decision.**  Multiconductor transmission-line theory (Paul,
+*Analysis of Multiconductor Transmission Lines*, 2nd ed., ch. 3 —
+`paul2008`, VERIFY): the per-conductor fields yield the two Maxwell
+capacitance matrices directly as energy forms,
+`C_jk = ê_jᵀ M_ε,cap ê_k / normal_dx` (actual dielectric) and `C_0`
+alike from the vacuum solve — the off-diagonals are negative by
+construction, no charge bookkeeping needed.  `_qtem_modal_channels`
+solves the generalised eigenproblem `C v = ε_eff C_0 v`
+(`scipy.linalg.eigh(C, C_0)`), the quasi-static form of the modal
+decomposition of `L C` with `L = μ_0 ε_0 C_0⁻¹`: eigenvectors are the
+conductor-voltage patterns (the exact even/odd pair of a symmetric
+pair), eigenvalues the modal ε_eff, fields the superpositions
+`Σ v_k ê_k` of the per-conductor solutions, M_ε-normalised.  Modal
+capacitances `C'_v = vᵀ C v`, `C'_0,v = vᵀ C_0 v` over the
+unit-Euclidean pattern give `Z_0 = 1/(c √(C'_v C'_0,v))` — the same
+gauge DD-066 chose for the TEM Gram eigenbasis, and for a symmetric
+pair literally Z_0e / Z_0o.  Conventions follow DD-066: descending
+ε_eff (a microstrip pair reports the even mode first), sign gauge
+"leading near-maximal entry positive" with the 1e-9 tie tolerance.
+The eigenvectors are C- and C_0-orthogonal, hence the modal fields
+are exactly orthogonal in the capacitance-corrected mass and only at
+tangential PMC window edges not exactly in M_ε — `build_modal_port`
+therefore builds the DD-068 dual-basis projectors for *every*
+multi-channel QTEM port (`epsilon_r is None and len(discrete) > 1`),
+not only when hybrids are present.  K = 2 takes the historical block
+bit-identically (no `eigh`, no renormalisation); the generalised
+path reproduces it to 1e-12 (tested).  Labels stay `QTEM_lap0k`.
+
+**Consequences.**  Single-conductor ports (every existing tutorial
+and test) are unchanged.  K > 2 QTEM ports change their channels:
+`report.modes[0]` is now the largest-ε_eff mode, not the first
+signal conductor, and `z_line_num` in the operator report follows.
+The CW (DD-056) and band (DD-057) bootstraps track `laplace_modes[0]`
+— now a modal profile, which the pencil eigenpairs match more
+closely than a per-conductor profile did; they still track one
+family only (a Z_0e/Z_0o pair through a band port is one family plus
+"the other families", as before).  The ζ-pencil hybrid extension
+(DD-068) drops one pencil eigenpair per line mode by W_t overlap —
+unchanged in count, better matched in profile.  Measured on the
+edge-coupled FR4 pair of `test_unified_multimode_port.py` (w = 1.5 mm,
+h = 0.8 mm, s = 0.5 mm): 1 < ε_odd < ε_even < 4.3, Z_e − Z_o > 15 % of
+Z_e, unit self-response of both channels through `project_V` at
+1e-9, coupling `(Z_e − Z_o)/(Z_e + Z_o)` rising as the gap closes.
+
+**Files:** `src/magnelio/ports/_modal/tem_laplace.py`
+(`_qtem_modal_channels`, `solve_qtem_laplace` branch, docstrings),
+`src/magnelio/ports/_modal/factory.py` (dual-basis condition,
+docstrings), `src/magnelio/ports/_modal/numerical_2d.py` (docstring),
+`tests/unit/test_modal_qtem_laplace.py`
+(`TestCoupledMicrostripModalBasis`),
+`tests/integration/test_unified_multimode_port.py`
+(`TestCoupledMicrostripModalPort`), `docs/methods/ports.md`,
+`docs/references.bib` (`paul2008`), `CHANGELOG.md`.

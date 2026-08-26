@@ -426,7 +426,9 @@ class Numerical2DModeSolver:
 
         ``solve_qtem_laplace`` runs the dual Laplace solve (actual ε
         + vacuum) and returns ``K - 1`` modes with
-        ``epsilon_r = ε_eff`` and ``z_line = Z_0``.
+        ``epsilon_r = ε_eff`` and ``z_line = Z_0``, ordered by
+        descending ``ε_eff`` (for ``K > 2`` the modal channels of the
+        line, so truncation keeps the slowest modes).
         """
         if self.grid is None:
             raise ValueError(

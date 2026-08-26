@@ -408,3 +408,74 @@ class TestMergedPortCWFloor:
         assert s11_db < -120.0, (
             f"merged two-wire TE CW floor {s11_db:.1f} dB (measured -154.6; acceptance -100)"
         )
+
+
+def _coupled_microstrip_mesh(s=0.5e-3):
+    """Edge-coupled microstrip pair: ground + two strips (K = 3), FR4."""
+    h_sub, w_strip, t_strip = 0.8e-3, 1.5e-3, 0.2e-3
+    w_box, h_box, length = 12.0e-3, 5.0e-3, 12.0e-3
+    pec = Material.pec()
+    air = Material.from_isotropic(name="air", epsilon=1.0)
+    diel = Material.from_isotropic(name="FR4", epsilon=4.3)
+    model = GeometryModel()
+    model.add(Brick(origin=(-w_box / 2, 0.0, 0.0), size=(w_box, h_sub, length), material=diel))
+    air_cap = Brick(
+        origin=(-w_box / 2, h_sub, 0.0), size=(w_box, h_box - h_sub, length), material=air
+    )
+    strips = [
+        Brick(origin=(xc - w_strip / 2, h_sub, 0.0), size=(w_strip, t_strip, length), material=pec)
+        for xc in (-(w_strip + s) / 2, (w_strip + s) / 2)
+    ]
+    model.add(Difference(air_cap, *strips))
+    for strip in strips:
+        model.add(strip)
+    model.add_port(PortWaveguide(name="pair", plane="zmin", n_modes=2))
+    mesh = Mesh.from_geometry(model, MeshControl(min_nodes_per_wavelength=15), f_max=25.0e9)
+    return mesh.with_boundary_conditions(
+        {"xmin": "PEC", "xmax": "PEC", "ymin": "PEC", "ymax": "PEC", "zmin": "PMC", "zmax": "PMC"}
+    )
+
+
+class TestCoupledMicrostripModalPort:
+    """DD-196: a ``PortWaveguide(n_modes=2)`` on ground + two strips
+    resolves to the QTEM path and returns the even/odd modal pair —
+    distinct ε_eff, distinct impedances, an orthonormal channel set
+    through the production projections."""
+
+    def test_declarative_pair_yields_even_and_odd_qtem_modes(self):
+        from magnelio.ports.declarative import resolve_declarative_port
+
+        mesh = _coupled_microstrip_mesh()
+        spec = resolve_declarative_port(mesh.ports[0], mesh)
+        assert isinstance(spec, PortSpecMultiConductor)
+        assert spec.epsilon_r is None and spec.n_modes == 2
+        op = _build(mesh, spec, f_calc=25.0e9)
+        even, odd = (dm.mode for dm in op.discrete_modes)
+        assert [even.name, odd.name] == ["QTEM_lap00", "QTEM_lap01"]
+        assert even.mode_type is ModeType.TEM and odd.mode_type is ModeType.TEM
+        assert 1.0 < odd.epsilon_r < even.epsilon_r < 4.3
+        assert even.z_line > odd.z_line > 0.0
+        assert (even.z_line - odd.z_line) / even.z_line > 0.15
+        # Unit self-response through the operator's projections.
+        n_e = build_M_eps(mesh).size
+        pl = op.plane
+        for j, dm in enumerate(op.discrete_modes):
+            e = np.zeros(n_e)
+            e[pl.e_u_indices] = dm.e_u_profile
+            e[pl.e_v_indices] = dm.e_v_profile
+            expected = np.zeros(2)
+            expected[j] = 1.0
+            np.testing.assert_allclose(op.project_V(e), expected, atol=1e-9)
+
+    def test_coupling_grows_as_the_gap_closes(self):
+        """Coupled-line coupling C = (Z_e − Z_o)/(Z_e + Z_o) rises for a
+        narrower gap — the knob the coupler how-to turns."""
+        from magnelio.ports.declarative import resolve_declarative_port
+
+        coupling = []
+        for s in (1.5e-3, 0.5e-3):
+            mesh = _coupled_microstrip_mesh(s=s)
+            op = _build(mesh, resolve_declarative_port(mesh.ports[0], mesh), f_calc=25.0e9)
+            z_e, z_o = (dm.mode.z_line for dm in op.discrete_modes)
+            coupling.append((z_e - z_o) / (z_e + z_o))
+        assert 0.0 < coupling[0] < coupling[1] < 1.0
