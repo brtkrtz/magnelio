@@ -1,165 +1,22 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-26.*  Latest work: **singularity refinement at
-conductor edges** (DD-194, merged 2026-08-26, released 0.4.6):
-`MeshControl(singularity_refinement=k)` starts the grading at the grid
-planes holding a singular metal edge at `h_fine / k` on both sides.
-Edges are classified from the CAD model with the kernel's offset
-analysis — convex edges of metal shapes, concave edges of non-metal
-shapes with metal in the open wedge (iris rims of a vacuum body in a
-PEC background); cavity corners, fillet onsets and dielectric edges
-are regular.  The fine size is now per plane; an interval with
-unequal ends grades from both at their own size (two ramps + middle,
-or a tent with the smaller size pinned and one ratio up and down).
-**Default off**, by measurement: the port-mode Z0 of the how-to's
-microstrip is a function of the edge cell alone (51.5 / 52.2 / 52.6 Ω
-at 50 / 25 / 12.5 µm, limit ≈ 52.9; equal edge cell → equal Z0 at
-32–42 % fewer cells), but on the how-to's S-parameter ladder the
-factors 1 / 2 / 3 lie on one cost-versus-error curve — the edge cell
-sets the time step, so the factor redistributes resolution rather
-than buying accuracy (at fixed `MeshControl` the error drops 2.5–4×,
-at fixed cost nothing changes).  Certificate
-`validation/singularity_refinement_certificate.py`; factor 1 is
-bit-identical to the DD-193 state.  Side fix **DD-195**: a
-pinned-shift eigenmode solve grows its ARPACK request at the same
-shift when null-space artefacts crowd it (tutorial 13 at factor 2
-returned 2 of 3 modes).  Previous: **the bulk cell size
-follows the slab's wavelength** (DD-192, branch
-`feat/local-wavelength-rule`, merged 2026-08-26, released 0.4.6): `Mesh.from_geometry` used one bulk size from the densest
-material anywhere, so the air box around a small ceramic or above a
-thin substrate was meshed at the ceramic's wavelength.  Now each axis
-interval between grid planes — a slab of the domain — is meshed for
-the densest material whose analytic bounding box reaches into it
-(background included; a shape without a box counts everywhere);
-`MeshControl(wavelength_rule="global")` restores the old rule.
-Feature refinement, grading, the DD-107 buffer and the DD-191 edge
-floor (global reference) are unchanged; the PML depth follows the
-boundary slab.  Measured: a 10 × 10 × 2 mm ε_r = 4.3 block in an
-80 mm air box, 20 nodes/λ at 10 GHz: 1.43 M → 254 k cells, identical
-cells inside the block.  A dense background now enters the wavelength
-(it was silently ignored).  Side fix **DD-193**: the air slab above
-a thin trace is now too short for the ramp to reach the air bulk
-size, which exposed the DD-105 integer-count undershoot (the how-to
-warned on two rungs, 19 %); short intervals now keep the fine-end
-cell at `h_fine` and relax the growth ratio.  Tutorial re-run
-(local vs global rule, DD-193 on both): 09 −15 % cells (y 27 → 23),
-10 −11 % (y 19 → 17), 13 −3…−34 % per grid (the air box around the
-pucks), 17 −27 % (z 15 → 11); every other tutorial identical — the
-coax, waveguide, sphere-in-PEC and TESLA models are homogeneous.
-The mesh-convergence how-to keeps its verdicts (S-parameters at
-mnpw 32, pillbox at rung 24) with the same cell counts per rung.
-Previous: **geometry-edge planes**
-(DD-191, released 0.4.5): the mesher's
-face pass reads planes, cylinders and spheres, so a chamfer (a cone) or
-a fillet (a quarter cylinder whose tangents lie outside its trim) never
-produced a grid plane, and — because the DD-051 material average is
-taken over the dual face *transverse* to the edge — a feature varying
-*along* the edges inside one cell layer had no effect until it crossed
-the layer's midplane (the DR-filter worksheet's plateau-and-16-%-jump
-chamfer, M4/M4a).  Now every sharp B-rep edge lying flat in an
-axis-normal plane yields a *soft* plane: one cell across the feature
-layer, floored at `h_max / MeshControl(max_edge_refinement=4)` (and at
-`min_cell_size`), never outranking a material plane, one warning per
-mesh naming the coarsest dropped edge and the ratio that keeps it;
-`max_edge_refinement=0` gives the 0.4.4 meshes bit-exactly.  Excluded:
-seams, degenerated edges and the split lines a Boolean fuse leaves
-between coplanar sub-faces; a thin sheet's far face is dropped from
-the edge pass as from the face pass; the DD-107 buffer no longer
-triples a single-cell feature interval at a port-blind face.
-Certificate `validation/edge_plane_chamfer_certificate.py` reproduces
-M4 with the pass off and gives monotone f0 with it on.  Cost on the
-tutorials: 13 +50–80 % cells (dz 1.0 → 0.49 mm at the chamfer), 18
-+10 %, 10 +20 % (line/ring junction edges), the rest unchanged.
-**Side finding:** tutorial 13's "f0 drifts 9.9 %, k 0.4 %" was mostly
-the chamfer switching on between its two grids; with the chamfer
-resolved on both, f0 moves 0.8 % (40 % of the passband) and k 0.8 %
-(of the bandwidth) between the default grid and (mnpw 24, mcpf 6) — the tutorial is re-based on a grid pair that scales
-both mesh knobs and argues from tolerances, not from "ratios are
-converged".  New how-to
-`plot_mesh_convergence.py`: the convergence loop as a drop-in recipe
-(rung → `MeshControl` before the user's simulation, complex-ΔS stop
-rule with 0.02 on two consecutive rungs after it; capacitive-patch
-microstrip converges at mnpw 32, pillbox TM010 at 1 % on rung 24 with
-0.7 % true error) — the answer to "adaptive refinement" as a recipe,
-not a mesher feature.  Measured: on a 16 mm feed the complex ΔS is
-S21 *phase* (grid dispersion), a bare-line ladder gives the same
-numbers; magnitude-only Δ|S| is 3–4× smaller.
-Previous: post-hoc de-embedding
-(DD-187, branch `feat/port-deembedding`, merged): `result.deembed(
-{"port": d})` shifts reference planes on the exact discrete chain
-dispersion — the on-circle `lambda^{-d/dz}` from the certified
-`(r, q, dz)` line records — and cancels a uniform feed line to the
-run's own floor (measured −119.9 dB TEM / −67.4 dB TE10 at 8 cells/λ;
-the continuum `exp(-γd)` would leave 3°–10° of grid dispersion, which
-is why discrete is the default and continuum only the fallback for
-uncertified channels).  Reference plane confirmed to sit exactly on
-the port plane (no half-cell/half-step offset).  Works on RAM and
-store results; returns an `SParameterResult` that now shares
-`phase`/`plot_s` via the new `SDerivedAccessors` base; lumped ports
-raise.  On top of it: the **How-to guides** gallery (DD-188,
-`examples/howto/` → `docs/howto/`, unnumbered pages) with the
-stripline pickup/kicker page moved out of the tutorials (old
-`tutorials/plot_19_…` URL lapses, changelog notes it), the filter
-capstone re-anchored as the close of tutorials 01–12, and the first
-lumped-port termination guides (DD-189, three developer-review
-amendments): **four pages** — *Lumped ports: investigations*
-(principle + sensitivity sweeps for coax, microstrip and CPW) and one
-compact *Lumped port tuning* pre-flight tool per line type (given →
-knobs → derived → scoreboard, fixture cut as gallery thumbnail).
-Waveguide port as measuring instrument, WG–WG reference run as
-grid-exact phase ruler, phase polarity normalised to n·180° at the
-low band edge, no de-embedding and no optimiser in the pages.  MS:
-vertical trace-end port, position optimum ≈ −1.0·h_sub on the example
-grid, dispersion tilts the compromise.  CPW (third amendment, after
-the developer's reference model): symmetry-plane end-gap port — strip
-ends an end gap short of the ground behind it, lumped port bridges it
-longitudinally on the ``SymmetryPMC`` plane, PMC lid, coax knobs;
-position optimum ≈ **+16·s beyond** the plane (21.4° → 0.74°, sign
-opposite to coax/MS).  Side find: empty boolean results crashed
-`plot()` via uncaught C++ exception → KB-026, closed by DD-190.
-Unit suite 2288
-passed / 3 skipped (DD-195 added 3, DD-194 35, DD-193 16).  **Released v0.4.6
-(2026-08-26)** with DD-192…DD-195 (slab wavelength rule, exact
-short-interval fill, singularity refinement, grown ARPACK request)
-and the KB-027 de-embedding note; before that v0.4.5 (2026-08-25)
-with DD-191 and the mesh-convergence how-to, v0.4.4 (2026-08-25) with DD-190, whose merge
-had turned CI and Docs red first — VTK segfaults on GPU-less runners
-(no EGL device, no libOSMesa; conda-forge `mesalib` is an empty
-metapackage), fixed by `pyvista/setup-headless-display-action` in both
-workflows.  Before that: released v0.4.2 (issue-#2
-boilerplate cuts DD-185/186 + DD-184 export fix) and v0.4.3 (hotfix:
-`Loft` missed the DD-185 name resolution); new versioning rule in
-CLAUDE.md — while 0.x, PATCH covers everything backwards-compatible,
-MINOR is reserved for breaking changes.  Before that: the
-Touchstone/scikit-rf
-export covers the excited channels instead of demanding the complete
-square matrix (DD-184, issue #3) — an unexcited channel is matched by
-its own port boundary, so the sub-matrix is the network seen with it
-terminated; the `.sNp` extension is now checked against the exported
-port count and filled in when absent, and an export that drops
-*propagating* higher modes at a port it keeps warns.  Before that:
-the stripline pickup/kicker page (DD-183; written as tutorial 19,
-since DD-188 a how-to guide) documents the
-pickup/kicker workflow of beam instrumentation on the public API
-alone.  A stripline pair is dimensioned with 2-D port solves (strip
-height for 50 Ω in the difference mode), driven as a kicker in its
-sum and difference modes by the wall type on the plane between the
-strips, and the beam-coupling figures follow from one line monitor:
-beam voltage `∫E_z e^{-jk_B z}dz` (sign fixed by directivity, 25:1),
-transverse kick by Panofsky–Wenzel from the gradient off the electric
-wall, pickup transfer impedances by reciprocity.  Against the
-ideal-stripline formulas of Goldberg/Lambertson with the feed-to-feed
-electrical length: curve shapes reproduced, peaks 10–20 % lower
-(transit-time factor of the extended end fields), position
-sensitivity 7.2 %/mm vs 7.6 ideal.  The coax feed needs
-`min_cells_per_feature=8` to sit within 5 % of 50 Ω — the
-`min_cell_size` floor does not refine it.  Script: ~2:20 on the CPU
-(two 3-D runs of 0.38 M cells plus ten 2-D port solves).  Before that: periodic
-structures have an eigenmode solver (DD-182) and tutorial 18 (TESLA
-mid-cell, 0-mode 1.2766 / π-mode 1.3010 GHz, coupling 1.89 % vs
-1.87 % published); the boundary metric books a full dual cell on every
-domain face, so the far plane must be stripped before the congruence.
-The plane-wave tutorial remains deferred.
+*Last updated: 2026-08-26.*  **Released v0.4.6** (2026-08-26): the
+bulk cell size follows the slab's wavelength (DD-192), short graded
+intervals keep the interface cell at `h_fine` (DD-193), opt-in
+singularity refinement at conductor edges (DD-194 — default off: the
+edge cell bounds the time step, so on an S-parameter ladder the
+factor is cost-neutral; it pays for impedance/ε_eff work and under a
+`min_cell_size` floor), the eigenmode solver grows its ARPACK request
+at a pinned shift (DD-195), and the ports page states that quasi-TEM
+de-embedding is quasi-static (KB-027).  Unit suite 2288 passed /
+3 skipped.  Channels: GitHub, PyPI, conda-forge, docs (`/stable/` =
+tag, `/dev/` = main).
+
+This file states what *is*.  The chronology is `git log
+--first-parent main` (one feature per merge), the reasoning is
+`design-decisions.md`, open bugs are `known-bugs.md`, and the
+measured floors quoted below are regenerated by the `validation/`
+certificates named in their DD entries.
 
 ## Recent decisions
 
@@ -175,67 +32,6 @@ Newest first, one line each; the full record is the DD entry.
 * **DD-188** (2026-08-24) — second sphinx-gallery "How-to guides" (`examples/howto/` → `docs/howto/`, unnumbered pages, own toctree caption): task recipes separated from the numbered curriculum; stripline page moved out of the tutorials (old URL lapses), filter capstone re-anchored as the close of tutorials 01–12; renumbering the tutorials rejected (URL + prose breakage).
 * **DD-187** (2026-08-24) — post-hoc reference-plane shift `result.deembed({"port": d})` on the exact discrete chain dispersion: `lambda^{-d/dz}` evaluated on the unit circle (passband magnitudes exactly untouched; the off-circle `lambda_symbol` offset would bias by `O(1e-8·d/dz)`), continuum `γ(ω)` fallback for uncertified channels, lumped ports raise; measured to cancel a uniform line to the run's own floor with zero reference-plane offset; `phase`/`plot_s` moved to `SDerivedAccessors`, shared by run results and `SParameterResult`.
 * **DD-186** (2026-08-24) — the mesh carries the f_max it was built for: `Mesh.from_geometry` records it, `AnalysisScatteringTD(f_max=None)` defaults to it, an explicit value above it warns (undersampled grid), `from_grid` meshes keep requiring an explicit value; rejected the issue's session-global "last used f_max" buffer (execution-order-dependent).
-* **DD-185** (2026-08-24) — built-in materials by name: `"air"`/`"vacuum"`/`"pec"` accepted (case-insensitive) at every public material argument, resolved at the call site to canonical shared instances; `"copper"` deferred to a curated material library; sticky last-used material and `bg=`/`mat=` aliases rejected (issue #2).
-* **DD-184** (2026-08-23) — a Touchstone export is the square sub-matrix over the *excited* channels (issue #3): unexcited channels carry their reflection-free boundary all run, so dropping them is the matched-termination condition of the S-parameter definition, not a truncation; `channels=` selects a sub-network explicitly; a warning fires only for propagating modes dropped at a port that is itself exported (mode conversion missing from a file that looks complete); the `.sNp` extension must match the exported port count — Touchstone records it nowhere else — and is filled in when absent; supersedes the completeness rule of DD-112.
-* **DD-183** (2026-08-22) — Tutorial 19, pickups and kickers as post-processing of a kicker run: beam voltage with `exp(-j k_B z)` for a +z particle (monitor convention, verified by directivity), symmetry plane between the strips selects sum/difference mode and drives both ports (2 W), `z_line_num` under it is the pair impedance, ideal-stripline reference with feed-to-feed length; no library change.
-* **DD-182** (2026-08-21) — Bloch-periodic eigenmodes: a `"Periodic"` face pair plus `AnalysisEigenmode(phase_advance_deg=…)` solves the unit cell by a congruence `P^H A P` (far-plane edges = near-plane × e^{-iφ}; far plane stripped of its full-dual-cell metric first — the half-cell assumption was refuted by the empty box); real path for 0/π, complex Hermitian on SuperLU in between; verified against the discrete dispersion of the empty box (1e-8) and half-cell band edges of an iris pillbox (1e-3); CPML and unpaired Periodic now rejected instead of solved as PMC.
-* **DD-181** (2026-08-21) — `Path.ellipse_to`/`Curve.ellipse_arc`: elliptical arcs as profile segments with the `arc_to` centre/normal vocabulary; OCC's major-first rule absorbed by an axis swap with a quarter-turn parameter shift.
-* **DD-179** (2026-08-20) — Board import: `io.import_pcb` reads a Gerber/Excellon/`.gbrjob` fabrication set into one `ImportedSolid` per stackup layer plus one per plated barrel; own readers written from the Ucamco spec (no kernel dependency, unsupported constructs refused by file and line); 2-D face set per layer then a single extrusion, so no Boolean is three-dimensional; barrels fill their cuts exactly (union volume = sum of volumes); copper at its real thickness rides the DD-059/DD-124 thin-sheet path because a layer is one board-spanning solid; construction at a private `fine_detail_scale` power of two; dielectrics numbered `dielectric_n` because layout tools name every core after its material; loss tangent reported, never modelled.
-* **DD-178** (2026-08-20) — CAD import: `io.import_step` (XCAF names, colours, file unit normalised to meters with the process-global setting restored; assemblies flattened into a `Group` with placements baked in) and `io.import_brep` (`unit=` mandatory); materials assigned by solid name with literal-beats-wildcard, errors on conflicting patterns and on keys matching nothing, unmapped solids stay construction bodies; `_LoadedShape` became the public `geo.ImportedSolid`; file colour is hue-only, opacity stays with the material; gate: STEP box meshes identically to the equivalent `Brick`.
-* **DD-177** (2026-08-19) — the TF/SF correction is a coefficient table: `attach()` folds beta·metric·amplitude per box face and keeps the retardation separate (scalar or 1-D for axis-aligned k), so the time loop runs one array expression per face; 245.7 → 31.8 ms/step (CPU) and 2024.8 → 16.1 ms/step (GPU) at 75 200 boundary cells, injection no longer measurable against the source-free baseline; behaviour preserved to 3e-16 (double).
-* **DD-176** (2026-08-19) — geometry arguments are checked where they are written: `geo/_validate.py` guards every constructor and verb (point/vector shape, sign and finiteness, operand type, edge selector), each message naming the argument; a scalar `Sphere(center=)` used to surface as `'float' object is not iterable` inside `pad_box` during `model.plot()`.
-* **DD-175** (2026-08-18) — a field picture stands for a cell layer: `plot_cross_section(slab=)` raises the in-plane tolerance of volume-free features to half the displayed cell, filled by the plotting monitors from their grid; wires and discrete ports were absent from every field plot (measured: plane snapped 1.79 mm off the node they sit on).
-* **DD-174** (2026-08-18) — pattern plots: `plots.plot_pattern_cut` (polar, antenna convention, dB floor) and `plots.plot_pattern_3d` (dB-radius surface); `FarFieldResult`/`MonitorFarField`/store reader delegate.
-* **DD-173** (2026-08-18) — far field from a Huygens box: `monitors.MonitorFarField` (auto-placed node-plane surface DFT) + `post.ntff_transform`/`FarFieldResult`; PEC/PMC/symmetry faces via image theory (`mirror_sign` is the image-current table); effective-amplitude intensity |E|²/η; certificate: dipole 2.15 dBi, monopole +3 dB, P_rad closure 2 %.
-* **DD-172** (2026-08-18) — a lumped element on a symmetry plane is half a device: full-model declaration, builder clips/scales internally (series cut Z/2, parallel cut 2Z), `LumpedPortReport` rides the existing √2-per-plane plumbing; invalid placements raise instead of clamping; certificate: exact restriction 5e-16.
-* **DD-159** (2026-08-14) — string/tuple symmetry vocabulary: bare `"SymmetryPEC"`/`"SymmetryPMC"` clip at plane 0.0, `("SymmetryPEC", position)` clips elsewhere, `"ForceSymmetry*"` declares an as-built half model; the `Symmetry` class is removed.
-* **DD-158** (2026-08-14) — unregistered-wall warning only for scenes with lossy conductors (declared at mesh time, or via the σ-fallback at `resolve_wall_conductors` time); registration stays unconditional.
-* **DD-157** (2026-08-14) — section contours are closed or the plane is re-taken (nudge retry, loud drop); open chains on tangent-band planes of Boolean solids booked fantasy coverage and sent coax ports to Mur; closes KB-015.
-* **DD-156** (2026-08-14) — conductor grouping: PEC-cell links fuse component labels, never add nodes; kills phantom conductors from isolated staircase fragments; closes KB-014.
-* **DD-155** (2026-08-14) — full-model power semantics under symmetry: injection ×1/√(2^k), recorder ×√(2^k), flux ×2 per cutting plane.
-* **DD-154** (2026-08-13) — symmetry planes as boundary declarations; a declared `position=` clips the domain at mesh time, bit-exact vs the half model; full-model port impedances, mirrored plots, ParaView Reflect.
-* **DD-153** (2026-08-13) — one API vocabulary: `corners=`, `normal=`/`position=`, `name`, written-out radii, `PortAnalytical(family=)`, `from_ranges`; breaking, no shims.
-* **DD-152** (2026-08-13) — geometric queries never read triangulation; closes KB-012 (`plot()` changed meshes).
-* **DD-151** (2026-08-13) — face planes outrank bbox extents in plane clustering; closes KB-013 (50 nm domain offset sent ports to Mur).
-* **DD-150** (2026-08-13) — `dt` from the measured spectral radius (Lanczos, Gershgorin fallback, cached); 17–34× over the eps/mu-min heuristic.
-* **DD-149** (2026-08-13) — free-area floor is a 1 % threshold, not `== 0`; floored E edges are frozen, not bulk.
-* **DD-148** (2026-08-13) — a sub-face port is drawn as its window, not the whole wall.
-* **DD-147** (2026-08-13) — `M_eps = 0` edges frozen out of solver and CFL (they pinned `dt` ×10³ and emitted NaN).
-* **DD-146** (2026-08-13) — Booleans keep their operand shapes intact (OCCT edits reached back into cached user bodies).
-* **DD-145** (2026-08-13) — structure diagrams, four views (`validation/tools/draw_structure.py`).
-* **DD-144** (2026-08-12) — `blend="tangent"` loft (Bezier spine); `ruled=` → three-valued `blend=`.
-* **DD-143** (2026-08-12) — cross-sections draw wires, discrete ports and lumped elements from their definitions.
-* **DD-142** (2026-08-12) — deterministic ARPACK start vector in the 2D mode solver; closes KB-010.
-* **DD-141** (2026-08-12) — section pool admission by measured sample, not face-count estimate.
-* **DD-140** (2026-08-12) — `MonitorFieldFrequency(interval=)` with Nyquist guards.
-* **DD-139** (2026-08-12) — eigenmodes export to ParaView on the monitor path.
-* **DD-138** (2026-08-12) — eigenmode auto-shift escalation ladder + under-delivery warning; closes KB-011.
-* **DD-137** (2026-08-11) — cross-sections on a plane lying in a face: opt-in `exact_at_faces=` (plot only).
-* **DD-131…DD-136** (2026-08-11) — profile geometry: `Curve.joined`/`covered`, `geo.Path`, `Cylinder(inner_radius=, angle_deg=)`, `shelled`/`thickened`, n-ary `Loft`, `Curve.traced`, `Shape.volume()`.
-* **DD-130** (2026-08-11) — `Brick.from_ranges` per-axis authoring.
-* **DD-129** (2026-08-10) — scattering-result documentation contract; docstring gate sweeps every namespace `__all__`.
-* **DD-128** (2026-08-10) — public `geo.Shape` base class; verbs carry their own documentation.
-* **DD-127** (2026-08-10) — optional `material`: construction bodies; `add()` rejects material-less solids.
-* **DD-126** (2026-08-10) — `mirrored()` plane-mirror verb.
-* **DD-125** (2026-08-10) — meshes are immutable inputs (port-plane flatten is builder-local).
-* **DD-124** (2026-08-10) — footprint-exact thin-sheet rasterisation; keep `min_cell_size` ≥ ~3·t.
-* **DD-123** (2026-08-10) — declarative passive lumped elements (`circuit.LumpedElement`).
-* **DD-122** (2026-08-10) — port-signal stall watchdog + `max_time_steps="auto"`; closes KB-008.
-* **DD-121** (2026-08-09) — 3D field slice plots (`normal=`/`position=`, ⊙/⊗ vectors, geometry overlays).
-* **DD-120** (2026-08-08) — scale-robust geometry pipeline (|ΔS| ≤ 1.9e-7 over six decades).
-* **DD-119** (2026-08-08) — `geo`/`plots` renames; `import magnelio as mio` example style.
-* **DD-118** (2026-08-07) — PMC window edges own the full boundary cell; `z_line` machine-exact.
-* **DD-117** (2026-08-07) — thin core (10 pinned names) + domain namespaces; noun-first monitors.
-* **DD-116** (2026-08-07) — documentation portal, four pillars.
-* **DD-115** (2026-08-04) — ready-to-open ParaView sessions from the store.
-* **DD-114** (2026-08-03) — `port_signal_stop_db="auto"` run default, armed past the step estimate.
-* **DD-108…DD-113** (2026-08-02) — pre-release API rework: namespaces, model-declared ports, store schema v1.0, result contract, CSG operators + verbs, `magnelio.constants`.
-* **DD-107** (2026-07-30) — three equidistant cells at every domain face (modal-port requirement).
-* **DD-106** (2026-07-30) — deterministic conventions on tangent section planes (slab defect 4.55e-01 → ~1e-12).
-* **DD-105** (2026-07-30) — mesh warnings report what costs something; Γ ≈ 2.5·(h/λ)²·(1−1/g²).
-* **DD-104** (2026-07-30) — monitor regions via `corners=`; interval recording until the stop criterion (hard break).
-* **DD-103** (2026-07-30) — boundary closure declared once on the model (hard break; undeclared faces close PEC).
-
 Older decisions: `design-decisions.md`.
 
 ## Working practices earned the hard way
@@ -553,52 +349,12 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   if curved-geometry meshing ever dominates; (3) a bin/BVH over face
   boxes if geometries grow another order of magnitude.
 
-**Closed construction sites** (full record in the DD entry; kept here
-so the question "was this ever a problem?" has a cheap answer):
-
-* ~~DD-107 undershoot reporting gap~~ — CLOSED 2026-08-12: buffered
-  boundary intervals are exempt from the wavelength-driven skip only
-  when the buffer forced extra cells; the warning names the remedy.
-* ~~KB-011: `AnalysisEigenmode` returns nothing on sparsely filled
-  high-contrast cavities~~ — CLOSED 2026-08-12, **DD-138**.
-* ~~KB-010: `test_coax_tem_vs_te_tm` fails intermittently~~ — CLOSED
-  2026-08-12, **DD-142** (fixed ARPACK `v0`; 30/30 green).
-* ~~KB-009: QTEM hybrid modes fail on x-normal port faces~~ — CLOSED
-  2026-08-12: per-edge normal strides in `PeriodChain.et_step`; the
-  workaround (feed lines along z) is no longer needed.
-* ~~KB-008: `port_signal_stop_db="auto"` stalls on band-edge
-  plateaus~~ — CLOSED 2026-08-10, **DD-122**.
-* ~~Section-prefill pool re-ran unguarded user scripts~~ — CLOSED:
-  `_hidden_main_module()` clears `__main__.__spec__` for the pool's
-  lifetime; user scripts must not need a `__main__` guard.
-* ~~PEC-fill runtime cost of dead conductor volume~~ — CLOSED,
-  **DD-100**: dead-tile skipping, default-on, bit-identical
-  (whole-step coax2rect −33 % single / −57 % double).
-* ~~Mixed-port-type reciprocity violation ~0.6 dB~~ — CLOSED,
-  **DD-095**: per-edge conformality patch in `_calibrate_v_i`;
-  post-fix −0.0001 dB.
-* ~~Mur late-time instability near hybrid cut-off~~ — CLOSED,
-  **DD-096**: complement absorber + `port_signal_stop_db`.
-* ~~Curved shapes tangent to the domain boundary give cube modes~~ —
-  CLOSED (the former KB-003, **DD-049**/**DD-103**); re-measured:
-  sphere TM₁₀₁ within −0.27 % at 14³.  See `known-bugs.md`.
+Closed construction sites are tombstoned where they were decided —
+the DD entry (DD-095/096/100/107/122/138/142) and `known-bugs.md`
+(KB-003, KB-008…KB-011) — and are not repeated here.
 
 ## Deferred / nice-to-have
 
-* **Contributor documentation for the `validation/tools/` gates** —
-  `check_imports.py`, `check_dd_references.py`, `check_api_surface.py`
-  and `draw_structure.py` (DD-145) are discoverable only through
-  their own docstrings.  A short CONTRIBUTING page is being added for
-  the v0.1.0 release to introduce the four together — including the
-  one external requirement no dependency declares:
-  `draw_structure.py --render` needs a Graphviz `dot` binary (the DOT
-  source on stdout needs nothing).
-* **TE/TM Mur limit near cutoff** — retired: the DD-055 Klein-Gordon
-  DTBC removes the DD-047 −19 dB peak structurally (measured −150 dB
-  at 1.01·f̂_c).  Mur remains only as the fallback for
-  analytical-path modes and — with explicit specs at
-  ``port_model="modal"`` — inhomogeneous QTEM; the analysis routes
-  the latter through the band pipeline by default (DD-063).
 * **Time-domain power waves on band results** — the band port's
   recorded channels are fixed subspace projections; a calibrated
   a/b time series needs per-frequency phasor synthesis (e.g.
