@@ -10,7 +10,10 @@ factor is cost-neutral; it pays for impedance/ε_eff work and under a
 at a pinned shift (DD-195), and the ports page states that quasi-TEM
 de-embedding is quasi-static (KB-027).  Unit suite 2288 passed /
 3 skipped.  Channels: GitHub, PyPI, conda-forge, docs (`/stable/` =
-tag, `/dev/` = main).
+tag, `/dev/` = main).  On `main` since the release: every gallery 3D
+view carries an "Interactive Scene" tab (vtk.js, DD-190 update),
+GitHub Discussions is the feedback channel, `SECURITY.md` names the
+private report routes.
 
 This file states what *is*.  The chronology is `git log
 --first-parent main` (one feature per merge), the reasoning is
@@ -360,34 +363,21 @@ the DD entry (DD-095/096/100/107/122/138/142) and `known-bugs.md`
   a/b time series needs per-frequency phasor synthesis (e.g.
   interpolated over the tracking grid).  ``result.a()/b()`` raise
   with guidance on band results today (DD-063).
-* **Cheap single-profile QTEM port upgrade** — measured and
-  refuted at the DD-064 state: the mid-band true-mode profile with
-  the fitted ``(r_eff, q_eff)`` scalar DTBC gains 5–20 dB in the
-  band interior but loses at the lower band edge (−19 dB < Mur's
-  −26 dB) and pollutes |S21| by up to 1.2 dB — the frequency-local
-  KG fit implies an artificial cut-off near the lower edge.
-  Candidate future WP: cut-off-free symbol fit (q ≡ 0), edge-aware
-  fit, or 2–3 profiles; derive-then-measure required.
+* **Cheap single-profile QTEM port upgrade** — refuted at the DD-064
+  state (mid-band profile + scalar DTBC gains 5–20 dB in-band, loses
+  at the lower edge, pollutes |S21| by 1.2 dB).  Candidates: cut-off-
+  free symbol fit, edge-aware fit, 2–3 profiles; derive-then-measure.
 * **Pulsed band-edge S-parameters on dispersive lines** are
-  finite-record-truncation limited (the cut-off resonance decays
-  algebraically; ~+10 dB per 10× run length — a measurement-
-  methodology bound, not a port defect).  Candidate future feature:
-  late-time autoregressive signal estimation for pulsed runs; the
-  certified measurement today is CW lock-in
+  record-truncation limited (~+10 dB per 10× run length — a
+  measurement bound, not a port defect); candidate: late-time
+  autoregressive estimation.  Certified today: CW lock-in
   (``validation/kg_dtbc_wg_port_floors.py``).
-* **A third compute backend** — assessed 2026-08-21, nothing built
-  (DD-180).  The blocker is not the amount of CUDA (204 lines, no shared
-  memory or intrinsics; 1.2 % of `src/` is backend-specific) but that
-  `xp is not np` is the solver's capability test, so any third array
-  module takes the CUDA path.  Metal is **rejected on bandwidth**: CPU
-  and GPU share one memory on Apple Silicon and reach 1.0×…1.4× of each
-  other, while the loop is bandwidth-bound — and Metal has no FP64, so
-  `precision="double"` would be lost.  CuPy on ROCm is the candidate
-  worth the effort (same array API, CUDA source translates nearly
-  verbatim), but the launch geometry is measured on one Ada card and
-  would need re-measuring.  Nothing merges without a run on the actual
-  hardware: CI runs `tests/unit` only, so every cross-backend gate is a
-  local run today.
+* **A third compute backend** — assessed, nothing built (DD-180).
+  Blocker is `xp is not np` as the solver's capability test, not the
+  204 CUDA lines.  Metal rejected (shared memory, no FP64); CuPy on
+  ROCm is the candidate, but launch geometry is measured on one Ada
+  card and CI runs `tests/unit` only — every cross-backend gate is a
+  local run on real hardware.
 * **Residual GPU small-grid floor** — ~0.41 ms/step at 10k cells is
   per-port feedback round trips plus the Python loop rest, not kernel
   time.  Needs port-hook restructuring (DD-092).
