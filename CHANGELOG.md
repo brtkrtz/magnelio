@@ -9,6 +9,12 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+### Added
+
+- Every 3D view in the tutorials and how-to guides now has an
+  "Interactive Scene" tab next to the screenshot: the same scene,
+  rotatable and zoomable in the browser.
+
 ### Changed
 
 - Tutorial 02, tutorial 06 and the stripline how-to show the model in

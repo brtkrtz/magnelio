@@ -41,6 +41,7 @@ dependencies:
   - sphinxcontrib-bibtex>=2.6
   - pydata-sphinx-theme>=0.15
   - sphinx-gallery>=0.15
+  - sphinx-design>=0.6  # tab set around the interactive 3D views
 
   # pip - editable install
   - pip

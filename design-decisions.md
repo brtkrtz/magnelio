@@ -13053,8 +13053,23 @@ skipped with a warning instead of reaching the tessellator.
 
 **Not done here (follow-ups).**  3D field views (`MonitorResult`,
 eigenmodes) on the same datasets the ParaView export builds; a
-`Mesh.plot()` without CAD (the discretised model alone); interactive
-`.vtksz` scenes in the docs (`DynamicScraper`) once PNGs are in.
+`Mesh.plot()` without CAD (the discretised model alone).
+
+**Update 2026-08-26 — interactive scenes in the docs.**  The gallery
+now scrapes 3D views with PyVista's `DynamicScraper`: every
+`model.plot()` becomes a `sphinx_design` tab set, "Static Scene"
+(the PNG, also the thumbnail) and "Interactive Scene" (the scene
+exported as `.vtksz`, rendered by trame-vtk's offline viewer — vtk.js
+in an iframe, `_static/static_viewer.html`, 1 MB once per site).
+Measured on tutorial 02: 10 kB for the geometry scene, 50 kB with the
+grid sheet; build time unchanged.  The browser tab has no toolbar: the
+cutting plane is frozen where the script set it, because the slider
+and the *Show* menu are trame state that Python re-clips.  New docs
+dependency `sphinx-design` (`environment.yml`, `[docs]` extra); the
+directive imports `trame_vtk`, which the docs environment already
+carried.  Sphinx trap: after adding the extension the doctree cache
+must go, or the `tab-set` directive stays "unknown" from the previous
+build.  Opt-out per script: `PYVISTA_GALLERY_FORCE_STATIC = True`.
 
 **Measurements** (developer machine, RTX 4070 SUPER, 2026-08-24/25):
 coax + 80k-cell grid scene 0.9 s to build; 27 M-cell rectilinear

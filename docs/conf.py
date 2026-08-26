@@ -66,18 +66,26 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinxcontrib.bibtex",
     "sphinx_gallery.gen_gallery",
+    # The interactive tab of every 3D view: ``offlineviewer`` embeds the
+    # exported scene in vtk.js, ``sphinx_design`` provides the tab set.
+    "pyvista.ext.viewer_directive",
+    "sphinx_design",
 ]
 
-# 3D views (``model.plot()``) become screenshots in the gallery: PyVista's
-# scraper collects every plotter a script showed.  Off-screen rendering is
-# forced so the build never asks for a display.
+# 3D views (``model.plot()``) become a two-tab figure in the gallery:
+# PyVista's dynamic scraper takes a screenshot of every plotter a script
+# showed (the default tab, and the thumbnail) and exports the same scene
+# as a ``.vtksz`` file that the second tab renders in the browser.
+# Off-screen rendering is forced so the build never asks for a display.
+# A script opts out with ``PYVISTA_GALLERY_FORCE_STATIC = True``.
 import pyvista  # noqa: E402
+from pyvista.plotting.utilities.sphinx_gallery import DynamicScraper  # noqa: E402
 
 pyvista.BUILDING_GALLERY = True
 pyvista.OFF_SCREEN = True
 
 sphinx_gallery_conf = {
-    "image_scrapers": ("matplotlib", "pyvista"),
+    "image_scrapers": ("matplotlib", DynamicScraper()),
     # Gallery sources are runnable scripts in the public examples tree;
     # the HTML pages and .ipynb downloads are generated from them.
     # Tutorials are the ordered curriculum; how-to guides are

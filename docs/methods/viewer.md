@@ -7,8 +7,10 @@ serves three situations:
 
 - in a **Jupyter notebook** it is a widget, rendered in the browser;
 - in a **script** it opens a window;
-- in a **documentation build** it becomes a screenshot (this is how the
-  3D figures in the tutorials are made).
+- in a **documentation build** it becomes a figure with two tabs: a
+  screenshot, and the same scene as a rotatable view in the browser
+  (this is how the 3D figures in the tutorials are made).  The browser
+  tab has no toolbar — the cutting plane stays where the script put it.
 
 ```python
 model.plot()                                  # geometry only
