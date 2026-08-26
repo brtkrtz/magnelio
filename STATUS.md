@@ -8,7 +8,7 @@ windows may sit in absorbing faces — with the conformal sub-cell data
 continued into the PML (KB-029) and TE/TM-fed monitors normalised to
 the launched incident power (KB-030) — (DD-198); how-to *coupled-line
 coupler* and tutorial 19 *offset Cassegrain* (rendered, not executed).
-On `feat/facet-section-engine` (DD-199, ready to merge): free-form
+Merged today (DD-199): free-form
 faces are sectioned on a lifted triangulation (Cassegrain mesh 372 s →
 58 s) and section contours are wound by nesting parity — hollow
 conductors had lost the conformal correction at their inner walls
