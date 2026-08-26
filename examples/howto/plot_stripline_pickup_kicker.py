@@ -144,18 +144,14 @@ def build_coupler(h):
 # A geometry of this complexity — revolved faces, lofts, mirrors and a
 # half-turn copy — is best assembled in a notebook, where every
 # intermediate body can be looked at in the interactive 3D view before
-# the next operation builds on it:
-#
-# .. code-block:: python
-#
-#     model = mio.GeometryModel(background="pec")
-#     for body in build_coupler(7.5e-3):
-#         model.add(body)
-#     model.plot()
-#
-# .. image:: /_static/tutorial_19_notebook_model_plot.png
-#    :width: 70 %
-#    :alt: The stripline pair with its four coaxial feeds in a notebook's 3D view
+# the next operation builds on it.  The assembled device, at a
+# provisional strip height (the port solver settles the real one
+# below):
+
+model = mio.GeometryModel(background="pec")
+for body in build_coupler(7.5e-3):
+    model.add(body)
+model.plot()
 
 # %%
 # Dimensioning the strip with the port solver

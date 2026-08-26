@@ -19,7 +19,7 @@ each other by symmetry alone.  The S-parameters state these facts —
 the field pictures show why they are true.
 """
 
-# sphinx_gallery_thumbnail_number = 3
+# sphinx_gallery_thumbnail_number = 4
 
 # %%
 # The geometry: three bricks, one junction
@@ -55,6 +55,13 @@ e_arm = geo.Brick(origin=(-b / 2, -a / 2, 0.0), size=(b, a, b + arm), material="
 
 model = mio.GeometryModel(background="pec")
 model.add(geo.Union(collinear, h_arm, e_arm, name="tee"))
+
+# %%
+# Since the background is metal, what the 3D view shows is the air
+# inside the tee — the hollow the waves live in — with the E-arm
+# standing up from the broad wall of the collinear guide.
+
+model.plot()
 
 # %%
 # Two cross-sections show the whole device: the mid-height cut

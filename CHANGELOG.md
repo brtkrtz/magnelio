@@ -7,6 +7,14 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Changed
+
+- Tutorial 02, tutorial 06 and the stripline how-to show the model in
+  the live 3D view (`model.plot()`) instead of a notebook screenshot;
+  the magic tee gets a 3D view before its cross-sections.
+
 ## [0.4.6] - 2026-08-26
 
 ### Added

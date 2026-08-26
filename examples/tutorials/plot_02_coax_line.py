@@ -87,21 +87,16 @@ model.add(inner)  # the inner conductor
 # Looking at the model in three dimensions
 # ----------------------------------------
 #
-# The cross-sections used throughout these pages are flat by
-# necessity — they render into a static document.  In a Jupyter
-# notebook, ``model.plot()`` opens the model as a rotatable,
-# zoomable 3D view instead, which is the faster way to check that a
-# boolean did what you meant.  Every tutorial can be downloaded as a
-# notebook (the link at the bottom of the page), so this is one call
-# away at any point:
-#
-# .. code-block:: python
-#
-#     model.plot()
-#
-# .. image:: /_static/tutorial_02_notebook_model_plot.png
-#    :width: 70 %
-#    :alt: The coaxial model as an interactive 3D view in a notebook
+# ``model.plot()`` shows the model in three dimensions.  On this page
+# it is a picture; in a Jupyter notebook the same call opens a
+# rotatable, zoomable view with a cutting plane driven from its
+# toolbar — the fastest way to check that a boolean did what you
+# meant.  Every tutorial can be downloaded as a notebook (the link at
+# the bottom of the page), so this is one call away at any point.
+# Here the model is opened along its axis to show the annulus around
+# the inner conductor.
+
+model.plot(cut=("y", 0.0))
 
 # %%
 # The coax port
