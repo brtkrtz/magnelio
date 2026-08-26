@@ -1,6 +1,6 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-26 (evening).*  On `main` since the release:
+*Last updated: 2026-08-26 (night).*  On `main` since the release:
 multi-conductor quasi-TEM ports return the modal (even/odd) basis
 (DD-196), `geo.Surface.parametric` builds curved sheets that
 `extruded()` turns into reflector shells (DD-197), waveguide-port
@@ -8,8 +8,12 @@ windows may sit in absorbing faces — with the conformal sub-cell data
 continued into the PML (KB-029) and TE/TM-fed monitors normalised to
 the launched incident power (KB-030) — (DD-198); how-to *coupled-line
 coupler* and tutorial 19 *offset Cassegrain* (rendered, not executed).
-Unit suite 2332 passed / 3 skipped; the integration suite carries four
-known red tests since the DD-191/192 mesh changes (KB-028).
+On `feat/facet-section-engine` (DD-199, ready to merge): free-form
+faces are sectioned on a lifted triangulation (Cassegrain mesh 372 s →
+58 s) and section contours are wound by nesting parity — hollow
+conductors had lost the conformal correction at their inner walls
+(KB-031).  Unit suite 2350 passed / 3 skipped; the integration suite
+carries four known red tests since the DD-191/192 mesh changes (KB-028).
 **Released v0.4.6** (2026-08-26): the
 bulk cell size follows the slab's wavelength (DD-192), short graded
 intervals keep the interface cell at `h_fine` (DD-193), opt-in
@@ -35,6 +39,7 @@ certificates named in their DD entries.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-199** (2026-08-26) — free-form faces in the planar section engine as a triangulation at the section deflection: combinatorial segment orientation (vertex-on-plane safe), Newton lift of every crossing onto the exact surface (the chord error is normal to the surface and reaches the plane as δ/sin θ), in-plane refinement to δ/10; analytic quadrics keep the kernel path (bit-identical). Cassegrain mesh 372 → 58 s with *better* fractions than the kernel tessellation. KB-031 found and fixed on the way: the kernel's section contours share one winding and the signed-sum kernels booked every dual face inside a hole as fully PEC — `orient_nested_contours` before the kernels (tube inner wall 0.12 → 4e-3 mean error).
 * **DD-198** (2026-08-26) — waveguide-port windows in absorbing (CPML) faces: the mesher copies the first interior slab's sub-cell data into the PML extension (KB-029 — every conductor touching a CPML face had lost its PEC mask there), the CPML zeroes its stretching coefficients behind each window (per-component arrays, bit-identical without windows), the enclosure rule (window ring = conductor) is enforced in the solver setup and on `PortWaveguide`, the far-field monitor samples the feed face at the absorber interface and leaves the guide interior out, and TE/TM-fed monitors divide by `|a(f)|/|W(f)|` (KB-030; measured `P_rad/P_acc` 0.79 → 0.97 on an open-ended tube).
 * **DD-197** (2026-08-26) — `geo.Surface.parametric(fn, u=, v=, samples=)`: B-spline interpolation of a sampled map (pole rows allowed), `Sheet` → `PlanarSheet` marker hierarchy, `extruded()` on curved sheets (prism, robust), `thickened()` on curved sheets as a guarded offset cascade (volume check catches the kernel's folds), transforms keep the sheet marker (`Face.rotated().thickened()` works); methods chapter *Geometry construction*.
 * **DD-196** (2026-08-26) — K > 2 quasi-TEM ports solve `C v = ε_eff C₀ v` on the capacitance matrices of the per-conductor Laplace fields: channels are the line's modes (even/odd of a symmetric pair, each with its own `ε_eff` and `Z_0`, descending `ε_eff`), orthogonal in the capacitance-corrected mass, dual-basis projections for every multi-channel QTEM port; K = 2 bit-identical; `ModeReport.epsilon_eff`.
@@ -360,12 +365,10 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   n = 100; pythonocc SWIG never releases the GIL, so processes only),
   with two measured caveats: it inherits the same ~5 s spawn floor,
   and on a 60-post row the function is not dominant, so the case has
-  to be made per geometry class; (2) quadric/free-form extension of
-  the planar engine — **now measured to dominate**: the tutorial-19
-  Cassegrain (two B-spline reflector shells, 2.1 M cells) meshes in
-  371 s, every section through a B-spline face going through the
-  kernel; (3) a bin/BVH over face boxes if geometries grow another
-  order of magnitude.
+  to be made per geometry class; (2) free-form faces — **done**
+  (DD-199, facet path; the analytic quadrics could still get an exact
+  plane × quadric section); (3) a bin/BVH over face boxes if
+  geometries grow another order of magnitude.
 * **Four red integration tests (KB-028).**  Conformal coax `z_line`
   48.94 vs the pinned 48.12 Ω since the DD-192 merge; three
   Dey–Mittra TM010 ordering/convergence tests since the DD-191
@@ -381,11 +384,9 @@ DD entry and `known-bugs.md`) and are not repeated here.
   fixed subspace projections; calibrated a/b series need per-frequency
   phasor synthesis.  ``result.a()/b()`` raise with guidance (DD-063).
 * **Cheap single-profile QTEM port upgrade** — refuted at the DD-064
-  state (gains 5–20 dB in-band, loses at the lower edge, pollutes
-  |S21| by 1.2 dB).  Candidates: cut-off-free or edge-aware symbol fit.
+  state (loses at the lower edge, pollutes |S21| by 1.2 dB).
 * **Pulsed band-edge S-parameters on dispersive lines** are
-  record-truncation limited (~+10 dB per 10× run length); candidate:
-  late-time autoregressive estimation.  CW lock-in is certified.
+  record-truncation limited; candidate: late-time AR estimation.
 * **A third compute backend** — assessed, nothing built (DD-180);
   blocker is `xp is not np` as the capability test.  Metal rejected
   (no FP64); CuPy on ROCm is the candidate, gates are local runs.

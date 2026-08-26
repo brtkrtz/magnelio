@@ -10,6 +10,23 @@ cross-sections) rather than voxel sampling.  This is engineering
 infrastructure on top of a third-party kernel, not a numerical-methods
 contribution.
 
+The planar cross-sections that feed the conformal fractions are taken
+three ways.  Planar faces are sectioned exactly by an in-house engine
+(intersection points on straight edges, segments stitched through
+shared edges).  Free-form faces — parametric surfaces, lofts, imported
+B-spline patches — are sectioned on a triangulation of the body at the
+section deflection: the crossing points are lifted back onto the exact
+surface (one Newton step from the interpolated surface parameters,
+which removes the chord error that a shallow cut would otherwise
+amplify), and each segment is refined in-plane until its sagitta is a
+tenth of the deflection.  Analytic curved faces — cylinders, cones,
+spheres, tori — go through the kernel's Boolean section, whose exact
+curves are tessellated at the deflection.  The deflection is a
+hundredth of the smallest cell for the sub-cell fractions and a tenth
+for the cell classification.  Section contours are wound by nesting
+parity (holes against their outer boundary) before the area kernels
+sum them, whatever path produced them.
+
 ## Graded Cartesian mesh
 
 The mesh generator (`mesh/mesher.py`) produces a graded (non-uniform)

@@ -658,3 +658,67 @@ def face_shape_area_kernel(
             remaining -= effective
         if remaining > 1e-30:
             bg_rem[f] = remaining
+
+
+def orient_nested_contours(polys: list[np.ndarray]) -> list[np.ndarray]:
+    """Wind section contours by nesting parity.
+
+    The area kernels sum *signed* polygon areas per shape, so a hole
+    must run against its outer boundary.  ``BRepAlgoAPI_Section`` gives
+    no such guarantee — a tube's bore and rim come back with the same
+    winding, and a dual face at the bore wall is then booked as fully
+    filled (the disc plus the hole).  Every contour is re-wound by its
+    nesting depth: the number of other contours that contain it (bbox
+    containment plus a majority point-in-polygon vote over its
+    vertices) — even depth positive, odd depth negative.  Contours with a
+    bbox-coincident partner (the paired opposite windings the kernel
+    emits on a degenerate tangency band, whose contributions cancel) are
+    left untouched.
+
+    Parameters
+    ----------
+    polys : list of np.ndarray
+        Closed contours ``(N, 2)`` of one shape in one plane.
+
+    Returns
+    -------
+    list of np.ndarray
+        The same contours, reversed where needed; order preserved.
+    """
+    n = len(polys)
+    if n == 0:
+        return polys
+    bbs = np.array([(p[:, 0].min(), p[:, 1].min(), p[:, 0].max(), p[:, 1].max()) for p in polys])
+    extent = max(float(np.ptp(bbs[:, (0, 2)])), float(np.ptp(bbs[:, (1, 3)])), 1e-300)
+    tol = 1e-9 * extent
+    coincident = np.zeros(n, dtype=bool)
+    depth = np.zeros(n, dtype=np.int64)
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            if np.all(np.abs(bbs[i] - bbs[j]) <= tol):
+                coincident[i] = True
+                continue
+            inside_bb = (
+                bbs[i, 0] >= bbs[j, 0] - tol
+                and bbs[i, 1] >= bbs[j, 1] - tol
+                and bbs[i, 2] <= bbs[j, 2] + tol
+                and bbs[i, 3] <= bbs[j, 3] + tol
+            )
+            if not inside_bb:
+                continue
+            votes = points_in_polygon(polys[i][:, 0], polys[i][:, 1], polys[j])
+            if votes.mean() > 0.5:
+                depth[i] += 1
+    out = []
+    for poly, d, keep in zip(polys, depth, coincident):
+        if keep:
+            out.append(poly)
+            continue
+        want_positive = d % 2 == 0
+        if (polygon_area(poly) >= 0.0) == want_positive:
+            out.append(poly)
+        else:
+            out.append(np.ascontiguousarray(poly[::-1]))
+    return out

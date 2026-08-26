@@ -26,10 +26,9 @@ Three things are new:
 The antenna is electrically small for a Cassegrain — an 8 λ dish and
 a 2 λ subreflector, where a real system has 20 λ and more — so its
 pattern is diffraction-dominated; the point of the page is the
-construction.  The script runs for minutes (a 2 M-cell mesh of
-free-form surfaces takes a few minutes on its own), so the gallery
-renders it without executing it; the numbers quoted below are from a
-measured run.
+construction.  The script runs for minutes (a 2 M-cell mesh and a
+GPU-sized time-domain run), so the gallery renders it without
+executing it; the numbers quoted below are from a measured run.
 """
 
 # %%
@@ -299,11 +298,9 @@ model.plot()
 # Free-form surfaces give the mesher nothing to hold on to — no
 # feature planes, only their bounding boxes — so the resolution across
 # the reflectors is the wavelength rule's: about 1.7 mm at the 12 GHz
-# band edge, 2 M cells for this box.  Cross-sections through B-spline
-# faces go through the geometry kernel rather than the exact planar
-# engine, which is why the mesh takes minutes here.  The 5 mm shells
-# are three cells thick, comfortably above the two-cell rule of the
-# geometry chapter.
+# band edge, 2 M cells for this box, about a minute to mesh.  The
+# 5 mm shells are three cells thick, comfortably above the two-cell
+# rule of the geometry chapter.
 
 f_max = 12.0e9
 mesh = mio.Mesh.from_geometry(model, mio.MeshControl(max_cell_size=5e-3), f_max=f_max)
@@ -366,15 +363,15 @@ fig, ax = pattern.plot_3d(title="Cassegrain radiation surface")
 # ----------------
 #
 # Numbers from the run this page was written against (131 × 122 × 130
-# cells; 6 min to mesh, 6 min to run on a consumer GPU):
+# cells; one minute to mesh, under a minute to run on a consumer GPU):
 #
 # ========================================  ==========
 # quantity                                  value
 # ========================================  ==========
-# peak directivity                          19.5 dBi
+# peak directivity                          19.2 dBi
 # aperture bound :math:`(\pi D/\lambda)^2`  28.0 dBi
 # beam direction, measured vs designed      2° apart
-# |S11| at 10 GHz (band 8.5–11.5 GHz)       −16 dB
+# |S11| over 8.5–11.5 GHz                   −12 … −19 dB
 # radiated / accepted power                 0.93
 # ========================================  ==========
 #
