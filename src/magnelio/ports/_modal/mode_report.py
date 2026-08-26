@@ -56,6 +56,12 @@ class ModeReport:
         multi-conductor (TEM/QTEM) modes; ``None`` for hollow-pipe
         modes, whose reference impedance is the frequency-dependent
         wave impedance (use :meth:`z_modal`).
+    epsilon_eff : float or None
+        Effective relative permittivity of a line mode — the ``ε_eff``
+        of a quasi-TEM mode (``C'/C'_0``, one value per mode of a
+        coupled line: even and odd travel at different speeds), the
+        filling ``ε_r`` of a homogeneous TEM mode; ``None`` for
+        hollow-pipe modes.  The phase velocity is ``c / √ε_eff``.
     """
 
     port_name: str
@@ -71,6 +77,7 @@ class ModeReport:
     # Dual edge lengths of the plane's H faces, needed to turn the H
     # profile's dual voltages back into A/m (see _field_profiles).
     _h_dual_lengths: tuple = field(default=(), repr=False)
+    epsilon_eff: float | None = None
 
     def z_modal(self, f: float) -> complex:
         """Power-wave reference impedance at frequency ``f`` [Hz]."""
@@ -538,6 +545,9 @@ class PortReport:
                     mode_type=dm.mode.mode_type,
                     f_cutoff=dm.mode.omega_c / (2.0 * math.pi),
                     z_line=(None if dm.mode.z_line is None else dm.mode.z_line * scale),
+                    epsilon_eff=(
+                        float(dm.mode.epsilon_r) if dm.mode.mode_type is ModeType.TEM else None
+                    ),
                     _discrete=dm,
                     _plane=op.plane,
                     _mirrors=mirrors,
@@ -575,6 +585,8 @@ class PortReport:
             )
             if m.z_line is not None:
                 entry += f"  z_line = {m.z_line:.2f} Ω"
+            if m.epsilon_eff is not None:
+                entry += f"  ε_eff = {m.epsilon_eff:.3f}"
             lines.append(entry)
         return "\n".join(lines)
 

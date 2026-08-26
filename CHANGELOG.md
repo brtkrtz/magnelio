@@ -11,6 +11,14 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- How-to guide *Coupled-line directional coupler*: a −10 dB microstrip
+  coupler dimensioned with the port solver alone — a port across both
+  lines returns the even and odd modes with their impedances and
+  effective permittivities — and built from two traced paths that
+  turn onto the box walls; the four-port run is checked against the
+  textbook coupled-line response.
+- The port report lists the effective permittivity of every line mode
+  (``report.modes[i].epsilon_eff``, printed alongside ``z_line``).
 - Waveguide ports may sit in absorbing (CPML) faces: a window port in
   the cross-section of a conductor-enclosed guide that reaches the
   wall — the neck of a horn, a coax entering an open box.  The
