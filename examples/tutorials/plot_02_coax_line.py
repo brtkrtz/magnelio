@@ -172,19 +172,67 @@ plots.plot_cross_section(
 fig.tight_layout()
 
 # %%
-# The same section seen from the mesh's side: every cell in the colour
-# of the material it was filled with, on its real size, and every grid
-# line in the style of the rule that placed it — material faces solid,
-# the graded fill between them as hairlines.  The exact contour is
-# drawn on top, so the staircase and the circle are read against each
-# other.
+# The same section seen from the mesh's side, three times.  Every grid
+# line is drawn in the style of the rule that placed it — material
+# faces solid, the graded fill between them as hairlines — and the
+# exact contour on top.  What differs is the cell shading.
+#
+# * Left, the *classification*: the material whose volume contains
+#   each cell's centre.  A circle on a rectangular grid looks like a
+#   staircase here, and this picture is often mistaken for the
+#   accuracy of the discretisation.  It is not — it is only the
+#   baseline the sub-cell treatment starts from.
+# * Middle, the *coverage*: the exact area share of each cell that lies
+#   inside a conductor, as the sub-cell classifier measured it.  The
+#   pin is a disc again and the outer wall a smooth ring.  The edge
+#   layer adds what happens on the grid lines: edges held at conductor
+#   potential in dark grey, edges only partly inside the conductor in
+#   orange, and the short ones the solver lends to a longer neighbour
+#   marked with a cross.
+# * Right, the permittivity the electric material matrix holds for the
+#   field component *normal* to the cut, on the dual cells around the
+#   nodes (0 = conductor).  Edges running along a conductor surface are
+#   held at its potential, so the masked cells reach one node beyond
+#   the contour.  For a TEM line this component carries no field; the
+#   picture matters for structures with a field along the cut normal.
 
-plots.plot_mesh_section(mesh, "z", L / 2, geometry=model, title="Grid planes by origin")
+fig, axes = plt.subplots(1, 3, figsize=(16, 4.8))
+plots.plot_mesh_section(
+    mesh,
+    "z",
+    L / 2,
+    geometry=model,
+    fill="material",
+    ax=axes[0],
+    legend=False,
+    title="Cell classification",
+)
+plots.plot_mesh_section(
+    mesh,
+    "z",
+    L / 2,
+    geometry=model,
+    fill="coverage",
+    edges=True,
+    ax=axes[1],
+    title="Conductor coverage and edge treatment",
+)
+plots.plot_mesh_section(
+    mesh,
+    "z",
+    L / 2,
+    geometry=model,
+    fill="conformal",
+    ax=axes[2],
+    legend=False,
+    title="Permittivity seen by the normal component",
+)
+fig.tight_layout()
 
 # %%
-# The circle is rendered on a rectangular grid as a staircase, with
-# partially filled cells treated by conformal material matrices — keep
-# this picture in mind when reading the port report below.
+# The middle picture is the one to keep in mind when reading the port
+# report below: the conductor contours enter the material matrices with
+# their exact area and length shares, not as the staircase on the left.
 #
 # Numerical mode vs. analytical reference
 # ---------------------------------------

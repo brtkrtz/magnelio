@@ -1805,11 +1805,14 @@ class Mesh:
         return dict(getattr(self, "_pml_cells", {}))
 
     def plot_section(self, normal: str, position: float, **kwargs):
-        """Plot the grid of an axis-aligned section, lines styled by origin.
+        """Plot an axis-aligned section of the mesh: cells and grid lines by origin.
 
         Thin wrapper around :func:`magnelio.plots.plot_mesh_section`;
-        see there for the keyword arguments (``geometry=`` overlays the
-        model's section outline).
+        see there for the keyword arguments — ``geometry=`` overlays
+        the model's section outline, ``fill=`` picks the cell shading
+        (PEC coverage by default, classification, or the permittivity
+        the normal edges see), ``edges=True`` adds the PEC-masked and
+        partially free edges.
         """
         from magnelio.post.plot_mesh import plot_mesh_section  # noqa: PLC0415
 

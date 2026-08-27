@@ -173,12 +173,35 @@ same in a form that can be pinned, and the test suite keeps such a pin
 for every example model: a change of the meshing rules then shows up as
 a readable diff of planes, not as a physics test that moved for reasons
 unknown.  `plots.plot_mesh_section(mesh, "z", z0, geometry=model)` (or
-`mesh.plot_section(...)`) draws the section from the mesh's side —
-every cell in the colour of the material it was filled with, on its
-real size; each grid line in the style of its highest-ranking source;
-the graded fill as hairlines; absorber cells hatched; the exact section
-outline on top.  Reading the staircase against the contour is the
-quickest plausibility check a mesh gets before the solver runs.
+`mesh.plot_section(...)`) draws the section from the mesh's side: each
+grid line in the style of its highest-ranking source, the graded fill
+as hairlines, absorber cells hatched, the exact section outline on top
+— and the cells shaded by one of three quantities:
+
+- `fill="coverage"` (default) — the exact area share of every cell that
+  lies inside a conductor, as measured by the sub-cell classifier on
+  the primal faces of the node plane nearest to the cut; each cell in
+  the colour of its material, blended towards conductor grey by that
+  share.  A round conductor is a round disc here.
+- `fill="material"` — the classification: the material whose volume
+  contains the cell centre.  This is the staircase *baseline* that the
+  sub-cell values override on every cut cell, not the accuracy of the
+  discretisation; thin sheets do not appear in it.
+- `fill="conformal"` — the permittivity $\bar\varepsilon$ the electric
+  material matrix holds for the field component normal to the cut, on
+  the dual cells around the nodes (bounded by the cell midpoints, so
+  half a cell off the grid lines; 0 = conductor).  Edges that run along
+  a conductor surface are held at its potential, so around a conductor
+  the masked cells reach one node beyond the contour — coarser than the
+  coverage, and the honest picture for a field along the cut normal.
+
+`edges=True` adds the primal edges of that node plane: edges held at
+conductor potential, edges only partly inside a conductor (with their
+free-length share $f_L$ setting the opacity) and the short ones lent
+to a longer neighbour by the enlarged-cell rule.  Reading the coverage
+against the contour is the quickest plausibility check a mesh gets
+before the solver runs; the vocabulary of the shares is explained in
+the next section.
 
 The record exists for meshes built by `Mesh.from_geometry`; a mesh
 assembled from a grid has none.  Positions are the merged geometry
@@ -197,7 +220,9 @@ data (unified per-edge/per-face sub-cell classification, DD-051).
 This family of techniques — retaining the standard leapfrog update and
 encoding sub-cell geometry purely in the material matrices — was
 introduced for FIT by Krietenstein, Schuhmann, Thoma and Weiland
-{cite}`krietenstein1998`.
+{cite}`krietenstein1998`.  The `conformal` fill of `plot_mesh_section`
+shows exactly this $\bar\varepsilon$, and its `coverage` fill the
+conductor area share of the primal faces.
 
 The average is taken over the dual face *transverse* to the edge; it
 does not integrate along the edge.  A boundary that crosses the grid

@@ -14081,6 +14081,34 @@ anchor is discarded by `_floor_merge_planes` without joining `absorbed`
 example model triggers it; left as is, the record now makes it
 visible.
 
+**Amendment 2026-08-27 (sub-cell layers).**  The material fill alone
+made tutorial 02 look like a staircase solver, because `material_id`
+is the cell-centre classification the conformal matrices override.
+Three fills now, all pure NumPy over data the mesh already carries:
+`coverage` (default) — the geometric PEC area of the primal faces
+normal to the cut in the nearest node plane (`FaceMaterialData.
+A_face_pec`, DD-087; exact for classifier candidates, staircase
+elsewhere) blended over the classified material colour; `material` —
+the classification; `conformal` — `eps_avg` of the dual faces of the
+normal edges on the dual tiling (cat 0 → staircase owner cell, cat 1/2
+→ `eps_avg`, cat 2 under the free-area floor / cat 3 / masked → 0).
+`edges=True` draws the in-plane edges of the nearest node plane:
+`pec_mask_edges`, `0 < L_free/L_primal < 1`, `enlarged_cell_donor ≥ 0`.
+Meshes without sub-cell data raise.  Decided with the developer after
+the first probe: the dual-face `eps_avg` had been proposed as the
+default, but on the coax it shows the pin as a plus shape one node
+larger than the geometry — not a bug: the in-plane edges cutting the
+pin have `f_L ≈ 0.27 < η = 0.4`, are masked and lent out, and the
+DD-053 tangential rule (both endpoints in the same masked component)
+then re-masks the normal edges around them although the conformal
+pass had measured `ε̄ = 1.65, f_L = 1` there.  Correct for the field
+normal to the cut, irrelevant for TEM, misleading as a default.  The
+coverage fill shows the ring the H-side actually integrates (0.88 /
+0.48 / 0.22 / 0.08 / 0.02 along the outer wall).  Tutorial 02 shows all
+three side by side.  Probe layers at `Nz // 2` of a CPML-extended
+grid sit in the absorber extension where the OCC sections find no
+geometry — take the layer from the position, never from the count.
+
 **Files:** `src/magnelio/mesh/_planes.py` (new),
 `src/magnelio/mesh/mesher.py`, `src/magnelio/mesh/__init__.py`,
 `src/magnelio/io/project.py`, `src/magnelio/post/plot_mesh.py` (new),
