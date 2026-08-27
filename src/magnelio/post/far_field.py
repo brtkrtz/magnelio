@@ -132,6 +132,22 @@ def _concat(sets: Sequence[SurfacePatchSet]) -> SurfacePatchSet:
     )
 
 
+def surface_power(patches: Sequence[SurfacePatchSet]) -> float:
+    """Real power [W] leaving the Huygens surface, from the same samples.
+
+    ``Re ∮ (E × H*) · n̂ dS`` over the patches — the Poynting flux the
+    surface fields carry outward, in the library's effective-phasor
+    units (no ½).  For a lossless exterior this equals the radiated
+    power exactly, so it is the natural closure check for the
+    transform, independent of any port bookkeeping.
+    """
+    total = 0.0
+    for s in patches:
+        S = np.real(np.cross(s.E, np.conj(s.H)))
+        total += float((np.einsum("pc,pc->p", S, s.normals) * s.areas).sum())
+    return total
+
+
 def default_angular_grid() -> tuple[np.ndarray, np.ndarray]:
     """The default (θ, φ) evaluation grid: 2° spacing, ISO convention."""
     return np.linspace(0.0, np.pi, 91), np.linspace(0.0, 2.0 * np.pi, 181)
@@ -144,6 +160,7 @@ def ntff_transform(
     theta: Optional[np.ndarray] = None,
     phi: Optional[np.ndarray] = None,
     accepted_power: Optional[float] = None,
+    surface_power: Optional[float] = None,
 ) -> "FarFieldResult":
     """Far-field pattern from tangential surface fields at one frequency.
 
@@ -163,6 +180,9 @@ def ntff_transform(
     accepted_power : float, optional
         Accepted input power [W] for the gain normalisation; usually
         wired by the analysis.
+    surface_power : float, optional
+        Real power leaving the surface, :func:`surface_power` of the
+        same patches; carried on the result for the closure check.
 
     Returns
     -------
@@ -260,6 +280,7 @@ def ntff_transform(
         E_theta=np.conj(A_th).reshape(n_th, n_ph),
         E_phi=np.conj(A_ph).reshape(n_th, n_ph),
         accepted_power=accepted_power,
+        surface_power=surface_power,
         physical_mask=mask,
         physical_sphere_fraction=0.5 ** len(physical),
     )
@@ -288,6 +309,13 @@ class FarFieldResult:
     accepted_power : float or None
         Accepted input power [W] behind :attr:`gain`; ``None`` until
         wired by the analysis.
+    surface_power : float or None
+        Real power [W] the recorded surface fields carry out of the
+        Huygens box (``Re ∮ E × H* · n̂ dS``), in the same full-model
+        watts as :attr:`P_rad` — a monitor on a symmetry half model
+        counts the mirrored half as well.  For a lossless exterior it
+        equals the radiated power; :attr:`power_balance` compares the
+        two.  ``None`` for a result built without it.
     physical_mask : (n_theta, n_phi) bool ndarray or None
         False in directions behind an infinite ground plane; ``None``
         when the whole sphere is physical.
@@ -306,6 +334,7 @@ class FarFieldResult:
     E_theta: np.ndarray
     E_phi: np.ndarray
     accepted_power: Optional[float] = None
+    surface_power: Optional[float] = None
     physical_mask: Optional[np.ndarray] = None
     physical_sphere_fraction: float = 1.0
 
@@ -367,6 +396,27 @@ class FarFieldResult:
                 "accepted_power on the result to evaluate it."
             )
         return self.P_rad / self.accepted_power
+
+    @property
+    def power_balance(self) -> float:
+        """P_rad / surface_power — 1.0 when the transform closes.
+
+        The surface fields carry a definite real power out of the box;
+        the far-field pattern must radiate the same power when the
+        exterior is lossless.  A ratio below about 0.97 means the box
+        samples the radiator's near zone too closely for the transform
+        (measured 0.93 for a microstrip patch with the box top 0.3 λ
+        above it, 1.00 at 0.7 λ); the pattern amplitude, and with it
+        the realized gain, is then low by that factor while the
+        self-normalised directivity is unaffected.
+        """
+        if self.surface_power is None:
+            raise ValueError(
+                "power_balance needs the surface power of the recording "
+                "box, which only a far-field monitor provides; set "
+                "surface_power on the result to evaluate it."
+            )
+        return self.P_rad / self.surface_power
 
     def _quantity(self, quantity: str) -> np.ndarray:
         table = {
