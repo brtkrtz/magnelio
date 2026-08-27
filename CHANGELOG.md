@@ -17,9 +17,14 @@ major version is 0, minor releases may change the public API.
   requested planes that were dropped or absorbed; `print(mesh.planes)`
   prints the report.  Meshes in a project store carry it.
 - `plots.plot_mesh_section` / `mesh.plot_section`: a section of the mesh
-  itself — cells coloured by material on their real size, grid lines
-  styled by origin, absorber cells hatched, the model's exact outline on
-  top.  `plot_cross_section(fill=False)` draws outlines only.
+  itself — grid lines styled by origin, absorber cells hatched, the
+  model's exact outline on top, and the cells shaded by the exact
+  conductor area share the sub-cell classifier measured
+  (`fill="coverage"`, default), by the classified material
+  (`fill="material"`) or by the permittivity the normal field component
+  sees (`fill="conformal"`); `edges=True` adds the PEC-masked, partly
+  free and borrowed edges.  `plot_cross_section(fill=False)` draws
+  outlines only.
 - The unit suite pins the grid planes of every example model
   (`tests/unit/data/gallery_planes/`), so a change of the meshing rules
   fails with a per-axis diff instead of a physics test downstream.
