@@ -16,27 +16,31 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Four entries are open as of 2026-08-27: KB-022, KB-023, KB-027 and
-KB-035.**  Everything else is struck through and resolved.
+**Three entries are open as of 2026-08-27: KB-022, KB-023 and
+KB-027.**  Everything else is struck through and resolved.
 
-## KB-035: Far-field power deficit of about a tenth with a window port in an absorbing face — Open
+## KB-035: ~~Far-field power deficit of about a tenth with a window port in an absorbing face~~ — Resolved (DD-204, 2026-08-27)
 
-With the feed entering through a window port on a CPML face (DD-198),
-`MonitorFarField` leaves the guide interior out of its Huygens surface
-and samples that face at the absorber interface; the currents on the
-guide's outer wall beyond the surface are the documented
-approximation.  On the patch-array how-to (2026-08-27, shielded
-microstrip launch, |S11|² ≈ 0.005) the integrated `P_rad` is 0.84–0.89
-of the incident power for both the single element and the 2 × 2
-array, against 0.91–0.92 for the same element on a lumped port —
-about a tenth of the accepted power is not collected, and the
-directivity (normalised to `P_rad`) reads 0.5–0.7 dB high while the
-realized gain (normalised to the incident power) is unaffected.
-Measured in `investigations/patch-array/MEASUREMENTS.md` (M16, internal
-record).  Not yet localised: candidates are the launch's outer walls
-inside the absorber and the window's node-inclusive footprint on the
-sampled face.  Until then, read realized gain from such models, or
-quote directivity from a lumped-port feed.
+Misattributed when opened.  The deficit was not the window port's:
+the same lossless patch element on a lumped port radiated 0.91 of its
+accepted power too, and the Poynting flux through the Huygens box
+reproduced the accepted power to a percent in every configuration —
+the transform of those surface fields fell short, by 7 % with the
+domain top 0.3 λ above the copper (the how-to's `h_box` of 12 mm) and
+by nothing from 0.7 λ upward, independent of lateral clearance,
+substrate extent, grid grading and angular resolution; halving the
+cells took the shortfall to 3 %.  The box sits at the absorbing
+faces, and 0.3 λ above a printed resonator its discrete near field is
+not the outgoing free-space field the transform assumes.  The reading
+in the original entry was also inverted: the pattern amplitude, hence
+the realized gain, was 0.3–0.4 dB low, while directivity, normalised
+to `P_rad` itself, was right.  The window port adds only the
+documented few percent of outer-wall current beyond the box
+(`P_surf/P_acc` 0.965 on the launch), which the balance does not see.
+Fix: `FarFieldResult.surface_power`/`power_balance` and a warning
+from `MonitorFarField.result` beyond 5 % imbalance; the how-to's
+`h_box` is 0.7 λ.  Measured in `investigations/patch-array/MEASUREMENTS.md`
+(M18, internal record); `tests/unit/test_far_field_closure.py`.
 
 ## KB-034: ~~Thin sheets and wires touching an absorbing face had no mask in the PML~~ — Resolved (DD-198 amendment, 2026-08-27)
 
