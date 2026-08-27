@@ -401,6 +401,7 @@ fig, ax = pattern.plot_3d(title="Cassegrain radiation surface")
 # beam direction, measured vs designed      2° apart
 # |S11| over 8.5–11.5 GHz                   −12 … −19 dB
 # radiated / accepted power                 0.93
+# power balance of the far-field box        1.005
 # ========================================  ==========
 #
 # Eight decibels below the aperture bound is what an 8 λ dish with a
@@ -411,7 +412,12 @@ fig, ax = pattern.plot_3d(title="Cassegrain radiation surface")
 # far-field transform agree.  The 7 % of accepted power the far field
 # does not account for is the feed-guide approximation of the
 # far-field chapter — the currents on the neck's outer wall inside the
-# absorber.
+# absorber.  The monitor's own check confirms that reading: the flux
+# through the recording box (``pattern.surface_power``) is short of
+# the accepted power by the same 7 %, and the pattern radiates that
+# flux to 0.5 % (``pattern.power_balance``) — the box's half-wavelength
+# clearance is enough for this radiator; the missing power never
+# crosses it.
 
 # %%
 # What to take away

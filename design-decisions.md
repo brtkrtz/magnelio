@@ -14547,12 +14547,20 @@ the certificate's 2-cell margin, 0.991–1.007 at 12 and 24 cells,
 (analytic dipole box balances to 1 %; a 60° E/H rotation breaks it;
 the monitor carries `surface_power` and warns; an empty box does not),
 the DD-173 certificate unchanged (2.2 % at its close box).
+Tutorial 19 (Cassegrain, horn neck through a window port, λ/2
+clearance, 2026-08-27 rerun): `P_acc` 0.938, `P_surf` 0.872,
+`P_rad` 0.877 → balance 1.005, no warning; its quoted 0.93 is
+entirely `P_surf/P_acc` — the outer-wall current of the neck in the
+absorber, as the page says — so the feed-guide share is 3.5 % for a
+shielded microstrip launch and 7 % for a bare horn neck; the
+tutorial's table now carries the balance line.
 
 **Files:** `src/magnelio/post/far_field.py` (`surface_power`,
 `FarFieldResult.surface_power`, `power_balance`),
 `src/magnelio/monitors/far_field.py` (`result` closure warning),
 `tests/unit/test_far_field_closure.py` (new),
 `examples/howto/plot_patch_array.py` (`h_box`, balance paragraph),
+`examples/tutorials/19_cassegrain_reflector.py` (balance line and reading),
 `docs/methods/far-field.md` (*Power balance* section),
 `known-bugs.md` KB-035 (resolved), `CHANGELOG.md`, `STATUS.md`;
 probes `investigations/patch-array/probe_kb035*.py`, `kb035_*.py`

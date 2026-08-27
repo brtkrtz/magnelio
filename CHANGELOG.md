@@ -32,7 +32,10 @@ major version is 0, minor releases may change the public API.
   too close to the radiator (the box lies at the absorbing faces, so
   the cure is clearance; half a wavelength in the direction of the
   main beam is enough for a patch).  Realized gain and gain are low by
-  that factor when it fires; directivity is not affected.
+  that factor when it fires; directivity is not affected.  Tutorial 19
+  (Cassegrain) quotes its balance next to the radiated-over-accepted
+  power, to show how the two numbers separate a close box from a
+  feed guide's wall current.
 - How-to *Patch array*: a 2 × 2 corporate-fed microstrip patch array
   designed from the element up — inset sweep and length trim of the
   patch, a feed network on the port solver's line impedances, in-phase
