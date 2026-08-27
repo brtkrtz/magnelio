@@ -13184,24 +13184,38 @@ class with a reported floor.
 
 **Measured** (`validation/edge_plane_chamfer_certificate.py`, the
 worksheet's coarse grid, mnpw 12 at 3.5 GHz, h_max 1.064 mm, lowest
-mode; 2026-08-25):
+mode; 2026-08-25, re-based 2026-08-27 after DD-199's contour winding
+gave the ring its air bore — the 2026-08-25 column values, 2.32784 GHz
+plain and 2.70978 / 2.74736 GHz at 0.8 mm, were measured with the bore
+booked as ceramic, KB-031):
 
 | chamfer | ratio 0 (0.4.4) | ratio 4 (default) | ratio 8 |
 |---|---|---|---|
-| 0.0 mm | 2.32784 GHz, 4704 cells | same | same |
-| 0.1 mm | 2.32784 (invisible) | 2.32784, **warned** | 2.32784, warned |
-| 0.2 mm | 2.32784 (invisible) | 2.32784, **warned** | 2.47076, 11760 cells |
-| 0.3 mm | 2.32784 (invisible) | 2.50288, 9408 | 2.50288 |
-| 0.5 mm | 2.32784 (invisible) | 2.57799, 7056 | 2.57799 |
-| 0.8 mm | 2.70978 (jump) | 2.74736, 5488 | 2.74736 |
+| 0.0 mm | 2.65658 GHz, 4704 cells | same | same |
+| 0.1 mm | 2.65658 (invisible) | 2.65658, **warned** | 2.65658, warned |
+| 0.2 mm | 2.65658 (invisible) | 2.65658, **warned** | 2.66561, 11760 cells |
+| 0.3 mm | 2.65658 (invisible) | 2.67973, 9408 | 2.67973 |
+| 0.5 mm | 2.65658 (invisible) | 2.72840, 7056 | 2.72840 |
+| 0.8 mm | 2.82089 (jump) | 2.86641, 5488 | 2.86641 |
 
-The legacy column reproduces M4 to the digit.  Resolved chamfers move
-f0 monotonically; the steps are uneven (the first tenths of a
-millimetre matter most — M4a saw the same on its fine grid), so the
-certificate checks monotonicity and that no single step carries the
-legacy jump, not evenness.  Dropped chamfers give the plain-puck grid
-bit-for-bit (unit test) and the plain-puck f0 to solver noise.
-DD-062 sentinel 30/30, unit suite green.
+The legacy column reproduces M4's plateau-and-jump pattern (M4's own
+digits carry the KB-031 bore).  Resolved chamfers move f0
+monotonically, and the steps follow the geometry: the ceramic a
+chamfer removes grows with c², and Δf0 / Δ(c²) is 0.26 → 0.30 → 0.35
+GHz/mm² along the default chain and 0.23 → 0.28 → 0.30 → 0.35 along
+the ratio-8 chain (spread 1.38× and 1.57×), so the certificate checks
+monotonicity and that spread (limit 3×; a chamfer switching on at the
+cell midplane gives one near-zero step and one large one).  The first
+measurement had read the chain as uneven — "the first tenths of a
+millimetre matter most", the 0 → 0.2 mm step at ratio 8 was 0.143 GHz
+against 0.009 GHz now — and pinned "no single step above half the
+legacy jump"; that unevenness was the filled bore (the chamfer at the
+bore edge cut into ceramic that should have been air), not physics,
+and the old criterion would reject the corrected chain (the 0.5 →
+0.8 mm step legitimately carries 84 % of the legacy jump).  Dropped
+chamfers give the plain-puck grid bit-for-bit (unit test) and the
+plain-puck f0 to solver noise.  DD-062 sentinel 30/30, unit suite
+green.
 
 **Side finding — tutorial 13's "9.9 % drift" was mostly this
 artefact.**  The filter capstone compared its single resonator on two
@@ -13212,7 +13226,7 @@ non-convergence of a high-permittivity puck.  On the coarse grid
 drift was the chamfer appearing, not the resolution.  With the edge
 pass both grids resolve the chamfer and — since the 0.5 mm feature
 layer now sets `h_fine` on both — come out nearly identical (drift
-−0.0 %).  The tutorial is re-based on a grid pair that scales both
+−0.0 %; −0.1 % on the corrected annulus, 2026-08-27).  The tutorial is re-based on a grid pair that scales both
 mesh knobs (see the how-to *Mesh convergence*), and its text no longer
 quotes the ten percent.  Cost of the pass on the tutorials: 13
 +50–80 % cells (dz 1.0 → 0.49 mm), 18 +10 % (iris/equator circles),
@@ -13972,6 +13986,26 @@ would be the DD-102 follow-up); `compute_edge_pec_fractions` on
 B-spline faces (`IntCurvesFace`, second-order cost); the pool
 admission for few-face free-form shapes (moot now that they never
 delegate).
+
+**Amendment 2026-08-27 (KB-031 fallout on dielectric rings).**  The
+winding fix also corrects dielectric bodies with an *air* hole — the
+priority rule had shielded only conductor-filled holes, so a ceramic
+ring's bore had been booked as ceramic.  The KB-011 fixture
+(`tests/integration/test_analysis_eigenmode.py::
+TestSparseHighContrastCavity`, ε_r = 45 ring 4/2 mm, 28×28×4) moved
+2.3279 → 2.6566 GHz on an unchanged grid (solid puck 2.2302 GHz: the
+old value was a nearly filled bore), and the under-delivery test no
+longer starved at its 100 MHz shift — the third DD-195 grow (k = 46)
+happens to deliver all six modes there; from 50 MHz down every grow
+returns artefacts only, so the test now pins 30 MHz.  The DD-191
+chamfer certificate (same annulus) was re-based and its jump criterion
+replaced by a c²-smoothness check (see the DD-191 table); tutorial 13
+re-run — its passband moved 2.90 → 3.02 GHz with the loaded
+resonator, so the monitor band is now derived (`F0_LOADED`, half
+the design bandwidth either side; centre confirmed to 0.04 %)
+instead of quoted, the phase drift across the band reads 62 / 97 /
+129°.  Recorded in `known-bugs.md` (KB-031) and `CHANGELOG.md`
+(0.4.7 entry, since the change shipped there).
 
 **Files:** `src/magnelio/geo/_occ_backend.py` (`_PlanarSectionEngine`
 facet path: `_build_facets`, `_section_facets`, `_lift_to_surfaces`,

@@ -34,7 +34,13 @@ judged it harmless.  DD-199 winds every contour by nesting parity
 before the kernels see it (`orient_nested_contours`); the tube is at
 4e-3 afterwards.  Dielectric bodies with a conductor in their hole
 were shielded by the priority rule (the conductor claims its area
-first), which is why coax-class models did not show it.
+first), which is why coax-class models did not show it.  Dielectric
+bodies with an *air* hole were not shielded: a ceramic ring's bore was
+booked as ceramic, so the KB-011 fixture (ε_r = 45 ring, 4/2 mm,
+resonating at 2.3279 GHz) moved to 2.6566 GHz on an unchanged grid
+when the winding was fixed (solid puck 2.2302 GHz — the old value was
+a nearly filled bore).  The fixture, the DD-191 chamfer certificate
+and tutorial 13 were re-based on 2026-08-27.
 
 ## KB-030: ~~Monitors fed by a TE/TM port were normalised to the waveform, not to the incident power~~ — Resolved (DD-198, 2026-08-26)
 

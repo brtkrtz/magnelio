@@ -31,6 +31,13 @@ major version is 0, minor releases may change the public API.
 - Methods chapter *Mesh generation*: section *Inspecting the grid*;
   tutorial 02 prints the record and shows the mesh section.
 
+### Changed
+
+- Tutorial 13 (dielectric filter) predicts the band its volume monitor
+  records from the loaded resonator frequency and the design
+  bandwidth instead of quoting fixed numbers; the corrected air bore
+  of the ceramic ring (0.4.7) moves its passband to 3.02 GHz.
+
 ### Fixed
 
 - A curved body touching a flat face — a cylinder inscribed in a box,
@@ -87,6 +94,10 @@ major version is 0, minor releases may change the public API.
   bore came back with the same winding as the outer boundary and the
   dual faces at the bore wall were booked fully metallic.  Contours
   are now wound by nesting parity before the area kernels see them.
+  The same defect filled the *air* bore of dielectric rings with their
+  own material, so resonators with a hole change too — a ceramic ring
+  (ε_r = 45, 4 mm / 2 mm bore) in a coarse test cavity moves from 2.33
+  to 2.66 GHz; the solid puck sits at 2.23 GHz.
 - A conductor touching an absorbing (CPML) face lost its PEC surface
   mask inside the absorber layer on conformal meshes (the classifier
   saw the solids end at the bounding box); the layer now carries the

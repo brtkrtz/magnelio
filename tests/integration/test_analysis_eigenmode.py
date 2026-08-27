@@ -154,16 +154,21 @@ class TestSparseHighContrastCavity:
         freqs = np.asarray(result.frequencies)
         assert freqs.size == 6
         assert np.all(np.diff(freqs) >= 0)
-        # The ring-loaded fundamental on this grid, and its degenerate
-        # first pair (equal to solver tolerance, not just to the mesh).
-        assert freqs[0] == pytest.approx(2.3279e9, rel=2e-3)
+        # The ring-loaded fundamental on this grid (air bore since the
+        # nested-contour winding of the section engine; the solid puck
+        # sits at 2.23 GHz), and its degenerate first pair (equal to
+        # solver tolerance, not just to the mesh).
+        assert freqs[0] == pytest.approx(2.6566e9, rel=2e-3)
         assert freqs[1] == pytest.approx(freqs[2], rel=1e-6)
 
     def test_under_delivery_warns(self, puck_mesh):
         # An explicit shift pinned far below the fundamental starves
         # ARPACK on null-space vectors; that must be loud, and an
-        # explicit sigma must stay a single attempt (no escalation).
-        sigma_bad = (2.0 * math.pi * 1.0e8) ** 2
+        # explicit sigma must stay a single attempt (no escalation —
+        # the request may still grow at the same shift).  At 100 MHz
+        # the third grow (k = 46) happens to deliver on this grid;
+        # from 50 MHz down every grow returns artefacts only.
+        sigma_bad = (2.0 * math.pi * 3.0e7) ** 2
         with pytest.warns(RuntimeWarning, match="of 6 requested"):
             result = AnalysisEigenmode(
                 mesh=puck_mesh, n_modes=6, sigma=sigma_bad, verbose=False

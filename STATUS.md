@@ -14,10 +14,10 @@ inner walls (KB-031); how-to *coupled-line coupler* and tutorial 19
 *offset Cassegrain* (rendered, not executed; figures of a measured run
 embedded), every gallery 3D view carries an "Interactive Scene" tab,
 GitHub Discussions is the feedback channel.  Unit suite 2425 passed /
-4 skipped; integration suite 397 passed after KB-028 (edge-pass
-tangency rule, coax re-pin; unreleased on `main`) — two eigenmode
-tests red as DD-199 fallout (see construction sites).  Previous
-release v0.4.6
+4 skipped; integration suite 402 passed / 5 skipped after KB-028
+(edge-pass tangency rule, coax re-pin) and the KB-011 fixture re-pin
+(DD-199 fallout closed 2026-08-27; both unreleased on `main`).
+Previous release v0.4.6
 (2026-08-26): slab wavelength rule (DD-192), short-interval fit
 (DD-193), opt-in singularity refinement (DD-194), ARPACK request growth
 (DD-195).  Channels: GitHub, PyPI, conda-forge, docs (`/stable/` =
@@ -364,16 +364,6 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   (DD-199, facet path; the analytic quadrics could still get an exact
   plane × quadric section); (3) a bin/BVH over face boxes if
   geometries grow another order of magnitude.
-* **DD-199 fallout on hollow dielectric bodies (found 2026-08-26,
-  open).**  The KB-031 winding also corrects dielectric rings with an
-  *air* bore (the priority rule shielded only conductor-filled holes):
-  the KB-011 fixture `test_analysis_eigenmode.py::
-  TestSparseHighContrastCavity` (ε_r = 45 ring, 4/2 mm) moves 2.3279
-  → 2.6566 GHz on an unchanged grid (solid puck 2.23 GHz: the old
-  value was a nearly filled bore) and `test_under_delivery_warns` no
-  longer starves ARPACK at 100 MHz; both pass at `acd8417^`.  To do:
-  re-pin, pick a shift that still exercises the KB-011 path, re-run
-  the DD-191 chamfer certificate (same annulus) and tutorial 13.
 
 Closed construction sites are tombstoned where they were decided (the
 DD entry and `known-bugs.md`) and are not repeated here.

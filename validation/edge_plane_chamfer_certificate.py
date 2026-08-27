@@ -35,9 +35,15 @@ Checks:
    nodes at z = c and H - c and move f0 monotonically.
 3. Ratio 8: 0.2 mm joins the resolved chain; the whole chain
    0 < 0.2 < 0.3 < 0.5 < 0.8 mm is strictly monotone in f0, with no
-   plateau and no jump.
+   plateau and no jump.  "No jump" is checked against the geometry:
+   the ceramic a chamfer removes grows with ``c**2``, so the step in
+   f0 per unit ``c**2`` must stay within a factor ``SMOOTH_RATIO`` over
+   the chain (a chamfer switching on at the cell midplane gives one
+   near-zero step and one large one, a ratio far beyond it).
 
-Measured (2026-08-25): see the table the script prints.
+Measured (2026-08-25, re-based 2026-08-27 on the corrected annulus —
+the section winding fix filled the bore with air, DD-199): see the
+table the script prints.
 """
 
 import warnings
@@ -51,6 +57,7 @@ R_OUT, R_BORE, H, W = 4e-3, 2e-3, 6e-3, 20e-3
 EPS_R = 45.0
 F_MAX, MNPW, F_SHIFT = 3.5e9, 12, 2.6e9
 CHAMFERS = (0.0, 0.1e-3, 0.2e-3, 0.3e-3, 0.5e-3, 0.8e-3)
+SMOOTH_RATIO = 3.0  # max/min of df0 / d(c**2) over a resolved chain
 
 
 def resonator(chamfer: float):
@@ -120,26 +127,35 @@ def main() -> int:
             failures.append(
                 f"default: dropped {c * 1e3} mm chamfer changed f0 ({f} vs {f_of(4.0, 0.0)})"
             )
-    chain = [f_of(4.0, c) for c in (0.0, 0.3e-3, 0.5e-3, 0.8e-3)]
-    for c in (0.3e-3, 0.5e-3, 0.8e-3):
+
+    def smoothness(ratio, chamfers):
+        # f0 step per unit of removed ceramic (~ c**2): a resolved chain
+        # is smooth in this measure, a chamfer switching on at the cell
+        # midplane is not (one near-zero step, one large one).
+        f = np.array([f_of(ratio, c) for c in chamfers])
+        c2 = np.array(chamfers) ** 2
+        slope = np.diff(f) / np.diff(c2)
+        return f, slope.max() / slope.min() if slope.min() > 0 else np.inf
+
+    chamfers4 = (0.0, 0.3e-3, 0.5e-3, 0.8e-3)
+    for c in chamfers4[1:]:
         if not table[4.0][c][2] or table[4.0][c][3]:
             failures.append(
                 f"default: {c * 1e3} mm chamfer should be on the grid without a warning"
             )
-    if not all(a < b for a, b in zip(chain, chain[1:])):
+    chain, ratio4 = smoothness(4.0, chamfers4)
+    if not np.all(np.diff(chain) > 0):
         failures.append(f"default: resolved chain is not strictly monotone: {chain}")
+    if ratio4 > SMOOTH_RATIO:
+        failures.append(f"default: chain is not smooth in c**2 (ratio {ratio4:.2f}): {chain}")
 
     # 3. ratio 8: the full chain from 0.2 mm on
-    chain8 = [f_of(8.0, c) for c in (0.0, 0.2e-3, 0.3e-3, 0.5e-3, 0.8e-3)]
-    if not all(a < b for a, b in zip(chain8, chain8[1:])):
+    chain8, ratio8 = smoothness(8.0, (0.0, 0.2e-3, 0.3e-3, 0.5e-3, 0.8e-3))
+    if not np.all(np.diff(chain8) > 0):
         failures.append(f"ratio 8: chain is not strictly monotone: {chain8}")
-    # No single resolved step may carry what the legacy grid delivered as
-    # one 0 -> 0.8 mm jump; the steps themselves are uneven (the first
-    # tenths of a millimetre matter most — the worksheet's fine grid
-    # showed the same), so evenness is not a criterion.
-    legacy_jump = f_of(0.0, 0.8e-3) - f_of(0.0, 0.0)
-    if np.diff(chain8).max() > 0.5 * legacy_jump:
-        failures.append(f"ratio 8: a single step carries the legacy jump: {np.diff(chain8)}")
+    if ratio8 > SMOOTH_RATIO:
+        failures.append(f"ratio 8: chain is not smooth in c**2 (ratio {ratio8:.2f}): {chain8}")
+    print(f"df0/d(c**2) spread: ratio 4 {ratio4:.2f}, ratio 8 {ratio8:.2f} (limit {SMOOTH_RATIO})")
 
     print()
     if failures:
