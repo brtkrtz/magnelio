@@ -14565,3 +14565,134 @@ tutorial's table now carries the balance line.
 `known-bugs.md` KB-035 (resolved), `CHANGELOG.md`, `STATUS.md`;
 probes `investigations/patch-array/probe_kb035*.py`, `kb035_*.py`
 and M18 in `MEASUREMENTS.md` (internal record).
+
+## DD-205 — Unions of prisms are fused in their plane; the effective PEC solid is cut per shape, not accumulated
+
+**Status:** Decided and implemented 2026-08-28, branch `perf/planar-fuse`.
+DD-202's re-ranked item 1.
+
+**Problem.**  DD-202 measured the N-ary fuse of a planar copper network
+as superlinear one tier up: 107 strips 0.74 s, 443 strips 16.2 s.  The
+premise "superlinear in N" was wrong in an instructive way: the same
+443 strips moved apart so that none touch fuse in 0.45 s.  The general
+fuser's cost grows with the *interference* between operands, and
+coplanar overlap is its worst case — every split of a cap face is
+matched against every other cap piece in the plane.  The measured
+alternatives: a 4 × 4 tiling of the strips 3.6 s (hierarchy helps,
+does not cure); `BOPAlgo_GlueShift` 3.6 s and **wrong** (volume a
+tenth — refuted, the glue modes assume no real intersections);
+fusing the bottom caps in the plane and raising the result once,
+0.74 s at the same volume to nine digits and 6 924 → 640 faces.  That
+is what the board importer has done since DD-179 ("no Boolean is
+3-D"); every other union in the library still went to the general
+fuser.
+
+A second finding on the way: the benchmark's `fuse` column on the Lange
+ladder (23 s of 136 s at 16 couplers) was not the `Difference` tool
+fuse (0.7 s) but `build_effective_pec_solid`, which subtracted the
+*accumulated* union of all higher-priority shapes from each PEC shape
+and grew that union pairwise on a growing compound — the O(N²) pattern
+`boolean_union`'s own docstring records as 28 s vs 0.1 s, surviving in
+the neighbouring function.  320 metal pieces: 35.9 s.
+
+**Decision.**  `boolean_union` (`src/magnelio/geo/_prism_fuse.py`)
+classifies each operand from its B-Rep as a prism along an axis when
+its planar faces normal to that axis lie on exactly two levels and
+every other face is ruled along it (planes containing the axis,
+cylinders about it — bricks, cylinders, extruded profiles and imported
+plates alike; spheres, cones, chamfers and steps are not).  It picks
+the axis on which the most operands share an interval, fuses each
+(axis, interval) group through its bottom caps — bounding-box clusters
+in the plane, one planar fuse per cluster, `UnifySameDomain` for the
+seams, one prism per fused face; operands whose caps touch no other
+are kept untouched — and fuses what is left in space only inside
+clusters of interfering 3-D bounding boxes.  An operand of a compound
+that meets another through one of its solids has all of its caps
+re-raised, so nothing of it is lost.  Empty operands (a Boolean that
+removed everything) are dropped before clustering.  The result is the
+general fuser's point set with fewer faces.  `Difference` tool fuses,
+the mesher's PEC and edge-pass fuses and the importer's layer merge all
+go through it; the importer's bounding-box sweep became the shared
+`cluster_boxes`.
+
+`build_effective_pec_solid` cuts each PEC shape once, N-ary, against
+the higher-priority shapes whose bounding boxes reach it, and fuses the
+contributions in one pass — same last-wins semantics, same volume and
+face count as the pairwise loop on the Lange row.
+
+**The edge pass had been living off the seams.**  The first ladder
+rerun kept the 8 × 8 array at 59.6 s: fuse 17.7 → 0.8 s and the
+residual 18.8 → 1.1 s were won, but the edge pass rose 22.1 → 49.2 s
+with the face count 10 799 → 1 326.  Per-face profiling
+(`probe_edge_pass_faces.py`): the two unified caps took 4.9 of 5.1 s of
+intersector time on the 4 × 4 at the *same* number of calls as the
+seamed pieces (132 k vs 142 k) — `IntCurvesFace_Intersector.Perform`
+classifies the hit point at O(edges of the face), 16 µs on a 640-edge
+cap against 3 µs on a 20-edge piece.  Two refuted fixes: tiling the
+cap's bounding box into occupied sub-boxes (selectivity was never the
+problem: 93 k → 83 k calls), and skipping planar faces for lines
+parallel to them (the kernel returns no point for those anyway, but
+they were few: 132 k → 125 k, and the NumPy test cost more per call
+than it saved on the small arrays).  The fix that held:
+`_PrefilteredLineSolid` cuts a large axis-aligned planar face
+(≥ 24 edges) into *classification pieces* — a coplanar `Common` per
+tile of a grid sized for about 12 edges per piece — and each piece is
+a candidate row with its own box and intersector, oriented to the
+face's effective normal; the solid itself is untouched.  A hit inside
+a piece is the face's hit; a hit within tolerance of a tile border
+reads `ON` and goes to the exact point classifier.
+`tests/unit/test_line_solid_pieces.py` pins the edge fractions
+bit-identical with and without pieces on a comb whose edges lie on
+grid lines (grazing and clean crossings alike).  Piece targets of 6
+and 24 edges were no better on the 8 × 8 (rows cost calls, edges cost
+per call); 48 made the 4 × 4 slower.  This is the same weakness a
+board layer or a ground plane pierced by vias has always paid — one
+face spanning the model — and it is fixed for them too.
+
+**Consequences.**  Bit-identity of the fused topology is given up
+where operands are coplanar prisms: their seams are gone, so section
+polygons have fewer collinear vertices.  The gallery-plane pins
+(28 scripts) and the unit suite are unchanged; the how-to scoreboards
+are re-measured below.  `tests/unit/test_import_cad.py` built its
+seamed fixture with `boolean_union` and now uses the plain fuser.
+
+**Measured** (`investigations/mesh-build-bench/probe_fuse_scaling.py`,
+`probe_fuse_routes.py` — internal record; CPU, 16 cores):
+
+| case | before | after | faces |
+|---|---|---|---|
+| Union, 4 × 4 array (107 strips) | 0.64 s | 0.10 s | 1 336 → 196 |
+| Union, 8 × 8 array (443 strips) | 16.1 s | 0.79 s | 6 924 → 640 |
+| `build_effective_pec_solid`, Lange 4 (80 PEC) | 2.9 s | 0.44 s | 448 → 424 |
+| `build_effective_pec_solid`, Lange 16 (320 PEC) | 35.9 s | 1.9 s | 1 792 → 1 696 |
+| same, with a background-PEC brick | 35.7 s | 4.7 s | — |
+
+Full ladder after both changes (`benchmarks/bench_mesh_build.py
+--family all --pool off auto forced --json`, CPU idle, `auto` arm;
+before = DD-202's ladder):
+
+| family, n | cells | faces before → after | total before → after | edge pass | fuse | other |
+|---|---|---|---|---|---|---|
+| Lange 16 | 3.69 M | 4 204 → 4 044 | 136.3 → **105.7 s** | 15.9 → 16.9 | 23.0 → 0.8 | 34.1 → 32.4 |
+| Lange 8 | 1.84 M | 2 108 → 2 028 | 52.6 → 44.7 | 7.3 → 7.9 | 6.3 → 0.4 | 8.9 → 8.7 |
+| array 8 × 8 | 664 k | 10 799 → 1 326 | 60.5 → **33.2 s** | 22.1 → 22.8 | 17.6 → 0.8 | 18.7 → 1.1 |
+| array 4 × 4 | 222 k | 2 147 → 415 | 10.0 → 8.8 | 4.3 → 6.0 | 0.9 → 0.1 | 0.9 → 0.2 |
+| array 2 × 2 | 84 k | 383 → 162 | 2.4 → 2.8 | 1.1 → 1.8 | 0.1 → 0.0 | 0.1 → 0.1 |
+| posts 240 | 385 k | 1 206 | 44.9 → 45.1 | 4.3 → 4.4 | 0.5 → 0.0 | 0.6 → 0.6 |
+
+The Lange residual (`other` 32 s) is what remains of the PEC solid and
+the section passes; DD-201's pool verdicts stand.  The small arrays'
+edge pass is slower by the looser boxes of irregular classification
+pieces against the old rectangular strip pieces — within a second.
+The how-to scoreboards (Lange coupler, patch array) reproduce to the
+printed digit on the GPU; the unit suite (2 504) and the integration
+subset (import pipeline, window ports, conformal convergence) are
+green.
+
+**Files:** `src/magnelio/geo/_prism_fuse.py` (new), `src/magnelio/geo/_occ_backend.py`
+(`boolean_union`, `build_effective_pec_solid`), `src/magnelio/io/_pcb_geom.py`
+(`_clusters` → `cluster_boxes`), `tests/unit/test_prism_fuse.py` (new),
+`tests/unit/test_import_cad.py`, `src/magnelio/geo/_occ_backend.py`
+(`_classification_pieces`, `_PrefilteredLineSolid` rows),
+`tests/unit/test_line_solid_pieces.py` (new), `benchmarks/bench_mesh_build.py`
+(results re-run), `docs/methods/geometry.md`.

@@ -11,6 +11,20 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Unions of many coplanar bodies — the strips of a feed network, the
+  pads of a layer, a row of posts — are fused in their common plane and
+  raised once instead of going to the kernel's general fuser, which
+  spends its time on exactly that overlap (an 8 × 8 patch array with
+  its corporate feed: 16 s → 0.8 s for the union, and the fused copper
+  carries 640 faces instead of 6 924 because the seams between the
+  strips are gone).  The mesher's priority-resolved conductor solid is
+  cut per body instead of against an accumulated union (a row of 16
+  Lange couplers: 36 s → 2 s).  The fused point sets are unchanged.
+- The conformal edge pass no longer slows down on a large planar face
+  with a complex outline — the copper of a fused network, an imported
+  board layer, a ground plane full of vias: such faces are classified
+  through pieces of a few edges each, with bit-identical edge
+  fractions (8 × 8 patch array with feed: 61 s → 34 s to mesh).
 - Mesh build of a large planar copper network — a patch array with its
   feed, an imported board layer, any union of many traces — no longer
   spends minutes painting the thin-sheet footprint: the outline comes

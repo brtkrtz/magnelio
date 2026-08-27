@@ -311,11 +311,14 @@ class TestHealing:
         from OCC.Core.TopAbs import TopAbs_FACE
         from OCC.Core.TopExp import TopExp_Explorer
 
-        # Two boxes fused across a shared plane: the seam splits what is
-        # geometrically one face into several.
-        from magnelio.geo._occ_backend import boolean_union
+        # Two boxes fused across a shared plane by the kernel's plain
+        # fuser: the seam splits what is geometrically one face into
+        # several (the library's own union removes such seams itself).
+        from magnelio.geo._occ_backend import _require_occ, _run_bop
 
-        fused = boolean_union([_box(2.0, 2.0, 2.0), _box(2.0, 2.0, 2.0, at=(2.0, 0.0, 0.0))])
+        fused = _run_bop(
+            _require_occ()["Fuse"], [_box(2.0, 2.0, 2.0)], [_box(2.0, 2.0, 2.0, at=(2.0, 0.0, 0.0))]
+        )
         path = tmp_path / "fused.brep"
         from OCC.Core.BRepTools import breptools
 

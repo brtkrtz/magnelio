@@ -23,6 +23,8 @@ from __future__ import annotations
 
 import math
 
+import numpy as np
+
 from magnelio.geo._occ_backend import (
     boolean_difference_many,
     boolean_intersection,
@@ -31,6 +33,7 @@ from magnelio.geo._occ_backend import (
     make_face_with_holes,
     unify_same_domain,
 )
+from magnelio.geo._prism_fuse import cluster_boxes
 from magnelio.io._gerber import (
     ArcSegment,
     ArcStroke,
@@ -646,35 +649,7 @@ def _clusters(shapes, tolerance: float) -> list[list[int]]:
     that could possibly meet are merged, and the sweep is what finds
     them without testing every pair.
     """
-    boxes = [_bbox(shape) for shape in shapes]
-    parent = list(range(len(shapes)))
-
-    def root(index: int) -> int:
-        while parent[index] != index:
-            parent[index] = parent[parent[index]]
-            index = parent[index]
-        return index
-
-    def join(a: int, b: int) -> None:
-        left, right = root(a), root(b)
-        if left != right:
-            parent[right] = left
-
-    order = sorted(range(len(shapes)), key=lambda index: boxes[index][0])
-    active: list[int] = []
-    for index in order:
-        x_min, y_min, x_max, y_max = boxes[index]
-        active = [other for other in active if boxes[other][2] >= x_min - tolerance]
-        for other in active:
-            _, other_y_min, _, other_y_max = boxes[other]
-            if other_y_max >= y_min - tolerance and other_y_min <= y_max + tolerance:
-                join(index, other)
-        active.append(index)
-
-    groups: dict[int, list[int]] = {}
-    for index in range(len(shapes)):
-        groups.setdefault(root(index), []).append(index)
-    return list(groups.values())
+    return cluster_boxes(np.array([_bbox(shape) for shape in shapes], dtype=float), tolerance)
 
 
 def merge_faces(shapes: list, tolerance: float):
