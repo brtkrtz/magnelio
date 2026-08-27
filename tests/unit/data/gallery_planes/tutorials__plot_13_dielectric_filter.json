@@ -1,0 +1,260 @@
+{
+ "axes": {
+  "x": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.007138,
+    0.001064,
+    0.001064,
+    0.001064,
+    0.007138
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.0005,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.01,
+     "singular": false,
+     "sources": [
+      "edge #0 Difference(air)",
+      "extent #0 Difference(air)",
+      "face #0 Difference(air)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0005,
+     "moved_to": null,
+     "node": 7,
+     "position": -0.004,
+     "singular": false,
+     "sources": [
+      "extent #1 ChamferedShape(ceramic)",
+      "face #0 Difference(air)",
+      "face #1 ChamferedShape(ceramic)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0005,
+     "moved_to": null,
+     "node": 11,
+     "position": -0.002,
+     "singular": false,
+     "sources": [
+      "face #0 Difference(air)",
+      "face #1 ChamferedShape(ceramic)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0005,
+     "moved_to": null,
+     "node": 17,
+     "position": 0.002,
+     "singular": false,
+     "sources": [
+      "face #0 Difference(air)",
+      "face #1 ChamferedShape(ceramic)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0005,
+     "moved_to": null,
+     "node": 21,
+     "position": 0.004,
+     "singular": false,
+     "sources": [
+      "extent #1 ChamferedShape(ceramic)",
+      "face #0 Difference(air)",
+      "face #1 ChamferedShape(ceramic)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.0005,
+     "moved_to": null,
+     "node": 28,
+     "position": 0.01,
+     "singular": false,
+     "sources": [
+      "edge #0 Difference(air)",
+      "extent #0 Difference(air)",
+      "face #0 Difference(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "y": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.007138,
+    0.001064,
+    0.001064,
+    0.001064,
+    0.007138
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.0005,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.01,
+     "singular": false,
+     "sources": [
+      "edge #0 Difference(air)",
+      "extent #0 Difference(air)",
+      "face #0 Difference(air)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0005,
+     "moved_to": null,
+     "node": 7,
+     "position": -0.004,
+     "singular": false,
+     "sources": [
+      "extent #1 ChamferedShape(ceramic)",
+      "face #0 Difference(air)",
+      "face #1 ChamferedShape(ceramic)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0005,
+     "moved_to": null,
+     "node": 11,
+     "position": -0.002,
+     "singular": false,
+     "sources": [
+      "face #0 Difference(air)",
+      "face #1 ChamferedShape(ceramic)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0005,
+     "moved_to": null,
+     "node": 17,
+     "position": 0.002,
+     "singular": false,
+     "sources": [
+      "face #0 Difference(air)",
+      "face #1 ChamferedShape(ceramic)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0005,
+     "moved_to": null,
+     "node": 21,
+     "position": 0.004,
+     "singular": false,
+     "sources": [
+      "extent #1 ChamferedShape(ceramic)",
+      "face #0 Difference(air)",
+      "face #1 ChamferedShape(ceramic)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.0005,
+     "moved_to": null,
+     "node": 28,
+     "position": 0.01,
+     "singular": false,
+     "sources": [
+      "edge #0 Difference(air)",
+      "extent #0 Difference(air)",
+      "face #0 Difference(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "z": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.001064,
+    0.001064,
+    0.001064
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.0005,
+     "moved_to": null,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "edge #0 Difference(air)",
+      "edge #1 ChamferedShape(ceramic)",
+      "extent #0 Difference(air)",
+      "extent #1 ChamferedShape(ceramic)",
+      "face #0 Difference(air)",
+      "face #1 ChamferedShape(ceramic)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0005,
+     "moved_to": null,
+     "node": 1,
+     "position": 0.0005,
+     "singular": false,
+     "sources": [
+      "edge #0 Difference(air)",
+      "edge #1 ChamferedShape(ceramic)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0005,
+     "moved_to": null,
+     "node": 8,
+     "position": 0.0055,
+     "singular": false,
+     "sources": [
+      "edge #0 Difference(air)",
+      "edge #1 ChamferedShape(ceramic)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.0005,
+     "moved_to": null,
+     "node": 9,
+     "position": 0.006,
+     "singular": false,
+     "sources": [
+      "edge #0 Difference(air)",
+      "edge #1 ChamferedShape(ceramic)",
+      "extent #0 Difference(air)",
+      "extent #1 ChamferedShape(ceramic)",
+      "face #0 Difference(air)",
+      "face #1 ChamferedShape(ceramic)"
+     ]
+    }
+   ],
+   "unplaced": []
+  }
+ },
+ "feature_gap": 3.15595e-07,
+ "n_nodes": {
+  "x": 29,
+  "y": 29,
+  "z": 10
+ },
+ "pml_cells": {},
+ "schema": 1
+}

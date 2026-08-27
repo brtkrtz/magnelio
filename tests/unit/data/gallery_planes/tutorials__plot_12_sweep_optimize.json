@@ -1,0 +1,198 @@
+{
+ "axes": {
+  "x": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.001612,
+    0.001612,
+    0.001612,
+    0.001612,
+    0.001612
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.001587,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.04143,
+     "singular": false,
+     "sources": [
+      "edge #0 Union(air) 'tee'",
+      "extent #0 Union(air) 'tee'",
+      "face #0 Union(air) 'tee'"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.001587,
+     "moved_to": null,
+     "node": 19,
+     "position": -0.01143,
+     "singular": false,
+     "sources": [
+      "edge #0 Union(air) 'tee'",
+      "face #0 Union(air) 'tee'"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.001587,
+     "moved_to": null,
+     "node": 23,
+     "position": -0.00508,
+     "singular": false,
+     "sources": [
+      "edge #0 Union(air) 'tee'",
+      "face #0 Union(air) 'tee'"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.001587,
+     "moved_to": null,
+     "node": 30,
+     "position": 0.00508,
+     "singular": false,
+     "sources": [
+      "edge #0 Union(air) 'tee'",
+      "face #0 Union(air) 'tee'"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.001587,
+     "moved_to": null,
+     "node": 34,
+     "position": 0.01143,
+     "singular": false,
+     "sources": [
+      "edge #0 Union(air) 'tee'",
+      "face #0 Union(air) 'tee'"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.001587,
+     "moved_to": null,
+     "node": 53,
+     "position": 0.04143,
+     "singular": false,
+     "sources": [
+      "edge #0 Union(air) 'tee'",
+      "extent #0 Union(air) 'tee'",
+      "face #0 Union(air) 'tee'"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "y": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.001612,
+    0.001612
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.001612,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.01143,
+     "singular": false,
+     "sources": [
+      "edge #0 Union(air) 'tee'",
+      "extent #0 Union(air) 'tee'",
+      "face #0 Union(air) 'tee'"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.001612,
+     "moved_to": null,
+     "node": 15,
+     "position": 0.01143,
+     "singular": false,
+     "sources": [
+      "edge #0 Union(air) 'tee'",
+      "face #0 Union(air) 'tee'"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.001612,
+     "moved_to": null,
+     "node": 34,
+     "position": 0.04143,
+     "singular": false,
+     "sources": [
+      "edge #0 Union(air) 'tee'",
+      "extent #0 Union(air) 'tee'",
+      "face #0 Union(air) 'tee'"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "z": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.001612,
+    0.001612
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.001612,
+     "moved_to": null,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "edge #0 Union(air) 'tee'",
+      "extent #0 Union(air) 'tee'",
+      "face #0 Union(air) 'tee'"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.001612,
+     "moved_to": null,
+     "node": 7,
+     "position": 0.01016,
+     "singular": false,
+     "sources": [
+      "edge #0 Union(air) 'tee'",
+      "face #0 Union(air) 'tee'"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.001612,
+     "moved_to": null,
+     "node": 26,
+     "position": 0.04016,
+     "singular": false,
+     "sources": [
+      "edge #0 Union(air) 'tee'",
+      "extent #0 Union(air) 'tee'",
+      "face #0 Union(air) 'tee'"
+     ]
+    }
+   ],
+   "unplaced": []
+  }
+ },
+ "feature_gap": 1.06173e-06,
+ "n_nodes": {
+  "x": 54,
+  "y": 35,
+  "z": 27
+ },
+ "pml_cells": {},
+ "schema": 1
+}

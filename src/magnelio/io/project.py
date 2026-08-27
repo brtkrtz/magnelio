@@ -482,6 +482,17 @@ def _save_mesh(f, mesh) -> None:
     # closure and the ports.
     if getattr(mesh, "f_max", None) is not None:
         mg.attrs["f_max"] = float(mesh.f_max)
+    # Grid-plane provenance (DD-200).  A string *dataset*, not an attr:
+    # HDF5 attributes are capped at 64 KB and a CAD import with
+    # hundreds of shapes lists every one of them per plane.
+    if getattr(mesh, "planes", None) is not None:
+        import h5py  # noqa: PLC0415
+
+        mg.create_dataset(
+            "planes_json",
+            data=json.dumps(mesh.planes.as_dict(rounded=False)),
+            dtype=h5py.string_dtype(),
+        )
 
     if mesh.edge_material is not None:
         _save_dataclass_arrays(mg.create_group("edge_material"), mesh.edge_material)
@@ -498,6 +509,7 @@ def _load_mesh(f):
     )
     from magnelio.geo._subcell import EdgeMaterialData, FaceMaterialData  # noqa: PLC0415
     from magnelio.mesh._conformal import PECSurfaceData  # noqa: PLC0415
+    from magnelio.mesh._planes import GridPlanes  # noqa: PLC0415
     from magnelio.mesh.grid import GridLines  # noqa: PLC0415
     from magnelio.mesh.mesher import Mesh  # noqa: PLC0415
 
@@ -545,9 +557,16 @@ def _load_mesh(f):
         if elements_attr is not None
         else ()
     )
+    planes = None
+    if "planes_json" in mg:
+        raw = mg["planes_json"][()]
+        if isinstance(raw, bytes):
+            raw = raw.decode("utf-8")
+        planes = GridPlanes.from_dict(json.loads(raw))
     return Mesh(
         ports=ports,
         elements=elements,
+        planes=planes,
         grid=grid,
         material_id=mg["material_id"][()],
         material_library=library,

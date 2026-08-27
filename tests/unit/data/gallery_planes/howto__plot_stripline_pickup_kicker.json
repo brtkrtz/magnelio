@@ -1,0 +1,256 @@
+{
+ "axes": {
+  "x": {
+   "absorbed": [],
+   "dropped": [
+    {
+     "gap": 0.0005,
+     "position": 0.0125,
+     "sources": [
+      "edge #0 Intersection(air)",
+      "edge #1 Intersection(PEC)"
+     ]
+    },
+    {
+     "gap": 0.0003633,
+     "position": 0.019738851,
+     "sources": [
+      "edge #0 Intersection(air)"
+     ]
+    },
+    {
+     "gap": 0.0002506,
+     "position": 0.019851541,
+     "sources": [
+      "edge #0 Intersection(air)"
+     ]
+    }
+   ],
+   "h_bulk": [
+    0.007495,
+    0.007495,
+    0.007495,
+    0.007495
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.001224,
+     "moved_to": 0.000333333,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "symmetry xmin"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.001224,
+     "moved_to": null,
+     "node": 13,
+     "position": 0.013,
+     "singular": false,
+     "sources": [
+      "edge #0 Intersection(air)",
+      "edge #1 Intersection(PEC)",
+      "extent #1 Intersection(PEC)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.001224,
+     "moved_to": null,
+     "node": 17,
+     "position": 0.016552149,
+     "singular": false,
+     "sources": [
+      "edge #0 Intersection(air)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.001224,
+     "moved_to": null,
+     "node": 21,
+     "position": 0.020102114,
+     "singular": false,
+     "sources": [
+      "face #0 Intersection(air)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.001224,
+     "moved_to": null,
+     "node": 26,
+     "position": 0.025,
+     "singular": false,
+     "sources": [
+      "extent #0 Intersection(air)",
+      "face #0 Intersection(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "y": {
+   "absorbed": [],
+   "dropped": [
+    {
+     "gap": 0.0008197,
+     "position": 0.022470343,
+     "sources": [
+      "edge #0 Intersection(air)"
+     ]
+    },
+    {
+     "gap": 0.000866,
+     "position": 0.02251666,
+     "sources": [
+      "edge #0 Intersection(air)",
+      "edge #1 Intersection(PEC)"
+     ]
+    },
+    {
+     "gap": 0.001096,
+     "position": 0.02390351,
+     "sources": [
+      "edge #0 Intersection(air)"
+     ]
+    }
+   ],
+   "h_bulk": [
+    0.007495,
+    0.007495,
+    0.007495,
+    0.007495,
+    0.007495
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.00025,
+     "moved_to": 0.000327931,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "symmetry ymin"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.00025,
+     "moved_to": null,
+     "node": 20,
+     "position": 0.018735697,
+     "singular": false,
+     "sources": [
+      "edge #0 Intersection(air)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.00025,
+     "moved_to": null,
+     "node": 24,
+     "position": 0.021650635,
+     "singular": false,
+     "sources": [
+      "edge #0 Intersection(air)",
+      "edge #1 Intersection(PEC)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.00025,
+     "moved_to": null,
+     "node": 29,
+     "position": 0.025,
+     "singular": false,
+     "sources": [
+      "face #0 Intersection(air)",
+      "face #1 Intersection(PEC)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.00025,
+     "moved_to": null,
+     "node": 31,
+     "position": 0.026,
+     "singular": false,
+     "sources": [
+      "extent #1 Intersection(PEC)",
+      "face #0 Intersection(air)",
+      "face #1 Intersection(PEC)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.00025,
+     "moved_to": null,
+     "node": 38,
+     "position": 0.031,
+     "singular": false,
+     "sources": [
+      "extent #0 Intersection(air)",
+      "face #0 Intersection(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "z": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.007495
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.007495,
+     "moved_to": null,
+     "node": 0,
+     "position": 0.074948114,
+     "singular": false,
+     "sources": [
+      "edge #0 Intersection(air)",
+      "edge #1 Intersection(PEC)",
+      "extent #0 Intersection(air)",
+      "extent #1 Intersection(PEC)",
+      "face #0 Intersection(air)",
+      "face #1 Intersection(PEC)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.007495,
+     "moved_to": null,
+     "node": 10,
+     "position": 0.084948114,
+     "singular": false,
+     "sources": [
+      "edge #0 Intersection(air)",
+      "edge #1 Intersection(PEC)",
+      "extent #0 Intersection(air)",
+      "extent #1 Intersection(PEC)",
+      "face #0 Intersection(air)",
+      "face #1 Intersection(PEC)"
+     ]
+    }
+   ],
+   "unplaced": []
+  }
+ },
+ "feature_gap": 8.78532e-06,
+ "n_nodes": {
+  "x": 27,
+  "y": 39,
+  "z": 11
+ },
+ "pml_cells": {},
+ "schema": 1
+}

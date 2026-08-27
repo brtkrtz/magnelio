@@ -1,0 +1,120 @@
+{
+ "axes": {
+  "x": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.001499
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.001499,
+     "moved_to": -0.0048958333,
+     "node": 0,
+     "position": -0.005,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(air)",
+      "extent #0 Brick(air)",
+      "face #0 Brick(air)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.001499,
+     "moved_to": 0.0048958333,
+     "node": 32,
+     "position": 0.005,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(air)",
+      "extent #0 Brick(air)",
+      "face #0 Brick(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "y": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.001499
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.001499,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.0025,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(air)",
+      "extent #0 Brick(air)",
+      "face #0 Brick(air)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.001499,
+     "moved_to": null,
+     "node": 16,
+     "position": 0.0025,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(air)",
+      "extent #0 Brick(air)",
+      "face #0 Brick(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "z": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.001499
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.001499,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.01,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(air)",
+      "extent #0 Brick(air)",
+      "face #0 Brick(air)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.001499,
+     "moved_to": null,
+     "node": 64,
+     "position": 0.01,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(air)",
+      "extent #0 Brick(air)",
+      "face #0 Brick(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  }
+ },
+ "feature_gap": 2.29129e-07,
+ "n_nodes": {
+  "x": 33,
+  "y": 17,
+  "z": 65
+ },
+ "pml_cells": {},
+ "schema": 1
+}

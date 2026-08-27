@@ -1,0 +1,114 @@
+{
+ "axes": {
+  "x": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.001363
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.001363,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.02,
+     "singular": false,
+     "sources": [
+      "extent #0 Sphere(air)",
+      "face #0 Sphere(air)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.001363,
+     "moved_to": null,
+     "node": 30,
+     "position": 0.02,
+     "singular": false,
+     "sources": [
+      "extent #0 Sphere(air)",
+      "face #0 Sphere(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "y": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.001363
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.001363,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.02,
+     "singular": false,
+     "sources": [
+      "extent #0 Sphere(air)",
+      "face #0 Sphere(air)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.001363,
+     "moved_to": null,
+     "node": 30,
+     "position": 0.02,
+     "singular": false,
+     "sources": [
+      "extent #0 Sphere(air)",
+      "face #0 Sphere(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "z": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.001363
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.001363,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.02,
+     "singular": false,
+     "sources": [
+      "extent #0 Sphere(air)",
+      "face #0 Sphere(air)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.001363,
+     "moved_to": null,
+     "node": 30,
+     "position": 0.02,
+     "singular": false,
+     "sources": [
+      "extent #0 Sphere(air)",
+      "face #0 Sphere(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  }
+ },
+ "feature_gap": 6.9282e-07,
+ "n_nodes": {
+  "x": 31,
+  "y": 31,
+  "z": 31
+ },
+ "pml_cells": {},
+ "schema": 1
+}

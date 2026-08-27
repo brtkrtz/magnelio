@@ -13982,3 +13982,111 @@ facet path: `_build_facets`, `_section_facets`, `_lift_to_surfaces`,
 `docs/methods/meshing-conformal.md`, `docs/methods/geometry.md`,
 `examples/tutorials/19_cassegrain_reflector.py`, `known-bugs.md`
 (KB-031), `CHANGELOG.md`.
+
+## DD-200 — Grid planes carry their provenance: post-hoc attribution, example pins, mesh-section plot
+
+**Status:** Decided 2026-08-27 with the developer (priorities: provenance
+first, then test anchoring, plot as a separate function); implemented
+2026-08-27.
+
+**Problem.**  KB-028: the DD-191 edge pass put a phantom plane through
+the axis of every cylinder inscribed in a box, and three releases
+shipped with it.  The mesher classifies every plane it places —
+critical face / bbox extent (`critical_raw`), edge (`feature_raw`),
+singular mark, thin sheet, wire, symmetry, forced anchor — and forgets
+it: the classification lives in locals of `from_geometry` and
+`GridLines` is coordinates only.  `plot_cross_section(mesh=)` shows the
+lines, not their reason; nothing pins the plane set of any model, so a
+rule change surfaces, if at all, through a physics test downstream —
+KB-028 through the Dey–Mittra ordering tests, three DDs later.
+
+**Decision.**
+
+1. *Record, not thread.*  Next to every raw plane list the mesher keeps
+   `plane_sources[axis]: [(position, PlaneSource)]` with the
+   contributing shape (index and label in model order, taken before the
+   wire split) and attributes them **after** the merges by position
+   (`attribute_planes`, `mesh/_planes.py`): nearest candidate within
+   `2 × feature_gap` among the final planes, the dropped edge planes
+   (`edge` sources only) and the floor-absorbed material planes
+   (material-class sources only).  Every merge stage moves an entry by
+   at most `feature_gap` and compares at the boundary, a longer snap
+   chain can exceed 1×, and final planes are pairwise farther apart
+   than the gap — so 2× is safe and unambiguous.  Whatever finds no
+   candidate is `unplaced`: the invariant that catches a silent drop.
+   The merge helpers (`_merge_axis_planes`, `_snap_planes`,
+   `_merge_feature_planes`, `_floor_merge_planes`) are untouched.
+2. *On the mesh.*  `Mesh.planes: GridPlanes | None` — frozen record with
+   per-axis `PlaneRecord(position, sources, node, singular, domain_end,
+   h_fine, moved_to)`, `h_bulk` per interval, `dropped` / `absorbed` /
+   `unplaced`, `n_nodes`, `pml_cells`, `feature_gap`.  `position` is the
+   merged geometry coordinate, `node` the index in the final axis
+   (offset by the min-side absorber cells), a PMC pull-in is
+   `moved_to`.  Carried by every rebuild (`with_boundary_conditions`,
+   `with_pec_boundaries` — the DD-123 `elements` trap — and the
+   `replace` paths); `from_grid` and older stores give `None`.  Store:
+   JSON in a string *dataset* `mesh/planes_json` — HDF5 attributes cap
+   at 64 KB and a CAD import lists hundreds of shapes.
+3. *Report.*  `print(mesh.planes)` (`GridPlanes.summary`, the
+   `PortReport.summary` style): header with gap, node counts and PML;
+   per axis the `h_bulk` range and `h_fine`; one row per plane with
+   position, sources grouped by kind (`face #0 Brick(air) #1
+   Cylinder(pec); extent #0 #1; edge #0`), flags `domain end` /
+   `singular` / `h_fine` where refined / `-> node at`; then dropped,
+   absorbed, unplaced.
+4. *Pins.*  `tests/unit/test_gallery_planes.py` runs every
+   `examples/{tutorials,howto}/plot_*.py` to its first
+   `Mesh.from_geometry` (the classmethod is wrapped to capture the mesh
+   and stop; the 3D viewer, section plots and `plt.show` are stubbed)
+   and compares `as_dict()` against
+   `tests/unit/data/gallery_planes/<dir>__<stem>.json`: positions
+   within `feature_gap / 2`, sources exactly, `n_nodes` exactly, `h_*`
+   at 1e-3; unmatched planes within ten gaps are reported as *moved*,
+   otherwise added / removed; leftovers as set differences.
+   `MAGNELIO_UPDATE_PLANE_PINS=1` regenerates.  Excluded:
+   `19_cassegrain_reflector.py` (370 s mesh; rule: first mesh > 10 s).
+   Measured: 28 scripts in 38 s; every `unplaced` list empty, no plane
+   without a source, no interior plane from a bounding box alone; the
+   edge-only planes are the chamfer of tutorial 13, the iris and
+   equator circles of tutorial 18 and the line/ring junctions of
+   tutorial 10 — the DD-191 set.
+5. *Plot.*  `plots.plot_mesh_section(mesh, normal, position, geometry=,
+   fill=, flip=, legend=)` / `Mesh.plot_section`: `pcolormesh` of the
+   `material_id` slab on the node coordinates (material palette, air
+   transparent), absorber cells hatched, graded fill nodes as
+   hairlines, plane lines styled by their highest-ranking kind
+   (sheet > symmetry > forced > face > wire > edge > extent), singular
+   planes with end markers, the model's outline via
+   `plot_cross_section(fill=False)` (new keyword).  Sub-cell layers
+   (PEC masks, f_A / f_L on edges) are deliberately later work.
+
+**Rejected.**
+- *Threading shape ids through the merge helpers*: every merge
+  invariant (KB-013 exact-member midpoint, anchor snap, floor merge)
+  would carry a parallel payload for a diagnostic; positional
+  attribution reproduces the result without touching them.
+- *A node → plane index map in `GridLines`*: the grid container stays
+  coordinates-only (store, `from_grid`, solver read it); provenance is
+  a property of the *build*, hence on the mesh.
+- *String-equal pins*: float noise in kernel coordinates would repin
+  every file; the tolerance compare fails exactly when a plane moves by
+  a snap or more.
+- *Pinning the node arrays*: any grading change would repin everything
+  without saying what moved; `n_nodes` plus `h_bulk` / `h_fine` show a
+  grading change with its reason.
+
+**Side finding.**  An edge plane closer than `min_cell_size` to an
+anchor is discarded by `_floor_merge_planes` without joining `absorbed`
+(its `is_material` is False) — it would appear as `unplaced`.  No
+example model triggers it; left as is, the record now makes it
+visible.
+
+**Files:** `src/magnelio/mesh/_planes.py` (new),
+`src/magnelio/mesh/mesher.py`, `src/magnelio/mesh/__init__.py`,
+`src/magnelio/io/project.py`, `src/magnelio/post/plot_mesh.py` (new),
+`src/magnelio/post/plot_geometry.py` (`fill=`),
+`src/magnelio/plots/__init__.py`, `tests/unit/test_grid_planes.py`,
+`tests/unit/test_plot_mesh.py`, `tests/unit/test_gallery_planes.py` +
+`tests/unit/data/gallery_planes/`,
+`examples/tutorials/plot_02_coax_line.py`,
+`docs/methods/meshing-conformal.md`, `spec.md` §2.2, `CHANGELOG.md`.

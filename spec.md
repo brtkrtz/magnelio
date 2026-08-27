@@ -126,6 +126,10 @@ class Mesh:
                                      # closure of the six bbox faces (DD-103);
                                      # declared on the GeometryModel / from_grid,
                                      # PEC faces already folded into pec_mask_edges
+    planes: GridPlanes | None        # provenance of every grid plane (DD-200):
+                                     # per axis position, sources (rule + shape),
+                                     # node index, dropped / absorbed / unplaced;
+                                     # from_geometry only, None on from_grid
 ```
 
 ### 2.3 Material

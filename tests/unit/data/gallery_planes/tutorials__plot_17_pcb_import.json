@@ -1,0 +1,194 @@
+{
+ "axes": {
+  "x": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.0003855
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.0003855,
+     "moved_to": null,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "edge #0 ImportedSolid(PEC) 'F.Cu'",
+      "edge #1 ImportedSolid(FR4) 'dielectric_1'",
+      "edge #2 ImportedSolid(PEC) 'B.Cu'",
+      "edge #3 Brick(air)",
+      "extent #0 ImportedSolid(PEC) 'F.Cu'",
+      "extent #1 ImportedSolid(FR4) 'dielectric_1'",
+      "extent #2 ImportedSolid(PEC) 'B.Cu'",
+      "extent #3 Brick(air)",
+      "face #0 ImportedSolid(PEC) 'F.Cu'",
+      "face #1 ImportedSolid(FR4) 'dielectric_1'",
+      "face #2 ImportedSolid(PEC) 'B.Cu'",
+      "face #3 Brick(air)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.0003855,
+     "moved_to": null,
+     "node": 52,
+     "position": 0.02,
+     "singular": false,
+     "sources": [
+      "edge #0 ImportedSolid(PEC) 'F.Cu'",
+      "edge #1 ImportedSolid(FR4) 'dielectric_1'",
+      "edge #2 ImportedSolid(PEC) 'B.Cu'",
+      "edge #3 Brick(air)",
+      "extent #0 ImportedSolid(PEC) 'F.Cu'",
+      "extent #1 ImportedSolid(FR4) 'dielectric_1'",
+      "extent #2 ImportedSolid(PEC) 'B.Cu'",
+      "extent #3 Brick(air)",
+      "face #0 ImportedSolid(PEC) 'F.Cu'",
+      "face #1 ImportedSolid(FR4) 'dielectric_1'",
+      "face #2 ImportedSolid(PEC) 'B.Cu'",
+      "face #3 Brick(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "y": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.0003855,
+    0.0003855,
+    0.0003855
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.0003,
+     "moved_to": null,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "edge #1 ImportedSolid(FR4) 'dielectric_1'",
+      "edge #2 ImportedSolid(PEC) 'B.Cu'",
+      "edge #3 Brick(air)",
+      "extent #1 ImportedSolid(FR4) 'dielectric_1'",
+      "extent #2 ImportedSolid(PEC) 'B.Cu'",
+      "extent #3 Brick(air)",
+      "face #1 ImportedSolid(FR4) 'dielectric_1'",
+      "face #2 ImportedSolid(PEC) 'B.Cu'",
+      "face #3 Brick(air)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0003,
+     "moved_to": null,
+     "node": 10,
+     "position": 0.0034,
+     "singular": false,
+     "sources": [
+      "edge #0 ImportedSolid(PEC) 'F.Cu'",
+      "extent #0 ImportedSolid(PEC) 'F.Cu'",
+      "face #0 ImportedSolid(PEC) 'F.Cu'"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0003,
+     "moved_to": null,
+     "node": 14,
+     "position": 0.0046,
+     "singular": false,
+     "sources": [
+      "edge #0 ImportedSolid(PEC) 'F.Cu'",
+      "extent #0 ImportedSolid(PEC) 'F.Cu'",
+      "face #0 ImportedSolid(PEC) 'F.Cu'"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.0003,
+     "moved_to": null,
+     "node": 24,
+     "position": 0.008,
+     "singular": false,
+     "sources": [
+      "edge #1 ImportedSolid(FR4) 'dielectric_1'",
+      "edge #2 ImportedSolid(PEC) 'B.Cu'",
+      "edge #3 Brick(air)",
+      "extent #1 ImportedSolid(FR4) 'dielectric_1'",
+      "extent #2 ImportedSolid(PEC) 'B.Cu'",
+      "extent #3 Brick(air)",
+      "face #1 ImportedSolid(FR4) 'dielectric_1'",
+      "face #2 ImportedSolid(PEC) 'B.Cu'",
+      "face #3 Brick(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "z": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.0003855,
+    0.0007994
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.0002,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.0008,
+     "singular": false,
+     "sources": [
+      "edge #1 ImportedSolid(FR4) 'dielectric_1'",
+      "extent #1 ImportedSolid(FR4) 'dielectric_1'",
+      "face #1 ImportedSolid(FR4) 'dielectric_1'",
+      "sheet #2 ImportedSolid(PEC) 'B.Cu'"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0002,
+     "moved_to": null,
+     "node": 3,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "edge #1 ImportedSolid(FR4) 'dielectric_1'",
+      "extent #1 ImportedSolid(FR4) 'dielectric_1'",
+      "face #1 ImportedSolid(FR4) 'dielectric_1'",
+      "sheet #0 ImportedSolid(PEC) 'F.Cu'"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.0002,
+     "moved_to": null,
+     "node": 11,
+     "position": 0.004035,
+     "singular": false,
+     "sources": [
+      "edge #3 Brick(air)",
+      "extent #3 Brick(air)",
+      "face #3 Brick(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  }
+ },
+ "feature_gap": 2.20843e-07,
+ "n_nodes": {
+  "x": 53,
+  "y": 25,
+  "z": 12
+ },
+ "pml_cells": {},
+ "schema": 1
+}

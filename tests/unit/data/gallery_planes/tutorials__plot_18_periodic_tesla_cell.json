@@ -1,0 +1,172 @@
+{
+ "axes": {
+  "x": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.009993
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.009993,
+     "moved_to": 0.00132436,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "symmetry xmin"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.009993,
+     "moved_to": null,
+     "node": 26,
+     "position": 0.1033001,
+     "singular": false,
+     "sources": [
+      "extent #0 Union(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "y": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.009993
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.009993,
+     "moved_to": 0.00132436,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "symmetry ymin"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.009993,
+     "moved_to": null,
+     "node": 26,
+     "position": 0.1033001,
+     "singular": false,
+     "sources": [
+      "extent #0 Union(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "z": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.009993,
+    0.009993,
+    0.009993,
+    0.009993,
+    0.009993,
+    0.009993
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.00559,
+     "moved_to": null,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "edge #0 Union(air)",
+      "extent #0 Union(air)",
+      "face #0 Union(air)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.00559,
+     "moved_to": null,
+     "node": 3,
+     "position": 0.011237646,
+     "singular": false,
+     "sources": [
+      "edge #0 Union(air)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.00559,
+     "moved_to": null,
+     "node": 4,
+     "position": 0.01682797,
+     "singular": false,
+     "sources": [
+      "edge #0 Union(air)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.00559,
+     "moved_to": null,
+     "node": 15,
+     "position": 0.0577,
+     "singular": false,
+     "sources": [
+      "edge #0 Union(air)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.00559,
+     "moved_to": null,
+     "node": 26,
+     "position": 0.09857203,
+     "singular": false,
+     "sources": [
+      "edge #0 Union(air)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.00559,
+     "moved_to": null,
+     "node": 27,
+     "position": 0.104162354,
+     "singular": false,
+     "sources": [
+      "edge #0 Union(air)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.00559,
+     "moved_to": null,
+     "node": 30,
+     "position": 0.1154,
+     "singular": false,
+     "sources": [
+      "edge #0 Union(air)",
+      "extent #0 Union(air)",
+      "face #0 Union(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  }
+ },
+ "feature_gap": 4.91095e-06,
+ "n_nodes": {
+  "x": 27,
+  "y": 27,
+  "z": 31
+ },
+ "pml_cells": {},
+ "schema": 1
+}

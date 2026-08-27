@@ -9,6 +9,23 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+### Added
+
+- `mesh.planes` records where every grid plane came from — the material
+  face, bounding box, geometry edge, thin sheet, wire, symmetry face or
+  forced position that asked for it, per shape — together with the
+  requested planes that were dropped or absorbed; `print(mesh.planes)`
+  prints the report.  Meshes in a project store carry it.
+- `plots.plot_mesh_section` / `mesh.plot_section`: a section of the mesh
+  itself — cells coloured by material on their real size, grid lines
+  styled by origin, absorber cells hatched, the model's exact outline on
+  top.  `plot_cross_section(fill=False)` draws outlines only.
+- The unit suite pins the grid planes of every example model
+  (`tests/unit/data/gallery_planes/`), so a change of the meshing rules
+  fails with a per-axis diff instead of a physics test downstream.
+- Methods chapter *Mesh generation*: section *Inspecting the grid*;
+  tutorial 02 prints the record and shows the mesh section.
+
 ### Fixed
 
 - A curved body touching a flat face — a cylinder inscribed in a box,

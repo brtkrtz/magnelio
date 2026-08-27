@@ -1,0 +1,230 @@
+{
+ "axes": {
+  "x": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.001205,
+    0.001205,
+    0.001205
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.0003,
+     "moved_to": 0.0001,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "symmetry xmin"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0003,
+     "moved_to": null,
+     "node": 2,
+     "position": 0.0006,
+     "singular": false,
+     "sources": [
+      "edge #1 Difference(air)",
+      "edge #2 Union(PEC)",
+      "face #1 Difference(air)",
+      "face #2 Union(PEC)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0003,
+     "moved_to": null,
+     "node": 6,
+     "position": 0.002,
+     "singular": false,
+     "sources": [
+      "edge #1 Difference(air)",
+      "edge #2 Union(PEC)",
+      "extent #2 Union(PEC)",
+      "face #1 Difference(air)",
+      "face #2 Union(PEC)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.0003,
+     "moved_to": null,
+     "node": 11,
+     "position": 0.004,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(FR4)",
+      "edge #1 Difference(air)",
+      "extent #0 Brick(FR4)",
+      "extent #1 Difference(air)",
+      "face #0 Brick(FR4)",
+      "face #1 Difference(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "y": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.001205,
+    0.002498,
+    0.002498
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.0001,
+     "moved_to": null,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(FR4)",
+      "extent #0 Brick(FR4)",
+      "face #0 Brick(FR4)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0001,
+     "moved_to": null,
+     "node": 5,
+     "position": 0.0008,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(FR4)",
+      "edge #1 Difference(air)",
+      "edge #2 Union(PEC)",
+      "extent #0 Brick(FR4)",
+      "extent #1 Difference(air)",
+      "extent #2 Union(PEC)",
+      "face #0 Brick(FR4)",
+      "face #1 Difference(air)",
+      "face #2 Union(PEC)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0001,
+     "moved_to": null,
+     "node": 7,
+     "position": 0.001,
+     "singular": false,
+     "sources": [
+      "edge #1 Difference(air)",
+      "edge #2 Union(PEC)",
+      "extent #2 Union(PEC)",
+      "face #1 Difference(air)",
+      "face #2 Union(PEC)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.0001,
+     "moved_to": null,
+     "node": 17,
+     "position": 0.005,
+     "singular": false,
+     "sources": [
+      "edge #1 Difference(air)",
+      "extent #1 Difference(air)",
+      "face #1 Difference(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "z": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.001205,
+    0.001205,
+    0.001205
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.001205,
+     "moved_to": null,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(FR4)",
+      "edge #1 Difference(air)",
+      "edge #2 Union(PEC)",
+      "extent #0 Brick(FR4)",
+      "extent #1 Difference(air)",
+      "extent #2 Union(PEC)",
+      "face #0 Brick(FR4)",
+      "face #1 Difference(air)",
+      "face #2 Union(PEC)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.001205,
+     "moved_to": null,
+     "node": 6,
+     "position": 0.0065,
+     "singular": false,
+     "sources": [
+      "edge #1 Difference(air)",
+      "edge #2 Union(PEC)",
+      "face #1 Difference(air)",
+      "face #2 Union(PEC)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.001205,
+     "moved_to": null,
+     "node": 9,
+     "position": 0.0095,
+     "singular": false,
+     "sources": [
+      "edge #1 Difference(air)",
+      "edge #2 Union(PEC)",
+      "face #1 Difference(air)",
+      "face #2 Union(PEC)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.001205,
+     "moved_to": null,
+     "node": 15,
+     "position": 0.016,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(FR4)",
+      "edge #1 Difference(air)",
+      "edge #2 Union(PEC)",
+      "extent #0 Brick(FR4)",
+      "extent #1 Difference(air)",
+      "extent #2 Union(PEC)",
+      "face #0 Brick(FR4)",
+      "face #1 Difference(air)",
+      "face #2 Union(PEC)"
+     ]
+    }
+   ],
+   "unplaced": []
+  }
+ },
+ "feature_gap": 1.85742e-07,
+ "n_nodes": {
+  "x": 12,
+  "y": 18,
+  "z": 16
+ },
+ "pml_cells": {},
+ "schema": 1
+}
