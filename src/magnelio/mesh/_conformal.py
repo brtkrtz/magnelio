@@ -352,6 +352,112 @@ def detect_thin_metallizations(
     return thin_sheets
 
 
+def _sheet_probe(spec: ThinSheetSpec) -> tuple[float, float]:
+    """Probe position along the sheet normal and the membership tolerance.
+
+    Mid-thickness when the far face is known, so the probe plane cuts
+    the metal and never lies in a face; the tolerance is just under
+    half the thickness, so a point laterally within it of the metal
+    counts as metal — the inclusive boundary of the rect path.
+    """
+    if spec.far_position is not None:
+        probe = 0.5 * (spec.position + spec.far_position)
+        tol = 0.45 * abs(spec.far_position - spec.position)
+    else:
+        probe = spec.position
+        tol = 1e-9 * (1.0 + abs(spec.position))
+    return probe, tol
+
+
+def _sheet_candidates(grid, spec: ThinSheetSpec) -> list[tuple[str, np.ndarray, np.ndarray]]:
+    """The tangential E edges of the sheet plane inside the spec's rect.
+
+    Returns one entry per tangential component ``(comp, iu_sel, iv_sel)``:
+    the u-directed edges run over u-cells × v-nodes, the v-directed ones
+    over u-nodes × v-cells; ``iu_sel``/``iv_sel`` index the candidate
+    positions along the two transverse axes (inclusive rect test).
+    """
+    nodes = {"x": grid.x, "y": grid.y, "z": grid.z}
+    centres = {a: 0.5 * (nodes[a][:-1] + nodes[a][1:]) for a in "xyz"}
+    u_axis, v_axis = [a for a in "xyz" if a != spec.axis]
+    if spec.rect is not None:
+        u_min, v_min, u_max, v_max = spec.rect
+    else:
+        u_min, v_min = nodes[u_axis][0], nodes[v_axis][0]
+        u_max, v_max = nodes[u_axis][-1], nodes[v_axis][-1]
+    out = []
+    for comp, u_vals, v_vals in (
+        (u_axis, centres[u_axis], nodes[v_axis]),
+        (v_axis, nodes[u_axis], centres[v_axis]),
+    ):
+        iu_sel = np.where((u_vals >= u_min) & (u_vals <= u_max))[0]
+        iv_sel = np.where((v_vals >= v_min) & (v_vals <= v_max))[0]
+        out.append((comp, iu_sel, iv_sel))
+    return out
+
+
+def _sheet_candidate_points(grid, spec: ThinSheetSpec, comp, iu_sel, iv_sel):
+    """(UU, VV) coordinate grids of the candidate edge midpoints."""
+    nodes = {"x": grid.x, "y": grid.y, "z": grid.z}
+    centres = {a: 0.5 * (nodes[a][:-1] + nodes[a][1:]) for a in "xyz"}
+    u_axis, v_axis = [a for a in "xyz" if a != spec.axis]
+    u_vals = centres[u_axis] if comp == u_axis else nodes[u_axis]
+    v_vals = nodes[v_axis] if comp == u_axis else centres[v_axis]
+    return np.meshgrid(u_vals[iu_sel], v_vals[iv_sel], indexing="ij")
+
+
+def _paint_sheet_edges(mesh, spec: ThinSheetSpec, comp, iu_sel, iv_sel, mask) -> None:
+    """Set the masked candidate edges of component *comp* PEC (vectorised)."""
+    grid = mesh.grid
+    Ny, Nz = grid.Ny, grid.Nz
+    nodes = {"x": grid.x, "y": grid.y, "z": grid.z}
+    h_idx = int(np.argmin(np.abs(nodes[spec.axis] - spec.position)))
+    u_axis, v_axis = [a for a in "xyz" if a != spec.axis]
+    wu, wv = np.nonzero(mask)
+    if wu.size == 0:
+        return
+    idx = {spec.axis: np.full(wu.size, h_idx), u_axis: iu_sel[wu], v_axis: iv_sel[wv]}
+    i, j, k = idx["x"], idx["y"], idx["z"]
+    if comp == "x":
+        comp_idx, flat = 0, i * (Ny + 1) * (Nz + 1) + j * (Nz + 1) + k
+    elif comp == "y":
+        comp_idx, flat = 1, i * Ny * (Nz + 1) + j * (Nz + 1) + k
+    else:
+        comp_idx, flat = 2, i * (Ny + 1) * Nz + j * Nz + k
+    mesh.pec_mask_edges[comp_idx, flat] = True
+
+
+def _rasterize_by_classifier(mesh, spec: ThinSheetSpec, scale: float = 1.0) -> None:
+    """Footprint by solid classification of every candidate edge midpoint.
+
+    The pre-section path, kept as the fallback for a sheet whose section
+    fails: one ``BRepClass3d_SolidClassifier`` per sheet (its ``Load``
+    is O(faces), so it is hoisted out of the loop) and one ``Perform``
+    per candidate.  Still O(candidates × faces) — the reason the section
+    path exists.
+    """
+    from OCC.Core.BRepClass3d import BRepClass3d_SolidClassifier  # noqa: PLC0415
+    from OCC.Core.gp import gp_Pnt  # noqa: PLC0415
+    from OCC.Core.TopAbs import TopAbs_IN, TopAbs_ON  # noqa: PLC0415
+
+    from magnelio.geo._occ_backend import _scale3  # noqa: PLC0415
+
+    occ = spec.shape._occ_shape(scale)
+    probe, tol = _sheet_probe(spec)
+    u_axis, v_axis = [a for a in "xyz" if a != spec.axis]
+    classifier = BRepClass3d_SolidClassifier()
+    classifier.Load(occ)
+    for comp, iu_sel, iv_sel in _sheet_candidates(mesh.grid, spec):
+        UU, VV = _sheet_candidate_points(mesh.grid, spec, comp, iu_sel, iv_sel)
+        mask = np.zeros(UU.shape, dtype=bool)
+        for a in range(UU.shape[0]):
+            for b in range(UU.shape[1]):
+                p = {spec.axis: probe, u_axis: UU[a, b], v_axis: VV[a, b]}
+                classifier.Perform(gp_Pnt(*_scale3((p["x"], p["y"], p["z"]), scale)), tol * scale)
+                mask[a, b] = classifier.State() in (TopAbs_IN, TopAbs_ON)
+        _paint_sheet_edges(mesh, spec, comp, iu_sel, iv_sel, mask)
+
+
 def rasterize_thin_sheet_footprint(mesh, spec: ThinSheetSpec, scale: float = 1.0) -> None:
     """Set tangential E edges on the sheet plane PEC — footprint-exact.
 
@@ -359,16 +465,29 @@ def rasterize_thin_sheet_footprint(mesh, spec: ThinSheetSpec, scale: float = 1.0
     shape's *bounding box* — which is exact for a straight strip but
     silently shorts the whole box span for any non-rectangular layout
     (a ring resonator turned into a full metal plane).  Here the rect
-    only pre-filters candidates; each candidate edge's midpoint is
-    classified against the source shape's OCC solid, probed at the
-    metal mid-thickness.  Edges on the lateral boundary count as metal
-    (OCC ``ON`` state), matching the inclusive node selection of the
-    rect path.
+    only pre-filters candidates; the footprint is **one section** of the
+    source solid at the metal mid-thickness, and every candidate edge
+    midpoint is tested against its contours by the even-odd rule (holes
+    stay open) — the cell classifier's path.  Edges on the lateral
+    boundary count as metal (a band of the classification tolerance
+    around the outline), matching the inclusive node selection of the
+    rect path and the OCC ``ON`` state of the classifier.
+
+    Classifying each midpoint against the solid instead costs
+    O(candidates × faces): 15 ms per point on a 1 300-face copper
+    network, minutes per sheet on a patch array.  That path stays as
+    the fallback (``_rasterize_by_classifier``) for a section that
+    fails or comes back empty.
 
     Falls back to the rect fill when the spec carries no source shape
-    or the OCC classification is unavailable.
+    or the OCC evaluation is unavailable.
     """
-    from magnelio.geo._occ_backend import point_in_shape  # noqa: PLC0415
+    from magnelio.geo._filling import (  # noqa: PLC0415
+        CLASSIFY_DEFLECTION_FRACTION,
+        SECTION_NUDGE_FRACTION,
+    )
+    from magnelio.geo._occ_backend import cross_section_polygons  # noqa: PLC0415
+    from magnelio.geo._polygon_clip import points_in_polygon, points_near_polygon  # noqa: PLC0415
     from magnelio.mesh.indexing import apply_thin_pec_sheet  # noqa: PLC0415
 
     if spec.shape is None:
@@ -381,49 +500,38 @@ def rasterize_thin_sheet_footprint(mesh, spec: ThinSheetSpec, scale: float = 1.0
         return
 
     grid = mesh.grid
-    Ny, Nz = grid.Ny, grid.Nz
-    pec = mesh.pec_mask_edges
-
-    if spec.far_position is not None:
-        probe = 0.5 * (spec.position + spec.far_position)
-        tol = 0.45 * abs(spec.far_position - spec.position)
-    else:
-        probe = spec.position
-        tol = 1e-9 * (1.0 + abs(spec.position))
-
+    probe, tol = _sheet_probe(spec)
     nodes = {"x": grid.x, "y": grid.y, "z": grid.z}
-    centres = {a: 0.5 * (nodes[a][:-1] + nodes[a][1:]) for a in "xyz"}
-    h_idx = int(np.argmin(np.abs(nodes[spec.axis] - spec.position)))
     u_axis, v_axis = [a for a in "xyz" if a != spec.axis]
-    if spec.rect is not None:
-        u_min, v_min, u_max, v_max = spec.rect
-    else:
-        u_min, v_min = nodes[u_axis][0], nodes[v_axis][0]
-        u_max, v_max = nodes[u_axis][-1], nodes[v_axis][-1]
+    h_min = min(float(np.diff(nodes[u_axis]).min()), float(np.diff(nodes[v_axis]).min()))
+    # The chord budget of the cell classifier; the escape step must
+    # stay inside the metal, so it is capped at half the tolerance.
+    deflection = CLASSIFY_DEFLECTION_FRACTION * h_min
+    nudge = SECTION_NUDGE_FRACTION * h_min
+    if spec.far_position is not None:
+        nudge = min(nudge, 0.5 * tol)
+    try:
+        contours = cross_section_polygons(
+            occ,
+            spec.axis,
+            probe,
+            deflection=deflection,
+            scale=scale,
+            exact_at_faces=spec.far_position is None,
+            nudge=nudge,
+            context=f"thin sheet {getattr(spec.shape, 'name', '') or ''}".rstrip(),
+        )
+    except Exception:  # noqa: BLE001 — the classifier path answers instead
+        contours = []
+    if not contours:
+        _rasterize_by_classifier(mesh, spec, scale)
+        return
 
-    def _point(u, v):
-        p = {spec.axis: probe, u_axis: u, v_axis: v}
-        return (p["x"], p["y"], p["z"])
-
-    def _flat(comp, i, j, k):
-        if comp == "x":
-            return (0, i * (Ny + 1) * (Nz + 1) + j * (Nz + 1) + k)
-        if comp == "y":
-            return (1, i * Ny * (Nz + 1) + j * (Nz + 1) + k)
-        return (2, i * (Ny + 1) * Nz + j * Nz + k)
-
-    # The two tangential components: the u-directed edges run over
-    # u-cells x v-nodes, the v-directed ones over u-nodes x v-cells.
-    for comp, u_vals, v_vals in (
-        (u_axis, centres[u_axis], nodes[v_axis]),
-        (v_axis, nodes[u_axis], centres[v_axis]),
-    ):
-        u_sel = np.where((u_vals >= u_min) & (u_vals <= u_max))[0]
-        v_sel = np.where((v_vals >= v_min) & (v_vals <= v_max))[0]
-        for iu in u_sel:
-            for iv in v_sel:
-                if not point_in_shape(occ, _point(u_vals[iu], v_vals[iv]), tol, scale=scale):
-                    continue
-                idx = {spec.axis: h_idx, u_axis: int(iu), v_axis: int(iv)}
-                comp_idx, flat = _flat(comp, idx["x"], idx["y"], idx["z"])
-                pec[comp_idx, flat] = True
+    for comp, iu_sel, iv_sel in _sheet_candidates(grid, spec):
+        UU, VV = _sheet_candidate_points(grid, spec, comp, iu_sel, iv_sel)
+        mask = np.zeros(UU.shape, dtype=bool)
+        for poly in contours:
+            mask ^= points_in_polygon(UU, VV, poly)
+        for poly in contours:
+            mask |= points_near_polygon(UU, VV, poly, tol)
+        _paint_sheet_edges(mesh, spec, comp, iu_sel, iv_sel, mask)
