@@ -14388,3 +14388,85 @@ DD-101 residue ("a bin/BVH over face boxes") is back in view.
 `docs/methods/meshing-conformal.md`, `spec.md` §10.3, `CHANGELOG.md`;
 DD-201 amended in place.  `investigations/mesh-build-bench/`
 (internal dossier: `probe_sheet_footprint.py`, M7).
+
+## DD-203 — Patch-array how-to: element-to-array design on the grid's line impedances, quarter-wave row offset, shielded launch port
+
+**Status:** Decided and implemented 2026-08-27, branch
+`feat/patch-array-howto`; the 2 × 2 topology was the developer's
+choice over the 1 × 4 row this record's probe started from.
+
+**Problem.**  The array family of the mesh-build benchmark (DD-201)
+was a meshing fixture, not an antenna; with the sheet rasteriser fixed
+(DD-202) a real patch-array how-to became affordable.  The probe
+(`investigations/patch-array/`, internal record, 16 measurement
+sections) found four things the page had to be built around.
+(1) *No pin on a wide line.*  A lumped port terminating the 2.4 mm
+50 Ω trunk reflects −17 dB on the how-to grid regardless of end
+position or port impedance (the 0.7 mm 100 Ω line: −38 dB), and that
+reflection interfered with the network's own to produce
+parity-dependent matches (1 × 2 −13 dB, 1 × 4 −20 dB, 1 × 8 −14 dB)
+that no transmission-line model reproduced.  (2) *Anti-phase rows.*
+Two rows fed from facing edges by a mirror-symmetric network radiate
+in anti-phase (a broadside null, measured −20 dBi); at 0.75 λ no
+collision-free in-phase 2 × 2 network fits without a meander.
+(3) *Grid impedances.*  The closed-form widths come out 11–13 % low on
+a 0.25 mm floor (44.6 / 63.1 / 86.6 Ω for 50 / 70.7 / 100), converging
+only with `singularity_refinement` and a 0.05 mm floor (48.8 Ω) — five
+times the run time; the ratios hold to 1–3 %.  (4) *Thin sheets and
+absorbing faces.*  A microstrip window port on a CPML wall was refused
+as a hollow cross-section — KB-034, the sheet mask was never extended
+into the absorber.
+
+**Decision.**  The page (`examples/howto/plot_patch_array.py`)
+designs a 2 × 2 on 0.787 mm ε_r 2.2, 10 GHz, lattice 0.75 λ (H) ×
+0.85 λ (E):
+
+- *Element*: cavity-model dimensions, one run at a nominal inset
+  reports the resonance and trims the length (9.653 → 9.219 mm), then
+  a three-point inset sweep on the trimmed patch picks the feed
+  (0.25 L: −26.8 dB at 9.95 GHz, D 7.4 dBi).  Inset before trim, the
+  original order, left the element 0.9 % low at −18 dB because the
+  notch shortens the resonant path.
+- *Network on the grid*: the three line impedances and ε_eff come from
+  `solve_ports()` on slices with the production mesh control; the
+  ports are referenced to the line modes, the text states the absolute
+  error and its price.
+- *Row phase without a meander*: the crossbar sits λ_g/4 below the
+  array centre, so the arm to the upper row is λ_g/2 longer than the
+  arm to the lower row — all arms straight.  The short arm needs
+  (p_y − L)/2 − λ_g/4 of room, which is what sets p_y ≥ 0.8 λ on this
+  substrate; 0.85 λ keeps the crossbar 2.6 mm (3.3 h) from the lower
+  row's fed edge, and that distance decides the E-plane symmetry
+  (0.8 λ: ±30° nulls at −13 / −0.2 dB; 0.85 λ: within 1.2 dB at ±20°).
+  A δ trim does not centre the beam — the asymmetry is the lower row's
+  environment, not line phase.  A higher-ε_r substrate (3.66, 1.524 mm)
+  would allow 0.74 λ but its thick, wide trunk excites a mode in the
+  launch and couples harder to the crossbar; rejected.
+- *Feeds*: the element on a lumped port at its 100 Ω line (a pin on a
+  narrow line is clean), the array through a shielded launch — two
+  walls and a roof around the trunk for 6 mm at the `ymin` wall, the
+  window port in that cross-section (DD-198 enclosure rule), which is
+  what a connector body does.  Needs KB-034's fix.
+- *Array trim*: the network loads the rows, the array resonates 1.6 %
+  above the element; one trim of L by f_dip/f0 on the array, the same
+  rule as for the element.
+- *Check*: principal-plane cuts against element cut × array factor;
+  the far-field power deficit of the window-port model (KB-035) is
+  stated in the text and realized gain named as the robust number.
+
+**Measured** (GPU, `howto_run3.log`, internal record): element as
+above; array 0.53 M cells; first run −17.2 dB at 10.09 GHz, trimmed to
+L = 9.30 mm: |S11| −16.7 dB at 10.00 GHz, −10 dB band 9.81–10.21 GHz
+(4.0 %), D 12.96 dBi, G 12.45 dBi, 5.5 dB over the element (four
+sources: 6.0; the rest is the E-plane shoulder of the 0.85 λ row
+pitch).  With the inset chosen before the trim (0.30 L) the array
+matched −25.6 dB but the element sat 0.9 % low — the network shifts
+the inset optimum, which the page says rather than tunes.  Six
+simulations ≈ 4 min GPU; expected CPU cost in the docs build
+8–10 min.
+
+**Files.**  `examples/howto/plot_patch_array.py`; `docs/methods/ports.md`
+(shielded launch sentence); `known-bugs.md` KB-034 (resolved, DD-198
+amendment), KB-035 (open); `CHANGELOG.md`; probe and protocol in
+`investigations/patch-array/` (`probe_array.py`, `probe_pin.py`,
+`tl_model.py`, `tl_quad.py`, `pattern_mult*.py`, `MEASUREMENTS.md`).

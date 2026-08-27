@@ -25,6 +25,13 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- How-to *Patch array*: a 2 × 2 corporate-fed microstrip patch array
+  designed from the element up — inset sweep and length trim of the
+  patch, a feed network on the port solver's line impedances, in-phase
+  feeding of the second row by a quarter-wave offset of the
+  distribution line, a microstrip window port in the absorbing wall
+  through a shielded launch, and the principal-plane cuts checked
+  against element pattern times array factor.
 - `mesh.planes` records where every grid plane came from — the material
   face, bounding box, geometry edge, thin sheet, wire, symmetry face or
   forced position that asked for it, per shape — together with the
