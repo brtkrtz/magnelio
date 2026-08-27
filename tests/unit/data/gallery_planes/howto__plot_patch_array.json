@@ -1,0 +1,188 @@
+{
+ "axes": {
+  "x": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.0008422
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.0008422,
+     "moved_to": null,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(substrate)",
+      "edge #1 Difference(air)",
+      "edge #2 Brick(PEC)",
+      "extent #0 Brick(substrate)",
+      "extent #1 Difference(air)",
+      "extent #2 Brick(PEC)",
+      "face #0 Brick(substrate)",
+      "face #1 Difference(air)",
+      "face #2 Brick(PEC)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.0008422,
+     "moved_to": null,
+     "node": 3,
+     "position": 0.002,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(substrate)",
+      "edge #1 Difference(air)",
+      "edge #2 Brick(PEC)",
+      "extent #0 Brick(substrate)",
+      "extent #1 Difference(air)",
+      "extent #2 Brick(PEC)",
+      "face #0 Brick(substrate)",
+      "face #1 Difference(air)",
+      "face #2 Brick(PEC)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "y": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.0008422,
+    0.0008422,
+    0.0008422
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.0006062,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.008,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(substrate)",
+      "edge #1 Difference(air)",
+      "extent #0 Brick(substrate)",
+      "extent #1 Difference(air)",
+      "face #0 Brick(substrate)",
+      "face #1 Difference(air)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0006062,
+     "moved_to": null,
+     "node": 9,
+     "position": -0.0012124418,
+     "singular": false,
+     "sources": [
+      "edge #1 Difference(air)",
+      "edge #2 Brick(PEC)",
+      "extent #2 Brick(PEC)",
+      "face #1 Difference(air)",
+      "face #2 Brick(PEC)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0006062,
+     "moved_to": null,
+     "node": 13,
+     "position": 0.0012124418,
+     "singular": false,
+     "sources": [
+      "edge #1 Difference(air)",
+      "edge #2 Brick(PEC)",
+      "extent #2 Brick(PEC)",
+      "face #1 Difference(air)",
+      "face #2 Brick(PEC)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.0006062,
+     "moved_to": null,
+     "node": 22,
+     "position": 0.008,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(substrate)",
+      "edge #1 Difference(air)",
+      "extent #0 Brick(substrate)",
+      "extent #1 Difference(air)",
+      "face #0 Brick(substrate)",
+      "face #1 Difference(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "z": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.0008422,
+    0.001249
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.0001968,
+     "moved_to": null,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(substrate)",
+      "extent #0 Brick(substrate)",
+      "face #0 Brick(substrate)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0001968,
+     "moved_to": null,
+     "node": 2,
+     "position": 0.000787,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(substrate)",
+      "edge #1 Difference(air)",
+      "extent #0 Brick(substrate)",
+      "extent #1 Difference(air)",
+      "face #0 Brick(substrate)",
+      "face #1 Difference(air)",
+      "sheet #2 Brick(PEC)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.0001968,
+     "moved_to": null,
+     "node": 22,
+     "position": 0.0209854721,
+     "singular": false,
+     "sources": [
+      "edge #1 Difference(air)",
+      "extent #1 Difference(air)",
+      "face #1 Difference(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  }
+ },
+ "feature_gap": 2.64649e-07,
+ "n_nodes": {
+  "x": 4,
+  "y": 23,
+  "z": 23
+ },
+ "pml_cells": {},
+ "schema": 1
+}

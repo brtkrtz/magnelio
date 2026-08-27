@@ -14394,6 +14394,11 @@ DD-201 amended in place.  `investigations/mesh-build-bench/`
 **Status:** Decided and implemented 2026-08-27, branch
 `feat/patch-array-howto`; the 2 × 2 topology was the developer's
 choice over the 1 × 4 row this record's probe started from.
+Amended 2026-08-27 (DD-204): the far-field deficit booked here as
+KB-035 was the domain top 0.29 λ above the copper, not the window
+port; `h_box` is now 0.7 λ and the page reads |S11| −14.4 dB at f0,
+3.3 % band, D 13.0 dBi, G 12.9 dBi (+0.4 dB — the pattern amplitude
+had been low), +5.6 dB over the element.
 
 **Problem.**  The array family of the mesh-build benchmark (DD-201)
 was a meshing fixture, not an antenna; with the sheet rasteriser fixed
@@ -14470,3 +14475,85 @@ simulations ≈ 4 min GPU; expected CPU cost in the docs build
 amendment), KB-035 (open); `CHANGELOG.md`; probe and protocol in
 `investigations/patch-array/` (`probe_array.py`, `probe_pin.py`,
 `tl_model.py`, `tl_quad.py`, `pattern_mult*.py`, `MEASUREMENTS.md`).
+
+## DD-204 — Far-field power balance: the surface power as a closure check, and how close the Huygens box may sit
+
+**Status:** Implemented 2026-08-27, on the `fix/far-field-power-balance`
+branch.  Resolves KB-035.
+
+**Problem.**  KB-035 recorded that the patch-array how-to's far field
+collected only 0.84–0.89 of the incident power with the feed through a
+window port, against 0.91–0.92 on a lumped pin, and blamed the window.
+Both numbers were wrong for a lossless model — PEC copper, a substrate
+without loss tangent — whose radiated power must equal $1 - |S_{11}|^2$
+= 0.98.  The far-field monitor had no independent check: `P_rad`
+could only be compared with the port's accepted power, which mixes the
+port bookkeeping into the question.
+
+**Finding** (probes in `investigations/patch-array/`, M18, internal
+record).  The Poynting flux through the recording box, computed from
+the very samples the transform uses, reproduces the accepted power to
+a percent in every configuration tried (lumped and window feed, box
+at 0.3 λ or 2 λ, λ/24 to λ/48 cells, graded and uniform grids).  The
+transform of those samples fell short by 6.6 % with the domain top —
+and with it the box's top face, which carries 87 % of the flux —
+0.29 λ above the copper, by 6 % at the same height with the box's
+sides moved out to 0.7 λ, by 2.8 % with the cells halved, and by
+nothing (−0.4 … +2.5 %) once the top sat 0.7 λ or higher.  Angular
+resolution, image-plane position, substrate extent beyond the copper
+and grid grading changed nothing.  A wire monopole balances to 1 % a
+dozen cells from the box at λ/25; an analytic vertical or horizontal
+dipole over ground pushed through `record()` on uniform, sawtooth and
+graded grids balances to 0.6 % at 0.33 λ — so neither the transform,
+the image expansion nor the sampling is at fault: the FIT near field
+of a printed resonator within half a wavelength is not the outgoing
+free-space field the equivalence theorem assumes, and the shortfall
+is a discretisation effect that fades with distance and resolution.
+The pattern is scaled down as a whole: realized gain read 0.3–0.4 dB
+low, directivity (normalised to `P_rad`) was right — the opposite of
+KB-035's reading.  The window port's own contribution is the
+documented outer-wall current in the absorber: `P_surf/P_acc` 0.965
+on the launch, unchanged by box height, with the balance closing.
+
+**Decision.**  (1) `post.far_field.surface_power(patches)` computes
+$\mathrm{Re}\oint(\mathbf E\times\mathbf H^*)\cdot\hat n\,dS$ in the
+library's effective-phasor units; `ntff_transform(surface_power=)`
+carries it on `FarFieldResult.surface_power`, and `power_balance`
+returns $P_\mathrm{rad}/P_\mathrm{surf}$.  (2) `MonitorFarField.result`
+computes the flux for every call (cheap next to the transform) and
+warns beyond a 5 % imbalance (`_CLOSURE_TOLERANCE`; good boxes scatter
+±2.5 %, bad ones sit at −6 … −10 %), naming both powers and the cure —
+clearance to the absorbing faces, half a wavelength or more.  No
+geometric heuristic: the balance is measured, model-independent, and
+also covers a box that is far enough but badly resolved.  (3) The
+patch-array how-to sets `h_box = 0.7 λ` (21 mm; +40 % cells) and states
+the balance; its element and array figures are re-measured (DD-203
+amendment).  (4) `docs/methods/far-field.md` gets the section *Power
+balance*.  Not done: moving the box inward from the absorber (the
+box would still sit in the near zone of whatever touches the
+boundary, and the flux shows the placement is not the issue); a
+transform-side near-field correction (the samples, not the transform,
+are off).
+
+**Measured.**  Patch element on a pin, 10 GHz, accepted 0.983:
+`P_surf` 0.977, `P_rad` 0.912 at h_box 12 mm (top 0.29 λ) → balance
+0.934; 0.975/0.975 at 24 mm → 1.000; 0.978/0.960 at 40 mm → 0.982;
+0.980/0.976 at 68 mm → 0.996; at 21 mm (the how-to) 0.978/1.003 →
+1.025.  Same element on the window launch: 0.894 at 12 mm, 1.007 at
+21 mm, `P_surf/P_acc` 0.965 throughout.  Wire dipole/monopole
+(`validation/farfield_dipole_certificate.py` grid): 0.980/0.953 at
+the certificate's 2-cell margin, 0.991–1.007 at 12 and 24 cells,
+λ/65 and λ/25 alike.  Gates: `tests/unit/test_far_field_closure.py`
+(analytic dipole box balances to 1 %; a 60° E/H rotation breaks it;
+the monitor carries `surface_power` and warns; an empty box does not),
+the DD-173 certificate unchanged (2.2 % at its close box).
+
+**Files:** `src/magnelio/post/far_field.py` (`surface_power`,
+`FarFieldResult.surface_power`, `power_balance`),
+`src/magnelio/monitors/far_field.py` (`result` closure warning),
+`tests/unit/test_far_field_closure.py` (new),
+`examples/howto/plot_patch_array.py` (`h_box`, balance paragraph),
+`docs/methods/far-field.md` (*Power balance* section),
+`known-bugs.md` KB-035 (resolved), `CHANGELOG.md`, `STATUS.md`;
+probes `investigations/patch-array/probe_kb035*.py`, `kb035_*.py`
+and M18 in `MEASUREMENTS.md` (internal record).

@@ -121,6 +121,39 @@ The radiated power integrates the smooth full-sphere pattern and
 scales by the physical solid-angle fraction, which the image
 symmetry makes exact.
 
+## Power balance: how close the box may sit to the radiator
+
+The recorded surface fields carry a definite real power out of the
+box, $P_\mathrm{surf} = \mathrm{Re}\oint (\mathbf E \times \mathbf
+H^*)\cdot\hat n\,dS$, and for a lossless exterior the pattern must
+radiate exactly that power.  `FarFieldResult.surface_power` carries
+the flux and `power_balance` the ratio $P_\mathrm{rad}/P_\mathrm{surf}$;
+`monitor.result(f)` warns when the two differ by more than 5 %.  The
+flux itself is a robust quantity — it reproduces the accepted power
+$1 - |S_{11}|^2$ of a lossless model to a percent wherever the box is
+placed — so a shortfall means the transform, not the solver: the box
+samples the radiator's near zone too closely, and the discrete near
+field there is not the free-space outgoing field the transform
+assumes.  The pattern amplitude is then low by that factor, and with
+it realized gain and gain; directivity, normalised to $P_\mathrm{rad}$
+itself, is unaffected.
+
+The box sits at the absorbing faces, so its distance from the
+radiator is the model's clearance to the boundary — and the face that
+matters is the one carrying most of the flux.  Measured in-house on a
+microstrip patch at 10 GHz on a 0.25 mm floor: with the domain top
+0.3 λ above the copper the balance reads 0.93, at 0.7 λ and beyond
+0.98–1.02, independent of the lateral clearance (0.3 λ or 0.7 λ) and of
+whether the substrate reaches the boundary; halving the cells at 0.3 λ
+brings it to 0.97.  A wire dipole or monopole balances to 1 % once the
+box is a dozen cells away.  Half a wavelength of clearance in the
+direction of the main beam is a safe rule for printed radiators over
+a ground plane; the warning tells you when a model needs more.  With
+a feed guide crossing the box (previous section) the flux itself
+misses the few percent that run along the guide's outer wall beyond
+the box, so $P_\mathrm{surf}$ and $P_\mathrm{rad}$ both sit that far
+below the accepted power there while the balance still closes.
+
 ## Plots
 
 ```python

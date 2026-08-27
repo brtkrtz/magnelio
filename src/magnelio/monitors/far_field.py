@@ -19,6 +19,7 @@ gaps or overhangs) and second-order accurate on graded grids.
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -32,7 +33,12 @@ from magnelio.post.far_field import (
     ImagePlane,
     SurfacePatchSet,
     ntff_transform,
+    surface_power,
 )
+
+# Closure tolerance of the radiated power against the surface power;
+# beyond it the box samples the near zone too closely (see result()).
+_CLOSURE_TOLERANCE = 0.05
 
 _AXES = "xyz"
 _FACE_NAMES = ("xmin", "xmax", "ymin", "ymax", "zmin", "zmax")
@@ -448,14 +454,48 @@ class MonitorFarField:
         accepted = None
         if self._accepted_power is not None:
             accepted = float(self._accepted_power[idx])
-        return ntff_transform(
-            self._patch_sets(idx),
+        sets = self._patch_sets(idx)
+        # The flux through the recorded box; a symmetry plane's mirror
+        # half exists physically and radiates the same again, so the
+        # surface power is booked in full-model watts like P_rad.  A
+        # real ground plane doubles nothing: P_rad is the half-space
+        # power and so is the flux through the open box.
+        n_sym = sum(1 for p in self._image_planes if not p.physical_halfspace)
+        p_surface = surface_power(sets) * 2.0**n_sym
+        result = ntff_transform(
+            sets,
             self._image_planes,
             float(self.freqs[idx]),
             theta=theta,
             phi=phi,
             accepted_power=accepted,
+            surface_power=p_surface,
         )
+        # Closure check: the surface fields carry a definite real power
+        # out of the box, and the pattern must radiate the same power
+        # for a lossless exterior.  A shortfall means the box samples
+        # the radiator's near zone too closely — every face of the box
+        # sits at the absorbing boundary, so the cure is more clearance
+        # (measured on a microstrip patch: 0.93 with the domain top
+        # 0.3 λ above the copper, 1.00 at 0.7 λ).  The pattern amplitude
+        # is then low by that factor; directivity is self-normalised.
+        scale = max(abs(result.P_rad), abs(p_surface))
+        if scale > 0.0 and abs(result.P_rad - p_surface) > _CLOSURE_TOLERANCE * scale:
+            balance = result.P_rad / p_surface if p_surface > 0.0 else float("inf")
+            f_ghz = float(self.freqs[idx]) / 1e9
+            warnings.warn(
+                f"far-field monitor {self.name!r} at {f_ghz:.4g} GHz: the "
+                f"pattern radiates {balance:.3f} of the power leaving the "
+                f"recording box (surface_power {p_surface:.4g} W, P_rad "
+                f"{result.P_rad:.4g} W).  The box sits at the absorbing "
+                f"boundary and samples the radiator's near zone too "
+                f"closely; realized gain and gain are off by that factor "
+                f"(directivity is not).  Give the model more clearance to "
+                f"the absorbing faces — half a wavelength or more between "
+                f"the radiator and the boundary restores the balance.",
+                stacklevel=2,
+            )
+        return result
 
     def plot_cut(self, f: Optional[float] = None, *, f_index: Optional[int] = None, **kwargs):
         """Polar cut of the pattern at one recorded frequency.

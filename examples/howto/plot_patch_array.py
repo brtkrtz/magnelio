@@ -70,7 +70,7 @@ lam0 = C0 / f0
 p_x = 0.75 * lam0  # column pitch (H-plane)
 p_y = 0.85 * lam0  # row pitch (E-plane)
 clearance = 12e-3  # copper to the absorbing boundary
-h_box = 12e-3  # air above the ground plane
+h_box = 0.7 * lam0  # air above the ground plane: the far-field box top clears the near zone
 z_in = 50.0  # input impedance of the feed
 
 substrate = mio.Material.from_isotropic(name="substrate", epsilon=eps_r)
@@ -338,11 +338,14 @@ def array(L, y_inset):
 # far-field monitor at the design frequency, the run, and the numbers
 # an antenna engineer reads first — the resonance and depth of the
 # match, the −10 dB band, peak directivity and realized gain.
-# Directivity is normalised to the power the recording box around the
-# antenna collects; with a feed through the wall a tenth of that
-# power leaves along the launch, outside the box, and directivity
-# reads a few tenths of a decibel high — realized gain, normalised to
-# the incident power, does not have that problem.
+# The far-field monitor records on a box at the absorbing faces, and
+# ``h_box`` keeps the top of that box 0.7 λ above the copper: closer
+# than about half a wavelength the transform under-reads the power
+# leaving the box (7 % at 0.3 λ on this patch) and the monitor warns.
+# With the feed through the wall, a few percent of the accepted power
+# runs along the outside of the launch beyond the box, so realized
+# gain reads about 0.15 dB low there; directivity, normalised to the
+# box's own power, is unaffected.
 
 f_axis = np.linspace(f_min, f_max, 401)
 
