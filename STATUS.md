@@ -33,6 +33,7 @@ certificates named in their DD entries.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-205** (2026-08-28) — planar fuse: `boolean_union` fuses operands that are prisms along one axis over the same interval through their caps in the plane and raises them once, the rest only inside interfering bounding-box clusters (the general fuser is superlinear in *interference*, not in N: 443 coplanar strips 16 s, the same strips moved apart 0.45 s; `GlueShift` refuted, wrong volume); `build_effective_pec_solid` cuts each PEC body once against its bounding-box neighbours instead of growing a pairwise union (Lange 16: 36 → 2 s); the edge pass, which had been living off the fuse seams (`Perform` classifies at O(edges of the face)), classifies large planar faces through coplanar pieces of ~12 edges, bit-identical f_L.  Union 8 × 8 array 16.1 → 0.8 s and 6 924 → 640 faces.
 * **DD-204** (2026-08-27) — far-field power balance: `FarFieldResult.surface_power` (Poynting flux through the recording box from the transform's own samples) and `power_balance`; `MonitorFarField.result` warns beyond 5 % imbalance.  KB-035 resolved and inverted: the flux reproduces the accepted power everywhere, the transform under-reads by 7 % when the domain top sits 0.3 λ above a printed radiator (nothing from 0.7 λ; the FIT near field, not the transform, image expansion or sampling — all pinned analytically), and it is the realized gain that read 0.3–0.4 dB low, not directivity high; the window port only adds its documented outer-wall 3.5 % to both powers alike (7 % for the bare horn neck of Tutorial 19, whose balance closes at 1.005 — its 0.93 is the feed guide, as stated).  Patch how-to at `h_box = 0.7 λ`.
 * **DD-203** (2026-08-27) — how-to *Patch array*: 2 × 2 corporate-fed microstrip array on 0.787 mm ε_r 2.2 at 10 GHz, designed from the element up (trim, then inset sweep on the trimmed patch), the network on the port solver's grid impedances (11–13 % below closed form on a 0.25 mm floor, ratios within 3 %), in-phase rows by a λ_g/4 offset of the crossbar instead of a meander (needs p_y ≥ 0.8 λ; 0.85 λ for E-plane symmetry), the trunk through a shielded launch with a window port in the CPML wall (a pin on the 2.4 mm trunk reflects −17 dB and defeats every network variant — KB-034 fixed on the way, KB-035 opened and closed by DD-204), one trim on the array; |S11| −14.4 dB at f0, 3.3 % band, D 13.0 dBi, G 12.9 dBi, +5.6 dB over the element, six runs ≈ 5 min GPU.
 * **DD-201** (2026-08-27) — mesh-build benchmark on production geometry classes (`benchmarks/bench_mesh_build.py`: Lange-coupler row, patch array with corporate feed, post row; wall time per mesher pass; section-pool arms off / auto / forced) and the how-to *Lange coupler* (3-dB interdigitated coupler dimensioned on the port solver, k = 8 singular refinement with a 6 µm floor, ribbon bonds, |S31| −2.7 dB / 89.8° / −32 dB match and isolation).  Verdict: the edge pass is 1–11 % of a build on every class — the edge pool is closed as a non-lever.  KB-032 (sheet-anchor sliver) and KB-033 (3D viewer refused bodies under ~200 µm) fixed on the way.
@@ -49,7 +50,6 @@ Newest first, one line each; the full record is the DD entry.
 * **DD-191** (2026-08-25) — geometry-edge planes: a grid plane wherever a sharp B-rep edge lies flat in an axis-normal plane (chamfer/fillet onsets, loft sections, iris circles), as a soft class — one cell per feature layer, floored at `h_max / max_edge_refinement` (default 4) and `min_cell_size`, dropped edges reported once per mesh with the coarsest position and the ratio that keeps it, `0` = the old meshes.  Closes the DR-filter worksheet's invisible-chamfer artefact (M4/M4a: dual-face averaging is transverse-only — a feature varying *along* the edges has no lever until it crosses the cell midplane).  Traps recorded: Boolean-fuse split lines between coplanar sub-faces are not edges; the thin-sheet far face re-enters through the imprint's edges; the DD-107 buffer would triple a single-cell feature interval.
 * **DD-190** (2026-08-25) — `model.plot()` rebuilt on PyVista: axis-aligned cutting plane from the widget toolbar (normal / slider / flip / undo / reset) that caps every solid and lays the exposed grid cells, coloured by assigned material, over the cut (the grid shows nowhere else); wires, ports, elements, symmetry planes and the domain box overlaid in mm; browser-side rendering by default (`mode=`), a VTK window in scripts, in the gallery a two-tab figure — screenshot plus the scene as a rotatable vtk.js view (`DynamicScraper`, since 2026-08-26).  Transport is trame's own websocket — JupyterLab ≥ 4.5 executes comm messages in ipykernel-7 subshell threads, and VTK rendered there gave black frames / kernel aborts (proven by replaying the comm transport).  `pyvista` is a core dependency, `[jupyter]` extra for the widget; pythreejs path gone; closes KB-026 as a side effect.
 * **DD-189** (2026-08-24, three amendments) — lumped-port termination guides, four pages: *Lumped ports: investigations* (principle + sweeps for all three line types) plus a compact *Lumped port tuning* tool each for coax/microstrip/CPW.  Waveguide port as instrument, WG–WG reference run as grid-exact phase ruler (no closed-form dispersion), phase polarity normalised to n·180° at the low band edge, knobs = end-gap geometry / position / port impedance as geometric re-run sweeps (de-embedding, the single overloaded page, and the CPW slot-port+resistor scheme all dropped on developer review).  CPW = coax picture on the symmetry plane: longitudinal end-gap port (`SymmetryPMC` half model, PMC lid), position optimum +16·s *beyond* the plane.  Kept as general (non-guide) knowledge: `elements=` for post-mesh lumped elements, single-mode test shields.  All three line types shipped; side find KB-026 (empty boolean crashes plot()).
-* **DD-188** (2026-08-24) — second sphinx-gallery "How-to guides" (`examples/howto/` → `docs/howto/`, unnumbered pages, own toctree caption): task recipes separated from the numbered curriculum; stripline page moved out of the tutorials (old URL lapses), filter capstone re-anchored as the close of tutorials 01–12; renumbering the tutorials rejected (URL + prose breakage).
 Older decisions: `design-decisions.md`.
 
 ## Working practices earned the hard way
@@ -354,26 +354,25 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
 * **Mesh-build speed.**  DD-101/102 (edge prefilter, planar section
   engine) took the slotline coupler 142 → 14 s; DD-141 admits the
   section pool on a measured sample; DD-199 gave free-form faces the
-  facet path.  DD-201 measured three production classes end to end
-  (`benchmarks/bench_mesh_build.py`, CPU): a row of 16 Lange couplers
-  (3.7 M cells) builds in 136 s, a 240-post row (385 k) in 45 s, a
-  4 × 4 patch array with corporate feed (222 k cells, 2 147 faces) in
-  10 s and an 8 × 8 (664 k cells, 10 799 faces) in 61 s after DD-202
-  took the thin-sheet rasteriser from one solid classification per
-  edge to one section (the 4 × 4 had been 475 s — a residual DD-201
-  misread as the fuse).  The edge pass is 1–11 % on the Lange and post
-  ladders and the edge-chunk pool is closed as a non-lever; on the
-  8 × 8 array it is 22.5 of 61 s.  Open, in value order: (1) the N-ary
-  Boolean fuse of a planar copper network is superlinear one tier up
-  (107 strips 0.7 s, 443 strips 16 s) — fuse in tiles, or the
-  sheet-level union of coplanar traces the board importer already
-  does; (2) the classification sections (`batch_cross_sections`, 15.6
-  of 45 s on the post row) have no pool; (3) the face pass on
+  facet path; DD-202 the thin-sheet rasteriser one section instead of
+  a classification per edge; DD-205 the planar fuse, the per-body PEC
+  solid and classification pieces for large planar faces.  Ladder
+  (`benchmarks/bench_mesh_build.py`, CPU, `auto` pool): 16 Lange
+  couplers (3.7 M cells) 106 s, 240 posts (385 k) 45 s, 4 × 4 patch
+  array with feed (222 k cells, 415 faces) 8.8 s, 8 × 8 (664 k,
+  1 326 faces) 33 s.  Open, in value order: (1) the Lange residual —
+  `other` 32 s of 106 at 16 couplers (PEC solid and section passes
+  outside the wrapped entry points; profile it before ranking it);
+  (2) the classification sections (`batch_cross_sections`, 15.6 of
+  45 s on the post row) have no pool; (3) the face pass on
   many-coupler planes grows faster than the cell count (areas µ
-  15.5 → 51.8 s for 8 → 16 couplers; the pool halves it) — a per-plane
-  face prefilter; (4) the edge pass at 10⁴ faces — a bin/BVH over face
-  boxes (the DD-101 residue).  The analytic quadrics could still get an
-  exact plane × quadric section.
+  14.7 → 48.7 s for 8 → 16 couplers, pool off; the pool halves it) —
+  a per-plane face prefilter; (4) the edge pass at 10⁵ edges (23 of
+  33 s on the 8 × 8, 17 of 106 s on Lange 16): 70 % of the edges go to
+  the point-classifier fallback because copper outlines lie on grid
+  planes (DD-191) and graze the lines — the per-line path fails there;
+  a bin over face boxes is the DD-101 residue.  The analytic quadrics
+  could still get an exact plane × quadric section.
 
 Closed construction sites are tombstoned where they were decided (the
 DD entry and `known-bugs.md`) and are not repeated here.
