@@ -1553,6 +1553,20 @@ class Mesh:
             for spec in _thin_sheets:
                 rasterize_thin_sheet_footprint(mesh, spec, scale=geo_scale)
 
+        # Step 4c: the wire and sheet masks were painted after step 3d,
+        # so a thin conductor touching an absorbing face — a microstrip
+        # reaching a port window in a CPML wall — had no mask in the
+        # extension slabs and the port saw a hollow cross-section
+        # (KB-034).  Mirror the interior slab once more, mask only: the
+        # sub-cell material data was already continued in step 3d and
+        # the sheet pass touches nothing but ``pec_mask_edges``.
+        if _pml_cells and (_thin_sheets or wires):
+            from magnelio.mesh._pml_extend import (  # noqa: PLC0415
+                extend_subcell_data_into_pml,
+            )
+
+            extend_subcell_data_into_pml(mesh.pec_mask_edges, None, None, grid, _pml_cells)
+
         # Step 5: Quality checks
         check_quality(mesh)
 

@@ -79,3 +79,81 @@ def test_categories_and_fractions_follow_the_interior_slab():
 def test_pec_face_meshes_are_untouched():
     mesh = _tube_mesh(conformal=True, xmin="PEC")
     assert not mesh.pml_cells
+
+
+# ---------------------------------------------------------------------------
+# Thin sheets are painted after step 3d — they need the extension too
+# ---------------------------------------------------------------------------
+
+H_SUB, W_STRIP, T_MET = 0.787e-3, 2.4e-3, 35e-6
+
+
+def _microstrip_to_wall_model(xmin="CPML", frame=False):
+    """A 35 um strip on a substrate, running from the ``xmin`` face inward.
+
+    With ``frame`` a PEC frame surrounds the strip at the face, so a
+    port window whose ring lies on conductor (DD-198) can sit there.
+    """
+    faces = ("xmin", "xmax", "ymin", "ymax", "zmin", "zmax")
+    bcs = {f: ("CPML" if f == "xmax" else "PEC") for f in faces}
+    bcs["xmin"] = xmin
+    sub = mio.Material.from_isotropic(name="sub", epsilon=2.2)
+    y0, y1, z1 = -8e-3, 8e-3, 8e-3
+    strip = geo.Brick(
+        origin=(0.0, -W_STRIP / 2, H_SUB), size=(12e-3, W_STRIP, T_MET), material="pec"
+    )
+    model = mio.GeometryModel(boundary_conditions=bcs)
+    substrate = geo.Brick(origin=(0.0, y0, 0.0), size=(20e-3, y1 - y0, H_SUB), material=sub)
+    air = geo.Brick(origin=(0.0, y0, H_SUB), size=(20e-3, y1 - y0, z1 - H_SUB), material="air")
+    if frame:
+        shield = geo.Difference(
+            geo.Brick(origin=(0.0, -6.5e-3, 0.0), size=(4e-3, 13e-3, 6.5e-3), material="pec"),
+            geo.Brick(origin=(-1e-3, -6e-3, -1e-3), size=(6e-3, 12e-3, 7e-3), material="air"),
+            material="pec",
+        )
+        model.add(geo.Difference(substrate, shield))
+        model.add(geo.Difference(air, strip, shield))
+        model.add(strip)
+        model.add(shield)
+    else:
+        model.add(substrate)
+        model.add(geo.Difference(air, strip))
+        model.add(strip)
+    return model
+
+
+def _microstrip_mesh(xmin="CPML"):
+    return mio.Mesh.from_geometry(
+        _microstrip_to_wall_model(xmin),
+        mio.MeshControl(min_nodes_per_wavelength=20, min_cell_size=0.25e-3),
+        f_max=12e9,
+    )
+
+
+def test_pml_slabs_carry_a_thin_sheet_touching_the_face():
+    mesh = _microstrip_mesh()
+    n = mesh.pml_cells["xmin"]
+    ey = _ey_slabs(mesh)
+    interior = ey[n + 2]
+    k = int(np.argmin(np.abs(mesh.grid.z - H_SUB)))
+    assert interior[:, k].sum() > 0, "the strip's y-edges must be masked on the sheet plane"
+    for i in range(n + 1):
+        np.testing.assert_array_equal(ey[i], interior)
+
+
+def test_microstrip_window_in_an_absorbing_face_resolves_as_a_line_mode():
+    from magnelio import ports
+
+    model = _microstrip_to_wall_model(frame=True)
+    model.add_port(
+        ports.PortWaveguide(
+            name="in", plane="xmin", corners=((None, -6e-3, 0.0), (None, 6e-3, 6e-3))
+        )
+    )
+    mesh = mio.Mesh.from_geometry(
+        model, mio.MeshControl(min_nodes_per_wavelength=20, min_cell_size=0.25e-3), f_max=12e9
+    )
+    report = mio.AnalysisScatteringTD(mesh=mesh, verbose=False).solve_ports()["in"]
+    mode = report.modes[0]
+    assert mode.mode_type.name == "TEM"
+    assert 30.0 < float(mode.z_line) < 60.0

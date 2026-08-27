@@ -19,6 +19,25 @@ dedicated DD keep their record here.
 **Three entries are open as of 2026-08-27: KB-022, KB-023 and
 KB-027.**  Everything else is struck through and resolved.
 
+## KB-034: ~~Thin sheets and wires touching an absorbing face had no mask in the PML~~ — Resolved (DD-198 amendment, 2026-08-27)
+
+DD-198 step 0 mirrors the first interior slab of the sub-cell data into
+the PML extension so a conductor touching an absorbing face keeps its
+PEC mask there.  It ran before the thin-wire and thin-sheet passes,
+which paint `pec_mask_edges` afterwards, so a thin metallisation
+reaching a CPML wall — a microstrip feed with a port window in that
+wall — was conductor inside the domain and free space in the
+extension.  A `PortWaveguide` window on the wall then saw a hollow
+cross-section over substrate and air and was refused with the
+"inhomogeneous or anisotropic filling" message; without a port the
+sheet simply ended one cell short of the wall.  Fix: step 4c repeats
+the mask-only extension after the sheet pass
+(`tests/unit/test_pml_extension.py::test_pml_slabs_carry_a_thin_sheet_touching_the_face`,
+`::test_microstrip_window_in_an_absorbing_face_resolves_as_a_line_mode`).
+The Holland material correction of a thin wire is still not continued
+into the extension — a wire ending on an absorbing face is not a
+supported feed.
+
 ## KB-033: ~~The 3D viewer refused bodies of a few tens of micrometres~~ — Resolved (DD-201, 2026-08-27)
 
 `plot_3d` tessellates every body with a linear deflection of 5e-4 of
