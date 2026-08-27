@@ -375,3 +375,27 @@ class TestEntryPoints:
         assert img.shape[:2] == (200, 300)
         # Something was drawn: not a blank canvas.
         assert img.std() > 5.0
+
+
+class TestTinyBodies:
+    """A body of a few tens of micrometres at metre scale must still tessellate.
+
+    OCC rejects a linear deflection below its confusion precision
+    (1e-7); the viewer's fraction of the bbox diagonal fell below that
+    for the ribbon bonds of a Lange coupler (66 µm diagonal → 3e-8).
+    """
+
+    def test_ribbon_bond_sized_brick_is_drawn(self):
+        post = geo.Brick(origin=(0, 0, 0), size=(25e-6, 12.6e-6, 60e-6), material="pec")
+        bodies = plot_3d._shape_bodies([post], unit_scale=1e3, quality=1.0)
+        assert len(bodies) == 1
+        assert bodies[0].polydata.n_cells >= 12
+
+    def test_model_with_tiny_parts_builds_a_scene(self):
+        model = mio.GeometryModel(background="pec")
+        air = geo.Brick(origin=(0, 0, 0), size=(1e-3, 1e-3, 0.5e-3), material="air")
+        post = geo.Brick(origin=(0.4e-3, 0.4e-3, 0), size=(25e-6, 12.6e-6, 60e-6), material="pec")
+        model.add(geo.Difference(air, post))
+        model.add(post)
+        pl = model.plot(mode="none")
+        assert pl is not None

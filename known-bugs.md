@@ -16,8 +16,38 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Three entries are open as of 2026-08-26: KB-022, KB-023 and
+**Three entries are open as of 2026-08-27: KB-022, KB-023 and
 KB-027.**  Everything else is struck through and resolved.
+
+## KB-033: ~~The 3D viewer refused bodies of a few tens of micrometres~~ — Resolved (DD-201, 2026-08-27)
+
+`plot_3d` tessellates every body with a linear deflection of 5e-4 of
+its bounding-box diagonal, floored at 1e-12.  OCC rejects a deflection
+below its confusion precision (1e-7 in kernel units) with a
+`Standard_NumericError`, so a model at metre scale with a body under
+~200 µm — the ribbon bonds of the Lange coupler, 66 µm across — made
+`model.plot()` raise.  The ParaView exporter carried the same floor.
+Fix: `_tessellate_shape` floors every deflection at 1.1e-7
+(`tests/unit/test_plot_3d.py::TestTinyBodies`).
+
+## KB-032: ~~Two thin sheets at one nominal height left a sliver anchor pair~~ — Resolved (DD-201, 2026-08-27)
+
+Thin-metallisation planes are verbatim anchors of the plane merge, like
+user-forced planes.  A brick and a Boolean-returned track on the same
+substrate come back with one ulp of float wiggle between their
+substrate-side faces (0.000254 against 0.00025399999999999994 m on the
+Lange coupler), so the merge saw two anchors 5e-20 m apart, warned
+"forced planes … closer than min_feature_gap … (user positions win)"
+for planes no user had forced, and computed the singular-edge grading
+from a feature size of 1.7e-21 m.  The grid itself deduplicated the
+sliver downstream, so the damage was the misleading warning and a
+growth-factor warning of ratio 1e14; the run that appeared to hang
+alongside it had a different cause (a closed housing ringing in band).
+Fix: `_unify_thin_sheet_positions` clusters sheet planes within the
+feature gap before they become anchors — a user-forced plane within
+reach wins, otherwise the lowest sheet — and updates the sheet specs
+so their masks land on the shared node
+(`tests/unit/test_thin_sheet_detection.py::TestThinSheetAnchorUnification`).
 
 ## KB-031: ~~Hollow conductors lost the conformal correction at their inner walls~~ — Resolved (DD-199, 2026-08-26)
 

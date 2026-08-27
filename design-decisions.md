@@ -14152,3 +14152,148 @@ geometry — take the layer from the position, never from the count.
 `tests/unit/data/gallery_planes/`,
 `examples/tutorials/plot_02_coax_line.py`,
 `docs/methods/meshing-conformal.md`, `spec.md` §2.2, `CHANGELOG.md`.
+
+## DD-201 — Mesh-build benchmark on production geometry classes; Lange-coupler how-to
+
+**Status:** Decided 2026-08-27 with the developer, implemented
+2026-08-27.  Developer choices: the test geometry is a Lange coupler
+on 254 µm alumina at 10 GHz, delivered as a how-to *and* a benchmark
+script with a size ladder; a tandem of two 8.34-dB four-finger Langes
+was the first choice and was dropped on measurement (below); bond
+wires were to be `ThinWire` and became resolved ribbon bonds because
+of the DD-080 radius rule; the developer's premise throughout: the
+test case has to be hard enough to measure the mesher on real-world
+scale — "everything must scale".
+
+**Problem.**  STATUS carried "mesh-build speed, item 1: a process
+pool over edge chunks for `compute_edge_pec_fractions`" as the next
+lever, on the strength of one private fixture (the slotline coupler
+at n = 100, DD-102: 22.8 of 33.6 s in the edge pass).  Nothing in the
+repository measured the mesher on a realistic geometry through the
+public API, and the only stress case (`profile_csg_scaling.py`, 1002
+spheres) exercises the CSG tree.  A decision of that kind has to be
+made per geometry class, on numbers that are versioned and
+reproducible.
+
+**Deliverables.**
+
+1. `examples/howto/plot_lange_coupler.py` — the 3-dB interdigitated
+   coupler: Ou's synthesis (k fingers, coupling C → even/odd impedance
+   of one adjacent pair; k = 4, 3 dB → 176.4 / 52.5 Ω, pair coupling
+   −5.3 dB), a two-dimensional design step on the port solver (4
+   widths × 4 gaps, sixteen slice meshes; the impedance ratio follows
+   the gap, the geometric mean the width; two 1-D interpolations),
+   ribbon bonds as three bricks, right-angle leads, four window ports,
+   scoreboard with the balance band.  Measured (GPU, 0.22 M cells,
+   120 k steps, 110 s): |S31| −2.72 dB, |S21| −3.32 dB, ∠S31 − ∠S21 =
+   89.8° and flat over 6–14 GHz, |S11| −31.9 dB, |S41| −32.1 dB,
+   |balance| ≤ 1 dB from 7.35 GHz to the band top.  Design on this
+   grid: w = 12.6 µm, s = 25.4 µm (w/h 0.05 — the thin-film edge;
+   635 µm alumina scales the transverse dimensions by 2.5), L =
+   3.135 mm at ε_mean 5.717.
+2. `benchmarks/bench_mesh_build.py` — mesh build only, wall time per
+   pass by wrapping the pass entry points from outside
+   (`compute_edge_pec_fractions`, `compute_face_material_areas` split
+   by `prop`, classification sections and fill, plane extraction, PEC
+   fuse, `cross_section_polygons` count, `_sample_and_admit` as "the
+   pool really ran"); "other" = CSG evaluation + plane merge + grid +
+   masks.  Pool arms off (`MAGNELIO_SECTION_WORKERS=0`), auto
+   (production), forced (`_SECTION_PARALLEL_MIN_QUERIES=1`,
+   `_SECTION_PARALLEL_MIN_FACE_WORK=0`, `_SECTION_POOL_STARTUP_S=0` — a
+   policy change, reported as such); the fallback warning is an error
+   in the pooled arms.  Families: `lange` (a row of n couplers, the
+   how-to's layout, n = 1…16), `array` (n × n patch array at 10 GHz
+   with an H-tree corporate feed and λ/4 transformers, one `Union` per
+   copper layer), `posts` (the DD-141 row rebuilt: n posts of 0.5 mm
+   radius at 2 mm pitch).  JSON is rewritten after every point
+   (`benchmarks/results/bench_mesh_build.json`); the private record is
+   `investigations/mesh-build-bench/MEASUREMENTS.md` (internal
+   dossier).
+
+**Measured** (CPU, fastest of one build, 2026-08-27):
+
+| family | n | cells | faces | total off | auto | forced | edge pass | areas µ off → auto | classify | other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| lange | 1 | 230 622 | 274 | 3.6 s | 3.6 | 9.4 | 0.8 | 0.9 → 0.9 | 0.1 | 0.5 |
+| lange | 4 | 922 488 | 1 060 | 19.6 | 19.6 | 22.6 | 3.5 | 5.3 → 5.3 | 0.3 | 3.4 |
+| lange | 16 | 3 689 952 | 4 204 | 171.9 | **140.8** | 140.7 | 15.8 | 51.8 → 20.9 | 1.3 | 38.2 |
+| posts | 60 | 97 200 | 306 | 8.4 | 8.3 | 16.5 | 1.0 | 3.0 → 3.0 | 1.5 | 0.1 |
+| posts | 240 | 385 200 | 1 206 | 70.9 | **44.7** | 44.9 | 4.3 | 26.9 → 11.5 | 15.6 | 0.6 |
+| array | 2 | 84 150 | 383 | 23.1 | 23.2 | 23.1 | 1.1 | 0.4 | 0.1 | 20.8 |
+| array | 4 | 222 497 | 2 147 | 475.1 | 478.7 | 476.9 | 4.3 | 1.4 | 0.2 | **466.1** |
+
+**Decision on the edge pool: not the lever.**  On all three classes
+the edge pass is 1–11 % of the build at the largest size (Lange row
+15.8 of 141 s, posts 4.3 of 45 s, array 4.3 of 475 s), and it scales
+linearly (DD-101's prefilter holds).  Item 1 is closed as measured;
+three new items replace it, in value order: (1) the **N-ary Boolean
+fuse of a planar copper network** is superlinear — 20.8 s for 30
+strips, 466 s for 120 — and is 98 % of the array's build; fusing in
+tiles (associative) is the known remedy (the DD-178 import worksheet
+named it); (2) the **classification sections** (`batch_cross_sections`,
+15.6 of 45 s on the post row) have no pool at all — the prefill pool
+could cover them; (3) the **face pass grows faster than the cell
+count** on the Lange row (areas µ 15.5 → 51.8 s for 8 → 16 couplers:
+every plane cuts every coupler), where the section pool already
+halves it (20.9 s) — a per-plane face prefilter would take the
+rest.  DD-141's sample admission is confirmed on production geometry:
+auto equals forced where the pool pays (Lange 16, posts 240) and
+declines correctly where it does not (forced costs the 5 s startup
+per admitted call: Lange 1 3.6 → 9.4 s, posts 60 8.4 → 16.5 s).  The
+array's 8 × 8 rung was not run (the fuse alone would take hours);
+that is the finding, not a gap.
+
+**Found on the way.**
+
+- **KB-032** (fixed here): two thin sheets at one nominal height — the
+  finger bricks and the Boolean-returned leads — differ by one ulp;
+  sheet planes are verbatim anchors, so the merge warned "forced
+  planes … closer than min_feature_gap (user positions win)" for
+  planes nobody had forced and fed the singular grading a feature
+  size of 1.7e-21 m; the grid deduplicated the sliver itself.
+  `_unify_thin_sheet_positions` clusters sheet planes within the
+  feature gap before they become anchors (a user-forced plane within
+  reach wins, otherwise the lowest sheet).
+- **KB-033** (fixed here): `model.plot()` raised on the ribbon bonds —
+  the viewer's tessellation deflection (5e-4 of the body's diagonal)
+  fell below OCC's confusion precision for a 66 µm body at metre
+  scale; `_tessellate_shape` floors it at 1.1e-7 for the viewer and
+  the ParaView export alike.
+- **The odd mode of a tight gap converges only with surface cells
+  below 10 µm**: Zo of a 35/25 µm pair 22.5 → 31.6 → 37.2 → 41.5 → 42.0 Ω
+  for surface cells 64 / 32 / 16 / 8 / 1 µm (`singularity_refinement`
+  1 / 2 / 4 / 8 / 64); a 240 µm line reads 45.7 Ω at the default and
+  49.5 Ω (Hammerstad 49.5) from k = 4 on; the odd ε_eff keeps moving
+  until the cells are below 4 µm (5.42 → 4.83).  The how-to designs
+  and runs at k = 8 with a 6 µm floor; recorded in the meshing
+  chapter.
+- **A finger narrower than two cells is not a conductor on the port
+  face** (one line mode, the port falls to the TE/TM path with an
+  inhomogeneous-filling error).
+- **The default run is unbounded and energy-gated at 70 dB**; a
+  closed lossless housing holds the last few percent of energy in
+  modes the ports barely see (−67.6 → −68.6 dB over 150 k steps), and
+  the first attempt ran 1.8 M steps into a timeout.  The how-to sets
+  `total_time_steps` and says why; the housing length keeps its first
+  x-resonance above the band.
+- **Two layout defects with a clean S-parameter signature**: two
+  ribbon bonds of one end at the same x and height cross and short
+  line A to line B (|S21| ≡ |S41| across the band; bonds staggered
+  now), and two 240 µm leads running side by side at the fingers'
+  spacing are a coupler of their own (right-angle leads now).
+- The tandem of two 8.34-dB four-finger Langes (Ou: 130 / 75.6 Ω,
+  mean 99 Ω) needs 10–15 µm fingers at 150 µm gaps on 254 µm alumina
+  (25 µm fingers reach 81 Ω) — a GaAs-MMIC form; the single 3-dB
+  Lange is the alumina part.  `ThinWire` bonds are excluded by
+  DD-080's radius rule on this grid (r < 1.8 µm).
+
+**Files:** `examples/howto/plot_lange_coupler.py`,
+`benchmarks/bench_mesh_build.py`, `benchmarks/results/bench_mesh_build.json`,
+`src/magnelio/mesh/mesher.py` (`_unify_thin_sheet_positions`),
+`tests/unit/test_thin_sheet_detection.py`
+(`TestThinSheetAnchorUnification`),
+`tests/unit/data/gallery_planes/howto__plot_lange_coupler.json`,
+`docs/methods/ports.md`, `docs/methods/meshing-conformal.md`,
+`src/magnelio/io/paraview.py` (`_OCC_MIN_DEFLECTION`), `tests/unit/test_plot_3d.py` (`TestTinyBodies`), `spec.md` §10.3, `known-bugs.md` (KB-032, KB-033), `CHANGELOG.md`;
+`investigations/mesh-build-bench/` (internal dossier: probes,
+worksheet, GPU runs).

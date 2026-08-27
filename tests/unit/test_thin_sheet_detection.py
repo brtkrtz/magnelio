@@ -213,3 +213,73 @@ class TestThinSheetPipeline:
         mesh = Mesh.from_geometry(_microstrip_model(), ctrl, f_max=10e9)
         gz = np.asarray(mesh.grid.z)
         assert np.any(np.abs(gz - (H_SUB + T_MET)) < 1e-9)
+
+
+class TestThinSheetAnchorUnification:
+    """Two sheets at one nominal height must share one anchor plane.
+
+    A brick and a Boolean-returned track on the same substrate come back
+    with float wiggle (~1e-19 m) between their substrate-side faces;
+    sheet planes are verbatim anchors, so without unification the pair
+    left a sliver cell that collapsed the time step.
+    """
+
+    def _two_strip_model(self, dz_wiggle, forced=None):
+        substrate, air_brick, strip_a = _microstrip_shapes()
+        pec = Material.pec()
+        z_b = H_SUB + dz_wiggle
+        strip_b = Brick(origin=(1.5e-3, 0.0, z_b), size=(W_STRIP / 2, L_Y, T_MET), material=pec)
+        m = GeometryModel()
+        m.add(substrate)
+        m.add(Difference(air_brick, strip_a, strip_b))
+        m.add(strip_a)
+        m.add(strip_b)
+        # The sliver between two anchors did its damage through the
+        # singular-edge grading, which took it for the feature size.
+        control = MeshControl(
+            min_nodes_per_wavelength=10,
+            min_cell_size=FLOOR,
+            singularity_refinement=4,
+            forced_planes={"z": list(forced)} if forced else {},
+        )
+        return m, control
+
+    def test_wiggled_sheets_share_one_plane(self):
+        import warnings
+
+        wiggle = float(np.nextafter(H_SUB, 1.0)) - H_SUB  # one ulp, ~1e-19 m
+        assert 0 < wiggle < 1e-15
+        model, control = self._two_strip_model(wiggle)
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            mesh = Mesh.from_geometry(model, control, f_max=5e9)
+        z = np.asarray(mesh.grid.z)
+        assert np.count_nonzero(np.abs(z - H_SUB) < 1e-9) == 1
+        assert np.diff(z).min() > 0.5 * FLOOR
+        assert not any("growth factor" in str(w.message) for w in caught)
+        assert not any("closer than min_feature_gap" in str(w.message) for w in caught)
+
+    def test_sheets_snap_onto_a_forced_plane(self):
+        wiggle = float(np.nextafter(H_SUB, 1.0)) - H_SUB
+        model, control = self._two_strip_model(wiggle, forced=[H_SUB])
+        mesh = Mesh.from_geometry(model, control, f_max=5e9)
+        z = np.asarray(mesh.grid.z)
+        assert H_SUB in z.tolist()
+        assert np.count_nonzero(np.abs(z - H_SUB) < 1e-9) == 1
+
+    def test_helper_chains_clusters_and_prefers_forced(self):
+        from types import SimpleNamespace
+
+        from magnelio.mesh.mesher import _unify_thin_sheet_positions
+
+        specs = [
+            SimpleNamespace(axis="z", position=1.0),
+            SimpleNamespace(axis="z", position=1.0 + 0.6e-6),
+            SimpleNamespace(axis="z", position=1.0 + 1.2e-6),  # chained via the middle one
+            SimpleNamespace(axis="z", position=1.0 + 5e-6),  # separate
+            SimpleNamespace(axis="x", position=2.0 + 0.4e-6),
+        ]
+        _unify_thin_sheet_positions(specs, {"x": [2.0]}, tol=1e-6)
+        assert [s.position for s in specs[:3]] == [1.0, 1.0, 1.0]
+        assert specs[3].position == 1.0 + 5e-6
+        assert specs[4].position == 2.0

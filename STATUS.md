@@ -13,7 +13,7 @@ parity — hollow conductors had lost the conformal correction at their
 inner walls (KB-031); how-to *coupled-line coupler* and tutorial 19
 *offset Cassegrain* (rendered, not executed; figures of a measured run
 embedded), every gallery 3D view carries an "Interactive Scene" tab,
-GitHub Discussions is the feedback channel.  Unit suite 2425 passed /
+GitHub Discussions is the feedback channel.  Unit suite 2431 passed /
 4 skipped; integration suite 402 passed / 5 skipped after KB-028
 (edge-pass tangency rule, coax re-pin) and the KB-011 fixture re-pin
 (DD-199 fallout closed 2026-08-27; both unreleased on `main`).
@@ -33,7 +33,8 @@ certificates named in their DD entries.
 
 Newest first, one line each; the full record is the DD entry.
 
-* **DD-200** (2026-08-27) — grid planes carry their provenance: `mesh.planes` (per-axis records with rule + shape, dropped / absorbed / `unplaced` as the silent-drop invariant, post-hoc positional attribution, merge helpers untouched), `print(mesh.planes)`, store dataset, `plots.plot_mesh_section` (cells by conductor coverage / material / normal-edge ε̄, edge layer, lines by origin, outline overlay), and per-example pins of the plane sets in the unit suite (28 scripts, 38 s) — the KB-028 class fails at the mesher now.
+* **DD-201** (2026-08-27) — mesh-build benchmark on production geometry classes (`benchmarks/bench_mesh_build.py`: Lange-coupler row, patch array with corporate feed, post row; wall time per mesher pass; section-pool arms off / auto / forced) and the how-to *Lange coupler* (3-dB interdigitated coupler dimensioned on the port solver, k = 8 singular refinement with a 6 µm floor, ribbon bonds, |S31| −2.7 dB / 89.8° / −32 dB match and isolation).  Verdict: the edge pass is 1–11 % of a build on every class — the edge pool is closed as a non-lever; the N-ary fuse of planar copper (466 of 475 s on a 4 × 4 array) and the un-pooled classification sections are the next items.  KB-032 (sheet-anchor sliver) and KB-033 (3D viewer refused bodies under ~200 µm) fixed on the way.
+* **DD-200** (2026-08-27) — grid planes carry their provenance: `mesh.planes` (per-axis records with rule + shape, dropped / absorbed / `unplaced` as the silent-drop invariant, post-hoc positional attribution, merge helpers untouched), `print(mesh.planes)`, store dataset, `plots.plot_mesh_section` (cells by conductor coverage / material / normal-edge ε̄, edge layer, lines by origin, outline overlay), and per-example pins of the plane sets in the unit suite (29 scripts, 38 s) — the KB-028 class fails at the mesher now.
 * **DD-199** (2026-08-26) — free-form faces in the planar section engine as a triangulation at the section deflection: combinatorial segment orientation (vertex-on-plane safe), Newton lift of every crossing onto the exact surface (the chord error is normal to the surface and reaches the plane as δ/sin θ), in-plane refinement to δ/10; analytic quadrics keep the kernel path (bit-identical). Cassegrain mesh 372 → 58 s with *better* fractions than the kernel tessellation. KB-031 found and fixed on the way: the kernel's section contours share one winding and the signed-sum kernels booked every dual face inside a hole as fully PEC — `orient_nested_contours` before the kernels (tube inner wall 0.12 → 4e-3 mean error).
 * **DD-198** (2026-08-26) — waveguide-port windows in absorbing (CPML) faces: the mesher copies the first interior slab's sub-cell data into the PML extension (KB-029 — every conductor touching a CPML face had lost its PEC mask there), the CPML zeroes its stretching coefficients behind each window (per-component arrays, bit-identical without windows), the enclosure rule (window ring = conductor) is enforced in the solver setup and on `PortWaveguide`, the far-field monitor samples the feed face at the absorber interface and leaves the guide interior out, and TE/TM-fed monitors divide by `|a(f)|/|W(f)|` (KB-030; measured `P_rad/P_acc` 0.79 → 0.97 on an open-ended tube).
 * **DD-197** (2026-08-26) — `geo.Surface.parametric(fn, u=, v=, samples=)`: B-spline interpolation of a sampled map (pole rows allowed), `Sheet` → `PlanarSheet` marker hierarchy, `extruded()` on curved sheets (prism, robust), `thickened()` on curved sheets as a guarded offset cascade (volume check catches the kernel's folds), transforms keep the sheet marker (`Face.rotated().thickened()` works); methods chapter *Geometry construction*.
@@ -347,23 +348,24 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   0.8 mm FR4 microstrip at 15 GHz, growing with substrate thickness,
   zero for ε_r = 1.  Needs a frequency-dependent quasi-TEM mode to
   close; until then keep quasi-TEM feeds short or compare raw S.
-* **Mesh-build speed.**  DD-101 (`compute_edge_pec_fractions`:
-  face-bbox slab prefilter + cached intersectors) and DD-102
-  (`compute_face_material_areas`: exact planar section engine, OCC
-  delegation only for curved/tangent/coplanar planes) took the
-  slotline coupler mesh 142 → 14 s with bit-identical mesh gates;
-  DD-141 fixed pool *admission* by measuring a sample (60-post
-  fixture 12.1 → 5.3 s; the 1002-primitive stress case keeps its pool
-  and its 58.0 → 33.3 s).  Remaining, in value order: (1) a process
-  pool over edge chunks for `compute_edge_pec_fractions` — still the
-  candidate for coupler-class geometries (22.8 s of 33.6 s at
-  n = 100; pythonocc SWIG never releases the GIL, so processes only),
-  with two measured caveats: it inherits the same ~5 s spawn floor,
-  and on a 60-post row the function is not dominant, so the case has
-  to be made per geometry class; (2) free-form faces — **done**
-  (DD-199, facet path; the analytic quadrics could still get an exact
-  plane × quadric section); (3) a bin/BVH over face boxes if
-  geometries grow another order of magnitude.
+* **Mesh-build speed.**  DD-101/102 (edge prefilter, planar section
+  engine) took the slotline coupler 142 → 14 s; DD-141 admits the
+  section pool on a measured sample; DD-199 gave free-form faces the
+  facet path.  DD-201 measured three production classes end to end
+  (`benchmarks/bench_mesh_build.py`, CPU): a row of 16 Lange couplers
+  (3.7 M cells) builds in 141 s, a 240-post row (385 k) in 45 s, a
+  4 × 4 patch array with corporate feed (222 k cells, 2 147 faces) in
+  475 s.  The edge pass is 1–11 % everywhere — the edge-chunk pool is
+  closed as a non-lever.  Open, in value order: (1) the N-ary Boolean
+  fuse of a planar copper network is superlinear (30 strips 21 s, 120
+  strips 466 s = 98 % of the array's build) — fuse in tiles; (2) the
+  classification sections (`batch_cross_sections`, 15.6 of 45 s on the
+  post row) have no pool; (3) the face pass on many-coupler planes
+  grows faster than the cell count (areas µ 15.5 → 51.8 s for 8 → 16
+  couplers; the pool halves it) — a per-plane face prefilter.  The
+  analytic quadrics could still get an exact plane × quadric section;
+  a bin/BVH over face boxes stays the answer for the next order of
+  magnitude.
 
 Closed construction sites are tombstoned where they were decided (the
 DD entry and `known-bugs.md`) and are not repeated here.

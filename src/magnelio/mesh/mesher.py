@@ -624,6 +624,13 @@ class Mesh:
                 background=bg_material,
                 scale=geo_scale,
             )
+        # Two sheets at one nominal height — a brick and a track that
+        # came back from a Boolean, say — differ by kernel float wiggle
+        # (~1e-19 m).  Sheet planes are anchors that survive every
+        # merge verbatim, so left alone the pair makes a sliver cell
+        # that collapses dt; unify them within the feature gap first
+        # (a user-forced plane wins, otherwise the lowest sheet).
+        _unify_thin_sheet_positions(_thin_sheets, control.forced_planes, feature_gap)
         _thin_by_shape = {id(spec.shape): spec for spec in _thin_sheets}
 
         # Step 1: Extract critical planes from OCC geometry (per shape,
@@ -1923,6 +1930,38 @@ def _restore_bbox_pec_walls(
         for (axis, sl), values in zip(face_specs[face], saved):
             view = pec_mask[axis, : n_per_axis[axis]].reshape(edge_shapes[axis])
             view[sl] = values
+
+
+def _unify_thin_sheet_positions(specs: list, forced_planes: dict, tol: float) -> None:
+    """Snap thin-sheet planes within *tol* of each other onto one position.
+
+    Sheet planes are verbatim anchors of the plane merge, so two sheets
+    whose substrate-side faces differ only by float wiggle would leave
+    a sliver cell between two anchors.  Per axis, sheets are clustered
+    by position (chain rule: each within *tol* of the previous one);
+    a cluster takes the position of a user-forced plane within *tol*
+    if there is one, otherwise its lowest member's.  The specs are
+    updated in place — the sheet masks land on the shared node.
+    """
+    if tol <= 0:
+        return
+    for axis in ("x", "y", "z"):
+        axis_specs = sorted((s for s in specs if s.axis == axis), key=lambda s: s.position)
+        forced = [float(p) for p in forced_planes.get(axis, [])]
+        clusters: list[list] = []
+        for spec in axis_specs:
+            if clusters and spec.position - clusters[-1][-1].position <= tol:
+                clusters[-1].append(spec)
+            else:
+                clusters.append([spec])
+        for cluster in clusters:
+            rep = cluster[0].position
+            for p in forced:
+                if abs(p - rep) <= tol:
+                    rep = p
+                    break
+            for spec in cluster:
+                spec.position = rep
 
 
 def _merge_axis_planes(
