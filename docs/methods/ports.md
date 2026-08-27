@@ -94,8 +94,12 @@ because the feed *is* uniform there.  And the window must be enclosed
 by conductor on the port slab: the lateral edge of the absorber
 switch-off then lies on metal, where it cannot scatter.  A port that
 covers the whole absorbing face, or a window whose ring lies in free
-space, is refused with a pointer to these rules.  The far-field
-monitor knows about such feeds (far-field chapter).
+space, is refused with a pointer to these rules.  A printed line —
+a microstrip feeding a patch array — satisfies them through a short
+shielded launch: two walls and a roof around the trace where it meets
+the wall, the window in the launch's cross-section, the way a
+connector body encloses the line (how-to *patch array*).  The
+far-field monitor knows about such feeds (far-field chapter).
 
 ## Exact discrete transparent boundary conditions (DTBC)
 

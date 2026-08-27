@@ -16,8 +16,27 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Three entries are open as of 2026-08-27: KB-022, KB-023 and
-KB-027.**  Everything else is struck through and resolved.
+**Four entries are open as of 2026-08-27: KB-022, KB-023, KB-027 and
+KB-035.**  Everything else is struck through and resolved.
+
+## KB-035: Far-field power deficit of about a tenth with a window port in an absorbing face — Open
+
+With the feed entering through a window port on a CPML face (DD-198),
+`MonitorFarField` leaves the guide interior out of its Huygens surface
+and samples that face at the absorber interface; the currents on the
+guide's outer wall beyond the surface are the documented
+approximation.  On the patch-array how-to (2026-08-27, shielded
+microstrip launch, |S11|² ≈ 0.005) the integrated `P_rad` is 0.84–0.89
+of the incident power for both the single element and the 2 × 2
+array, against 0.91–0.92 for the same element on a lumped port —
+about a tenth of the accepted power is not collected, and the
+directivity (normalised to `P_rad`) reads 0.5–0.7 dB high while the
+realized gain (normalised to the incident power) is unaffected.
+Measured in `investigations/patch-array/MEASUREMENTS.md` (M16, internal
+record).  Not yet localised: candidates are the launch's outer walls
+inside the absorber and the window's node-inclusive footprint on the
+sampled face.  Until then, read realized gain from such models, or
+quote directivity from a lumped-port feed.
 
 ## KB-034: ~~Thin sheets and wires touching an absorbing face had no mask in the PML~~ — Resolved (DD-198 amendment, 2026-08-27)
 
