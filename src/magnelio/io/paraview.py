@@ -130,6 +130,13 @@ def _material_table(materials, colors=None) -> tuple[list[dict], list[int]]:
 # ═════════════════════════════════════════════════════════════════════
 
 
+# OCC rejects a linear deflection below ``Precision::Confusion()`` (1e-7
+# in the kernel's units) with a Standard_NumericError; a body of a few
+# tens of micrometres at metre scale asks for less, so every deflection
+# handed to ``BRepMesh_IncrementalMesh`` is floored here.
+_OCC_MIN_DEFLECTION = 1.1e-7
+
+
 def _occ_deflection(shape, rel: float) -> float:
     """Linear deflection as a fraction of the shape's bbox diagonal."""
     from OCC.Core.Bnd import Bnd_Box  # noqa: PLC0415
@@ -147,7 +154,7 @@ def _occ_deflection(shape, rel: float) -> float:
         return 1e-4
     xmin, ymin, zmin, xmax, ymax, zmax = box.Get()
     diag = float(np.sqrt((xmax - xmin) ** 2 + (ymax - ymin) ** 2 + (zmax - zmin) ** 2))
-    return max(rel * diag, 1e-12)
+    return max(rel * diag, _OCC_MIN_DEFLECTION)
 
 
 def _tessellate_shape(occ_shape, deflection: float | None, angular_deflection: float = 0.5):
@@ -167,6 +174,7 @@ def _tessellate_shape(occ_shape, deflection: float | None, angular_deflection: f
     from OCC.Core.TopoDS import topods  # noqa: PLC0415
 
     defl = deflection if deflection is not None else _occ_deflection(occ_shape, 2e-3)
+    defl = max(float(defl), _OCC_MIN_DEFLECTION)
     BRepMesh_IncrementalMesh(occ_shape, defl, False, angular_deflection, True)
 
     points: list[np.ndarray] = []

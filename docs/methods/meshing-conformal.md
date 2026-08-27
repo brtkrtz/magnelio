@@ -123,7 +123,14 @@ The corners of a cavity are concave metal edges and regular; a
 fillet's onset is tangential; dielectric edges are much weaker and
 not refined.  The refinement never adds a plane (the edge's plane is
 a material face or an edge plane already), never touches the domain's
-own end planes, and stops at `min_cell_size`.
+own end planes, and stops at `min_cell_size`.  Coupled lines with a
+tight gap are the case that needs it most: the odd mode of a 25 µm
+gap between 5 µm fingers on 254 µm alumina lives within a few tens of
+micrometres of the surface, and its impedance moves from 22 Ω at the
+default grading to 42 Ω once the cells next to the metal are below
+10 µm (factor 8 with a 6 µm floor), while the even mode moves by a
+tenth of that — the *Lange coupler* how-to designs on exactly that
+grid.
 
 The factor is off by default, and the reason is the time step.  The
 edge cell bounds it, so a factor of 2 halves the step and adds the

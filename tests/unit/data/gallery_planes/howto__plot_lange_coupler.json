@@ -1,0 +1,227 @@
+{
+ "axes": {
+  "x": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.000228
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.000228,
+     "moved_to": null,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(alumina)",
+      "edge #1 Difference(air)",
+      "edge #2 Brick(PEC)",
+      "edge #3 Brick(PEC)",
+      "extent #0 Brick(alumina)",
+      "extent #1 Difference(air)",
+      "extent #2 Brick(PEC)",
+      "extent #3 Brick(PEC)",
+      "face #0 Brick(alumina)",
+      "face #1 Difference(air)",
+      "face #2 Brick(PEC)",
+      "face #3 Brick(PEC)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.000228,
+     "moved_to": null,
+     "node": 5,
+     "position": 0.001,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(alumina)",
+      "edge #1 Difference(air)",
+      "edge #2 Brick(PEC)",
+      "edge #3 Brick(PEC)",
+      "extent #0 Brick(alumina)",
+      "extent #1 Difference(air)",
+      "extent #2 Brick(PEC)",
+      "extent #3 Brick(PEC)",
+      "face #0 Brick(alumina)",
+      "face #1 Difference(air)",
+      "face #2 Brick(PEC)",
+      "face #3 Brick(PEC)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "y": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.000228,
+    0.000228,
+    0.000228,
+    0.000228,
+    0.000228
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 3e-06,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.003,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(alumina)",
+      "edge #1 Difference(air)",
+      "extent #0 Brick(alumina)",
+      "extent #1 Difference(air)",
+      "face #0 Brick(alumina)",
+      "face #1 Difference(air)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 3.75e-07,
+     "moved_to": null,
+     "node": 24,
+     "position": -2.2e-05,
+     "singular": true,
+     "sources": [
+      "edge #1 Difference(air)",
+      "edge #2 Brick(PEC)",
+      "extent #2 Brick(PEC)",
+      "face #1 Difference(air)",
+      "face #2 Brick(PEC)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 3.75e-07,
+     "moved_to": null,
+     "node": 26,
+     "position": -1e-05,
+     "singular": true,
+     "sources": [
+      "edge #1 Difference(air)",
+      "edge #2 Brick(PEC)",
+      "extent #2 Brick(PEC)",
+      "face #1 Difference(air)",
+      "face #2 Brick(PEC)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 3.75e-07,
+     "moved_to": null,
+     "node": 29,
+     "position": 1e-05,
+     "singular": true,
+     "sources": [
+      "edge #1 Difference(air)",
+      "edge #3 Brick(PEC)",
+      "extent #3 Brick(PEC)",
+      "face #1 Difference(air)",
+      "face #3 Brick(PEC)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 3.75e-07,
+     "moved_to": null,
+     "node": 31,
+     "position": 2.2e-05,
+     "singular": true,
+     "sources": [
+      "edge #1 Difference(air)",
+      "edge #3 Brick(PEC)",
+      "extent #3 Brick(PEC)",
+      "face #1 Difference(air)",
+      "face #3 Brick(PEC)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 3e-06,
+     "moved_to": null,
+     "node": 55,
+     "position": 0.003,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(alumina)",
+      "edge #1 Difference(air)",
+      "extent #0 Brick(alumina)",
+      "extent #1 Difference(air)",
+      "face #0 Brick(alumina)",
+      "face #1 Difference(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "z": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.000228,
+    0.0007138
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 6.35e-05,
+     "moved_to": null,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(alumina)",
+      "extent #0 Brick(alumina)",
+      "face #0 Brick(alumina)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 7.937e-06,
+     "moved_to": null,
+     "node": 9,
+     "position": 0.000254,
+     "singular": true,
+     "sources": [
+      "edge #0 Brick(alumina)",
+      "edge #1 Difference(air)",
+      "extent #0 Brick(alumina)",
+      "extent #1 Difference(air)",
+      "face #0 Brick(alumina)",
+      "face #1 Difference(air)",
+      "sheet #2 Brick(PEC)",
+      "sheet #3 Brick(PEC)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 6.35e-05,
+     "moved_to": null,
+     "node": 26,
+     "position": 0.002,
+     "singular": false,
+     "sources": [
+      "edge #1 Difference(air)",
+      "extent #1 Difference(air)",
+      "face #1 Difference(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  }
+ },
+ "feature_gap": 6.40312e-08,
+ "n_nodes": {
+  "x": 6,
+  "y": 56,
+  "z": 27
+ },
+ "pml_cells": {},
+ "schema": 1
+}

@@ -63,7 +63,10 @@ a symmetric pair), its eigenvalue the modal $\varepsilon_{\text{eff}}$,
 and its impedance $Z_0 = 1/(c\sqrt{C'_v C'_{0,v}})$ with the modal
 capacitances $C'_v = \mathbf v^\top\mathbf C\,\mathbf v$ for the
 unit-Euclidean pattern $\mathbf v$ — for a symmetric pair exactly
-$Z_{0e}$ and $Z_{0o}$.  Channels are ordered by descending
+$Z_{0e}$ and $Z_{0o}$.  Dimensioning a coupled section from these two
+modes alone — a pair of lines, or one pair of a Lange coupler's
+fingers — is the subject of the how-to guides *Coupled-line
+directional coupler* and *Lange coupler*.  Channels are ordered by descending
 $\varepsilon_{\text{eff}}$ and are orthogonal in the port's
 capacitance-corrected mass.  A single signal conductor is the $1
 \times 1$ case of the same construction.  For a homogeneous filling

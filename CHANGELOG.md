@@ -30,6 +30,17 @@ major version is 0, minor releases may change the public API.
   fails with a per-axis diff instead of a physics test downstream.
 - Methods chapter *Mesh generation*: section *Inspecting the grid*;
   tutorial 02 prints the record and shows the mesh section.
+- How-to guide *Lange coupler*: a 3-dB interdigitated coupler at 10 GHz
+  on 254 µm alumina, dimensioned with the port solver alone — the
+  interdigital synthesis gives the even- and odd-mode impedances one
+  finger pair must have, sixteen slice meshes find the finger width and
+  gap that deliver them on the grid the coupler is then solved on —
+  with ribbon bonds as resolved metal and the coupling, quadrature
+  phase, match and isolation read off the four-port run.
+- Benchmark `benchmarks/bench_mesh_build.py`: mesh-build wall time per
+  mesher pass on three production geometry classes (a row of Lange
+  couplers, a patch array with corporate feed, a post row), with the
+  section process pool off, in production mode or forced.
 
 ### Changed
 
@@ -40,6 +51,15 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- `model.plot()` and the ParaView export no longer fail on bodies of a
+  few tens of micrometres (a bond post, a via barrel): the tessellation
+  deflection is floored at the kernel's precision instead of below it.
+- Two thin metallisations at the same nominal height — a brick and a
+  traced track on one substrate, say — no longer leave a pair of grid
+  planes a float-rounding apart: sheet planes within the feature gap
+  now share one plane (and snap onto a forced plane there), so the
+  misleading "forced planes … closer than min_feature_gap" warning and
+  the growth-factor warning that came with it are gone.
 - A curved body touching a flat face — a cylinder inscribed in a box,
   a round hole reaching a wall — no longer places a grid plane through
   its own axis: the Boolean's split line along the touching line is
