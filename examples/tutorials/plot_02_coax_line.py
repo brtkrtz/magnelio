@@ -143,6 +143,16 @@ mesh = mio.Mesh.from_geometry(model, mio.MeshControl(max_cell_size=0.12e-3), f_m
 print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 
 # %%
+# Which geometry put each grid line where it is?  The mesh keeps that
+# record.  Every plane lists the rule and the shape that asked for it:
+# here the tangent planes of the two cylinders (``face``) and the
+# bounding boxes that coincide with them (``extent``); ``domain end``
+# marks the box.  A plane you cannot explain from this list is a plane
+# worth questioning.
+
+print(mesh.planes)
+
+# %%
 # The 3D view shows the line opened along its axis, the grid cells on
 # the cut coloured by material, and the two port windows on the domain
 # faces.
@@ -160,6 +170,16 @@ plots.plot_cross_section(
     model, "x", 0.0, mesh=mesh, ax=axes[1], flip=True, title="Longitudinal cut (x = 0)"
 )
 fig.tight_layout()
+
+# %%
+# The same section seen from the mesh's side: every cell in the colour
+# of the material it was filled with, on its real size, and every grid
+# line in the style of the rule that placed it — material faces solid,
+# the graded fill between them as hairlines.  The exact contour is
+# drawn on top, so the staircase and the circle are read against each
+# other.
+
+plots.plot_mesh_section(mesh, "z", L / 2, geometry=model, title="Grid planes by origin")
 
 # %%
 # The circle is rendered on a rectangular grid as a staircase, with

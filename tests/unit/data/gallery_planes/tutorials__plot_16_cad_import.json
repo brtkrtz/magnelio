@@ -1,0 +1,240 @@
+{
+ "axes": {
+  "x": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.0009993,
+    0.0006896,
+    0.0006896,
+    0.0006896,
+    0.0009993
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.000325,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.0035,
+     "singular": false,
+     "sources": [
+      "extent #2 ImportedSolid(PEC) 'outer_shell'",
+      "face #2 ImportedSolid(PEC) 'outer_shell'"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.000325,
+     "moved_to": null,
+     "node": 6,
+     "position": -0.00218,
+     "singular": false,
+     "sources": [
+      "extent #1 ImportedSolid(PTFE) 'insulator'",
+      "face #1 ImportedSolid(PTFE) 'insulator'",
+      "face #2 ImportedSolid(PEC) 'outer_shell'"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.000325,
+     "moved_to": null,
+     "node": 13,
+     "position": -0.00065,
+     "singular": false,
+     "sources": [
+      "extent #0 ImportedSolid(PEC) 'centre_pin'",
+      "face #0 ImportedSolid(PEC) 'centre_pin'",
+      "face #1 ImportedSolid(PTFE) 'insulator'"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.000325,
+     "moved_to": null,
+     "node": 19,
+     "position": 0.00065,
+     "singular": false,
+     "sources": [
+      "extent #0 ImportedSolid(PEC) 'centre_pin'",
+      "face #0 ImportedSolid(PEC) 'centre_pin'",
+      "face #1 ImportedSolid(PTFE) 'insulator'"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.000325,
+     "moved_to": null,
+     "node": 26,
+     "position": 0.00218,
+     "singular": false,
+     "sources": [
+      "extent #1 ImportedSolid(PTFE) 'insulator'",
+      "face #1 ImportedSolid(PTFE) 'insulator'",
+      "face #2 ImportedSolid(PEC) 'outer_shell'"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.000325,
+     "moved_to": null,
+     "node": 32,
+     "position": 0.0035,
+     "singular": false,
+     "sources": [
+      "extent #2 ImportedSolid(PEC) 'outer_shell'",
+      "face #2 ImportedSolid(PEC) 'outer_shell'"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "y": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.0009993,
+    0.0006896,
+    0.0006896,
+    0.0006896,
+    0.0009993
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.000325,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.0035,
+     "singular": false,
+     "sources": [
+      "extent #2 ImportedSolid(PEC) 'outer_shell'",
+      "face #2 ImportedSolid(PEC) 'outer_shell'"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.000325,
+     "moved_to": null,
+     "node": 6,
+     "position": -0.00218,
+     "singular": false,
+     "sources": [
+      "extent #1 ImportedSolid(PTFE) 'insulator'",
+      "face #1 ImportedSolid(PTFE) 'insulator'",
+      "face #2 ImportedSolid(PEC) 'outer_shell'"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.000325,
+     "moved_to": null,
+     "node": 13,
+     "position": -0.00065,
+     "singular": false,
+     "sources": [
+      "extent #0 ImportedSolid(PEC) 'centre_pin'",
+      "face #0 ImportedSolid(PEC) 'centre_pin'",
+      "face #1 ImportedSolid(PTFE) 'insulator'"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.000325,
+     "moved_to": null,
+     "node": 19,
+     "position": 0.00065,
+     "singular": false,
+     "sources": [
+      "extent #0 ImportedSolid(PEC) 'centre_pin'",
+      "face #0 ImportedSolid(PEC) 'centre_pin'",
+      "face #1 ImportedSolid(PTFE) 'insulator'"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.000325,
+     "moved_to": null,
+     "node": 26,
+     "position": 0.00218,
+     "singular": false,
+     "sources": [
+      "extent #1 ImportedSolid(PTFE) 'insulator'",
+      "face #1 ImportedSolid(PTFE) 'insulator'",
+      "face #2 ImportedSolid(PEC) 'outer_shell'"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.000325,
+     "moved_to": null,
+     "node": 32,
+     "position": 0.0035,
+     "singular": false,
+     "sources": [
+      "extent #2 ImportedSolid(PEC) 'outer_shell'",
+      "face #2 ImportedSolid(PEC) 'outer_shell'"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "z": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.0006896
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.0006896,
+     "moved_to": null,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "edge #0 ImportedSolid(PEC) 'centre_pin'",
+      "edge #1 ImportedSolid(PTFE) 'insulator'",
+      "edge #2 ImportedSolid(PEC) 'outer_shell'",
+      "extent #0 ImportedSolid(PEC) 'centre_pin'",
+      "extent #1 ImportedSolid(PTFE) 'insulator'",
+      "extent #2 ImportedSolid(PEC) 'outer_shell'",
+      "face #0 ImportedSolid(PEC) 'centre_pin'",
+      "face #1 ImportedSolid(PTFE) 'insulator'",
+      "face #2 ImportedSolid(PEC) 'outer_shell'"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.0006896,
+     "moved_to": null,
+     "node": 48,
+     "position": 0.012,
+     "singular": false,
+     "sources": [
+      "edge #0 ImportedSolid(PEC) 'centre_pin'",
+      "edge #1 ImportedSolid(PTFE) 'insulator'",
+      "edge #2 ImportedSolid(PEC) 'outer_shell'",
+      "extent #0 ImportedSolid(PEC) 'centre_pin'",
+      "extent #1 ImportedSolid(PTFE) 'insulator'",
+      "extent #2 ImportedSolid(PEC) 'outer_shell'",
+      "face #0 ImportedSolid(PEC) 'centre_pin'",
+      "face #1 ImportedSolid(PTFE) 'insulator'",
+      "face #2 ImportedSolid(PEC) 'outer_shell'"
+     ]
+    }
+   ],
+   "unplaced": []
+  }
+ },
+ "feature_gap": 1.55563e-07,
+ "n_nodes": {
+  "x": 33,
+  "y": 33,
+  "z": 49
+ },
+ "pml_cells": {},
+ "schema": 1
+}

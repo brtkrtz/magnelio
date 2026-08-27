@@ -12,6 +12,7 @@ from magnelio.post.plot_field import (
     plot_field_vector,
 )
 from magnelio.post.plot_geometry import plot_cross_section
+from magnelio.post.plot_mesh import plot_mesh_section
 from magnelio.post.plot_pattern import (
     plot_pattern_3d,
     plot_pattern_cut,
@@ -19,6 +20,7 @@ from magnelio.post.plot_pattern import (
 
 __all__ = [
     "plot_cross_section",
+    "plot_mesh_section",
     "show_geometry",
     "plot_field_scalar",
     "plot_field_vector",

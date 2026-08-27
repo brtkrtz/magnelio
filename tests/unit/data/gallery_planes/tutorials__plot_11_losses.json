@@ -1,0 +1,178 @@
+{
+ "axes": {
+  "x": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.001257,
+    0.001257,
+    0.001257
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.0002025,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.001475,
+     "singular": false,
+     "sources": [
+      "extent #0 Difference(FR-4 class)",
+      "face #0 Difference(FR-4 class)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0002025,
+     "moved_to": null,
+     "node": 6,
+     "position": -0.000405,
+     "singular": false,
+     "sources": [
+      "extent #1 Cylinder(PEC)",
+      "face #0 Difference(FR-4 class)",
+      "face #1 Cylinder(PEC)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0002025,
+     "moved_to": null,
+     "node": 11,
+     "position": 0.000405,
+     "singular": false,
+     "sources": [
+      "extent #1 Cylinder(PEC)",
+      "face #0 Difference(FR-4 class)",
+      "face #1 Cylinder(PEC)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.0002025,
+     "moved_to": null,
+     "node": 17,
+     "position": 0.001475,
+     "singular": false,
+     "sources": [
+      "extent #0 Difference(FR-4 class)",
+      "face #0 Difference(FR-4 class)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "y": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.001257,
+    0.001257,
+    0.001257
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.0002025,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.001475,
+     "singular": false,
+     "sources": [
+      "extent #0 Difference(FR-4 class)",
+      "face #0 Difference(FR-4 class)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0002025,
+     "moved_to": null,
+     "node": 6,
+     "position": -0.000405,
+     "singular": false,
+     "sources": [
+      "extent #1 Cylinder(PEC)",
+      "face #0 Difference(FR-4 class)",
+      "face #1 Cylinder(PEC)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0002025,
+     "moved_to": null,
+     "node": 11,
+     "position": 0.000405,
+     "singular": false,
+     "sources": [
+      "extent #1 Cylinder(PEC)",
+      "face #0 Difference(FR-4 class)",
+      "face #1 Cylinder(PEC)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.0002025,
+     "moved_to": null,
+     "node": 17,
+     "position": 0.001475,
+     "singular": false,
+     "sources": [
+      "extent #0 Difference(FR-4 class)",
+      "face #0 Difference(FR-4 class)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "z": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.001257
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.001257,
+     "moved_to": null,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "edge #0 Difference(FR-4 class)",
+      "edge #1 Cylinder(PEC)",
+      "extent #0 Difference(FR-4 class)",
+      "extent #1 Cylinder(PEC)",
+      "face #0 Difference(FR-4 class)",
+      "face #1 Cylinder(PEC)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.001257,
+     "moved_to": null,
+     "node": 150,
+     "position": 0.024,
+     "singular": false,
+     "sources": [
+      "edge #0 Difference(FR-4 class)",
+      "edge #1 Cylinder(PEC)",
+      "extent #0 Difference(FR-4 class)",
+      "extent #1 Cylinder(PEC)",
+      "face #0 Difference(FR-4 class)",
+      "face #1 Cylinder(PEC)"
+     ]
+    }
+   ],
+   "unplaced": []
+  }
+ },
+ "feature_gap": 2.7271e-07,
+ "n_nodes": {
+  "x": 18,
+  "y": 18,
+  "z": 151
+ },
+ "pml_cells": {},
+ "schema": 1
+}

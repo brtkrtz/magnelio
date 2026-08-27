@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from magnelio.geo._subcell import EdgeMaterialData, FaceMaterialData
     from magnelio.materials.material import Material
     from magnelio.mesh._conformal import PECSurfaceData
+    from magnelio.mesh._planes import GridPlanes
     from magnelio.mesh.faces import BoxFace
 
 
@@ -315,6 +316,11 @@ class Mesh:
     # via add_element.  Carried alongside the ports for the same
     # reason; the mesher itself never reads them.
     elements: tuple = ()
+    # Provenance of every grid plane (DD-200): which rule and which
+    # shape asked for it, which requested planes were dropped or
+    # absorbed.  Set by ``from_geometry``; ``None`` on the ``from_grid``
+    # path and on meshes loaded from stores written before this field.
+    planes: "GridPlanes | None" = None
     # Pre-wall values of the edges the PEC closure overwrote, per face.
     # Lets a later closure change take a wall back off again (the OR
     # itself is lossy).  Not serialised: a reloaded mesh keeps the
@@ -527,6 +533,25 @@ class Mesh:
         shapes = list(geometry)
         bg_material = getattr(geometry, "background", None)
 
+        # DD-200: plane provenance.  The model's shape order labels every
+        # plane source; taken before the wire split so wires keep the
+        # index they have in the model.
+        from magnelio.mesh._planes import (  # noqa: PLC0415
+            GridPlanes,
+            PlaneSource,
+            attribute_planes,
+            shape_label,
+            with_node_data,
+        )
+
+        _shape_index = {id(s): i for i, s in enumerate(shapes)}
+        _shape_labels = {id(s): shape_label(i, s) for i, s in enumerate(shapes)}
+
+        def _src(kind: str, shape=None, label: str = "") -> PlaneSource:
+            if shape is None:
+                return PlaneSource(kind, None, label)
+            return PlaneSource(kind, _shape_index.get(id(shape)), _shape_labels.get(id(shape), ""))
+
         boundary_conditions = resolve_boundary_conditions(
             getattr(geometry, "boundary_conditions", None),
         )
@@ -618,13 +643,21 @@ class Mesh:
         # Boolean-inflated bbox extent must not drag the grid line off
         # the material face it duplicates).
         critical_raw: dict[str, list[tuple[float, bool]]] = {"x": [], "y": [], "z": []}
+        # DD-200: the raw (position, source) record kept next to every
+        # raw plane list and attributed to the merged outcome below.
+        plane_sources: dict[str, list[tuple[float, PlaneSource]]] = {"x": [], "y": [], "z": []}
         for shape, shape_planes in extract_critical_planes_per_shape(shapes, scale=geo_scale):
             spec = _thin_by_shape.get(id(shape))
             for axis in ("x", "y", "z"):
                 if spec is not None and axis == spec.axis:
                     critical_raw[axis].append((spec.position, True))
+                    plane_sources[axis].append((spec.position, _src("sheet", shape)))
                 else:
                     critical_raw[axis].extend(shape_planes[axis])
+                    plane_sources[axis].extend(
+                        (p, _src("face" if exact else "extent", shape))
+                        for p, exact in shape_planes[axis]
+                    )
         # Step 1b (DD-191): geometry-edge planes — where a B-rep edge
         # lies flat in an axis-normal plane the body's cross-section
         # changes character along that axis (chamfer/fillet onset,
@@ -644,6 +677,7 @@ class Mesh:
                     if spec is not None and axis == spec.axis:
                         continue
                     feature_raw[axis].extend(shape_edges[axis])
+                    plane_sources[axis].extend((p, _src("edge", shape)) for p in shape_edges[axis])
         # Step 1c (DD-194): conductor edges with a field singularity —
         # the sharp metal wedges of the model.  The planes holding one
         # are flagged after the merges below; their grading starts at
@@ -672,6 +706,10 @@ class Mesh:
                 for ax_i, axis in enumerate(("x", "y", "z")):
                     critical_raw[axis].extend((float(v), True) for v in w_pts[:, ax_i])
                     critical_raw[axis].extend(((w_min[ax_i], False), (w_max[ax_i], False)))
+                    plane_sources[axis].extend((float(v), _src("wire", w)) for v in w_pts[:, ax_i])
+                    plane_sources[axis].extend(
+                        ((w_min[ax_i], _src("extent", w)), (w_max[ax_i], _src("extent", w)))
+                    )
 
         # The far-side face of a thin sheet re-enters through the
         # *negative imprint* of the metal in the surrounding dielectric
@@ -683,12 +721,18 @@ class Mesh:
         # machinery absorbs.
         for spec in _thin_sheets:
             tol_drop = feature_gap
+
+            def _not_far(p, _far=spec.far_position, _pos=spec.position, _tol=tol_drop):
+                return abs(p - _far) > _tol or abs(p - _pos) <= _tol
+
             critical_raw[spec.axis] = [
-                (p, exact)
-                for (p, exact) in critical_raw[spec.axis]
-                if abs(p - spec.far_position) > tol_drop or abs(p - spec.position) <= tol_drop
+                (p, exact) for (p, exact) in critical_raw[spec.axis] if _not_far(p)
             ]
             critical_raw[spec.axis].append((spec.position, True))
+            plane_sources[spec.axis] = [
+                (p, src) for (p, src) in plane_sources[spec.axis] if _not_far(p)
+            ]
+            plane_sources[spec.axis].append((spec.position, _src("sheet", spec.shape)))
             # The far face comes back through the imprint's *edges* too
             # (DD-191) — same global drop, or the edge floor would
             # report the sheet the mesher itself chose not to resolve.
@@ -706,6 +750,7 @@ class Mesh:
         axis_anchors: dict[str, list[float]] = {"x": [], "y": [], "z": []}
         for axis in ("x", "y", "z"):
             axis_anchors[axis] = list(control.forced_planes.get(axis, []))
+            plane_sources[axis].extend((float(p), _src("forced")) for p in axis_anchors[axis])
         for spec in _thin_sheets:
             axis_anchors[spec.axis].append(spec.position)
 
@@ -738,6 +783,15 @@ class Mesh:
 
             critical_raw[axis] = [(p, e) for (p, e) in critical_raw[axis] if _kept(p)]
             critical_raw[axis].append((sym_pos, True))
+            # A forced plane ON the symmetry plane stays an anchor
+            # (only planes strictly beyond are dropped below).
+            plane_sources[axis] = [
+                (p, src)
+                for (p, src) in plane_sources[axis]
+                if _kept(p)
+                or (src.kind == "forced" and (p >= sym_pos if side == "min" else p <= sym_pos))
+            ]
+            plane_sources[axis].append((sym_pos, _src("symmetry", label=face)))
             feature_raw[axis] = [p for p in feature_raw[axis] if _kept(p)]
             singular_raw[axis] = [p for p in singular_raw[axis] if _kept(p)]
             if side == "min":
@@ -851,6 +905,16 @@ class Mesh:
                 and bool(np.min(np.abs(marks - p)) <= feature_gap)
                 for i, p in enumerate(planes)
             ]
+
+        # DD-200: attribute every raw source to its merged outcome.
+        (_plane_recs, _plane_dropped, _plane_absorbed, _plane_unplaced) = attribute_planes(
+            axis_planes,
+            axis_is_singular,
+            plane_sources,
+            _dropped_edges,
+            _absorbed_planes,
+            feature_gap,
+        )
 
         # DD-192: bulk cell size per axis interval.  An interval is a
         # slab of the domain; the densest material reaching into it
@@ -990,6 +1054,26 @@ class Mesh:
             h_fine_planes=h_fine_planes,
         )
 
+        # DD-200: every plane is a node of its axis (the generators
+        # clamp interval end points; the boundary buffer never moves a
+        # plane).  Indices are taken before the absorber cells shift
+        # them and before a PMC face pulls an end node inwards.
+        _plane_nodes: dict[str, list[int]] = {}
+        for axis in ("x", "y", "z"):
+            arr = np.asarray(grid_lines[axis], dtype=float)
+            span = float(arr[-1] - arr[0]) if arr.size > 1 else 1.0
+            idx_list: list[int] = []
+            for rec in _plane_recs[axis]:
+                j = int(np.argmin(np.abs(arr - rec.position)))
+                if abs(float(arr[j]) - rec.position) > 1e-9 * span:
+                    raise RuntimeError(
+                        f"mesher invariant violated: plane at {rec.position!r} on "
+                        f"axis {axis!r} is not a grid node (nearest {float(arr[j])!r})."
+                    )
+                idx_list.append(j)
+            _plane_nodes[axis] = idx_list
+        _plane_moved: dict[str, dict[str, float]] = {}
+
         _face_axis = {
             "xmin": ("x", "min"),
             "xmax": ("x", "max"),
@@ -1054,6 +1138,7 @@ class Mesh:
                             stacklevel=2,
                         )
                     nodes[0] = moved
+                    _plane_moved.setdefault(axis, {})["min"] = moved
                 else:
                     moved = nodes[-1] - (nodes[-1] - nodes[-2]) / 3.0
                     if nodes[-1] in axis_anchors[axis]:
@@ -1065,11 +1150,47 @@ class Mesh:
                             stacklevel=2,
                         )
                     nodes[-1] = moved
+                    _plane_moved.setdefault(axis, {})["max"] = moved
 
         grid = GridLines(
             x=np.array(grid_lines["x"]),
             y=np.array(grid_lines["y"]),
             z=np.array(grid_lines["z"]),
+        )
+
+        # DD-200: freeze the provenance record with the grid-side data.
+        def _frozen_axis(axis: str) -> tuple:
+            recs = _plane_recs[axis]
+            moved = _plane_moved.get(axis, {})
+            offset = _pml_cells.get(f"{axis}min", 0)
+            out = []
+            for i, rec in enumerate(recs):
+                moved_to = None
+                if i == 0 and "min" in moved:
+                    moved_to = moved["min"]
+                elif i == len(recs) - 1 and "max" in moved:
+                    moved_to = moved["max"]
+                out.append(
+                    with_node_data(
+                        rec,
+                        node=_plane_nodes[axis][i] + offset,
+                        h_fine=float(h_fine_planes[axis][i]),
+                        moved_to=moved_to,
+                    )
+                )
+            return tuple(out)
+
+        grid_planes = GridPlanes(
+            x=_frozen_axis("x"),
+            y=_frozen_axis("y"),
+            z=_frozen_axis("z"),
+            h_bulk={a: tuple(float(h) for h in h_max_axis[a]) for a in ("x", "y", "z")},
+            dropped={a: tuple(_plane_dropped[a]) for a in ("x", "y", "z")},
+            absorbed={a: tuple(_plane_absorbed[a]) for a in ("x", "y", "z")},
+            unplaced={a: tuple(_plane_unplaced[a]) for a in ("x", "y", "z")},
+            n_nodes={a: len(grid_lines[a]) for a in ("x", "y", "z")},
+            pml_cells=dict(_pml_cells),
+            feature_gap=feature_gap,
         )
 
         Nx, Ny, Nz = grid.Nx, grid.Ny, grid.Nz
@@ -1363,6 +1484,7 @@ class Mesh:
             f_max=f_max,
             ports=tuple(getattr(geometry, "ports", ()) or ()),
             elements=tuple(getattr(geometry, "elements", ()) or ()),
+            planes=grid_planes,
             _wall_backup=wall_backup,
         )
         # Effective (resolved) DD-120 values, for diagnostics and the
@@ -1520,6 +1642,7 @@ class Mesh:
             boundary_conditions=self.boundary_conditions,
             ports=self.ports,
             elements=self.elements,
+            planes=self.planes,
         )
 
     def with_ports(self, ports) -> "Mesh":
@@ -1644,6 +1767,7 @@ class Mesh:
             boundary_conditions=resolved,
             ports=self.ports,
             elements=self.elements,
+            planes=self.planes,
             _wall_backup=backup,
         )
 
@@ -1679,6 +1803,17 @@ class Mesh:
             Absorber cell count per face; a fresh copy on every access.
         """
         return dict(getattr(self, "_pml_cells", {}))
+
+    def plot_section(self, normal: str, position: float, **kwargs):
+        """Plot the grid of an axis-aligned section, lines styled by origin.
+
+        Thin wrapper around :func:`magnelio.plots.plot_mesh_section`;
+        see there for the keyword arguments (``geometry=`` overlays the
+        model's section outline).
+        """
+        from magnelio.post.plot_mesh import plot_mesh_section  # noqa: PLC0415
+
+        return plot_mesh_section(self, normal, position, **kwargs)
 
     def __repr__(self) -> str:
         return f"Mesh(grid={self.grid!r}, n_materials={len(self.material_library)})"

@@ -1,0 +1,228 @@
+{
+ "axes": {
+  "x": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.0005436,
+    0.0005436,
+    0.0005436
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 1.25e-05,
+     "moved_to": 3.06847e-05,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "symmetry xmin"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 1.25e-05,
+     "moved_to": null,
+     "node": 8,
+     "position": 0.00035,
+     "singular": false,
+     "sources": [
+      "edge #2 Union(PEC)",
+      "edge #3 Difference(air)",
+      "face #2 Union(PEC)",
+      "face #3 Difference(air)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 1.25e-05,
+     "moved_to": null,
+     "node": 11,
+     "position": 0.0004,
+     "singular": false,
+     "sources": [
+      "edge #2 Union(PEC)",
+      "edge #3 Difference(air)",
+      "face #2 Union(PEC)",
+      "face #3 Difference(air)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 1.25e-05,
+     "moved_to": null,
+     "node": 23,
+     "position": 0.0016,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(air)",
+      "edge #1 Brick(rogers4003)",
+      "edge #2 Union(PEC)",
+      "edge #3 Difference(air)",
+      "extent #0 Brick(air)",
+      "extent #1 Brick(rogers4003)",
+      "extent #2 Union(PEC)",
+      "extent #3 Difference(air)",
+      "face #0 Brick(air)",
+      "face #1 Brick(rogers4003)",
+      "face #2 Union(PEC)",
+      "face #3 Difference(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "y": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.0009993,
+    0.0005436,
+    0.0009993,
+    0.0009993
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 4.25e-06,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.000758,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(air)",
+      "extent #0 Brick(air)",
+      "face #0 Brick(air)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 4.25e-06,
+     "moved_to": null,
+     "node": 7,
+     "position": -0.000508,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(air)",
+      "edge #1 Brick(rogers4003)",
+      "extent #0 Brick(air)",
+      "extent #1 Brick(rogers4003)",
+      "face #0 Brick(air)",
+      "face #1 Brick(rogers4003)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 4.25e-06,
+     "moved_to": null,
+     "node": 21,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "edge #1 Brick(rogers4003)",
+      "edge #2 Union(PEC)",
+      "edge #3 Difference(air)",
+      "extent #1 Brick(rogers4003)",
+      "extent #2 Union(PEC)",
+      "extent #3 Difference(air)",
+      "face #1 Brick(rogers4003)",
+      "face #2 Union(PEC)",
+      "face #3 Difference(air)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 4.25e-06,
+     "moved_to": null,
+     "node": 22,
+     "position": 1.7e-05,
+     "singular": false,
+     "sources": [
+      "edge #2 Union(PEC)",
+      "edge #3 Difference(air)",
+      "extent #2 Union(PEC)",
+      "face #2 Union(PEC)",
+      "face #3 Difference(air)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 4.25e-06,
+     "moved_to": 0.00045897777,
+     "node": 31,
+     "position": 0.0005,
+     "singular": false,
+     "sources": [
+      "edge #3 Difference(air)",
+      "extent #3 Difference(air)",
+      "face #3 Difference(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "z": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.0005436
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.0005436,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.0035,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(air)",
+      "edge #1 Brick(rogers4003)",
+      "edge #2 Union(PEC)",
+      "edge #3 Difference(air)",
+      "extent #0 Brick(air)",
+      "extent #1 Brick(rogers4003)",
+      "extent #2 Union(PEC)",
+      "extent #3 Difference(air)",
+      "face #0 Brick(air)",
+      "face #1 Brick(rogers4003)",
+      "face #2 Union(PEC)",
+      "face #3 Difference(air)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.0005436,
+     "moved_to": null,
+     "node": 9,
+     "position": 0.0012,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(air)",
+      "edge #1 Brick(rogers4003)",
+      "edge #2 Union(PEC)",
+      "edge #3 Difference(air)",
+      "extent #0 Brick(air)",
+      "extent #1 Brick(rogers4003)",
+      "extent #2 Union(PEC)",
+      "extent #3 Difference(air)",
+      "face #0 Brick(air)",
+      "face #1 Brick(rogers4003)",
+      "face #2 Union(PEC)",
+      "face #3 Difference(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  }
+ },
+ "feature_gap": 5.82345e-08,
+ "n_nodes": {
+  "x": 24,
+  "y": 32,
+  "z": 10
+ },
+ "pml_cells": {},
+ "schema": 1
+}

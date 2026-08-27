@@ -1,0 +1,236 @@
+{
+ "axes": {
+  "x": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.001666,
+    0.001666,
+    0.001666
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.0002025,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.001475,
+     "singular": false,
+     "sources": [
+      "extent #0 Difference(polyethylene)",
+      "extent #1 Difference(air)",
+      "extent #2 Difference(polyethylene)",
+      "face #0 Difference(polyethylene)",
+      "face #1 Difference(air)",
+      "face #2 Difference(polyethylene)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0002025,
+     "moved_to": null,
+     "node": 9,
+     "position": -0.000405,
+     "singular": false,
+     "sources": [
+      "extent #3 Cylinder(PEC)",
+      "face #0 Difference(polyethylene)",
+      "face #1 Difference(air)",
+      "face #2 Difference(polyethylene)",
+      "face #3 Cylinder(PEC)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0002025,
+     "moved_to": null,
+     "node": 16,
+     "position": 0.000405,
+     "singular": false,
+     "sources": [
+      "extent #3 Cylinder(PEC)",
+      "face #0 Difference(polyethylene)",
+      "face #1 Difference(air)",
+      "face #2 Difference(polyethylene)",
+      "face #3 Cylinder(PEC)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.0002025,
+     "moved_to": null,
+     "node": 25,
+     "position": 0.001475,
+     "singular": false,
+     "sources": [
+      "extent #0 Difference(polyethylene)",
+      "extent #1 Difference(air)",
+      "extent #2 Difference(polyethylene)",
+      "face #0 Difference(polyethylene)",
+      "face #1 Difference(air)",
+      "face #2 Difference(polyethylene)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "y": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.001666,
+    0.001666,
+    0.001666
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.0002025,
+     "moved_to": null,
+     "node": 0,
+     "position": -0.001475,
+     "singular": false,
+     "sources": [
+      "extent #0 Difference(polyethylene)",
+      "extent #1 Difference(air)",
+      "extent #2 Difference(polyethylene)",
+      "face #0 Difference(polyethylene)",
+      "face #1 Difference(air)",
+      "face #2 Difference(polyethylene)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0002025,
+     "moved_to": null,
+     "node": 9,
+     "position": -0.000405,
+     "singular": false,
+     "sources": [
+      "extent #3 Cylinder(PEC)",
+      "face #0 Difference(polyethylene)",
+      "face #1 Difference(air)",
+      "face #2 Difference(polyethylene)",
+      "face #3 Cylinder(PEC)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.0002025,
+     "moved_to": null,
+     "node": 16,
+     "position": 0.000405,
+     "singular": false,
+     "sources": [
+      "extent #3 Cylinder(PEC)",
+      "face #0 Difference(polyethylene)",
+      "face #1 Difference(air)",
+      "face #2 Difference(polyethylene)",
+      "face #3 Cylinder(PEC)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.0002025,
+     "moved_to": null,
+     "node": 25,
+     "position": 0.001475,
+     "singular": false,
+     "sources": [
+      "extent #0 Difference(polyethylene)",
+      "extent #1 Difference(air)",
+      "extent #2 Difference(polyethylene)",
+      "face #0 Difference(polyethylene)",
+      "face #1 Difference(air)",
+      "face #2 Difference(polyethylene)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "z": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.001666,
+    0.001666,
+    0.001666
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.001,
+     "moved_to": null,
+     "node": 0,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "edge #0 Difference(polyethylene)",
+      "edge #3 Cylinder(PEC)",
+      "extent #0 Difference(polyethylene)",
+      "extent #3 Cylinder(PEC)",
+      "face #0 Difference(polyethylene)",
+      "face #3 Cylinder(PEC)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.001,
+     "moved_to": null,
+     "node": 34,
+     "position": 0.004,
+     "singular": false,
+     "sources": [
+      "edge #0 Difference(polyethylene)",
+      "edge #1 Difference(air)",
+      "extent #0 Difference(polyethylene)",
+      "extent #1 Difference(air)",
+      "face #0 Difference(polyethylene)",
+      "face #1 Difference(air)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.001,
+     "moved_to": null,
+     "node": 68,
+     "position": 0.008,
+     "singular": false,
+     "sources": [
+      "edge #1 Difference(air)",
+      "edge #2 Difference(polyethylene)",
+      "extent #1 Difference(air)",
+      "extent #2 Difference(polyethylene)",
+      "face #1 Difference(air)",
+      "face #2 Difference(polyethylene)"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.001,
+     "moved_to": null,
+     "node": 102,
+     "position": 0.012,
+     "singular": false,
+     "sources": [
+      "edge #2 Difference(polyethylene)",
+      "edge #3 Cylinder(PEC)",
+      "extent #2 Difference(polyethylene)",
+      "extent #3 Cylinder(PEC)",
+      "face #2 Difference(polyethylene)",
+      "face #3 Cylinder(PEC)"
+     ]
+    }
+   ],
+   "unplaced": []
+  }
+ },
+ "feature_gap": 1.55212e-07,
+ "n_nodes": {
+  "x": 26,
+  "y": 26,
+  "z": 103
+ },
+ "pml_cells": {},
+ "schema": 1
+}

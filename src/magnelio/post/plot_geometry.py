@@ -299,6 +299,7 @@ def plot_cross_section(
     show_wires: bool = True,
     show_ports: bool = True,
     slab: float = 0.0,
+    fill: bool = True,
 ) -> tuple["matplotlib.figure.Figure", "matplotlib.axes.Axes"]:
     """Plot a 2D cross-section of 3D geometry at an axis-aligned plane.
 
@@ -362,6 +363,11 @@ def plot_cross_section(
         half-height of the cell layer they display, so a wire on a grid
         node still appears in a picture whose field samples sit half a
         cell off it.
+    fill : bool, optional
+        Fill the sections of opaque materials (default True).  ``False``
+        draws only their outline in the material colour — the overlay
+        :func:`~magnelio.plots.plot_mesh_section` uses on top of the
+        cell fill.
 
     Returns
     -------
@@ -453,7 +459,7 @@ def plot_cross_section(
                     ]
                 )
                 ax.add_patch(patch)
-        elif contours:
+        elif contours and fill:
             ax.add_patch(
                 PathPatch(
                     _region_path(contours),
@@ -461,6 +467,16 @@ def plot_cross_section(
                     alpha=rgba[3],
                     edgecolor=(0.3, 0.3, 0.3, 0.5),
                     linewidth=0.6,
+                )
+            )
+        elif contours:
+            ax.add_patch(
+                PathPatch(
+                    _region_path(contours),
+                    facecolor="none",
+                    edgecolor=rgba[:3],
+                    linewidth=1.0,
+                    zorder=2.5,
                 )
             )
 

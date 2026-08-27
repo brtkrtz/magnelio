@@ -139,7 +139,52 @@ third fewer cells.  Model-wide refinement is still what
 `min_nodes_per_wavelength` is for.
 
 Why a feature below the grid is *silent* rather than approximately
-represented is a property of the conformal material matrices, next.
+represented is a property of the conformal material matrices, below.
+
+### Inspecting the grid
+
+A grid plane is a decision, and the mesh keeps the record of every one
+of them: `mesh.planes` lists, per axis, the position of each plane, the
+rule that asked for it and the shape it came from.  The vocabulary:
+
+- `face` — an analytic material face: a brick's side, a cylinder's
+  tangent plane, the plane of a sheet;
+- `extent` — the bounding box of a shape, which coincides with a face
+  for bricks and is a conservative envelope for everything else;
+- `edge` — a geometry edge lying flat in the plane: the onset of a
+  chamfer or a fillet, a loft section, the circle of an iris;
+- `sheet` — the single plane of a thin metallisation;
+- `wire` — a vertex of a thin wire;
+- `symmetry` — a symmetry face with a position;
+- `forced` — a position from `MeshControl(forced_planes=...)`.
+
+A plane usually has several sources (a brick face is a `face`, an
+`extent` and the `edge` of the brick's own sides at once); `domain end`
+marks the bounding box, `singular` a plane that holds a conductor edge
+and grades from the refined fine size.  Requested planes that did not
+make it into the grid are listed as well: `dropped` for edge planes
+below the edge floor, `absorbed` for material planes merged by the hard
+`min_cell_size` floor — and `unplaced` for anything the mesher discarded
+without recording it, which is empty in a consistent build and
+otherwise the first place to look.
+
+`print(mesh.planes)` prints the record.  `mesh.planes.as_dict()` is the
+same in a form that can be pinned, and the test suite keeps such a pin
+for every example model: a change of the meshing rules then shows up as
+a readable diff of planes, not as a physics test that moved for reasons
+unknown.  `plots.plot_mesh_section(mesh, "z", z0, geometry=model)` (or
+`mesh.plot_section(...)`) draws the section from the mesh's side —
+every cell in the colour of the material it was filled with, on its
+real size; each grid line in the style of its highest-ranking source;
+the graded fill as hairlines; absorber cells hatched; the exact section
+outline on top.  Reading the staircase against the contour is the
+quickest plausibility check a mesh gets before the solver runs.
+
+The record exists for meshes built by `Mesh.from_geometry`; a mesh
+assembled from a grid has none.  Positions are the merged geometry
+coordinates: absorber cells are appended outside them, and on a PMC
+face the end node is pulled a third of a cell inwards, which the record
+shows as `-> node at`.
 
 ## Conformal sub-cell material matrices (partially filled cells)
 
