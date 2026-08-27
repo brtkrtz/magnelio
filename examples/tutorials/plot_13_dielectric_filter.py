@@ -506,6 +506,11 @@ fig.tight_layout()
 R_PROBE = float(np.interp(np.log(QE_TARGET), np.log(qe_values), radii))
 print(f"\nprobe radius for Qe = {QE_TARGET:.1f}: {R_PROBE * 1e3:.2f} mm")
 
+# The probe also loads the resonator, so the frequency the filter will
+# centre on is the loaded one at this radius — not the bare puck's.
+F0_LOADED = float(np.interp(R_PROBE, radii, f_probe))
+print(f"loaded resonator at that radius: {F0_LOADED / 1e9:.4f} GHz")
+
 # %%
 # Stage 4: the filter itself
 # --------------------------
@@ -552,13 +557,15 @@ print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} = {mesh.Nx * mesh.Ny * mesh.Nz} 
 
 # Record the whole volume at three in-band frequencies, so the run
 # also produces a ParaView session (see "Looking inside" below).  A
-# monitor needs its frequencies before the run, so the band edges and
-# centre below are stated up front — they are the values the
-# S-parameter evaluation afterwards confirms.  ``interval`` is what
-# makes a volume monitor affordable, and it is sized from the *band
-# edge* rather than from the monitor's own frequency — see there.
+# monitor needs its frequencies before the run, so the band is
+# predicted up front from what the design already knows: the loaded
+# resonator's frequency as the centre, half the design bandwidth to
+# either side — values the S-parameter evaluation afterwards
+# confirms.  ``interval`` is what makes a volume monitor affordable,
+# and it is sized from the *band edge* rather than from the monitor's
+# own frequency — see there.
 F_TOP = 3.4e9
-POLES = np.array([2.8705e9, 2.8924e9, 2.9143e9])  # lower band edge, centre, upper
+POLES = F0_LOADED * np.array([1 - FBW / 2, 1.0, 1 + FBW / 2])  # lower edge, centre, upper
 pattern = monitors.MonitorFieldFrequency(
     freqs=POLES,
     fields=["E", "H"],
@@ -619,7 +626,7 @@ reference = chebyshev_response(band, f0=f_centre, fbw=fbw_achieved, n=N_POLES, r
 in_band = (band >= f_lo) & (band <= f_hi)
 deviation = np.abs(s21 - reference)[in_band]
 
-print(f"band centre     {f_centre / 1e9:.4f} GHz   (target 2.90 GHz)")
+print(f"band centre     {f_centre / 1e9:.4f} GHz   (loaded resonator {F0_LOADED / 1e9:.4f} GHz)")
 print(f"ripple bandwidth {100 * fbw_achieved:.2f} %      (target {100 * FBW:.2f} %)")
 print(f"worst in-band insertion loss {-s21[in_band].min():.3f} dB")
 print(f"deviation from the synthesised response: max {deviation.max():.2f} dB")
