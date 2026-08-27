@@ -271,7 +271,13 @@ Zero-thickness or sub-cell metallisation is detected before gridding
 (`apply_thin_pec_sheet`, DD-017) — the standard thin-sheet treatment
 in Cartesian time-domain solvers {cite}`taflovehagness2005`
 (subcell thin-sheet models are ch. 10 there; the
-detection pipeline itself is in-house).
+detection pipeline itself is in-house).  The footprint a sheet paints
+is exact, not its bounding box: one section of the metal at
+mid-thickness gives the outline, and every tangential edge of the sheet
+plane is tested against it by the even-odd rule — holes stay open, and
+edges on the outline count as metal — the same path the cell
+classifier uses, so a copper layer of thousands of faces costs one
+section, not one solid classification per edge.
 
 ## Thin-wire sub-cell model
 

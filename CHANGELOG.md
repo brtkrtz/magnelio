@@ -9,6 +9,16 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+### Fixed
+
+- Mesh build of a large planar copper network — a patch array with its
+  feed, an imported board layer, any union of many traces — no longer
+  spends minutes painting the thin-sheet footprint: the outline comes
+  from one section of the metal at mid-thickness instead of one solid
+  classification per grid edge.  A 4 × 4 patch array with corporate
+  feed builds in 10 s instead of 475 s; the footprint itself is
+  unchanged (holes stay open, edges on the outline count as metal).
+
 ### Added
 
 - `mesh.planes` records where every grid plane came from — the material

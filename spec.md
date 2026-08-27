@@ -944,7 +944,7 @@ Full-scale validation against analytical solutions. Scripts output JSON report.
 | `bench_microstrip.py`           | Microstrip S-parameters     | S-param error < 2 dB |
 | `bench_sphere_scattering.py`    | Plane-wave RCS from sphere  | RCS error < 2 dB |
 | `bench_stripline.py`            | Stripline S-parameters      | S-param error < 2 dB |
-| `bench_mesh_build.py`           | Mesh-build time per mesher pass on three production geometry classes (Lange-coupler row, patch array with corporate feed, post row), section-pool arms off / auto / forced | timing only; results in `benchmarks/results/bench_mesh_build.json` |
+| `bench_mesh_build.py`           | Mesh-build time per mesher pass on three production geometry classes (Lange-coupler row, patch array with corporate feed, post row), section-pool arms off / auto / forced; `sheets` (thin-sheet footprints) and `fuse` (every N-ary union, nested) columns | timing only; results in `benchmarks/results/bench_mesh_build.json` |
 
 ### 10.4 Notebooks (`examples/notebooks/`)
 
