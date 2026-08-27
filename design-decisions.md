@@ -14229,8 +14229,12 @@ linearly (DD-101's prefilter holds).  Item 1 is closed as measured;
 three new items replace it, in value order: (1) the **N-ary Boolean
 fuse of a planar copper network** is superlinear — 20.8 s for 30
 strips, 466 s for 120 — and is 98 % of the array's build; fusing in
-tiles (associative) is the known remedy (the DD-178 import worksheet
-named it); (2) the **classification sections** (`batch_cross_sections`,
+tiles (associative) is the known remedy (the DD-179 board-import
+bbox-cluster fuse is the in-house precedent) — *corrected 2026-08-27
+by DD-202: the residual was never timed; the fuse of those 107 strips
+takes 0.74 s, the 466 s were the thin-sheet footprint rasteriser.  The
+fuse is superlinear one tier up (443 strips 16 s) and stays the open
+item with that number*; (2) the **classification sections** (`batch_cross_sections`,
 15.6 of 45 s on the post row) have no pool at all — the prefill pool
 could cover them; (3) the **face pass grows faster than the cell
 count** on the Lange row (areas µ 15.5 → 51.8 s for 8 → 16 couplers:
@@ -14241,7 +14245,7 @@ auto equals forced where the pool pays (Lange 16, posts 240) and
 declines correctly where it does not (forced costs the 5 s startup
 per admitted call: Lange 1 3.6 → 9.4 s, posts 60 8.4 → 16.5 s).  The
 array's 8 × 8 rung was not run (the fuse alone would take hours);
-that is the finding, not a gap.
+that is the finding, not a gap — *DD-202 ran it: 61 s.*
 
 **Found on the way.**
 
@@ -14297,3 +14301,83 @@ that is the finding, not a gap.
 `src/magnelio/io/paraview.py` (`_OCC_MIN_DEFLECTION`), `tests/unit/test_plot_3d.py` (`TestTinyBodies`), `spec.md` §10.3, `known-bugs.md` (KB-032, KB-033), `CHANGELOG.md`;
 `investigations/mesh-build-bench/` (internal dossier: probes,
 worksheet, GPU runs).
+
+## DD-202 — Thin-sheet footprints from one section, not a solid classification per edge
+
+**Status:** Decided and implemented 2026-08-27.  Planned as "the tiled
+fuse" (DD-201's item 1); the plan-mode measurement turned it into this.
+
+**Problem.**  DD-201 attributed the 4 × 4 patch array's residual — 466
+of 475 s — to the N-ary Boolean fuse of its 107 copper strips.  The
+residual was never timed.  A cProfile of the 2 × 2 build put 16.8 of
+24.8 s into `BRepClass3d_SolidClassifier.Load` (9 160 calls) and 20.6 s
+cumulative into `rasterize_thin_sheet_footprint`; the fuse of the 107
+strips takes 0.74 s.  The footprint rasteriser (the WP-M2 fix that
+replaced the bbox fill, so an L-shape or a ring keeps its corner or
+bore open) classified every tangential edge midpoint inside the sheet's
+bbox rect against the sheet's OCC solid — one fresh classifier per
+point, whose `Load` is O(faces).  Candidates grow with the cells of the
+rect and each costs the face count: 15 ms per point on the 1 336-face
+copper network, superlinear on exactly the class Magnelio is for —
+patch arrays with feeds, imported board layers (one part per layer, so
+the rect is the whole board), any `Union` of traces.  The cell
+classifier had left this path years ago (`classify_cells_from_cross_sections`:
+one `cross_section_polygons` per plane, vectorised `points_in_polygon`,
+even-odd rule); the sheet rasteriser was the one pass that never got
+the same treatment.
+
+**Decision.**  `rasterize_thin_sheet_footprint` takes **one section**
+of the sheet solid at the probe plane (mid-thickness; in the face with
+`exact_at_faces` when no far face is known), with the cell classifier's
+chord budget (`CLASSIFY_DEFLECTION_FRACTION` × smallest transverse
+cell) and an escape step capped at half the membership tolerance so
+the DD-157 nudge ladder cannot leave the metal.  The candidate edge
+midpoints of both tangential components are built as arrays, tested
+by the even-odd rule over the contours (`points_in_polygon`) and OR-ed
+with a boundary band of the old classifier tolerance
+(`points_near_polygon`, new in `_polygon_clip.py`: vectorised
+point-to-segment distance, segments outer, points chunked) — edges on
+the outline stay metal, the inclusive semantics of the rect path and of
+the classifier's `ON` state.  The mask is written with vectorised index
+arithmetic.  The classifier path stays as the fallback for a section
+that raises or comes back empty (`_rasterize_by_classifier`, its `Load`
+hoisted to one per sheet); `point_in_shape` itself is untouched — its
+other callers make one call per sheet or face.  The benchmark wraps the
+rasteriser (`sheets`, top-level) and `boolean_union` (`fuse`, nested in
+`pec_fuse` and the edge pass, hence not part of `other`) so a residual
+can no longer pose as a pass.
+
+**Measured** (CPU, `benchmarks/bench_mesh_build.py --family array --pool off`):
+
+| n | cells | faces | strips | before | after | edge pass | areas µ | sheets | fuse | other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 2 | 84 150 | 383 | 23 | 23.1 s | **2.7 s** | 1.1 | 0.4 | 0.0 | 0.1 | 0.2 |
+| 4 | 222 497 | 2 147 | 107 | 475.1 s | **10.2 s** | 4.4 | 1.4 | 0.1 | 0.9 | 1.0 |
+| 8 | 664 378 | 10 799 | 443 | — | **61.4 s** | 22.5 | 5.9 | 0.8 | 17.8 | 18.9 |
+
+Equivalence: bit-identical to the classifier path on the L-shape
+fixture; on a ring the two differ only along the tessellated rim
+(≤ 3 % of the sheet edges, gated).  The full ladder rerun is in the
+JSON (all rows carry the new columns): the Lange row's sheets cost
+0.2 s at n = 16 (many small rects), the post row's 0.0 s — the
+rasteriser was an array-class problem; the new `fuse` column shows the
+Lange row's `Difference(air, *metal)` tool fuse at 23 of 167 s
+(n = 16), the second place the fuse tier surfaces.  Lange 16 auto
+136 s, posts 240 auto 45 s — DD-201's pool verdicts stand.
+
+**Re-ranked open items** (STATUS): (1) the N-ary fuse *is* superlinear
+one tier up — 0.74 → 16 s for 107 → 443 strips, 18 of the 8 × 8's 61 s
+— tiles or the sheet-level fuse of DD-179's deferred list; (2) the
+classification sections have no pool; (3) the per-plane face
+prefilter.  The edge pass is 22.5 s of the 8 × 8 build (37 %) — DD-201's
+"1–11 %" verdict held up to the sizes it measured; at 10 799 faces the
+DD-101 residue ("a bin/BVH over face boxes") is back in view.
+
+**Files.**  `src/magnelio/mesh/_conformal.py` (`rasterize_thin_sheet_footprint`,
+`_rasterize_by_classifier`, `_sheet_*` helpers), `src/magnelio/geo/_polygon_clip.py`
+(`points_near_polygon`), `tests/unit/test_thin_sheet_footprint.py`
+(equivalence, ring, boundary), `tests/unit/test_polygon_clip.py`,
+`benchmarks/bench_mesh_build.py` (+ `results/bench_mesh_build.json`),
+`docs/methods/meshing-conformal.md`, `spec.md` §10.3, `CHANGELOG.md`;
+DD-201 amended in place.  `investigations/mesh-build-bench/`
+(internal dossier: `probe_sheet_footprint.py`, M7).

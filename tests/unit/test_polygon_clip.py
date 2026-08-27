@@ -325,3 +325,43 @@ class TestPointsInPolygonParallelKernel:
         inside_strict = (px > 0) & (px < 1) & (py > 0) & (py < 1)
         assert np.all(result[inside_strict])
         assert not np.any(result[~expected])
+
+
+class TestPointsNearPolygon:
+    """The boundary band that makes polygon membership inclusive."""
+
+    def test_band_around_unit_square(self):
+        from magnelio.geo._polygon_clip import points_near_polygon
+
+        sq = np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype=float)
+        px = np.array([0.5, 0.5, 0.5, -0.05, -0.2, 1.05, 0.5])
+        py = np.array([0.0, 0.05, 0.5, -0.05, 0.5, 1.05, -0.11])
+        near = points_near_polygon(px, py, sq, 0.1)
+        # on the edge, within the band, deep inside, outer corner within
+        # the band (diagonal 0.07), too far outside, outer corner within
+        # the band, just outside the band
+        assert near.tolist() == [True, True, False, True, False, True, False]
+
+    def test_preserves_shape_and_chunks(self):
+        from magnelio.geo._polygon_clip import points_near_polygon
+
+        tri = np.array([[0, 0], [2, 0], [0, 2]], dtype=float)
+        rng = np.random.default_rng(7)
+        px = rng.uniform(-1, 3, size=(40, 50))
+        py = rng.uniform(-1, 3, size=(40, 50))
+        whole = points_near_polygon(px, py, tri, 0.15)
+        chunked = points_near_polygon(px, py, tri, 0.15, chunk=64)
+        assert whole.shape == px.shape
+        np.testing.assert_array_equal(whole, chunked)
+        assert whole.any() and not whole.all()
+
+    def test_degenerate_inputs(self):
+        from magnelio.geo._polygon_clip import points_near_polygon
+
+        one = np.array([[0.0, 0.0]])
+        assert not points_near_polygon(np.array([0.0]), np.array([0.0]), one, 1.0).any()
+        repeated = np.array([[1.0, 1.0], [1.0, 1.0], [1.0, 1.0]])
+        near = points_near_polygon(np.array([1.0, 1.5]), np.array([1.0, 1.0]), repeated, 0.2)
+        assert near.tolist() == [True, False]
+        sq = np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype=float)
+        assert not points_near_polygon(np.array([0.0]), np.array([0.0]), sq, 0.0).any()
