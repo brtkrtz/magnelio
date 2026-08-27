@@ -69,10 +69,10 @@ alumina = mio.Material.from_isotropic(name="alumina", epsilon=eps_r)
 #
 # .. math::
 #
-#    q = \\sqrt{C^2 + (1 - C^2)(k-1)^2}, \\qquad
-#    Z_{0o} = Z_0 \\sqrt{\\frac{1-C}{1+C}}\\;
-#             \\frac{(k-1)(1+q)}{(C+q) + (k-1)(1-C)}, \\qquad
-#    Z_{0e} = Z_{0o}\\,\\frac{C+q}{(k-1)(1-C)} .
+#    q = \sqrt{C^2 + (1 - C^2)(k-1)^2}, \qquad
+#    Z_{0o} = Z_0 \sqrt{\frac{1-C}{1+C}}\;
+#             \frac{(k-1)(1+q)}{(C+q) + (k-1)(1-C)}, \qquad
+#    Z_{0e} = Z_{0o}\,\frac{C+q}{(k-1)(1-C)} .
 #
 # For :math:`k = 2` this is the plain coupled-line result; for
 # :math:`k = 4` and 3 dB it asks for 176 Ω / 53 Ω — a pair coupling of
@@ -164,7 +164,7 @@ for i, w in enumerate(widths):
 # Two targets, two knobs.  The impedance *ratio* is a function of the
 # gap almost alone, so first the gap that gives the target ratio is
 # read for every width; then the width whose geometric mean at that
-# gap meets :math:`\\sqrt{Z_{0e} Z_{0o}}`.
+# gap meets :math:`\sqrt{Z_{0e} Z_{0o}}`.
 
 ratio = z_even / z_odd
 mean = np.sqrt(z_even * z_odd)

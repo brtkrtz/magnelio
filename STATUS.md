@@ -13,7 +13,7 @@ parity — hollow conductors had lost the conformal correction at their
 inner walls (KB-031); how-to *coupled-line coupler* and tutorial 19
 *offset Cassegrain* (rendered, not executed; figures of a measured run
 embedded), every gallery 3D view carries an "Interactive Scene" tab,
-GitHub Discussions is the feedback channel.  Unit suite 2431 passed /
+GitHub Discussions is the feedback channel.  Unit suite 2458 passed /
 4 skipped; integration suite 402 passed / 5 skipped after KB-028
 (edge-pass tangency rule, coax re-pin) and the KB-011 fixture re-pin
 (DD-199 fallout closed 2026-08-27; both unreleased on `main`).
