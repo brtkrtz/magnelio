@@ -294,15 +294,31 @@ def _run_bop(op_cls, arguments: list, tools: list):
 def boolean_union(shapes: list):
     """Fuse a list of OCC shapes into one.
 
-    Single N-ary Boolean operation: all shapes enter one BOP pass.  The
-    former pairwise loop re-processed the growing accumulated compound
-    on every step — measured 28.3 s for 501 tools vs. 0.1 s N-ary, with
-    bit-identical downstream cross-sections of the fused result.
+    Prisms that share an axis and an interval — the strips of a feed
+    network, the pads of a layer, a row of posts — are fused through
+    their caps in the plane and raised once; whatever is left meets the
+    general N-ary fuser only inside clusters of interfering bounding
+    boxes (:mod:`magnelio.geo._prism_fuse`).  The general fuser's cost
+    grows with the interference between its operands, not their number,
+    and coplanar overlap is its worst case: 443 overlapping strips take
+    it 16 s, the same strips moved apart 0.45 s, the planar route 0.7 s.
+    A single N-ary pass replaced the pairwise loop long before that
+    (28.3 s for 501 tools vs. 0.1 s N-ary).
     """
     occ = _require_occ()
     if len(shapes) == 1:
         return shapes[0]
-    return _run_bop(occ["Fuse"], shapes[:1], shapes[1:])
+    from magnelio.geo._prism_fuse import fuse_shapes  # noqa: PLC0415
+
+    def fuse(parts):
+        return _run_bop(occ["Fuse"], parts[:1], parts[1:])
+
+    return fuse_shapes(
+        shapes,
+        fuse=fuse,
+        fuse_faces=lambda faces: unify_same_domain(fuse(faces)),
+        extrude=make_extrude,
+    )
 
 
 def boolean_intersection(shape_a, shape_b):
@@ -2487,9 +2503,13 @@ def build_effective_pec_solid(
 ):
     """Build the effective PEC solid respecting last-wins CSG ordering.
 
-    Processes shapes in reverse priority order (last shape wins) and
-    constructs an OCC solid representing the final PEC region after all
-    material overrides are applied.
+    A PEC shape contributes its volume minus every higher-priority shape
+    (later in the list) that can reach it — one N-ary cut against the
+    shapes whose bounding boxes touch its own — and the contributions
+    are fused in one pass.  The former loop subtracted the *accumulated*
+    union of all higher shapes from each PEC shape and grew that union
+    pairwise, so a row of 320 metal pieces cost 36 s where this takes
+    1.1 s for the same solid (same volume, same face count).
 
     Parameters
     ----------
@@ -2504,33 +2524,29 @@ def build_effective_pec_solid(
     TopoDS_Shape or None
         Fused PEC solid, or ``None`` if no PEC region exists.
     """
-    effective_pec = None
-    higher_coverage = None  # union of all shapes with higher priority
+    from magnelio.geo._prism_fuse import _bounding_box  # noqa: PLC0415
 
-    for shape_obj, mat_id in reversed(shapes_with_material):
-        occ_shape = shape_obj._occ_shape(scale)
-        is_pec = material_library[mat_id].is_pec
-
-        if is_pec:
-            # This shape's PEC contribution = its volume minus any
-            # higher-priority shapes (which override it).
-            if higher_coverage is not None:
-                contribution = boolean_difference(occ_shape, higher_coverage)
-            else:
-                contribution = occ_shape
-
-            if effective_pec is None:
-                effective_pec = contribution
-            else:
-                effective_pec = boolean_union([effective_pec, contribution])
-
-        # Add this shape to the higher-priority coverage for lower shapes
-        if higher_coverage is None:
-            higher_coverage = occ_shape
-        else:
-            higher_coverage = boolean_union([higher_coverage, occ_shape])
-
-    return effective_pec
+    if not shapes_with_material:
+        return None
+    occ_shapes = [shape_obj._occ_shape(scale) for shape_obj, _ in shapes_with_material]
+    boxes = np.array([_bounding_box(s) for s in occ_shapes])
+    gap = 1e-7  # Precision::Confusion — touching counts as reaching
+    contributions = []
+    for i, (_, mat_id) in enumerate(shapes_with_material):
+        if not material_library[mat_id].is_pec:
+            continue
+        lo, hi = boxes[i, :3], boxes[i, 3:]
+        higher = [
+            occ_shapes[j]
+            for j in range(i + 1, len(occ_shapes))
+            if np.all(boxes[j, 3:] >= lo - gap) and np.all(boxes[j, :3] <= hi + gap)
+        ]
+        contributions.append(
+            boolean_difference_many(occ_shapes[i], higher) if higher else occ_shapes[i]
+        )
+    if not contributions:
+        return None
+    return boolean_union(contributions)
 
 
 # ---------------------------------------------------------------------------
@@ -2552,6 +2568,110 @@ _OBLIQUE_PROBES = (
 )
 
 
+# A planar face with at least this many edges is classified through
+# pieces of about ``_PIECE_TARGET_EDGES`` edges each instead of as a whole.
+_PIECE_MIN_EDGES = 24
+_PIECE_TARGET_EDGES = 12
+_PIECE_MAX_PER_AXIS = 32
+
+
+def _classification_pieces(face, lo: np.ndarray, hi: np.ndarray):
+    """Tile a large axis-aligned planar face into pieces for classification.
+
+    ``IntCurvesFace_Intersector.Perform`` classifies the hit point in the
+    face's 2-D domain at O(edges of the face) — 36 µs per call on the
+    194-edge cap of a fused feed network against 9 µs on a 16-edge
+    piece, and the edge pass makes hundreds of thousands of such calls.
+    The face is therefore cut into a grid of rectangles (a coplanar
+    ``Common`` per tile), and each piece serves as the intersector's
+    face over its own bounding box.  A hit inside a piece is a hit on
+    the face with the same parameter, state and transition; a hit
+    within tolerance of a tile border reads ``ON`` and sends the query
+    to the point classifier, which is exact — only slower.  Pieces keep
+    the face's effective normal (surface normal × orientation), so the
+    transitions they report are the face's.
+
+    Returns a list of ``(piece, lo, hi)`` or ``None`` when the face is
+    not planar, not axis-aligned, or too simple to be worth it.
+    """
+    from OCC.Core.Bnd import Bnd_Box  # noqa: PLC0415
+    from OCC.Core.BRepAdaptor import BRepAdaptor_Surface  # noqa: PLC0415
+    from OCC.Core.BRepBndLib import brepbndlib  # noqa: PLC0415
+    from OCC.Core.BRepBuilderAPI import (  # noqa: PLC0415
+        BRepBuilderAPI_MakeFace,
+        BRepBuilderAPI_MakePolygon,
+    )
+    from OCC.Core.GeomAbs import GeomAbs_Plane  # noqa: PLC0415
+    from OCC.Core.gp import gp_Pnt  # noqa: PLC0415
+    from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_FACE, TopAbs_REVERSED  # noqa: PLC0415
+    from OCC.Core.TopExp import TopExp_Explorer  # noqa: PLC0415
+    from OCC.Core.TopoDS import topods  # noqa: PLC0415
+
+    n_edges = 0
+    explorer = TopExp_Explorer(face, TopAbs_EDGE)
+    while explorer.More():
+        n_edges += 1
+        explorer.Next()
+    if n_edges < _PIECE_MIN_EDGES:
+        return None
+    adaptor = BRepAdaptor_Surface(face)
+    if adaptor.GetType() != GeomAbs_Plane:
+        return None
+
+    def effective_normal(f):
+        d = BRepAdaptor_Surface(f).Plane().Axis().Direction()
+        n = np.array((d.X(), d.Y(), d.Z()))
+        return -n if f.Orientation() == TopAbs_REVERSED else n
+
+    normal = effective_normal(face)
+    axis = int(np.argmax(np.abs(normal)))
+    if abs(normal[axis]) < 1.0 - 1e-12:
+        return None
+    u, v = [k for k in range(3) if k != axis]
+    extent_u, extent_v = hi[u] - lo[u], hi[v] - lo[v]
+    if extent_u <= 0.0 or extent_v <= 0.0:
+        return None
+    k = np.sqrt(n_edges / _PIECE_TARGET_EDGES)
+    ku = int(np.clip(round(k * np.sqrt(extent_u / extent_v)), 1, _PIECE_MAX_PER_AXIS))
+    kv = int(np.clip(round(k * np.sqrt(extent_v / extent_u)), 1, _PIECE_MAX_PER_AXIS))
+    if ku * kv < 2:
+        return None
+    # Tiles overhang the face box a little so that the outline never
+    # runs along a tile border by construction.
+    margin_u, margin_v = 0.01 * extent_u / ku, 0.01 * extent_v / kv
+    u_lines = np.linspace(lo[u] - margin_u, hi[u] + margin_u, ku + 1)
+    v_lines = np.linspace(lo[v] - margin_v, hi[v] + margin_v, kv + 1)
+    level = 0.5 * (lo[axis] + hi[axis])
+    occ = _require_occ()
+    pieces = []
+    for i in range(ku):
+        for j in range(kv):
+            corners = []
+            for cu, cv in ((i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1)):
+                xyz = [0.0, 0.0, 0.0]
+                xyz[axis] = level
+                xyz[u] = float(u_lines[cu])
+                xyz[v] = float(v_lines[cv])
+                corners.append(gp_Pnt(*xyz))
+            polygon = BRepBuilderAPI_MakePolygon(*corners, True)
+            rectangle = BRepBuilderAPI_MakeFace(polygon.Wire(), True).Face()
+            common = _run_bop(occ["Common"], [face], [rectangle])
+            parts = TopExp_Explorer(common, TopAbs_FACE)
+            while parts.More():
+                piece = topods.Face(parts.Current())
+                parts.Next()
+                if np.dot(effective_normal(piece), normal) < 0.0:
+                    piece = topods.Face(piece.Reversed())
+                box = Bnd_Box()
+                brepbndlib.Add(piece, box, False)
+                if box.IsVoid():
+                    continue
+                p_lo = np.array(box.Get()[:3])
+                p_hi = np.array(box.Get()[3:])
+                pieces.append((piece, tuple(p_lo), tuple(p_hi)))
+    return pieces or None
+
+
 class _PrefilteredLineSolid:
     """Face-bbox prefiltered line-vs-solid intersections.
 
@@ -2571,6 +2691,14 @@ class _PrefilteredLineSolid:
     TopAbs_IN``, or an orientation other than FORWARD/REVERSED) marks
     the query as not clean; the caller falls back to point
     classification.
+
+    The kernel's classification of a hit point costs O(edges of the
+    face) — 16 µs per call on the 640-edge cap of a fused feed network
+    against 3 µs on a 20-edge piece, over hundreds of thousands of
+    calls in one edge pass.  Large axis-aligned planar faces are
+    therefore represented by classification pieces
+    (:func:`_classification_pieces`), each a candidate row of its own
+    with its own box and intersector; the face itself is untouched.
     """
 
     def __init__(self, solid, tolerance: float):
@@ -2618,28 +2746,48 @@ class _PrefilteredLineSolid:
             exp.Next()
         self._faces = faces
         self._ori_ok = ori_ok
-        # Per-face intersectors, built lazily on first use: construction
+        # Per-row intersectors, built lazily on first use: construction
         # digests the face restriction (all wires) once, so queries that
         # keep touching a complex face — a plate pierced by hundreds of
         # holes — stay cheap afterwards.
-        self._face_ints: list = [None] * len(faces)
-        if faces:
-            self._flo = np.asarray(lo)
-            self._fhi = np.asarray(hi)
+        # Candidate rows: a face as a whole, or the classification pieces
+        # of a large planar face, each with its own box; ``_row_face``
+        # maps a row to its face (orientation bookkeeping), ``_row_shape``
+        # is what the row's intersector is built from.
+        rows_lo: list = []
+        rows_hi: list = []
+        row_face: list[int] = []
+        row_shape: list = []
+        for fi, face in enumerate(faces):
+            pieces = _classification_pieces(face, np.asarray(lo[fi]), np.asarray(hi[fi]))
+            if pieces is None:
+                pieces = [(face, lo[fi], hi[fi])]
+            for shape, p_lo, p_hi in pieces:
+                rows_lo.append(p_lo)
+                rows_hi.append(p_hi)
+                row_face.append(fi)
+                row_shape.append(shape)
+        self._row_face = np.asarray(row_face, dtype=np.intp)
+        self._row_shape = row_shape
+        self._row_ints: list = [None] * len(row_shape)
+        if row_shape:
+            self._flo = np.asarray(rows_lo, dtype=np.float64)
+            self._fhi = np.asarray(rows_hi, dtype=np.float64)
         else:
             self._flo = np.empty((0, 3))
             self._fhi = np.empty((0, 3))
 
     def _line_candidates(self, p0, direction):
-        """Faces whose bounding box the line touches, with the parameter
-        interval [w_in, w_out] over which the line stays inside each box
-        (slab method, vectorised over all faces).
+        """Candidate rows (faces or their classification pieces) whose
+        bounding box the line touches, with the parameter interval
+        [w_in, w_out] over which the line stays inside each box (slab
+        method, vectorised over all rows).
 
         Returns ``(idx, w_in, w_out)`` sorted by ascending ``w_in``.
         """
         tol = self._tol
-        w_in = np.full(len(self._faces), -np.inf)
-        w_out = np.full(len(self._faces), np.inf)
+        w_in = np.full(len(self._row_face), -np.inf)
+        w_out = np.full(len(self._row_face), np.inf)
         for ax in range(3):
             lo = self._flo[:, ax] - tol
             hi = self._fhi[:, ax] + tol
@@ -2659,7 +2807,7 @@ class _PrefilteredLineSolid:
         return idx, w_in[idx], w_out[idx]
 
     def _intersect_faces(self, face_indices, line, w_lo, w_hi):
-        """Intersections of ``line`` with the given faces, W in
+        """Intersections of ``line`` with the given candidate rows, W in
         [w_lo, w_hi].  Returns ``(hits, clean)``: ``hits`` is a list of
         ``(w, step)`` with step ``+1`` entering the solid along +W,
         ``-1`` leaving, ``0`` tangential or untrusted; ``clean`` is
@@ -2672,14 +2820,14 @@ class _PrefilteredLineSolid:
         """
         hits: list[tuple[float, int]] = []
         clean = True
-        face_ints = self._face_ints
-        for fi in face_indices:
-            it = face_ints[fi]
+        row_ints = self._row_ints
+        for row in face_indices:
+            it = row_ints[row]
             if it is None:
-                it = self._Intersector(self._faces[fi], self._tol)
-                face_ints[fi] = it
+                it = self._Intersector(self._row_shape[row], self._tol)
+                row_ints[row] = it
             it.Perform(line, -1e100, 1e100)
-            ok = self._ori_ok[fi]
+            ok = self._ori_ok[self._row_face[row]]
             for ip in range(1, it.NbPnt() + 1):
                 w = it.WParameter(ip)
                 if w_lo <= w <= w_hi:
