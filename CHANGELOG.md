@@ -18,6 +18,10 @@ major version is 0, minor releases may change the public API.
   classification per grid edge.  A 4 × 4 patch array with corporate
   feed builds in 10 s instead of 475 s; the footprint itself is
   unchanged (holes stay open, edges on the outline count as metal).
+- A thin metallisation reaching an absorbing wall is now continued into
+  the absorber like any other conductor, so a microstrip can carry a
+  waveguide-port window in a CPML face (the port used to be refused
+  with an "inhomogeneous filling" message).
 
 ### Added
 

@@ -13742,6 +13742,13 @@ without trimming), thin-sheet physics, curved `revolved()`/`swept()`.
 ## DD-198 — Waveguide-port windows in absorbing faces
 
 **Status:** Implemented 2026-08-26, on the `feat/port-window-cpml` branch.
+Amended 2026-08-27 (KB-034): step 0 ran before the thin-wire and
+thin-sheet passes, so a thin metallisation touching the absorbing face
+— a microstrip feed with its window in a CPML wall — had no mask in
+the extension and the window read as a hollow cross-section.  Step 4c
+of the mesher now repeats the mask-only extension after the sheet pass
+(`tests/unit/test_pml_extension.py`); found while feeding the patch
+array of the antenna-array how-to through a shielded launch.
 
 **Problem.**  A radiating structure fed through a guide — a horn's
 neck, a coax entering an open box — puts its port on a wall that must
