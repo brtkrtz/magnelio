@@ -19,6 +19,7 @@ import warnings
 
 import numpy as np
 
+from magnelio.geo import _section_kernels as _sk
 from magnelio.geo._line_kernels import (
     axis_edge_fractions,
     axis_edge_windows,
@@ -1750,6 +1751,13 @@ def _cylinder_sections_enabled() -> bool:
     return os.environ.get("MAGNELIO_CYLINDER_SECTIONS", "").strip() != "0"
 
 
+def _section_batch_enabled() -> bool:
+    """``MAGNELIO_SECTION_BATCH=0`` sections plane by plane in NumPy
+    (A/B runs); anything else lets the engine answer every plane of an
+    axis in one compiled pass (read at call time)."""
+    return os.environ.get("MAGNELIO_SECTION_BATCH", "").strip() != "0"
+
+
 def _is_generatrix(p1, p2, centre, axis_dir, radius: float, tol: float) -> bool:
     """Whether the segment *p1*–*p2* runs along the cylinder
     (*centre*, *axis_dir*, *radius*): parallel to the axis at its radius."""
@@ -2060,6 +2068,82 @@ class _FaceSlabIndex:
                     continue
             builder.Add(compound, face)
         return compound
+
+
+def _annotate_polygons(polys: list) -> list:
+    """The area pass's annotation of one shape's section contours:
+    ``(polygon, (u_min, v_min, u_max, v_max), signed_area)`` each."""
+    from magnelio.geo._polygon_clip import polygon_area  # noqa: PLC0415
+
+    out = []
+    for poly in polys:
+        u = poly[:, 0]
+        v = poly[:, 1]
+        out.append(
+            (
+                poly,
+                (float(u.min()), float(v.min()), float(u.max()), float(v.max())),
+                polygon_area(poly),
+            )
+        )
+    return out
+
+
+class _PackedSections:
+    """The compiled batch's answer for the planes of one axis
+    (:meth:`_PlanarSectionEngine.sections_packed`).
+
+    Planes are sectioned in sorted order; ``order`` maps that order to
+    the caller's, ``rank`` the caller's to it.  ``status`` is 1 where
+    the engine answered and 0 where it delegates; polygon *q* of the
+    sorted plane *k* is ``verts[vert_ptr[q]:vert_ptr[q + 1]]`` [m] for
+    *q* in ``poly_ptr[k]:poly_ptr[k + 1]``.
+    """
+
+    __slots__ = ("order", "poly_ptr", "rank", "status", "vert_ptr", "verts")
+
+    def __init__(self, order, status, poly_ptr, vert_ptr, verts) -> None:
+        self.order = order
+        rank = np.empty_like(order)
+        rank[order] = np.arange(order.size)
+        self.rank = rank
+        self.status = status
+        self.poly_ptr = poly_ptr
+        self.vert_ptr = vert_ptr
+        self.verts = verts
+
+    def __len__(self) -> int:
+        return int(self.order.size)
+
+    def polygons(self, i: int) -> list[np.ndarray] | None:
+        """Section polygons [m] of the caller's plane *i*, ``None``
+        where the engine delegates."""
+        k = self.rank[i]
+        if self.status[k] != _sk.ANSWERED:
+            return None
+        vp = self.vert_ptr
+        return [
+            self.verts[vp[q] : vp[q + 1]] for q in range(self.poly_ptr[k], self.poly_ptr[k + 1])
+        ]
+
+    def annotated(self) -> list[list | None]:
+        """Every plane's contours wound by nesting parity and annotated
+        for the area pass (see :func:`_annotate_polygons`), in the
+        caller's order; ``None`` where the engine delegates."""
+        verts, bbox, area = _sk.orient_annotate_packed(self.poly_ptr, self.vert_ptr, self.verts)
+        vp = self.vert_ptr
+        pp = self.poly_ptr
+        bb = bbox.tolist()
+        ar = area.tolist()
+        out: list[list | None] = [None] * len(self)
+        for i in range(len(self)):
+            k = self.rank[i]
+            if self.status[k] != _sk.ANSWERED:
+                continue
+            out[i] = [
+                (verts[vp[q] : vp[q + 1]], tuple(bb[q]), ar[q]) for q in range(pp[k], pp[k + 1])
+            ]
+        return out
 
 
 class _PlanarSectionEngine:
@@ -2854,6 +2938,100 @@ class _PlanarSectionEngine:
             return self._screen_facets(axis, pos * self._scale)
         return self._screen(axis, pos * self._scale) is not None
 
+    # -- every plane of an axis in one compiled pass (DD-219) --------------
+
+    @property
+    def batchable(self) -> bool:
+        """Whether :meth:`sections_packed` runs the compiled batch: an
+        enabled exact engine (facet engines section plane by plane),
+        Numba at hand and the batch not switched off."""
+        return self.enabled and not self.facetted and _sk.HAS_NUMBA and _section_batch_enabled()
+
+    def _axis_tables(self, axis: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Per-axis inputs of the batch, computed once: the face trace
+        directions (:meth:`_face_tangents`) and the sorted vertex
+        coordinates along the axis."""
+        cache = self.__dict__.setdefault("_axis_table_cache", {})
+        if axis not in cache:
+            tangent, tangent_ok = self._face_tangents(axis)
+            cache[axis] = (
+                np.ascontiguousarray(tangent, dtype=np.float64),
+                np.ascontiguousarray(tangent_ok, dtype=np.bool_),
+                np.sort(self._v_pts[:, axis]),
+            )
+        return cache[axis]
+
+    def sections_packed(self, axis: int, positions) -> _PackedSections:
+        """Sections of every plane of *axis* at *positions* [m] in one
+        compiled pass — :meth:`section` for each, packed (see
+        :class:`_PackedSections`).  Requires :attr:`batchable`."""
+        pos = np.asarray(positions, dtype=np.float64) * self._scale
+        order = np.argsort(pos, kind="stable")
+        tangent, tangent_ok, v_sorted = self._axis_tables(axis)
+        packed = _sk.section_planes(
+            axis,
+            np.ascontiguousarray(pos[order]),
+            self._tol,
+            0.0 if self._deflection is None else self._deflection,
+            self._scale,
+            self._f_lo,
+            self._f_hi,
+            self._f_planar,
+            self._f_n,
+            self._f_d,
+            self._f_ok,
+            self._f_cyl_ok,
+            tangent,
+            tangent_ok,
+            self._cyl_c,
+            self._cyl_a,
+            self._cyl_x,
+            self._cyl_y,
+            self._cyl_r,
+            self._cyl_sense,
+            self._cyl_uv,
+            self._e_ok,
+            self._e_any,
+            self._e_p1,
+            self._e_p2,
+            self._e_f,
+            self._e_lo,
+            self._e_hi,
+            self._c_ok,
+            self._c_c,
+            self._c_x,
+            self._c_y,
+            self._c_r,
+            self._c_t,
+            v_sorted,
+        )
+        return _PackedSections(order, *packed)
+
+    def sections(self, axis: int, positions) -> list[list[np.ndarray] | None]:
+        """:meth:`section` for every plane of *axis* at *positions* [m]
+        — the compiled batch where :attr:`batchable`, plane by plane
+        otherwise."""
+        if not self.batchable:
+            return [self.section(axis, float(pos)) for pos in positions]
+        packed = self.sections_packed(axis, positions)
+        return [packed.polygons(i) for i in range(len(positions))]
+
+    def annotated_sections(self, axis: int, positions) -> list[list | None]:
+        """:meth:`sections` wound by nesting parity and annotated for the
+        area pass — per plane ``[(polygon, (u_min, v_min, u_max, v_max),
+        signed_area), ...]`` or ``None`` where the engine delegates."""
+        if not self.batchable:
+            from magnelio.geo._polygon_clip import orient_nested_contours  # noqa: PLC0415
+
+            out: list[list | None] = []
+            for pos in positions:
+                polys = self.section(axis, float(pos))
+                out.append(
+                    None if polys is None else _annotate_polygons(orient_nested_contours(polys))
+                )
+            return out
+        return self.sections_packed(axis, positions).annotated()
+
     def section(self, axis: int, pos: float) -> list[np.ndarray] | None:
         """Section polygons [m] for the plane at *pos* [m], or ``None``
         to delegate to the OCC path."""
@@ -2959,12 +3137,14 @@ class _PlanarSectionEngine:
             return np.zeros(0, dtype=np.int64), np.zeros((0, 3), dtype=np.float64)
         a_coef = self._c_x[cand, axis]
         b_coef = self._c_y[cand, axis]
-        rho = self._c_r[cand] * np.hypot(a_coef, b_coef)
+        # Scalar libm calls element by element: the ufuncs round an ulp
+        # differently from the compiled batch (``_section_kernels``).
+        rho = self._c_r[cand] * _sk.hypot_elementwise(a_coef, b_coef)
         ok = rho > 0.0
         q = np.where(ok, (pos - self._c_c[cand, axis]) / np.where(ok, rho, 1.0), 2.0)
         ok &= np.abs(q) < 1.0
-        phi = np.arctan2(b_coef, a_coef)
-        half = np.arccos(np.clip(q, -1.0, 1.0))
+        phi = _sk.atan2_elementwise(b_coef, a_coef)
+        half = _sk.acos_elementwise(np.clip(q, -1.0, 1.0))
         t0 = self._c_t[cand, 0]
         t1 = self._c_t[cand, 1]
         sel_edges = []
@@ -3039,10 +3219,14 @@ class _PlanarSectionEngine:
         umin, umax, vmin, vmax = self._cyl_uv[f]
         full = umax - umin >= two_pi - 1e-9
         rel = pts[crossings] - c
-        du = np.mod(np.arctan2(rel @ y, rel @ x) - umin, two_pi)
+        # Written-out dot products: BLAS fuses ``rel @ y`` and would put
+        # this path an ulp off the compiled batch (``_section_kernels``).
+        rel_y = rel[:, 0] * y[0] + rel[:, 1] * y[1] + rel[:, 2] * y[2]
+        rel_x = rel[:, 0] * x[0] + rel[:, 1] * x[1] + rel[:, 2] * x[2]
+        du = np.mod(_sk.atan2_elementwise(rel_y, rel_x) - umin, two_pi)
         du[du >= two_pi - 1e-12] = 0.0
         u = umin + du
-        v = rel @ a
+        v = rel[:, 0] * a[0] + rel[:, 1] * a[1] + rel[:, 2] * a[2]
         a_n, b_n, c_n = float(x[axis]), float(y[axis]), float(a[axis])
         p = pos - float(c[axis])
 
@@ -3081,7 +3265,8 @@ class _PlanarSectionEngine:
                 lo, hi = group[np.argsort(v[group])]
                 if v[hi] - v[lo] <= self._tol:
                     return None
-                forward = float(np.dot(direction(u_star), a)) > 0.0
+                d = direction(u_star)
+                forward = d[0] * a[0] + d[1] * a[1] + d[2] * a[2] > 0.0
                 first.append(int(crossings[lo if forward else hi]))
                 second.append(int(crossings[hi if forward else lo]))
             return first, second, interior
@@ -3113,7 +3298,8 @@ class _PlanarSectionEngine:
                 continue
             v_prime = r * (a_n * math.sin(um) - b_n * math.cos(um)) / c_n
             tangent = r * (-math.sin(um) * x + math.cos(um) * y) + v_prime * a
-            forward = float(np.dot(direction(um), tangent)) > 0.0
+            d = direction(um)
+            forward = d[0] * tangent[0] + d[1] * tangent[1] + d[2] * tangent[2] > 0.0
             n_seg = max(1, int(math.ceil((ub - ua) / du_max - 1e-9)))
             if n_seg > 100_000:
                 return None
@@ -3192,11 +3378,26 @@ def batch_cross_sections(
             lo = bbox_flat[lo_idx]
             hi = bbox_flat[hi_idx]
 
-            for idx, pos in enumerate(positions):
-                if pos < lo - deflection or pos > hi + deflection:
-                    continue  # plane outside this shape's bounding box
-
-                polys = engine.section(_axis_to_int[axis], float(pos)) if engine.enabled else None
+            reaching = [
+                idx
+                for idx, pos in enumerate(positions)
+                if not (pos < lo - deflection or pos > hi + deflection)
+            ]
+            # Every plane of the axis in one compiled pass (DD-219);
+            # the planes the engine declines go to the kernel below.
+            fast = (
+                engine.sections(_axis_to_int[axis], [float(positions[idx]) for idx in reaching])
+                if engine.batchable and reaching
+                else None
+            )
+            for n_idx, idx in enumerate(reaching):
+                pos = positions[idx]
+                if fast is not None:
+                    polys = fast[n_idx]
+                else:
+                    polys = (
+                        engine.section(_axis_to_int[axis], float(pos)) if engine.enabled else None
+                    )
                 if polys is None:
                     polys = cross_section_polygons(
                         occ_shape,
@@ -5594,6 +5795,7 @@ def compute_face_material_areas(
     # handling) is untouched.  Below the query threshold, or with
     # MAGNELIO_SECTION_WORKERS=0, nothing happens here at all.
     prefill_queries: dict[tuple[int, float, int], None] = {}
+    batch_queries: dict[tuple[int, int], dict[float, None]] = {}
     for axis, plane_pos in plane_to_face_indices:
         if plane_pec_degenerate[(axis, plane_pos)]:
             positions = [plane_pos + shift, plane_pos - shift]
@@ -5605,6 +5807,11 @@ def compute_face_material_areas(
                 key = (axis, pos, si)
                 if key in section_cache:
                     continue
+                # Every plane of an axis a batchable engine is asked
+                # for goes into one compiled pass below (DD-219).
+                if engines[si].batchable:
+                    batch_queries.setdefault((si, axis), {})[pos] = None
+                    continue
                 # Planes the planar engine will answer in-process are
                 # not worth a worker round-trip — only queries that
                 # will delegate to the OCC Boolean count toward (and
@@ -5612,6 +5819,17 @@ def compute_face_material_areas(
                 if engines[si].enabled and engines[si].can_fast(axis, pos):
                     continue
                 prefill_queries[key] = None
+    # The batch answers and caches what it can; the planes it declines
+    # (curved candidates the engine does not carry, tangencies,
+    # vertices on the plane) are delegated like any other.
+    for (si, axis), by_pos in batch_queries.items():
+        positions = list(by_pos)
+        annotated_all = engines[si].annotated_sections(axis, positions)
+        for pos, annotated in zip(positions, annotated_all, strict=True):
+            if annotated is None:
+                prefill_queries[(axis, pos, si)] = None
+            else:
+                section_cache[(axis, pos, si)] = annotated
     prefill_work = sum(engines[si].face_count for (_, _, si) in prefill_queries)
     if (
         len(prefill_queries) >= _SECTION_PARALLEL_MIN_QUERIES

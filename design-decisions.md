@@ -16105,3 +16105,122 @@ the engine and the line table when a model shows them on a ladder row.
 `_hits` / `classify_point`, `compute_edge_pec_fractions`,
 `_cylinder_face_pairs`), `tests/unit/test_edge_pass_lines.py`,
 `benchmarks/results/`, `CHANGELOG.md`, `STATUS.md`.
+
+## DD-219 — Every plane of an axis in one compiled pass
+
+**Status:** Decided and implemented 2026-08-28, branch
+`perf/section-batch`.  DD-218's open items 1 (second half) and 2 at
+once: the per-plane Python of the area passes and the classifier.
+
+**Problem.**  After DD-218 the post row built in 7.1 s and its three
+largest terms were the area passes (`areas_mu` 2.5 s, `areas_epsilon`
+1.7 s) and the cell classifier (0.7 s) — all of them
+`_PlanarSectionEngine.section`: 15 487 calls, 3.8 s, plus 11 645
+`can_fast` calls from the prefill loop (internal dossier
+`investigations/mesh-build-bench/posts/`, M22).  A plane through the
+post row meets *one* post; the engine's arrays for it are a handful of
+entries long, and each of the ~50 NumPy calls per plane (`_screen`,
+crossings, `_planar_pairs`, `_cylinder_face_pairs`, the chain walk,
+`orient_nested_contours`, the annotation) is overhead — 430 k
+`ufunc.reduce` and 215 k `np.array` calls per build.  Lange 16 paid
+the same way: 35 824 `section` calls at 45 µs.
+
+**Decision.**
+
+1. *The batch* — `src/magnelio/geo/_section_kernels.py` (Numba,
+   cached).  `section_planes` takes the sorted plane positions of one
+   axis and the engine's arrays: candidate faces and edges per plane
+   from `searchsorted` windows on the positions (CSR in index order;
+   the windows are widened past the tolerance and every plane re-tests
+   the exact `lo <= pos + tol` comparison, because the widened bound
+   rounds differently), then per plane the pipeline of `section` in
+   compiled loops — the admission screen, one crossing per
+   transversally crossed straight edge and two analytic ones per
+   circular edge, planar faces paired by parity along their trace
+   direction (two stable sorts = `lexsort`), cylindrical faces along
+   their generatrices or section conic with the DD-217 tessellation,
+   the stitch and the chain walk.  Every arithmetic step is the scalar
+   form of the array expression it replaces, in the same order.  The
+   answer is packed (`status` per plane, `poly_ptr`, `vert_ptr`,
+   `verts` [m]); `orient_annotate_packed` is the batch form of
+   `orient_nested_contours` plus the area pass's annotation (nesting
+   parity by bbox containment and majority point-in-polygon vote,
+   bbox, signed area of the final winding).
+2. *The engine* — `batchable` (enabled, exact, Numba at hand, not
+   switched off), `sections_packed(axis, positions)` →
+   `_PackedSections` (answers in the caller's order through a rank
+   map; `polygons(i)` slices, `annotated()` runs the orientation
+   kernel), `sections()` and `annotated_sections()` with the per-plane
+   fallback.  Facet engines keep the per-plane path.
+3. *The consumers* — `compute_face_material_areas` collects the
+   queries of a batchable engine per (shape, axis) in its prefill loop
+   instead of asking `can_fast` for each, sections them in one pass
+   and caches the annotated answers; the planes the batch declines join
+   the delegated queries (pool or in-process kernel, as before).
+   `batch_cross_sections` asks per (shape, axis) likewise.
+   `MAGNELIO_SECTION_BATCH=0` sections plane by plane (read at call
+   time, for the A/B probe).
+4. *Same libm on both paths.*  The batch differed from the per-plane
+   path on the post row by ≤ 8.7e-19 m at the rim-circle crossings —
+   NumPy's `arctan2`/`arccos`/`hypot` ufuncs round an ulp off `math.*`
+   (7 680 / 9 438 / 607 of 100 000 random arguments; `cos`, `sin`,
+   `mod`, `fmod` agree).  The per-plane path calls the same scalar
+   functions through `atan2_elementwise`/`acos_elementwise`/
+   `hypot_elementwise` (njit loops) and writes its three-term dot
+   products out, so both paths are bit-identical and the tests assert
+   equality vertex for vertex.
+
+**Measured.**  `probe_section_batch_check.py` (comb, air body and
+posts of the unit fixtures, 1 200 random planes each plus the
+degenerate ones): 0 differing vertices, delegate for delegate; 400
+planes 26–96 ms per plane path → 1–3 ms batch.  Batch on/off
+in-process (`probe_ab_arrays.py posts 60 MAGNELIO_SECTION_BATCH`):
+35 / 35 identical.  Against `main` (worktree dump,
+`probe_compare_npz.py`): 33 / 35, `A_face_free` / `A_face_pec`
+8.5e-22 of 1.9e-7 m² on 7 of 306 380 entries — the ufunc ulps of
+item 4; hash gate array 4 and Lange 4 35 / 35, posts re-pinned
+(`*_pre_dd219.txt`).  `probe_pass_breakdown.py … auto`: posts 240
+7.1 → **3.5 s** (`areas_mu` 2.52 → 0.87, `areas_epsilon` 1.72 → 0.34,
+`classify_sections` 0.69 → 0.26), Lange 16 17.2 → **12.9 s**
+(`areas_mu` 4.1 → 1.8, `areas_epsilon` 3.3 → 1.4), 16 × 16 array
+12.6 → **11.0 s**.
+
+Full ladder (`--family all --pool off auto forced --json`, `auto`,
+CPU idle; before = DD-218's ladder):
+
+| family, n | cells | total before → after | edge pass | ε pass | µ pass |
+|---|---|---|---|---|---|
+| posts 240 | 385 k | 6.1 → **3.0 s** | 0.7 | 1.4 → 0.3 | 2.3 → 0.8 |
+| posts 60 | 97 k | 1.5 → **0.7 s** | 0.2 | 0.3 → 0.1 | 0.5 → 0.2 |
+| Lange 16 | 3.69 M | 17.2 → **12.5 s** | 0.4 | 3.3 → 1.4 | 4.1 → 1.8 |
+| Lange 8 | 1.84 M | 7.4 → **5.2 s** | 0.2 | 1.5 → 0.6 | 1.7 → 0.7 |
+| array 8 × 8 | 664 k | 3.3 → **2.5 s** | 0.2 | 0.6 → 0.3 | 0.7 → 0.3 |
+| array 4 × 4 | 222 k | 1.1 → **0.8 s** | 0.1 | 0.3 → 0.1 | 0.3 → 0.1 |
+
+Unit suite 2 592 passed / 4 skipped (five new tests: batch against
+the per-plane path bit for bit on planar and cylindrical fixtures,
+model scale, the annotation, the toggle, both consumers with the batch
+on and off), integration 402 passed / 5 skipped (`CUPY_ACCELERATORS=""`);
+`ruff check` / `ruff format --check` clean; `check_imports.py` on
+`investigations/` and `userscripts/`: all imports resolve.
+
+**Open, re-ranked.**  In value order: (1) the post row's 480 **caps**
+in the edge pass (planar faces with a circular outline, which
+`_planar_row` declines: 49 440 kernel `Perform` calls, 0.6 of the
+0.72 s `edge_fractions` — now the largest post-row term; an in-house
+planar test with arcs); (2) the N-ary fuses on the planar rows —
+`fuse` 2.1 s and `pec_fuse` 2.0 s on Lange 16, `pec_fuse` 1.5 s on the
+16 × 16 array; (3) the thin-sheet rasteriser (`sheets_detect` 1.7 s on
+Lange 16, 1.9 s on the 16 × 16 array — its section 1.3 s); (4) the
+classifier's remaining `section_calls` on the 16 × 16 array (1.2 s)
+and `planes_material` (0.35 s on the posts); (5) spheres and cones in
+the engine and the line table when a model shows them on a ladder row.
+
+**Files:** `src/magnelio/geo/_section_kernels.py` (new),
+`src/magnelio/geo/_occ_backend.py` (`_section_batch_enabled`,
+`_annotate_polygons`, `_PackedSections`, `_PlanarSectionEngine.batchable`
+/ `_axis_tables` / `sections_packed` / `sections` /
+`annotated_sections` / `_circle_crossings` / `_cylinder_face_pairs`,
+`compute_face_material_areas`, `batch_cross_sections`),
+`tests/unit/test_planar_section_engine.py` (`TestSectionBatch`),
+`CHANGELOG.md`, `STATUS.md`.
