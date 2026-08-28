@@ -15057,3 +15057,100 @@ fuse (14 s).  Gallery plane pins (28 scripts) unchanged; unit suite
 `_PrefilteredLineSolid.flagged_hits`/`_line_candidates`,
 `compute_edge_pec_fractions`), `tests/unit/test_edge_pass_lines.py`
 (new), `benchmarks/results/bench_mesh_build.json` (re-run).
+
+## DD-209 — The planar fuse climbs a bisection tree; sheet contours are tested on their own boxes
+
+**Status:** Decided and implemented 2026-08-28, branch `perf/plane-fuse-tree`.
+DD-208's re-ranked item 1.
+
+**Problem.**  DD-208 left the 16 × 16 array (1.8 M cells) with two
+superlinear terms one tier above the ladder: "the thin-sheet
+rasteriser (19 s) and the planar fuse (14 s)".  Profiled
+(`investigations/mesh-build-bench/probe_sheets_fuse.py` — internal
+record), the two were one: the benchmark's `sheets` column adds
+`detect_thin_metallizations`, and that pass is the first caller of
+the copper union's `_occ_shape()` — 14.8 of its 15.5 s were the fuse.
+The rasteriser itself took 3.8 s: 1.4 s for the section, 2.3 s in
+`points_near_polygon`, which walked every one of 2 572 outline
+segments over all ~150 k candidate points for each of 229 small
+contours.  The fuse's 12.8 s were one kernel call: DD-205's planar
+route hands the 1 787 coplanar caps of the network to the N-ary fuse
+in one go, and that call is superlinear in the number of coplanar
+pieces — 107 caps 0.07 s, 443 caps 0.66 s, 1 787 caps 13.4 s
+(`probe_plane_fuse.py`, same file set).
+
+**Routes measured** on the caps of the array's copper (one plane,
+bounding boxes all interfering — one DD-205 cluster):
+
+| route | 107 caps | 443 caps | 1 787 caps | faces / area |
+|---|---|---|---|---|
+| flat N-ary fuse + unify (DD-205) | 0.07 s | 0.66 s | 13.4 s | 1 / reference |
+| `BOPAlgo_Builder` general fuse + unify | 0.07 s | 0.68 s | 13.5 s | identical |
+| **fuse tree, leaf 32, fuse + unify per node** | 0.11 s | 0.54 s | **2.6 s** | identical to 12 digits |
+| fuse tree, leaf 8 | 0.12 s | 0.58 s | 2.6 s | identical |
+| fuse tree, unify only at the root | 0.10 s | 0.75 s | 4.7 s | identical |
+| in-house rectilinear union (coordinate compression) | 0.12 s | 0.05 s | 0.22 s | identical to 12 digits |
+
+**Decision.**
+
+1. **Coplanar caps are fused up a bisection tree**
+   (`_prism_fuse.fuse_faces_tree`, called by `_fuse_group_in_plane`
+   for every cluster): the set is split at the median of the cap
+   centres along the axis of largest spread, leaves of at most
+   `_FUSE_TREE_LEAF` = 32 caps are fused N-ary, siblings pairwise,
+   and `unify_same_domain` runs at every node so that a node never
+   carries more edges than its outline.  The kernel keeps every
+   semantic (tolerances, arcs, `ON` handling); only the association
+   of the fuse changes.  Unifying at the root only is slower (4.7 s):
+   the seams of the lower nodes multiply the pieces the upper fuses
+   must match.
+
+2. **The in-house rectilinear union stays a measured option, not
+   code.**  Coordinate compression of all rectangle edges, an
+   even-odd fill on the compressed grid and a contour trace give the
+   union of rectilinear caps exactly (vertices are original
+   coordinates) in 0.2 s for 1 787 caps — 12 × below the tree — but
+   only for straight, axis-aligned rings; pads with arcs, rotated
+   traces and imported outlines would still go to the kernel.  With
+   the tree at 2.6 s of a 100 s build the fuse is no longer a lever;
+   the probe keeps the route for the day it is.
+
+3. **Sheet contours are tested inside their own bounding boxes**
+   (`_conformal.contour_mask`): for each contour the block of
+   candidate points inside its box padded by the membership
+   tolerance is located by `searchsorted` on the monotonic coordinate
+   vectors; the even-odd test and the boundary band run on that block
+   only.  Outside the padded box neither can be true (every straddling
+   edge crosses to the right of a point left of the box, an even
+   count; none straddles a point above or below it; the band is
+   bounded by the tolerance), so the mask equals the full-grid
+   evaluation bit for bit (tested on a square with a hole, a triangle
+   and a contour off the grid at three tolerances).  The XOR pass
+   precedes the OR pass as before.
+
+**Result.**  16 × 16 array under the probe (`auto` pool, CPU): build
+113.6 → **99.2 s**, `boolean_union` 14.8 → 3.9 s (the in-plane fuse
+12.8 → 2.6, `cluster_boxes` 0.7 and the two-operand fuse of the
+raised parts unchanged), sheet rasteriser 3.8 → 2.0 s (`points_near_polygon`
+2.26 → 0.54, the section's 1.3 s remains).  Full ladder rerun
+(`--family all --pool off auto forced --json`): 8 × 8 array 14.8 →
+14.4 s (fuse 0.78 → 0.65, sheets 1.31 → 1.06), every other row within
+0.1 s of DD-208's — the Lange copper fuses in 0.8 s already and the
+posts' caps carry arcs but only 240 of them.  Edge fractions of the
+4 × 4 and 16 × 16 arrays against DD-208's references (45 k and 450 k
+edges): no change above 4e-14 except DD-208's own corrected edge — the
+union's point set is unchanged; unit suite 2 533 passed, integration
+402 passed, gallery plane pins unchanged.
+
+**Open, re-ranked.**  The 16 × 16 row's 99 s are now the ε/µ area
+passes and the classification sections at 1.8 M cells — the ladder's
+own linear terms, one tier up — plus the edge pass's 13 s (DD-208
+item 3, batch formulation).  The post row stays pool-bound (DD-208
+item 2).
+
+**Files:** `src/magnelio/geo/_prism_fuse.py` (`fuse_faces_tree`,
+`_FUSE_TREE_LEAF`), `src/magnelio/mesh/_conformal.py`
+(`contour_mask`), `tests/unit/test_prism_fuse.py`
+(`TestFuseFacesTree`), `tests/unit/test_thin_sheet_footprint.py`
+(`test_contour_mask_windows_match_the_full_grid`),
+`benchmarks/results/bench_mesh_build.json` (re-run).

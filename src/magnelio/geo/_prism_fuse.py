@@ -18,8 +18,9 @@ Given the operands of a union, :func:`fuse_shapes`
    about it) — true of bricks, cylinders, extruded profiles and
    imported plates alike, false of spheres, cones, chamfers and steps;
 2. groups the prisms by (axis, interval), fuses the *bottom caps* of
-   each group in the plane — bounding-box clusters, one planar fuse per
-   cluster, seams removed — and raises each fused face once;
+   each group in the plane — bounding-box clusters, one planar fuse
+   per cluster up a bisection tree (:func:`fuse_faces_tree`), seams
+   removed — and raises each fused face once;
 3. fuses what is left in space, but only within clusters of
    interfering bounding boxes; clusters that touch nothing are kept as
    they are.
@@ -29,7 +30,8 @@ fewer faces: the seams a fuse leaves between coplanar operands describe
 nothing and are gone.  Measured on the benchmark's patch arrays
 (``benchmarks/bench_mesh_build.py``): 8 × 8 with feed network, 443
 strips, 16.1 s → 0.74 s and 6 924 → 640 faces at the same volume to
-nine digits.
+nine digits; 16 × 16, 1 787 strips, 13.4 s → 2.6 s in the plane with
+the fuse tree.
 """
 
 from __future__ import annotations
@@ -49,6 +51,13 @@ _COSINE_TOLERANCE = 1e-12
 _LEVEL_TOLERANCE = 1e-7
 
 _AXES = (2, 0, 1)  # order of preference on a tie: z first, then x, y
+
+# Caps per leaf of the planar fuse tree.  The kernel's N-ary fuse of
+# coplanar faces is superlinear in their number (443 caps 0.66 s, 1 787
+# caps 13.4 s); fused pairwise up a bisection tree with the seams
+# removed at every node, 1 787 caps take 2.6 s, the same point set.
+# Leaves of 8 and 32 measured alike; 32 keeps the tree shallow.
+_FUSE_TREE_LEAF = 32
 
 
 def cluster_boxes(boxes: np.ndarray, tolerance: float) -> list[list[int]]:
@@ -224,6 +233,45 @@ def _oriented_solid(shape):
     return shape.Reversed() if props.Mass() < 0.0 else shape
 
 
+def fuse_faces_tree(faces: list, fuse_faces: Callable, leaf: int | None = None):
+    """Fuse coplanar *faces* pairwise up a spatial bisection tree.
+
+    The N-ary fuse of many coplanar faces is superlinear: every split
+    of every cap is matched against every other piece in the plane.
+    Splitting the set by the median of the cap centres along the axis
+    of largest spread, fusing the leaves N-ary and the siblings
+    pairwise — seams removed at every node, so a node never carries
+    more edges than its outline — keeps each kernel call small.  The
+    result is the same point set as the flat fuse.
+
+    Parameters
+    ----------
+    faces : list of TopoDS_Face
+        Coplanar faces; a single face is returned as it is.
+    fuse_faces : callable(list) -> TopoDS_Shape
+        Fuses faces and removes the seams between them.
+    leaf : int, optional
+        Faces per leaf; ``_FUSE_TREE_LEAF`` by default.
+    """
+    if leaf is None:
+        leaf = _FUSE_TREE_LEAF
+    if len(faces) <= 1:
+        return faces[0] if faces else _compound([])
+    boxes = np.array([_bounding_box(face) for face in faces])
+    centres = 0.5 * (boxes[:, :3] + boxes[:, 3:])
+
+    def fuse_subset(index: np.ndarray):
+        if len(index) <= leaf:
+            return fuse_faces([faces[i] for i in index]) if len(index) > 1 else faces[index[0]]
+        spread = centres[index].max(axis=0) - centres[index].min(axis=0)
+        axis = int(np.argmax(spread))
+        order = index[np.argsort(centres[index, axis], kind="stable")]
+        half = len(order) // 2
+        return fuse_faces([fuse_subset(order[:half]), fuse_subset(order[half:])])
+
+    return fuse_subset(np.arange(len(faces)))
+
+
 def _fuse_group_in_plane(
     members: list[tuple[object, list]],
     axis: int,
@@ -260,7 +308,7 @@ def _fuse_group_in_plane(
         if not owner_set & touched:
             continue
         faces = [caps[i][1].Oriented(TopAbs_FORWARD) for i in cluster]
-        fused = fuse_faces(faces) if len(faces) > 1 else faces[0]
+        fused = fuse_faces_tree(faces, fuse_faces)
         parts.extend(_oriented_solid(extrude(face, tuple(direction))) for face in _faces_of(fused))
     parts.extend(members[i][0] for i in range(len(members)) if i not in touched)
     return parts

@@ -11,6 +11,15 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- A union of thousands of coplanar bodies — the copper of a large
+  patch array with its feed, an imported layer of pads and traces —
+  no longer spends its build in one kernel fuse of all of them: the
+  bodies are fused pairwise up a spatial bisection tree in their
+  plane (a 16 × 16 patch array with its corporate feed, 1 787 strips:
+  13 s → 2.6 s for the union, identical point set).  The thin-sheet
+  footprint tests each contour of the metal outline only on the edges
+  inside its own bounding box (the same array: 3.8 s → 1.6 s for the
+  sheet, identical masks).
 - Unions of many coplanar bodies — the strips of a feed network, the
   pads of a layer, a row of posts — are fused in their common plane and
   raised once instead of going to the kernel's general fuser, which
