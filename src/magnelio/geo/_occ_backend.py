@@ -2618,6 +2618,19 @@ class _PlanarSectionEngine:
                     polygons.append(np.array(filtered) / self._scale)
         return polygons
 
+    def _face_tangents(self, axis: int) -> tuple[np.ndarray, np.ndarray]:
+        """Per-face trace direction of planes normal to *axis*
+        (``e_axis × face normal``), and whether it is non-degenerate;
+        computed once per axis."""
+        cache = self.__dict__.setdefault("_tangent_cache", {})
+        if axis not in cache:
+            n_axis = np.zeros(3)
+            n_axis[axis] = 1.0
+            tangent = np.cross(n_axis, self._f_n)
+            ok = np.linalg.norm(tangent, axis=1) >= 1e-12
+            cache[axis] = (tangent, ok)
+        return cache[axis]
+
     def _screen(self, axis: int, pos: float):
         """Common fast-path admission checks.
 
@@ -2670,36 +2683,42 @@ class _PlanarSectionEngine:
         u_idx, v_idx = self._UV[axis]
         uv = np.ascontiguousarray(pts[:, (u_idx, v_idx)])
 
-        face_pts: dict[int, list[int]] = {}
-        for k, ei in enumerate(trans):
-            face_pts.setdefault(self._e_f[ei, 0], []).append(k)
-            face_pts.setdefault(self._e_f[ei, 1], []).append(k)
-
-        n_axis = np.zeros(3)
-        n_axis[axis] = 1.0
-        succ = np.full(uv.shape[0], -1, dtype=np.int64)
-        for fi, ks in face_pts.items():
-            if len(ks) % 2:
-                return None
-            t3 = np.cross(n_axis, self._f_n[fi])
-            norm = np.linalg.norm(t3)
-            if norm < 1e-12:
-                return None
-            t2 = (t3[u_idx], t3[v_idx])
-            s = uv[ks] @ np.asarray(t2)
-            order = np.argsort(s, kind="stable")
-            s_sorted = s[order]
-            if (np.diff(s_sorted) <= self._tol).any():
-                return None
-            for j in range(0, len(ks), 2):
-                a = ks[order[j]]
-                b = ks[order[j + 1]]
-                if succ[a] != -1:
-                    return None
-                succ[a] = b
+        # Pair the crossing points along each candidate face: every
+        # crossing lies on two faces, and on a planar face the
+        # crossings sort along the face's in-plane trace direction
+        # (plane normal × face normal) into consecutive pairs.  Done
+        # for all faces of the plane at once — the per-face loop with
+        # a ``np.cross`` each was 30 µs a face and 108 k faces on a
+        # row of eight couplers.
+        m = uv.shape[0]
+        rep = np.concatenate((np.arange(m), np.arange(m)))
+        face = np.concatenate((self._e_f[trans, 0], self._e_f[trans, 1]))
+        tangent, tangent_ok = self._face_tangents(axis)
+        if not tangent_ok[face].all():
+            return None
+        s = uv[rep, 0] * tangent[face, u_idx] + uv[rep, 1] * tangent[face, v_idx]
+        order = np.lexsort((s, face))
+        face_sorted = face[order]
+        s_sorted = s[order]
+        starts = np.flatnonzero(np.r_[True, face_sorted[1:] != face_sorted[:-1]])
+        sizes = np.diff(np.r_[starts, face_sorted.size])
+        if (sizes % 2).any():
+            return None
+        within = np.ones(s_sorted.size - 1, dtype=np.bool_)
+        within[starts[1:] - 1] = False
+        if (np.diff(s_sorted)[within] <= self._tol).any():
+            return None
+        # Groups are contiguous and even-sized, so the pairs of every
+        # group are the even/odd positions of the sorted order.
+        first = rep[order[0::2]]
+        second = rep[order[1::2]]
+        if np.unique(first).size != first.size:
+            return None
+        succ = np.full(m, -1, dtype=np.int64)
+        succ[first] = second
         if (succ == -1).any():
             return None
-        counts = np.bincount(succ, minlength=uv.shape[0])
+        counts = np.bincount(succ, minlength=m)
         if (counts != 1).any():
             return None
 

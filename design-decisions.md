@@ -15259,3 +15259,75 @@ millions of cells.
 (`test_sample_projects_the_cost_per_axis`),
 `docs/methods/meshing-conformal.md`, `CHANGELOG.md`,
 `benchmarks/results/bench_mesh_build.json` (re-run).
+
+## DD-211 — The engine's stitch and the face collection run as arrays
+
+**Status:** Decided and implemented 2026-08-28, branch `perf/vectorise-face-passes`.
+DD-210's open item 3 ("the ε/µ area passes — the ladder's own linear terms").
+
+**Problem.**  STATUS carried the area passes as the linear terms of the
+ladder — the cost of having millions of cells.  Profiled on a row of
+eight Lange couplers (1.84 M cells, 19.6 s build; internal dossier
+`investigations/mesh-build-bench/probe_area_profile.py`,
+`probe_engine_split.py`, M14), two of their three seconds per million
+cells were Python loops, not the kernels:
+
+1. **The engine's stitch.**  `_PlanarSectionEngine.section` paired the
+   plane's edge crossings face by face in Python, with a `np.cross`
+   and a `np.linalg.norm` per face per plane — 108 k such faces on
+   the row, 30 µs each: 3.4 s of the 6.9 s spent in
+   `compute_face_material_areas`, whose Numba kernels took 0.4 s.
+2. **The face collection.**  `compute_conformal_mu` walked every primal
+   face of the grid in a Python triple loop to find the ones at a
+   boundary cell (5.5 M iterations, four `bool()` calls and five
+   `append`s each): 3 s.  `compute_conformal_eps` had its masks as
+   arrays already but still built its specs row by row (0.5 s).
+
+**Decision.**
+
+1. The stitch pairs all crossings of a plane at once: every crossing
+   is listed under both of its faces, the trace direction of each face
+   (plane normal × face normal) is cached per axis, the crossings sort
+   by `(face, position along the trace)` with one `lexsort`, and
+   consecutive pairs of every face group become successor links.  The
+   admission checks are the same as before — odd crossing count on a
+   face, two crossings within the tolerance on a face, a crossing
+   claimed twice, a point without or with two successors, a chain that
+   does not close — each declining to the kernel path.  Ties in the
+   trace position are rejected either way, so the different stable
+   order of a tie cannot change an answer.  Contours identical to the
+   kernel's on 120 random planes through a slab with teeth and pockets
+   (`tests/unit/test_planar_section_engine.py`, the engine's first
+   direct equivalence test).
+2. The face collection of both conformal passes builds its specs,
+   normal axes, flat indices and areas from `argwhere` results with
+   fancy indexing, in the axis-major order the loops had; a primal
+   face is selected when either cell it separates is flagged, which
+   the `|=` of the cell mask onto the two face layers expresses
+   without a special case at the domain walls.
+
+**Result.**  Lange 8: build 19.6 → **13.9 s** (engine sections
+3.4 → 1.4 s, `compute_conformal_mu` 6.8 → 2.7 s of which the area
+kernels are unchanged, `compute_conformal_eps` 3.8 → 2.4 s); 8 × 8
+array 14.9 → 12.2 s; Lange 4 8.9 → 6.5 s, 4 × 4 array 4.4 → 3.4 s,
+240 posts 23.4 → 22.4 s.  Every mesh array bit-identical on posts
+60 / 240, Lange 4 and the 4 × 4 array (`probe_mesh_hash.py`, 35 / 35).
+Full ladder (`--family all --pool off auto forced --json`, CPU idle,
+`auto` arm; internal dossier `investigations/mesh-build-bench/vec/`):
+Lange 16 43.7 → **32.5 s**, Lange 8 18.7 → 13.8, Lange 4 8.6 → 6.0;
+8 × 8 array 14.5 → **11.6 s**, 4 × 4 4.0 → 3.1; 240 posts 23.3 → 21.8
+(its sections are kernel sections); 16 × 16 array under the probe
+99.2 → **92 s**.  Unit suite 2 541 passed / 4 skipped, integration
+402 passed / 5 skipped (the six GPU single-precision tests on the device); ruff, DD, API and import gates clean.
+
+**Open, re-ranked.**  The edge pass's batch formulation (DD-208 item 3)
+now leads every row (Lange 16: 6.0 of 32.5 s, 8 × 8 array: 4.1 of
+11.6 s); after it the kernel Booleans of the CSG evaluation and the
+overlap check (Lange 16: `pec_fuse` 4.7 s, `overlaps` 3.1 s) and the
+post row's kernel sections at the kernel's floor.
+
+**Files:** `src/magnelio/geo/_occ_backend.py`
+(`_PlanarSectionEngine.section`, `_face_tangents`),
+`src/magnelio/geo/_filling.py` (`compute_conformal_eps`,
+`compute_conformal_mu`), `tests/unit/test_planar_section_engine.py`
+(new), `CHANGELOG.md`, `benchmarks/results/bench_mesh_build.json` (re-run).

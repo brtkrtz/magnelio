@@ -246,40 +246,33 @@ def compute_conformal_eps(
         | b[1 : Nx + 2, 1 : Ny + 2, :]
     )
 
-    # Collect all boundary face specifications and their flat indices
-    face_specs_list: list[tuple[float, float, float, float, float]] = []
-    face_axes_list: list[int] = []
-    flat_indices: list[int] = []
+    # Boundary dual faces per axis as arrays (specs, normal axis, flat
+    # edge index), in the argwhere order of the former per-row loop.
+    spec_blocks, axes_blocks, flat_blocks = [], [], []
+    ex_ijk = np.argwhere(bnd_ex)  # dual face at x=xm[i], [ye[j]..ye[j+1]] x [ze[k]..ze[k+1]]
+    if ex_ijk.size:
+        i, j, k = ex_ijk[:, 0], ex_ijk[:, 1], ex_ijk[:, 2]
+        spec_blocks.append(np.column_stack((xm[i], ye[j], ze[k], ye[j + 1], ze[k + 1])))
+        axes_blocks.append(np.zeros(len(ex_ijk), dtype=np.int32))
+        flat_blocks.append(i * (Ny + 1) * (Nz + 1) + j * (Nz + 1) + k)
+    ey_ijk = np.argwhere(bnd_ey)  # dual face at y=ym[j], [xe[i]..xe[i+1]] x [ze[k]..ze[k+1]]
+    if ey_ijk.size:
+        i, j, k = ey_ijk[:, 0], ey_ijk[:, 1], ey_ijk[:, 2]
+        spec_blocks.append(np.column_stack((ym[j], xe[i], ze[k], xe[i + 1], ze[k + 1])))
+        axes_blocks.append(np.ones(len(ey_ijk), dtype=np.int32))
+        flat_blocks.append(n_Ex + i * Ny * (Nz + 1) + j * (Nz + 1) + k)
+    ez_ijk = np.argwhere(bnd_ez)  # dual face at z=zm[k], [xe[i]..xe[i+1]] x [ye[j]..ye[j+1]]
+    if ez_ijk.size:
+        i, j, k = ez_ijk[:, 0], ez_ijk[:, 1], ez_ijk[:, 2]
+        spec_blocks.append(np.column_stack((zm[k], xe[i], ye[j], xe[i + 1], ye[j + 1])))
+        axes_blocks.append(np.full(len(ez_ijk), 2, dtype=np.int32))
+        flat_blocks.append(n_Ex + n_Ey + i * (Ny + 1) * Nz + j * Nz + k)
 
-    # Ex edges: dual face at x=xm[i], extent [ye[j]..ye[j+1]] x [ze[k]..ze[k+1]]
-    ex_ijk = np.argwhere(bnd_ex)
-    for row in ex_ijk:
-        i, j, k = int(row[0]), int(row[1]), int(row[2])
-        face_specs_list.append((xm[i], ye[j], ze[k], ye[j + 1], ze[k + 1]))
-        face_axes_list.append(0)
-        flat_indices.append(i * (Ny + 1) * (Nz + 1) + j * (Nz + 1) + k)
-
-    # Ey edges: dual face at y=ym[j], extent [xe[i]..xe[i+1]] x [ze[k]..ze[k+1]]
-    ey_ijk = np.argwhere(bnd_ey)
-    for row in ey_ijk:
-        i, j, k = int(row[0]), int(row[1]), int(row[2])
-        face_specs_list.append((ym[j], xe[i], ze[k], xe[i + 1], ze[k + 1]))
-        face_axes_list.append(1)
-        flat_indices.append(n_Ex + i * Ny * (Nz + 1) + j * (Nz + 1) + k)
-
-    # Ez edges: dual face at z=zm[k], extent [xe[i]..xe[i+1]] x [ye[j]..ye[j+1]]
-    ez_ijk = np.argwhere(bnd_ez)
-    for row in ez_ijk:
-        i, j, k = int(row[0]), int(row[1]), int(row[2])
-        face_specs_list.append((zm[k], xe[i], ye[j], xe[i + 1], ye[j + 1]))
-        face_axes_list.append(2)
-        flat_indices.append(n_Ex + n_Ey + i * (Ny + 1) * Nz + j * Nz + k)
-
-    if not face_specs_list:
+    if not spec_blocks:
         return eps_result, sigma_result, f_area_result, fractions_result
 
-    face_specs = np.array(face_specs_list, dtype=np.float64)
-    face_axes = np.array(face_axes_list, dtype=np.int32)
+    face_specs = np.ascontiguousarray(np.concatenate(spec_blocks), dtype=np.float64)
+    face_axes = np.concatenate(axes_blocks)
 
     from magnelio.geo._occ_backend import compute_face_material_areas  # noqa: PLC0415
 
@@ -330,7 +323,7 @@ def compute_conformal_eps(
         scale=scale,
     )
 
-    flat_arr = np.array(flat_indices, dtype=np.int64)
+    flat_arr = np.concatenate(flat_blocks).astype(np.int64)
     valid = ~np.isnan(eps_vals)
     eps_result[flat_arr[valid]] = eps_vals[valid]
     valid_s = ~np.isnan(sigma_vals)
@@ -487,82 +480,57 @@ def compute_conformal_mu(
     # seed.
     geom = geom_only_cells & ~boundary if geom_only_cells is not None else np.zeros_like(boundary)
 
-    face_specs_list: list[tuple[float, float, float, float, float]] = []
-    face_axes_list: list[int] = []
-    flat_indices: list[int] = []
-    face_areas_list: list[float] = []
-    geom_flags: list[bool] = []
+    # Primal faces at a boundary or geometry-only cell, per normal
+    # axis, as arrays: a face is selected when either cell it separates
+    # is flagged (the one cell at a domain wall).  The face order is
+    # the axis-major (i, j, k) order of the former per-face loop, which
+    # walked every face of the grid in Python — 5.5 M iterations, 3 s,
+    # on a row of eight couplers.
+    def _faces(axis):
+        n_axis = (Nx, Ny, Nz)[axis]
+        shape = [Nx, Ny, Nz]
+        shape[axis] = n_axis + 1
+        lo_sl, hi_sl = [slice(None)] * 3, [slice(None)] * 3
+        lo_sl[axis] = slice(0, n_axis)
+        hi_sl[axis] = slice(1, n_axis + 1)
+        bnd = np.zeros(shape, dtype=bool)
+        geo = np.zeros(shape, dtype=bool)
+        bnd[tuple(lo_sl)] |= boundary
+        bnd[tuple(hi_sl)] |= boundary
+        geo[tuple(lo_sl)] |= geom
+        geo[tuple(hi_sl)] |= geom
+        return bnd, geo
 
-    # Hx faces at x=x[i].  An interior face (1 <= i <= Nx-1) is a
-    # candidate when either of its two adjacent cells is a boundary
-    # cell.  Domain-boundary faces (i = 0 or i = Nx) are candidates
-    # when their *single* adjacent cell is a boundary cell — those
-    # are the port-plane H faces that the 2D mode solver consumes,
-    # and on extruded curved-PEC geometries (round-WG) the Cylinder
-    # contour cuts them just like every interior x-slice does.
-    for i in range(0, Nx + 1):
-        for j in range(Ny):
-            for k in range(Nz):
-                if i == 0:
-                    is_bnd = bool(boundary[0, j, k])
-                    is_geom = bool(geom[0, j, k])
-                elif i == Nx:
-                    is_bnd = bool(boundary[Nx - 1, j, k])
-                    is_geom = bool(geom[Nx - 1, j, k])
-                else:
-                    is_bnd = bool(boundary[i - 1, j, k] or boundary[i, j, k])
-                    is_geom = bool(geom[i - 1, j, k] or geom[i, j, k])
-                if not (is_bnd or is_geom):
-                    continue
-                face_specs_list.append((x[i], y[j], z[k], y[j + 1], z[k + 1]))
-                face_axes_list.append(0)
-                flat_indices.append(i * Ny * Nz + j * Nz + k)
-                face_areas_list.append(float((y[j + 1] - y[j]) * (z[k + 1] - z[k])))
-                geom_flags.append(not is_bnd)
+    spec_blocks, axes_blocks, flat_blocks, area_blocks, geom_blocks = [], [], [], [], []
+    bnd_x, geo_x = _faces(0)
+    idx = np.argwhere(bnd_x | geo_x)
+    if idx.size:
+        i, j, k = idx[:, 0], idx[:, 1], idx[:, 2]
+        spec_blocks.append(np.column_stack((x[i], y[j], z[k], y[j + 1], z[k + 1])))
+        axes_blocks.append(np.zeros(len(idx), dtype=np.int32))
+        flat_blocks.append(i * Ny * Nz + j * Nz + k)
+        area_blocks.append((y[j + 1] - y[j]) * (z[k + 1] - z[k]))
+        geom_blocks.append(~bnd_x[i, j, k])
+    bnd_y, geo_y = _faces(1)
+    idx = np.argwhere((bnd_y | geo_y).transpose(1, 0, 2))
+    if idx.size:
+        j, i, k = idx[:, 0], idx[:, 1], idx[:, 2]
+        spec_blocks.append(np.column_stack((y[j], x[i], z[k], x[i + 1], z[k + 1])))
+        axes_blocks.append(np.ones(len(idx), dtype=np.int32))
+        flat_blocks.append(n_Hx + i * (Ny + 1) * Nz + j * Nz + k)
+        area_blocks.append((x[i + 1] - x[i]) * (z[k + 1] - z[k]))
+        geom_blocks.append(~bnd_y[i, j, k])
+    bnd_z, geo_z = _faces(2)
+    idx = np.argwhere((bnd_z | geo_z).transpose(2, 0, 1))
+    if idx.size:
+        k, i, j = idx[:, 0], idx[:, 1], idx[:, 2]
+        spec_blocks.append(np.column_stack((z[k], x[i], y[j], x[i + 1], y[j + 1])))
+        axes_blocks.append(np.full(len(idx), 2, dtype=np.int32))
+        flat_blocks.append(n_Hx + n_Hy + i * Ny * (Nz + 1) + j * (Nz + 1) + k)
+        area_blocks.append((x[i + 1] - x[i]) * (y[j + 1] - y[j]))
+        geom_blocks.append(~bnd_z[i, j, k])
 
-    # Hy faces at y=y[j]
-    for j in range(0, Ny + 1):
-        for i in range(Nx):
-            for k in range(Nz):
-                if j == 0:
-                    is_bnd = bool(boundary[i, 0, k])
-                    is_geom = bool(geom[i, 0, k])
-                elif j == Ny:
-                    is_bnd = bool(boundary[i, Ny - 1, k])
-                    is_geom = bool(geom[i, Ny - 1, k])
-                else:
-                    is_bnd = bool(boundary[i, j - 1, k] or boundary[i, j, k])
-                    is_geom = bool(geom[i, j - 1, k] or geom[i, j, k])
-                if not (is_bnd or is_geom):
-                    continue
-                face_specs_list.append((y[j], x[i], z[k], x[i + 1], z[k + 1]))
-                face_axes_list.append(1)
-                flat_indices.append(n_Hx + i * (Ny + 1) * Nz + j * Nz + k)
-                face_areas_list.append(float((x[i + 1] - x[i]) * (z[k + 1] - z[k])))
-                geom_flags.append(not is_bnd)
-
-    # Hz faces at z=z[k]
-    for k in range(0, Nz + 1):
-        for i in range(Nx):
-            for j in range(Ny):
-                if k == 0:
-                    is_bnd = bool(boundary[i, j, 0])
-                    is_geom = bool(geom[i, j, 0])
-                elif k == Nz:
-                    is_bnd = bool(boundary[i, j, Nz - 1])
-                    is_geom = bool(geom[i, j, Nz - 1])
-                else:
-                    is_bnd = bool(boundary[i, j, k - 1] or boundary[i, j, k])
-                    is_geom = bool(geom[i, j, k - 1] or geom[i, j, k])
-                if not (is_bnd or is_geom):
-                    continue
-                face_specs_list.append((z[k], x[i], y[j], x[i + 1], y[j + 1]))
-                face_axes_list.append(2)
-                flat_indices.append(n_Hx + n_Hy + i * Ny * (Nz + 1) + j * (Nz + 1) + k)
-                face_areas_list.append(float((x[i + 1] - x[i]) * (y[j + 1] - y[j])))
-                geom_flags.append(not is_bnd)
-
-    if not face_specs_list:
+    if not spec_blocks:
         return result, pec_frac, pec_frac_geom, pec_frac_jump, fractions_result, sigma_m_result
 
     from magnelio.geo._occ_backend import compute_face_material_areas  # noqa: PLC0415
@@ -583,12 +551,15 @@ def compute_conformal_mu(
         (float(z[0]), float(z[-1])),
     )
 
-    geom_only = np.array(geom_flags, dtype=bool)
+    face_specs_all = np.ascontiguousarray(np.concatenate(spec_blocks), dtype=np.float64)
+    face_axes_all = np.concatenate(axes_blocks)
+    face_areas_all = np.concatenate(area_blocks).astype(np.float64)
+    geom_only = np.concatenate(geom_blocks)
     main = ~geom_only
-    face_specs = np.array(face_specs_list, dtype=np.float64)[main]
-    face_axes = np.array(face_axes_list, dtype=np.int32)[main]
-    face_areas = np.array(face_areas_list, dtype=np.float64)[main]
-    flat_all = np.array(flat_indices, dtype=np.int64)
+    face_specs = face_specs_all[main]
+    face_axes = face_axes_all[main]
+    face_areas = face_areas_all[main]
+    flat_all = np.concatenate(flat_blocks).astype(np.int64)
 
     if main.any():
         pec_areas = np.zeros(len(face_specs), dtype=np.float64)
@@ -657,9 +628,9 @@ def compute_conformal_mu(
     # only the per-call face grouping (which the separate call
     # preserves) affects results.
     if geom_only.any():
-        g_specs = np.array(face_specs_list, dtype=np.float64)[geom_only]
-        g_axes = np.array(face_axes_list, dtype=np.int32)[geom_only]
-        g_areas = np.array(face_areas_list, dtype=np.float64)[geom_only]
+        g_specs = face_specs_all[geom_only]
+        g_axes = face_axes_all[geom_only]
+        g_areas = face_areas_all[geom_only]
         g_flat = flat_all[geom_only]
         g_pec = np.zeros(len(g_specs), dtype=np.float64)
         g_geom = np.zeros(len(g_specs), dtype=np.float64)
