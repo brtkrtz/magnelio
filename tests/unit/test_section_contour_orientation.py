@@ -47,6 +47,38 @@ class TestOrientNestedContours:
         out = orient_nested_contours([a, b])
         assert polygon_area(out[0]) > 0 and polygon_area(out[1]) < 0
 
+    def test_many_holes_with_islands_shuffled(self):
+        rng = np.random.default_rng(1)
+        outer = _square(0.0, 60.0, ccw=False)
+        holes, islands = [], []
+        for i in range(8):
+            for j in range(8):
+                c = (-42.0 + 12.0 * i, -42.0 + 12.0 * j)
+                hole = np.array(
+                    [
+                        (c[0] - 4, c[1] - 4),
+                        (c[0] + 4, c[1] - 4),
+                        (c[0] + 4, c[1] + 4),
+                        (c[0] - 4, c[1] + 4),
+                    ]
+                )
+                holes.append(hole if rng.random() < 0.5 else hole[::-1])
+                if (i + j) % 3 == 0:
+                    island = np.array(
+                        [
+                            (c[0] - 1, c[1] - 1),
+                            (c[0] + 1, c[1] - 1),
+                            (c[0] + 1, c[1] + 1),
+                            (c[0] - 1, c[1] + 1),
+                        ]
+                    )
+                    islands.append(island if rng.random() < 0.5 else island[::-1])
+        polys = [outer, *holes, *islands]
+        expected = [1] + [-1] * len(holes) + [1] * len(islands)
+        order = rng.permutation(len(polys))
+        out = orient_nested_contours([polys[k] for k in order])
+        assert [int(np.sign(polygon_area(p))) for p in out] == [expected[k] for k in order]
+
     def test_empty_and_single(self):
         assert orient_nested_contours([]) == []
         (only,) = orient_nested_contours([_square(0.0, 1.0, ccw=False)])

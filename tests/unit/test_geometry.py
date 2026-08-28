@@ -1783,6 +1783,54 @@ class TestParallelSectionPrefill:
         # Spread across the whole batch, not clustered at its head.
         assert max(sampled) > n // 2
 
+    def test_sample_projects_the_cost_per_axis(self, monkeypatch):
+        """A few expensive planes along a row must not price the cheap ones across it.
+
+        The schedule is rarest-axis-first, so a stride sample holds one
+        plane of the expensive axis and many of the cheap one; the mean
+        of the two, projected onto the cheap remainder, admitted a pool
+        that lost time on a row of posts.  Per axis, the projection is
+        the true remainder.
+        """
+        _occ()
+        import time
+
+        from magnelio.geo import _occ_backend as occ_backend
+        from magnelio.geo.primitives import Brick
+        from magnelio.materials.material import Material
+
+        brick = Brick(origin=(0, 0, 0), size=(4e-3, 4e-3, 4e-3), material=Material.pec())
+        shapes = [(brick, 1)]
+        calls = []
+
+        def timed(shape, axis, pos, **kwargs):
+            calls.append(axis)
+            if axis == "y":
+                time.sleep(0.02)
+            return []
+
+        monkeypatch.setattr(occ_backend, "cross_section_polygons", timed)
+        monkeypatch.setattr(occ_backend, "_SECTION_POOL_STARTUP_S", 1.0)
+        queries = [(1, 1e-4 * k, 0) for k in range(20)]  # along: 20 ms each
+        queries += [(0, 1e-6 * k, 0) for k in range(1900)]  # across: ~0
+        cache: dict = {}
+        remaining = occ_backend._sample_and_admit(
+            list(queries), shapes, 1e-4, cache, lambda p: p, 1.0, 8
+        )
+        # True remainder ≈ 18 × 20 ms = 0.4 s, under the 1.5 s bar; the
+        # blended mean (~0.8 ms × 1 900 = 1.6 s) would have cleared it.
+        assert remaining == []
+        assert calls.count("y") == 2 and calls.count("x") >= 20
+        assert len(cache) == len(calls)
+        # Two along-the-row planes would still be worth a pool at 0.3 s
+        # each: the projection is per axis, not a veto on rare axes.
+        monkeypatch.setattr(occ_backend, "_SECTION_POOL_STARTUP_S", 0.02)
+        calls.clear()
+        remaining = occ_backend._sample_and_admit(
+            list(queries), shapes, 1e-4, {}, lambda p: p, 1.0, 8
+        )
+        assert len(remaining) == len(queries) - len(calls)
+
     def test_unguarded_script_does_not_reexecute(self, tmp_path):
         """A user script without ``if __name__ == "__main__":`` stays sane.
 

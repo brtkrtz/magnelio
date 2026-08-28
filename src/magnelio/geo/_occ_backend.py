@@ -1773,6 +1773,28 @@ def _facet_edge_table(con: np.ndarray):
     return keep, con, e_nodes, np.ascontiguousarray(t_e), e_f
 
 
+# A planar, axis-aligned face with at least this many edges is cut into
+# tiles of about ``_SLAB_TILE_TARGET_EDGES`` edges for the sections that
+# cross exactly one of them (see ``_FaceSlabIndex.restrict``).
+_SLAB_TILE_MIN_EDGES = 24
+_SLAB_TILE_TARGET_EDGES = 12
+_SLAB_TILE_MAX_PER_AXIS = 32
+
+
+class _FaceTiles:
+    """The tiles of one heavy planar face: pieces with their boxes and
+    the cut positions per in-plane axis (scaled units)."""
+
+    __slots__ = ("cuts", "hi", "lo", "normal_axis", "pieces")
+
+    def __init__(self, normal_axis, pieces, lo, hi, cuts) -> None:
+        self.normal_axis = normal_axis
+        self.pieces = pieces
+        self.lo = lo
+        self.hi = hi
+        self.cuts = cuts
+
+
 class _FaceSlabIndex:
     """The faces of a shape with their axis slabs, so a section can be
     taken over the faces a plane can touch instead of the whole body.
@@ -1788,6 +1810,21 @@ class _FaceSlabIndex:
     adjacent candidates share their boundary ``TopoDS_Edge`` — and the
     contours came back bit-identical on both bodies.  Positions and
     extents are in the shape's scaled units.
+
+    The same preparation cost sits inside one face when that face
+    carries the outline of every feature on it — the floor of an air
+    body with 240 post pockets has 244 edges, and a plane across the
+    row paid 6.2 of its 6.7 ms for that one face while meeting two of
+    its edges.  Such faces (planar, axis-aligned, at least
+    ``_SLAB_TILE_MIN_EDGES`` edges) are cut once, on first demand, into
+    a grid of tiles along their in-plane axes (``BRepAlgoAPI_Splitter``,
+    ~25 ms for that floor), and a plane that crosses exactly one tile
+    and stays clear of every cut line is sectioned over that tile:
+    the section line then meets only edges the face has itself, or
+    parts of them, and the contours are bit-identical (measured on the
+    post row for 8 to 64 strips).  A plane within the tolerance pad of
+    a cut line, or one crossing several tiles, takes the whole face as
+    before — so a cut line never becomes a section edge.
     """
 
     def __init__(self, shape) -> None:
@@ -1824,14 +1861,113 @@ class _FaceSlabIndex:
         #: units] — the distance within which the kernel treats a plane
         #: as touching the shape.
         self.tolerance = tol
+        #: Tiles of the heavy planar faces, by face index, built on
+        #: first demand; ``None`` marks a face that is not tiled.
+        self._tiles: dict[int, _FaceTiles | None] = {}
 
     @property
     def n_faces(self) -> int:
         return len(self.faces)
 
+    def tiles(self, index: int) -> _FaceTiles | None:
+        """The tiles of face *index*, built on first demand."""
+        if index not in self._tiles:
+            try:
+                self._tiles[index] = self._tile(index)
+            except Exception:  # noqa: BLE001 — the face is sectioned whole
+                self._tiles[index] = None
+        return self._tiles[index]
+
+    def _tile(self, index: int) -> _FaceTiles | None:
+        from OCC.Core.Bnd import Bnd_Box  # noqa: PLC0415
+        from OCC.Core.BRepAdaptor import BRepAdaptor_Surface  # noqa: PLC0415
+        from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Splitter  # noqa: PLC0415
+        from OCC.Core.BRepBndLib import brepbndlib  # noqa: PLC0415
+        from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace  # noqa: PLC0415
+        from OCC.Core.GeomAbs import GeomAbs_Plane  # noqa: PLC0415
+        from OCC.Core.gp import gp_Dir, gp_Pln, gp_Pnt  # noqa: PLC0415
+        from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_FACE  # noqa: PLC0415
+        from OCC.Core.TopExp import TopExp_Explorer  # noqa: PLC0415
+        from OCC.Core.TopoDS import topods  # noqa: PLC0415
+        from OCC.Core.TopTools import TopTools_ListOfShape  # noqa: PLC0415
+
+        face = self.faces[index]
+        n_edges = 0
+        explorer = TopExp_Explorer(face, TopAbs_EDGE)
+        while explorer.More():
+            n_edges += 1
+            explorer.Next()
+        if n_edges < _SLAB_TILE_MIN_EDGES:
+            return None
+        adaptor = BRepAdaptor_Surface(face)
+        if adaptor.GetType() != GeomAbs_Plane:
+            return None
+        direction = adaptor.Plane().Axis().Direction()
+        normal = np.array((direction.X(), direction.Y(), direction.Z()))
+        axis = int(np.argmax(np.abs(normal)))
+        if abs(normal[axis]) < 1.0 - 1e-12:
+            return None
+        lo, hi = self.lo[index], self.hi[index]
+        u, v = (k for k in range(3) if k != axis)
+        extent_u, extent_v = hi[u] - lo[u], hi[v] - lo[v]
+        if extent_u <= 0.0 or extent_v <= 0.0:
+            return None
+        k = np.sqrt(n_edges / _SLAB_TILE_TARGET_EDGES)
+        ku = int(np.clip(round(k * np.sqrt(extent_u / extent_v)), 1, _SLAB_TILE_MAX_PER_AXIS))
+        kv = int(np.clip(round(k * np.sqrt(extent_v / extent_u)), 1, _SLAB_TILE_MAX_PER_AXIS))
+        if ku * kv < 2:
+            return None
+        # Equal tiles, shifted off the equal-split fractions by a phase
+        # so that cut lines do not sit on the layout's own rational
+        # positions (a plane on a cut line is still correct, only slow).
+        phase = 0.2137
+        cuts = {
+            u: lo[u] + extent_u * (np.arange(1, ku) - phase) / ku,
+            v: lo[v] + extent_v * (np.arange(1, kv) - phase) / kv,
+        }
+        tools = TopTools_ListOfShape()
+        margin = 0.1 * (extent_u + extent_v) + 2.0 * self.tolerance
+        for cut_axis, positions in cuts.items():
+            unit = [0.0, 0.0, 0.0]
+            unit[cut_axis] = 1.0
+            other = [k for k in range(3) if k != cut_axis]
+            half = max(hi[other[0]] - lo[other[0]], hi[other[1]] - lo[other[1]]) + margin
+            for pos in positions:
+                origin = [0.5 * (lo[k] + hi[k]) for k in range(3)]
+                origin[cut_axis] = float(pos)
+                pln = gp_Pln(gp_Pnt(*origin), gp_Dir(*unit))
+                tools.Append(BRepBuilderAPI_MakeFace(pln, -half, half, -half, half).Face())
+        arguments = TopTools_ListOfShape()
+        arguments.Append(face)
+        splitter = BRepAlgoAPI_Splitter()
+        splitter.SetArguments(arguments)
+        splitter.SetTools(tools)
+        splitter.SetRunParallel(True)
+        keep_operands_intact(splitter)
+        splitter.Build()
+        if not splitter.IsDone():
+            return None
+        pieces = []
+        explorer = TopExp_Explorer(splitter.Shape(), TopAbs_FACE)
+        while explorer.More():
+            pieces.append(topods.Face(explorer.Current()))
+            explorer.Next()
+        if len(pieces) < 2:
+            return None
+        p_lo = np.empty((len(pieces), 3), dtype=np.float64)
+        p_hi = np.empty((len(pieces), 3), dtype=np.float64)
+        for i, piece in enumerate(pieces):
+            box = Bnd_Box()
+            brepbndlib.Add(piece, box, False)
+            xmin, ymin, zmin, xmax, ymax, zmax = box.Get()
+            p_lo[i] = (xmin, ymin, zmin)
+            p_hi[i] = (xmax, ymax, zmax)
+        return _FaceTiles(axis, pieces, p_lo, p_hi, cuts)
+
     def restrict(self, axis: int, position: float):
         """The shape itself when every face reaches the plane at
-        *position* [scaled units], else a compound of those that do."""
+        *position* [scaled units], else a compound of those that do —
+        a tiled face entering as the one tile the plane crosses."""
         if not self.faces:
             return self.shape
         pad = 2.0 * self.tolerance + 1e-7
@@ -1847,7 +1983,17 @@ class _FaceSlabIndex:
         builder = BRep_Builder()
         builder.MakeCompound(compound)
         for i in sel:
-            builder.Add(compound, self.faces[int(i)])
+            face = self.faces[int(i)]
+            tiles = self.tiles(int(i))
+            if tiles is not None and axis != tiles.normal_axis:
+                near = (tiles.lo[:, axis] <= position + pad) & (tiles.hi[:, axis] >= position - pad)
+                cuts = tiles.cuts.get(axis)
+                clear = cuts is None or not np.any(np.abs(cuts - position) <= pad)
+                if near.sum() == 1 and clear:
+                    face = tiles.pieces[int(np.flatnonzero(near)[0])]
+                elif not near.any():
+                    continue
+            builder.Add(compound, face)
         return compound
 
 
@@ -3904,14 +4050,30 @@ def _sample_and_admit(
     if n_sample == 0:
         return []
     stride = max(1, n // n_sample)
-    sample_idx = list(range(0, n, stride))[:n_sample]
+    chosen = set(list(range(0, n, stride))[:n_sample])
+    # Costs are projected per axis, and every axis is sampled at least
+    # twice where it has two queries.  The schedule puts the rarest axis
+    # first, so a stride sample over a row of posts picked one 150 ms
+    # plane *along* the row and 23 planes *across* it at 1.5 ms — and
+    # the mean of the two, put on the 1 900 cheap remaining planes,
+    # projected 15 s for a 3 s remainder: a pool built to lose 2 s.
+    by_axis: dict[int, list[int]] = {}
+    for i, (axis, _, _) in enumerate(queries):
+        by_axis.setdefault(axis, []).append(i)
+    for idx in by_axis.values():
+        missing = 2 - sum(i in chosen for i in idx)
+        extra = [i for i in (idx[0], idx[len(idx) // 2], idx[-1]) if i not in chosen]
+        chosen.update(extra[: max(0, missing)])
 
     axis_letter = {0: "x", 1: "y", 2: "z"}
-    t0 = time.perf_counter()
-    for i in sample_idx:
+    elapsed = {axis: 0.0 for axis in by_axis}
+    counted = {axis: 0 for axis in by_axis}
+    for i in sorted(chosen):
         axis, pos, si = queries[i]
+        occ_shape = shapes_with_material[si][0]._occ_shape(scale)
+        t0 = time.perf_counter()
         polys = cross_section_polygons(
-            shapes_with_material[si][0]._occ_shape(scale),
+            occ_shape,
             axis_letter[axis],
             pos,
             deflection=deflection,
@@ -3921,13 +4083,16 @@ def _sample_and_admit(
             slab=slabs[si] if slabs else None,
         )
         section_cache[(axis, pos, si)] = _annotate_sections(polys, annotate)
-    elapsed = time.perf_counter() - t0
+        elapsed[axis] += time.perf_counter() - t0
+        counted[axis] += 1
 
-    remaining = [q for i, q in enumerate(queries) if i not in set(sample_idx)]
+    remaining = [q for i, q in enumerate(queries) if i not in chosen]
     if not remaining:
         return []
-    per_query = elapsed / len(sample_idx)
-    projected = per_query * len(remaining)
+    projected = 0.0
+    for axis, idx in by_axis.items():
+        left = len(idx) - counted[axis]
+        projected += elapsed[axis] / counted[axis] * left
     # Break-even: startup + projected/n_workers < projected.
     if projected < _SECTION_POOL_STARTUP_S * _SECTION_POOL_SPEEDUP_MARGIN:
         return []
