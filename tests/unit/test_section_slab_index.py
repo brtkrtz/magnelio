@@ -84,6 +84,105 @@ def test_restrict_returns_the_shape_when_every_face_reaches_the_plane():
     assert slab.tolerance >= 0.0
 
 
+def _floor_with_holes(n_holes=30):
+    """An air slab whose floor carries the outline of every post pocket."""
+    body = Brick(origin=(0, 0, 0), size=(12e-3, 2e-3, 1e-3), material=AIR)
+    posts = [
+        Cylinder(
+            origin=(0.4e-3 + 0.38e-3 * i, 1e-3, 0),
+            radius=0.15e-3,
+            height=0.6e-3,
+            axis="z",
+            material=PEC,
+        )
+        for i in range(n_holes)
+    ]
+    return Difference(body, *posts), posts
+
+
+def _n_edges(shape):
+    from OCC.Core.TopAbs import TopAbs_EDGE
+    from OCC.Core.TopExp import TopExp_Explorer
+
+    n = 0
+    explorer = TopExp_Explorer(shape, TopAbs_EDGE)
+    while explorer.More():
+        n += 1
+        explorer.Next()
+    return n
+
+
+def _faces_of(compound):
+    from OCC.Core.TopAbs import TopAbs_FACE
+    from OCC.Core.TopExp import TopExp_Explorer
+
+    faces = []
+    explorer = TopExp_Explorer(compound, TopAbs_FACE)
+    while explorer.More():
+        faces.append(explorer.Current())
+        explorer.Next()
+    return faces
+
+
+class TestTiledFaces:
+    """A heavy planar face enters a section as the one tile the plane
+    crosses; every other situation takes the whole face."""
+
+    def test_the_heavy_floor_is_tiled_on_demand_only(self):
+        pocketed, _ = _floor_with_holes()
+        slab = ob._FaceSlabIndex(pocketed._occ_shape(1.0))
+        assert slab._tiles == {}
+        floor = max(range(slab.n_faces), key=lambda i: _n_edges(slab.faces[i]))
+        assert _n_edges(slab.faces[floor]) >= ob._SLAB_TILE_MIN_EDGES
+        tiles = slab.tiles(floor)
+        assert tiles is not None and tiles.normal_axis == 2
+        assert len(tiles.pieces) >= 2 and len(tiles.cuts[0]) == len(tiles.pieces) - 1
+        assert len(tiles.cuts[1]) == 0
+        simple = min(range(slab.n_faces), key=lambda i: _n_edges(slab.faces[i]))
+        assert slab.tiles(simple) is None
+        assert slab.tiles(floor) is tiles
+
+    def test_sections_over_tiles_match_the_whole_body(self):
+        pocketed, _ = _floor_with_holes()
+        occ = pocketed._occ_shape(1.0)
+        slab = ob._FaceSlabIndex(occ)
+        floor = max(range(slab.n_faces), key=lambda i: _n_edges(slab.faces[i]))
+        cuts = slab.tiles(floor).cuts[0]
+        rng = np.random.default_rng(11)
+        positions = list(rng.uniform(0.05e-3, 11.95e-3, 60))
+        positions += [c + s for c in cuts for s in (0.0, 0.5e-7, -3e-7, 1e-5, -1e-5)]
+        assert _sections(occ, "x", positions, slab) == _sections(occ, "x", positions, None)
+        ys = list(np.linspace(0.2e-3, 1.8e-3, 5))
+        assert _sections(occ, "y", ys, slab) == _sections(occ, "y", ys, None)
+        zs = [0.3e-3, 0.6e-3 + 6e-7, 0.6e-3 - 6e-7]
+        assert _sections(occ, "z", zs, slab) == _sections(occ, "z", zs, None)
+
+    def test_a_plane_inside_one_tile_takes_the_tile_and_no_other_case_does(self):
+        pocketed, _ = _floor_with_holes()
+        occ = pocketed._occ_shape(1.0)
+        slab = ob._FaceSlabIndex(occ)
+        floor = max(range(slab.n_faces), key=lambda i: _n_edges(slab.faces[i]))
+        face = slab.faces[floor]
+        tiles = slab.tiles(floor)
+        cut = float(tiles.cuts[0][0])
+        inside = 0.5 * (cut + float(tiles.cuts[0][1]))
+
+        def carries_the_floor(compound):
+            return any(f.IsSame(face) for f in _faces_of(compound))
+
+        def carries_a_tile(compound):
+            return any(any(f.IsSame(p) for p in tiles.pieces) for f in _faces_of(compound))
+
+        assert carries_a_tile(slab.restrict(0, inside))
+        assert not carries_the_floor(slab.restrict(0, inside))
+        on_cut = slab.restrict(0, cut)
+        assert carries_the_floor(on_cut) and not carries_a_tile(on_cut)
+        across = slab.restrict(1, 1e-3)  # a y-plane crosses every strip
+        assert carries_the_floor(across) and not carries_a_tile(across)
+        coplanar = slab.restrict(2, 0.0)
+        assert carries_the_floor(coplanar) and not carries_a_tile(coplanar)
+
+
 def test_pool_worker_sections_with_its_own_slab():
     from OCC.Core.BRepTools import breptools
 

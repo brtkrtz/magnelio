@@ -28,7 +28,11 @@ parity (holes against their outer boundary) before the area kernels
 sum them, whatever path produced them.  The kernel's section runs over
 the faces whose extent reaches the plane rather than over the whole
 body — the same curves, without the kernel preparing a thousand faces
-the plane never meets.  A grid plane that coincides with a face of the
+the plane never meets — and a planar face that carries the outline of
+every feature on it (the floor of an air body under a row of posts)
+is cut once into tiles, so that a plane crossing one tile is
+sectioned over that tile alone; a plane on a cut line or across
+several tiles takes the whole face.  A grid plane that coincides with a face of the
 model is never sectioned in place: the fractions there come from
 sections a small step to either side, and the step clears the kernel's
 tolerance by a margin (four times the largest tolerance in the model,
