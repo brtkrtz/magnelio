@@ -47,7 +47,6 @@ Newest first, one line each; the full record is the DD entry.
 * **DD-197** (2026-08-26) — `geo.Surface.parametric(fn, u=, v=, samples=)`: B-spline interpolation of a sampled map (pole rows allowed), `Sheet` → `PlanarSheet` marker hierarchy, `extruded()` on curved sheets (prism, robust), `thickened()` on curved sheets as a guarded offset cascade (volume check catches the kernel's folds), transforms keep the sheet marker (`Face.rotated().thickened()` works); methods chapter *Geometry construction*.
 * **DD-196** (2026-08-26) — K > 2 quasi-TEM ports solve `C v = ε_eff C₀ v` on the capacitance matrices of the per-conductor Laplace fields: channels are the line's modes (even/odd of a symmetric pair, each with its own `ε_eff` and `Z_0`, descending `ε_eff`), orthogonal in the capacitance-corrected mass, dual-basis projections for every multi-channel QTEM port; K = 2 bit-identical; `ModeReport.epsilon_eff`.
 * **DD-195** (2026-08-26) — eigenmode solver grows the ARPACK request at the same shift by the null-space artefact count (≤ 2 grows, one shared SuperLU factorisation via `OPinv`) before/instead of moving the shift; a pinned `sigma` no longer under-delivers when tiny conformal edges swell the residual null space (tutorial 13 at `singularity_refinement=2`: 5 of 7 vectors were artefacts).
-* **DD-194** (2026-08-25) — singularity refinement at conductor edges: `MeshControl(singularity_refinement=k)` grades the planes holding a singular metal edge (convex metal edge, or concave edge of a vacuum body with metal outside; kernel offset analysis, 5° tangency) from `h_fine / k` on both sides; per-plane fine sizes, asymmetric two-ramp / tent profile; default 1 (off) — on the S-parameter ladder the factor is cost-neutral (edge cell sets dt), it pays for impedance / ε_eff and under a `min_cell_size` floor.
 Older decisions: `design-decisions.md`.
 
 ## Working practices earned the hard way
@@ -374,8 +373,7 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   remaining ~30 µs per edge is Python per line and edge — a batch
   formulation (every planar row against all carrier lines through its
   box in one compiled call, edge accounting vectorised per line) is
-  the next tier; (4) the analytic quadrics could still get an exact
-  plane × quadric section.
+  the next tier.
 
 Closed construction sites are tombstoned where they were decided (the
 DD entry and `known-bugs.md`) and are not repeated here.
