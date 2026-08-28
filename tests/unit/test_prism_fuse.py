@@ -14,7 +14,8 @@ import pytest
 
 from magnelio import geo
 from magnelio.geo import _occ_backend as backend
-from magnelio.geo._prism_fuse import cluster_boxes, prism_candidates
+from magnelio.geo import _prism_fuse
+from magnelio.geo._prism_fuse import cluster_boxes, fuse_faces_tree, prism_candidates
 from magnelio.materials import Material
 
 MM = 1e-3
@@ -120,6 +121,84 @@ class TestPrismCandidates:
         )
         (shape,) = _occ(step)
         assert 2 not in prism_candidates(shape)
+
+
+def _area(shape) -> float:
+    from OCC.Core.BRepGProp import brepgprop
+    from OCC.Core.GProp import GProp_GProps
+
+    props = GProp_GProps()
+    brepgprop.SurfaceProperties(shape, props)
+    return props.Mass()
+
+
+def _bottom_caps(shapes) -> list:
+    from OCC.Core.TopAbs import TopAbs_FORWARD
+
+    caps = []
+    for shape in _occ(*shapes):
+        caps.extend(face.Oriented(TopAbs_FORWARD) for face in prism_candidates(shape)[2][2])
+    return caps
+
+
+def _fuse_faces(faces):
+    return backend.unify_same_domain(_general_fuse(faces))
+
+
+def _comb(n: int) -> list:
+    """A spine with *n* overlapping teeth — one connected copper network."""
+    teeth = [
+        geo.Brick(origin=(k * MM, 0, 0), size=(0.6 * MM, 3 * MM, 0.1 * MM), material="pec")
+        for k in range(n)
+    ]
+    spine = geo.Brick(origin=(-0.5 * MM, -0.2 * MM, 0), size=((n + 1) * MM, MM, 0.1 * MM))
+    return [spine, *teeth]
+
+
+class TestFuseFacesTree:
+    def test_matches_the_flat_fuse(self):
+        caps = _bottom_caps(_comb(40))  # more than one leaf
+        tree = fuse_faces_tree(caps, _fuse_faces)
+        flat = _fuse_faces(caps)
+        assert _faces(tree) == _faces(flat) == 1
+        assert _area(tree) == pytest.approx(_area(flat), rel=1e-12)
+        expected = (40 * 0.6 * 3 + 41 * 1 - 40 * 0.6 * 0.8) * MM**2  # teeth, spine, overlaps
+        assert _area(tree) == pytest.approx(expected, rel=1e-9)
+
+    def test_small_sets_take_one_call(self):
+        caps = _bottom_caps(_comb(5))
+        calls = []
+
+        def counting(faces):
+            calls.append(len(faces))
+            return _fuse_faces(faces)
+
+        fuse_faces_tree(caps, counting)
+        assert calls == [6]
+        (face,) = caps[:1]
+        assert fuse_faces_tree([face], counting) is face
+        assert calls == [6]
+
+    def test_bisects_by_the_axis_of_largest_spread(self):
+        caps = _bottom_caps(_comb(9))
+        calls = []
+
+        def counting(faces):
+            calls.append(len(faces))
+            return _fuse_faces(faces)
+
+        tree = fuse_faces_tree(caps, counting, leaf=3)
+        # 10 caps → 5 + 5 → (2 + 3) + (2 + 3): four leaves, three pair fuses
+        assert sorted(calls) == [2, 2, 2, 2, 2, 3, 3]
+        assert _faces(tree) == 1
+        assert _area(tree) == pytest.approx(_area(_fuse_faces(caps)), rel=1e-12)
+
+    def test_union_takes_the_tree(self, monkeypatch):
+        monkeypatch.setattr(_prism_fuse, "_FUSE_TREE_LEAF", 4)
+        parts = _comb(12)
+        fused = geo.Union(*parts)._occ_shape(1.0)
+        assert _solids(fused) == 1
+        assert _volume(fused) == pytest.approx(_volume(_general_fuse(_occ(*parts))), rel=1e-9)
 
 
 class TestUnionPointSet:

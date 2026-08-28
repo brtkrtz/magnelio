@@ -479,10 +479,12 @@ def rasterize_thin_sheet_footprint(mesh, spec: ThinSheetSpec, scale: float = 1.0
     only pre-filters candidates; the footprint is **one section** of the
     source solid at the metal mid-thickness, and every candidate edge
     midpoint is tested against its contours by the even-odd rule (holes
-    stay open) — the cell classifier's path.  Edges on the lateral
-    boundary count as metal (a band of the classification tolerance
-    around the outline), matching the inclusive node selection of the
-    rect path and the OCC ``ON`` state of the classifier.
+    stay open) — the cell classifier's path, each contour on the points
+    of its own bounding box (:func:`contour_mask`).  Edges on the
+    lateral boundary count as metal (a band of the classification
+    tolerance around the outline), matching the inclusive node
+    selection of the rect path and the OCC ``ON`` state of the
+    classifier.
 
     Classifying each midpoint against the solid instead costs
     O(candidates × faces): 15 ms per point on a 1 300-face copper
@@ -498,7 +500,6 @@ def rasterize_thin_sheet_footprint(mesh, spec: ThinSheetSpec, scale: float = 1.0
         SECTION_NUDGE_FRACTION,
     )
     from magnelio.geo._occ_backend import cross_section_polygons  # noqa: PLC0415
-    from magnelio.geo._polygon_clip import points_in_polygon, points_near_polygon  # noqa: PLC0415
     from magnelio.mesh.indexing import apply_thin_pec_sheet  # noqa: PLC0415
 
     if spec.shape is None:
@@ -540,9 +541,37 @@ def rasterize_thin_sheet_footprint(mesh, spec: ThinSheetSpec, scale: float = 1.0
 
     for comp, iu_sel, iv_sel in _sheet_candidates(grid, spec):
         UU, VV = _sheet_candidate_points(grid, spec, comp, iu_sel, iv_sel)
-        mask = np.zeros(UU.shape, dtype=bool)
-        for poly in contours:
-            mask ^= points_in_polygon(UU, VV, poly)
-        for poly in contours:
-            mask |= points_near_polygon(UU, VV, poly, tol)
+        mask = contour_mask(UU, VV, contours, tol)
         _paint_sheet_edges(mesh, spec, comp, iu_sel, iv_sel, mask)
+
+
+def contour_mask(UU, VV, contours, tol: float) -> np.ndarray:
+    """Even-odd membership of the grid points in *contours*, boundary band included.
+
+    ``UU``/``VV`` are ``meshgrid(u_vals, v_vals, indexing="ij")`` of
+    monotonic coordinate vectors.  Every contour is tested only on the
+    block of points inside its bounding box padded by *tol*: outside
+    it neither the even-odd test nor the band can be true, so the
+    result equals the evaluation on the full grid — while a section of
+    many small contours (the pads of an array) costs the sum of their
+    boxes instead of contours × grid.
+    """
+    from magnelio.geo._polygon_clip import points_in_polygon, points_near_polygon  # noqa: PLC0415
+
+    mask = np.zeros(UU.shape, dtype=bool)
+    if UU.size == 0:
+        return mask
+    u_vals, v_vals = UU[:, 0], VV[0, :]
+    windows = []
+    for poly in contours:
+        lo = poly.min(axis=0) - tol
+        hi = poly.max(axis=0) + tol
+        i0, i1 = np.searchsorted(u_vals, lo[0]), np.searchsorted(u_vals, hi[0], side="right")
+        j0, j1 = np.searchsorted(v_vals, lo[1]), np.searchsorted(v_vals, hi[1], side="right")
+        if i0 < i1 and j0 < j1:
+            windows.append((poly, (slice(i0, i1), slice(j0, j1))))
+    for poly, window in windows:
+        mask[window] ^= points_in_polygon(UU[window], VV[window], poly)
+    for poly, window in windows:
+        mask[window] |= points_near_polygon(UU[window], VV[window], poly, tol)
+    return mask

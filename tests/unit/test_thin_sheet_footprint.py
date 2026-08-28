@@ -195,3 +195,36 @@ def test_strip_boundary_edges_are_metal_inclusive():
     assert ex[i, k0] and ex[i, k1], "x-edges on the strip's lateral boundary lines are metal"
     assert ex[i, (k0 + k1) // 2]
     assert not ex[i, k0 - 1] and not ex[i, k1 + 1], "one node outside the strip is open"
+
+
+def _full_grid_mask(UU, VV, contours, tol):
+    """The pre-window evaluation: every contour on every point."""
+    from magnelio.geo._polygon_clip import points_in_polygon, points_near_polygon
+
+    mask = np.zeros(UU.shape, dtype=bool)
+    for poly in contours:
+        mask ^= points_in_polygon(UU, VV, poly)
+    for poly in contours:
+        mask |= points_near_polygon(UU, VV, poly, tol)
+    return mask
+
+
+def test_contour_mask_windows_match_the_full_grid():
+    from magnelio.mesh._conformal import contour_mask
+
+    rng = np.random.default_rng(3)
+    u = np.sort(rng.uniform(0.0, 10.0, 173))
+    v = np.sort(rng.uniform(0.0, 7.0, 131))
+    UU, VV = np.meshgrid(u, v, indexing="ij")
+    square = np.array([(1.0, 1.0), (4.0, 1.0), (4.0, 4.0), (1.0, 4.0)])
+    hole = np.array([(2.0, 2.0), (3.0, 2.0), (3.0, 3.0), (2.0, 3.0)])
+    triangle = np.array([(5.0, 0.5), (9.5, 2.0), (6.0, 6.5)])
+    outside = np.array([(20.0, 20.0), (21.0, 20.0), (21.0, 21.0)])  # no window at all
+    contours = [square, hole, triangle, outside]
+    for tol in (1e-9, 0.05, 0.4):
+        got = contour_mask(UU, VV, contours, tol)
+        np.testing.assert_array_equal(got, _full_grid_mask(UU, VV, contours, tol))
+    i, j = np.argmin(np.abs(u - 2.5)), np.argmin(np.abs(v - 2.5))
+    in_hole = contour_mask(UU, VV, contours, 0.05)[i, j]
+    assert not in_hole
+    assert contour_mask(UU[:0], VV[:0], contours, 0.05).shape == (0, 131)
