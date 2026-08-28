@@ -87,7 +87,8 @@ def test_planar_point_state_with_a_hole_and_a_tolerance_band():
     hole = np.array([[1.0, 1.0], [1.0, 2.0], [2.0, 2.0], [2.0, 1.0]])
     verts = np.vstack([outer, hole])
     offsets = np.array([0, 4, 8])
-    state = lambda u, v: planar_point_state(u, v, verts, offsets, 1e-6)  # noqa: E731
+    kinds, arcs = _straight(verts)
+    state = lambda u, v: planar_point_state(u, v, verts, offsets, kinds, arcs, 1e-6)  # noqa: E731
     assert state(3.0, 3.0) == 1
     assert state(1.5, 1.5) == 0  # in the hole
     assert state(5.0, 1.0) == 0
@@ -95,6 +96,50 @@ def test_planar_point_state_with_a_hole_and_a_tolerance_band():
     assert state(1.0 + 5e-7, 1.5) == 2  # within tolerance of the hole
     assert state(2.0 + 5e-6, 1.5) == 1  # beyond the band, in the material
     assert state(4.0, 4.0) == 2  # a corner
+
+
+def _straight(verts):
+    return np.zeros(len(verts), dtype=np.int64), np.zeros((len(verts), 5))
+
+
+def test_planar_point_state_on_arcs():
+    # A "D": the right half of the unit circle from (0, -1) up to (0, 1)
+    # and the chord back down.
+    verts = np.array([[0.0, -1.0], [0.0, 1.0]])
+    offsets = np.array([0, 2])
+    kinds = np.array([1, 0], dtype=np.int64)
+    arcs = np.array([[0.0, 0.0, 1.0, -np.pi / 2, np.pi / 2], [0.0] * 5])
+    state = lambda u, v: planar_point_state(u, v, verts, offsets, kinds, arcs, 1e-6)  # noqa: E731
+    assert state(0.5, 0.0) == 1
+    assert state(0.99, 0.0) == 1
+    assert state(1.01, 0.0) == 0
+    assert state(-0.5, 0.0) == 0
+    assert state(0.5, 0.9) == 0  # beyond the arc (0.25 + 0.81 > 1)
+    assert state(0.6, 0.6) == 1
+    assert state(1.0 + 5e-7, 0.0) == 2  # on the arc, within the band
+    assert state(1.0 - 5e-7, 0.0) == 2
+    assert state(0.0, 0.0) == 2  # on the chord
+    assert state(5e-7, 1.0) == 2  # at the arc's end
+    assert state(-0.5, 0.5) == 0
+    # The left half as a second piece closes the disc: same answers on
+    # the right, the left now inside.
+    verts = np.array([[0.0, -1.0], [0.0, 1.0]])
+    kinds = np.array([1, -1], dtype=np.int64)
+    arcs = np.array([[0.0, 0.0, 1.0, -np.pi / 2, np.pi / 2]] * 2)
+    disc = lambda u, v: planar_point_state(u, v, verts, offsets, kinds, arcs, 1e-6)  # noqa: E731
+    assert disc(-0.5, 0.5) == 1
+    assert disc(-0.99, 0.0) == 1
+    assert disc(-1.01, 0.0) == 0
+    assert disc(0.0, 0.0) == 1
+    assert disc(0.0, 1.0 - 5e-7) == 2
+    assert disc(0.0, 1.0 - 5e-6) == 1
+    rng = np.random.default_rng(3)
+    pts = rng.uniform(-1.5, 1.5, size=(2000, 2))
+    rad = np.hypot(pts[:, 0], pts[:, 1])
+    for (u, v), d in zip(pts, rad, strict=True):
+        if abs(d - 1.0) < 1e-5:
+            continue
+        assert disc(u, v) == (1 if d < 1.0 else 0), (u, v)
 
 
 def test_planar_row_of_faces():
@@ -123,12 +168,24 @@ def test_planar_row_of_faces():
         geo.Cylinder(origin=(2 * MM, 2 * MM, -MM), radius=MM, height=3 * MM, axis="z"),
     )._occ_shape(1.0)
     rows = [backend._planar_row(f) for f in faces(plate)]
-    # The bore, and the two faces whose outline carries its circle.
-    assert sum(r is None for r in rows) == 3
-    assert all(r[0] in (0, 1) for r in rows if r is not None)  # the four straight sides
+    # The bore is the only face declined; the two faces whose outline
+    # carries its circle get the hole as v-monotone arcs.
+    assert sum(r is None for r in rows) == 1
+    holed = [r for r in rows if r is not None and r[0] == 2]
+    assert len(holed) == 2
+    for r in holed:
+        assert r[4].tolist() == [0, 4, 4 + int(np.count_nonzero(r[5]))]
+        assert set(r[5][4:].tolist()) <= {1, -1} and np.all(r[6][4:, 2] == MM)
+    assert all(not r[5].any() for r in rows if r is not None and r[0] in (0, 1))
 
     cyl = geo.Cylinder(origin=(0, 0, 0), radius=MM, height=MM, axis="z")._occ_shape(1.0)
-    assert all(backend._planar_row(f) is None for f in faces(cyl))  # arcs everywhere
+    rows = [backend._planar_row(f) for f in faces(cyl)]
+    assert sum(r is None for r in rows) == 1  # the cylindrical side
+    for r in [r for r in rows if r is not None]:
+        assert r[0] == 2 and len(r[3]) == 3 and np.all(r[5] != 0)  # one vertex + two cuts
+        # One cut at the top, one at the bottom of the circle (u = 0).
+        assert sorted(np.round(r[3][1:, 1] / MM, 9).tolist()) == [-1.0, 1.0]
+        assert np.allclose(r[3][1:, 0], 0.0, atol=1e-12)
 
 
 def _line(p0, ax, d=1.0):
@@ -204,7 +261,7 @@ def _post():
 def test_cylinder_rows_reproduce_the_kernel_off_the_special_lines(monkeypatch):
     occ = _post()
     solid = backend._PrefilteredLineSolid(occ, TOL)
-    assert all(r is None for r in solid._row_planar)  # the caps have circular outlines
+    assert sum(r is not None for r in solid._row_planar) == 2  # the caps, arcs in-house
     assert sum(c is not None for c in solid._row_cyl) == 1
     rng = np.random.default_rng(7)
     checked = 0
@@ -225,6 +282,57 @@ def test_cylinder_rows_reproduce_the_kernel_off_the_special_lines(monkeypatch):
         for (w1, s1, u1), (w2, s2, u2) in zip(got, ref, strict=True):
             assert abs(w1 - w2) < 1e-12 and s1 == s2 and u1 == u2, (p0, ax, got, ref)
     assert checked > 150
+
+
+def test_disc_caps_reproduce_the_kernel_off_the_rim(monkeypatch):
+    """z-lines through a post's caps and a plate's round hole: the arc
+    rings answer as the kernel's intersector does, except on the rim
+    (the kernel's ON there is not reliable — a standalone post reads IN)."""
+    plate = geo.Difference(
+        geo.Brick(origin=(0, 0, 0), size=(2 * MM, 2 * MM, 0.2 * MM)),
+        geo.Cylinder(origin=(MM, MM, -MM), radius=0.4 * MM, height=3 * MM, axis="z"),
+        material="pec",
+    )._occ_shape(1.0)
+    rng = np.random.default_rng(9)
+    for occ in (_post(), plate):
+        solid = backend._PrefilteredLineSolid(occ, TOL)
+        assert sum(r is not None and r[5].any() for r in solid._row_planar) == 2
+        checked = 0
+        for _ in range(300):
+            ax = int(rng.integers(3))
+            p0 = rng.uniform((0.0, 0.0, -0.2 * MM), (2 * MM, 2 * MM, 1.2 * MM))
+            p0[ax] = 0.0
+            got = _hits(solid, p0, ax, True, monkeypatch)
+            ref = _hits(solid, p0, ax, False, monkeypatch)
+            if any(u for _, _, u in ref) or len(ref) != len(got):
+                continue
+            checked += 1
+            for (w1, s1, u1), (w2, s2, u2) in zip(got, ref, strict=True):
+                assert abs(w1 - w2) < 1e-12 and s1 == s2 and u1 == u2, (p0, ax, got, ref)
+        assert checked > 200
+    # On the rim itself the caps read ON: a z-line at (c + r, c) touches
+    # both caps of the post with untrusted hits.
+    solid = backend._PrefilteredLineSolid(_post(), TOL)
+    c, r = MM, 0.4 * MM
+    hits = _hits(solid, (c + r, c, 0.0), 2, True, monkeypatch)
+    assert [(round(w, 12), s, u) for w, s, u in hits] == [(0.0, 0, True), (round(MM, 12), 0, True)]
+    hits = _hits(solid, (c + r - 5e-9, c, 0.0), 2, True, monkeypatch)
+    assert all(u for _, _, u in hits) and len(hits) == 2
+    hits = _hits(solid, (c + r - 5e-8, c, 0.0), 2, True, monkeypatch)
+    assert [(s, u) for _, s, u in hits] == [(1, False), (-1, False)]
+    assert _hits(solid, (c + r + 5e-8, c, 0.0), 2, True, monkeypatch) == []
+
+
+def test_disc_caps_give_the_edge_fractions_of_the_kernel(monkeypatch):
+    occ = _post()
+    x = np.linspace(0, 2 * MM, 9)
+    z = np.array([-0.2 * MM, 0.0, 0.3 * MM, 0.8 * MM, MM, 1.2 * MM])
+    edges = np.concatenate([_grid_edges(x, x, z, axis) for axis in range(3)])
+    in_house = backend.compute_edge_pec_fractions([occ], edges, TOL)
+    monkeypatch.setattr(backend, "_PLANAR_ROW_HITS", False)
+    kernel = backend.compute_edge_pec_fractions([occ], edges, TOL)
+    assert np.allclose(in_house, kernel, atol=1e-12, rtol=0)
+    assert 0.0 < in_house.mean() < 1.0
 
 
 def test_cylinder_rows_give_the_edge_fractions_of_the_kernel(monkeypatch):
@@ -348,7 +456,7 @@ def test_planar_tiles_keep_the_parity_of_the_face():
             cap = planar
         exp.Next()
     assert cap is not None
-    axis, level, outward, verts, offsets = cap
+    axis, level, outward, verts, offsets, kinds, arcs = cap
     lo = np.array([verts[:, 0].min(), verts[:, 1].min(), level])
     hi = np.array([verts[:, 0].max(), verts[:, 1].max(), level])
     tiles = backend._planar_tiles(cap, lo, hi)
@@ -357,13 +465,13 @@ def test_planar_tiles_keep_the_parity_of_the_face():
     pts = rng.uniform(lo[:2], hi[:2], size=(2000, 2))
     checked = 0
     for pu, pv in pts:
-        whole = planar_point_state(pu, pv, verts, offsets, 1e-9)
+        whole = planar_point_state(pu, pv, verts, offsets, kinds, arcs, 1e-9)
         hosts = [
             t
             for t, t_lo, t_hi in tiles
             if t_lo[0] - 1e-9 <= pu <= t_hi[0] + 1e-9 and t_lo[1] - 1e-9 <= pv <= t_hi[1] + 1e-9
         ]
-        states = {planar_point_state(pu, pv, t[3], t[4], 1e-9) for t in hosts}
+        states = {planar_point_state(pu, pv, t[3], t[4], t[5], t[6], 1e-9) for t in hosts}
         if whole == 2 or 2 in states:
             continue  # on an outline or a tile border: the fallback's call
         checked += 1

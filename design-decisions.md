@@ -16224,3 +16224,106 @@ the engine and the line table when a model shows them on a ladder row.
 `compute_face_material_areas`, `batch_cross_sections`),
 `tests/unit/test_planar_section_engine.py` (`TestSectionBatch`),
 `CHANGELOG.md`, `STATUS.md`.
+
+## DD-220 — Arcs in the planar rows of the edge pass
+
+**Status:** Decided and implemented 2026-08-29, branch
+`perf/planar-arc-rows`.  DD-219's open item 1: the post row's caps.
+
+**Problem.**  After DD-219 the largest post-row term was
+`edge_fractions` (0.72 s of 3.0 s), and 0.58 s of it were 49 440
+`IntCurvesFace_Intersector.Perform` calls on the 480 **caps** of the
+240 posts (internal dossier `investigations/mesh-build-bench/posts/`,
+M23).  A cap is a planar, axis-aligned face with one circular edge and
+one vertex; DD-208's `_planar_row` admits straight edges only, so the
+caps were the last rows of the post row on the kernel — the cylinders
+had gone in-house with DD-218.  A plate with round holes, a washer, a
+pin head are the same case.  Tessellating the circle as the kernel's
+5° rule would was ruled out: with r = 0.5 mm the chord's sagitta is
+4.8e-7 m, twenty times the 2.4e-8 m tolerance, and a line grazing the
+rim would read wrong.
+
+**Decision.**
+
+1. *v-monotone arc segments.*  `_planar_row` accepts circular edges
+   whose circle lies in the face plane and returns, next to the rings'
+   vertices, one segment record per vertex: `kinds[k]` ``0`` for a
+   straight segment, ``±1`` for an arc on the right / left half of its
+   circle, `arcs[k] = (cu, cv, r, ψ_lo, ψ_hi)` with the angular span in
+   the half's own frame (`atan2(v − cv, ±(u − cu))`, so ψ_lo ≤ ψ_hi
+   always).  `_arc_pieces` cuts every circular edge at the in-plane
+   angles ±π/2 — where the tangent is parallel to *u* — in the wire's
+   direction of travel; the cut points join the ring as vertices (a
+   full circle: its seam vertex plus two cut points, three arcs), the
+   edge's start vertex is the B-Rep vertex (the ring stays closed
+   against the neighbouring straight segments), the spans come from
+   the exact parameters.  Ellipses and splines are still declined.
+2. *The point test.*  `planar_point_state(pu, pv, verts, offsets,
+   kinds, arcs, tol)`: a v-monotone arc obeys the even-odd rule
+   exactly like a segment — it crosses the ray towards +u iff its ends
+   straddle `pv`, at `cu ± √(r² − (pv − cv)²)` — and its ON band is
+   `| |p − c| − r | ≤ tol` when the point's frame angle lies in the
+   span, else the distance to the arc's ends.  `planar_pair_hits`
+   (the line table's batch), `flagged_hits` (the per-line path) and
+   `boundary_on_lines` (the fallback's boundary rule) carry the two
+   arrays; `_PlanarRows` packs them beside the vertices (`kinds`,
+   `arcs`, `face_kinds`, `face_arcs`).
+3. *Not tiled, not united.*  `_planar_tiles` declines a row with arcs
+   (Sutherland–Hodgman clips polygons; the face stays one row whose
+   test is a compiled loop over its segments — a plate with 240 round
+   holes is ~1 000 segments per line, microseconds), and
+   `rectilinear_rings` declines it for the 2-D union (DD-215).
+4. *Scalar 3-vector helpers.*  `_is_generatrix`, `_is_rim` and the
+   `sense` sign of `_cylinder_row` are written out in scalar arithmetic
+   (`_axis_distance`): 1 200 `np.cross` and 2 400 `np.linalg.norm` on
+   3-vectors were 0.025 s of the 0.09 s row constructor.  Booleans
+   only — no numerical change.
+
+**Measured.**  Edge pass on posts 240: 0 kernel `Perform` calls (from
+49 440), 0.91 → 0.21 s under the profiler, per-line in-house vs kernel
+hits without mismatch, f_L against the DD-218 reference 0 edges
+differing; fallback edges 18 720 → 20 160 (rim lines read ON on both
+caps where the kernel's cap rows said IN — the fallback gives the same
+f_L).  Hash gate posts 60 / posts 240 / array 4 / Lange 4: 35 / 35
+identical.  `probe_pass_breakdown.py posts 240 auto`: `edge_fractions`
+0.72 → **0.15 s**; the row constructor is now 0.065 s of it, ~90 µs
+per face in SWIG accessor calls without a dominant term.
+
+Full ladder (`--family all --pool auto`, CPU idle; before = DD-219's):
+
+| family, n | cells | total before → after | edge pass |
+|---|---|---|---|
+| posts 240 | 385 k | 3.0 → **2.4 s** | 0.7 → 0.1 |
+| posts 60 | 97 k | 0.7 → **0.5 s** | 0.2 → 0.0 |
+| Lange 16 | 3.69 M | 12.5 → 12.5 s | 0.4 |
+| Lange 8 | 1.84 M | 5.2 → 5.2 s | 0.2 |
+| array 8 × 8 | 664 k | 2.5 → 2.5 s | 0.2 |
+| array 4 × 4 | 222 k | 0.8 → 0.7 s | 0.1 |
+
+Unit suite 2 595 passed / 4 skipped (three new tests: the hand-built
+"D" and disc rings, the disc caps of a post and of a plate with a bore
+against the kernel off the rim plus the rim's ON/clean/miss ladder,
+edge fractions with and without the in-house caps; the DD-208 and
+DD-218 fixtures updated — a post's caps are rows now), integration
+402 passed / 5 skipped (`CUPY_ACCELERATORS=""`); `ruff check` / `ruff format
+--check` clean; `check_imports.py` on `investigations/` and
+`userscripts/`: all imports resolve.
+
+**Open, re-ranked.**  In value order: (1) the N-ary fuses on the planar
+rows — `fuse` 2.0 s and `pec_fuse` 2.0 s on Lange 16, `pec_fuse` 1.5 s
+on the 16 × 16 array; (2) the thin-sheet rasteriser (`sheets_detect`
+1.6 s on Lange 16, 1.9 s on the 16 × 16 array — its section 1.3 s);
+(3) the post row's `pass_faces_mu` 0.89 s (the µ pass's own terms
+beyond the sections) and the classifier's `section_calls` (0.38 s on
+the posts, 1.2 s on the 16 × 16 array) with `planes_material` (0.34 s
+on the posts); (4) spheres and cones in the engine and the line table
+when a model shows them on a ladder row.
+
+**Files:** `src/magnelio/geo/_line_kernels.py` (`planar_point_state`,
+`planar_pair_hits`, `boundary_on_lines`),
+`src/magnelio/geo/_occ_backend.py` (`_planar_row`, `_arc_pieces`,
+`_NO_ARC`, `_ARC_CUT_MARGIN`, `_planar_tiles`, `_pack_segments`,
+`_PlanarRows`, `_PrefilteredLineSolid.flagged_hits`, `_LineTable`,
+`_is_generatrix`, `_axis_distance`, `_is_rim`, `_cylinder_row`),
+`src/magnelio/geo/_rect_union.py` (`rectilinear_rings`),
+`tests/unit/test_edge_pass_lines.py`, `CHANGELOG.md`, `STATUS.md`.

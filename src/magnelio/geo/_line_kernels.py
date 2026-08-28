@@ -6,6 +6,8 @@ plain loops and give the same results either way.
 
 from __future__ import annotations
 
+import math
+
 import numpy as np
 
 try:
@@ -83,13 +85,24 @@ def axis_line_candidates(flo, fhi, tol, p0, ax, d):
 
 
 @njit(cache=True)
-def planar_point_state(pu, pv, verts, offsets, tol):
+def planar_point_state(pu, pv, verts, offsets, kinds, arcs, tol):
     """Classify a point against the rings of a planar face.
 
     ``verts`` holds the rings back to back, ring ``r`` occupying rows
-    ``offsets[r]:offsets[r + 1]``.  Returns ``2`` when the point is
-    within ``tol`` of any ring segment (the kernel's ``ON``), else ``1``
-    when the even-odd rule over all rings puts it inside, else ``0``.
+    ``offsets[r]:offsets[r + 1]``; segment ``k`` runs from ``verts[k]``
+    to the next vertex of its ring.  ``kinds[k]`` is ``0`` for a
+    straight segment and ``+1`` / ``-1`` for a circular arc on the
+    right / left half of its circle ``arcs[k, :3] = (cu, cv, r)``,
+    whose angular span ``arcs[k, 3:5] = (psi_lo, psi_hi)`` is measured
+    from that half's own direction (``atan2(v - cv, ±(u - cu))``).
+    Such an arc is monotone in ``v``, so the even-odd rule treats it
+    like a segment: it crosses the ray towards ``+u`` exactly when its
+    ends straddle ``pv``, at ``cu ± sqrt(r² - (pv - cv)²)`` — no
+    tessellation, no chord error.
+
+    Returns ``2`` when the point is within ``tol`` of any ring segment
+    (the kernel's ``ON``), else ``1`` when the even-odd rule over all
+    rings puts it inside, else ``0``.
     """
     tol2 = tol * tol
     inside = False
@@ -106,25 +119,49 @@ def planar_point_state(pu, pv, verts, offsets, tol):
             yi = verts[i, 1]
             xj = verts[j, 0]
             yj = verts[j, 1]
-            dx = xj - xi
-            dy = yj - yi
-            length2 = dx * dx + dy * dy
-            if length2 > 0.0:
-                t = ((pu - xi) * dx + (pv - yi) * dy) / length2
-                if t < 0.0:
+            kind = kinds[j]
+            if kind == 0:
+                dx = xj - xi
+                dy = yj - yi
+                length2 = dx * dx + dy * dy
+                if length2 > 0.0:
+                    t = ((pu - xi) * dx + (pv - yi) * dy) / length2
+                    if t < 0.0:
+                        t = 0.0
+                    elif t > 1.0:
+                        t = 1.0
+                else:
                     t = 0.0
-                elif t > 1.0:
-                    t = 1.0
+                ex = xi + t * dx - pu
+                ey = yi + t * dy - pv
+                if ex * ex + ey * ey <= tol2:
+                    return 2
+                if (yi > pv) != (yj > pv):
+                    x_cross = (xj - xi) * (pv - yi) / (yj - yi) + xi
+                    if pu < x_cross:
+                        inside = not inside
             else:
-                t = 0.0
-            ex = xi + t * dx - pu
-            ey = yi + t * dy - pv
-            if ex * ex + ey * ey <= tol2:
-                return 2
-            if (yi > pv) != (yj > pv):
-                x_cross = (xj - xi) * (pv - yi) / (yj - yi) + xi
-                if pu < x_cross:
-                    inside = not inside
+                cu = arcs[j, 0]
+                cv = arcs[j, 1]
+                rad = arcs[j, 2]
+                du = pu - cu
+                dv = pv - cv
+                psi = math.atan2(dv, kind * du)
+                if arcs[j, 3] <= psi <= arcs[j, 4]:
+                    if abs(math.sqrt(du * du + dv * dv) - rad) <= tol:
+                        return 2
+                else:
+                    ei = (xi - pu) * (xi - pu) + (yi - pv) * (yi - pv)
+                    ej = (xj - pu) * (xj - pu) + (yj - pv) * (yj - pv)
+                    if ei <= tol2 or ej <= tol2:
+                        return 2
+                if (yi > pv) != (yj > pv):
+                    h = rad * rad - dv * dv
+                    if h < 0.0:
+                        h = 0.0
+                    x_cross = cu + kind * math.sqrt(h)
+                    if pu < x_cross:
+                        inside = not inside
             j = i
     return 1 if inside else 0
 
@@ -239,6 +276,8 @@ def planar_pair_hits(
     row_level,
     row_outward,
     verts,
+    kinds,
+    arcs,
     ring_offsets,
     row_ring_lo,
     row_ring_hi,
@@ -267,6 +306,8 @@ def planar_pair_hits(
             line_pv[line],
             verts,
             ring_offsets[row_ring_lo[r] : row_ring_hi[r]],
+            kinds,
+            arcs,
             tol,
         )
         if state == 0:
@@ -682,6 +723,8 @@ def boundary_on_lines(
     hit_untrusted,
     hit_row,
     face_verts,
+    face_kinds,
+    face_arcs,
     face_ring_offsets,
     row_face_lo,
     row_face_hi,
@@ -716,6 +759,8 @@ def boundary_on_lines(
                 line_pv[line],
                 face_verts,
                 face_ring_offsets[row_face_lo[r] : row_face_hi[r]],
+                face_kinds,
+                face_arcs,
                 tol,
             )
             if state != 0:

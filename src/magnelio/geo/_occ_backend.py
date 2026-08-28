@@ -1760,16 +1760,30 @@ def _section_batch_enabled() -> bool:
 
 def _is_generatrix(p1, p2, centre, axis_dir, radius: float, tol: float) -> bool:
     """Whether the segment *p1*–*p2* runs along the cylinder
-    (*centre*, *axis_dir*, *radius*): parallel to the axis at its radius."""
-    seg = p2 - p1
-    length = float(np.linalg.norm(seg))
+    (*centre*, *axis_dir*, *radius*): parallel to the axis at its radius.
+
+    Scalar arithmetic on the three components: the callers ask this
+    once per edge of every cylindrical face, and NumPy's overhead on
+    3-vectors is the cost of the row constructor.
+    """
+    sx, sy, sz = p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]
+    length = math.sqrt(sx * sx + sy * sy + sz * sz)
     if length <= 0.0:
         return False
-    if float(np.linalg.norm(np.cross(seg, axis_dir))) > 1e-9 * length:
+    ax, ay, az = float(axis_dir[0]), float(axis_dir[1]), float(axis_dir[2])
+    cx, cy, cz = sy * az - sz * ay, sz * ax - sx * az, sx * ay - sy * ax
+    if math.sqrt(cx * cx + cy * cy + cz * cz) > 1e-9 * length:
         return False
-    rel = p1 - centre
-    radial = rel - float(np.dot(rel, axis_dir)) * axis_dir
-    return abs(float(np.linalg.norm(radial)) - radius) <= tol
+    return abs(_axis_distance(p1, centre, (ax, ay, az)) - radius) <= tol
+
+
+def _axis_distance(point, centre, axis_dir) -> float:
+    """Distance of *point* from the line through *centre* along the
+    unit vector *axis_dir*."""
+    rx, ry, rz = point[0] - centre[0], point[1] - centre[1], point[2] - centre[2]
+    along = rx * axis_dir[0] + ry * axis_dir[1] + rz * axis_dir[2]
+    qx, qy, qz = rx - along * axis_dir[0], ry - along * axis_dir[1], rz - along * axis_dir[2]
+    return math.sqrt(qx * qx + qy * qy + qz * qz)
 
 
 def _is_rim(
@@ -1778,11 +1792,12 @@ def _is_rim(
     """Whether the circle (*c_centre*, *c_normal*, *c_radius*) is a
     parameter line of the cylinder: coaxial, centred on the axis, at
     its radius."""
-    if float(np.linalg.norm(np.cross(c_normal, axis_dir))) > 1e-9:
+    nx, ny, nz = float(c_normal[0]), float(c_normal[1]), float(c_normal[2])
+    ax, ay, az = float(axis_dir[0]), float(axis_dir[1]), float(axis_dir[2])
+    cx, cy, cz = ny * az - nz * ay, nz * ax - nx * az, nx * ay - ny * ax
+    if math.sqrt(cx * cx + cy * cy + cz * cz) > 1e-9:
         return False
-    rel = c_centre - centre
-    radial = rel - float(np.dot(rel, axis_dir)) * axis_dir
-    return float(np.linalg.norm(radial)) <= tol and abs(c_radius - radius) <= tol
+    return _axis_distance(c_centre, centre, (ax, ay, az)) <= tol and abs(c_radius - radius) <= tol
 
 
 def _weld_nodes(
@@ -3648,19 +3663,27 @@ def _cylinder_line_hits_enabled() -> bool:
 
 
 def _planar_row(face):
-    """Plane data of a planar, axis-aligned, straight-edged face for the
-    in-house hit test of :class:`_PrefilteredLineSolid`, or ``None``.
+    """Plane data of a planar, axis-aligned face bounded by straight
+    segments and circular arcs for the in-house hit test of
+    :class:`_PrefilteredLineSolid`, or ``None``.
 
-    Returns ``(axis, level, outward_sign, verts, offsets)``: the normal
-    axis, the plane's coordinate on it, the sign of the outward normal
-    (surface normal × face orientation) along that axis, and the wires
-    of the face as rings of ``(u, v)`` vertices (``u < v`` the other
-    two axes, in xyz order) packed back to back.
+    Returns ``(axis, level, outward_sign, verts, offsets, kinds,
+    arcs)``: the normal axis, the plane's coordinate on it, the sign of
+    the outward normal (surface normal × face orientation) along that
+    axis, and the wires of the face as rings of ``(u, v)`` vertices
+    (``u < v`` the other two axes, in xyz order) packed back to back
+    with one segment per vertex — ``kinds[k]`` / ``arcs[k]`` describe
+    the segment from ``verts[k]`` to the ring's next vertex as
+    :func:`planar_point_state` reads them.  Every circular edge is cut
+    at the angles where its tangent is parallel to ``u`` (``±π/2``) so
+    that each piece is monotone in ``v``; the cut points join the ring
+    as vertices.  Faces with any other edge curve (ellipses, splines)
+    are declined.
     """
     from OCC.Core.BRep import BRep_Tool  # noqa: PLC0415
     from OCC.Core.BRepAdaptor import BRepAdaptor_Curve, BRepAdaptor_Surface  # noqa: PLC0415
     from OCC.Core.BRepTools import BRepTools_WireExplorer  # noqa: PLC0415
-    from OCC.Core.GeomAbs import GeomAbs_Line, GeomAbs_Plane  # noqa: PLC0415
+    from OCC.Core.GeomAbs import GeomAbs_Circle, GeomAbs_Line, GeomAbs_Plane  # noqa: PLC0415
     from OCC.Core.TopAbs import TopAbs_FORWARD, TopAbs_REVERSED, TopAbs_WIRE  # noqa: PLC0415
     from OCC.Core.TopExp import TopExp_Explorer  # noqa: PLC0415
     from OCC.Core.TopoDS import topods  # noqa: PLC0415
@@ -3683,27 +3706,122 @@ def _planar_row(face):
     loc = plane.Location()
     level = float((loc.X(), loc.Y(), loc.Z())[axis])
     rings: list[np.ndarray] = []
+    ring_kinds: list[np.ndarray] = []
+    ring_arcs: list[np.ndarray] = []
     wires = TopExp_Explorer(face, TopAbs_WIRE)
     while wires.More():
         points: list[tuple[float, float]] = []
+        kinds: list[int] = []
+        arcs: list[tuple[float, float, float, float, float]] = []
         walker = BRepTools_WireExplorer(topods.Wire(wires.Current()), face)
         while walker.More():
             edge = topods.Edge(walker.Current())
-            if BRepAdaptor_Curve(edge).GetType() != GeomAbs_Line:
+            if BRep_Tool.Degenerated(edge):
                 return None
+            curve = BRepAdaptor_Curve(edge)
+            ctype = curve.GetType()
             p = BRep_Tool.Pnt(topods.Vertex(walker.CurrentVertex()))
             xyz = (p.X(), p.Y(), p.Z())
-            points.append((xyz[u], xyz[v]))
+            start = (xyz[u], xyz[v])
+            if ctype == GeomAbs_Line:
+                points.append(start)
+                kinds.append(0)
+                arcs.append(_NO_ARC)
+            elif ctype == GeomAbs_Circle:
+                pieces = _arc_pieces(
+                    curve, edge.Orientation() == TopAbs_REVERSED, start, axis, u, v
+                )
+                if pieces is None:
+                    return None
+                for point, kind, arc in pieces:
+                    points.append(point)
+                    kinds.append(kind)
+                    arcs.append(arc)
+            else:
+                return None
             walker.Next()
-        if len(points) < 3:
+        if len(points) < 2 or (len(points) < 3 and not any(kinds)):
             return None
         rings.append(np.asarray(points, dtype=np.float64))
+        ring_kinds.append(np.asarray(kinds, dtype=np.int64))
+        ring_arcs.append(np.asarray(arcs, dtype=np.float64).reshape(-1, 5))
         wires.Next()
     if not rings:
         return None
     offsets = np.zeros(len(rings) + 1, dtype=np.int64)
     offsets[1:] = np.cumsum([len(r) for r in rings])
-    return axis, level, float(np.sign(normal[axis])), np.vstack(rings), offsets
+    return (
+        axis,
+        level,
+        float(np.sign(normal[axis])),
+        np.vstack(rings),
+        offsets,
+        np.concatenate(ring_kinds),
+        np.vstack(ring_arcs),
+    )
+
+
+#: The ``arcs`` row of a straight segment.
+_NO_ARC = (0.0, 0.0, 0.0, 0.0, 0.0)
+#: Angular margin below which a circular edge is not cut at ``±π/2``
+#: (the sliver would be a zero-length piece); the piece then overhangs
+#: its half by that much, which the frame angles tolerate.
+_ARC_CUT_MARGIN = 1e-9
+
+
+def _arc_pieces(curve, reversed_edge: bool, start, axis: int, u: int, v: int):
+    """A circular edge of a planar axis-aligned face as ``v``-monotone
+    arc segments for :func:`_planar_row`: ``[(start_point, kind,
+    arc), ...]`` in the wire's direction of travel, the first point the
+    edge's start vertex, the following ones the cut points at ``±π/2``
+    (the end vertex belongs to the next edge).  ``None`` when the
+    circle does not lie in the face plane.
+    """
+    circ = curve.Circle()
+    frame = circ.Position()
+    n = frame.Direction()
+    if abs((n.X(), n.Y(), n.Z())[axis]) < 1.0 - 1e-12:
+        return None
+    loc = frame.Location()
+    centre = (loc.X(), loc.Y(), loc.Z())
+    cu, cv = centre[u], centre[v]
+    r = float(circ.Radius())
+    if r <= 0.0:
+        return None
+    xd, yd = frame.XDirection(), frame.YDirection()
+    xu, xv = (xd.X(), xd.Y(), xd.Z())[u], (xd.X(), xd.Y(), xd.Z())[v]
+    yu, yv = (yd.X(), yd.Y(), yd.Z())[u], (yd.X(), yd.Y(), yd.Z())[v]
+    # P(t) = c + r (cos t X + sin t Y) sits at the in-plane angle
+    # psi(t) = psi0 ± t, the sign the handedness of (X, Y) in (u, v).
+    psi0 = math.atan2(xv, xu)
+    sgn = 1.0 if xu * yv - xv * yu > 0.0 else -1.0
+    t0, t1 = curve.FirstParameter(), curve.LastParameter()
+    ta, tb = (t1, t0) if reversed_edge else (t0, t1)
+    psi_a, psi_b = psi0 + sgn * ta, psi0 + sgn * tb
+    if abs(psi_b - psi_a) <= _ARC_CUT_MARGIN:
+        return None
+    half = 0.5 * math.pi
+    cuts: list[float] = []
+    if psi_b > psi_a:
+        k = math.ceil((psi_a + _ARC_CUT_MARGIN - half) / math.pi)
+        while half + k * math.pi < psi_b - _ARC_CUT_MARGIN:
+            cuts.append(half + k * math.pi)
+            k += 1
+    else:
+        k = math.floor((psi_a - _ARC_CUT_MARGIN - half) / math.pi)
+        while half + k * math.pi > psi_b + _ARC_CUT_MARGIN:
+            cuts.append(half + k * math.pi)
+            k -= 1
+    angles = [psi_a, *cuts, psi_b]
+    pieces = []
+    for i in range(len(angles) - 1):
+        pa, pb = angles[i], angles[i + 1]
+        kind = 1 if math.cos(0.5 * (pa + pb)) >= 0.0 else -1
+        fa = math.atan2(math.sin(pa), kind * math.cos(pa))
+        fb = math.atan2(math.sin(pb), kind * math.cos(pb))
+        point = start if i == 0 else (cu + r * math.cos(pa), cv + r * math.sin(pa))
+        pieces.append((point, kind, (cu, cv, r, min(fa, fb), max(fa, fb))))
+    return pieces
 
 
 def _cylinder_row(face):
@@ -3743,7 +3861,12 @@ def _cylinder_row(face):
     r = float(cyl.Radius())
     if r <= 0.0:
         return None
-    sense = 1.0 if float(np.dot(np.cross(x, y), a)) > 0.0 else -1.0
+    handed = (
+        (x[1] * y[2] - x[2] * y[1]) * a[0]
+        + (x[2] * y[0] - x[0] * y[2]) * a[1]
+        + (x[0] * y[1] - x[1] * y[0]) * a[2]
+    )
+    sense = 1.0 if handed > 0.0 else -1.0
     if orientation == TopAbs_REVERSED:
         sense = -sense
     exp = TopExp_Explorer(face, TopAbs_EDGE)
@@ -3758,17 +3881,15 @@ def _cylinder_row(face):
         if ctype == GeomAbs_Line:
             p1 = curve.Value(curve.FirstParameter())
             p2 = curve.Value(curve.LastParameter())
-            p1 = np.array((p1.X(), p1.Y(), p1.Z()))
-            p2 = np.array((p2.X(), p2.Y(), p2.Z()))
-            if not _is_generatrix(p1, p2, c, a, r, tol):
+            if not _is_generatrix((p1.X(), p1.Y(), p1.Z()), (p2.X(), p2.Y(), p2.Z()), c, a, r, tol):
                 return None
         elif ctype == GeomAbs_Circle:
             circ = curve.Circle()
             c_loc = circ.Position().Location()
             c_dir = circ.Position().Direction()
             if not _is_rim(
-                np.array((c_loc.X(), c_loc.Y(), c_loc.Z())),
-                np.array((c_dir.X(), c_dir.Y(), c_dir.Z())),
+                (c_loc.X(), c_loc.Y(), c_loc.Z()),
+                (c_dir.X(), c_dir.Y(), c_dir.Z()),
                 float(circ.Radius()),
                 c,
                 a,
@@ -3797,12 +3918,14 @@ def _planar_tiles(planar, lo: np.ndarray, hi: np.ndarray):
     kernel piece's edge.
 
     Returns a list of ``(planar, lo, hi)`` rows or ``None`` when the
-    face is too simple to be worth it.
+    face is too simple to be worth it, or when its outline carries arcs
+    (the clip is for polygons; such a face stays one row, its point
+    test a compiled loop over its segments).
     """
     from magnelio.geo._polygon_clip import clip_polygon_to_rect  # noqa: PLC0415
 
-    axis, level, outward, verts, offsets = planar
-    if len(verts) < _PIECE_MIN_EDGES:
+    axis, level, outward, verts, offsets, kinds, _arcs = planar
+    if len(verts) < _PIECE_MIN_EDGES or kinds.any():
         return None
     u, v = (k for k in range(3) if k != axis)
     extent_u, extent_v = hi[u] - lo[u], hi[v] - lo[v]
@@ -3837,7 +3960,16 @@ def _planar_tiles(planar, lo: np.ndarray, hi: np.ndarray):
             t_lo[axis] = t_hi[axis] = level
             t_lo[u], t_hi[u] = t_verts[:, 0].min(), t_verts[:, 0].max()
             t_lo[v], t_hi[v] = t_verts[:, 1].min(), t_verts[:, 1].max()
-            tiles.append(((axis, level, outward, t_verts, t_offsets), tuple(t_lo), tuple(t_hi)))
+            t_planar = (
+                axis,
+                level,
+                outward,
+                t_verts,
+                t_offsets,
+                np.zeros(len(t_verts), dtype=np.int64),
+                np.zeros((len(t_verts), 5), dtype=np.float64),
+            )
+            tiles.append((t_planar, tuple(t_lo), tuple(t_hi)))
     return tiles or None
 
 
@@ -4122,7 +4254,7 @@ class _PrefilteredLineSolid:
         for row in face_indices:
             planar = self._row_planar[row] if in_house else None
             if planar is not None:
-                axis, level, outward, verts, offsets = planar
+                axis, level, outward, verts, offsets, kinds, arcs = planar
                 d = float(direction[axis])
                 if abs(d) <= 1e-300:
                     # Parallel to the row's plane: no hit — the kernel
@@ -4133,7 +4265,7 @@ class _PrefilteredLineSolid:
                     u, v = (k for k in range(3) if k != axis)
                     pu = float(p0[u]) + w * float(direction[u])
                     pv = float(p0[v]) + w * float(direction[v])
-                    state = planar_point_state(pu, pv, verts, offsets, tol)
+                    state = planar_point_state(pu, pv, verts, offsets, kinds, arcs, tol)
                     if state == 2:
                         hits.append((w, 0, True))
                     elif state == 1:
@@ -4309,11 +4441,28 @@ _TRANSVERSE_AXES = np.array([[1, 0, 0], [2, 2, 1]], dtype=np.int64)
 _PROBE_ORDER = np.array([[1, 2, 0], [0, 2, 1], [0, 1, 2]], dtype=np.int64)
 
 
+def _pack_segments(verts: list, kinds: list, arcs: list):
+    """Stack per-row ring vertices with their segment kinds and arc
+    data (empty arrays when there is nothing to pack)."""
+    if not verts:
+        return (
+            np.empty((0, 2), dtype=np.float64),
+            np.empty(0, dtype=np.int64),
+            np.empty((0, 5), dtype=np.float64),
+        )
+    return (
+        np.vstack(verts),
+        np.concatenate(kinds).astype(np.int64),
+        np.vstack(arcs).astype(np.float64),
+    )
+
+
 class _PlanarRows:
     """Plane and cylinder data of a solid's rows packed for the
     compiled hit tests."""
 
     __slots__ = (
+        "arcs",
         "axis",
         "cyl_a",
         "cyl_c",
@@ -4322,12 +4471,15 @@ class _PlanarRows:
         "cyl_uv",
         "cyl_x",
         "cyl_y",
+        "face_arcs",
         "face_hi",
+        "face_kinds",
         "face_lo",
         "face_ring_offsets",
         "face_verts",
         "is_cyl",
         "is_planar",
+        "kinds",
         "level",
         "outward",
         "ring_hi",
@@ -4367,6 +4519,8 @@ class _PlanarRows:
         self.ring_lo = np.zeros(n, dtype=np.int64)
         self.ring_hi = np.zeros(n, dtype=np.int64)
         verts: list[np.ndarray] = []
+        kinds: list[np.ndarray] = []
+        arcs: list[np.ndarray] = []
         offsets: list[np.ndarray] = []
         n_verts = 0
         n_offsets = 0
@@ -4374,18 +4528,20 @@ class _PlanarRows:
             if planar is None:
                 self.ring_lo[r] = self.ring_hi[r] = n_offsets
                 continue
-            axis, level, outward, r_verts, r_offsets = planar
+            axis, level, outward, r_verts, r_offsets, r_kinds, r_arcs = planar
             self.is_planar[r] = True
             self.axis[r] = axis
             self.level[r] = level
             self.outward[r] = outward
             verts.append(r_verts)
+            kinds.append(r_kinds)
+            arcs.append(r_arcs)
             offsets.append(r_offsets + n_verts)
             self.ring_lo[r] = n_offsets
             n_offsets += len(r_offsets)
             self.ring_hi[r] = n_offsets
             n_verts += len(r_verts)
-        self.verts = np.vstack(verts) if verts else np.empty((0, 2), dtype=np.float64)
+        self.verts, self.kinds, self.arcs = _pack_segments(verts, kinds, arcs)
         self.ring_offsets = (
             np.concatenate(offsets) if offsets else np.empty(0, dtype=np.int64)
         ).astype(np.int64)
@@ -4395,6 +4551,8 @@ class _PlanarRows:
         self.face_lo = np.zeros(n, dtype=np.int64)
         self.face_hi = np.zeros(n, dtype=np.int64)
         verts = []
+        kinds = []
+        arcs = []
         offsets = []
         n_verts = 0
         n_offsets = 0
@@ -4405,15 +4563,17 @@ class _PlanarRows:
                 continue
             span = packed.get(id(planar))
             if span is None:
-                _axis, _level, _outward, p_verts, p_offsets = planar
+                _axis, _level, _outward, p_verts, p_offsets, p_kinds, p_arcs = planar
                 verts.append(p_verts)
+                kinds.append(p_kinds)
+                arcs.append(p_arcs)
                 offsets.append(p_offsets + n_verts)
                 span = (n_offsets, n_offsets + len(p_offsets))
                 packed[id(planar)] = span
                 n_offsets += len(p_offsets)
                 n_verts += len(p_verts)
             self.face_lo[r], self.face_hi[r] = span
-        self.face_verts = np.vstack(verts) if verts else np.empty((0, 2), dtype=np.float64)
+        self.face_verts, self.face_kinds, self.face_arcs = _pack_segments(verts, kinds, arcs)
         self.face_ring_offsets = (
             np.concatenate(offsets) if offsets else np.empty(0, dtype=np.int64)
         ).astype(np.int64)
@@ -4559,6 +4719,8 @@ class _LineTable:
                 planar.level,
                 planar.outward,
                 planar.verts,
+                planar.kinds,
+                planar.arcs,
                 planar.ring_offsets,
                 planar.ring_lo,
                 planar.ring_hi,
@@ -4652,6 +4814,8 @@ class _LineTable:
             self.hit_untrusted,
             self.hit_row,
             planar.face_verts,
+            planar.face_kinds,
+            planar.face_arcs,
             planar.face_ring_offsets,
             planar.face_lo,
             planar.face_hi,
