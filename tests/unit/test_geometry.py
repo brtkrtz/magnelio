@@ -321,6 +321,55 @@ class TestOverlapDetection:
         with pytest.raises(GeometryOverlapError):
             m.validate()
 
+    def test_a_difference_is_disjoint_from_its_own_tools(self, monkeypatch):
+        """The pair (Difference, tool) is skipped before any Boolean."""
+        _occ()
+        from magnelio import geo
+        from magnelio.geo import GeometryModel, GeometryOverlapError, _disjoint_by_construction
+        from magnelio.geo import _occ_backend as occ_backend
+        from magnelio.materials.material import Material
+
+        pec = Material.pec()
+        box = geo.Brick(origin=(0, 0, 0), size=(10e-3, 10e-3, 10e-3), material=Material.air())
+        a = geo.Brick(origin=(1e-3, 1e-3, 1e-3), size=(2e-3, 2e-3, 2e-3), material=pec)
+        b = geo.Brick(origin=(5e-3, 5e-3, 5e-3), size=(2e-3, 2e-3, 2e-3), material=pec)
+        posts = geo.Union(a, b)
+        air = geo.Difference(box, posts)
+        solids = [air, posts, a, b]
+        assert _disjoint_by_construction(solids) == {(0, 1), (0, 2), (0, 3)}
+
+        seen = {}
+        original = occ_backend.check_pairwise_overlaps
+
+        def spy(shapes, **kwargs):
+            seen["disjoint"] = kwargs.get("disjoint")
+            return original(shapes, **kwargs)
+
+        monkeypatch.setattr(occ_backend, "check_pairwise_overlaps", spy)
+        model = GeometryModel()
+        model.add(air)
+        model.add(posts)
+        model.validate()
+        assert seen["disjoint"] == {(0, 1)}
+        # A genuine overlap of a different-material pair still raises.
+        intruder = geo.Brick(
+            origin=(1.5e-3, 1.5e-3, 1.5e-3), size=(1e-3, 1e-3, 1e-3), material=Material.air()
+        )
+        model.add(intruder)
+        with pytest.raises(GeometryOverlapError):
+            model.validate()
+
+    def test_disjoint_pairs_skip_the_boolean(self):
+        _occ()
+        from magnelio import geo
+        from magnelio.geo._occ_backend import check_pairwise_overlaps
+        from magnelio.materials.material import Material
+
+        a = geo.Brick(origin=(0, 0, 0), size=(2e-3, 2e-3, 2e-3), material=Material.air())
+        b = geo.Brick(origin=(1e-3, 1e-3, 1e-3), size=(2e-3, 2e-3, 2e-3), material=Material.pec())
+        assert check_pairwise_overlaps([a, b])
+        assert check_pairwise_overlaps([a, b], disjoint={(0, 1)}) == []
+
     def test_csg_difference_no_overlap(self):
         """Difference(A, B) + B should not overlap (non-overlapping CSG)."""
         _occ()

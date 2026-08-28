@@ -15331,3 +15331,63 @@ post row's kernel sections at the kernel's floor.
 `src/magnelio/geo/_filling.py` (`compute_conformal_eps`,
 `compute_conformal_mu`), `tests/unit/test_planar_section_engine.py`
 (new), `CHANGELOG.md`, `benchmarks/results/bench_mesh_build.json` (re-run).
+
+## DD-212 — Booleans the construction already answers are not run
+
+**Status:** Decided and implemented 2026-08-28, branch `perf/construction-aware-booleans`.
+DD-211's open item 2 (the kernel Booleans of the CSG evaluation and the
+overlap check).
+
+**Problem.**  Two kernel Booleans on the ladder proved what the model's
+own construction states.
+
+1. `build_effective_pec_solid` cut every PEC shape by every
+   higher-priority shape whose box touches it, PEC or not.  A higher
+   PEC shape is in the union anyway, so the cut changes nothing —
+   `∪ᵢ (Pᵢ − Pⱼ) ∪ Pⱼ = ∪ Pᵢ` — and on a housing with PEC background the
+   mesher's background brick sits at the lowest priority and was cut
+   by all 320 metal pieces of a row of 16 couplers: `pec_fuse` 4.7 s in
+   the benchmark against 1.2 s for the same function without the brick
+   (internal dossier `investigations/mesh-build-bench/probe_pec_solid.py`,
+   M15).  Only 384 of its 384 cut operands were PEC.
+2. `validate()` intersected the air body of the housing — a
+   `Difference(air, *metal)` — with the very pieces it was cut by: one
+   batch `Common` of a 2 118-face body against 320 tools, 3.1 s, to
+   measure a volume the construction fixes at zero.
+
+**Decision.**
+
+1. Only non-PEC higher shapes are cut tools of a PEC contribution
+   (`tests/unit/test_prism_fuse.py::test_effective_pec_solid_cuts_only_with_non_pec_tools`).
+   Every mesh array on posts 60, Lange 4 and the 4 × 4 array is
+   bit-identical (`probe_mesh_hash.py`) — the solid's point set is the
+   same, and the kernel happened to return the same seams.
+2. `GeometryModel.validate` hands `check_pairwise_overlaps` the pairs
+   its construction proves disjoint — a `Difference` and each of its
+   tools, and the operands of a tool that is a `Union` — matched by
+   object identity, so only the shapes the user actually cut with
+   count (`_disjoint_by_construction`; `check_pairwise_overlaps(disjoint=)`).
+   The check's semantics are untouched: every other pair of different
+   materials is still measured, and a genuine overlap still raises
+   (`tests/unit/test_geometry.py::test_a_difference_is_disjoint_from_its_own_tools`).
+
+**Result.**  Full ladder (`--family all --pool off auto forced --json`,
+`auto`, CPU idle; internal dossier `investigations/mesh-build-bench/bool/`):
+Lange 16 32.5 → **26.7 s** (`pec_fuse` 4.7 → 2.0, `overlaps` 3.1 → 0),
+Lange 8 13.8 → 11.6, Lange 4 6.0 → 5.3; 8 × 8 array 11.6 → 10.8
+(`pec_fuse` 1.2 → 0.3; its overlap check is off); 240 posts 21.8 →
+21.2.  Meshes bit-identical (35 / 35 arrays on posts 60, Lange 4,
+4 × 4 array).  Unit suite 2 544 passed / 4 skipped, integration 402 passed / 5 skipped (the six GPU single-precision tests on the device);
+ruff, DD, API and import gates clean.
+
+**Open, re-ranked.**  The edge pass leads every row by a margin now
+(Lange 16: 6.3 of 26.7 s, 8 × 8 array: 4.2 of 10.8 s — DD-208 item 3,
+the batch formulation); the remaining `pec_fuse` 2.0 s of Lange 16 is
+the one N-ary fuse of 320 raised pieces (`fuse` 2.0 s); then the post
+row's kernel sections at the kernel's floor.
+
+**Files:** `src/magnelio/geo/_occ_backend.py` (`build_effective_pec_solid`,
+`check_pairwise_overlaps`), `src/magnelio/geo/__init__.py`
+(`_disjoint_by_construction`, `GeometryModel.validate`),
+`tests/unit/test_prism_fuse.py`, `tests/unit/test_geometry.py`,
+`CHANGELOG.md`, `benchmarks/results/bench_mesh_build.json` (re-run).

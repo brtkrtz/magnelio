@@ -370,3 +370,25 @@ class TestEffectivePecSolid:
         lid = geo.Brick(origin=(9 * MM, 0, MM), size=(MM, MM, MM))
         backend.build_effective_pec_solid([(near, 1), (far, 1), (lid, 0)], self._library())
         assert calls == [1]  # only `far` reaches the lid; `near` is cut against nothing
+
+
+def test_effective_pec_solid_cuts_only_with_non_pec_tools(monkeypatch):
+    """A higher PEC shape is in the union anyway; only non-PEC shapes are tools."""
+    from magnelio.geo import _occ_backend as ob
+
+    pec, air = Material.pec(), Material.air()
+    base = geo.Brick(origin=(0, 0, 0), size=(4 * MM, 4 * MM, 4 * MM), material=pec)
+    metal = geo.Brick(origin=(1 * MM, 1 * MM, 1 * MM), size=(2 * MM, 2 * MM, 5 * MM), material=pec)
+    pocket = geo.Brick(origin=(2 * MM, 2 * MM, 2 * MM), size=(3 * MM, 3 * MM, 3 * MM), material=air)
+    tools_seen = []
+    original = ob.boolean_difference_many
+
+    def counting(shape, tools):
+        tools_seen.append(len(tools))
+        return original(shape, tools)
+
+    monkeypatch.setattr(ob, "boolean_difference_many", counting)
+    solid = ob.build_effective_pec_solid([(base, 1), (metal, 1), (pocket, 2)], {1: pec, 2: air})
+    assert tools_seen == [1, 1]  # the pocket only, for each PEC shape
+    expected = 63 * MM**3  # 64 + 8 above the base, minus the pocket (8 + 3 - 2)
+    assert abs(_volume(solid) - expected) <= 1e-9 * expected

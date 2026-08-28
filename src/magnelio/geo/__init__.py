@@ -79,6 +79,30 @@ def _require_material(shape) -> None:
     )
 
 
+def _disjoint_by_construction(solids: list) -> set[tuple[int, int]]:
+    """Index pairs a model's own construction proves disjoint.
+
+    A ``Difference`` cannot overlap a shape that was cut out of it:
+    the tool itself, or — when the tool is a ``Union`` — any of the
+    union's operands.  Matching is by object identity, so only the
+    very shapes the user cut with count (a copy is a different shape).
+    """
+    index = {id(s): k for k, s in enumerate(solids)}
+    pairs: set[tuple[int, int]] = set()
+    for k, shape in enumerate(solids):
+        if not isinstance(shape, Difference):
+            continue
+        tools = list(shape.tools)
+        for tool in shape.tools:
+            if isinstance(tool, Union):
+                tools.extend(tool.shapes)
+        for tool in tools:
+            j = index.get(id(tool))
+            if j is not None and j != k:
+                pairs.add((min(k, j), max(k, j)))
+    return pairs
+
+
 class GeometryModel:
     """Container for a CSG geometry model (ordered list of shapes).
 
@@ -411,7 +435,12 @@ class GeometryModel:
         from magnelio.geo._scaling import model_scale  # noqa: PLC0415
 
         materials = [getattr(s, "material", None) for s in solids]
-        overlaps = check_pairwise_overlaps(solids, materials=materials, scale=model_scale(solids))
+        overlaps = check_pairwise_overlaps(
+            solids,
+            materials=materials,
+            scale=model_scale(solids),
+            disjoint=_disjoint_by_construction(solids),
+        )
         if overlaps:
             lines = []
             for i, j, vol in overlaps:
