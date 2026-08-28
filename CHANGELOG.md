@@ -11,6 +11,14 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- The mesh build's section engine answers every grid plane of an axis
+  in one compiled pass instead of plane by plane through NumPy — the
+  conformal area passes and the cell classifier of models with many
+  small features were spending their time in per-plane overhead, not
+  geometry.  A row of 240 PEC posts meshes in 3.5 s instead of 7.1 s,
+  sixteen Lange couplers in 12.9 s instead of 17.2 s; meshes of planar
+  models are unchanged, those with round features change only in the
+  last bits.
 - The edge pass of the mesh build intersects its grid lines with
   cylindrical faces — posts, pins, vias, holes — in closed form
   instead of through the geometry kernel's line–face intersector, and

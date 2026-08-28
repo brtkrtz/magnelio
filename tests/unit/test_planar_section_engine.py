@@ -289,3 +289,135 @@ class TestCylinderSectionEngine:
         assert engine.enabled and not engine._has_cylinders
         assert engine.section(2, 0.5 * HEIGHT) is None
         assert engine.section(0, PITCH) is None
+
+
+# ── Every plane of an axis in one compiled pass ────────────────────────────
+
+
+def _same_polygons(a, b):
+    assert (a is None) == (b is None)
+    if a is None:
+        return
+    assert len(a) == len(b)
+    for pa, pb in zip(a, b, strict=True):
+        assert pa.shape == pb.shape
+        np.testing.assert_array_equal(pa, pb)
+
+
+class TestSectionBatch:
+    def _planes(self, rng):
+        return {
+            0: np.concatenate((rng.uniform(0.0, 4 * PITCH, 120), [PITCH, 0.0])),
+            1: np.concatenate((rng.uniform(-3e-3, 3e-3, 120), [0.0, RADIUS, -RADIUS])),
+            2: np.concatenate((rng.uniform(0.0, 6e-3, 120), [HEIGHT, 0.5 * HEIGHT])),
+        }
+
+    def test_batch_equals_the_per_plane_path_bit_for_bit(self):
+        """Planar and cylindrical shapes, random planes in random order
+        plus the degenerate ones: the same answer, delegate for delegate
+        and vertex for vertex."""
+        rng = np.random.default_rng(11)
+        bodies = [_pocketed_comb(), *_post_row()]
+        for body in bodies:
+            engine = ob._PlanarSectionEngine(body._occ_shape(1.0), scale=1.0, deflection=DEFLECTION)
+            assert engine.batchable
+            answered = 0
+            for axis, positions in self._planes(rng).items():
+                batch = engine.sections(axis, positions)
+                assert len(batch) == positions.size
+                for pos, polys in zip(positions, batch, strict=True):
+                    _same_polygons(engine.section(axis, float(pos)), polys)
+                    answered += polys is not None
+            assert answered >= 300
+
+    def test_batch_honours_the_model_scale(self):
+        _, posts = _post_row()
+        for scale in (1.0, 1024.0):
+            engine = ob._PlanarSectionEngine(
+                posts._occ_shape(scale), scale=scale, deflection=DEFLECTION
+            )
+            positions = [0.3 * HEIGHT, 0.7 * HEIGHT, PITCH + 0.3e-3, 0.2e-3]
+            for axis in (2, 0, 1):
+                for pos, polys in zip(positions, engine.sections(axis, positions), strict=True):
+                    _same_polygons(engine.section(axis, pos), polys)
+
+    def test_annotated_sections_match_the_per_plane_annotation(self):
+        """Nesting parity (the air body's post holes against its outline),
+        bounding boxes and signed areas equal the Python path's."""
+        from magnelio.geo._polygon_clip import orient_nested_contours
+
+        rng = np.random.default_rng(5)
+        air, posts = _post_row()
+        for body in (air, posts, _pocketed_comb()):
+            engine = ob._PlanarSectionEngine(body._occ_shape(1.0), scale=1.0, deflection=DEFLECTION)
+            holes = 0
+            for axis, positions in self._planes(rng).items():
+                annotated = engine.annotated_sections(axis, positions)
+                for pos, ann in zip(positions, annotated, strict=True):
+                    polys = engine.section(axis, float(pos))
+                    if polys is None:
+                        assert ann is None
+                        continue
+                    expected = ob._annotate_polygons(orient_nested_contours(polys))
+                    assert len(ann) == len(expected)
+                    for (pa, ba, aa), (pb, bb, ab) in zip(ann, expected, strict=True):
+                        np.testing.assert_array_equal(pa, pb)
+                        assert ba == bb
+                        assert aa == ab
+                        holes += ab < 0.0
+            assert holes >= 1 or body is not air
+
+    def test_toggle_sections_plane_by_plane(self, monkeypatch):
+        _, posts = _post_row()
+        engine = ob._PlanarSectionEngine(posts._occ_shape(1.0), scale=1.0, deflection=DEFLECTION)
+        assert engine.batchable
+        monkeypatch.setenv("MAGNELIO_SECTION_BATCH", "0")
+        assert not engine.batchable
+        positions = [0.3 * HEIGHT, HEIGHT, 0.7 * HEIGHT]
+        for polys, pos in zip(engine.sections(2, positions), positions, strict=True):
+            _same_polygons(engine.section(2, pos), polys)
+        assert engine.sections(2, positions)[1] is None
+
+    def test_area_pass_and_classifier_agree_with_the_per_plane_path(self, monkeypatch):
+        """The two consumers — `compute_face_material_areas` (annotated,
+        cached, degenerate planes shifted) and `batch_cross_sections` —
+        give the same arrays with the batch on and off."""
+        air, posts = _post_row()
+        mats = {1: AIR, 2: PEC}
+        shapes = [(air, 1), (posts, 2)]
+        z = np.linspace(0.1e-3, 5.9e-3, 12)
+        z = np.concatenate((z, [HEIGHT]))
+        u = np.linspace(0.2e-3, 4 * PITCH - 0.2e-3, 10)
+        v = np.linspace(-2.8e-3, 2.8e-3, 8)
+        specs, axes = [], []
+        for zp in z:
+            for i in range(u.size - 1):
+                for j in range(v.size - 1):
+                    specs.append((zp, u[i], v[j], u[i + 1], v[j + 1]))
+                    axes.append(2)
+        for xp in (PITCH + 0.3e-3, 1.0e-3):
+            for j in range(v.size - 1):
+                specs.append((xp, v[j], 0.1e-3, v[j + 1], 1.0e-3))
+                axes.append(0)
+        specs = np.asarray(specs, dtype=np.float64)
+        axes = np.asarray(axes, dtype=np.int64)
+        results = {}
+        for flag in ("1", "0"):
+            monkeypatch.setenv("MAGNELIO_SECTION_BATCH", flag)
+            pec = np.zeros(specs.shape[0])
+            eps = ob.compute_face_material_areas(
+                shapes, mats, specs, axes, prop="epsilon", deflection=DEFLECTION, pec_area_out=pec
+            )
+            planes = {"x": np.array([PITCH + 0.3e-3, 1.0e-3]), "y": np.array([0.2e-3]), "z": z}
+            sections = ob.batch_cross_sections(shapes, planes, deflection=DEFLECTION)
+            results[flag] = (eps, pec, sections)
+        eps_on, pec_on, sec_on = results["1"]
+        eps_off, pec_off, sec_off = results["0"]
+        np.testing.assert_array_equal(eps_on, eps_off)
+        np.testing.assert_array_equal(pec_on, pec_off)
+        assert pec_on.max() > 0.0
+        assert sec_on.keys() == sec_off.keys()
+        for key in sec_on:
+            assert [m for m, _ in sec_on[key]] == [m for m, _ in sec_off[key]]
+            for (_, pa), (_, pb) in zip(sec_on[key], sec_off[key], strict=True):
+                _same_polygons(pa, pb)
