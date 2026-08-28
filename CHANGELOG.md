@@ -11,6 +11,15 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Planes through cylindrical faces — posts, pins, vias, holes, round
+  wires, fillets — are sectioned by the mesher's own engine instead of
+  the geometry kernel's Boolean: the crossing points of the rim circles
+  are computed analytically, the trace on the cylinder is its exact
+  conic or generatrix pair, tessellated at the kernel's own chord and
+  angle rule.  A row of 240 PEC posts meshes in 8.4 s instead of 20 s;
+  the sections agree with the kernel's to rounding, so meshes change
+  only in the last bits.  Cones, spheres, tori and cylinders trimmed by
+  other curves keep the kernel route.
 - The conformal area passes of the mesh build no longer rebuild their
   per-shape section engine for every pass, group their faces by plane
   with one sort instead of a loop over every face, and test a plane

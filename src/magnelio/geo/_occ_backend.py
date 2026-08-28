@@ -1741,6 +1741,40 @@ def _facet_sections_enabled() -> bool:
     return os.environ.get("MAGNELIO_FACET_SECTIONS", "").strip() != "0"
 
 
+def _cylinder_sections_enabled() -> bool:
+    """``MAGNELIO_CYLINDER_SECTIONS=0`` keeps planes touching cylindrical
+    faces on the kernel Boolean (A/B runs and the regression gate);
+    anything else lets the section engine answer them exactly."""
+    return os.environ.get("MAGNELIO_CYLINDER_SECTIONS", "").strip() != "0"
+
+
+def _is_generatrix(p1, p2, centre, axis_dir, radius: float, tol: float) -> bool:
+    """Whether the segment *p1*–*p2* runs along the cylinder
+    (*centre*, *axis_dir*, *radius*): parallel to the axis at its radius."""
+    seg = p2 - p1
+    length = float(np.linalg.norm(seg))
+    if length <= 0.0:
+        return False
+    if float(np.linalg.norm(np.cross(seg, axis_dir))) > 1e-9 * length:
+        return False
+    rel = p1 - centre
+    radial = rel - float(np.dot(rel, axis_dir)) * axis_dir
+    return abs(float(np.linalg.norm(radial)) - radius) <= tol
+
+
+def _is_rim(
+    c_centre, c_normal, c_radius: float, centre, axis_dir, radius: float, tol: float
+) -> bool:
+    """Whether the circle (*c_centre*, *c_normal*, *c_radius*) is a
+    parameter line of the cylinder: coaxial, centred on the axis, at
+    its radius."""
+    if float(np.linalg.norm(np.cross(c_normal, axis_dir))) > 1e-9:
+        return False
+    rel = c_centre - centre
+    radial = rel - float(np.dot(rel, axis_dir)) * axis_dir
+    return float(np.linalg.norm(radial)) <= tol and abs(c_radius - radius) <= tol
+
+
 def _weld_nodes(
     nodes: np.ndarray, con: np.ndarray, tol: float = 0.0
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -2027,39 +2061,50 @@ class _FaceSlabIndex:
 
 
 class _PlanarSectionEngine:
-    """Exact axis-aligned plane sections of planar-faced solid regions.
+    """Exact axis-aligned plane sections of solids bounded by planes and cylinders.
 
     Answers the same question as :func:`cross_section_polygons` — the
     boundary polygons of ``shape`` ∩ plane in the plane's (u, v) frame —
     but without the per-plane Boolean, whose fixed cost (~1 ms per
     touched face pair in ``BRepAlgoAPI_Section``) dominates structured-
     grid meshing where thousands of parallel planes query the same
-    solid.  Faces, straight edges and their adjacency are collected
-    once; each section is then assembled from the exact edge/plane
-    intersection points:
+    solid.  Faces, edges and their adjacency are collected once; each
+    section is then assembled from the exact edge/plane intersection
+    points:
 
     - candidate faces/edges via bounding-box slabs (as in
       :class:`_PrefilteredLineSolid`),
     - one exact intersection point per transversally crossed straight
-      edge,
-    - per face, points sorted along the face/plane intersection line
-      and paired by parity into segments directed along
+      edge, two analytic ones per crossed circular edge,
+    - per planar face, points sorted along the face/plane intersection
+      line and paired by parity into segments directed along
       ``n_plane × n_outward`` (outer contours and holes are thereby
       consistently counter-rotating, the only orientation property the
       area accounting relies on),
+    - per cylindrical face, the trace of the plane — two generatrices
+      when the plane is parallel to the axis, a conic otherwise —
+      split at the face's boundary crossings and kept where it lies
+      within the face's (u, v) rectangle, arcs tessellated at the
+      kernel's rule (chord ≤ deflection, turn ≤ 5°) and directed the
+      same way (:meth:`_cylinder_face_pairs`),
     - segments stitched into closed chains through shared edge
       indices — exact, no tolerance matching, because both adjacent
       faces reference the *same* intersection point of their common
-      edge.
+      edge (a seam crossing closes the chain on itself).
 
     The fast path only fires when every candidate face is planar with
-    a well-defined outward normal, every candidate edge is a straight
-    line crossed transversally, and no vertex lies on the plane
-    (within tolerance).  Everything else — curved faces or edges,
-    tangencies, planes through vertices or coplanar faces (the DD-087
-    degenerate planes) — makes :meth:`section` return ``None`` and must
-    be delegated to :func:`cross_section_polygons`, which keeps every
-    boundary-case semantic identical to the previous behaviour.
+    a well-defined outward normal or a cylinder bounded by its own
+    parameter lines (rim circles, generatrices, seam), every candidate
+    edge is a straight line or a circle crossed transversally, no
+    plane is tangent to a cylinder or a circle, and no vertex lies on
+    the plane (within tolerance).  Everything else — cones, spheres,
+    tori, cylinders trimmed by other curves, tangencies, planes
+    through vertices or coplanar faces (the DD-087 degenerate planes)
+    — makes :meth:`section` return ``None`` and must be delegated to
+    :func:`cross_section_polygons`, which keeps every boundary-case
+    semantic identical to the previous behaviour.  Free-form faces
+    switch the whole shape to the facet representation
+    (:meth:`_build_facets`).
     """
 
     #: (u, v) axis indices per plane-normal axis, matching
@@ -2105,7 +2150,9 @@ class _PlanarSectionEngine:
             BRepAdaptor_Surface,
         )
         from OCC.Core.BRepBndLib import brepbndlib  # noqa: PLC0415
+        from OCC.Core.BRepTools import breptools  # noqa: PLC0415
         from OCC.Core.GeomAbs import (  # noqa: PLC0415
+            GeomAbs_Circle,
             GeomAbs_Cone,
             GeomAbs_Cylinder,
             GeomAbs_Line,
@@ -2150,6 +2197,18 @@ class _PlanarSectionEngine:
         f_planar = np.zeros(n_f, dtype=np.bool_)
         f_n = np.zeros((n_f, 3), dtype=np.float64)
         f_d = np.zeros(n_f, dtype=np.float64)
+        # Cylindrical faces (DD-217): parametric frame P(u, v) =
+        # c + r (cos u X + sin u Y) + v A, the outward sense of the
+        # radial direction, and the (u, v) bounds of the face.
+        cylinders_wanted = self._deflection is not None and _cylinder_sections_enabled()
+        f_cyl = np.zeros(n_f, dtype=np.bool_)
+        cyl_c = np.zeros((n_f, 3), dtype=np.float64)
+        cyl_a = np.zeros((n_f, 3), dtype=np.float64)
+        cyl_x = np.zeros((n_f, 3), dtype=np.float64)
+        cyl_y = np.zeros((n_f, 3), dtype=np.float64)
+        cyl_r = np.zeros(n_f, dtype=np.float64)
+        cyl_sense = np.zeros(n_f, dtype=np.float64)
+        cyl_uv = np.zeros((n_f, 4), dtype=np.float64)
         if self.slab is not None and self.slab.n_faces == n_f:
             f_lo = self.slab.lo.copy()
             f_hi = self.slab.hi.copy()
@@ -2173,6 +2232,25 @@ class _PlanarSectionEngine:
             stype = surf.GetType()
             if stype not in analytic_types:
                 free_form = True
+            if stype == GeomAbs_Cylinder and cylinders_wanted:
+                cyl = surf.Cylinder()
+                frame = cyl.Position()
+                loc = frame.Location()
+                cyl_c[i] = (loc.X(), loc.Y(), loc.Z())
+                for arr, vec in (
+                    (cyl_a, frame.Direction()),
+                    (cyl_x, frame.XDirection()),
+                    (cyl_y, frame.YDirection()),
+                ):
+                    arr[i] = (vec.X(), vec.Y(), vec.Z())
+                cyl_r[i] = cyl.Radius()
+                # The natural normal ∂P/∂u × ∂P/∂v is the radial
+                # direction for a direct frame and its opposite for an
+                # indirect one; the face orientation flips it once more.
+                sense = 1.0 if float(np.dot(np.cross(cyl_x[i], cyl_y[i]), cyl_a[i])) > 0.0 else -1.0
+                cyl_sense[i] = -sense if ori == TopAbs_REVERSED else sense
+                cyl_uv[i] = breptools.UVBounds(face)
+                f_cyl[i] = True
             if stype != GeomAbs_Plane:
                 continue
             pln = surf.Plane()
@@ -2206,6 +2284,20 @@ class _PlanarSectionEngine:
         e_f = np.zeros((n_e, 2), dtype=np.int64)
         e_lo = np.empty((n_e, 3), dtype=np.float64)
         e_hi = np.empty((n_e, 3), dtype=np.float64)
+        # Circular edges (DD-217): P(t) = c + r (cos t X + sin t Y),
+        # t in [t0, t1]; and the seams of cylindrical faces, straight
+        # edges bordering one face twice.
+        c_ok = np.zeros(n_e, dtype=np.bool_)
+        c_c = np.zeros((n_e, 3), dtype=np.float64)
+        c_x = np.zeros((n_e, 3), dtype=np.float64)
+        c_y = np.zeros((n_e, 3), dtype=np.float64)
+        c_r = np.zeros(n_e, dtype=np.float64)
+        c_t = np.zeros((n_e, 2), dtype=np.float64)
+        e_seam = np.zeros(n_e, dtype=np.bool_)
+        # A cylindrical face is answered only while every boundary edge
+        # is one of its parameter lines (a generatrix or a rim circle),
+        # i.e. the face is a rectangle of its (u, v) domain.
+        f_cyl_ok = f_cyl.copy()
         max_tol = 1e-12
         for i in range(n_e):
             edge = topods.Edge(emap.FindKey(i + 1))
@@ -2223,27 +2315,60 @@ class _PlanarSectionEngine:
                 fi = fmap.FindIndex(f) - 1
                 if fi not in fids:
                     fids.append(fi)
-            if len(fids) != 2:
-                continue
             if BRep_Tool.Degenerated(edge):
                 continue
-            max_tol = max(max_tol, BRep_Tool.Tolerance(edge))
-            curve = BRepAdaptor_Curve(edge)
-            if curve.GetType() != GeomAbs_Line:
+            seam = len(fids) == 1 and bool(f_cyl[fids[0]])
+            if len(fids) != 2 and not seam:
                 continue
-            p1 = curve.Value(curve.FirstParameter())
-            p2 = curve.Value(curve.LastParameter())
-            e_ok[i] = True
-            e_p1[i] = (p1.X(), p1.Y(), p1.Z())
-            e_p2[i] = (p2.X(), p2.Y(), p2.Z())
-            e_f[i] = fids
+            edge_tol = BRep_Tool.Tolerance(edge)
+            max_tol = max(max_tol, edge_tol)
+            curve = BRepAdaptor_Curve(edge)
+            ctype = curve.GetType()
+            cyl_faces = [fi for fi in fids if f_cyl[fi]]
+            if ctype == GeomAbs_Line:
+                p1 = curve.Value(curve.FirstParameter())
+                p2 = curve.Value(curve.LastParameter())
+                e_p1[i] = (p1.X(), p1.Y(), p1.Z())
+                e_p2[i] = (p2.X(), p2.Y(), p2.Z())
+                for fi in cyl_faces:
+                    geo_tol = max(edge_tol, 1e-9 * cyl_r[fi])
+                    if not _is_generatrix(
+                        e_p1[i], e_p2[i], cyl_c[fi], cyl_a[fi], cyl_r[fi], geo_tol
+                    ):
+                        f_cyl_ok[fi] = False
+                e_ok[i] = True
+                e_seam[i] = seam
+                e_f[i] = (fids[0], fids[-1])
+            elif ctype == GeomAbs_Circle and not seam:
+                circ = curve.Circle()
+                frame = circ.Position()
+                loc = frame.Location()
+                c_c[i] = (loc.X(), loc.Y(), loc.Z())
+                normal = frame.Direction()
+                c_normal = np.array((normal.X(), normal.Y(), normal.Z()))
+                for arr, vec in ((c_x, frame.XDirection()), (c_y, frame.YDirection())):
+                    arr[i] = (vec.X(), vec.Y(), vec.Z())
+                c_r[i] = circ.Radius()
+                c_t[i] = (curve.FirstParameter(), curve.LastParameter())
+                for fi in cyl_faces:
+                    geo_tol = max(edge_tol, 1e-9 * cyl_r[fi])
+                    if not _is_rim(
+                        c_c[i], c_normal, c_r[i], cyl_c[fi], cyl_a[fi], cyl_r[fi], geo_tol
+                    ):
+                        f_cyl_ok[fi] = False
+                c_ok[i] = True
+                e_f[i] = fids
+            else:
+                for fi in cyl_faces:
+                    f_cyl_ok[fi] = False
         vex = TopTools_IndexedMapOfShape()
         topexp.MapShapes(shape, TopAbs_VERTEX, vex)
+        v_pts = np.empty((vex.Size(), 3), dtype=np.float64)
         for i in range(vex.Size()):
-            max_tol = max(
-                max_tol,
-                BRep_Tool.Tolerance(topods.Vertex(vex.FindKey(i + 1))),
-            )
+            vertex = topods.Vertex(vex.FindKey(i + 1))
+            max_tol = max(max_tol, BRep_Tool.Tolerance(vertex))
+            pnt = BRep_Tool.Pnt(vertex)
+            v_pts[i] = (pnt.X(), pnt.Y(), pnt.Z())
 
         self._f_planar = f_planar
         self._f_n = f_n
@@ -2256,6 +2381,25 @@ class _PlanarSectionEngine:
         self._e_f = e_f
         self._e_lo = e_lo
         self._e_hi = e_hi
+        self._e_any = e_ok | c_ok
+        self._v_pts = v_pts
+        self._f_cyl_ok = f_cyl_ok
+        self._f_ok = f_planar | f_cyl_ok
+        self._cyl_c = cyl_c
+        self._cyl_a = cyl_a
+        self._cyl_x = cyl_x
+        self._cyl_y = cyl_y
+        self._cyl_r = cyl_r
+        self._cyl_sense = cyl_sense
+        self._cyl_uv = cyl_uv
+        self._c_ok = c_ok
+        self._c_c = c_c
+        self._c_x = c_x
+        self._c_y = c_y
+        self._c_r = c_r
+        self._c_t = c_t
+        self._has_cylinders = bool(f_cyl_ok.any())
+        self._has_circles = bool(c_ok.any())
         # On-plane tolerance: anchored at the shape's own vertex/edge
         # tolerances so any plane OCC might resolve by tolerance gluing
         # is delegated to the OCC path instead of answered exactly.
@@ -2660,29 +2804,46 @@ class _PlanarSectionEngine:
             cache[axis] = (tangent, ok)
         return cache[axis]
 
-    def _screen(self, axis: int, pos: float):
+    def _screen(self, axis: int, pos: float) -> bool | None:
         """Common fast-path admission checks.
 
-        Returns ``(d1, d2)`` signed vertex/plane distances of the
-        straight candidate edges, or ``None`` when the plane must be
-        delegated (curved candidate face/edge, coplanar face, vertex on
-        the plane).
+        Returns ``True`` when the plane can be answered, ``None`` when
+        it must be delegated: a candidate face that is neither planar
+        nor an admitted cylinder, a coplanar face, a candidate edge that
+        is neither straight nor circular, a plane tangent to a cylinder
+        or to a circular edge (a coplanar circle included), or a vertex
+        on the plane — within the shape's own tolerance.
         """
         tol = self._tol
         cf = (self._f_lo[:, axis] <= pos + tol) & (self._f_hi[:, axis] >= pos - tol)
-        if not self._f_planar[cf].all():
+        if not self._f_ok[cf].all():
             return None
-        par = cf & (np.abs(self._f_n[:, axis]) >= 1.0 - 1e-9)
+        par = cf & self._f_planar & (np.abs(self._f_n[:, axis]) >= 1.0 - 1e-9)
         if par.any() and (np.abs(pos * self._f_n[par, axis] - self._f_d[par]) <= tol).any():
             return None
+        if self._has_cylinders:
+            cyl = np.flatnonzero(cf & self._f_cyl_ok)
+            parallel = cyl[np.abs(self._cyl_a[cyl, axis]) <= 1e-9]
+            if parallel.size:
+                rho = self._cyl_r[parallel] * np.hypot(
+                    self._cyl_x[parallel, axis], self._cyl_y[parallel, axis]
+                )
+                p = pos - self._cyl_c[parallel, axis]
+                if (np.abs(np.abs(p) - rho) <= tol).any():
+                    return None
         ce = (self._e_lo[:, axis] <= pos + tol) & (self._e_hi[:, axis] >= pos - tol)
-        if not self._e_ok[ce].all():
+        if not self._e_any[ce].all():
             return None
-        d1 = self._e_p1[:, axis] - pos
-        d2 = self._e_p2[:, axis] - pos
-        if (np.abs(d1[ce]) <= tol).any() or (np.abs(d2[ce]) <= tol).any():
+        if self._has_circles:
+            circ = np.flatnonzero(ce & self._c_ok)
+            if circ.size:
+                rho = self._c_r[circ] * np.hypot(self._c_x[circ, axis], self._c_y[circ, axis])
+                p = pos - self._c_c[circ, axis]
+                if (np.abs(np.abs(p) - rho) <= tol).any():
+                    return None
+        if (np.abs(self._v_pts[:, axis] - pos) <= tol).any():
             return None
-        return d1, d2
+        return True
 
     def can_fast(self, axis: int, pos: float) -> bool:
         """Whether :meth:`section` will (barring stitch anomalies)
@@ -2699,29 +2860,66 @@ class _PlanarSectionEngine:
             if not self._screen_facets(axis, pos):
                 return None
             return self._section_facets(axis, pos)
-        screened = self._screen(axis, pos)
-        if screened is None:
+        if self._screen(axis, pos) is None:
             return None
-        d1, d2 = screened
-        trans = np.nonzero(self._e_ok & (d1 * d2 < 0.0))[0]
-        if trans.size == 0:
-            return []
-        t = d1[trans] / (d1[trans] - d2[trans])
-        pts = self._e_p1[trans] + t[:, None] * (self._e_p2[trans] - self._e_p1[trans])
-        pts[:, axis] = pos
         u_idx, v_idx = self._UV[axis]
+        # One crossing point per transversally crossed edge: exact on
+        # straight edges, analytic on circular ones.
+        d1 = self._e_p1[:, axis] - pos
+        d2 = self._e_p2[:, axis] - pos
+        edges = np.nonzero(self._e_ok & (d1 * d2 < 0.0))[0]
+        t = d1[edges] / (d1[edges] - d2[edges])
+        pts = self._e_p1[edges] + t[:, None] * (self._e_p2[edges] - self._e_p1[edges])
+        if self._has_circles:
+            c_edges, c_pts = self._circle_crossings(axis, pos)
+            edges = np.concatenate((edges, c_edges))
+            pts = np.concatenate((pts, c_pts))
+        if edges.size == 0:
+            return []
+        pts[:, axis] = pos
         uv = np.ascontiguousarray(pts[:, (u_idx, v_idx)])
 
-        # Pair the crossing points along each candidate face: every
-        # crossing lies on two faces, and on a planar face the
-        # crossings sort along the face's in-plane trace direction
-        # (plane normal × face normal) into consecutive pairs.  Done
-        # for all faces of the plane at once — the per-face loop with
-        # a ``np.cross`` each was 30 µs a face and 108 k faces on a
-        # row of eight couplers.
-        m = uv.shape[0]
+        # Every crossing lies on the two faces of its edge (a seam
+        # crossing on one face, listed twice).  Planar faces pair their
+        # crossings along the trace line, cylindrical faces along their
+        # section conic or generatrices; every crossing must come out
+        # as the start of exactly one segment and the end of exactly
+        # one, which is what stitches the segments into closed chains.
+        m = edges.size
         rep = np.concatenate((np.arange(m), np.arange(m)))
-        face = np.concatenate((self._e_f[trans, 0], self._e_f[trans, 1]))
+        face = np.concatenate((self._e_f[edges, 0], self._e_f[edges, 1]))
+        planar = self._f_planar[face]
+        pairs = self._planar_pairs(axis, uv, rep[planar], face[planar])
+        if pairs is None:
+            return None
+        first, second = pairs
+        interior = None
+        if not planar.all():
+            curved = self._cylinder_pairs(axis, pos, pts, rep[~planar], face[~planar])
+            if curved is None:
+                return None
+            first = np.concatenate((first, curved[0]))
+            second = np.concatenate((second, curved[1]))
+            interior = curved[2]
+        if np.unique(first).size != first.size:
+            return None
+        succ = np.full(m, -1, dtype=np.int64)
+        succ[first] = second
+        if (succ == -1).any():
+            return None
+        if (np.bincount(succ, minlength=m) != 1).any():
+            return None
+        return self._chains_to_polygons(uv, succ, interior)
+
+    def _planar_pairs(
+        self, axis: int, uv: np.ndarray, rep: np.ndarray, face: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray] | None:
+        """Segments of the planar faces: crossings sorted along each
+        face's in-plane trace direction (plane normal × face normal)
+        and paired by parity.  Done for all faces of the plane at once
+        — the per-face loop with a ``np.cross`` each was 30 µs a face
+        and 108 k faces on a row of eight couplers."""
+        u_idx, v_idx = self._UV[axis]
         tangent, tangent_ok = self._face_tangents(axis)
         if not tangent_ok[face].all():
             return None
@@ -2733,56 +2931,199 @@ class _PlanarSectionEngine:
         sizes = np.diff(np.r_[starts, face_sorted.size])
         if (sizes % 2).any():
             return None
-        within = np.ones(s_sorted.size - 1, dtype=np.bool_)
+        within = np.ones(max(s_sorted.size - 1, 0), dtype=np.bool_)
         within[starts[1:] - 1] = False
         if (np.diff(s_sorted)[within] <= self._tol).any():
             return None
         # Groups are contiguous and even-sized, so the pairs of every
         # group are the even/odd positions of the sorted order.
-        first = rep[order[0::2]]
-        second = rep[order[1::2]]
-        if np.unique(first).size != first.size:
-            return None
-        succ = np.full(m, -1, dtype=np.int64)
-        succ[first] = second
-        if (succ == -1).any():
-            return None
-        counts = np.bincount(succ, minlength=m)
-        if (counts != 1).any():
-            return None
+        return rep[order[0::2]], rep[order[1::2]]
 
-        polygons: list[np.ndarray] = []
-        visited = np.zeros(uv.shape[0], dtype=np.bool_)
-        for start in range(uv.shape[0]):
-            if visited[start]:
-                continue
-            chain = []
-            k = start
-            while not visited[k]:
-                visited[k] = True
-                chain.append(k)
-                k = succ[k]
-            if k != start:
+    def _circle_crossings(self, axis: int, pos: float) -> tuple[np.ndarray, np.ndarray]:
+        """Crossings of the candidate circular edges with the plane:
+        ``(edge indices, points)`` [scaled units].
+
+        Along P(t) = c + r (cos t X + sin t Y) the plane equation reads
+        ρ cos(t − φ) = pos − c·n with ρ = r √(A² + B²), A = X·n,
+        B = Y·n, φ = atan2(B, A) — two roots per full circle, those
+        inside the parameter range of an arc.  Tangent and coplanar
+        circles have been delegated by :meth:`_screen`.
+        """
+        tol = self._tol
+        cand = np.nonzero(
+            self._c_ok & (self._e_lo[:, axis] <= pos + tol) & (self._e_hi[:, axis] >= pos - tol)
+        )[0]
+        if cand.size == 0:
+            return np.zeros(0, dtype=np.int64), np.zeros((0, 3), dtype=np.float64)
+        a_coef = self._c_x[cand, axis]
+        b_coef = self._c_y[cand, axis]
+        rho = self._c_r[cand] * np.hypot(a_coef, b_coef)
+        ok = rho > 0.0
+        q = np.where(ok, (pos - self._c_c[cand, axis]) / np.where(ok, rho, 1.0), 2.0)
+        ok &= np.abs(q) < 1.0
+        phi = np.arctan2(b_coef, a_coef)
+        half = np.arccos(np.clip(q, -1.0, 1.0))
+        t0 = self._c_t[cand, 0]
+        t1 = self._c_t[cand, 1]
+        sel_edges = []
+        sel_t = []
+        for sign in (1.0, -1.0):
+            tt = t0 + np.mod(phi + sign * half - t0, 2.0 * np.pi)
+            keep = ok & (tt <= t1 + 1e-12)
+            sel_edges.append(cand[keep])
+            sel_t.append(tt[keep])
+        e = np.concatenate(sel_edges)
+        tt = np.concatenate(sel_t)
+        pts = self._c_c[e] + self._c_r[e, None] * (
+            np.cos(tt)[:, None] * self._c_x[e] + np.sin(tt)[:, None] * self._c_y[e]
+        )
+        return e, pts
+
+    def _cylinder_pairs(
+        self, axis: int, pos: float, pts: np.ndarray, rep: np.ndarray, face: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, dict[int, np.ndarray]] | None:
+        """Segments of the cylindrical faces, face by face."""
+        if rep.size == 0:
+            return np.zeros(0, dtype=np.int64), np.zeros(0, dtype=np.int64), {}
+        if not self._f_cyl_ok[face].all():
+            return None
+        order = np.lexsort((rep, face))
+        face = face[order]
+        rep = rep[order]
+        # A seam crossing lists its face twice — once per side.
+        keep = np.r_[True, (face[1:] != face[:-1]) | (rep[1:] != rep[:-1])]
+        face = face[keep]
+        rep = rep[keep]
+        starts = np.flatnonzero(np.r_[True, face[1:] != face[:-1]])
+        ends = np.r_[starts[1:], face.size]
+        first: list[int] = []
+        second: list[int] = []
+        interior: dict[int, np.ndarray] = {}
+        for i0, i1 in zip(starts, ends, strict=True):
+            result = self._cylinder_face_pairs(int(face[i0]), axis, pos, pts, rep[i0:i1])
+            if result is None:
                 return None
-            points = [(float(uv[c, 0]), float(uv[c, 1])) for c in chain]
-            # Consecutive-duplicate and closing-duplicate filtering,
-            # matching cross_section_polygons.
-            filtered: list[tuple[float, float]] = []
-            for p in points:
-                if not filtered or (
-                    abs(p[0] - filtered[-1][0]) > 1e-12 or abs(p[1] - filtered[-1][1]) > 1e-12
-                ):
-                    filtered.append(p)
-            if len(filtered) >= 3:
-                if (
-                    abs(filtered[0][0] - filtered[-1][0]) < 1e-10
-                    and abs(filtered[0][1] - filtered[-1][1]) < 1e-10
-                ):
-                    filtered.pop()
-                if len(filtered) >= 3:
-                    # Back to meters (lossless power-of-two divide).
-                    polygons.append(np.array(filtered) / self._scale)
-        return polygons
+            f1, f2, inner = result
+            first.extend(f1)
+            second.extend(f2)
+            interior.update(inner)
+        return np.array(first, dtype=np.int64), np.array(second, dtype=np.int64), interior
+
+    def _cylinder_face_pairs(
+        self, f: int, axis: int, pos: float, pts: np.ndarray, crossings: np.ndarray
+    ) -> tuple[list[int], list[int], dict[int, np.ndarray]] | None:
+        """Segments of one cylindrical face between its boundary
+        crossings *crossings* (indices into *pts*).
+
+        With P(u, v) = c + r (cos u X + sin u Y) + v A and the plane
+        n·P = pos, the trace is either two generatrices (n ⟂ A: at the
+        two roots u* of r (A_n cos u + B_n sin u) = pos − c_n, each
+        joining its two rim crossings) or the conic v(u) = (pos − c_n −
+        r (A_n cos u + B_n sin u)) / A_n, which the boundary crossings
+        split into arcs; an arc belongs to the face where v(u) lies
+        within the face's v range.  Segments run along n × n_outward,
+        the convention of the planar faces, so outer contours and
+        holes counter-rotate; arc interiors are tessellated at the
+        kernel's rule (chord ≤ δ, turn ≤ 5°) in the parameter u.
+        """
+        two_pi = 2.0 * np.pi
+        u_idx, v_idx = self._UV[axis]
+        c = self._cyl_c[f]
+        a = self._cyl_a[f]
+        x = self._cyl_x[f]
+        y = self._cyl_y[f]
+        r = float(self._cyl_r[f])
+        sense = float(self._cyl_sense[f])
+        umin, umax, vmin, vmax = self._cyl_uv[f]
+        full = umax - umin >= two_pi - 1e-9
+        rel = pts[crossings] - c
+        du = np.mod(np.arctan2(rel @ y, rel @ x) - umin, two_pi)
+        du[du >= two_pi - 1e-12] = 0.0
+        u = umin + du
+        v = rel @ a
+        a_n, b_n, c_n = float(x[axis]), float(y[axis]), float(a[axis])
+        p = pos - float(c[axis])
+        n_plane = np.zeros(3)
+        n_plane[axis] = 1.0
+
+        def direction(uu: float) -> np.ndarray:
+            # Segment direction n × n_outward at azimuth uu.
+            return np.cross(n_plane, sense * (math.cos(uu) * x + math.sin(uu) * y))
+
+        first: list[int] = []
+        second: list[int] = []
+        interior: dict[int, np.ndarray] = {}
+
+        if abs(c_n) <= 1e-9:
+            rho = r * math.hypot(a_n, b_n)
+            q = p / rho
+            if abs(q) >= 1.0:
+                return None
+            phi = math.atan2(b_n, a_n)
+            half = math.acos(q)
+            for u_star in (phi + half, phi - half):
+                u_star = umin + math.fmod(u_star - umin, two_pi)
+                if u_star < umin:
+                    u_star += two_pi
+                if u_star > umax + 1e-9:
+                    continue
+                gap = np.abs(np.mod(u - u_star + np.pi, two_pi) - np.pi)
+                group = np.flatnonzero(gap <= 1e-6)
+                if group.size != 2:
+                    return None
+                lo, hi = group[np.argsort(v[group])]
+                if v[hi] - v[lo] <= self._tol:
+                    return None
+                forward = float(np.dot(direction(u_star), a)) > 0.0
+                first.append(int(crossings[lo if forward else hi]))
+                second.append(int(crossings[hi if forward else lo]))
+            return first, second, interior
+
+        order = np.argsort(u, kind="stable")
+        k = order.size
+        if k == 0:
+            return first, second, interior
+        u_s = u[order]
+        idx_s = crossings[order]
+        arcs = [(i, i + 1, 0.0) for i in range(k - 1)]
+        if full:
+            arcs.append((k - 1, 0, two_pi))
+        du_max = min(
+            math.radians(5.0) * abs(c_n),
+            math.sqrt(8.0 * self._deflection * abs(c_n) ** 3 / r),
+        )
+        v_margin = max(self._tol, 1e-9 * (vmax - vmin))
+        for i, j, wrap in arcs:
+            ua = float(u_s[i])
+            ub = float(u_s[j]) + wrap
+            if ub - ua <= 1e-12:
+                continue
+            um = 0.5 * (ua + ub)
+            vm = (p - r * (a_n * math.cos(um) + b_n * math.sin(um))) / c_n
+            if abs(vm - vmin) <= v_margin or abs(vm - vmax) <= v_margin:
+                return None
+            if not vmin < vm < vmax:
+                continue
+            v_prime = r * (a_n * math.sin(um) - b_n * math.cos(um)) / c_n
+            tangent = r * (-math.sin(um) * x + math.cos(um) * y) + v_prime * a
+            forward = float(np.dot(direction(um), tangent)) > 0.0
+            n_seg = max(1, int(math.ceil((ub - ua) / du_max - 1e-9)))
+            if n_seg > 100_000:
+                return None
+            uu = ua + (ub - ua) * np.arange(1, n_seg) / n_seg
+            vv = (p - r * (a_n * np.cos(uu) + b_n * np.sin(uu))) / c_n
+            inner = c + r * (np.cos(uu)[:, None] * x + np.sin(uu)[:, None] * y) + vv[:, None] * a
+            inner[:, axis] = pos
+            inner = np.ascontiguousarray(inner[:, (u_idx, v_idx)])
+            if forward:
+                first.append(int(idx_s[i]))
+                second.append(int(idx_s[j]))
+                interior[int(idx_s[i])] = inner
+            else:
+                first.append(int(idx_s[j]))
+                second.append(int(idx_s[i]))
+                interior[int(idx_s[j])] = inner[::-1]
+        return first, second, interior
 
 
 # ---------------------------------------------------------------------------
@@ -2835,7 +3176,7 @@ def batch_cross_sections(
         occ_shape = shape_obj._occ_shape(scale)
         name = getattr((material_library or {}).get(mat_id), "name", mat_id)
         context = f"the {name!r} solid"
-        engine = _PlanarSectionEngine(occ_shape, scale=scale, deflection=deflection)
+        engine = _section_engine(shape_obj, scale, deflection)
         (xmin, ymin, zmin), (xmax, ymax, zmax) = shape_obj.bounding_box(scale)
         bbox_flat = (xmin, ymin, zmin, xmax, ymax, zmax)
 
