@@ -15391,3 +15391,129 @@ row's kernel sections at the kernel's floor.
 (`_disjoint_by_construction`, `GeometryModel.validate`),
 `tests/unit/test_prism_fuse.py`, `tests/unit/test_geometry.py`,
 `CHANGELOG.md`, `benchmarks/results/bench_mesh_build.json` (re-run).
+
+## DD-213 — The edge pass runs in batch: a line table, compiled bookkeeping, the boundary rule
+
+**Status:** Decided and implemented 2026-08-28, branch `perf/edge-pass-batch`.
+DD-212's open item 1 (DD-208's "next tier").
+
+**Problem.**  After DD-208 the edge pass was Python per line and per
+edge: `line_entry` built a carrier line's hits row by row (the
+compiled candidate pass, then `flagged_hits` looping the rows), every
+edge sliced its window with `bisect` and walked its sub-segments in
+Python, and every fallback midpoint — 55–70 % of the edges lie in
+conductor faces — cast probe lines of its own through the same path
+(82 871 lines for the 106 965 edges of 8 Lange couplers, 164 548 for
+the 153 440 edges of the 8 × 8 array).  Profiled: 5.9 s and 8.6 s, of
+it `line_entry` 2.3 / 4.7 s, `classify_point` 3.0 / 4.1 s, the edge
+loop 1.0 / 1.5 s (internal dossier
+`investigations/mesh-build-bench/edges2/`, M16).  A second term hid
+behind the first: 10 128 midpoints of the Lange row reached the
+*oblique* probes (`point_state`, 0.8 s), and 9 184 of them went on to
+the solid classifier (1.0 s at ~100 µs a point) — every one of them
+classified `ON`: points on a conductor's corner line, where each probe
+finds its own face's outline at the origin.
+
+**Decision.**
+
+1. **A line table** (`_LineTable`) holds every axis-aligned line of the
+   pass — carrier lines of the edges, probe lines of the fallback —
+   keyed by axis and transverse point, resolved in batches by a stable
+   sort (the first point asking keeps the origin, so every parameter
+   is what the per-line query produced), and stores the sorted ``(w,
+   step, untrusted, row)`` hits in CSR form with the crossing
+   parameters and the parity flag.  Hits come from compiled passes:
+   `axis_line_pairs` (per axis the lines sorted by ``u``, every row
+   tests the lines inside its ``u`` range and filters by ``v`` — the
+   conditions of `axis_line_candidates`, the same pair set),
+   `planar_pair_hits` (the in-house test of DD-208 over all pairs of a
+   line and a planar row normal to it); rows parallel to a line have
+   no hit; curved rows keep the kernel's intersector, one call per
+   line and row as before.  Every kernel call, every in-house state,
+   every parameter is the one the per-line query made — the batch
+   changes the order of work, not the work.
+2. **The per-edge bookkeeping is one compiled call**
+   (`axis_edge_windows`, `axis_edge_fractions`): window by binary
+   search, crossings clipped and deduplicated, boundaries, the
+   transitions sorted by ``(w, step)`` as the sequential pass sorted
+   them, parity at the midpoint when nothing crosses, the outside
+   length summed in sub-segment order; edges the hits cannot anchor
+   emit their sub-segment midpoints.  Those are classified in three
+   rounds — the most-perpendicular axis first, as before — each round
+   resolving the probe lines of all pending points at once
+   (`classify_on_lines`).
+3. **The boundary rule** for a point no axis line has parity for: a
+   hit within tolerance of the point on any of its three probe lines
+   that is trusted (the face's interior) or an in-house hit whose
+   point lies in or on the row's *face* by the face's own rings
+   (`boundary_on_lines`) puts the point within tolerance of a face —
+   the classifier's ``ON``, inside.  Measured on the Lange row and the
+   8 × 8 array: all 13 452 points the old last resort classified were
+   ``ON`` with exactly such a hit at the origin (`probe_undecided_points.py`),
+   and the oblique probes never contradicted the classifier on the 2 013
+   points they did decide (`probe_oblique_vs_classifier.py`).  The
+   rule applies only where the sequential pass reached its last resort
+   — after the three axis rounds — so an ok probe line's parity is
+   never pre-empted; the parent-face check matters because a tile
+   border (DD-208 item 4) reads ``ON`` on the tile without being an
+   outline; kernel hits do not qualify (a classification piece's
+   border is not an outline either).  What the rule leaves — pile-ups
+   beyond tolerance, kernel-row borders — takes the oblique probes and
+   the classifier as before (0 points on the ladder).
+4. Oblique edges (none on a structured grid) keep the per-edge path,
+   with the table as their line cache.
+
+**Result.**  Edge pass under the profiler: 8 Lange couplers 5.9 →
+**0.26 s**, 8 × 8 array 8.6 → **0.24 s** — f_L bit-identical on all
+106 965 + 153 440 edges (`probe_edge_pass.py` against the DD-212
+references); 60 posts 0.6 s, of it 0.3 s the 41 812 kernel `Perform`
+calls on the cylinder rows (the kernel floor).  Meshes bit-identical:
+35 / 35 arrays on posts 60, posts 240, Lange 4, 4 × 4 array
+(`probe_mesh_hash.py`).  The batch formulation is exact against a
+sequential reference of the old bookkeeping — single-line queries,
+per-point probe lines, oblique probes and the solid classifier as the
+last resort — on the comb and on a post fused with a brick
+(`tests/unit/test_edge_pass_lines.py::test_batch_fractions_equal_the_sequential_bookkeeping`).
+
+Full ladder (`--family all --pool off auto forced --json`, `auto`, CPU
+idle; before = DD-212's ladder):
+
+| family, n | cells | edges | total before → after | edge pass | ε pass | µ pass |
+|---|---|---|---|---|---|---|
+| Lange 16 | 3.69 M | 214 k | 26.7 → **20.6 s** | 6.3 → 0.4 | 3.6 → 3.7 | 5.9 → 5.7 |
+| Lange 8 | 1.84 M | 107 k | 11.6 → **9.0 s** | 3.0 → 0.2 | 1.7 | 2.5 |
+| Lange 4 | 922 k | 54 k | 5.3 → 4.0 | 1.4 → 0.1 | 0.8 | 1.2 |
+| array 8 × 8 | 664 k | 153 k | 10.8 → **6.9 s** | 4.2 → 0.2 | 0.9 | 1.2 |
+| array 4 × 4 | 222 k | 45 k | 3.0 → 1.8 | 1.2 → 0.1 | 0.4 | 0.5 |
+| array 2 × 2 | 84 k | 14 k | 1.0 → 0.7 | 0.4 → 0.0 | 0.1 | 0.2 |
+| posts 240 | 385 k | 78 k | 21.2 → 20.5 | 3.0 → 2.1 | 5.9 → 6.0 | 7.9 → 8.0 |
+| posts 60 | 97 k | 20 k | 5.1 → 4.9 | 0.7 → 0.5 | 1.4 | 1.9 |
+| array 16 × 16 (off-ladder) | 1.82 M | 450 k | 91.6 → **65.4 s** | 13.3 → 0.8 | — | — |
+
+The pool arms agree with `auto` within noise (`forced` on the post rows
+pays its start-up as before).  The edge pass is now 2 % of every planar
+row (Lange 16: 0.4 of 20.6 s) and at the kernel floor on the post rows
+(240 posts: 2.1 s — kernel `Perform` per line and cylinder row).  Unit suite 2 549 passed / 4 skipped, integration 402
+passed / 5 skipped (the six GPU single-precision tests on the device);
+ruff, DD, API and import gates clean.
+
+**Open, re-ranked.**  The per-key timer breakdown of the 16 × 16 array
+(`probe_pass_breakdown.py` — internal dossier; the bench table prints
+a subset of the keys, and columns nest) puts two terms first that no
+ladder row shows: `compute_subcell_data` 32.4 s, of which the area
+kernels, the conductivity pass, the edge pass and the PEC solid make
+8 s — some 24 s in the pass itself, 1.4 s on Lange 16; and
+`extract_feature_planes_per_shape` (DD-191) 20.9 s, against 0.7 s on
+Lange 16 — both superlinear at this tier.  Then the area passes of the
+Lange row (µ 5.7 + ε 3.7 of 20.6 s), the raised-piece fuse
+(`pec_fuse` 2.0 s), and the post row's kernel sections at the kernel's
+fixed cost.
+
+**Files:** `src/magnelio/geo/_line_kernels.py` (`axis_line_pairs`,
+`planar_pair_hits`, `line_flags`, `axis_edge_windows`,
+`axis_edge_fractions`, `classify_on_lines`, `boundary_on_lines`,
+`segment_fractions`), `src/magnelio/geo/_occ_backend.py` (`_LineTable`,
+`_PlanarRows`, `_PrefilteredLineSolid.planar_arrays`/`_row_parent`,
+`compute_edge_pec_fractions`), `tests/unit/test_edge_pass_lines.py`,
+`docs/methods/meshing-conformal.md`, `CHANGELOG.md`,
+`benchmarks/results/bench_mesh_build.json` (re-run).

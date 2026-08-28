@@ -13,7 +13,7 @@ parity — hollow conductors had lost the conformal correction at their
 inner walls (KB-031); how-to *coupled-line coupler* and tutorial 19
 *offset Cassegrain* (rendered, not executed; figures of a measured run
 embedded), every gallery 3D view carries an "Interactive Scene" tab,
-GitHub Discussions is the feedback channel.  Unit suite 2544 passed /
+GitHub Discussions is the feedback channel.  Unit suite 2549 passed /
 4 skipped; integration suite 402 passed / 5 skipped (2026-08-28)
 (edge-pass tangency rule, coax re-pin) and the KB-011 fixture re-pin
 (DD-199 fallout closed 2026-08-27; both unreleased on `main`).
@@ -353,26 +353,26 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   a classification per edge; DD-205 the planar fuse and the per-body
   PEC solid; DD-206 one classifier per shape for the point probes and
   one Boolean per hub in the overlap check; DD-207 the side step of
-  degenerate planes past the kernel tolerance and kernel sections over
-  the faces a plane can reach; DD-208 the edge pass on carrier lines
-  with in-house planar hits and 2-D tiles; DD-209 the planar fuse up
-  a bisection tree and sheet contours on their own boxes; DD-210 tiles
-  for the one planar face that carries every feature outline, a
-  vectorised contour winding and a per-axis pool projection; DD-211
+  degenerate planes and kernel sections over the faces a plane reaches;
+  DD-208 the edge pass on carrier lines with in-house planar hits and
+  2-D tiles; DD-209 the planar fuse up a bisection tree; DD-210 tiles
+  for the one planar face that carries every feature outline; DD-211
   the engine's stitch and the conformal face collection as arrays;
-  DD-212 no PEC-by-PEC cuts in the effective PEC solid and no overlap
-  Boolean for a `Difference` against its own tools.  Ladder
-  (`benchmarks/bench_mesh_build.py`, CPU, `auto` pool): 16 Lange
-  couplers (3.7 M cells) 27 s, 240 posts (385 k) 21 s, 4 × 4 patch
-  array with feed (222 k cells) 3 s, 8 × 8 (664 k) 11 s, 16 × 16
-  (1.8 M, off-ladder) 92 s; `other` ≤ 1.4 s on every row; the pool
-  fires on no ladder row.  Open, in value order: (1) the edge pass —
-  ~30 µs per edge in Python, 55–70 % of the edges on the fallback
-  (edges in conductor faces); a batch formulation (every planar row
-  against all carrier lines through its box in one compiled call) is
-  the next tier (Lange 16: 6.3 of 27 s, 8 × 8 array: 4.2 of 11 s);
-  (2) the N-ary fuse of the raised metal pieces in the effective PEC
-  solid (Lange 16: 2.0 s); (3) the post row's kernel sections at the
+  DD-212 no PEC-by-PEC cuts and no overlap Boolean a `Difference`
+  already answers; DD-213 the edge pass in batch (a line table,
+  compiled bookkeeping, the boundary rule for points on corner lines).
+  Ladder (`benchmarks/bench_mesh_build.py`, CPU, `auto` pool): 16 Lange
+  couplers (3.7 M cells) 21 s, 240 posts (385 k) 21 s, 4 × 4 patch
+  array with feed (222 k cells) 1.8 s, 8 × 8 (664 k) 6.9 s, 16 × 16
+  (1.8 M, off-ladder) 64 s; the edge pass is ≤ 2 % of every planar row;
+  the pool fires on no ladder row.  Open, in value order: (1) two terms
+  the bench table never showed (columns nest — read the JSON row or
+  `probe_pass_breakdown.py`): on the 16 × 16 array `compute_subcell_data`
+  spends ~24 s outside its area/edge kernels (1.4 s on Lange 16) and
+  `extract_feature_planes_per_shape` 21 s (0.7 s on Lange 16) — both
+  superlinear at that tier; (2) the area passes of the Lange row
+  (µ 5.7 + ε 3.7 of 21 s); (3) the N-ary fuse of the raised metal
+  pieces (`pec_fuse` 2.0 s); (4) the post row's kernel sections at the
   kernel's fixed cost per `BRepAlgoAPI_Section` (6 284 at 1–2 ms).
 
 Closed construction sites are tombstoned where they were decided (the
