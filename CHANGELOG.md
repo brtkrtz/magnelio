@@ -11,6 +11,15 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- The union of coplanar rectangular conductors — the strips and pads
+  of a planar layout — is computed on the grid of their vertex
+  coordinates instead of by the geometry kernel's fuse (a 16 × 16
+  patch array with its corporate feed: 2.6 s → 0.2 s for the union,
+  the build 20.6 s → 17.4 s; an 8 × 8 array 5.0 s → 4.6 s).  Layouts
+  with arcs or rotated edges take the kernel route as before.  The
+  union's vertices are now the input coordinates exactly; where the
+  kernel's rounding of a crossing had set a grid plane, the plane moves
+  by that rounding (below 1e-18 m).
 - Two mesh-build terms that grew faster than the layout on large planar
   designs are gone: the series-permittivity correction for grid edges
   crossing a floor-absorbed material plane runs over arrays instead of

@@ -18,9 +18,12 @@ Given the operands of a union, :func:`fuse_shapes`
    about it) — true of bricks, cylinders, extruded profiles and
    imported plates alike, false of spheres, cones, chamfers and steps;
 2. groups the prisms by (axis, interval), fuses the *bottom caps* of
-   each group in the plane — bounding-box clusters, one planar fuse
-   per cluster up a bisection tree (:func:`fuse_faces_tree`), seams
-   removed — and raises each fused face once;
+   each group in the plane — bounding-box clusters; a cluster of
+   straight, axis-aligned caps is united on the compressed grid of
+   its vertex coordinates (:mod:`magnelio.geo._rect_union`), any
+   other climbs a bisection tree of kernel fuses
+   (:func:`fuse_faces_tree`), seams removed — and raises each fused
+   face once;
 3. fuses what is left in space, but only within clusters of
    interfering bounding boxes; clusters that touch nothing are kept as
    they are.
@@ -31,7 +34,7 @@ nothing and are gone.  Measured on the benchmark's patch arrays
 (``benchmarks/bench_mesh_build.py``): 8 × 8 with feed network, 443
 strips, 16.1 s → 0.74 s and 6 924 → 640 faces at the same volume to
 nine digits; 16 × 16, 1 787 strips, 13.4 s → 2.6 s in the plane with
-the fuse tree.
+the fuse tree and 0.2 s on the grid.
 """
 
 from __future__ import annotations
@@ -80,7 +83,7 @@ def cluster_boxes(boxes: np.ndarray, tolerance: float) -> list[list[int]]:
         return []
     d = boxes.shape[1] // 2
     lo, hi = boxes[:, :d], boxes[:, d:]
-    parent = list(range(n))
+    parent = np.arange(n)
 
     def root(i: int) -> int:
         while parent[i] != i:
@@ -88,17 +91,17 @@ def cluster_boxes(boxes: np.ndarray, tolerance: float) -> list[list[int]]:
             i = parent[i]
         return i
 
-    order = sorted(range(n), key=lambda i: lo[i, 0])
-    active: list[int] = []
+    order = np.argsort(lo[:, 0], kind="stable")
+    active = np.empty(0, dtype=np.int64)
     for i in order:
-        active = [j for j in active if hi[j, 0] >= lo[i, 0] - tolerance]
-        for j in active:
-            reach = np.all(hi[j, 1:] >= lo[i, 1:] - tolerance)
-            if reach and np.all(lo[j, 1:] <= hi[i, 1:] + tolerance):
-                a, b = root(i), root(j)
-                if a != b:
-                    parent[b] = a
-        active.append(i)
+        active = active[hi[active, 0] >= lo[i, 0] - tolerance]
+        reach = np.all(hi[active, 1:] >= lo[i, 1:] - tolerance, axis=1)
+        reach &= np.all(lo[active, 1:] <= hi[i, 1:] + tolerance, axis=1)
+        for j in active[reach]:
+            a, b = root(i), root(j)
+            if a != b:
+                parent[b] = a
+        active = np.append(active, i)
 
     groups: dict[int, list[int]] = {}
     for i in range(n):
@@ -283,9 +286,14 @@ def _fuse_group_in_plane(
     """Fuse one (axis, interval) group of prisms through their bottom caps.
 
     Members whose caps touch no other member's are returned as they
-    are — no Boolean, no re-raising, bit-identical to their input.
+    are — no Boolean, no re-raising, bit-identical to their input.  A
+    cluster of straight, axis-aligned caps is united on the compressed
+    grid of its vertex coordinates (:mod:`magnelio.geo._rect_union`);
+    any other cluster climbs the kernel's fuse tree.
     """
     from OCC.Core.TopAbs import TopAbs_FORWARD  # noqa: PLC0415
+
+    from magnelio.geo._rect_union import fuse_rectilinear_faces  # noqa: PLC0415
 
     in_plane = [k for k in range(3) if k != axis]
     caps = []  # (member index, face)
@@ -308,7 +316,9 @@ def _fuse_group_in_plane(
         if not owner_set & touched:
             continue
         faces = [caps[i][1].Oriented(TopAbs_FORWARD) for i in cluster]
-        fused = fuse_faces_tree(faces, fuse_faces)
+        fused = fuse_rectilinear_faces(faces, _LEVEL_TOLERANCE)
+        if fused is None:
+            fused = fuse_faces_tree(faces, fuse_faces)
         parts.extend(_oriented_solid(extrude(face, tuple(direction))) for face in _faces_of(fused))
     parts.extend(members[i][0] for i in range(len(members)) if i not in touched)
     return parts
