@@ -25,7 +25,15 @@ curves are tessellated at the deflection.  The deflection is a
 hundredth of the smallest cell for the sub-cell fractions and a tenth
 for the cell classification.  Section contours are wound by nesting
 parity (holes against their outer boundary) before the area kernels
-sum them, whatever path produced them.
+sum them, whatever path produced them.  The kernel's section runs over
+the faces whose extent reaches the plane rather than over the whole
+body — the same curves, without the kernel preparing a thousand faces
+the plane never meets.  A grid plane that coincides with a face of the
+model is never sectioned in place: the fractions there come from
+sections a small step to either side, and the step clears the kernel's
+tolerance by a margin (four times the largest tolerance in the model,
+or the section deflection if that is larger), because a section within
+the tolerance of a face reports that face on both sides.
 
 ## Graded Cartesian mesh
 

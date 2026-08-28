@@ -14792,3 +14792,129 @@ device) are green.
 `src/magnelio/mesh/_conformal.py` (`_probe_eps`, `detect_thin_metallizations`),
 `tests/unit/test_point_classifier_set.py` (new), `tests/unit/test_geometry.py`
 (`TestOverlapBatching`), `benchmarks/bench_mesh_build.py` (columns, results re-run).
+
+## DD-207 — The side step of a degenerate plane clears the kernel tolerance; kernel sections run over the faces a plane can reach
+
+**Status:** Decided and implemented 2026-08-28, branch `perf/section-shift-slab`.
+DD-206's re-ranked item 1; closes KB-036.
+
+**Problem.**  The face pass of the Lange ladder grew faster than the
+cell count (areas µ 14.7 → 48.6 s for 8 → 16 couplers, pool off), and
+STATUS had filed it as "every plane cuts every coupler — a per-plane
+face prefilter".  Instrumenting the sections instead of guessing
+(`investigations/mesh-build-bench/probe_face_sections.py` — internal
+record) showed what the 2 148 kernel sections of the 16-coupler build
+were: **every one** a plane the planar engine had declined for
+*coplanar face within tolerance*, i.e. the DD-106 side steps `p ± δ`
+of the degenerate planes (finger ends, lead ends, bond edges — about
+ten per coupler along x), taken with δ = deflection = 6e-8 m on this
+6 µm grid, below the engine's tolerance screen (2 × max B-Rep
+tolerance = 2–3e-7).  Of them 184 per 8 couplers hit the pocketed air
+body (1 062 faces at 8, 2 118 at 16) at 59 ms each — the kernel's
+section prepares every sub-shape before it looks for intersections, so
+the cost per plane is the body's face count, and planes ∝ n × faces ∝ n
+is the superlinear term.
+
+The same measurement exposed a correctness defect.  A step below the
+kernel's tolerance does not leave the face: the section Boolean
+reports the face the plane was meant to escape on *both* sides — the
+air body at `p ± 6e-8` returned one and the same 8-vertex polygon on
+either side of a finger's end wall (the 4-vertex answer appears from
+6e-7 on), and a finger brick 60 nm or 200 nm outside its end face still
+reported its full section (correct from 4e-7).  In the face pass the
+spurious pocket opening on the outside fell to the model's conducting
+background, so every face lying in a finger's end wall read fully
+blocked (min = max) with a wall jump of zero — DD-106's conventions
+had nothing to choose from.  The threshold is the kernel's own and
+topological rather than a distance: a 12.6 µm pocket on an air body's
+bottom face answered correctly at 60 nm, the same pocket in the
+interior did not, and a lone brick is protected by the bounding-box
+screen.  Any model whose smallest cell is below about 15 µm at scale 1
+was exposed (KB-036).
+
+**Decision.**
+
+1. **The side step is the larger of the section deflection and four
+   times the largest B-Rep tolerance in the model** (at least the
+   kernel's confusion, 1e-7 scaled): `_SECTION_SHIFT_TOLERANCES = 4`,
+   the tolerance read once per shape by the new `_FaceSlabIndex`.
+   Four is the margin over the measured failure (wrong at 1.3
+   tolerances, right from 2.7) and, since the engine's screen is two
+   tolerances, it also puts every shifted plane past the exact planar
+   engine — the shifted sections of a planar model are now answered
+   exactly, in microseconds, instead of by the kernel.  DD-106's
+   conventions (min / mean for the matrix channel, max and jump for
+   the geometric one, one-sided at the hull) are untouched; only the
+   distance of the sampling planes changes, and only where the
+   deflection was below four tolerances — grids finer than about 60 µm
+   at scale 1.  There the step is at most a tenth of the smallest cell
+   (the Lange: 6e-7 on 6 µm), still far below any cell; a sheet
+   thinner than twice the step would be missed by both sides — sheets
+   below a micron at scale 1 are beyond the kernel's tolerance anyway
+   and are the thin-sheet pipeline's business (DD-202).
+
+2. **Kernel sections run over the faces whose slab reaches the plane.**
+   `_FaceSlabIndex(shape)` holds the faces, their geometry-only boxes
+   and the shape's largest tolerance; `restrict(axis, pos)` returns a
+   compound of the candidate faces (the shape itself when every face
+   qualifies).  `cross_section_polygons(..., slab=)` sections that
+   compound at every rung of its nudge ladder; the planar engine owns
+   the index of its shape and hands it to every delegation
+   (`compute_face_material_areas`, `batch_cross_sections`, the pool
+   sampler, and the pool workers build their own at deserialisation).
+   The kernel only intersects sub-shapes of *different* arguments and
+   adjacent candidates share their boundary `TopoDS_Edge`, so the
+   contours are the solid's — measured bit-identical on 194/194 Lange
+   planes and 80/80 post planes.  The `exact_at_faces` path keeps the
+   whole shape.
+
+**Refuted on the way.**  A per-plane *face* prefilter as STATUS
+imagined it would have left the engine declines in place; the slab
+compound alone takes the Lange air body's x-planes from 53 to 15 ms
+(29 candidate faces still carry 480 edges — the z = h face holds
+every pocket outline), the y/z-planes only 1.3–1.7× — the decisive
+lever was the step, the compound is what remains for curved bodies
+(posts across the row 4.7 → 0.5 ms; along the row every face is a
+candidate and nothing changes).
+
+**Measured.**  Lange 8, pool off, before/after (`faces/probe8.log`,
+`faces/probe8_after.log`): kernel sections in the face pass 1 092 →
+**0** (the 96 remaining are the thin-sheet sections, one per sheet),
+build 35.7 → 24.6 s.  Full ladder (`benchmarks/bench_mesh_build.py
+--family all --pool off auto forced --json`, CPU idle; before =
+DD-206's ladder):
+
+| family, n | cells | total before → after (auto) | pool off | areas µ | areas ε | classify | kernel sections |
+|---|---|---|---|---|---|---|---|
+| Lange 16 | 3.69 M | 66.2 → **54.9 s** | 94.5 → 54.9 | 20.4 → 8.4 | 5.3 → 5.3 | 1.2 | 2 148 → 192 |
+| Lange 8 | 1.84 M | 34.9 → **23.9 s** | 34.9 → 23.9 | 14.7 → 3.5 | 2.3 → 2.3 | 0.6 | 1 092 → 96 |
+| Lange 4 | 922 k | 14.5 → 11.0 | 14.6 → 11.0 | 5.1 → 1.5 | 1.1 → 1.1 | 0.3 | 564 → 48 |
+| Lange 2 | 461 k | 6.6 → 5.3 | 6.6 → 5.3 | 2.0 → 0.7 | 0.5 → 0.5 | 0.1 | 300 → 24 |
+| Lange 1 | 231 k | 3.1 → 2.7 | 3.2 → 2.7 | 0.9 → 0.4 | 0.3 → 0.3 | 0.1 | 168 → 12 |
+| posts 240 | 385 k | 45.9 → **38.1 s** | 71.1 → 48.4 | 12.0 → 11.6 | 10.6 → 10.3 | 15.6 → 8.5 | 1 968 (pooled) |
+| posts 60 | 97 k | 8.4 → 7.2 | 8.4 → 7.1 | 3.0 → 2.5 | 2.3 → 1.9 | 1.5 → 1.1 | 1 604 |
+| array 8 × 8 | 664 k | 33.2 → 34.1 | 33.4 → 33.9 | 1.6 | 1.2 | 0.2 | 1 |
+| array 4 × 4 | 222 k | 8.9 → 9.1 | 8.8 → 9.0 | 0.6 | 0.5 | 0.1 | 1 |
+
+The Lange rows no longer admit the pool at all (the remaining kernel
+sections are the thin-sheet ones, one per sheet) and the face pass
+grows with the cell count again (areas µ 3.5 → 8.4 s for 8 → 16
+couplers, cells 1.84 → 3.69 M); at 16 couplers the edge pass (26.7 s)
+is now half the build.  The post rows gain the slab compound on the
+sections across the row (pool off: kernel sections 54.9 → 32.0 s,
+classification 15.5 → 8.5 s); pooled, the prefill's 20 s (worker
+start-up, serialisation, the along-the-row sections every face
+qualifies for) bound the row.  The array rows are unchanged within
+noise.  Gallery plane pins (28 scripts) unchanged; unit suite 2 520
+passed, integration 402 passed (the GPU tests on the device).  The
+Lange how-to's scoreboard (`docs/howto/plot_lange_coupler.py`, GPU)
+repeats −2.72 / −3.32 dB, 0.60 dB balance, 89.8°, −31.90 / −32.06 dB
+to the printed digit — the freed end-wall faces are 5 µm × 12.6 µm.
+
+**Files:** `src/magnelio/geo/_occ_backend.py` (`_FaceSlabIndex`,
+`_PlanarSectionEngine.slab`, `cross_section_polygons(slab=)`,
+`compute_face_material_areas` step, `batch_cross_sections`,
+`_sample_and_admit`, `_section_worker_init`/`_section_worker`,
+`_SECTION_SHIFT_TOLERANCES`), `tests/unit/test_section_slab_index.py`
+(new), `docs/methods/meshing-conformal.md`, `known-bugs.md` (KB-036),
+`benchmarks/results/bench_mesh_build.json` (re-run).

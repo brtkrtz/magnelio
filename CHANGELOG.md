@@ -45,6 +45,16 @@ major version is 0, minor releases may change the public API.
   the absorber like any other conductor, so a microstrip can carry a
   waveguide-port window in a CPML face (the port used to be refused
   with an "inhomogeneous filling" message).
+- On grids finer than about 15 µm a face lying in a conductor's end
+  wall was blocked instead of free and the wall's area went unbooked:
+  the side step that keeps a grid plane off a coincident model face was
+  below the kernel's tolerance, where the section reports the face on
+  both sides.  The step now clears the largest tolerance in the model
+  by a factor of four.  The shifted planes are thereby answered by the
+  exact planar engine instead of the kernel's Boolean, and the kernel's
+  sections run over the faces a plane can reach instead of the whole
+  body: the face pass of 16 Lange couplers no longer grows faster than
+  the cell count.
 
 ### Added
 

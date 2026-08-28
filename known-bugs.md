@@ -19,6 +19,31 @@ dedicated DD keep their record here.
 **Three entries are open as of 2026-08-27: KB-022, KB-023 and
 KB-027.**  Everything else is struck through and resolved.
 
+## KB-036: ~~Faces in a conductor's end wall blocked and the wall unbooked on grids below about 15 µm~~ — Resolved (DD-207, 2026-08-28)
+
+A grid plane coinciding with a face of the model is sampled a small
+step to either side (DD-106); the step was the section deflection, a
+hundredth of the smallest cell.  On the Lange coupler's 6 µm grid that
+is 60 nm — below the kernel's confusion (1e-7) and the edge tolerances
+of a Boolean result (1.5e-7) — and there the section Boolean reports
+the face the plane was meant to leave on *both* sides: the air body's
+finger pocket (12.6 µm × 5 µm) appeared in the section outside its own
+end wall, the spurious opening fell to the conducting background, and
+every face lying in a finger's end wall read fully blocked with a wall
+jump of zero (min = max, DD-106's min-convention had nothing to
+choose from).  The threshold is the kernel's, not a plain distance: a
+12.6-µm pocket on the body's bottom face answered correctly at the
+same 60 nm, one in the interior did not; a single brick is protected
+by the bounding-box screen.  Every model whose smallest cell is under
+about 15 µm at scale 1 was exposed; the ε average on the same planes
+was affected through the same mechanism.  Fix: the step is the larger
+of the deflection and four times the largest B-Rep tolerance of the
+model — which also puts the shifted planes past the planar engine's
+tolerance screen, so they are answered exactly instead of by the
+Boolean.  `tests/unit/test_section_slab_index.py`; measured in
+`investigations/mesh-build-bench/MEASUREMENTS.md` (M10, internal
+record).
+
 ## KB-035: ~~Far-field power deficit of about a tenth with a window port in an absorbing face~~ — Resolved (DD-204, 2026-08-27)
 
 Misattributed when opened.  The deficit was not the window port's:
