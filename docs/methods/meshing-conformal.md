@@ -39,6 +39,18 @@ tolerance by a margin (four times the largest tolerance in the model,
 or the section deflection if that is larger), because a section within
 the tolerance of a face reports that face on both sides.
 
+The free length of a grid edge — the part outside any conductor —
+comes from the crossings of its carrier line with the conductor's
+faces.  Every edge of a structured grid lies on one of comparatively
+few such lines; the lines are collected once and intersected in bulk,
+planar faces at their exactly known crossing points and curved faces
+through the kernel, and each edge reads the crossings inside its own
+window.  An edge whose crossings cannot anchor the inside/outside
+bookkeeping — a crossing on a face outline, as on every edge that runs
+along a conductor's corner — classifies its sub-segment midpoints on
+probe lines of their own, and a midpoint within tolerance of a face
+counts as conductor, as the kernel's classifier would have it.
+
 ## Graded Cartesian mesh
 
 The mesh generator (`mesh/mesher.py`) produces a graded (non-uniform)

@@ -19,7 +19,18 @@ import warnings
 
 import numpy as np
 
-from magnelio.geo._line_kernels import axis_line_candidates, planar_point_state
+from magnelio.geo._line_kernels import (
+    axis_edge_fractions,
+    axis_edge_windows,
+    axis_line_candidates,
+    axis_line_pairs,
+    boundary_on_lines,
+    classify_on_lines,
+    line_flags,
+    planar_pair_hits,
+    planar_point_state,
+    segment_fractions,
+)
 
 
 def _require_occ():
@@ -3283,6 +3294,7 @@ class _PrefilteredLineSolid:
         row_face: list[int] = []
         row_shape: list = []
         row_planar: list = []
+        row_parent: list = []
         row_int_key: list[int] = []
 
         def planar_of(shape):
@@ -3305,6 +3317,7 @@ class _PrefilteredLineSolid:
                     row_face.append(fi)
                     row_shape.append(face)
                     row_planar.append(t_planar)
+                    row_parent.append(planar)
                     row_int_key.append(-1 - fi)
                 continue
             pieces = (
@@ -3318,6 +3331,7 @@ class _PrefilteredLineSolid:
                 row_face.append(fi)
                 row_shape.append(face)
                 row_planar.append(planar)
+                row_parent.append(planar)
                 row_int_key.append(-1 - fi)
                 continue
             for shape, p_lo, p_hi in pieces:
@@ -3326,10 +3340,15 @@ class _PrefilteredLineSolid:
                 row_face.append(fi)
                 row_shape.append(shape)
                 row_planar.append(planar_of(shape) if ori_ok[fi] else None)
+                row_parent.append(None)
                 row_int_key.append(len(row_int_key))
         self._row_face = np.asarray(row_face, dtype=np.intp)
         self._row_shape = row_shape
         self._row_planar = row_planar
+        # The plane data of the row's *face* (a tile's clipped rings read
+        # ``ON`` along the tile border; the face's rings tell a real
+        # outline from a cut).
+        self._row_parent = row_parent
         self._row_int_key = row_int_key
         self._ints: dict[int, object] = {}
         if row_shape:
@@ -3347,6 +3366,15 @@ class _PrefilteredLineSolid:
             it = self._Intersector(self._row_shape[row], self._tol)
             self._ints[key] = it
         return it
+
+    def planar_arrays(self) -> _PlanarRows:
+        """The rows' plane data packed for the compiled hit test, built
+        on first use."""
+        packed = self.__dict__.get("_planar_packed")
+        if packed is None:
+            packed = _PlanarRows(self._row_planar, self._row_parent)
+            self._planar_packed = packed
+        return packed
 
     def _line_candidates(self, p0, direction):
         """Candidate rows (faces or their classification pieces) whose
@@ -3584,6 +3612,330 @@ class _PrefilteredLineSolid:
         return None
 
 
+#: Transverse axes ``(u, v)`` of a line along axis ``ax`` (xyz order):
+#: ``u = _TRANSVERSE_AXES[0][ax]``, ``v = _TRANSVERSE_AXES[1][ax]``.
+_TRANSVERSE_AXES = np.array([[1, 0, 0], [2, 2, 1]], dtype=np.int64)
+#: Probe axes of a fallback midpoint on an edge along ``ax``, in order:
+#: ``np.argsort(np.abs(direction), kind="stable")`` for the unit
+#: direction — the two transverse axes first, the edge's own axis last.
+_PROBE_ORDER = np.array([[1, 2, 0], [0, 2, 1], [0, 1, 2]], dtype=np.int64)
+
+
+class _PlanarRows:
+    """Plane data of a solid's rows packed for the compiled hit test."""
+
+    __slots__ = (
+        "axis",
+        "face_hi",
+        "face_lo",
+        "face_ring_offsets",
+        "face_verts",
+        "is_planar",
+        "level",
+        "outward",
+        "ring_hi",
+        "ring_lo",
+        "ring_offsets",
+        "verts",
+    )
+
+    def __init__(self, row_planar, row_parent=None):
+        n = len(row_planar)
+        self.is_planar = np.zeros(n, dtype=np.bool_)
+        self.axis = np.full(n, -1, dtype=np.int64)
+        self.level = np.zeros(n, dtype=np.float64)
+        self.outward = np.zeros(n, dtype=np.float64)
+        self.ring_lo = np.zeros(n, dtype=np.int64)
+        self.ring_hi = np.zeros(n, dtype=np.int64)
+        verts: list[np.ndarray] = []
+        offsets: list[np.ndarray] = []
+        n_verts = 0
+        n_offsets = 0
+        for r, planar in enumerate(row_planar):
+            if planar is None:
+                self.ring_lo[r] = self.ring_hi[r] = n_offsets
+                continue
+            axis, level, outward, r_verts, r_offsets = planar
+            self.is_planar[r] = True
+            self.axis[r] = axis
+            self.level[r] = level
+            self.outward[r] = outward
+            verts.append(r_verts)
+            offsets.append(r_offsets + n_verts)
+            self.ring_lo[r] = n_offsets
+            n_offsets += len(r_offsets)
+            self.ring_hi[r] = n_offsets
+            n_verts += len(r_verts)
+        self.verts = np.vstack(verts) if verts else np.empty((0, 2), dtype=np.float64)
+        self.ring_offsets = (
+            np.concatenate(offsets) if offsets else np.empty(0, dtype=np.int64)
+        ).astype(np.int64)
+        # The rings of every row's face, packed once per face: the
+        # boundary rule of the fallback re-tests a point that read
+        # ``ON`` on a row against them (a tile border is not an outline).
+        self.face_lo = np.zeros(n, dtype=np.int64)
+        self.face_hi = np.zeros(n, dtype=np.int64)
+        verts = []
+        offsets = []
+        n_verts = 0
+        n_offsets = 0
+        packed: dict[int, tuple[int, int]] = {}
+        for r, planar in enumerate(row_parent if row_parent is not None else row_planar):
+            if planar is None:
+                self.face_lo[r] = self.face_hi[r] = n_offsets
+                continue
+            span = packed.get(id(planar))
+            if span is None:
+                _axis, _level, _outward, p_verts, p_offsets = planar
+                verts.append(p_verts)
+                offsets.append(p_offsets + n_verts)
+                span = (n_offsets, n_offsets + len(p_offsets))
+                packed[id(planar)] = span
+                n_offsets += len(p_offsets)
+                n_verts += len(p_verts)
+            self.face_lo[r], self.face_hi[r] = span
+        self.face_verts = np.vstack(verts) if verts else np.empty((0, 2), dtype=np.float64)
+        self.face_ring_offsets = (
+            np.concatenate(offsets) if offsets else np.empty(0, dtype=np.int64)
+        ).astype(np.int64)
+
+
+class _LineTable:
+    """The axis-aligned lines of one edge pass and their hits.
+
+    A line is keyed by its axis and transverse point; its origin is the
+    coordinate along the axis of the first point that asked for it, so
+    the parameters of its hits are relative to that point, as they are
+    on a per-line query.  New lines are resolved in batches (stable
+    sort, first occurrence keeps the origin), intersected with the
+    solid's rows in compiled passes — planar rows normal to the line
+    in-house, curved rows through the kernel's intersector, rows
+    parallel to the line have no hit — and stored as sorted ``(w,
+    step, untrusted)`` triples in CSR form, with the crossing
+    parameters and the parity flag every consumer needs: an edge takes
+    the W slice of its carrier line, a probe point the parity of its
+    probe line at its own coordinate.
+    """
+
+    def __init__(self, prefiltered, tolerance: float):
+        self._pf = prefiltered
+        self._tol = float(tolerance)
+        self.ax = np.empty(0, dtype=np.int64)
+        self.pu = np.empty(0, dtype=np.float64)
+        self.pv = np.empty(0, dtype=np.float64)
+        self.origin = np.empty(0, dtype=np.float64)
+        self.ok = np.empty(0, dtype=np.bool_)
+        self.hit_offsets = np.zeros(1, dtype=np.int64)
+        self.hit_w = np.empty(0, dtype=np.float64)
+        self.hit_step = np.empty(0, dtype=np.int64)
+        self.hit_untrusted = np.empty(0, dtype=np.bool_)
+        self.hit_row = np.empty(0, dtype=np.int64)
+        self.cross_offsets = np.zeros(1, dtype=np.int64)
+        self.cross_w = np.empty(0, dtype=np.float64)
+
+    def resolve(self, ax, pu, pv, origin) -> np.ndarray:
+        """Line ids of the given ``(ax, pu, pv)`` keys, adding the
+        lines not seen before (origin = the first ``origin`` asking)."""
+        ax = np.asarray(ax, dtype=np.int64)
+        pu = np.asarray(pu, dtype=np.float64)
+        pv = np.asarray(pv, dtype=np.float64)
+        origin = np.asarray(origin, dtype=np.float64)
+        n_old = self.ax.size
+        all_ax = np.concatenate([self.ax, ax])
+        all_pu = np.concatenate([self.pu, pu])
+        all_pv = np.concatenate([self.pv, pv])
+        order = np.lexsort((all_pv, all_pu, all_ax))
+        s_ax, s_pu, s_pv = all_ax[order], all_pu[order], all_pv[order]
+        starts = np.ones(order.size, dtype=np.bool_)
+        starts[1:] = (s_ax[1:] != s_ax[:-1]) | (s_pu[1:] != s_pu[:-1]) | (s_pv[1:] != s_pv[:-1])
+        group = np.cumsum(starts) - 1
+        first = order[starts]
+        ids = np.empty(first.size, dtype=np.int64)
+        is_old = first < n_old
+        ids[is_old] = first[is_old]
+        new_groups = np.flatnonzero(~is_old)
+        new_first = first[new_groups] - n_old
+        rank = np.argsort(new_first, kind="stable")
+        ids[new_groups[rank]] = n_old + np.arange(new_groups.size)
+        line_of = np.empty(order.size, dtype=np.int64)
+        line_of[order] = ids[group]
+        if new_groups.size:
+            sel = new_first[rank]
+            self._append(ax[sel], pu[sel], pv[sel], origin[sel])
+        return line_of[n_old:]
+
+    def _append(self, ax, pu, pv, origin) -> None:
+        n_new = ax.size
+        line, w, step, untrusted, row = self._hits(ax, pu, pv, origin)
+        order = np.lexsort((untrusted.astype(np.int8), step, w, line))
+        line, w, step, untrusted, row = (
+            line[order],
+            w[order],
+            step[order],
+            untrusted[order],
+            row[order],
+        )
+        counts = np.bincount(line, minlength=n_new)
+        offsets = np.zeros(n_new + 1, dtype=np.int64)
+        np.cumsum(counts, out=offsets[1:])
+        ok = line_flags(offsets, step, untrusted)
+        crossing = step != 0
+        cross_counts = np.bincount(line[crossing], minlength=n_new)
+        self.ax = np.concatenate([self.ax, ax])
+        self.pu = np.concatenate([self.pu, pu])
+        self.pv = np.concatenate([self.pv, pv])
+        self.origin = np.concatenate([self.origin, origin])
+        self.ok = np.concatenate([self.ok, ok])
+        self.hit_offsets = np.concatenate([self.hit_offsets, self.hit_offsets[-1] + offsets[1:]])
+        self.hit_w = np.concatenate([self.hit_w, w])
+        self.hit_step = np.concatenate([self.hit_step, step])
+        self.hit_untrusted = np.concatenate([self.hit_untrusted, untrusted])
+        self.hit_row = np.concatenate([self.hit_row, row])
+        self.cross_offsets = np.concatenate(
+            [self.cross_offsets, self.cross_offsets[-1] + np.cumsum(cross_counts)]
+        )
+        self.cross_w = np.concatenate([self.cross_w, w[crossing]])
+
+    def _hits(self, ax, pu, pv, origin):
+        """Hits of new lines (local ids) on every row their transverse
+        point reaches, unsorted: ``(line, w, step, untrusted, row)``,
+        the row ``-1`` for a kernel hit."""
+        pf = self._pf
+        tol = self._tol
+        pair_line, pair_row = axis_line_pairs(ax, pu, pv, pf._flo, pf._fhi, tol)
+        lines: list[np.ndarray] = []
+        ws: list[np.ndarray] = []
+        steps: list[np.ndarray] = []
+        unts: list[np.ndarray] = []
+        rows: list[np.ndarray] = []
+        if _PLANAR_ROW_HITS:
+            planar = pf.planar_arrays()
+            in_house = planar.is_planar[pair_row]
+            normal = in_house & (planar.axis[pair_row] == ax[pair_line])
+            kernel = ~in_house
+        else:
+            normal = np.zeros(pair_line.size, dtype=np.bool_)
+            kernel = np.ones(pair_line.size, dtype=np.bool_)
+        if normal.any():
+            pl, prow = pair_line[normal], pair_row[normal]
+            w, step, untrusted, valid = planar_pair_hits(
+                pl,
+                prow,
+                pu,
+                pv,
+                origin,
+                planar.level,
+                planar.outward,
+                planar.verts,
+                planar.ring_offsets,
+                planar.ring_lo,
+                planar.ring_hi,
+                tol,
+            )
+            lines.append(pl[valid])
+            ws.append(w[valid])
+            steps.append(step[valid])
+            unts.append(untrusted[valid])
+            rows.append(prow[valid])
+        if kernel.any():
+            kl, kr = pair_line[kernel], pair_row[kernel]
+            order = np.argsort(kl, kind="stable")
+            kl, kr = kl[order], kr[order]
+            starts = np.flatnonzero(np.r_[True, kl[1:] != kl[:-1]])
+            ends = np.r_[starts[1:], kl.size]
+            k_lines: list[int] = []
+            k_hits: list[tuple[float, int, bool]] = []
+            for s, e in zip(starts, ends, strict=True):
+                line = int(kl[s])
+                a = int(ax[line])
+                xyz = [0.0, 0.0, 0.0]
+                xyz[a] = float(origin[line])
+                xyz[_TRANSVERSE_AXES[0][a]] = float(pu[line])
+                xyz[_TRANSVERSE_AXES[1][a]] = float(pv[line])
+                dvec = [0.0, 0.0, 0.0]
+                dvec[a] = 1.0
+                gp_line = pf._gp_Lin(pf._gp_Pnt(*xyz), pf._gp_Dir(*dvec))
+                hits = pf.flagged_hits(kr[s:e], gp_line, -np.inf, np.inf)
+                k_lines.extend([line] * len(hits))
+                k_hits.extend(hits)
+            if k_hits:
+                lines.append(np.asarray(k_lines, dtype=np.int64))
+                ws.append(np.asarray([h[0] for h in k_hits], dtype=np.float64))
+                steps.append(np.asarray([h[1] for h in k_hits], dtype=np.int64))
+                unts.append(np.asarray([h[2] for h in k_hits], dtype=np.bool_))
+                rows.append(np.full(len(k_hits), -1, dtype=np.int64))
+        if not lines:
+            return (
+                np.empty(0, dtype=np.int64),
+                np.empty(0, dtype=np.float64),
+                np.empty(0, dtype=np.int64),
+                np.empty(0, dtype=np.bool_),
+                np.empty(0, dtype=np.int64),
+            )
+        return (
+            np.concatenate(lines),
+            np.concatenate(ws),
+            np.concatenate(steps),
+            np.concatenate(unts),
+            np.concatenate(rows),
+        )
+
+    def on_boundary(self, line, w_rel) -> np.ndarray:
+        """The boundary rule of the fallback's last resort: a point with
+        a hit within tolerance of its parameter on the given line —
+        trusted (the face's interior), or an in-house hit whose point
+        lies in or on the row's face by the face's own rings — is
+        within tolerance of a face, the classifier's ``ON``: inside.
+        Kernel hits do not qualify (a piece border is not an outline)."""
+        planar = self._pf.planar_arrays()
+        return boundary_on_lines(
+            line,
+            w_rel,
+            self.pu,
+            self.pv,
+            self.hit_offsets,
+            self.hit_w,
+            self.hit_untrusted,
+            self.hit_row,
+            planar.face_verts,
+            planar.face_ring_offsets,
+            planar.face_lo,
+            planar.face_hi,
+            self._tol,
+        )
+
+    def classify_point(self, point, axes_order):
+        """Classifier semantics from the table's lines for one point: a
+        point within tolerance of a crossing sits on the boundary
+        (``ON`` → PEC side, i.e. inside); otherwise crossing parity
+        decides.  With no parity on any probe line the boundary rule
+        (:meth:`on_boundary`) is tried over them.  Returns True =
+        outside, False = inside, None = undecided."""
+        lines = []
+        for ax_probe in axes_order:
+            ax = int(ax_probe)
+            u, v = _TRANSVERSE_AXES[0][ax], _TRANSVERSE_AXES[1][ax]
+            line = self.resolve(
+                np.array([ax]),
+                np.array([float(point[u])]),
+                np.array([float(point[v])]),
+                np.array([float(point[ax])]),
+            )
+            w_rel = np.array([float(point[ax]) - self.origin[line[0]]])
+            lines.append((line, w_rel))
+            state = int(
+                classify_on_lines(
+                    line, w_rel, self.cross_offsets, self.cross_w, self.ok, self._tol
+                )[0]
+            )
+            if state == 2:
+                continue
+            return state == 0
+        if any(bool(self.on_boundary(line, w_rel)[0]) for line, w_rel in lines):
+            return False
+        return None
+
+
 def compute_edge_pec_fractions(
     pec_shapes: list,
     edges: np.ndarray,
@@ -3602,6 +3954,13 @@ def compute_edge_pec_fractions(
     bookkeeping (tangential or border hits, inconsistent transitions)
     fall back to classifying each sub-segment midpoint against the full
     solid, which reproduces the pre-prefilter behaviour exactly.
+
+    Axis-aligned edges — every edge of a structured grid — are handled
+    in batch: their carrier lines are collected once, intersected with
+    the solid's rows in compiled passes (planar rows in-house, curved
+    rows through the kernel), and the per-edge bookkeeping and the
+    fallback's point classification run over arrays (see
+    ``_LineTable``).  Oblique edges take the per-edge path.
 
     Parameters
     ----------
@@ -3645,7 +4004,7 @@ def compute_edge_pec_fractions(
     # Into scaled model units in one bulk multiply (f_L is a fraction,
     # so nothing needs converting back).  `edges * 1.0` keeps the s = 1
     # path bit-identical.
-    edges = np.asarray(edges) * scale
+    edges = np.asarray(edges, dtype=np.float64) * scale
     tolerance = tolerance * scale
 
     # Fuse PEC shapes into a single solid for clean face topology
@@ -3653,118 +4012,146 @@ def compute_edge_pec_fractions(
     pec_solid = boolean_union(pec_shapes)
 
     prefiltered = _PrefilteredLineSolid(pec_solid, tolerance)
-    # Full-solid point classifier, built only when some edge needs the
-    # fallback path (its Perform scans every face — O(faces) per call).
+    # Full-solid point classifier, built only when some point needs the
+    # last resort (its Perform scans every face — O(faces) per call).
     classifier = None
+
+    def classify_last_resort(point) -> bool:
+        nonlocal classifier
+        _EDGE_FRACTION_STATS["classifier_points"] += 1
+        if classifier is None:
+            classifier = BRepClass3d_SolidClassifier()
+            classifier.Load(pec_solid)
+        classifier.Perform(
+            gp_Pnt(float(point[0]), float(point[1]), float(point[2])),
+            tolerance,
+        )
+        return classifier.State() not in (TopAbs_IN, TopAbs_ON)
 
     # Mesh edges are collinear in droves: every edge of a structured
     # grid lies on one of comparatively few carrier lines.  The full
-    # crossing structure of such a line — candidate faces, transversal
-    # crossing parameters, and whether transitions alternate cleanly —
-    # is computed once and shared by every edge (and probe ray) on it.
+    # crossing structure of such a line — candidate rows, crossing
+    # parameters, and whether transitions alternate cleanly — is
+    # computed once and shared by every edge (and probe line) on it.
     # Parity along the line is anchored for free: the line enters from
     # outside the solid, so the state before its first crossing is
     # "outside".
-    line_cache: dict[tuple[int, float, float], dict] = {}
+    table = _LineTable(prefiltered, tolerance)
 
-    def line_entry(ax: int, point) -> dict:
-        key = (ax, float(point[(ax + 1) % 3]), float(point[(ax + 2) % 3]))
-        entry = line_cache.get(key)
-        if entry is not None:
-            return entry
-        origin = np.array(
-            [float(point[0]), float(point[1]), float(point[2])],
+    p0_all = edges[:, 0]
+    dx_all = edges[:, 1] - edges[:, 0]
+    length_all = np.sqrt(np.sum(dx_all * dx_all, axis=1))
+    degenerate = length_all < tolerance
+    # Degenerate edges — treat as PEC.
+    f_L[degenerate] = 0.0
+    nonzero = dx_all != 0.0
+    axis_of = np.argmax(nonzero, axis=1)
+    one_axis = nonzero.sum(axis=1) == 1
+    positive = dx_all[np.arange(n_edges), axis_of] > 0.0
+    axis_sel = np.flatnonzero(~degenerate & one_axis & positive)
+    general_sel = np.flatnonzero(~degenerate & ~(one_axis & positive))
+
+    # ── Axis-aligned edges: windows of their carrier line ──────────────
+    if axis_sel.size:
+        ax = axis_of[axis_sel]
+        p0 = p0_all[axis_sel]
+        length = length_all[axis_sel]
+        u, v = _TRANSVERSE_AXES[0][ax], _TRANSVERSE_AXES[1][ax]
+        rows = np.arange(axis_sel.size)
+        line = table.resolve(ax, p0[rows, u], p0[rows, v], p0[rows, ax])
+        offset = p0[rows, ax] - table.origin[line]
+        win_lo, win_hi = axis_edge_windows(
+            line, offset, length, table.hit_offsets, table.hit_w, tolerance
         )
-        dvec = np.zeros(3)
-        dvec[ax] = 1.0
-        axis_line = gp_Lin(
-            gp_Pnt(origin[0], origin[1], origin[2]),
-            gp_Dir(dvec[0], dvec[1], dvec[2]),
+        seg_offsets = np.zeros(axis_sel.size + 1, dtype=np.int64)
+        np.cumsum(win_hi - win_lo + 2, out=seg_offsets[1:])
+        f_axis, fallback, seg_count, seg_t, seg_len = axis_edge_fractions(
+            line,
+            offset,
+            length,
+            win_lo,
+            win_hi,
+            table.hit_w,
+            table.hit_step,
+            table.hit_untrusted,
+            table.cross_offsets,
+            table.cross_w,
+            table.ok,
+            seg_offsets,
+            tolerance,
         )
-        cand = prefiltered._line_candidates(origin, dvec)
-        if cand[0].size:
-            line_hits = sorted(
-                prefiltered.flagged_hits(cand[0], axis_line, -np.inf, np.inf, origin, dvec)
+        f_L[axis_sel] = f_axis
+        fb = np.flatnonzero(fallback)
+        _EDGE_FRACTION_STATS["fallback_edges"] += int(fb.size)
+        if fb.size:
+            # Sub-segment midpoints of the fallback edges, classified in
+            # rounds: the most-perpendicular probe axis first (the
+            # decisive direction for edges lying inside a face plane),
+            # then the next, then the edge's own axis; whatever every
+            # axis line leaves undecided goes to the oblique probes.
+            counts = seg_count[fb]
+            seg_edge = np.repeat(fb, counts)
+            local = np.arange(counts.sum()) - np.repeat(np.cumsum(counts) - counts, counts)
+            seg_idx = np.repeat(seg_offsets[fb], counts) + local
+            t_mid = seg_t[seg_idx]
+            direction = dx_all[axis_sel[seg_edge]] / length[seg_edge][:, None]
+            points = p0[seg_edge] + t_mid[:, None] * direction
+            outside = np.zeros(seg_idx.size, dtype=np.bool_)
+            pending = np.arange(seg_idx.size)
+            for probe_round in range(3):
+                if not pending.size:
+                    break
+                probe_ax = _PROBE_ORDER[ax[seg_edge[pending]], probe_round]
+                pts = points[pending]
+                pr = np.arange(pending.size)
+                pu = pts[pr, _TRANSVERSE_AXES[0][probe_ax]]
+                pv = pts[pr, _TRANSVERSE_AXES[1][probe_ax]]
+                origin = pts[pr, probe_ax]
+                probe_line = table.resolve(probe_ax, pu, pv, origin)
+                w_rel = origin - table.origin[probe_line]
+                state = classify_on_lines(
+                    probe_line, w_rel, table.cross_offsets, table.cross_w, table.ok, tolerance
+                )
+                decided = state != 2
+                outside[pending[decided]] = state[decided] == 0
+                pending = pending[~decided]
+            if pending.size:
+                # No probe line has parity: the boundary rule over the
+                # three lines, then the oblique probes and the solid
+                # classifier for what is left.
+                on = np.zeros(pending.size, dtype=np.bool_)
+                pts = points[pending]
+                pr = np.arange(pending.size)
+                for probe_round in range(3):
+                    probe_ax = _PROBE_ORDER[ax[seg_edge[pending]], probe_round]
+                    pu = pts[pr, _TRANSVERSE_AXES[0][probe_ax]]
+                    pv = pts[pr, _TRANSVERSE_AXES[1][probe_ax]]
+                    origin = pts[pr, probe_ax]
+                    probe_line = table.resolve(probe_ax, pu, pv, origin)
+                    on |= table.on_boundary(probe_line, origin - table.origin[probe_line])
+                outside[pending[on]] = False
+                pending = pending[~on]
+            for k in pending:
+                st = prefiltered.point_state(points[k], _OBLIQUE_PROBES)
+                outside[k] = classify_last_resort(points[k]) if st is None else st
+            seg_outside = np.zeros(seg_offsets[-1], dtype=np.bool_)
+            seg_outside[seg_idx] = outside
+            f_L[axis_sel[fb]] = segment_fractions(
+                seg_offsets[fb], counts, seg_len, seg_outside, length[fb]
             )
-        else:
-            line_hits = []
-        crossings = [(w, s) for w, s, _ in line_hits if s != 0]
-        ok = not any(untrusted for _, _, untrusted in line_hits)
-        prev_step = 0
-        for _w, step in crossings:
-            if step == prev_step:
-                ok = False
-                break
-            prev_step = step
-        if crossings and crossings[0][1] != 1:
-            # A bounded solid must be entered before it can be left.
-            ok = False
-        entry = {
-            "origin_ax": origin[ax],
-            "cand": cand,
-            "hits": line_hits,
-            "ws_all": [w for w, _, _ in line_hits],
-            "ws": [w for w, _ in crossings],
-            "ok": ok,
-        }
-        line_cache[key] = entry
-        return entry
 
-    def classify_point(point, axes_order):
-        """Old-classifier semantics from cached carrier lines: a point
-        within tolerance of a crossing sits on the boundary (``ON`` →
-        PEC side, i.e. inside); otherwise crossing parity decides.
-        Returns True = outside, False = inside, None = every probe line
-        was untrusted."""
-        for ax_probe in axes_order:
-            probe = line_entry(int(ax_probe), point)
-            if not probe["ok"]:
-                continue
-            w_rel = float(point[int(ax_probe)]) - probe["origin_ax"]
-            ws = probe["ws"]
-            pos = bisect.bisect_left(ws, w_rel - tolerance)
-            if pos < len(ws) and ws[pos] <= w_rel + tolerance:
-                return False
-            return bisect.bisect(ws, w_rel) % 2 == 0
-        return prefiltered.point_state(point, _OBLIQUE_PROBES)
-
-    for i in range(n_edges):
-        p0 = edges[i, 0]
-        p1 = edges[i, 1]
-        dx = p1 - p0
+    # ── Oblique edges: their own candidate intervals and hits ──────────
+    for i in general_sel:
+        p0 = p0_all[i]
+        dx = dx_all[i]
         length = float(np.linalg.norm(dx))
-
-        if length < tolerance:
-            # Degenerate edge — treat as PEC
-            f_L[i] = 0.0
-            continue
-
         direction = dx / length
-
-        # Axis-aligned edges are windows of their carrier line: the
-        # line's hits (every candidate row, intersected once) are sliced
-        # at the edge's parameter window, no kernel call per edge.
-        # Anything else computes its own candidate intervals and hits.
-        nz_axes = np.nonzero(dx)[0]
-        entry = None
-        offset = 0.0
-        if len(nz_axes) == 1 and dx[nz_axes[0]] > 0.0:
-            ax = int(nz_axes[0])
-            entry = line_entry(ax, p0)
-            offset = float(p0[ax]) - entry["origin_ax"]
-            ws_all = entry["ws_all"]
-            lo_i = bisect.bisect_left(ws_all, offset - tolerance)
-            hi_i = bisect.bisect_right(ws_all, offset + length + tolerance)
-            window = entry["hits"][lo_i:hi_i]
-            hits = [(w - offset, step) for w, step, _ in window]
-            clean = not any(untrusted for _, _, untrusted in window)
-        else:
-            line = gp_Lin(
-                gp_Pnt(float(p0[0]), float(p0[1]), float(p0[2])),
-                gp_Dir(float(direction[0]), float(direction[1]), float(direction[2])),
-            )
-            candidates = prefiltered._line_candidates(p0, direction)
-            hits, clean = prefiltered.window_hits(candidates, line, length, p0, direction)
+        line = gp_Lin(
+            gp_Pnt(float(p0[0]), float(p0[1]), float(p0[2])),
+            gp_Dir(float(direction[0]), float(direction[1]), float(direction[2])),
+        )
+        candidates = prefiltered._line_candidates(p0, direction)
+        hits, clean = prefiltered.window_hits(candidates, line, length, p0, direction)
 
         # Collect surface crossing parameters within [0, length]
         raw_params = [max(0.0, min(w, length)) for w, _ in hits]
@@ -3799,32 +4186,13 @@ def compute_edge_pec_fractions(
                 trans_ws = [w for w, _ in trans]
                 first_outside = trans[0][1] > 0
             else:
-                if entry is not None:
-                    if entry["ok"]:
-                        k = bisect.bisect(
-                            entry["ws"],
-                            offset + length / 2.0,
-                        )
-                        first_outside = k % 2 == 0
-                    else:
-                        use_fallback = True
+                uniform = prefiltered.uniform_state(candidates, line, length, p0, direction)
+                if uniform is None:
+                    use_fallback = True
                 else:
-                    uniform = prefiltered.uniform_state(
-                        candidates,
-                        line,
-                        length,
-                        p0,
-                        direction,
-                    )
-                    if uniform is None:
-                        use_fallback = True
-                    else:
-                        first_outside = uniform
+                    first_outside = uniform
         if use_fallback:
             _EDGE_FRACTION_STATS["fallback_edges"] += 1
-            # Probe axes for local point classification: most-perpendicular
-            # first (the decisive direction for edges lying inside a face
-            # plane).
             probe_axes = np.argsort(np.abs(direction), kind="stable")
 
         # Sum the outside length over sub-segment midpoints
@@ -3838,21 +4206,10 @@ def compute_edge_pec_fractions(
             t_mid = (seg_start + seg_end) / 2
             if use_fallback:
                 mid_pt = p0 + t_mid * direction
-                state = classify_point(mid_pt, probe_axes)
+                state = table.classify_point(mid_pt, probe_axes)
                 if state is None:
-                    # Every probe ray was spoiled — full-solid classifier
-                    # as the last resort (O(faces), rare).
-                    _EDGE_FRACTION_STATS["classifier_points"] += 1
-                    if classifier is None:
-                        classifier = BRepClass3d_SolidClassifier()
-                        classifier.Load(pec_solid)
-                    classifier.Perform(
-                        gp_Pnt(float(mid_pt[0]), float(mid_pt[1]), float(mid_pt[2])),
-                        tolerance,
-                    )
-                    outside = classifier.State() not in (TopAbs_IN, TopAbs_ON)
-                else:
-                    outside = state
+                    state = prefiltered.point_state(mid_pt, _OBLIQUE_PROBES)
+                outside = classify_last_resort(mid_pt) if state is None else state
             else:
                 k = bisect.bisect(trans_ws, t_mid)
                 outside = first_outside if k % 2 == 0 else not first_outside

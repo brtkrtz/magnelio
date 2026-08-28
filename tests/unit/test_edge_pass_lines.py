@@ -284,3 +284,217 @@ def test_oblique_lines_are_decided_in_house_on_planar_rows():
             reference += [it.WParameter(k) for k in range(1, it.NbPnt() + 1)]
         assert sorted(round(w, 12) for w, _, _ in hits) == sorted(round(w, 12) for w in reference)
     assert len(solid._ints) == 0  # no kernel intersector was ever built
+
+
+# ── Batch formulation: line table, compiled pairs, per-edge bookkeeping ────
+
+from magnelio.geo._line_kernels import (  # noqa: E402
+    axis_line_pairs,
+    classify_on_lines,
+    line_flags,
+)
+
+
+def test_line_pairs_reproduce_the_single_line_candidates():
+    rng = np.random.default_rng(7)
+    lo = rng.uniform(0, 1, size=(300, 3))
+    hi = lo + rng.uniform(0, 0.3, size=(300, 3))
+    lo[:40, 1] = 0.5  # boxes sharing one slab bound
+    n = 500
+    ax = rng.integers(3, size=n)
+    pts = rng.uniform(-0.1, 1.1, size=(n, 3))
+    pts[::7, 0] = 0.5 - 1e-9  # a tolerance-wide coincidence
+    u = backend._TRANSVERSE_AXES[0][ax]
+    v = backend._TRANSVERSE_AXES[1][ax]
+    rows = np.arange(n)
+    pair_line, pair_row = axis_line_pairs(ax, pts[rows, u], pts[rows, v], lo, hi, 1e-9)
+    got = {(int(a), int(b)) for a, b in zip(pair_line, pair_row, strict=True)}
+    ref = set()
+    for i in range(n):
+        idx, _, _ = axis_line_candidates(lo, hi, 1e-9, pts[i], int(ax[i]), 1.0)
+        ref.update((i, int(r)) for r in idx)
+    assert got == ref
+
+
+def test_line_flags_and_classification_follow_the_sequential_rules():
+    # line 0: clean pair; line 1: untrusted hit; line 2: leaves before it
+    # enters; line 3: two entries in a row; line 4: no hit at all.
+    offsets = np.array([0, 2, 4, 6, 8, 8])
+    step = np.array([1, -1, 1, 0, -1, 1, 1, 1])
+    untrusted = np.array([False, False, False, True, False, False, False, False])
+    assert line_flags(offsets, step, untrusted).tolist() == [True, False, False, False, True]
+    cross_offsets = np.array([0, 2, 2])
+    cross_w = np.array([1.0, 3.0])
+    ok = np.array([True, False])
+    pts = np.array([0, 0, 0, 0, 0, 1])
+    w = np.array([0.5, 2.0, 3.5, 1.0 + 5e-10, 3.0 - 5e-10, 0.0])
+    state = classify_on_lines(pts, w, cross_offsets, cross_w, ok, 1e-9)
+    # outside, inside, outside, ON → inside, ON → inside, undecided
+    assert state.tolist() == [0, 1, 0, 1, 1, 2]
+
+
+def test_line_table_keeps_the_first_origin_and_the_ids():
+    occ = geo.Brick(origin=(0, 0, 0), size=(MM, MM, MM), material="pec")._occ_shape(1.0)
+    table = backend._LineTable(backend._PrefilteredLineSolid(occ, TOL), TOL)
+    ax = np.array([2, 2, 0, 2])
+    pu = np.array([0.5 * MM, 0.5 * MM, 0.5 * MM, 0.2 * MM])
+    pv = np.array([0.5 * MM, 0.5 * MM, 0.5 * MM, 0.2 * MM])
+    origin = np.array([-MM, -2 * MM, -3 * MM, -MM])
+    ids = table.resolve(ax, pu, pv, origin)
+    assert ids.tolist() == [0, 0, 1, 2]
+    assert table.origin.tolist() == [-MM, -3 * MM, -MM]  # the first asker's
+    # The z line through the cube's centre enters at z = 0 and leaves at
+    # z = 1 mm, parameters relative to its origin.
+    sl = slice(table.hit_offsets[0], table.hit_offsets[1])
+    assert table.ok[0]
+    assert table.hit_w[sl].tolist() == [MM, 2 * MM]
+    assert table.hit_step[sl].tolist() == [1, -1]
+    # A second round: one known key (keeps its id and origin), one new.
+    ids = table.resolve(
+        np.array([2, 1]),
+        np.array([0.5 * MM, 0.5 * MM]),
+        np.array([0.5 * MM, 0.5 * MM]),
+        np.array([7.0, 0.0]),
+    )
+    assert ids.tolist() == [0, 3] and table.origin[0] == -MM and table.ax.size == 4
+    # The single-point classifier: centre inside, outside beyond a face,
+    # on the boundary → inside.
+    assert table.classify_point(np.array([0.5 * MM, 0.5 * MM, 0.5 * MM]), [2]) is False
+    assert table.classify_point(np.array([0.5 * MM, 0.5 * MM, 1.5 * MM]), [2]) is True
+    assert table.classify_point(np.array([0.5 * MM, 0.5 * MM, MM]), [2]) is False
+
+
+def _sequential_fractions(solid, occ, edges, tol):
+    """The per-edge bookkeeping of the edge pass on single-line queries
+    (the pass before the batch formulation), as a reference: windows of
+    one line query per carrier line, the fallback classifying every
+    sub-segment midpoint on its own probe lines, the oblique probes and
+    the solid classifier as the last resort."""
+    import bisect
+
+    from OCC.Core.BRepClass3d import BRepClass3d_SolidClassifier
+    from OCC.Core.gp import gp_Dir, gp_Lin, gp_Pnt
+    from OCC.Core.TopAbs import TopAbs_IN, TopAbs_ON
+
+    lines = {}
+    classifier = BRepClass3d_SolidClassifier()
+    classifier.Load(occ)
+
+    def line_entry(ax, point):
+        key = (ax, float(point[(ax + 1) % 3]), float(point[(ax + 2) % 3]))
+        if key in lines:
+            return lines[key]
+        origin = np.array([float(point[0]), float(point[1]), float(point[2])])
+        dvec = np.zeros(3)
+        dvec[ax] = 1.0
+        cand = solid._line_candidates(origin, dvec)
+        gline = gp_Lin(gp_Pnt(*origin), gp_Dir(*dvec))
+        hits = sorted(solid.flagged_hits(cand[0], gline, -np.inf, np.inf, origin, dvec))
+        crossings = [(w, s) for w, s, _ in hits if s != 0]
+        ok = not any(u for _, _, u in hits)
+        prev = 0
+        for _, s in crossings:
+            if s == prev:
+                ok = False
+                break
+            prev = s
+        if crossings and crossings[0][1] != 1:
+            ok = False
+        entry = (origin[ax], hits, [w for w, _, _ in hits], [w for w, _ in crossings], ok)
+        lines[key] = entry
+        return entry
+
+    def classify(point, axes):
+        for ax in axes:
+            origin_ax, _, _, ws, ok = line_entry(int(ax), point)
+            if not ok:
+                continue
+            w_rel = float(point[int(ax)]) - origin_ax
+            pos = bisect.bisect_left(ws, w_rel - tol)
+            if pos < len(ws) and ws[pos] <= w_rel + tol:
+                return False
+            return bisect.bisect(ws, w_rel) % 2 == 0
+        state = solid.point_state(point, backend._OBLIQUE_PROBES)
+        if state is None:
+            classifier.Perform(gp_Pnt(*map(float, point)), tol)
+            return classifier.State() not in (TopAbs_IN, TopAbs_ON)
+        return state
+
+    f_L = np.ones(len(edges))
+    for i, (p0, p1) in enumerate(edges):
+        dx = p1 - p0
+        length = float(np.linalg.norm(dx))
+        ax = int(np.nonzero(dx)[0][0])
+        origin_ax, hits_all, ws_all, ws, ok = line_entry(ax, p0)
+        offset = float(p0[ax]) - origin_ax
+        lo = bisect.bisect_left(ws_all, offset - tol)
+        hi = bisect.bisect_right(ws_all, offset + length + tol)
+        window = hits_all[lo:hi]
+        hits = [(w - offset, s) for w, s, _ in window]
+        clean = not any(u for _, _, u in window)
+        params = []
+        for p in sorted(max(0.0, min(w, length)) for w, _ in hits):
+            if not params or p - params[-1] > tol:
+                params.append(p)
+        bounds = [0.0]
+        for p in params:
+            if p - bounds[-1] > tol:
+                bounds.append(p)
+        if length - bounds[-1] > tol:
+            bounds.append(length)
+        fallback = not clean
+        trans_ws, first_outside = [], True
+        if not fallback:
+            trans = sorted((w, s) for w, s in hits if s != 0)
+            if trans:
+                fallback = any(trans[k][1] != -trans[k - 1][1] for k in range(1, len(trans)))
+                trans_ws = [w for w, _ in trans]
+                first_outside = trans[0][1] > 0
+            elif ok:
+                first_outside = bisect.bisect(ws, offset + length / 2.0) % 2 == 0
+            else:
+                fallback = True
+        direction = dx / length
+        probe_axes = np.argsort(np.abs(direction), kind="stable")
+        outside_len = 0.0
+        for a, b in zip(bounds[:-1], bounds[1:], strict=True):
+            if b - a < tol:
+                continue
+            t_mid = (a + b) / 2
+            if fallback:
+                outside = classify(p0 + t_mid * direction, probe_axes)
+            else:
+                k = bisect.bisect(trans_ws, t_mid)
+                outside = first_outside if k % 2 == 0 else not first_outside
+            if outside:
+                outside_len += b - a
+        f_L[i] = max(0.0, min(outside_len / length, 1.0))
+    return f_L
+
+
+@pytest.mark.parametrize("body", ["comb", "post"])
+def test_batch_fractions_equal_the_sequential_bookkeeping(body):
+    teeth = 8
+    if body == "comb":
+        shape = _comb(teeth)
+        x = np.concatenate([np.arange(0, teeth * 2 * MM + 1e-9, 0.5 * MM), [0.25 * MM, 1.75 * MM]])
+        x = np.unique(np.round(x, 12))
+        y = np.array([-0.5 * MM, 0.0, 0.5 * MM, MM, 2.5 * MM, 4 * MM, 4.5 * MM])
+        z = np.array([-0.1 * MM, 0.0, 0.05 * MM, 0.1 * MM, 0.2 * MM])
+    else:
+        shape = geo.Union(
+            geo.Cylinder(origin=(MM, MM, 0), radius=0.4 * MM, height=MM, axis="z", material="pec"),
+            geo.Brick(
+                origin=(0.8 * MM, 0.8 * MM, 0), size=(0.4 * MM, 1.6 * MM, MM), material="pec"
+            ),
+            material="pec",
+        )
+        x = y = np.linspace(0, 2 * MM, 9)
+        z = np.array([-0.2 * MM, 0.0, 0.3 * MM, 0.8 * MM, MM, 1.2 * MM])
+    occ = shape._occ_shape(1.0)
+    edges = np.concatenate([_grid_edges(x, y, z, axis) for axis in range(3)])
+    got = backend.compute_edge_pec_fractions([occ], edges, TOL)
+    assert backend._EDGE_FRACTION_STATS["fallback_edges"] > 0  # the rounds are exercised
+    ref = _sequential_fractions(backend._PrefilteredLineSolid(occ, TOL), occ, edges, TOL)
+    assert np.array_equal(got, ref)
+    assert 0.0 < got.mean() < 1.0

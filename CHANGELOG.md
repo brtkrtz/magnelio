@@ -11,6 +11,14 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- The conformal edge pass of the mesh build runs in batch: the carrier
+  lines of all grid edges are collected once and intersected in
+  compiled passes, the per-edge bookkeeping and the classification of
+  edges lying in conductor faces run over arrays, and a point on a
+  conductor's corner line is recognised as boundary without the
+  kernel's classifier.  A row of eight Lange couplers spends 0.3 s
+  instead of 6 s there, an 8 × 8 patch array 0.2 s instead of 9 s
+  (the full builds 11.6 s → 9.0 s and 10.8 s → 6.9 s; a row of 16 couplers 26.7 s → 20.6 s, a 16 × 16 array 92 s → 65 s); identical meshes.
 - The effective PEC solid no longer cuts metal out of metal (a higher
   PEC shape is in the union anyway), and the overlap check of
   `GeometryModel.validate` skips the pairs a `Difference` proves
