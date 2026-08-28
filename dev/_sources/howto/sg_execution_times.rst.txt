@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**08:49.199** total execution time for 7 files **from howto**:
+**32:22.858** total execution time for 9 files **from howto**:
 
 .. container::
 
@@ -32,24 +32,30 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
+   * - :ref:`sphx_glr_howto_plot_patch_array.py` (``plot_patch_array.py``)
+     - 15:48.377
+     - 0.0
    * - :ref:`sphx_glr_howto_plot_stripline_pickup_kicker.py` (``plot_stripline_pickup_kicker.py``)
-     - 04:33.251
+     - 07:56.271
+     - 0.0
+   * - :ref:`sphx_glr_howto_plot_lange_coupler.py` (``plot_lange_coupler.py``)
+     - 03:00.636
      - 0.0
    * - :ref:`sphx_glr_howto_plot_coupled_line_coupler.py` (``plot_coupled_line_coupler.py``)
-     - 01:35.094
-     - 0.0
-   * - :ref:`sphx_glr_howto_plot_mesh_convergence.py` (``plot_mesh_convergence.py``)
-     - 01:13.915
+     - 01:57.473
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_investigations.py` (``plot_lumped_port_investigations.py``)
-     - 01:12.411
+     - 01:41.484
+     - 0.0
+   * - :ref:`sphx_glr_howto_plot_mesh_convergence.py` (``plot_mesh_convergence.py``)
+     - 01:37.996
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_tuning_cpw.py` (``plot_lumped_port_tuning_cpw.py``)
-     - 00:08.963
+     - 00:12.647
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_tuning_microstrip.py` (``plot_lumped_port_tuning_microstrip.py``)
-     - 00:02.860
+     - 00:04.029
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_tuning_coax.py` (``plot_lumped_port_tuning_coax.py``)
-     - 00:02.706
+     - 00:03.945
      - 0.0

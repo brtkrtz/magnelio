@@ -25,7 +25,15 @@ curves are tessellated at the deflection.  The deflection is a
 hundredth of the smallest cell for the sub-cell fractions and a tenth
 for the cell classification.  Section contours are wound by nesting
 parity (holes against their outer boundary) before the area kernels
-sum them, whatever path produced them.
+sum them, whatever path produced them.  The kernel's section runs over
+the faces whose extent reaches the plane rather than over the whole
+body — the same curves, without the kernel preparing a thousand faces
+the plane never meets.  A grid plane that coincides with a face of the
+model is never sectioned in place: the fractions there come from
+sections a small step to either side, and the step clears the kernel's
+tolerance by a margin (four times the largest tolerance in the model,
+or the section deflection if that is larger), because a section within
+the tolerance of a face reports that face on both sides.
 
 ## Graded Cartesian mesh
 
@@ -123,7 +131,14 @@ The corners of a cavity are concave metal edges and regular; a
 fillet's onset is tangential; dielectric edges are much weaker and
 not refined.  The refinement never adds a plane (the edge's plane is
 a material face or an edge plane already), never touches the domain's
-own end planes, and stops at `min_cell_size`.
+own end planes, and stops at `min_cell_size`.  Coupled lines with a
+tight gap are the case that needs it most: the odd mode of a 25 µm
+gap between 5 µm fingers on 254 µm alumina lives within a few tens of
+micrometres of the surface, and its impedance moves from 22 Ω at the
+default grading to 42 Ω once the cells next to the metal are below
+10 µm (factor 8 with a 6 µm floor), while the even mode moves by a
+tenth of that — the *Lange coupler* how-to designs on exactly that
+grid.
 
 The factor is off by default, and the reason is the time step.  The
 edge cell bounds it, so a factor of 2 halves the step and adds the
@@ -139,7 +154,75 @@ third fewer cells.  Model-wide refinement is still what
 `min_nodes_per_wavelength` is for.
 
 Why a feature below the grid is *silent* rather than approximately
-represented is a property of the conformal material matrices, next.
+represented is a property of the conformal material matrices, below.
+
+### Inspecting the grid
+
+A grid plane is a decision, and the mesh keeps the record of every one
+of them: `mesh.planes` lists, per axis, the position of each plane, the
+rule that asked for it and the shape it came from.  The vocabulary:
+
+- `face` — an analytic material face: a brick's side, a cylinder's
+  tangent plane, the plane of a sheet;
+- `extent` — the bounding box of a shape, which coincides with a face
+  for bricks and is a conservative envelope for everything else;
+- `edge` — a geometry edge lying flat in the plane: the onset of a
+  chamfer or a fillet, a loft section, the circle of an iris;
+- `sheet` — the single plane of a thin metallisation;
+- `wire` — a vertex of a thin wire;
+- `symmetry` — a symmetry face with a position;
+- `forced` — a position from `MeshControl(forced_planes=...)`.
+
+A plane usually has several sources (a brick face is a `face`, an
+`extent` and the `edge` of the brick's own sides at once); `domain end`
+marks the bounding box, `singular` a plane that holds a conductor edge
+and grades from the refined fine size.  Requested planes that did not
+make it into the grid are listed as well: `dropped` for edge planes
+below the edge floor, `absorbed` for material planes merged by the hard
+`min_cell_size` floor — and `unplaced` for anything the mesher discarded
+without recording it, which is empty in a consistent build and
+otherwise the first place to look.
+
+`print(mesh.planes)` prints the record.  `mesh.planes.as_dict()` is the
+same in a form that can be pinned, and the test suite keeps such a pin
+for every example model: a change of the meshing rules then shows up as
+a readable diff of planes, not as a physics test that moved for reasons
+unknown.  `plots.plot_mesh_section(mesh, "z", z0, geometry=model)` (or
+`mesh.plot_section(...)`) draws the section from the mesh's side: each
+grid line in the style of its highest-ranking source, the graded fill
+as hairlines, absorber cells hatched, the exact section outline on top
+— and the cells shaded by one of three quantities:
+
+- `fill="coverage"` (default) — the exact area share of every cell that
+  lies inside a conductor, as measured by the sub-cell classifier on
+  the primal faces of the node plane nearest to the cut; each cell in
+  the colour of its material, blended towards conductor grey by that
+  share.  A round conductor is a round disc here.
+- `fill="material"` — the classification: the material whose volume
+  contains the cell centre.  This is the staircase *baseline* that the
+  sub-cell values override on every cut cell, not the accuracy of the
+  discretisation; thin sheets do not appear in it.
+- `fill="conformal"` — the permittivity $\bar\varepsilon$ the electric
+  material matrix holds for the field component normal to the cut, on
+  the dual cells around the nodes (bounded by the cell midpoints, so
+  half a cell off the grid lines; 0 = conductor).  Edges that run along
+  a conductor surface are held at its potential, so around a conductor
+  the masked cells reach one node beyond the contour — coarser than the
+  coverage, and the honest picture for a field along the cut normal.
+
+`edges=True` adds the primal edges of that node plane: edges held at
+conductor potential, edges only partly inside a conductor (with their
+free-length share $f_L$ setting the opacity) and the short ones lent
+to a longer neighbour by the enlarged-cell rule.  Reading the coverage
+against the contour is the quickest plausibility check a mesh gets
+before the solver runs; the vocabulary of the shares is explained in
+the next section.
+
+The record exists for meshes built by `Mesh.from_geometry`; a mesh
+assembled from a grid has none.  Positions are the merged geometry
+coordinates: absorber cells are appended outside them, and on a PMC
+face the end node is pulled a third of a cell inwards, which the record
+shows as `-> node at`.
 
 ## Conformal sub-cell material matrices (partially filled cells)
 
@@ -152,7 +235,9 @@ data (unified per-edge/per-face sub-cell classification, DD-051).
 This family of techniques — retaining the standard leapfrog update and
 encoding sub-cell geometry purely in the material matrices — was
 introduced for FIT by Krietenstein, Schuhmann, Thoma and Weiland
-{cite}`krietenstein1998`.
+{cite}`krietenstein1998`.  The `conformal` fill of `plot_mesh_section`
+shows exactly this $\bar\varepsilon$, and its `coverage` fill the
+conductor area share of the primal faces.
 
 The average is taken over the dual face *transverse* to the edge; it
 does not integrate along the edge.  A boundary that crosses the grid
@@ -194,7 +279,13 @@ Zero-thickness or sub-cell metallisation is detected before gridding
 (`apply_thin_pec_sheet`, DD-017) — the standard thin-sheet treatment
 in Cartesian time-domain solvers {cite}`taflovehagness2005`
 (subcell thin-sheet models are ch. 10 there; the
-detection pipeline itself is in-house).
+detection pipeline itself is in-house).  The footprint a sheet paints
+is exact, not its bounding box: one section of the metal at
+mid-thickness gives the outline, and every tangential edge of the sheet
+plane is tested against it by the even-odd rule — holes stay open, and
+edges on the outline count as metal — the same path the cell
+classifier uses, so a copper layer of thousands of faces costs one
+section, not one solid classification per edge.
 
 ## Thin-wire sub-cell model
 

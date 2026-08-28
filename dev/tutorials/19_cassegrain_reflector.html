@@ -921,6 +921,9 @@ cells; one minute to mesh, under a minute to run on a consumer GPU):</p>
 <tr class="row-even"><td><p>radiated / accepted power</p></td>
 <td><p>0.93</p></td>
 </tr>
+<tr class="row-odd"><td><p>power balance of the far-field box</p></td>
+<td><p>1.005</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -932,7 +935,12 @@ check that the two parametric surfaces, their orientation and the
 far-field transform agree.  The 7 % of accepted power the far field
 does not account for is the feed-guide approximation of the
 far-field chapter — the currents on the neck’s outer wall inside the
-absorber.</p>
+absorber.  The monitor’s own check confirms that reading: the flux
+through the recording box (<code class="docutils literal notranslate"><span class="pre">pattern.surface_power</span></code>) is short of
+the accepted power by the same 7 %, and the pattern radiates that
+flux to 0.5 % (<code class="docutils literal notranslate"><span class="pre">pattern.power_balance</span></code>) — the box’s half-wavelength
+clearance is enough for this radiator; the missing power never
+crosses it.</p>
 </section>
 <section id="what-to-take-away">
 <h2>What to take away<a class="headerlink" href="#what-to-take-away" title="Link to this heading">#</a></h2>

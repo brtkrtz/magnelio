@@ -685,7 +685,7 @@ so :math:`\ln Q_e` is a straight line in the probe radius.  Two
 points would in principle place the design; three show that the line
 is real.
 
-.. GENERATED FROM PYTHON SOURCE LINES 494-509
+.. GENERATED FROM PYTHON SOURCE LINES 494-514
 
 .. code-block:: Python
 
@@ -704,6 +704,11 @@ is real.
     R_PROBE = float(np.interp(np.log(QE_TARGET), np.log(qe_values), radii))
     print(f"\nprobe radius for Qe = {QE_TARGET:.1f}: {R_PROBE * 1e3:.2f} mm")
 
+    # The probe also loads the resonator, so the frequency the filter will
+    # centre on is the loaded one at this radius — not the bare puck's.
+    F0_LOADED = float(np.interp(R_PROBE, radii, f_probe))
+    print(f"loaded resonator at that radius: {F0_LOADED / 1e9:.4f} GHz")
+
 
 
 
@@ -719,11 +724,12 @@ is real.
 
 
     probe radius for Qe = 33.3: 7.83 mm
+    loaded resonator at that radius: 3.0206 GHz
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 510-519
+.. GENERATED FROM PYTHON SOURCE LINES 515-524
 
 Stage 4: the filter itself
 --------------------------
@@ -735,7 +741,7 @@ the second half from the first: the filter is symmetric about
 :math:`x = 0`, and saying so in the geometry means it cannot drift
 out of symmetry through a typo.
 
-.. GENERATED FROM PYTHON SOURCE LINES 519-538
+.. GENERATED FROM PYTHON SOURCE LINES 524-543
 
 .. code-block:: Python
 
@@ -770,7 +776,7 @@ out of symmetry through a typo.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 539-545
+.. GENERATED FROM PYTHON SOURCE LINES 544-550
 
 One excitation is enough
 ------------------------
@@ -779,7 +785,7 @@ The structure is symmetric about the iris, so :math:`S_{22} = S_{11}`
 and :math:`S_{12} = S_{21}`.  Driving the second port would cost a
 full run and add nothing.
 
-.. GENERATED FROM PYTHON SOURCE LINES 545-583
+.. GENERATED FROM PYTHON SOURCE LINES 550-590
 
 .. code-block:: Python
 
@@ -793,13 +799,15 @@ full run and add nothing.
 
     # Record the whole volume at three in-band frequencies, so the run
     # also produces a ParaView session (see "Looking inside" below).  A
-    # monitor needs its frequencies before the run, so the band edges and
-    # centre below are stated up front — they are the values the
-    # S-parameter evaluation afterwards confirms.  ``interval`` is what
-    # makes a volume monitor affordable, and it is sized from the *band
-    # edge* rather than from the monitor's own frequency — see there.
+    # monitor needs its frequencies before the run, so the band is
+    # predicted up front from what the design already knows: the loaded
+    # resonator's frequency as the centre, half the design bandwidth to
+    # either side — values the S-parameter evaluation afterwards
+    # confirms.  ``interval`` is what makes a volume monitor affordable,
+    # and it is sized from the *band edge* rather than from the monitor's
+    # own frequency — see there.
     F_TOP = 3.4e9
-    POLES = np.array([2.8705e9, 2.8924e9, 2.9143e9])  # lower band edge, centre, upper
+    POLES = F0_LOADED * np.array([1 - FBW / 2, 1.0, 1 + FBW / 2])  # lower edge, centre, upper
     pattern = monitors.MonitorFieldFrequency(
         freqs=POLES,
         fields=["E", "H"],
@@ -834,7 +842,7 @@ full run and add nothing.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 584-599
+.. GENERATED FROM PYTHON SOURCE LINES 591-606
 
 The yardstick: the response the synthesis promised
 --------------------------------------------------
@@ -852,7 +860,7 @@ bandwidth.  For a Chebyshev the two differ by a fixed factor,
 which is 2.34 here.  Reading the −3 dB width as the design width
 would make this filter look more than twice too wide.
 
-.. GENERATED FROM PYTHON SOURCE LINES 599-627
+.. GENERATED FROM PYTHON SOURCE LINES 606-634
 
 .. code-block:: Python
 
@@ -879,7 +887,7 @@ would make this filter look more than twice too wide.
     in_band = (band >= f_lo) & (band <= f_hi)
     deviation = np.abs(s21 - reference)[in_band]
 
-    print(f"band centre     {f_centre / 1e9:.4f} GHz   (target 2.90 GHz)")
+    print(f"band centre     {f_centre / 1e9:.4f} GHz   (loaded resonator {F0_LOADED / 1e9:.4f} GHz)")
     print(f"ripple bandwidth {100 * fbw_achieved:.2f} %      (target {100 * FBW:.2f} %)")
     print(f"worst in-band insertion loss {-s21[in_band].min():.3f} dB")
     print(f"deviation from the synthesised response: max {deviation.max():.2f} dB")
@@ -892,7 +900,7 @@ would make this filter look more than twice too wide.
 
  .. code-block:: none
 
-    band centre     3.0195 GHz   (target 2.90 GHz)
+    band centre     3.0195 GHz   (loaded resonator 3.0206 GHz)
     ripple bandwidth 2.14 %      (target 2.00 %)
     worst in-band insertion loss 0.062 dB
     deviation from the synthesised response: max 0.02 dB
@@ -900,12 +908,12 @@ would make this filter look more than twice too wide.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 628-630
+.. GENERATED FROM PYTHON SOURCE LINES 635-637
 
 The result
 ----------
 
-.. GENERATED FROM PYTHON SOURCE LINES 630-645
+.. GENERATED FROM PYTHON SOURCE LINES 637-652
 
 .. code-block:: Python
 
@@ -936,7 +944,7 @@ The result
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 646-693
+.. GENERATED FROM PYTHON SOURCE LINES 653-700
 
 Looking inside: how the filter passes power
 -------------------------------------------
@@ -986,7 +994,7 @@ monitor recorded three frequencies across the band, so that claim
 can simply be read off it: sum :math:`E_z` over each half of the
 housing and compare the phases.
 
-.. GENERATED FROM PYTHON SOURCE LINES 693-704
+.. GENERATED FROM PYTHON SOURCE LINES 700-711
 
 .. code-block:: Python
 
@@ -1010,14 +1018,14 @@ housing and compare the phases.
  .. code-block:: none
 
       f [GHz]   phase L    phase R   difference
-       2.8705     -17.1°      +1.5°     +18.6°
-       2.8924     -12.2°      +9.3°     +21.5°
-       2.9143      -4.7°     +20.7°     +25.4°
+       2.9904     +50.9°    +112.9°     +62.0°
+       3.0206     +51.9°    +149.1°     +97.2°
+       3.0508     +56.1°    -175.1°    +128.9°
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 705-717
+.. GENERATED FROM PYTHON SOURCE LINES 712-724
 
 A steady drift of tens of degrees, not the 0° or 180° a standing
 even/odd pair would show — and nothing in between is available to a
@@ -1032,7 +1040,7 @@ both resonators are near their peaks — at phase zero, one of them
 happens to be near a zero crossing and the render looks like a
 half-empty filter.
 
-.. GENERATED FROM PYTHON SOURCE LINES 719-753
+.. GENERATED FROM PYTHON SOURCE LINES 726-760
 
 What this shows
 ---------------
@@ -1072,7 +1080,7 @@ and mirror one more chamber into the housing.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (6 minutes 9.538 seconds)
+   **Total running time of the script:** (8 minutes 29.747 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_13_dielectric_filter.py:

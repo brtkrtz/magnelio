@@ -39,6 +39,13 @@ Moving, turning, scaling and mirroring keep these kinds: a rotated
 sheet is still a sheet and still a profile, a mirrored planar sheet is
 still planar.  Booleans are defined on bodies.
 
+A union of bodies that are prisms along one axis over the same
+interval — the strips of a feed network, the pads of a layer, a row of
+posts — is fused in their common plane and raised once, so the result
+carries no seams between its operands; whatever else a union holds is
+fused in space, and only where it meets something.  The point set is
+the same either way; the face count is what the mesher sees.
+
 ## From a map to a reflector: parametric surfaces
 
 `Surface.parametric(fn, u=(u0, u1), v=(v0, v1), samples=(nu, nv))`

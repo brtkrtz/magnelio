@@ -532,7 +532,15 @@ curves are tessellated at the deflection.  The deflection is a
 hundredth of the smallest cell for the sub-cell fractions and a tenth
 for the cell classification.  Section contours are wound by nesting
 parity (holes against their outer boundary) before the area kernels
-sum them, whatever path produced them.</p>
+sum them, whatever path produced them.  The kernel’s section runs over
+the faces whose extent reaches the plane rather than over the whole
+body — the same curves, without the kernel preparing a thousand faces
+the plane never meets.  A grid plane that coincides with a face of the
+model is never sectioned in place: the fractions there come from
+sections a small step to either side, and the step clears the kernel’s
+tolerance by a margin (four times the largest tolerance in the model,
+or the section deflection if that is larger), because a section within
+the tolerance of a face reports that face on both sides.</p>
 </section>
 <section id="graded-cartesian-mesh">
 <h2>Graded Cartesian mesh<a class="headerlink" href="#graded-cartesian-mesh" title="Link to this heading">#</a></h2>
@@ -626,7 +634,14 @@ The corners of a cavity are concave metal edges and regular; a
 fillet’s onset is tangential; dielectric edges are much weaker and
 not refined.  The refinement never adds a plane (the edge’s plane is
 a material face or an edge plane already), never touches the domain’s
-own end planes, and stops at <code class="docutils literal notranslate"><span class="pre">min_cell_size</span></code>.</p>
+own end planes, and stops at <code class="docutils literal notranslate"><span class="pre">min_cell_size</span></code>.  Coupled lines with a
+tight gap are the case that needs it most: the odd mode of a 25 µm
+gap between 5 µm fingers on 254 µm alumina lives within a few tens of
+micrometres of the surface, and its impedance moves from 22 Ω at the
+default grading to 42 Ω once the cells next to the metal are below
+10 µm (factor 8 with a 6 µm floor), while the even mode moves by a
+tenth of that — the <em>Lange coupler</em> how-to designs on exactly that
+grid.</p>
 <p>The factor is off by default, and the reason is the time step.  The
 edge cell bounds it, so a factor of 2 halves the step and adds the
 cells of the two ramps: on the mesh-convergence how-to’s structure
@@ -640,7 +655,73 @@ limit: at equal edge cell the refined grids of the microstrip need a
 third fewer cells.  Model-wide refinement is still what
 <code class="docutils literal notranslate"><span class="pre">min_nodes_per_wavelength</span></code> is for.</p>
 <p>Why a feature below the grid is <em>silent</em> rather than approximately
-represented is a property of the conformal material matrices, next.</p>
+represented is a property of the conformal material matrices, below.</p>
+</section>
+<section id="inspecting-the-grid">
+<h3>Inspecting the grid<a class="headerlink" href="#inspecting-the-grid" title="Link to this heading">#</a></h3>
+<p>A grid plane is a decision, and the mesh keeps the record of every one
+of them: <code class="docutils literal notranslate"><span class="pre">mesh.planes</span></code> lists, per axis, the position of each plane, the
+rule that asked for it and the shape it came from.  The vocabulary:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">face</span></code> — an analytic material face: a brick’s side, a cylinder’s
+tangent plane, the plane of a sheet;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">extent</span></code> — the bounding box of a shape, which coincides with a face
+for bricks and is a conservative envelope for everything else;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">edge</span></code> — a geometry edge lying flat in the plane: the onset of a
+chamfer or a fillet, a loft section, the circle of an iris;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sheet</span></code> — the single plane of a thin metallisation;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">wire</span></code> — a vertex of a thin wire;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">symmetry</span></code> — a symmetry face with a position;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">forced</span></code> — a position from <code class="docutils literal notranslate"><span class="pre">MeshControl(forced_planes=...)</span></code>.</p></li>
+</ul>
+<p>A plane usually has several sources (a brick face is a <code class="docutils literal notranslate"><span class="pre">face</span></code>, an
+<code class="docutils literal notranslate"><span class="pre">extent</span></code> and the <code class="docutils literal notranslate"><span class="pre">edge</span></code> of the brick’s own sides at once); <code class="docutils literal notranslate"><span class="pre">domain</span> <span class="pre">end</span></code>
+marks the bounding box, <code class="docutils literal notranslate"><span class="pre">singular</span></code> a plane that holds a conductor edge
+and grades from the refined fine size.  Requested planes that did not
+make it into the grid are listed as well: <code class="docutils literal notranslate"><span class="pre">dropped</span></code> for edge planes
+below the edge floor, <code class="docutils literal notranslate"><span class="pre">absorbed</span></code> for material planes merged by the hard
+<code class="docutils literal notranslate"><span class="pre">min_cell_size</span></code> floor — and <code class="docutils literal notranslate"><span class="pre">unplaced</span></code> for anything the mesher discarded
+without recording it, which is empty in a consistent build and
+otherwise the first place to look.</p>
+<p><code class="docutils literal notranslate"><span class="pre">print(mesh.planes)</span></code> prints the record.  <code class="docutils literal notranslate"><span class="pre">mesh.planes.as_dict()</span></code> is the
+same in a form that can be pinned, and the test suite keeps such a pin
+for every example model: a change of the meshing rules then shows up as
+a readable diff of planes, not as a physics test that moved for reasons
+unknown.  <code class="docutils literal notranslate"><span class="pre">plots.plot_mesh_section(mesh,</span> <span class="pre">&quot;z&quot;,</span> <span class="pre">z0,</span> <span class="pre">geometry=model)</span></code> (or
+<code class="docutils literal notranslate"><span class="pre">mesh.plot_section(...)</span></code>) draws the section from the mesh’s side: each
+grid line in the style of its highest-ranking source, the graded fill
+as hairlines, absorber cells hatched, the exact section outline on top
+— and the cells shaded by one of three quantities:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">fill=&quot;coverage&quot;</span></code> (default) — the exact area share of every cell that
+lies inside a conductor, as measured by the sub-cell classifier on
+the primal faces of the node plane nearest to the cut; each cell in
+the colour of its material, blended towards conductor grey by that
+share.  A round conductor is a round disc here.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fill=&quot;material&quot;</span></code> — the classification: the material whose volume
+contains the cell centre.  This is the staircase <em>baseline</em> that the
+sub-cell values override on every cut cell, not the accuracy of the
+discretisation; thin sheets do not appear in it.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fill=&quot;conformal&quot;</span></code> — the permittivity <span class="math notranslate nohighlight">\(\bar\varepsilon\)</span> the electric
+material matrix holds for the field component normal to the cut, on
+the dual cells around the nodes (bounded by the cell midpoints, so
+half a cell off the grid lines; 0 = conductor).  Edges that run along
+a conductor surface are held at its potential, so around a conductor
+the masked cells reach one node beyond the contour — coarser than the
+coverage, and the honest picture for a field along the cut normal.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">edges=True</span></code> adds the primal edges of that node plane: edges held at
+conductor potential, edges only partly inside a conductor (with their
+free-length share <span class="math notranslate nohighlight">\(f_L\)</span> setting the opacity) and the short ones lent
+to a longer neighbour by the enlarged-cell rule.  Reading the coverage
+against the contour is the quickest plausibility check a mesh gets
+before the solver runs; the vocabulary of the shares is explained in
+the next section.</p>
+<p>The record exists for meshes built by <code class="docutils literal notranslate"><span class="pre">Mesh.from_geometry</span></code>; a mesh
+assembled from a grid has none.  Positions are the merged geometry
+coordinates: absorber cells are appended outside them, and on a PMC
+face the end node is pulled a third of a cell inwards, which the record
+shows as <code class="docutils literal notranslate"><span class="pre">-&gt;</span> <span class="pre">node</span> <span class="pre">at</span></code>.</p>
 </section>
 </section>
 <section id="conformal-sub-cell-material-matrices-partially-filled-cells">
@@ -654,7 +735,9 @@ data (unified per-edge/per-face sub-cell classification, DD-051).
 This family of techniques — retaining the standard leapfrog update and
 encoding sub-cell geometry purely in the material matrices — was
 introduced for FIT by Krietenstein, Schuhmann, Thoma and Weiland
-<span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id15" title="Bernd Krietenstein, Rolf Schuhmann, Peter Thoma, and Thomas Weiland. The perfect boundary approximation technique facing the big challenge of high precision field computation. In Proceedings of the XIX International Linear Accelerator Conference (LINAC 98), 860–862. Chicago, IL, 1998.">7</a>]</span>.</p>
+<span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id15" title="Bernd Krietenstein, Rolf Schuhmann, Peter Thoma, and Thomas Weiland. The perfect boundary approximation technique facing the big challenge of high precision field computation. In Proceedings of the XIX International Linear Accelerator Conference (LINAC 98), 860–862. Chicago, IL, 1998.">7</a>]</span>.  The <code class="docutils literal notranslate"><span class="pre">conformal</span></code> fill of <code class="docutils literal notranslate"><span class="pre">plot_mesh_section</span></code>
+shows exactly this <span class="math notranslate nohighlight">\(\bar\varepsilon\)</span>, and its <code class="docutils literal notranslate"><span class="pre">coverage</span></code> fill the
+conductor area share of the primal faces.</p>
 <p>The average is taken over the dual face <em>transverse</em> to the edge; it
 does not integrate along the edge.  A boundary that crosses the grid
 edges is therefore resolved continuously — moving a cylinder’s radius
@@ -694,7 +777,13 @@ Zagorodnov, Schuhmann and Weiland <span class="bibtex-citation" id="id4">[<a cla
 (<code class="docutils literal notranslate"><span class="pre">apply_thin_pec_sheet</span></code>, DD-017) — the standard thin-sheet treatment
 in Cartesian time-domain solvers <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>
 (subcell thin-sheet models are ch. 10 there; the
-detection pipeline itself is in-house).</p>
+detection pipeline itself is in-house).  The footprint a sheet paints
+is exact, not its bounding box: one section of the metal at
+mid-thickness gives the outline, and every tangential edge of the sheet
+plane is tested against it by the even-odd rule — holes stay open, and
+edges on the outline count as metal — the same path the cell
+classifier uses, so a copper layer of thousands of faces costs one
+section, not one solid classification per edge.</p>
 </section>
 <section id="thin-wire-sub-cell-model">
 <h2>Thin-wire sub-cell model<a class="headerlink" href="#thin-wire-sub-cell-model" title="Link to this heading">#</a></h2>
@@ -776,6 +865,7 @@ reported edge floor (DD-191) are in-house engineering.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#which-wavelength-sets-the-bulk-cell-size">Which wavelength sets the bulk cell size</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#which-geometry-gets-a-grid-plane">Which geometry gets a grid plane</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#refining-the-conductor-edges">Refining the conductor edges</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#inspecting-the-grid">Inspecting the grid</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#conformal-sub-cell-material-matrices-partially-filled-cells">Conformal sub-cell material matrices (partially filled cells)</a></li>

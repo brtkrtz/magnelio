@@ -1,0 +1,1219 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Patch array: a 2 × 2 corporate-fed microstrip array from element to pattern &#8212; Magnelio Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+
+    <script src="../_static/documentation_options.js?v=4e2bec15"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'howto/plot_patch_array';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/dev/howto/plot_patch_array.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Striplines as pickups and kickers: beam-coupling figures from S-parameter runs" href="plot_stripline_pickup_kicker.html" />
+    <link rel="prev" title="Mesh convergence: a ladder around your simulation" href="plot_mesh_convergence.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Magnelio Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../methods/index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio/discussions" title="Discussions" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-regular fa-comments fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discussions</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../methods/index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio/discussions" title="Discussions" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-regular fa-comments fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discussions</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="plot_coupled_line_coupler.html">Coupled-line directional coupler: dimensioning the pair with the port solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lange_coupler.html">Lange coupler: a 3-dB interdigitated coupler dimensioned with the port solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_investigations.html">Lumped ports: investigations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_coax.html">Lumped port tuning: coaxial line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_cpw.html">Lumped port tuning: coplanar waveguide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_microstrip.html">Lumped port tuning: microstrip</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_mesh_convergence.html">Mesh convergence: a ladder around your simulation</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Patch array: a 2 × 2 corporate-fed microstrip array from element to pattern</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_stripline_pickup_kicker.html">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">How-to guides</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Patch array: a 2 × 2 corporate-fed microstrip array from element to pattern</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-howto-plot-patch-array-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code.</p>
+</div>
+<section class="sphx-glr-example-title" id="patch-array-a-2-2-corporate-fed-microstrip-array-from-element-to-pattern">
+<span id="sphx-glr-howto-plot-patch-array-py"></span><h1>Patch array: a 2 × 2 corporate-fed microstrip array from element to pattern<a class="headerlink" href="#patch-array-a-2-2-corporate-fed-microstrip-array-from-element-to-pattern" title="Link to this heading">#</a></h1>
+<p>A single rectangular patch is the textbook printed antenna — a
+half-wave resonator on a grounded substrate, 7 dBi of directivity,
+a few percent of bandwidth.  Four of them on a lattice of three
+quarters of a wavelength, fed in phase, give 13 dBi and a beam that
+the array factor sharpens in both planes.  This guide designs the
+element, then the corporate feed that splits one 50 Ω input into four
+equal, in-phase branches, and reads match, directivity and the two
+principal-plane cuts off the array run — with the element pattern
+times the array factor as the independent check.</p>
+<p>New compared with the antenna tutorials and the coupler pages:</p>
+<ul class="simple">
+<li><p>the <strong>element-to-array flow</strong>: the patch is dimensioned by the
+cavity formulas, its length trimmed once from the resonance the
+run reports, its inset feed chosen from a short sweep on the
+trimmed patch — and the array gets one more trim, because the feed
+network loads the patches it feeds;</p></li>
+<li><p>a <strong>corporate feed on the grid’s own line impedances</strong>: T-junctions
+into 100 Ω arms, quarter-wave transformers back to 50 Ω, every
+impedance taken from the port solver on the production mesh, so the
+network is consistent with the run that uses it;</p></li>
+<li><p><strong>in-phase feeding of a second row without a meander</strong>: the two rows
+face each other across the distribution line, which would feed them
+in anti-phase; sliding that line a quarter of a guided wavelength
+off the array centre makes one arm half a wavelength longer than
+the other and restores the phase — every arm stays straight;</p></li>
+<li><p>a <strong>microstrip port in an absorbing wall</strong>: the array’s 50 Ω trunk
+enters the model through a short shielded launch on the CPML face,
+the window port sits in the launch’s cross-section, and the
+far-field monitor accounts for the guide (see the <em>ports</em> and
+<em>far-field</em> chapters of the methods section); the element keeps the
+lumped port of the antenna tutorials.</p></li>
+</ul>
+<p>The reference for the pattern is the element cut multiplied by the
+array factor of four in-phase sources — the standard array-theory
+estimate.  It carries no mutual coupling and no feed-line radiation,
+and the comparison shows where those matter.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span><span class="p">,</span> <span class="n">monitors</span><span class="p">,</span> <span class="n">plots</span><span class="p">,</span> <span class="n">ports</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">C0</span>
+</pre></div>
+</div>
+<section id="given-quantities">
+<h2>Given quantities<a class="headerlink" href="#given-quantities" title="Link to this heading">#</a></h2>
+<p>A PTFE-glass laminate of the kind every antenna text uses, 35 µm
+copper, X band.  The lattice is 0.75 λ along the H-plane and 0.85 λ
+along the E-plane: the feed network runs between the two rows, and
+the E-plane spacing is what makes room for it (the layout section
+below has the geometry).  The element lengths and the network are
+derived from these values; edit them for your own board.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">eps_r</span> <span class="o">=</span> <span class="mf">2.2</span>  <span class="c1"># substrate permittivity</span>
+<span class="n">h_sub</span> <span class="o">=</span> <span class="mf">0.787e-3</span>  <span class="c1"># substrate height</span>
+<span class="n">t_cu</span> <span class="o">=</span> <span class="mf">35e-6</span>  <span class="c1"># copper thickness</span>
+<span class="n">f0</span> <span class="o">=</span> <span class="mf">10.0e9</span>  <span class="c1"># design frequency</span>
+<span class="n">f_min</span><span class="p">,</span> <span class="n">f_max</span> <span class="o">=</span> <span class="mf">8.0e9</span><span class="p">,</span> <span class="mf">12.0e9</span>  <span class="c1"># simulated band</span>
+<span class="n">lam0</span> <span class="o">=</span> <span class="n">C0</span> <span class="o">/</span> <span class="n">f0</span>
+<span class="n">p_x</span> <span class="o">=</span> <span class="mf">0.75</span> <span class="o">*</span> <span class="n">lam0</span>  <span class="c1"># column pitch (H-plane)</span>
+<span class="n">p_y</span> <span class="o">=</span> <span class="mf">0.85</span> <span class="o">*</span> <span class="n">lam0</span>  <span class="c1"># row pitch (E-plane)</span>
+<span class="n">clearance</span> <span class="o">=</span> <span class="mf">12e-3</span>  <span class="c1"># copper to the absorbing boundary</span>
+<span class="n">h_box</span> <span class="o">=</span> <span class="mf">0.7</span> <span class="o">*</span> <span class="n">lam0</span>  <span class="c1"># air above the ground plane: the far-field box top clears the near zone</span>
+<span class="n">z_in</span> <span class="o">=</span> <span class="mf">50.0</span>  <span class="c1"># input impedance of the feed</span>
+
+<span class="n">substrate</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Material</span><span class="o">.</span><span class="n">from_isotropic</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"substrate"</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="n">eps_r</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="the-synthesis">
+<h2>The synthesis<a class="headerlink" href="#the-synthesis" title="Link to this heading">#</a></h2>
+<p>Closed forms carry the first draft: Hammerstad’s microstrip
+synthesis for the three line widths of the network, the cavity-model
+patch — width for efficient radiation, length a fringing correction
+short of the half wavelength in the substrate.  The inset depth
+<span class="math notranslate nohighlight">\(y_0\)</span> that brings the edge resistance down to the 100 Ω of
+the feed arm is left to a sweep below: the cosine-squared law of the
+cavity model is off by a factor of two for a notched feed on this
+substrate.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">microstrip_width</span><span class="p">(</span><span class="n">z0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Trace width for characteristic impedance ``z0`` on this substrate (Hammerstad)."""</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">z0</span> <span class="o">/</span> <span class="mi">60</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span></a><span class="p">((</span><span class="n">eps_r</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">eps_r</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">eps_r</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">0.23</span> <span class="o">+</span> <span class="mf">0.11</span> <span class="o">/</span> <span class="n">eps_r</span><span class="p">)</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="mi">377</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">z0</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span></a><span class="p">(</span><span class="n">eps_r</span><span class="p">))</span>
+    <span class="n">w_h</span> <span class="o">=</span> <span class="mi">8</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">exp</span></a><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">exp</span></a><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">a</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">w_h</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">w_h</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">/</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="n">b</span>
+            <span class="o">-</span> <span class="mi">1</span>
+            <span class="o">-</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">log</span></a><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">b</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="o">+</span> <span class="p">(</span><span class="n">eps_r</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">eps_r</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">log</span></a><span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.39</span> <span class="o">-</span> <span class="mf">0.61</span> <span class="o">/</span> <span class="n">eps_r</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">w_h</span> <span class="o">*</span> <span class="n">h_sub</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">patch_dimensions</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">"""(W, L) of the rectangular patch from the cavity model."""</span>
+    <span class="n">W</span> <span class="o">=</span> <span class="n">C0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">f0</span><span class="p">)</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span></a><span class="p">(</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">eps_r</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">eps_eff</span> <span class="o">=</span> <span class="p">(</span><span class="n">eps_r</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">eps_r</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">/</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span></a><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">12</span> <span class="o">*</span> <span class="n">h_sub</span> <span class="o">/</span> <span class="n">W</span><span class="p">)</span>
+    <span class="n">dL</span> <span class="o">=</span> <span class="mf">0.412</span> <span class="o">*</span> <span class="n">h_sub</span> <span class="o">*</span> <span class="p">(</span><span class="n">eps_eff</span> <span class="o">+</span> <span class="mf">0.3</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">W</span> <span class="o">/</span> <span class="n">h_sub</span> <span class="o">+</span> <span class="mf">0.264</span><span class="p">)</span>
+    <span class="n">dL</span> <span class="o">/=</span> <span class="p">(</span><span class="n">eps_eff</span> <span class="o">-</span> <span class="mf">0.258</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">W</span> <span class="o">/</span> <span class="n">h_sub</span> <span class="o">+</span> <span class="mf">0.8</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">W</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">C0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">f0</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span></a><span class="p">(</span><span class="n">eps_eff</span><span class="p">))</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">dL</span><span class="p">)</span>
+
+
+<span class="n">w50</span> <span class="o">=</span> <span class="n">microstrip_width</span><span class="p">(</span><span class="n">z_in</span><span class="p">)</span>
+<span class="n">w70</span> <span class="o">=</span> <span class="n">microstrip_width</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span></a><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">z_in</span><span class="p">)</span>
+<span class="n">w100</span> <span class="o">=</span> <span class="n">microstrip_width</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">z_in</span><span class="p">)</span>
+<span class="n">W_patch</span><span class="p">,</span> <span class="n">L_formula</span> <span class="o">=</span> <span class="n">patch_dimensions</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"lines: w50 = </span><span class="si">{</span><span class="n">w50</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm, w70.7 = </span><span class="si">{</span><span class="n">w70</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm, w100 = </span><span class="si">{</span><span class="n">w100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"patch: W = </span><span class="si">{</span><span class="n">W_patch</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm, L = </span><span class="si">{</span><span class="n">L_formula</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm (cavity model)"</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>lines: w50 = 2.42 mm, w70.7 = 1.39 mm, w100 = 0.71 mm
+patch: W = 11.85 mm, L = 9.65 mm (cavity model)
+</pre></div>
+</div>
+</section>
+<section id="the-lines-on-this-grid">
+<h2>The lines on this grid<a class="headerlink" href="#the-lines-on-this-grid" title="Link to this heading">#</a></h2>
+<p>The network is a set of impedance ratios — an arm has to be twice
+the trunk, a transformer their geometric mean — and the impedances
+that matter are the ones the <em>grid</em> gives the lines, not the ones
+the closed form promised.  Three short slices through the port
+solver read them; the mesh control is the one the array run will
+use.  The grid’s values come out a tenth low across the board (the
+current crowds at the trace edges, and 0.25 mm cells cannot follow
+it), the ratios hold to a few percent, and the port that feeds the
+array is referenced to its own line mode — so the design is
+consistent as it stands.  Recovering the absolute values takes the
+edge refinement of the Lange page, at several times the run time.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">mesh_control</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">MeshControl</span><span class="p">(</span><span class="n">min_nodes_per_wavelength</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_cell_size</span><span class="o">=</span><span class="mf">0.25e-3</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">line_mode</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="mf">2e-3</span><span class="p">,</span> <span class="n">w_box</span><span class="o">=</span><span class="mf">16e-3</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""(Z_line, eps_eff) of a microstrip of ``width`` on this grid."""</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">()</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">w_box</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">w_box</span><span class="p">,</span> <span class="n">h_sub</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="n">substrate</span><span class="p">))</span>
+    <span class="n">air</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span>
+        <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">w_box</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">h_sub</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">w_box</span><span class="p">,</span> <span class="n">h_box</span> <span class="o">-</span> <span class="n">h_sub</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span>
+    <span class="p">)</span>
+    <span class="n">trace</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">h_sub</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">t_cu</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">Difference</span><span class="p">(</span><span class="n">air</span><span class="p">,</span> <span class="n">trace</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">trace</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add_port</span><span class="p">(</span><span class="n">ports</span><span class="o">.</span><span class="n">PortWaveguide</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"line"</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s2">"xmin"</span><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">mesh</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">mesh_control</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="n">f_max</span><span class="p">)</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">solve_ports</span><span class="p">()[</span><span class="s2">"line"</span><span class="p">]</span><span class="o">.</span><span class="n">modes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">mode</span><span class="o">.</span><span class="n">z_line</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">mode</span><span class="o">.</span><span class="n">epsilon_eff</span><span class="p">)</span>
+
+
+<span class="n">z_trunk</span><span class="p">,</span> <span class="n">eps_trunk</span> <span class="o">=</span> <span class="n">line_mode</span><span class="p">(</span><span class="n">w50</span><span class="p">)</span>
+<span class="n">z_transformer</span><span class="p">,</span> <span class="n">eps_transformer</span> <span class="o">=</span> <span class="n">line_mode</span><span class="p">(</span><span class="n">w70</span><span class="p">)</span>
+<span class="n">z_arm</span><span class="p">,</span> <span class="n">eps_arm</span> <span class="o">=</span> <span class="n">line_mode</span><span class="p">(</span><span class="n">w100</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">lam4</span></a> <span class="o">=</span> <span class="n">C0</span> <span class="o">/</span> <span class="n">f0</span> <span class="o">/</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span></a><span class="p">(</span><span class="n">eps_transformer</span><span class="p">)</span> <span class="o">/</span> <span class="mi">4</span>  <span class="c1"># transformer length</span>
+<a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">lam_g_arm</span></a> <span class="o">=</span> <span class="n">C0</span> <span class="o">/</span> <span class="n">f0</span> <span class="o">/</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span></a><span class="p">(</span><span class="n">eps_arm</span><span class="p">)</span>  <span class="c1"># guided wavelength of the arms</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"grid: trunk </span><span class="si">{</span><span class="n">z_trunk</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> ohm, transformer </span><span class="si">{</span><span class="n">z_transformer</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> ohm, arm </span><span class="si">{</span><span class="n">z_arm</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> ohm"</span><span class="p">)</span>
+<span class="n">ratio_arm</span><span class="p">,</span> <span class="n">ratio_t</span> <span class="o">=</span> <span class="n">z_arm</span> <span class="o">/</span> <span class="n">z_trunk</span><span class="p">,</span> <span class="n">z_transformer</span> <span class="o">/</span> <span class="n">z_trunk</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"      arm/trunk = </span><span class="si">{</span><span class="n">ratio_arm</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> (2), transformer/trunk = </span><span class="si">{</span><span class="n">ratio_t</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> (1.414)"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">"      quarter wave (transformer) </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">lam4</span></a><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm, arm lambda_g </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">lam_g_arm</span></a><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm"</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>grid: trunk 44.7 ohm, transformer 63.2 ohm, arm 86.7 ohm
+      arm/trunk = 1.94 (2), transformer/trunk = 1.41 (1.414)
+      quarter wave (transformer) 5.51 mm, arm lambda_g 22.34 mm
+</pre></div>
+</div>
+</section>
+<section id="building-blocks">
+<h2>Building blocks<a class="headerlink" href="#building-blocks" title="Link to this heading">#</a></h2>
+<p>Everything is copper on the substrate plane: rectangles for the
+lines, a patch with a notch for the inset feed, and the <em>launch</em> —
+a short shielded section where the feed line meets the absorbing
+wall.  A window port on a CPML face has to be enclosed by conductor,
+so the launch puts two walls and a roof around the trace for the
+first few millimetres, the way a connector body would.  <code class="docutils literal notranslate"><span class="pre">board</span></code>
+assembles substrate, air, copper and shield into an open model with
+the ground plane as the only electric wall, and feeds it one of two
+ways: a lumped port — a pin from the trace down to the ground — for
+the element, whose 100 Ω line is narrow enough for a pin to
+terminate it cleanly (the lumped-port tuning pages), and the window
+port in the launch for the array, whose 2.4 mm trunk is not.  Both
+are referenced to the line’s own impedance on this grid.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">tunnel_w</span><span class="p">,</span> <span class="n">tunnel_h</span><span class="p">,</span> <span class="n">tunnel_l</span> <span class="o">=</span> <span class="mf">8e-3</span><span class="p">,</span> <span class="mf">4e-3</span><span class="p">,</span> <span class="mf">6e-3</span>  <span class="c1"># launch shield: width, height above copper, length</span>
+<span class="n">wall</span> <span class="o">=</span> <span class="mf">0.5e-3</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">rect</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y0</span></a><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">):</span>
+    <span class="n">x0</span><span class="p">,</span> <span class="n">x1</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">((</span><span class="n">x0</span><span class="p">,</span> <span class="n">x1</span><span class="p">))</span>
+    <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y0</span></a><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">((</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y0</span></a><span class="p">,</span> <span class="n">y1</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y0</span></a><span class="p">,</span> <span class="n">h_sub</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">x1</span> <span class="o">-</span> <span class="n">x0</span><span class="p">,</span> <span class="n">y1</span> <span class="o">-</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y0</span></a><span class="p">,</span> <span class="n">t_cu</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">trace</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y0</span></a><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">width</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""A trace of ``width`` along the centre line (x0, y0) -&gt; (x1, y1), square ends."""</span>
+    <span class="n">x0</span><span class="p">,</span> <span class="n">x1</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">((</span><span class="n">x0</span><span class="p">,</span> <span class="n">x1</span><span class="p">))</span>
+    <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y0</span></a><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">((</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y0</span></a><span class="p">,</span> <span class="n">y1</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">rect</span><span class="p">(</span><span class="n">x0</span> <span class="o">-</span> <span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y0</span></a> <span class="o">-</span> <span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">x1</span> <span class="o">+</span> <span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">y1</span> <span class="o">+</span> <span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">patch</span><span class="p">(</span><span class="n">cx</span><span class="p">,</span> <span class="n">y_edge</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">y_inset</span><span class="p">,</span> <span class="n">side</span><span class="o">=+</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""A patch of length L whose fed edge is at ``y_edge``; ``side`` is the direction it extends in.</span>
+
+<span class="sd">    The notch of the inset feed is two line widths wide and ``y_inset`` deep.</span>
+<span class="sd">    """</span>
+    <span class="n">xn</span> <span class="o">=</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">w100</span>  <span class="c1"># half width of the notch</span>
+    <span class="n">y_far</span> <span class="o">=</span> <span class="n">y_edge</span> <span class="o">+</span> <span class="n">side</span> <span class="o">*</span> <span class="n">L</span>
+    <span class="n">y_notch</span> <span class="o">=</span> <span class="n">y_edge</span> <span class="o">+</span> <span class="n">side</span> <span class="o">*</span> <span class="n">y_inset</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="n">rect</span><span class="p">(</span><span class="n">cx</span> <span class="o">-</span> <span class="n">W_patch</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">y_edge</span><span class="p">,</span> <span class="n">cx</span> <span class="o">-</span> <span class="n">xn</span><span class="p">,</span> <span class="n">y_far</span><span class="p">),</span>
+        <span class="n">rect</span><span class="p">(</span><span class="n">cx</span> <span class="o">+</span> <span class="n">xn</span><span class="p">,</span> <span class="n">y_edge</span><span class="p">,</span> <span class="n">cx</span> <span class="o">+</span> <span class="n">W_patch</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">y_far</span><span class="p">),</span>
+        <span class="n">rect</span><span class="p">(</span><span class="n">cx</span> <span class="o">-</span> <span class="n">xn</span><span class="p">,</span> <span class="n">y_notch</span><span class="p">,</span> <span class="n">cx</span> <span class="o">+</span> <span class="n">xn</span><span class="p">,</span> <span class="n">y_far</span><span class="p">),</span>
+    <span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">launch</span><span class="p">(</span><span class="n">y_wall</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="n">tunnel_l</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Shield walls and roof around the trace entering at the ``ymin`` wall."""</span>
+    <span class="n">z_roof</span> <span class="o">=</span> <span class="n">h_sub</span> <span class="o">+</span> <span class="n">tunnel_h</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span>
+            <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="n">tunnel_w</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">wall</span><span class="p">,</span> <span class="n">y_wall</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">wall</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">z_roof</span> <span class="o">+</span> <span class="n">wall</span><span class="p">),</span>
+            <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span>
+            <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="n">tunnel_w</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">y_wall</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">wall</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">z_roof</span> <span class="o">+</span> <span class="n">wall</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span>
+        <span class="p">),</span>
+        <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span>
+            <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="n">tunnel_w</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">wall</span><span class="p">,</span> <span class="n">y_wall</span><span class="p">,</span> <span class="n">z_roof</span><span class="p">),</span>
+            <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">tunnel_w</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">wall</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">wall</span><span class="p">),</span>
+            <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">board</span><span class="p">(</span><span class="n">copper_pieces</span><span class="p">,</span> <span class="n">feed</span><span class="p">,</span> <span class="n">shield_pieces</span><span class="o">=</span><span class="p">(),</span> <span class="n">y_wall</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Open model: substrate and air out to the absorbing faces, ground plane below.</span>
+
+<span class="sd">    ``feed="pin"`` puts a lumped port at the start of the trace at the</span>
+<span class="sd">    origin; ``feed="window"`` expects the launch shield and puts the</span>
+<span class="sd">    window port in its cross-section on the ``ymin`` wall at ``y_wall``.</span>
+<span class="sd">    """</span>
+    <span class="n">xs</span> <span class="o">=</span> <span class="p">[</span><span class="n">b</span><span class="o">.</span><span class="n">origin</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">copper_pieces</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">b</span><span class="o">.</span><span class="n">origin</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">copper_pieces</span><span class="p">]</span>
+    <span class="n">ys</span> <span class="o">=</span> <span class="p">[</span><span class="n">b</span><span class="o">.</span><span class="n">origin</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">copper_pieces</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">b</span><span class="o">.</span><span class="n">origin</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">copper_pieces</span><span class="p">]</span>
+    <span class="n">x0</span><span class="p">,</span> <span class="n">x1</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span> <span class="o">-</span> <span class="n">clearance</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span> <span class="o">+</span> <span class="n">clearance</span>
+    <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y0</span></a> <span class="o">=</span> <span class="n">y_wall</span> <span class="k">if</span> <span class="n">feed</span> <span class="o">==</span> <span class="s2">"window"</span> <span class="k">else</span> <span class="nb">min</span><span class="p">(</span><span class="n">ys</span><span class="p">)</span> <span class="o">-</span> <span class="n">clearance</span>
+    <span class="n">y1</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">ys</span><span class="p">)</span> <span class="o">+</span> <span class="n">clearance</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span>
+        <span class="n">boundary_conditions</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">"zmin"</span><span class="p">:</span> <span class="s2">"PEC"</span><span class="p">,</span>  <span class="c1"># the ground plane</span>
+            <span class="s2">"xmin"</span><span class="p">:</span> <span class="s2">"CPML"</span><span class="p">,</span>
+            <span class="s2">"xmax"</span><span class="p">:</span> <span class="s2">"CPML"</span><span class="p">,</span>
+            <span class="s2">"ymin"</span><span class="p">:</span> <span class="s2">"CPML"</span><span class="p">,</span>  <span class="c1"># carries the feed window of the array</span>
+            <span class="s2">"ymax"</span><span class="p">:</span> <span class="s2">"CPML"</span><span class="p">,</span>
+            <span class="s2">"zmax"</span><span class="p">:</span> <span class="s2">"CPML"</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+    <span class="n">sub</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y0</span></a><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">x1</span> <span class="o">-</span> <span class="n">x0</span><span class="p">,</span> <span class="n">y1</span> <span class="o">-</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y0</span></a><span class="p">,</span> <span class="n">h_sub</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="n">substrate</span><span class="p">)</span>
+    <span class="n">air</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y0</span></a><span class="p">,</span> <span class="n">h_sub</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">x1</span> <span class="o">-</span> <span class="n">x0</span><span class="p">,</span> <span class="n">y1</span> <span class="o">-</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y0</span></a><span class="p">,</span> <span class="n">h_box</span> <span class="o">-</span> <span class="n">h_sub</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span><span class="p">)</span>
+    <span class="n">copper</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Union</span><span class="p">(</span><span class="o">*</span><span class="n">copper_pieces</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">feed</span> <span class="o">==</span> <span class="s2">"pin"</span><span class="p">:</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">Difference</span><span class="p">(</span><span class="n">air</span><span class="p">,</span> <span class="n">copper</span><span class="p">))</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">copper</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">add_port</span><span class="p">(</span>
+            <span class="n">ports</span><span class="o">.</span><span class="n">PortLumped</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="s2">"feed"</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">w100</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">h_sub</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">w100</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">Z0</span><span class="o">=</span><span class="n">z_arm</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">model</span>
+    <span class="n">shield</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">Union</span><span class="p">(</span><span class="o">*</span><span class="n">shield_pieces</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">Difference</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="n">shield</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">Difference</span><span class="p">(</span><span class="n">air</span><span class="p">,</span> <span class="n">copper</span><span class="p">,</span> <span class="n">shield</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">copper</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">shield</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add_port</span><span class="p">(</span>
+        <span class="n">ports</span><span class="o">.</span><span class="n">PortWaveguide</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">"feed"</span><span class="p">,</span>
+            <span class="n">plane</span><span class="o">=</span><span class="s2">"ymin"</span><span class="p">,</span>
+            <span class="n">corners</span><span class="o">=</span><span class="p">((</span><span class="o">-</span><span class="n">tunnel_w</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="p">(</span><span class="n">tunnel_w</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">h_sub</span> <span class="o">+</span> <span class="n">tunnel_h</span><span class="p">)),</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span>
+</pre></div>
+</div>
+</section>
+<section id="the-element-and-the-array">
+<h2>The element and the array<a class="headerlink" href="#the-element-and-the-array" title="Link to this heading">#</a></h2>
+<p>The element is one patch on a short 100 Ω line with the pin at its
+end.  The array puts the trunk on the <code class="docutils literal notranslate"><span class="pre">ymin</span></code> wall, splits
+it at a T into two 100 Ω arms, transforms each back to 50 Ω a
+quarter wave before the column node, and splits again there into
+the two 100 Ω arms that feed the column’s patches — the lower one
+from its top edge, the upper one from its bottom edge.  Fed like
+that, the rows radiate in anti-phase; the crossbar therefore sits
+<span class="math notranslate nohighlight">\(\lambda_g/4\)</span> <em>below</em> the array centre, so the arm to the upper
+row is <span class="math notranslate nohighlight">\(\lambda_g/2\)</span> longer than the arm to the lower row and
+the half-wave of line undoes the half-turn of the mirror.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">l_line</span> <span class="o">=</span> <span class="mf">5e-3</span>  <span class="c1"># element: feed line from the pin to the patch</span>
+<a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">delta</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">lam_g_arm</span></a> <span class="o">/</span> <span class="mi">4</span>  <span class="c1"># crossbar offset below the array centre</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">element</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">y_inset</span><span class="p">):</span>
+    <span class="n">copper</span> <span class="o">=</span> <span class="p">[</span><span class="n">rect</span><span class="p">(</span><span class="o">-</span><span class="n">w100</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">w100</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">l_line</span> <span class="o">+</span> <span class="n">y_inset</span><span class="p">)]</span>  <span class="c1"># feed line from the pin</span>
+    <span class="n">copper</span> <span class="o">+=</span> <span class="n">patch</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">l_line</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">y_inset</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">board</span><span class="p">(</span><span class="n">copper</span><span class="p">,</span> <span class="n">feed</span><span class="o">=</span><span class="s2">"pin"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">array</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">y_inset</span><span class="p">):</span>
+    <span class="n">y_c</span> <span class="o">=</span> <span class="o">-</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">delta</span></a>  <span class="c1"># crossbar</span>
+    <span class="n">y_up</span> <span class="o">=</span> <span class="n">p_y</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">L</span> <span class="o">/</span> <span class="mi">2</span>  <span class="c1"># fed (bottom) edge of the upper row</span>
+    <span class="n">y_dn</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">p_y</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">L</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># fed (top) edge of the lower row</span>
+    <span class="n">copper</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">sx</span> <span class="ow">in</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">x_node</span> <span class="o">=</span> <span class="n">sx</span> <span class="o">*</span> <span class="n">p_x</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">copper</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">trace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">y_c</span><span class="p">,</span> <span class="n">sx</span> <span class="o">*</span> <span class="p">(</span><span class="n">p_x</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">lam4</span></a><span class="p">),</span> <span class="n">y_c</span><span class="p">,</span> <span class="n">w100</span><span class="p">))</span>  <span class="c1"># arm</span>
+        <span class="n">copper</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">trace</span><span class="p">(</span><span class="n">sx</span> <span class="o">*</span> <span class="p">(</span><span class="n">p_x</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">lam4</span></a><span class="p">),</span> <span class="n">y_c</span><span class="p">,</span> <span class="n">x_node</span><span class="p">,</span> <span class="n">y_c</span><span class="p">,</span> <span class="n">w70</span><span class="p">))</span>  <span class="c1"># transformer</span>
+        <span class="n">copper</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">trace</span><span class="p">(</span><span class="n">x_node</span><span class="p">,</span> <span class="n">y_c</span><span class="p">,</span> <span class="n">x_node</span><span class="p">,</span> <span class="n">y_up</span> <span class="o">+</span> <span class="n">y_inset</span><span class="p">,</span> <span class="n">w100</span><span class="p">))</span>  <span class="c1"># long arm, upper row</span>
+        <span class="n">copper</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">trace</span><span class="p">(</span><span class="n">x_node</span><span class="p">,</span> <span class="n">y_c</span><span class="p">,</span> <span class="n">x_node</span><span class="p">,</span> <span class="n">y_dn</span> <span class="o">-</span> <span class="n">y_inset</span><span class="p">,</span> <span class="n">w100</span><span class="p">))</span>  <span class="c1"># short arm, lower row</span>
+        <span class="n">copper</span> <span class="o">+=</span> <span class="n">patch</span><span class="p">(</span><span class="n">x_node</span><span class="p">,</span> <span class="n">y_up</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">y_inset</span><span class="p">,</span> <span class="n">side</span><span class="o">=+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">copper</span> <span class="o">+=</span> <span class="n">patch</span><span class="p">(</span><span class="n">x_node</span><span class="p">,</span> <span class="n">y_dn</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">y_inset</span><span class="p">,</span> <span class="n">side</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">y_wall</span> <span class="o">=</span> <span class="n">y_dn</span> <span class="o">-</span> <span class="n">L</span> <span class="o">-</span> <span class="n">tunnel_l</span> <span class="o">-</span> <span class="mf">4e-3</span>  <span class="c1"># launch ends 4 mm short of the lower row</span>
+    <span class="n">copper</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rect</span><span class="p">(</span><span class="o">-</span><span class="n">w50</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">y_wall</span><span class="p">,</span> <span class="n">w50</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">y_c</span> <span class="o">+</span> <span class="n">w100</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>  <span class="c1"># trunk</span>
+    <span class="k">return</span> <span class="n">board</span><span class="p">(</span><span class="n">copper</span><span class="p">,</span> <span class="n">feed</span><span class="o">=</span><span class="s2">"window"</span><span class="p">,</span> <span class="n">shield_pieces</span><span class="o">=</span><span class="n">launch</span><span class="p">(</span><span class="n">y_wall</span><span class="p">),</span> <span class="n">y_wall</span><span class="o">=</span><span class="n">y_wall</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="one-simulation-one-scoreboard">
+<h2>One simulation, one scoreboard<a class="headerlink" href="#one-simulation-one-scoreboard" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">simulate</span></code> is the block to lift into your own script: mesh, a
+far-field monitor at the design frequency, the run, and the numbers
+an antenna engineer reads first — the resonance and depth of the
+match, the −10 dB band, peak directivity and realized gain.
+The far-field monitor records on a box at the absorbing faces, and
+<code class="docutils literal notranslate"><span class="pre">h_box</span></code> keeps the top of that box 0.7 λ above the copper: closer
+than about half a wavelength the transform under-reads the power
+leaving the box (7 % at 0.3 λ on this patch) and the monitor warns.
+With the feed through the wall, a few percent of the accepted power
+runs along the outside of the launch beyond the box, so realized
+gain reads about 0.15 dB low there; directivity, normalised to the
+box’s own power, is unaffected.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.linspace.html#numpy.linspace" title="numpy.linspace" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">linspace</span></a><span class="p">(</span><span class="n">f_min</span><span class="p">,</span> <span class="n">f_max</span><span class="p">,</span> <span class="mi">401</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">simulate</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+    <span class="n">mesh</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">mesh_control</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="n">f_max</span><span class="p">)</span>
+    <span class="n">farfield</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarField</span><span class="p">(</span><span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"farfield"</span><span class="p">)</span>
+    <span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">f_min</span><span class="o">=</span><span class="n">f_min</span><span class="p">,</span> <span class="n">monitors</span><span class="o">=</span><span class="p">(</span><span class="n">farfield</span><span class="p">,),</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a><span class="o">=</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a><span class="p">,</span> <span class="n">excited</span><span class="o">=</span><span class="p">[</span><span class="s2">"feed"</span><span class="p">])</span>
+    <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11</span></a> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s2">"feed"</span><span class="p">,</span> <span class="s2">"feed"</span><span class="p">)</span>
+    <span class="n">pattern</span> <span class="o">=</span> <span class="n">farfield</span><span class="o">.</span><span class="n">result</span><span class="p">(</span><span class="n">f0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mesh</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11</span></a><span class="p">,</span> <span class="n">pattern</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">scoreboard</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11</span></a><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+    <span class="n">s11_db</span> <span class="o">=</span> <span class="mi">20</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11</span></a><span class="p">))</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.argmin.html#numpy.argmin" title="numpy.argmin" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">argmin</span></a><span class="p">(</span><span class="n">s11_db</span><span class="p">))</span>
+    <span class="n">i0</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.argmin.html#numpy.argmin" title="numpy.argmin" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">argmin</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a> <span class="o">-</span> <span class="n">f0</span><span class="p">)))</span>
+    <span class="n">band</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a><span class="p">[</span><span class="n">s11_db</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">10.0</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"--- </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> ---"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"|S11| at f0      : </span><span class="si">{</span><span class="n">s11_db</span><span class="p">[</span><span class="n">i0</span><span class="p">]</span><span class="si">:</span><span class="s2">6.1f</span><span class="si">}</span><span class="s2"> dB"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"dip              : </span><span class="si">{</span><span class="n">s11_db</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">6.1f</span><span class="si">}</span><span class="s2"> dB at </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> GHz"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">band</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="p">(</span><span class="n">band</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">band</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">f0</span> <span class="o">*</span> <span class="mi">100</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"-10 dB band      : </span><span class="si">{</span><span class="n">band</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">band</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> GHz (</span><span class="si">{</span><span class="n">width</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> %)"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"peak directivity : </span><span class="si">{</span><span class="mi">10</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><span class="n">pattern</span><span class="o">.</span><span class="n">directivity</span><span class="o">.</span><span class="n">max</span><span class="p">())</span><span class="si">:</span><span class="s2">6.2f</span><span class="si">}</span><span class="s2"> dBi"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"realized gain    : </span><span class="si">{</span><span class="mi">10</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><span class="n">pattern</span><span class="o">.</span><span class="n">realized_gain</span><span class="o">.</span><span class="n">max</span><span class="p">())</span><span class="si">:</span><span class="s2">6.2f</span><span class="si">}</span><span class="s2"> dBi"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+<section id="designing-the-element">
+<h2>Designing the element<a class="headerlink" href="#designing-the-element" title="Link to this heading">#</a></h2>
+<p>The cavity-model length resonates a few percent low — the closed
+form underestimates the fringing at this width-to-height ratio —
+so one run at a nominal inset reports the resonance, and the length
+is trimmed by that ratio, as a half-wave resonator scales.  The
+inset is then chosen <em>on the trimmed patch</em>: three depths, the
+deepest dip wins, and that run is the element.  The order matters:
+the notch shortens the resonant path a little, so an inset chosen
+first would hand the trim a moving target.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11_0</span></a><span class="p">,</span> <span class="n">pattern_0</span> <span class="o">=</span> <span class="n">simulate</span><span class="p">(</span><span class="n">element</span><span class="p">(</span><span class="n">L_formula</span><span class="p">,</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="n">L_formula</span><span class="p">))</span>
+<span class="n">f_dip</span> <span class="o">=</span> <span class="n">scoreboard</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11_0</span></a><span class="p">,</span> <span class="n">pattern_0</span><span class="p">,</span> <span class="s2">"element, cavity-model length, inset 0.25 L"</span><span class="p">)</span>
+<span class="n">L_element</span> <span class="o">=</span> <span class="n">L_formula</span> <span class="o">*</span> <span class="n">f_dip</span> <span class="o">/</span> <span class="n">f0</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"length </span><span class="si">{</span><span class="n">L_formula</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">L_element</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> mm</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">insets</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">([</span><span class="mf">0.20</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.30</span><span class="p">])</span> <span class="o">*</span> <span class="n">L_element</span>
+<span class="n">sweep</span><span class="p">,</span> <span class="n">patterns</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+<span class="k">for</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y0</span></a> <span class="ow">in</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">insets</span></a><span class="p">:</span>
+    <span class="n">_</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11</span></a><span class="p">,</span> <span class="n">pat</span> <span class="o">=</span> <span class="n">simulate</span><span class="p">(</span><span class="n">element</span><span class="p">(</span><span class="n">L_element</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y0</span></a><span class="p">))</span>
+    <span class="n">sweep</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11</span></a><span class="p">)</span>
+    <span class="n">patterns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pat</span><span class="p">)</span>
+    <span class="n">scoreboard</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11</span></a><span class="p">,</span> <span class="n">pat</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"element, trimmed length, inset </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y0</span></a><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">L_element</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> L"</span><span class="p">)</span>
+
+<span class="n">deepest</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.argmin.html#numpy.argmin" title="numpy.argmin" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">argmin</span></a><span class="p">([</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s</span></a><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="k">for</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s</span></a> <span class="ow">in</span> <span class="n">sweep</span><span class="p">]))</span>
+<span class="n">y_inset</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">insets</span></a><span class="p">[</span><span class="n">deepest</span><span class="p">])</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11_e</span></a><span class="p">,</span> <span class="n">pattern_e</span> <span class="o">=</span> <span class="n">sweep</span><span class="p">[</span><span class="n">deepest</span><span class="p">],</span> <span class="n">patterns</span><span class="p">[</span><span class="n">deepest</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">element: L = </span><span class="si">{</span><span class="n">L_element</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm, inset </span><span class="si">{</span><span class="n">y_inset</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm"</span><span class="p">)</span>
+
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/toolkits/mplot3d/axes3d.html#mpl_toolkits.mplot3d.axes3d.Axes3D" title="mpl_toolkits.mplot3d.axes3d.Axes3D" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">6.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">))</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/mpl_toolkits.mplot3d.axes3d.Axes3D.plot.html#mpl_toolkits.mplot3d.axes3d.Axes3D.plot" title="mpl_toolkits.mplot3d.axes3d.Axes3D.plot" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <span class="mi">20</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11_0</span></a><span class="p">)),</span> <span class="s2">"0.6"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"cavity-model length"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="p">(</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y0</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s</span></a><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">insets</span></a><span class="p">,</span> <span class="n">sweep</span><span class="p">)):</span>
+    <a href="https://matplotlib.org/stable/api/_as_gen/mpl_toolkits.mplot3d.axes3d.Axes3D.plot.html#mpl_toolkits.mplot3d.axes3d.Axes3D.plot" title="mpl_toolkits.mplot3d.axes3d.Axes3D.plot" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span>
+        <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span>
+        <span class="mi">20</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s</span></a><span class="p">)),</span>
+        <span class="s2">"k"</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="n">deepest</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"C</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="n">lw</span><span class="o">=</span><span class="mi">2</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="n">deepest</span> <span class="k">else</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"trimmed, inset </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y0</span></a><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">L_element</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> L"</span><span class="p">,</span>
+    <span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.axvline.html#matplotlib.axes.Axes.axvline" title="matplotlib.axes.Axes.axvline" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">axvline</span></a><span class="p">(</span><span class="n">f0</span> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"0.6"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">":"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_xlabel.html#matplotlib.axes.Axes.set_xlabel" title="matplotlib.axes.Axes.set_xlabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span></a><span class="p">(</span><span class="s2">"frequency (GHz)"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_ylabel.html#matplotlib.axes.Axes.set_ylabel" title="matplotlib.axes.Axes.set_ylabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span></a><span class="p">(</span><span class="s2">"|S11| (dB)"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/mpl_toolkits.mplot3d.axes3d.Axes3D.set_ylim.html#mpl_toolkits.mplot3d.axes3d.Axes3D.set_ylim" title="mpl_toolkits.mplot3d.axes3d.Axes3D.set_ylim" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span></a><span class="p">(</span><span class="o">-</span><span class="mi">45</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/mpl_toolkits.mplot3d.axes3d.Axes3D.set_title.html#mpl_toolkits.mplot3d.axes3d.Axes3D.set_title" title="mpl_toolkits.mplot3d.axes3d.Axes3D.set_title" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">"Element: length trim, then the inset"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/mpl_toolkits.mplot3d.axes3d.Axes3D.grid.html#mpl_toolkits.mplot3d.axes3d.Axes3D.grid" title="mpl_toolkits.mplot3d.axes3d.Axes3D.grid" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">grid</span></a><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_patch_array_001.png" srcset="../_images/sphx_glr_plot_patch_array_001.png" alt="Element: length trim, then the inset" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>--- element, cavity-model length, inset 0.25 L ---
+|S11| at f0      :   -2.6 dB
+dip              :  -17.3 dB at 9.57 GHz
+-10 dB band      : 9.45 - 9.68 GHz (2.3 %)
+peak directivity :   7.06 dBi
+realized gain    :   3.40 dBi
+length 9.653 -&gt; 9.238 mm
+
+--- element, trimmed length, inset 0.20 L ---
+|S11| at f0      :  -12.6 dB
+dip              :  -12.6 dB at 10.00 GHz
+-10 dB band      : 9.89 - 10.10 GHz (2.1 %)
+peak directivity :   7.49 dBi
+realized gain    :   7.35 dBi
+--- element, trimmed length, inset 0.25 L ---
+|S11| at f0      :  -15.9 dB
+dip              :  -20.7 dB at 9.94 GHz
+-10 dB band      : 9.82 - 10.07 GHz (2.5 %)
+peak directivity :   7.43 dBi
+realized gain    :   7.40 dBi
+--- element, trimmed length, inset 0.30 L ---
+|S11| at f0      :   -8.3 dB
+dip              :  -20.3 dB at 9.87 GHz
+-10 dB band      : 9.76 - 9.97 GHz (2.1 %)
+peak directivity :   7.33 dBi
+realized gain    :   6.64 dBi
+
+element: L = 9.24 mm, inset 2.31 mm
+</pre></div>
+</div>
+</section>
+<section id="the-array">
+<h2>The array<a class="headerlink" href="#the-array" title="Link to this heading">#</a></h2>
+<p>The layout on the copper plane, and the grid the run will use.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">model_a</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="n">L_element</span><span class="p">,</span> <span class="n">y_inset</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/toolkits/mplot3d/axes3d.html#mpl_toolkits.mplot3d.axes3d.Axes3D" title="mpl_toolkits.mplot3d.axes3d.Axes3D" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">plots</span><span class="o">.</span><span class="n">plot_cross_section</span><span class="p">(</span>
+    <span class="n">model_a</span><span class="p">,</span> <span class="s2">"z"</span><span class="p">,</span> <span class="n">h_sub</span> <span class="o">+</span> <span class="n">t_cu</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"2 x 2 array with corporate feed"</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_patch_array_002.png" srcset="../_images/sphx_glr_plot_patch_array_002.png" alt="2 x 2 array with corporate feed" class = "sphx-glr-single-img"/><p>First array run — and a trim.  The distribution line runs a few
+millimetres from the fed edges of the lower row and loads them; the
+array’s resonance lands about a percent above the element’s.  One
+full-wave trim of the patch length, the same rule as for the
+element, moves it back.  The loading shifts the inset optimum too —
+the array matches a few decibels less deeply than the element — and
+the inset sweep would transfer to the array the same way; this page
+trims the length only.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">mesh_a</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11_a</span></a><span class="p">,</span> <span class="n">pattern_a</span> <span class="o">=</span> <span class="n">simulate</span><span class="p">(</span><span class="n">model_a</span><span class="p">)</span>
+<span class="n">n_cells</span> <span class="o">=</span> <span class="n">mesh_a</span><span class="o">.</span><span class="n">Nx</span> <span class="o">*</span> <span class="n">mesh_a</span><span class="o">.</span><span class="n">Ny</span> <span class="o">*</span> <span class="n">mesh_a</span><span class="o">.</span><span class="n">Nz</span> <span class="o">/</span> <span class="mf">1e6</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"grid: </span><span class="si">{</span><span class="n">mesh_a</span><span class="o">.</span><span class="n">Nx</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">mesh_a</span><span class="o">.</span><span class="n">Ny</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">mesh_a</span><span class="o">.</span><span class="n">Nz</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">n_cells</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> M cells"</span><span class="p">)</span>
+<span class="n">f_dip_a</span> <span class="o">=</span> <span class="n">scoreboard</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11_a</span></a><span class="p">,</span> <span class="n">pattern_a</span><span class="p">,</span> <span class="s2">"array, element length"</span><span class="p">)</span>
+
+<span class="n">L_array</span> <span class="o">=</span> <span class="n">L_element</span> <span class="o">*</span> <span class="n">f_dip_a</span> <span class="o">/</span> <span class="n">f0</span>
+<span class="n">mesh_a</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11_a</span></a><span class="p">,</span> <span class="n">pattern_a</span> <span class="o">=</span> <span class="n">simulate</span><span class="p">(</span><span class="n">array</span><span class="p">(</span><span class="n">L_array</span><span class="p">,</span> <span class="n">y_inset</span><span class="p">))</span>
+<span class="n">scoreboard</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11_a</span></a><span class="p">,</span> <span class="n">pattern_a</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"array, trimmed (L = </span><span class="si">{</span><span class="n">L_array</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm)"</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">d_elem</span></a> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><span class="n">pattern_e</span><span class="o">.</span><span class="n">directivity</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+<a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">d_array</span></a> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><span class="n">pattern_a</span><span class="o">.</span><span class="n">directivity</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"array gain over the element: </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">d_array</span></a><span class="w"> </span><span class="o">-</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">d_elem</span></a><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> dB (four sources: 6.0 dB)"</span><span class="p">)</span>
+
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/toolkits/mplot3d/axes3d.html#mpl_toolkits.mplot3d.axes3d.Axes3D" title="mpl_toolkits.mplot3d.axes3d.Axes3D" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">6.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">))</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/mpl_toolkits.mplot3d.axes3d.Axes3D.plot.html#mpl_toolkits.mplot3d.axes3d.Axes3D.plot" title="mpl_toolkits.mplot3d.axes3d.Axes3D.plot" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <span class="mi">20</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11_e</span></a><span class="p">)),</span> <span class="s2">"0.6"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"element"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/mpl_toolkits.mplot3d.axes3d.Axes3D.plot.html#mpl_toolkits.mplot3d.axes3d.Axes3D.plot" title="mpl_toolkits.mplot3d.axes3d.Axes3D.plot" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <span class="mi">20</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11_a</span></a><span class="p">)),</span> <span class="s2">"k"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"array"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.axvline.html#matplotlib.axes.Axes.axvline" title="matplotlib.axes.Axes.axvline" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">axvline</span></a><span class="p">(</span><span class="n">f0</span> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"0.6"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">":"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.axhline.html#matplotlib.axes.Axes.axhline" title="matplotlib.axes.Axes.axhline" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">axhline</span></a><span class="p">(</span><span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"0.6"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">"--"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_xlabel.html#matplotlib.axes.Axes.set_xlabel" title="matplotlib.axes.Axes.set_xlabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span></a><span class="p">(</span><span class="s2">"frequency (GHz)"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_ylabel.html#matplotlib.axes.Axes.set_ylabel" title="matplotlib.axes.Axes.set_ylabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span></a><span class="p">(</span><span class="s2">"|S11| (dB)"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/mpl_toolkits.mplot3d.axes3d.Axes3D.set_ylim.html#mpl_toolkits.mplot3d.axes3d.Axes3D.set_ylim" title="mpl_toolkits.mplot3d.axes3d.Axes3D.set_ylim" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span></a><span class="p">(</span><span class="o">-</span><span class="mi">40</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/mpl_toolkits.mplot3d.axes3d.Axes3D.set_title.html#mpl_toolkits.mplot3d.axes3d.Axes3D.set_title" title="mpl_toolkits.mplot3d.axes3d.Axes3D.set_title" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">"Return loss at the feed"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/mpl_toolkits.mplot3d.axes3d.Axes3D.grid.html#mpl_toolkits.mplot3d.axes3d.Axes3D.grid" title="mpl_toolkits.mplot3d.axes3d.Axes3D.grid" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">grid</span></a><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_patch_array_003.png" srcset="../_images/sphx_glr_plot_patch_array_003.png" alt="Return loss at the feed" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>grid: 134 x 123 x 39 = 0.64 M cells
+--- array, element length ---
+|S11| at f0      :  -14.3 dB
+dip              :  -14.7 dB at 10.04 GHz
+-10 dB band      : 9.87 - 10.21 GHz (3.4 %)
+peak directivity :  12.92 dBi
+realized gain    :  12.81 dBi
+--- array, trimmed (L = 9.28 mm) ---
+|S11| at f0      :  -14.4 dB
+dip              :  -14.4 dB at 10.00 GHz
+-10 dB band      : 9.84 - 10.17 GHz (3.3 %)
+peak directivity :  12.99 dBi
+realized gain    :  12.89 dBi
+array gain over the element: 5.6 dB (four sources: 6.0 dB)
+</pre></div>
+</div>
+</section>
+<section id="pattern-multiplication">
+<h2>Pattern multiplication<a class="headerlink" href="#pattern-multiplication" title="Link to this heading">#</a></h2>
+<p>The two principal-plane cuts against the element cut times the
+array factor of four in-phase sources on the lattice.  Main lobe
+and the first sidelobes follow the estimate; the nulls fill in
+(mutual coupling between the patches and the network’s own
+radiation are what the estimate leaves out), and the E-plane shows
+the price of a 0.85 λ row pitch: the array factor’s second lobe
+rises toward the horizon, where the element still radiates.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">theta</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">phi</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">pattern_a</span><span class="o">.</span><span class="n">theta</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">pattern_a</span><span class="o">.</span><span class="n">phi</span></a>
+<span class="n">k0</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">/</span> <span class="n">lam0</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">array_factor</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">theta</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">phi</span></a><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""|AF|^2 of the 2 x 2 lattice, normalised to one at broadside."""</span>
+    <span class="n">ax_</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">cos</span></a><span class="p">(</span><span class="n">k0</span> <span class="o">*</span> <span class="n">p_x</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">sin</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">theta</span></a><span class="p">)</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">cos</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">phi</span></a><span class="p">))</span>
+    <span class="n">ay_</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">cos</span></a><span class="p">(</span><span class="n">k0</span> <span class="o">*</span> <span class="n">p_y</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">sin</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">theta</span></a><span class="p">)</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">sin</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">phi</span></a><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">ax_</span> <span class="o">*</span> <span class="n">ay_</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+
+
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a> <span class="o">=</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">),</span> <span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s2">"projection"</span><span class="p">:</span> <span class="s2">"polar"</span><span class="p">})</span>
+<span class="k">for</span> <a href="https://matplotlib.org/stable/api/toolkits/mplot3d/axes3d.html#mpl_toolkits.mplot3d.axes3d.Axes3D" title="mpl_toolkits.mplot3d.axes3d.Axes3D" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">phi_cut</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">,</span> <span class="p">((</span><span class="s2">"H-plane (xz)"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="p">(</span><span class="s2">"E-plane (yz)"</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">/</span> <span class="mi">2</span><span class="p">))):</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.argmin.html#numpy.argmin" title="numpy.argmin" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">argmin</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">phi</span></a> <span class="o">-</span> <span class="n">phi_cut</span><span class="p">)))</span>
+    <span class="n">j_back</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.argmin.html#numpy.argmin" title="numpy.argmin" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">argmin</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">phi</span></a> <span class="o">-</span> <span class="p">(</span><span class="n">phi_cut</span> <span class="o">+</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a><span class="p">))))</span>
+    <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">cut_a</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.concatenate.html#numpy.concatenate" title="numpy.concatenate" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span></a><span class="p">([</span><span class="n">pattern_a</span><span class="o">.</span><span class="n">directivity</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">j_back</span><span class="p">],</span> <span class="n">pattern_a</span><span class="o">.</span><span class="n">directivity</span><span class="p">[</span><span class="mi">1</span><span class="p">:,</span> <span class="n">j</span><span class="p">]])</span>
+    <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">cut_e</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.concatenate.html#numpy.concatenate" title="numpy.concatenate" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span></a><span class="p">([</span><span class="n">pattern_e</span><span class="o">.</span><span class="n">directivity</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">j_back</span><span class="p">],</span> <span class="n">pattern_e</span><span class="o">.</span><span class="n">directivity</span><span class="p">[</span><span class="mi">1</span><span class="p">:,</span> <span class="n">j</span><span class="p">]])</span>
+    <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">af</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.concatenate.html#numpy.concatenate" title="numpy.concatenate" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span></a><span class="p">([</span><span class="n">array_factor</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">theta</span></a><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">phi</span></a><span class="p">[</span><span class="n">j_back</span><span class="p">]),</span> <span class="n">array_factor</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">theta</span></a><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">phi</span></a><span class="p">[</span><span class="n">j</span><span class="p">])])</span>
+    <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">th</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.concatenate.html#numpy.concatenate" title="numpy.concatenate" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span></a><span class="p">([</span><span class="o">-</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">theta</span></a><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">theta</span></a><span class="p">[</span><span class="mi">1</span><span class="p">:]])</span>
+    <span class="n">floor</span> <span class="o">=</span> <span class="o">-</span><span class="mf">20.0</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="mi">10</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">maximum</span></a><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="mi">10</span> <span class="o">**</span> <span class="p">(</span><span class="n">floor</span> <span class="o">/</span> <span class="mi">10</span><span class="p">)))</span>  <span class="c1"># noqa: E731</span>
+    <a href="https://matplotlib.org/stable/api/_as_gen/mpl_toolkits.mplot3d.axes3d.Axes3D.plot.html#mpl_toolkits.mplot3d.axes3d.Axes3D.plot" title="mpl_toolkits.mplot3d.axes3d.Axes3D.plot" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">th</span></a><span class="p">,</span> <span class="n">db</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">cut_a</span></a><span class="p">),</span> <span class="s2">"k"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.8</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"array"</span><span class="p">)</span>
+    <a href="https://matplotlib.org/stable/api/_as_gen/mpl_toolkits.mplot3d.axes3d.Axes3D.plot.html#mpl_toolkits.mplot3d.axes3d.Axes3D.plot" title="mpl_toolkits.mplot3d.axes3d.Axes3D.plot" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">th</span></a><span class="p">,</span> <span class="n">db</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">cut_e</span></a> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">af</span></a><span class="p">),</span> <span class="s2">"C1--"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"element x array factor"</span><span class="p">)</span>
+    <a href="https://matplotlib.org/stable/api/toolkits/mplot3d/axes3d.html#mpl_toolkits.mplot3d.axes3d.Axes3D" title="mpl_toolkits.mplot3d.axes3d.Axes3D" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span><span class="o">.</span><span class="n">set_theta_zero_location</span></a><span class="p">(</span><span class="s2">"N"</span><span class="p">)</span>
+    <a href="https://matplotlib.org/stable/api/toolkits/mplot3d/axes3d.html#mpl_toolkits.mplot3d.axes3d.Axes3D" title="mpl_toolkits.mplot3d.axes3d.Axes3D" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span><span class="o">.</span><span class="n">set_theta_direction</span></a><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <a href="https://matplotlib.org/stable/api/toolkits/mplot3d/axes3d.html#mpl_toolkits.mplot3d.axes3d.Axes3D" title="mpl_toolkits.mplot3d.axes3d.Axes3D" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span><span class="o">.</span><span class="n">set_thetamin</span></a><span class="p">(</span><span class="o">-</span><span class="mi">90</span><span class="p">)</span>
+    <a href="https://matplotlib.org/stable/api/toolkits/mplot3d/axes3d.html#mpl_toolkits.mplot3d.axes3d.Axes3D" title="mpl_toolkits.mplot3d.axes3d.Axes3D" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span><span class="o">.</span><span class="n">set_thetamax</span></a><span class="p">(</span><span class="mi">90</span><span class="p">)</span>
+    <a href="https://matplotlib.org/stable/api/toolkits/mplot3d/axes3d.html#mpl_toolkits.mplot3d.axes3d.Axes3D" title="mpl_toolkits.mplot3d.axes3d.Axes3D" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span><span class="o">.</span><span class="n">set_rlim</span></a><span class="p">(</span><span class="n">floor</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+    <a href="https://matplotlib.org/stable/api/_as_gen/mpl_toolkits.mplot3d.axes3d.Axes3D.set_title.html#mpl_toolkits.mplot3d.axes3d.Axes3D.set_title" title="mpl_toolkits.mplot3d.axes3d.Axes3D.set_title" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">, directivity (dBi)"</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">"lower left"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_patch_array_004.png" srcset="../_images/sphx_glr_plot_patch_array_004.png" alt="H-plane (xz), directivity (dBi), E-plane (yz), directivity (dBi)" class = "sphx-glr-single-img"/><p>The radiation surface: the radius is directivity in dB above the
+floor, the ground plane cuts the sphere in half.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/toolkits/mplot3d/axes3d.html#mpl_toolkits.mplot3d.axes3d.Axes3D" title="mpl_toolkits.mplot3d.axes3d.Axes3D" class="sphx-glr-backref-module-mpl_toolkits-mplot3d-axes3d sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">pattern_a</span><span class="o">.</span><span class="n">plot_3d</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">"2 x 2 patch array, radiation surface (dB radius)"</span><span class="p">)</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_patch_array_005.png" srcset="../_images/sphx_glr_plot_patch_array_005.png" alt="2 x 2 patch array, radiation surface (dB radius)" class = "sphx-glr-single-img"/></section>
+<section id="carry-it-over">
+<h2>Carry it over<a class="headerlink" href="#carry-it-over" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">simulate</span></code> and <code class="docutils literal notranslate"><span class="pre">scoreboard</span></code> transfer as they are; <code class="docutils literal notranslate"><span class="pre">element</span></code>,
+<code class="docutils literal notranslate"><span class="pre">array</span></code> and the builders take your substrate from the block at the
+top.  Two things to keep: choose the inset before trimming the
+length, and expect the array to need a trim of its own once the
+feed network is in place.  A different lattice changes the space
+the network needs — the crossbar wants a few substrate heights of
+clearance from the fed edges — and a row pitch below the quarter-
+wave offset’s reach asks for a meandered arm instead of the
+straight one used here.</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (15 minutes 48.377 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-patch-array-py">
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/aa1574a624d08bd2fd272ebe92860f60/plot_patch_array.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_patch_array.ipynb</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/88e857670a5c0e3c9d9df5a54d3ff0cf/plot_patch_array.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_patch_array.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-zip docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/14fef30b9f901932783c0dd707f3cbc1/plot_patch_array.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">zipped:</span> <span class="pre">plot_patch_array.zip</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="plot_mesh_convergence.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Mesh convergence: a ladder around your simulation</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="plot_stripline_pickup_kicker.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#given-quantities">Given quantities</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-synthesis">The synthesis</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-lines-on-this-grid">The lines on this grid</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#building-blocks">Building blocks</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-element-and-the-array">The element and the array</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#one-simulation-one-scoreboard">One simulation, one scoreboard</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#designing-the-element">Designing the element</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-array">The array</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pattern-multiplication">Pattern multiplication</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#carry-it-over">Carry it over</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/howto/plot_patch_array.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Bernd Breitkreutz.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

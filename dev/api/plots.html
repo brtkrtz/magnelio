@@ -516,7 +516,7 @@
 home for direct use on objects you assembled yourself.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="magnelio.plots.plot_cross_section">
-<span class="sig-prename descclassname"><span class="pre">magnelio.plots.</span></span><span class="sig-name descname"><span class="pre">plot_cross_section</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">geometry</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deflection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outline_transparent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_wires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_ports</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.plots.plot_cross_section" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">magnelio.plots.</span></span><span class="sig-name descname"><span class="pre">plot_cross_section</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">geometry</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deflection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outline_transparent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_wires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_ports</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.plots.plot_cross_section" title="Link to this definition">#</a></dt>
 <dd><p>Plot a 2D cross-section of 3D geometry at an axis-aligned plane.</p>
 <p>Intersects every shape in <em>geometry</em> with the specified plane and
 renders the resulting polygons as matplotlib patches, coloured by
@@ -564,6 +564,10 @@ fall within this distance of the plane.  Field plots pass the
 half-height of the cell layer they display, so a wire on a grid
 node still appears in a picture whose field samples sit half a
 cell off it.</p></li>
+<li><p><strong>fill</strong> (<em>bool</em><em>, </em><em>optional</em>) – Fill the sections of opaque materials (default True).  <code class="docutils literal notranslate"><span class="pre">False</span></code>
+draws only their outline in the material colour — the overlay
+<a class="reference internal" href="#magnelio.plots.plot_mesh_section" title="magnelio.plots.plot_mesh_section"><code class="xref py py-func docutils literal notranslate"><span class="pre">plot_mesh_section()</span></code></a> uses on top of the
+cell fill.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -688,6 +692,82 @@ fixed-scale animations).  Overrides <em>auto_scale</em>.</p></li>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>tuple[‘matplotlib.figure.Figure’, ‘matplotlib.axes.Axes’]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="magnelio.plots.plot_mesh_section">
+<span class="sig-prename descclassname"><span class="pre">magnelio.plots.</span></span><span class="sig-name descname"><span class="pre">plot_mesh_section</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'coverage'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.plots.plot_mesh_section" title="Link to this definition">#</a></dt>
+<dd><p>Plot an axis-aligned section of the mesh: cells and grid lines by origin.</p>
+<p>Every grid line of the two in-plane axes is drawn in the style of
+the rule that placed it (see the legend); lines that are graded fill
+between those planes are hairlines, absorber cells are hatched, and
+a plane holding a conductor edge with a field singularity carries
+red markers at its ends.  Pass the model as <code class="docutils literal notranslate"><span class="pre">geometry</span></code> to overlay
+the exact section outline.</p>
+<p>The fill answers one of three questions.  <code class="docutils literal notranslate"><span class="pre">&quot;coverage&quot;</span></code> (default)
+shows how much of each cell is conductor: the exact PEC-covered
+area of the primal faces normal to the cut, in the node plane
+nearest to it, as measured by the sub-cell classifier — every cell
+in the colour of its classified material, blended towards PEC grey
+by that share.  <code class="docutils literal notranslate"><span class="pre">&quot;material&quot;</span></code> shows the cell classification: the
+material containing each cell’s centre, on the real cell size.  It
+is the staircase baseline the sub-cell values override on every
+cut cell, not the accuracy of the discretisation, and thin sheets
+do not appear in it.  <code class="docutils literal notranslate"><span class="pre">&quot;conformal&quot;</span></code> shows the dual faces of the
+edges normal to the cut — one tile per node, bounded by the cell
+midpoints, so the tiles sit half a cell off the grid lines — each
+coloured by the area-weighted permittivity that enters the
+electric material matrix for that edge (0 = PEC), with a colour
+bar.  Around a conductor the masked tiles reach one node beyond
+the contour: edges running along a conductor surface are held at
+its potential.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> (<a class="reference internal" href="core.html#magnelio.Mesh" title="magnelio.Mesh"><em>Mesh</em></a>) – The mesh to draw.  Its <code class="docutils literal notranslate"><span class="pre">planes</span></code> record supplies the line
+styles; a mesh without one (built from a grid) draws every line
+as graded fill.  The <code class="docutils literal notranslate"><span class="pre">&quot;conformal&quot;</span></code> fill and the edge layer
+need the sub-cell data of a mesh built by <code class="docutils literal notranslate"><span class="pre">Mesh.from_geometry</span></code>.</p></li>
+<li><p><strong>normal</strong> (<em>str</em>) – Normal axis of the cutting plane: <code class="docutils literal notranslate"><span class="pre">'x'</span></code>, <code class="docutils literal notranslate"><span class="pre">'y'</span></code>, or <code class="docutils literal notranslate"><span class="pre">'z'</span></code>.</p></li>
+<li><p><strong>position</strong> (<em>float</em>) – Position along the normal axis in metres.  The cell layer
+containing it is shown; the edge layer takes the node plane
+nearest to it.</p></li>
+<li><p><strong>geometry</strong> (<a class="reference internal" href="core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><em>GeometryModel</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Overlay the exact section outline of this model (via
+<a class="reference internal" href="#magnelio.plots.plot_cross_section" title="magnelio.plots.plot_cross_section"><code class="xref py py-func docutils literal notranslate"><span class="pre">plot_cross_section()</span></code></a> with <code class="docutils literal notranslate"><span class="pre">fill=False</span></code>).</p></li>
+<li><p><strong>scale_mm</strong> (<em>bool</em><em>, </em><em>optional</em>) – Display axes in millimetres (default) or metres.</p></li>
+<li><p><strong>flip</strong> (<em>bool</em><em>, </em><em>optional</em>) – Swap the horizontal and vertical axes.</p></li>
+<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.1)"><em>matplotlib.axes.Axes</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Existing axes to draw into.  A new figure is created when <em>None</em>.</p></li>
+<li><p><strong>title</strong> (<em>str</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – Plot title.  Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;Mesh</span> <span class="pre">section</span> <span class="pre">at</span> <span class="pre">&lt;axis&gt;</span> <span class="pre">=</span> <span class="pre">&lt;pos&gt;</span> <span class="pre">&lt;unit&gt;&quot;</span></code>.</p></li>
+<li><p><strong>fill</strong> (<em>{&quot;coverage&quot;</em><em>, </em><em>&quot;material&quot;</em><em>, </em><em>&quot;conformal&quot;</em><em>, </em><em>None}</em><em>, </em><em>optional</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;coverage&quot;</span></code> (default) shades every cell by its exact
+PEC-covered area; <code class="docutils literal notranslate"><span class="pre">&quot;material&quot;</span></code> colours every cell by its
+classified material; <code class="docutils literal notranslate"><span class="pre">&quot;conformal&quot;</span></code> colours the dual-face
+tiles of the normal edges by their area-weighted permittivity,
+with a colour bar; <code class="docutils literal notranslate"><span class="pre">None</span></code> draws the lines only.</p></li>
+<li><p><strong>edges</strong> (<em>bool</em><em>, </em><em>optional</em>) – Add the in-plane primal edges of the nearest node plane:
+PEC-masked edges dark, edges partly inside PEC orange (the more
+metal, the stronger), edges borrowed out by the enlarged-cell
+technique with a red cross.  Free edges are not drawn.  Default
+False.</p></li>
+<li><p><strong>legend</strong> (<em>bool</em><em>, </em><em>optional</em>) – Add a legend of the plane kinds and edge classes present
+(default True).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>fig</strong> (<em>matplotlib.figure.Figure</em>)</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib.axes.Axes</em>)</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – For an unknown <code class="docutils literal notranslate"><span class="pre">normal</span></code> or <code class="docutils literal notranslate"><span class="pre">fill</span></code>, or when <code class="docutils literal notranslate"><span class="pre">fill=&quot;coverage&quot;</span></code>,
+    <code class="docutils literal notranslate"><span class="pre">fill=&quot;conformal&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">edges=True</span></code> is asked of a mesh
+    without sub-cell data.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple[‘matplotlib.figure.Figure’, ‘matplotlib.axes.Axes’]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -866,6 +946,7 @@ image with a warning.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.plots.plot_cross_section"><code class="docutils literal notranslate"><span class="pre">plot_cross_section()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.plots.plot_field_scalar"><code class="docutils literal notranslate"><span class="pre">plot_field_scalar()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.plots.plot_field_vector"><code class="docutils literal notranslate"><span class="pre">plot_field_vector()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.plots.plot_mesh_section"><code class="docutils literal notranslate"><span class="pre">plot_mesh_section()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.plots.plot_pattern_3d"><code class="docutils literal notranslate"><span class="pre">plot_pattern_3d()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.plots.plot_pattern_cut"><code class="docutils literal notranslate"><span class="pre">plot_pattern_cut()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.plots.show_geometry"><code class="docutils literal notranslate"><span class="pre">show_geometry()</span></code></a></li>
