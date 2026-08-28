@@ -16327,3 +16327,128 @@ when a model shows them on a ladder row.
 `_is_generatrix`, `_axis_distance`, `_is_rim`, `_cylinder_row`),
 `src/magnelio/geo/_rect_union.py` (`rectilinear_rings`),
 `tests/unit/test_edge_pass_lines.py`, `CHANGELOG.md`, `STATUS.md`.
+
+## DD-221 — The effective PEC solid is not fused out of pieces its housing already holds
+
+**Status:** Decided and implemented 2026-08-29, branch
+`perf/contained-pec-contributions`.  DD-220's open item 1: the N-ary
+fuses on the planar rows.
+
+**Problem.**  `build_effective_pec_solid` on a PEC housing (the
+mesher's background brick of DD-049 at the lowest priority) cut the
+brick by every non-PEC shape and then fused the result with every PEC
+shape of the model in one N-ary kernel fuse — on a row of 16 Lange
+couplers 257 bodies (the housing and 256 raised half-couplers), 1.47 s
+of the 2.0 s `pec_fuse` column, `fuse` 2.0 s (internal dossier
+`investigations/mesh-build-bench/nary/`, M24).  The fuse measured
+nothing: `brick − (air − metal)` *is* the brick minus the air plus
+the metal, so every piece it united was in the housing's own cut
+already.  On the 16 × 16 patch array the union was a two-body fuse
+(0.26 s), but the housing's cut itself was 1.24 s — a cut against the
+air body, whose 2 807 faces are the imprint of the 1 787 copper strips
+it was cut by, for a result equal to the copper union that the
+`Difference` had computed and thrown away.
+
+**Decision.**  Two set identities applied where the construction
+proves their premises, both in `build_effective_pec_solid`.
+
+1. *Contained contributions* (`_contained_pec_shapes`).  With
+   ``Cᵢ = Pᵢ − ∪{H non-PEC, H above Pᵢ}`` the contribution of a PEC
+   shape, ``Cᵢ ⊆ Cₖ`` — and ``Pᵢ`` is left out of the union, uncut —
+   whenever ``Pᵢ ⊆ Pₖ`` and either ``Pₖ`` is the higher of the two
+   or no non-PEC shape *between* them in priority has volume in
+   common with ``Pᵢ``.  Containment is decided on the analytic
+   bounding boxes (exact for bricks, conservative for the rest — a
+   larger box can only withhold the rule) and only for a box-shaped
+   ``Pₖ`` (kernel volume equal to its box volume, so the box *is* the
+   solid); "no volume in common" is proven by boxes that touch
+   without overlapping (the metal on its substrate) or by DD-212's
+   construction pairs (the metal and the air body it was cut from).
+   On the Lange row every one of the 320 metal pieces is held by the
+   brick; the union receives one body.
+2. *Difference tools as pieces* (`_difference_tools_as_pieces`).  For
+   a box-shaped contribution ``P`` cut by a ``Difference`` ``D = base −
+   T`` with ``T ⊆ P``, ``P − D − H₁ − … = (P − base − H₁ − …) ∪ (T −
+   H₁ − …)``: the cut runs against the base (six faces, not the
+   imprint) and the tools' union ``T`` joins the union as a piece,
+   cut by those other tools of ``P`` that may share volume with it —
+   none when they touch it at most or were constructed disjoint from
+   its operands.  ``T`` is what `Difference` already fused for its own
+   result; it is now kept (`Difference._occ_tools`, cached per scale
+   like `_occ_shape`).  Pieces whose box is void (the housing shell of
+   a domain the substrate and the air box fill completely) are
+   dropped before the union, so on both benchmark housings the PEC
+   solid is the metal union itself: one 3 ms cut, no fuse.
+
+Both identities are exact set theory; what the kernel returns differs
+from the former route only in its face structure (the metal union's
+faces instead of the imprint's), which the mesh sees at the ulp:
+posts 60 / 240 and Lange 4 bit-identical (35 / 35 arrays), the 4 × 4
+array 33 / 35 — `L_free` and `A_free` on 9 221 edges by ≤ 2.2e-19 m
+(rel 1.4e-16) and 5.3e-22 m² (rel 3.2e-16), the kernel's fused
+vertices 1–4 ulp off the input coordinates as in DD-215.  References
+re-pinned (`pool/hash_refs/array4.txt`, the DD-215 one kept as
+`array4_pre_dd221.txt`).
+
+**Measured.**  `probe_union_calls.py` (every `boolean_union`, kernel
+op and planar route of a build): Lange 16 `pec_fuse` 2.02 → 0.43 s
+after rule 1 (the union receives the housing's cut, 2 208 faces) →
+**0.04 s** after rule 2 (shell cut 3 ms, void; PEC solid = the tool
+union); 16 × 16 array `pec_fuse` 1.55 → 1.28 → **0.04 s**.  The `fuse`
+column of Lange 16 (2.4 s) was the housing fuse plus the tool union
+0.75 s (0.28 s the rectilinear union's one-off compile, 0.38 s
+32 kernel fuses of eight bodies — the two halves of each coupler,
+whose posts and bridges sit on different z intervals) and is 0.6 s
+now.
+
+Full ladder (`--family all --pool auto`, CPU idle; before = DD-220's;
+`pec_fuse` from `probe_pass_breakdown.py` / `probe_union_calls.py`):
+
+| family, n | cells | total before → after | `pec_fuse` | `fuse` |
+|---|---|---|---|---|
+| Lange 16 | 3.69 M | 12.5 → **10.6 s** | 2.0 → 0.04 | 2.0 → 0.5 |
+| Lange 8 | 1.84 M | 5.2 → **4.5 s** | | 0.8 → 0.2 |
+| Lange 4 | 922 k | 2.4 → **2.0 s** | | 0.4 → 0.1 |
+| array 8 × 8 | 664 k | 2.5 → **2.3 s** | 0.27 → 0.01 | 0.2 → 0.1 |
+| array 4 × 4 | 222 k | 0.7 → 0.7 s | | |
+| posts 240 | 385 k | 2.4 → **2.0 s** | 0.35 → 0.01 | 0.2 → 0.0 |
+| posts 60 | 97 k | 0.5 → 0.5 s | | |
+| 16 × 16 (off-ladder) | 1.8 M | 11.0 → **9.6 s** | 1.5 → 0.04 | 0.9 → 0.6 |
+
+The posts needed a third step: the `Cylinder`'s analytic bounding box
+is conservative (a 0 … 4 mm post reports z −0.5 … 4.5 mm) and kept the
+post union outside its housing, so both rules read the kernel's
+optimal boxes (`bounding_box(occ, 1.0)`: no tolerance padding, exact
+for primitives and Booleans) rather than the analytic ones.
+
+Unit suite 2 604 passed / 4 skipped (nine new tests: the housing whose metal the
+brick holds, a pocket between that blocks, a touching substrate that
+does not, a higher lid that makes cut and fuse unnecessary, a holder
+that is not a box, an overlapping air block, the housing cut by the
+air box rather than the air body, substituted tools cut by a pocket
+overlapping them, tools beyond the box left alone), integration
+402 passed / 5 skipped (`CUPY_ACCELERATORS=""`); `ruff check` / `ruff format
+--check` clean; `check_dd_references.py` and `check_imports.py` on
+`investigations/` and `userscripts/` clean.
+
+**Open, re-ranked.**  In value order: (1) the thin-sheet
+rasteriser — `sheets` 1.8 s on the 16 × 16 array (its section 1.3 s),
+`sheets_detect` 1.6 s on Lange 16 of which ~0.7 s is its own; (2) the
+air body's kernel cut (`Cut` air − copper, 1.04 s on the 16 × 16
+array, 0.33 s on Lange 16 — the imprint of every metal piece, needed
+by the material filling as a solid today; a section-level `base −
+tools` would make it a 2-D difference per plane); (3) the post row's
+`pass_faces_mu` 0.87 s beyond its sections and the classifier's
+`section_calls` (0.38 s on the posts, 1.2 s on the 16 × 16 array)
+with `planes_material` (0.34 s on the posts); (4) the tool union's 32
+eight-body kernel fuses on Lange 16 (0.38 s: prisms of one axis on
+three z intervals, which the planar route takes one interval at a
+time); (5) spheres and cones in the engine and the line table when a
+ladder row shows them.
+
+**Files:** `src/magnelio/geo/_occ_backend.py` (`_box_shaped`,
+`_contained_pec_shapes`, `_difference_tools_as_pieces`,
+`build_effective_pec_solid`), `src/magnelio/geo/operations.py`
+(`Difference._occ_tools`), `tests/unit/test_prism_fuse.py`
+(`TestContainedPecContributions`), `CHANGELOG.md`, `STATUS.md`,
+`benchmarks/results/bench_mesh_build.json` (re-run).

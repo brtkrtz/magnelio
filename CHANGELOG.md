@@ -11,6 +11,15 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- The mesh build no longer fuses the metal of a PEC housing into the
+  housing's own cut when constructing the effective PEC solid — the
+  cut holds it already — and cuts the housing by an air box rather
+  than by the air body carrying the imprint of every metal piece.
+  Sixteen Lange couplers mesh in 10.6 s instead of 12.5 s, a 16 × 16
+  patch array with feed in 9.6 s instead of 11.0 s; meshes are
+  unchanged except in the last bits of the edge-fraction arrays of
+  models whose kernel-fused vertices differed from the input
+  coordinates by an ulp.
 - The edge pass of the mesh build decides grid lines against planar
   faces with round outlines — the caps of posts and pins, plates with
   round holes — in-house, exactly on the circle, instead of through the

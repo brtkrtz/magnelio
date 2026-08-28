@@ -164,13 +164,26 @@ class Difference(Shape):
 
     @cached_occ_shape
     def _occ_shape(self, scale=1.0):
-        from magnelio.geo._occ_backend import boolean_difference, boolean_union
+        from magnelio.geo._occ_backend import boolean_difference
 
-        base_occ = self.base._occ_shape(scale)
-        if len(self.tools) == 1:
-            return boolean_difference(base_occ, self.tools[0]._occ_shape(scale))
-        fused = boolean_union([t._occ_shape(scale) for t in self.tools])
-        return boolean_difference(base_occ, fused)
+        return boolean_difference(self.base._occ_shape(scale), self._occ_tools(scale))
+
+    def _occ_tools(self, scale=1.0):
+        """The tools fused into one kernel shape at *scale*, cached per instance.
+
+        Kept beside the result because the effective PEC solid of a
+        housing reads it: the housing brick minus this Difference is
+        the brick minus the base plus the tools, and the tools' union
+        has been paid for once.
+        """
+        cache = self.__dict__.setdefault("_occ_tools_cache", {})
+        key = float(scale)
+        if key not in cache:
+            from magnelio.geo._occ_backend import boolean_union  # noqa: PLC0415
+
+            shapes = [t._occ_shape(key) for t in self.tools]
+            cache[key] = shapes[0] if len(shapes) == 1 else boolean_union(shapes)
+        return cache[key]
 
     def _analytic_bbox(self):
         return self.base._analytic_bbox()

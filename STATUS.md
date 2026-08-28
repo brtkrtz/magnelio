@@ -341,39 +341,39 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
 * **Mesh-build speed.**  DD-101/102 (edge prefilter, planar section
   engine) took the slotline coupler 142 → 14 s; DD-141 admits the
   section pool on a measured sample; DD-199 gave free-form faces the
-  facet path; the 2026-08-27/29 campaign DD-202…DD-220 moved the
-  thin-sheet rasteriser, the planar fuse and PEC solid, the point
-  probes and overlap check, the degenerate-plane side step, the edge
-  pass (carrier lines, batch, cylinders and round outlines in closed
-  form), the plane fuse tree and tiles, the area passes' loops, the
-  construction-aware Booleans, the series-ε pass, the rectilinear cap
-  union and the engine bookkeeping off the kernel and out of Python
-  loops; DD-217 sections cylindrical faces exactly in the engine,
-  DD-219 answers every grid plane of an axis in one compiled pass
-  (`_section_kernels.section_planes`, `orient_annotate_packed`), and
-  DD-220 decides grid lines against planar faces with circular
-  outlines on the circle (`MAGNELIO_SECTION_BATCH=0`,
-  `MAGNELIO_CYLINDER_SECTIONS=0`, `MAGNELIO_CYLINDER_LINE_HITS=0` for
-  A/B) — cones, spheres, tori, trimmed cylinders, ellipses and splines
-  keep the kernel.  Ladder (`benchmarks/bench_mesh_build.py`, CPU, `auto` pool):
-  16 Lange couplers (3.7 M cells) 12.5 s, 240 posts (385 k) 2.4 s,
-  4 × 4 patch array with feed (222 k cells) 0.7 s, 8 × 8 (664 k) 2.5 s,
-  16 × 16 (1.8 M, off-ladder) 11.0 s; the post row's edge pass sends
-  nothing to the kernel's line–face intersector, the pool fires on no
-  ladder row, and every ladder row is bit-identical to its DD-219
-  reference.  Open, in value order: (1) the N-ary fuses of the planar
-  rows (`fuse` 2.0 s + `pec_fuse` 2.0 s on Lange 16, `pec_fuse` 1.5 s
-  on the 16 × 16 array); (2) the thin-sheet rasteriser (`sheets_detect`
-  1.6 s on Lange 16, 1.9 s on the 16 × 16 array; its section 1.3 s);
-  (3) the post row's `pass_faces_mu` (0.89 s beyond its sections) and
-  the classifier's `section_calls` (0.38 s on the posts, 1.2 s on the
-  16 × 16 array) with `planes_material` (0.34 s on the posts); (4)
-  spheres and cones in the engine and the line table once a ladder
-  row shows them.  Traps: bench columns nest — rank from
-  `probe_pass_breakdown.py`; NumPy's `arctan2`/`arccos`/`hypot` are an
-  ulp off `math.*` (both section paths call the scalar forms); the
-  kernel's cap rows read IN on a standalone post's rim, ON on a fused
-  row — never assert kernel behaviour on a rim.
+  facet path; the 2026-08-27/29 campaign DD-202…DD-221 moved the
+  thin-sheet rasteriser, the fuses and the PEC solid, the point probes
+  and overlap check, the edge pass (carrier lines, batch, cylinders
+  and round outlines in closed form), the area passes and the engine
+  bookkeeping off the kernel and out of Python loops; DD-217/219
+  section cylinders exactly and every plane of an axis in one compiled
+  pass, DD-220 decides grid lines on the circle, DD-221 builds the
+  effective PEC solid of a housing without fusing the metal into the
+  housing's own cut (`_contained_pec_shapes`,
+  `_difference_tools_as_pieces`, `Difference._occ_tools` — on every
+  ladder row the PEC solid is the metal union, one void 3 ms cut;
+  A/B switches `MAGNELIO_*=0` per DD-217…219).  Ladder
+  (`benchmarks/bench_mesh_build.py`, CPU, `auto` pool): 16 Lange
+  couplers (3.7 M cells) 10.6 s, 240 posts (385 k) 2.0 s, 4 × 4 patch
+  array with feed (222 k) 0.7 s, 8 × 8 (664 k) 2.3 s, 16 × 16 (1.8 M,
+  off-ladder) 9.6 s; the pool fires on no ladder row; every row is
+  bit-identical to its reference (4 × 4 re-pinned at DD-221:
+  `L_free`/`A_free` ≤ 2e-19 m, the kernel-fused vertices had been
+  1–4 ulp off).  Open, in value order: (1) the thin-sheet rasteriser
+  (`sheets` 1.8 s on the 16 × 16 array, its section 1.3 s;
+  `sheets_detect` ~0.7 s own on Lange 16); (2) the air body's kernel
+  cut (`Cut` air − copper 1.04 s on the 16 × 16 array, 0.33 s on
+  Lange 16 — a section-level `base − tools` would make it a 2-D
+  difference per plane); (3) the post row's `pass_faces_mu` (0.87 s
+  beyond its sections), `section_calls` (0.38 s posts, 1.2 s 16 × 16)
+  and `planes_material` (0.34 s posts); (4) the tool union's 32
+  eight-body kernel fuses on Lange 16 (0.38 s: one axis, three z
+  intervals); (5) spheres and cones once a ladder row shows them.
+  Traps: bench columns nest — rank from `probe_pass_breakdown.py`
+  (`sheets_detect` holds the first `_occ_shape()`); NumPy's
+  `arctan2`/`arccos`/`hypot` are an ulp off `math.*`; kernel cap rows
+  read IN on a standalone post's rim, ON on a fused row; analytic
+  boxes of round primitives are conservative (±r) — use kernel boxes.
 
 Closed construction sites are tombstoned where they were decided (the
 DD entry and `known-bugs.md`) and are not repeated here.

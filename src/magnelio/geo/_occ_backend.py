@@ -3438,6 +3438,59 @@ def batch_cross_sections(
 # ---------------------------------------------------------------------------
 
 
+def _box_shaped(occ_shape, box: np.ndarray) -> bool:
+    """Whether *occ_shape* fills its box *box* — a brick, in any construction."""
+    box_volume = float(np.prod(box[3:] - box[:3]))
+    return box_volume > 0.0 and abs(occ_volume(occ_shape) - box_volume) <= 1e-9 * box_volume
+
+
+def _contained_pec_shapes(
+    shape_objs: list, is_pec: np.ndarray, occ_shapes: list, boxes: np.ndarray
+) -> set[int]:
+    """PEC shapes whose contribution lies inside another PEC shape's.
+
+    With ``Cᵢ = Pᵢ − ∪{H non-PEC, H above Pᵢ}`` the contribution of a
+    PEC shape, ``Cᵢ ⊆ Cₖ`` — and ``Pᵢ`` adds nothing to the union —
+    whenever ``Pᵢ ⊆ Pₖ`` and either ``Pₖ`` is the higher of the two
+    (it is cut by fewer shapes than ``Pᵢ``) or no non-PEC shape
+    *between* them in priority has volume in common with ``Pᵢ`` (those
+    are cut from ``Cₖ`` but not from ``Cᵢ``).  Containment is decided
+    on the boxes and only for a box-shaped ``Pₖ``; volume in common is
+    denied by boxes that touch without overlapping and by the model's
+    construction (a ``Difference`` and its tools).  The mesher's
+    background brick of a PEC housing is the case: every metal piece
+    of the model lies inside it, sits on the substrate without
+    entering it, and was cut out of the air body — the brick's one
+    cut already holds them all, and the N-ary fuse of 257 bodies that
+    united them again (1.5 s on a row of 16 couplers) measured nothing.
+    """
+    from magnelio.geo import _disjoint_by_construction  # noqa: PLC0415
+
+    disjoint = _disjoint_by_construction(shape_objs)
+    lo, hi = boxes[:, :3], boxes[:, 3:]
+    gap = 1e-7  # Precision::Confusion, in scaled model units
+    pec = np.flatnonzero(is_pec)
+    box_shaped: dict[int, bool] = {}
+    contained: set[int] = set()
+    for i in pec.tolist():
+        holds = np.all(lo[pec] <= lo[i] + gap, axis=1) & np.all(hi[pec] >= hi[i] - gap, axis=1)
+        for k in pec[holds].tolist():
+            if k == i or k in contained:
+                continue
+            if k not in box_shaped:
+                box_shaped[k] = _box_shaped(occ_shapes[k], boxes[k])
+            if not box_shaped[k]:
+                continue
+            if k < i:
+                between = np.arange(k + 1, i)[~is_pec[k + 1 : i]]
+                shares = np.all(lo[i] < hi[between], axis=1) & np.all(lo[between] < hi[i], axis=1)
+                if any((min(i, j), max(i, j)) not in disjoint for j in between[shares].tolist()):
+                    continue
+            contained.add(i)
+            break
+    return contained
+
+
 def build_effective_pec_solid(
     shapes_with_material: list[tuple[object, int]],
     material_library: dict,
@@ -3452,11 +3505,14 @@ def build_effective_pec_solid(
     tool: it is in the union anyway, so cutting it out first changes
     nothing but costs a Boolean per pair (the PEC background brick of
     a housing was cut by every one of 320 metal pieces, 3.5 s of a
-    4.7 s build step, for a solid the air body alone defines).  The
-    former loop subtracted the *accumulated*
-    union of all higher shapes from each PEC shape and grew that union
-    pairwise, so a row of 320 metal pieces cost 36 s where this takes
-    1.1 s for the same solid (same volume, same face count).
+    4.7 s build step, for a solid the air body alone defines).  A PEC
+    shape whose contribution lies inside another's — every metal piece
+    of a PEC housing, held by the background brick's own cut — is not
+    fused either (:func:`_contained_pec_shapes`).  The former loop
+    subtracted the *accumulated* union of all higher shapes from each
+    PEC shape and grew that union pairwise, so a row of 320 metal
+    pieces cost 36 s where this takes 1.1 s for the same solid (same
+    volume, same face count).
 
     Parameters
     ----------
@@ -3475,27 +3531,97 @@ def build_effective_pec_solid(
 
     if not shapes_with_material:
         return None
-    occ_shapes = [shape_obj._occ_shape(scale) for shape_obj, _ in shapes_with_material]
+    shape_objs = [shape_obj for shape_obj, _ in shapes_with_material]
+    is_pec = np.array([material_library[mat_id].is_pec for _, mat_id in shapes_with_material])
+    occ_shapes = [shape_obj._occ_shape(scale) for shape_obj in shape_objs]
     boxes = np.array([_bounding_box(s) for s in occ_shapes])
+    # ``_bounding_box`` pads by the shapes' tolerance; the containment
+    # rule needs exact touching and reads the kernel's optimal boxes
+    # (``AddOptimal`` without tolerance: the vertices of a brick, the
+    # exact extent of a cylinder — the analytic boxes are conservative
+    # for round primitives and would keep a post out of its housing).
+    exact = np.array([np.concatenate(bounding_box(s, 1.0)) for s in occ_shapes])
+    contained = _contained_pec_shapes(shape_objs, is_pec, occ_shapes, exact)
     gap = 1e-7  # Precision::Confusion — touching counts as reaching
     contributions = []
     for i, (_, mat_id) in enumerate(shapes_with_material):
-        if not material_library[mat_id].is_pec:
+        if not material_library[mat_id].is_pec or i in contained:
             continue
         lo, hi = boxes[i, :3], boxes[i, 3:]
         higher = [
-            occ_shapes[j]
+            j
             for j in range(i + 1, len(occ_shapes))
             if not material_library[shapes_with_material[j][1]].is_pec
             and np.all(boxes[j, 3:] >= lo - gap)
             and np.all(boxes[j, :3] <= hi + gap)
         ]
+        tools = [occ_shapes[j] for j in higher]
+        extra: list = []
+        if higher and _box_shaped(occ_shapes[i], exact[i]):
+            tools, extra = _difference_tools_as_pieces(
+                i, higher, shape_objs, occ_shapes, exact, scale
+            )
         contributions.append(
-            boolean_difference_many(occ_shapes[i], higher) if higher else occ_shapes[i]
+            boolean_difference_many(occ_shapes[i], tools) if tools else occ_shapes[i]
         )
+        contributions.extend(extra)
+    contributions = [c for c in contributions if not np.isnan(_bounding_box(c)[0])]
     if not contributions:
         return None
     return boolean_union(contributions)
+
+
+def _difference_tools_as_pieces(
+    i: int, higher: list[int], shape_objs: list, occ_shapes: list, exact: np.ndarray, scale: float
+) -> tuple[list, list]:
+    """A box-shaped contribution's ``Difference`` tools, replaced by their bases.
+
+    With ``D = base − T`` a cut tool of the box ``P``,
+    ``P − D − H₁ − … = (P − base − H₁ − …) ∪ (T − H₁ − …)`` as long
+    as ``T ⊆ P`` — and the tools' union ``T`` is already computed
+    (:meth:`Difference._occ_tools`), so the cut against the
+    Difference's faces (the imprint of every metal piece in an air
+    body, 2 807 faces on a 16 × 16 array, 1.2 s) becomes a cut against
+    the base (six faces) plus ``T`` cut by those other tools that may
+    share volume with it — none, when they touch it at most or were
+    constructed disjoint from its operands.
+
+    Returns ``(tools, pieces)``: the cut tools of *i* with every
+    qualifying Difference replaced by its base, and the pieces to add
+    to the union.
+    """
+    from magnelio.geo import _disjoint_by_construction  # noqa: PLC0415
+    from magnelio.geo.operations import Difference  # noqa: PLC0415
+
+    gap = 1e-7
+    index = {id(s): k for k, s in enumerate(shape_objs)}
+    disjoint = _disjoint_by_construction(shape_objs)
+    tools = [occ_shapes[j] for j in higher]
+    pieces = []
+    for slot, j in enumerate(higher):
+        difference = shape_objs[j]
+        if not isinstance(difference, Difference):
+            continue
+        operand_boxes = np.array(
+            [np.concatenate(bounding_box(t._occ_shape(scale), 1.0)) for t in difference.tools]
+        )
+        t_lo, t_hi = operand_boxes[:, :3].min(axis=0), operand_boxes[:, 3:].max(axis=0)
+        if not (np.all(t_lo >= exact[i, :3] - gap) and np.all(t_hi <= exact[i, 3:] + gap)):
+            continue
+        operands = [index.get(id(t)) for t in difference.tools]
+        others = []
+        for k in higher:
+            if k == j:
+                continue
+            if not (np.all(t_lo < exact[k, 3:]) and np.all(exact[k, :3] < t_hi)):
+                continue  # touches the tools' box at most
+            if all(o is not None and (min(o, k), max(o, k)) in disjoint for o in operands):
+                continue  # every operand was cut from k, or is k's own tool
+            others.append(occ_shapes[k])
+        tools[slot] = difference.base._occ_shape(scale)
+        fused = difference._occ_tools(scale)
+        pieces.append(boolean_difference_many(fused, others) if others else fused)
+    return tools, pieces
 
 
 # ---------------------------------------------------------------------------
