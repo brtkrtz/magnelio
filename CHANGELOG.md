@@ -113,6 +113,17 @@ major version is 0, minor releases may change the public API.
   records from the loaded resonator frequency and the design
   bandwidth instead of quoting fixed numbers; the corrected air bore
   of the ceramic ring (0.4.7) moves its passband to 3.02 GHz.
+- The mesh build's edge pass — the free-length fraction of every grid
+  edge against the conductors — decides the crossings of planar,
+  axis-aligned faces itself (plane level, even-odd rule over the face
+  outline with a tolerance band, outward normal), tiles large faces by
+  clipping their outlines instead of cutting them with the kernel, and
+  slices each edge from the crossings of its grid line instead of
+  asking the kernel's intersector per edge: 8 × 8 patch array 34 →
+  20 s, 16 Lange couplers 55 → 46 s, a 16 × 16 array's edge pass 62 →
+  <<A16>> s, with the same fractions.  A grid edge lying exactly on a
+  conductor's corner line that the kernel's classifier had missed now
+  reads as conductor like its neighbours.
 
 ### Fixed
 
