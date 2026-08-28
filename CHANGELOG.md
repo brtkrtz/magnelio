@@ -20,6 +20,15 @@ major version is 0, minor releases may change the public API.
   strips are gone).  The mesher's priority-resolved conductor solid is
   cut per body instead of against an accumulated union (a row of 16
   Lange couplers: 36 s → 2 s).  The fused point sets are unchanged.
+- Meshing a model whose air body is cut by hundreds of parts — a row
+  of couplers, a board with its copper subtracted — no longer spends
+  most of its build outside the mesher passes: the overlap check
+  intersects such a body with all its neighbours in one Boolean
+  instead of one per neighbour, and the material probes of the
+  singular-edge and thin-sheet detection keep one loaded classifier
+  per shape and ask only the shapes whose bounding box holds the
+  point (16 Lange couplers on one carrier: 106 s → 68 s to mesh; the
+  meshes are unchanged).
 - The conformal edge pass no longer slows down on a large planar face
   with a complex outline — the copper of a fused network, an imported
   board layer, a ground plane full of vias: such faces are classified

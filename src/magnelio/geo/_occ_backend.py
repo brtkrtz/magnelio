@@ -870,19 +870,19 @@ def extract_singular_edge_planes(
         _is_metal(getattr(s, "material", None)) for s in shapes
     )
 
+    classifiers: PointClassifierSet | None = None
+
     def _material_at(point_scaled, exclude) -> object:
         """Material of the shape containing *point_scaled* (else background)."""
+        nonlocal classifiers
+        if classifiers is None:
+            # One loaded classifier per shape, bounding boxes as the
+            # screen: a body with hundreds of pockets has hundreds of
+            # concave edges, and each probe walked every shape before.
+            classifiers = PointClassifierSet(shapes, scale=scale)
         point_m = tuple(c / scale for c in point_scaled)
-        for other in shapes:
-            if other is exclude:
-                continue
-            try:
-                inside = point_in_shape(other._occ_shape(scale), point_m, scale=scale)
-            except Exception:  # noqa: BLE001 — exotic shape: cannot contain the probe
-                continue
-            if inside:
-                return getattr(other, "material", None)
-        return background
+        hit = classifiers.first_containing(point_m, skip=exclude)
+        return background if hit is None else getattr(shapes[hit], "material", None)
 
     def _open_wedge_probe(edge, faces):
         """A point a short way into the open (non-shape) wedge at the edge."""
@@ -1030,6 +1030,89 @@ def point_in_shape(
     classifier.Perform(gp_Pnt(*_scale3(point, scale)), tolerance * scale)
     state = classifier.State()
     return state in (TopAbs_IN, TopAbs_ON)
+
+
+class PointClassifierSet:
+    """Point-in-shape probes against a fixed list of model shapes.
+
+    :func:`point_in_shape` loads a fresh ``BRepClass3d_SolidClassifier``
+    per call, and loading is O(faces) of the solid — some 15 ms for an
+    air body with a few hundred pockets — so a probe that walks every
+    shape of the model pays that once per shape and per point.  This
+    set keeps one loaded classifier per shape, screens the shapes by
+    bounding box before it asks any of them, and walks the survivors in
+    list order or reversed.  Shapes the kernel cannot box or classify
+    are skipped, as the per-call loop skipped them.
+
+    The bounding-box screen is padded by the classification tolerance,
+    so a point the classifier would report ``ON`` is never screened
+    out.
+
+    Parameters
+    ----------
+    shapes : list
+        Model shapes (each with ``.bounding_box(scale)`` and
+        ``._occ_shape(scale)``), in the order the probes walk.
+    scale : float
+        Model scale factor of the kernel shapes.
+    tolerance : float
+        Classification tolerance [m].
+    """
+
+    def __init__(self, shapes: list, scale: float = 1.0, tolerance: float = 1e-7) -> None:
+        self._shapes = list(shapes)
+        self._scale = float(scale)
+        self._tolerance = float(tolerance)
+        boxes = np.full((len(self._shapes), 6), np.nan)
+        for k, shape in enumerate(self._shapes):
+            try:
+                lo, hi = shape.bounding_box(scale)
+            except Exception:  # noqa: BLE001 — exotic shape: never a candidate
+                continue
+            boxes[k, :3], boxes[k, 3:] = lo, hi
+        self._boxes = boxes
+        self._classifiers: dict[int, object] = {}
+
+    def candidates(self, point) -> np.ndarray:
+        """Indices (list order) of the shapes whose padded box holds *point* [m]."""
+        p = np.asarray(point, dtype=float)
+        pad = self._tolerance + 1e-12 * (1.0 + float(np.abs(p).max()))
+        inside = np.all(self._boxes[:, :3] - pad <= p, axis=1)
+        inside &= np.all(p <= self._boxes[:, 3:] + pad, axis=1)
+        return np.flatnonzero(inside)
+
+    def contains(self, index: int, point) -> bool:
+        """Whether shape *index* contains *point* [m] (inside or on its surface)."""
+        from OCC.Core.BRepClass3d import BRepClass3d_SolidClassifier  # noqa: PLC0415
+        from OCC.Core.gp import gp_Pnt  # noqa: PLC0415
+        from OCC.Core.TopAbs import TopAbs_IN, TopAbs_ON  # noqa: PLC0415
+
+        classifier = self._classifiers.get(index)
+        if classifier is None:
+            classifier = BRepClass3d_SolidClassifier()
+            classifier.Load(self._shapes[index]._occ_shape(self._scale))
+            self._classifiers[index] = classifier
+        classifier.Perform(gp_Pnt(*_scale3(point, self._scale)), self._tolerance * self._scale)
+        return classifier.State() in (TopAbs_IN, TopAbs_ON)
+
+    def first_containing(self, point, skip=None, reverse: bool = False) -> int | None:
+        """Index of the first shape containing *point* [m]; ``None`` if none does.
+
+        *skip* is left out by identity; *reverse* walks the list from
+        its end (last shape wins — the cell-filling order).
+        """
+        indices = self.candidates(point)
+        if reverse:
+            indices = indices[::-1]
+        for k in indices:
+            if self._shapes[k] is skip:
+                continue
+            try:
+                if self.contains(int(k), point):
+                    return int(k)
+            except Exception:  # noqa: BLE001 — exotic shape: cannot contain the probe
+                continue
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -6104,10 +6187,16 @@ def check_pairwise_overlaps(
 ) -> list[tuple[int, int, float]]:
     """Check all shape pairs for volumetric overlap.
 
-    Uses bounding-box pre-filter to skip pairs whose AABBs do not
-    intersect, then computes the Boolean intersection volume via
-    ``BRepAlgoAPI_Common`` + ``BRepGProp.VolumeProperties`` for the
-    remaining pairs.
+    Pairs whose bounding boxes share no volume are skipped.  The rest
+    are intersected with ``BRepAlgoAPI_Common`` and measured with
+    ``BRepGProp.VolumeProperties`` — but not one pair at a time: the
+    shape with the most candidate partners is intersected with all of
+    them in one Boolean, and ``vol(A ∩ ∪B_k) ≥ vol(A ∩ B_k)`` for every
+    *k*, so a batch below the tightest pair tolerance clears every pair
+    it holds.  A batch with volume is bisected until the offending
+    pairs are found, each measured on its own.  A body with hundreds of
+    pockets against the hundreds of parts that fill them costs one
+    Boolean at the body's face count instead of hundreds.
 
     Parameters
     ----------
@@ -6146,15 +6235,25 @@ def check_pairwise_overlaps(
     if n < 2:
         return []
 
-    # Pre-compute bounding boxes [m]
-    bboxes = []
-    aabb_volumes = []
-    for s in shapes:
+    boxes = np.empty((n, 6))
+    for k, s in enumerate(shapes):
         (xmin, ymin, zmin), (xmax, ymax, zmax) = s.bounding_box(scale)
-        bboxes.append((xmin, ymin, zmin, xmax, ymax, zmax))
-        aabb_volumes.append((xmax - xmin) * (ymax - ymin) * (zmax - zmin))
+        boxes[k] = (xmin, ymin, zmin, xmax, ymax, zmax)
+    aabb_volumes = np.prod(boxes[:, 3:] - boxes[:, :3], axis=1)
+    lo, hi = boxes[:, :3], boxes[:, 3:]
 
-    # Pre-compute OCC shapes lazily (only when needed)
+    # Candidate pairs: boxes that share volume (touching boxes do not),
+    # materials that differ (a same-material overlap is allowed —
+    # value equality, not identity — and costs no Boolean).
+    partners: list[set[int]] = [set() for _ in range(n)]
+    for i in range(n - 1):
+        meets = np.all(lo[i] < hi[i + 1 :], axis=1) & np.all(lo[i + 1 :] < hi[i], axis=1)
+        for j in (np.flatnonzero(meets) + i + 1).tolist():
+            if materials is not None and materials[i] == materials[j]:
+                continue
+            partners[i].add(j)
+            partners[j].add(i)
+
     occ_cache: dict[int, object] = {}
 
     def get_occ(idx):
@@ -6162,51 +6261,56 @@ def check_pairwise_overlaps(
             occ_cache[idx] = shapes[idx]._occ_shape(scale)
         return occ_cache[idx]
 
-    overlaps: list[tuple[int, int, float]] = []
     gprops = GProp_GProps()
 
-    for i in range(n):
-        for j in range(i + 1, n):
-            # AABB rejection
-            a, b = bboxes[i], bboxes[j]
-            if (
-                a[0] >= b[3]
-                or b[0] >= a[3]
-                or a[1] >= b[4]
-                or b[1] >= a[4]
-                or a[2] >= b[5]
-                or b[2] >= a[5]
-            ):
-                continue
+    def common_volume(i: int, js: list[int]) -> float | None:
+        """Volume of shape *i* ∩ (∪ shapes *js*) [m³]; None when the kernel fails."""
+        # Explicit SetArguments/SetTools/Build, not the two-shape
+        # constructor: that one builds immediately, before
+        # ``keep_operands_intact`` could take effect — and this
+        # Boolean runs on the user's cached solids (DD-146).
+        common = BRepAlgoAPI_Common()
+        common.SetArguments(_shape_list([get_occ(i)]))
+        common.SetTools(_shape_list([get_occ(j) for j in js]))
+        keep_operands_intact(common)
+        common.Build()
+        if not common.IsDone():
+            return None
+        brepgprop.VolumeProperties(common.Shape(), gprops)
+        return abs(gprops.Mass()) / scale**3
 
-            # Same-material overlaps are allowed (value equality, not
-            # identity) — skip before the expensive Boolean intersection.
-            if materials is not None and materials[i] == materials[j]:
-                continue
+    def pair_tolerance(i: int, j: int) -> float:
+        if tolerance is not None:
+            return tolerance
+        return 1e-12 * float(min(aabb_volumes[i], aabb_volumes[j]))
 
-            # Explicit SetArguments/SetTools/Build, not the two-shape
-            # constructor: that one builds immediately, before
-            # ``keep_operands_intact`` could take effect — and this
-            # Boolean runs on the user's cached solids (DD-146).
-            common = BRepAlgoAPI_Common()
-            common.SetArguments(_shape_list([get_occ(i)]))
-            common.SetTools(_shape_list([get_occ(j)]))
-            keep_operands_intact(common)
-            common.Build()
-            if not common.IsDone():
-                continue
+    overlaps: list[tuple[int, int, float]] = []
 
-            brepgprop.VolumeProperties(common.Shape(), gprops)
-            volume = abs(gprops.Mass()) / scale**3
+    def attribute(i: int, js: list[int]) -> None:
+        if len(js) == 1:
+            a, b = min(i, js[0]), max(i, js[0])
+            volume = common_volume(a, [b])
+            if volume is not None and volume > pair_tolerance(a, b):
+                overlaps.append((a, b, volume))
+            return
+        batch = common_volume(i, js)
+        if batch is not None and batch <= min(pair_tolerance(i, j) for j in js):
+            return
+        half = len(js) // 2
+        attribute(i, js[:half])
+        attribute(i, js[half:])
 
-            pair_tol = (
-                tolerance
-                if tolerance is not None
-                else 1e-12 * min(aabb_volumes[i], aabb_volumes[j])
-            )
-            if volume > pair_tol:
-                overlaps.append((i, j, volume))
+    # Hubs first: the shape with the most partners settles all its pairs
+    # in one Boolean, and every pair is measured exactly once.
+    settled: set[tuple[int, int]] = set()
+    for i in sorted(range(n), key=lambda k: (-len(partners[k]), k)):
+        js = sorted(j for j in partners[i] if (min(i, j), max(i, j)) not in settled)
+        if not js:
+            continue
+        settled.update((min(i, j), max(i, j)) for j in js)
+        attribute(i, js)
 
+    overlaps.sort()
     return overlaps
 
 

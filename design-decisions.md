@@ -14696,3 +14696,99 @@ green.
 (`_classification_pieces`, `_PrefilteredLineSolid` rows),
 `tests/unit/test_line_solid_pieces.py` (new), `benchmarks/bench_mesh_build.py`
 (results re-run), `docs/methods/geometry.md`.
+
+## DD-206 — Point probes carry one loaded classifier per shape; the overlap check runs one Boolean per hub
+
+**Status:** Decided and implemented 2026-08-28, branch `perf/mesh-residual`.
+DD-205's re-ranked item 1.
+
+**Problem.**  The Lange ladder's residual — `other` 32 s of 106 s at
+16 couplers — was three functions outside the benchmark's wrapped
+passes, and one of them, `extract_singular_edge_planes`, hid a fourth
+inside the `singular` column (cProfile of the build,
+`investigations/mesh-build-bench/probe_lange_residual.py` — internal
+record):
+
+* `GeometryModel.validate` → `check_pairwise_overlaps`, 22.4 s: the
+  air body of the model is `Difference(air, *320 pieces)` with 2 118
+  faces, and its bounding box meets every piece, so the check ran 320
+  `BRepAlgoAPI_Common(air, piece)` at 75 ms each — the fuser pays the
+  body's face count per call.  All 320 were empty.
+* `extract_singular_edge_planes`, 15.6 s: the pocketed air body has
+  2 016 concave edges, and the probe into each open wedge walked *all*
+  322 shapes with `point_in_shape`, which loads a fresh
+  `BRepClass3d_SolidClassifier` per call — 283 000 loads, 13.3 s, for
+  probes that hit the second or third shape their box admits.
+* `detect_thin_metallizations`, 9.6 s: 384 probes, each re-computing
+  the 320 bounding boxes (123 000 `AddOptimal`, 3.3 s) and then loading
+  the air body's classifier (14 ms — O(faces)) for the hit, 384 times.
+
+**Decision.**  `PointClassifierSet` (`_occ_backend.py`) holds the
+shapes of one probe pass with their bounding boxes and one
+`BRepClass3d_SolidClassifier` per shape, loaded on first use and kept;
+`first_containing(point, skip=, reverse=)` screens by box (padded by
+the classification tolerance, so an `ON` point is never screened out)
+and asks the survivors in list order or reversed.  `_material_at` in
+the singular-edge pass and `_probe_eps` in the sheet detection walk
+that set instead of the model; their semantics (first shape in model
+order, last shape wins respectively, identity skip, exotic shapes
+skipped) are unchanged and pinned by `tests/unit/test_point_classifier_set.py`
+against the per-call loop.
+
+`check_pairwise_overlaps` keeps its bounding-box and same-material
+screens but no longer measures the candidate pairs one by one: the
+shape with the most candidate partners (the hub) is intersected with
+all of them in one `Common`, and since ``vol(A ∩ ∪B_k) ≥ vol(A ∩ B_k)``
+for every *k*, a batch below the tightest pair tolerance clears every
+pair it holds.  A batch with volume is bisected until the offending
+pairs are isolated and measured on their own with the pair's exact
+tolerance — the same numbers the pairwise loop reported, in the same
+order (`tests/unit/test_geometry.py::TestOverlapBatching` compares
+against a copy of the pairwise check and counts the Booleans).  Routes
+measured on the Lange 16 model (`probe_overlap_routes.py`): pairwise
+22.5 s; pairwise with `SetRunParallel` 22.9 s (no lever); one N-ary
+`Common` 2.4 s; N-ary per 3-D bounding-box cluster (32 groups) 3.8 s;
+the body cut to each cluster's box, then pairwise 6.3 s.
+
+**Consequences.**  Meshes are unchanged: the gallery-plane pins
+(28 scripts, both how-tos among them) and the unit suite pass; the
+sheet detection now screens with the classification tolerance as pad
+where it used a rounding pad before — the consistent choice, and no
+pinned mesh moved.  The overlap check's error path (a real overlap
+inside a large batch) costs the bisection, about 2 log₂ N Booleans
+instead of N.  The benchmark reports `sheets_detect`, `overlaps` and
+prints `singular` and `overlap` columns, so `other` is what is truly
+unaccounted.
+
+**Measured** (CPU, 16 cores, Lange 16, `auto` pool):
+`singular` 15.6 → 1.0 s, `overlap` 22.4 → 3.1 s, sheet detection
+9.6 → 0.3 s, `other` 32.4 → 1.2 s; total **105.7 → 67.7 s**.
+Full ladder below.
+
+Full ladder (`benchmarks/bench_mesh_build.py --family all --pool off
+auto forced --json`, CPU idle, `auto` arm; before = DD-205's ladder):
+
+| family, n | cells | total before → after | singular | overlap | sheets | other |
+|---|---|---|---|---|---|---|
+| Lange 16 | 3.69 M | 105.7 → **66.2 s** | 15.6 → 0.9 | 22.4 → 3.0 | 9.9 → 1.6 | 32.4 → 1.2 |
+| Lange 8 | 1.84 M | 44.7 → **34.9 s** | 3.9 → 0.4 | 3.0 → 1.0 | 1.2 → 0.7 | 8.7 → 0.6 |
+| Lange 4 | 922 k | 16.8 → 14.5 | 1.0 → 0.2 | 0.8 → 0.4 | 0.3 → 0.3 | 2.4 → 0.3 |
+| Lange 2 | 461 k | 7.1 → 6.6 | 0.3 → 0.1 | 0.2 → 0.2 | 0.1 → 0.1 | 0.8 → 0.1 |
+| array 8 × 8 | 664 k | 33.2 → 33.2 | 0.0 | 0.0 | 1.3 | 1.1 → 0.2 |
+| array 4 × 4 | 222 k | 8.8 → 8.9 | 0.0 | 0.0 | 0.2 | 0.2 → 0.1 |
+| posts 240 | 385 k | 45.1 → 45.9 | 0.0 | 0.4 | 0.0 | 0.6 → 0.2 |
+
+The Lange rows scaled with the number of pockets in the air body
+(concave edges × shapes, partners × faces) and now sit at the passes
+the ladder was built to watch: at 16 couplers the face pass (20 s
+pooled, 49 s not) and the edge pass (17 s) are 55 % of the build.
+The `before` singular / overlap / sheets figures are the DD-206
+profile's, the ladder had not printed them.  The unit suite (2 514)
+and the integration suite (398, the four GPU tests re-run on the
+device) are green.
+
+**Files:** `src/magnelio/geo/_occ_backend.py` (`PointClassifierSet`,
+`extract_singular_edge_planes`, `check_pairwise_overlaps`),
+`src/magnelio/mesh/_conformal.py` (`_probe_eps`, `detect_thin_metallizations`),
+`tests/unit/test_point_classifier_set.py` (new), `tests/unit/test_geometry.py`
+(`TestOverlapBatching`), `benchmarks/bench_mesh_build.py` (columns, results re-run).
