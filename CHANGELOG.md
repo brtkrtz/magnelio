@@ -120,8 +120,8 @@ major version is 0, minor releases may change the public API.
   clipping their outlines instead of cutting them with the kernel, and
   slices each edge from the crossings of its grid line instead of
   asking the kernel's intersector per edge: 8 × 8 patch array 34 →
-  20 s, 16 Lange couplers 55 → 46 s, a 16 × 16 array's edge pass 62 →
-  <<A16>> s, with the same fractions.  A grid edge lying exactly on a
+  15 s, 16 Lange couplers 55 → 43 s, a 16 × 16 array 164 → 111 s
+  (its edge pass 62 → 13 s), with the same fractions.  A grid edge lying exactly on a
   conductor's corner line that the kernel's classifier had missed now
   reads as conductor like its neighbours.
 

@@ -15029,7 +15029,28 @@ before this change with the edge pass at 62 s, the thin-sheet
 rasteriser at 19 s and the planar fuse at 14 s; the latter two are the
 next superlinear terms one tier up.
 
-<<LADDER>>
+Full ladder (`benchmarks/bench_mesh_build.py --family all --pool off
+auto forced --json`, CPU idle, `auto` arm; before = DD-207's ladder):
+
+| family, n | cells | edges | total before → after | edge pass | ε pass | µ pass |
+|---|---|---|---|---|---|---|
+| array 8 × 8 | 664 k | 153 k | 34.1 → **14.8 s** | 23.5 → 3.9 | 26.5 → 7.0 | 3.3 → 3.5 |
+| array 4 × 4 | 222 k | 45 k | 9.1 → **4.0 s** | 6.2 → 1.2 | 7.1 → 2.1 | 1.2 |
+| array 2 × 2 | 84 k | 14 k | 2.9 → 1.4 | 1.8 → 0.4 | 2.2 → 0.7 | 0.5 |
+| Lange 16 | 3.69 M | 214 k | 54.9 → **43.4 s** | 17.3 → 5.8 | 26.7 → 15.2 | 14.6 |
+| Lange 8 | 1.84 M | 107 k | 23.9 → 18.7 | 7.9 → 2.7 | 12.0 → 6.7 | 6.6 |
+| Lange 4 | 922 k | 54 k | 11.0 → 8.5 | 3.8 → 1.3 | 5.7 → 3.2 | 3.1 |
+| posts 240 | 385 k | 78 k | 38.1 → 35.9 | 4.5 → 2.5 | 15.3 → 13.3 | 12.6 |
+| posts 60 | 97 k | 20 k | 7.2 → 6.6 | 1.0 → 0.6 | 3.0 → 2.6 | 2.7 |
+| array 16 × 16 (off-ladder) | 1.82 M | 450 k | 163.5 → **111.4 s** | 62.4 → 13.3 | — | — |
+
+The pool arms agree with `auto` within noise (Lange 16 off 43.5, array
+8 off 14.8).  The edge pass now scales linearly with the edge count
+across the array tier (26–29 µs per edge at 4 × 4, 8 × 8 and 16 × 16)
+and is a minor pass everywhere; the 16 × 16 row's remaining
+superlinear terms are the thin-sheet rasteriser (19 s) and the planar
+fuse (14 s).  Gallery plane pins (28 scripts) unchanged; unit suite
+2 528 passed, integration 402 passed (GPU tests on the device).
 
 **Files:** `src/magnelio/geo/_line_kernels.py` (new),
 `src/magnelio/geo/_occ_backend.py` (`_planar_row`,
