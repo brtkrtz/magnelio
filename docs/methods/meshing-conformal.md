@@ -285,7 +285,10 @@ mid-thickness gives the outline, and every tangential edge of the sheet
 plane is tested against it by the even-odd rule — holes stay open, and
 edges on the outline count as metal — the same path the cell
 classifier uses, so a copper layer of thousands of faces costs one
-section, not one solid classification per edge.
+section, not one solid classification per edge.  Each contour of the
+section is tested only on the edges inside its own bounding box, so a
+layer of many small pads costs the sum of their boxes, not pads ×
+plane.
 
 ## Thin-wire sub-cell model
 
