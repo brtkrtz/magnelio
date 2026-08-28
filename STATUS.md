@@ -13,7 +13,7 @@ parity — hollow conductors had lost the conformal correction at their
 inner walls (KB-031); how-to *coupled-line coupler* and tutorial 19
 *offset Cassegrain* (rendered, not executed; figures of a measured run
 embedded), every gallery 3D view carries an "Interactive Scene" tab,
-GitHub Discussions is the feedback channel.  Unit suite 2572 passed /
+GitHub Discussions is the feedback channel.  Unit suite 2577 passed /
 4 skipped; integration suite 402 passed / 5 skipped (2026-08-28)
 (edge-pass tangency rule, coax re-pin) and the KB-011 fixture re-pin
 (DD-199 fallout closed 2026-08-27; both unreleased on `main`).
@@ -33,13 +33,10 @@ certificates named in their DD entries.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-216** (2026-08-28) — the area passes' time was around the sections: `compute_face_material_areas` rebuilt every shape's planar section engine on every call (26 builds on the 16 × 16 array, 1 422 on Lange 16), grouped its faces by plane in a Python loop over every face (5.7 M dict operations per build) and tested each plane against every shape's bounding box in Python.  One engine per (shape, scale, deflection) cached on the shape object, `_faces_by_plane` by one stable sort, `_shapes_reaching` as arrays.  16 × 16 array 17.4 → 12.6 s, Lange 16 19.9 → 17.1 s, 8 × 8 array 4.6 → 3.1 s, bit-identical meshes.
 * **DD-215** (2026-08-28) — DD-214's "sheets 4.7 s + fuse 4.0 s" nested (the sheet detection is the first caller of the copper union); the term was DD-209's fuse tree 2.7 s plus a Python box sweep 0.7 s.  Clusters of straight, axis-aligned caps are now united on the compressed grid of their vertex coordinates (winding-number fill, component labels, one compiled boundary walk; corner contacts resolved as the kernel resolves them), arcs and rotated edges keep the tree; `cluster_boxes` compares against its active set as arrays.  16 × 16 array 20.6 → 17.4 s (union 2.6 → 0.2 s), 8 × 8 5.0 → 4.6 s; the union's vertices are the input coordinates, so three 4 × 4 grid planes moved by the kernel's 1e-19 m rounding (hash references re-pinned), posts bit-identical.
 * **DD-214** (2026-08-28) — two quadratic terms one tier above the ladder: the series-ε pass walked `Ny × Nz` edges per floor-absorbed plane in Python (26.9 → 1.7 s as arrays, `_run_sums` for bit-identity — `reduceat` rounds runs ≥ 3 differently), and the sharp-edge test built a restricted `BRepAdaptor_Surface` per comparison whose `UVBounds` walks every edge of the fused cap (18.2 → 0.6 s with one unrestricted adaptor per face).  16 × 16 array 65 → 21 s, 8 × 8 6.9 → 5.0 s, bit-identical meshes.
 * **DD-213** (2026-08-28) — the edge pass in batch: one line table for all grid edges, compiled bookkeeping, and the boundary rule — every point the oblique last resort could not decide was classifier `ON` on a copper corner line.  Lange 8 5.9 → 0.26 s, 8 × 8 array 8.6 → 0.24 s in the pass, bit-identical.
-* **DD-212** (2026-08-28) — two Booleans proved what the construction states: the effective PEC solid cut every PEC shape by every higher shape in reach, PEC included (the PEC background brick of a housing by all 320 metal pieces — a set-theoretic no-op under the union, 3.5 s), and `validate()` intersected the air body with the very tools it was cut by (one batch Common, 3.1 s, volume zero by construction).  Only non-PEC shapes are cut tools now, and `validate()` hands the overlap check the `Difference`/tool pairs as disjoint (`_disjoint_by_construction`, by identity).  Lange 16 32.5 → 26.7 s, bit-identical meshes; a genuine overlap still raises.
-* **DD-211** (2026-08-28) — the ε/µ area passes' "linear terms" were two Python loops: the planar section engine paired a plane's edge crossings face by face with a `np.cross` per face (108 k per row of eight couplers, 3.4 s), and `compute_conformal_mu` walked every primal face of the grid to find the boundary ones (5.5 M iterations, 3 s).  The stitch now sorts all crossings of a plane once by (face, trace position) and links consecutive pairs; both conformal passes collect their faces from `argwhere` masks.  Lange 16 44 → 32 s, 8 × 8 array 14.5 → 11.6 s, bit-identical meshes; the engine gets its first direct equivalence test against the kernel.
-* **DD-210** (2026-08-28) — the post row's "pool-bound" 36 s were one face and one loop: the air body's floor carries the outline of all 240 post pockets (244 edges) and the slab compound handed it whole to the kernel on every plane across the row (6.2 of 6.7 ms per section, 3 120 sections), and `orient_nested_contours` compared contour pairs in Python (241 contours along the row, 283 ms per section).  `_FaceSlabIndex` now tiles such faces once (`BRepAlgoAPI_Splitter`, on first demand) and sections a plane over the one tile it crosses — never on or across a cut line, so a cut is never a section edge; contours bit-identical.  The pair loop is vectorised (290 → 6 ms) and the pool's admission sample projects per axis (a stride sample had blended one 150 ms plane along the row into 1 900 cheap ones and built a pool that lost 2 s).  240 posts 36 → 23 s, every mesh array bit-identical on the ladder's families; the pool no longer fires on any ladder row.
-* **DD-209** (2026-08-28) — one tier up, the "sheets 19 s + fuse 14 s" of the 16 × 16 array were one term: the sheet detection is the first caller of the copper union, and DD-205's planar route handed all 1 787 coplanar caps to one kernel N-ary fuse, superlinear in their number (443 caps 0.7 s, 1 787 caps 13.4 s).  Coplanar caps are now fused pairwise up a spatial bisection tree (`fuse_faces_tree`, leaf 32, seams removed at every node — same point set, 2.6 s), and the sheet rasteriser tests each section contour only on the candidate points inside its own padded bounding box (`contour_mask`, bit-identical masks).  16 × 16 array 114 → 99 s; ladder rows within 0.1 s (8 × 8 14.8 → 14.4).  The in-house rectilinear union (0.2 s) stays a measured option in the internal record.
 Older decisions: `design-decisions.md`.
 
 ## Working practices earned the hard way
@@ -358,22 +355,23 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   boundary rule); DD-214 the series-ε pass as arrays and the sharp-edge
   test without the kernel's UV walk; DD-215 the union of rectilinear
   caps on the compressed grid of their vertices (arcs and rotated edges
-  keep the tree) and the box sweep as arrays.
+  keep the tree) and the box sweep as arrays; DD-216 one section engine
+  per shape across the passes, faces grouped by one sort, the plane
+  reach test as arrays.
   Ladder (`benchmarks/bench_mesh_build.py`, CPU, `auto` pool): 16 Lange
-  couplers (3.7 M cells) 20 s, 240 posts (385 k) 20 s, 4 × 4 patch array
-  with feed (222 k cells) 1.5 s, 8 × 8 (664 k) 4.6 s, 16 × 16 (1.8 M,
-  off-ladder) 17.4 s; the edge pass is ≤ 2 % of every planar row, the
-  plane fuse ≤ 1 s everywhere; the pool fires on no ladder row.  Open,
-  in value order: (1) the ε/µ/σ area passes — the leading term on every
-  row now (16 × 16: µ 3.6 + ε 2.9 + σ 2.1 of 17.4 s, `compute_face_material_areas`
-  2.4 s own time; Lange 16: µ 6.0 + ε 3.7 of 20.1 s; posts 240: 7.9 +
-  5.9 of 20.2 s); (2) the N-ary fuse of the raised metal pieces
-  (`pec_fuse` 1.5 s on the 16 × 16 array, `fuse` 2.0 s on Lange 16);
-  (3) the post row's kernel sections at the kernel's fixed cost per
-  `BRepAlgoAPI_Section` (6 284 at 1–2 ms); (4) the thin-sheet
-  rasteriser's section (1.3 of `sheets` 1.8 s on the 16 × 16 array).
-  Trap: bench columns nest (`sheets_detect` holds the union's fuse) —
-  rank from `probe_pass_breakdown.py` or a cProfile, not the table.
+  couplers (3.7 M cells) 17.1 s, 240 posts (385 k) 20.0 s, 4 × 4 patch
+  array with feed (222 k cells) 1.1 s, 8 × 8 (664 k) 3.1 s, 16 × 16
+  (1.8 M, off-ladder) 12.6 s; the edge pass is ≤ 2 % of every planar
+  row, the plane fuse ≤ 1 s everywhere; the pool fires on no ladder
+  row.  Open, in value order: (1) the post row's kernel sections —
+  `cross_section_polygons` 3 887 calls 10.5 s of a 25 s profiled
+  build at the kernel's 1.3 ms per `BRepAlgoAPI_Section`; (2) the
+  section engine's per-plane `section` (35 824 calls × 45 µs on Lange
+  16 plus a Python chain walk) — batch all planes of an axis per
+  engine; (3) the N-ary fuse of the raised metal pieces (`pec_fuse`
+  1.5 s on the 16 × 16 array, `fuse` 2.2 s on Lange 16); (4) the
+  thin-sheet rasteriser's section (1.3 of `sheets` 1.8 s on the 16 × 16
+  array).  Trap: bench columns nest — rank from `probe_pass_breakdown.py`.
 
 Closed construction sites are tombstoned where they were decided (the
 DD entry and `known-bugs.md`) and are not repeated here.
