@@ -392,3 +392,154 @@ def test_effective_pec_solid_cuts_only_with_non_pec_tools(monkeypatch):
     assert tools_seen == [1, 1]  # the pocket only, for each PEC shape
     expected = 63 * MM**3  # 64 + 8 above the base, minus the pocket (8 + 3 - 2)
     assert abs(_volume(solid) - expected) <= 1e-9 * expected
+
+
+class TestContainedPecContributions:
+    """A PEC shape inside a box-shaped PEC contribution is not fused."""
+
+    PEC = Material(name="pec", is_pec=True)
+    AIR = Material(name="air")
+    SUBSTRATE = Material(name="alumina")
+
+    def _library(self):
+        return {0: self.AIR, 1: self.PEC, 2: self.SUBSTRATE}
+
+    @staticmethod
+    def _union_operands(monkeypatch):
+        seen = []
+        original = backend.boolean_union
+
+        def counting(shapes):
+            seen.append(len(shapes))
+            return original(shapes)
+
+        monkeypatch.setattr(backend, "boolean_union", counting)
+        return seen
+
+    def test_metal_of_a_pec_housing_is_held_by_the_brick(self, monkeypatch):
+        """Substrate touching from below, air body cut by the metal: nothing to fuse."""
+        housing = geo.Brick(origin=(0, 0, 0), size=(10 * MM, 10 * MM, 10 * MM))
+        substrate = geo.Brick(origin=(0, 0, 0), size=(10 * MM, 10 * MM, 2 * MM))
+        air = geo.Brick(origin=(0, 0, 2 * MM), size=(10 * MM, 10 * MM, 8 * MM))
+        metal = geo.Brick(origin=(4 * MM, 4 * MM, 2 * MM), size=(2 * MM, 2 * MM, MM))
+        shapes = [(housing, 1), (substrate, 2), (geo.Difference(air, metal), 0), (metal, 1)]
+        seen = self._union_operands(monkeypatch)
+        solid = backend.build_effective_pec_solid(shapes, self._library())
+        assert seen == [1]  # the housing's own cut holds the metal already
+        assert _volume(solid) == pytest.approx(4 * MM**3, rel=1e-12)
+        reference = _pairwise_reference(shapes, self._library())
+        assert _volume(solid) == pytest.approx(_volume(reference), rel=1e-12)
+
+    def test_metal_over_a_lower_air_pocket_is_fused(self, monkeypatch):
+        """The pocket is cut from the housing but not from the metal above it."""
+        housing = geo.Brick(origin=(0, 0, 0), size=(10 * MM, 10 * MM, 10 * MM))
+        pocket = geo.Brick(origin=(4 * MM, 4 * MM, 4 * MM), size=(2 * MM, 2 * MM, 2 * MM))
+        metal = geo.Brick(origin=(4 * MM, 4 * MM, 5 * MM), size=(2 * MM, 2 * MM, 2 * MM))
+        seen = self._union_operands(monkeypatch)
+        solid = backend.build_effective_pec_solid(
+            [(housing, 1), (pocket, 0), (metal, 1)], self._library()
+        )
+        assert seen == [2]
+        assert _volume(solid) == pytest.approx((1000 - 8 + 4) * MM**3, rel=1e-12)
+
+    def test_a_touching_shape_between_does_not_block(self, monkeypatch):
+        housing = geo.Brick(origin=(0, 0, 0), size=(10 * MM, 10 * MM, 10 * MM))
+        substrate = geo.Brick(origin=(0, 0, 0), size=(10 * MM, 10 * MM, 2 * MM))
+        metal = geo.Brick(origin=(4 * MM, 4 * MM, 2 * MM), size=(2 * MM, 2 * MM, MM))
+        seen = self._union_operands(monkeypatch)
+        solid = backend.build_effective_pec_solid(
+            [(housing, 1), (substrate, 2), (metal, 1)], self._library()
+        )
+        assert seen == [1]
+        assert _volume(solid) == pytest.approx(800 * MM**3, rel=1e-12)
+
+    def test_metal_under_a_higher_pec_box_is_neither_cut_nor_fused(self, monkeypatch):
+        metal = geo.Brick(origin=(4 * MM, 4 * MM, 4 * MM), size=(2 * MM, 2 * MM, 2 * MM))
+        pocket = geo.Brick(origin=(3 * MM, 3 * MM, 3 * MM), size=(4 * MM, 4 * MM, 4 * MM))
+        lid = geo.Brick(origin=(0, 0, 0), size=(10 * MM, 10 * MM, 10 * MM))
+        cuts = []
+        original = backend.boolean_difference_many
+        monkeypatch.setattr(
+            backend, "boolean_difference_many", lambda b, t: cuts.append(len(t)) or original(b, t)
+        )
+        seen = self._union_operands(monkeypatch)
+        solid = backend.build_effective_pec_solid(
+            [(metal, 1), (pocket, 0), (lid, 1)], self._library()
+        )
+        assert seen == [1] and cuts == []
+        assert _volume(solid) == pytest.approx(1000 * MM**3, rel=1e-12)
+
+    def test_a_holder_that_is_not_a_box_does_not_hold(self, monkeypatch):
+        block = geo.Brick(origin=(0, 0, 0), size=(10 * MM, 10 * MM, 10 * MM))
+        corner = geo.Brick(origin=(0, 0, 0), size=(5 * MM, 5 * MM, 10 * MM))
+        metal = geo.Brick(origin=(MM, MM, MM), size=(2 * MM, 2 * MM, 2 * MM))
+        seen = self._union_operands(monkeypatch)
+        solid = backend.build_effective_pec_solid(
+            [(geo.Difference(block, corner), 1), (metal, 1)], self._library()
+        )
+        assert seen == [2]
+        assert _volume(solid) == pytest.approx((1000 - 250 + 8) * MM**3, rel=1e-12)
+
+    def test_an_overlapping_shape_between_blocks(self, monkeypatch):
+        housing = geo.Brick(origin=(0, 0, 0), size=(10 * MM, 10 * MM, 10 * MM))
+        air = geo.Brick(origin=(0, 0, 2 * MM), size=(8 * MM, 8 * MM, 8 * MM))
+        metal = geo.Brick(origin=(4 * MM, 4 * MM, 2 * MM), size=(2 * MM, 2 * MM, MM))
+        seen = self._union_operands(monkeypatch)
+        solid = backend.build_effective_pec_solid(
+            [(housing, 1), (air, 0), (metal, 1)], self._library()
+        )
+        assert seen == [2]
+        assert _volume(solid) == pytest.approx((1000 - 512 + 4) * MM**3, rel=1e-12)
+
+    def test_the_housing_is_cut_by_the_air_box_not_the_air_body(self, monkeypatch):
+        """Brick − (air − metal) = (brick − air) ∪ metal: the air body's faces stay out of it."""
+        housing = geo.Brick(origin=(0, 0, 0), size=(10 * MM, 10 * MM, 10 * MM))
+        substrate = geo.Brick(origin=(0, 0, 0), size=(10 * MM, 10 * MM, 2 * MM))
+        air = geo.Brick(origin=(MM, MM, 2 * MM), size=(8 * MM, 8 * MM, 7 * MM))
+        metal = geo.Brick(origin=(4 * MM, 4 * MM, 2 * MM), size=(2 * MM, 2 * MM, MM))
+        air_body = geo.Difference(air, metal)
+        shapes = [(housing, 1), (substrate, 2), (air_body, 0), (metal, 1)]
+        tools_seen = []
+        original = backend.boolean_difference_many
+        monkeypatch.setattr(
+            backend,
+            "boolean_difference_many",
+            lambda b, t: tools_seen.append([id(x) for x in t]) or original(b, t),
+        )
+        seen = self._union_operands(monkeypatch)
+        solid = backend.build_effective_pec_solid(shapes, self._library())
+        assert tools_seen == [[id(substrate._occ_shape()), id(air._occ_shape())]]
+        assert seen == [2]  # the housing shell and the metal
+        expected = (1000 - 200 - 8 * 8 * 7 + 4) * MM**3
+        assert _volume(solid) == pytest.approx(expected, rel=1e-12)
+        reference = _pairwise_reference(shapes, self._library())
+        assert _volume(solid) == pytest.approx(_volume(reference), rel=1e-12)
+
+    def test_substituted_tools_are_cut_by_a_pocket_that_overlaps_them(self, monkeypatch):
+        housing = geo.Brick(origin=(0, 0, 0), size=(10 * MM, 10 * MM, 10 * MM))
+        air = geo.Brick(origin=(MM, MM, MM), size=(8 * MM, 8 * MM, 8 * MM))
+        metal = geo.Brick(origin=(4 * MM, 4 * MM, 4 * MM), size=(2 * MM, 2 * MM, 2 * MM))
+        pocket = geo.Brick(origin=(5 * MM, 5 * MM, 5 * MM), size=(2 * MM, 2 * MM, 2 * MM))
+        shapes = [(housing, 1), (geo.Difference(air, metal), 0), (metal, 1), (pocket, 0)]
+        solid = backend.build_effective_pec_solid(shapes, self._library())
+        assert _volume(solid) == pytest.approx((1000 - 512 + 8 - 1) * MM**3, rel=1e-12)
+        reference = _pairwise_reference(shapes, self._library())
+        assert _volume(solid) == pytest.approx(_volume(reference), rel=1e-12)
+
+    def test_tools_beyond_the_box_are_not_substituted(self, monkeypatch):
+        housing = geo.Brick(origin=(0, 0, 0), size=(10 * MM, 10 * MM, 10 * MM))
+        air = geo.Brick(origin=(0, 0, 0), size=(10 * MM, 10 * MM, 10 * MM))
+        metal = geo.Brick(origin=(4 * MM, 4 * MM, 8 * MM), size=(2 * MM, 2 * MM, 4 * MM))
+        tools_seen = []
+        original = backend.boolean_difference_many
+        monkeypatch.setattr(
+            backend,
+            "boolean_difference_many",
+            lambda b, t: tools_seen.append([id(x) for x in t]) or original(b, t),
+        )
+        air_body = geo.Difference(air, metal)
+        solid = backend.build_effective_pec_solid(
+            [(housing, 1), (air_body, 0), (metal, 1)], self._library()
+        )
+        assert tools_seen == [[id(air_body._occ_shape())]]
+        assert _volume(solid) == pytest.approx(16 * MM**3, rel=1e-12)
