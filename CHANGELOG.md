@@ -11,6 +11,11 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- The edge pass of the mesh build decides grid lines against planar
+  faces with round outlines — the caps of posts and pins, plates with
+  round holes — in-house, exactly on the circle, instead of through the
+  geometry kernel's line–face intersector.  A row of 240 PEC posts
+  meshes in 2.4 s instead of 3.0 s; meshes are unchanged.
 - The mesh build's section engine answers every grid plane of an axis
   in one compiled pass instead of plane by plane through NumPy — the
   conformal area passes and the cell classifier of models with many

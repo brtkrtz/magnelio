@@ -50,7 +50,9 @@ def rectilinear_rings(faces: list, tolerance: float):
         row = _planar_row(face)
         if row is None:
             return None
-        face_axis, face_level, _, verts, offsets = row
+        face_axis, face_level, _, verts, offsets, kinds, _arcs = row
+        if kinds.any():
+            return None
         if axis is None:
             axis, level = face_axis, face_level
         elif face_axis != axis:
