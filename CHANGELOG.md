@@ -11,6 +11,14 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Two mesh-build terms that grew faster than the layout on large planar
+  designs are gone: the series-permittivity correction for grid edges
+  crossing a floor-absorbed material plane runs over arrays instead of
+  a Python loop per edge and segment, and the geometry-edge plane
+  extraction no longer re-derives a face's parametric bounds for every
+  edge it tests (a 16 × 16 patch array with its corporate feed: 27 s →
+  2 s and 19 s → 0.7 s for the two steps, the build 65 s → 21 s; an 8 × 8 array 6.9 s → 5.0 s;
+  identical meshes).
 - The conformal edge pass of the mesh build runs in batch: the carrier
   lines of all grid edges are collected once and intersected in
   compiled passes, the per-edge bookkeeping and the classification of

@@ -15517,3 +15517,110 @@ fixed cost.
 `compute_edge_pec_fractions`), `tests/unit/test_edge_pass_lines.py`,
 `docs/methods/meshing-conformal.md`, `CHANGELOG.md`,
 `benchmarks/results/bench_mesh_build.json` (re-run).
+
+## DD-214 — Two quadratic terms of the large-layout tier: the series-ε pass as arrays, the sharp-edge test without the UV walk
+
+**Status:** Decided and implemented 2026-08-28, branch
+`perf/subcell-quadratic-terms`.  DD-213's open item 1.
+
+**Problem.**  The 16 × 16 patch array (1.8 M cells, 1 090 metal
+pieces) spent 45 of its 65 s in two terms no ladder row shows, both
+superlinear in the layout (internal dossier
+`investigations/mesh-build-bench/tier2/`, M17; cProfile of the whole
+build):
+
+1. `_apply_longitudinal_eps` (the WP-M3 series-ε correction on edges
+   crossing floor-absorbed material planes, DD-051/WP-M3) — 24.2 s of
+   own time, 29.7 s cumulative, of which the sectioning batch was
+   5.6 s.  Per absorbed plane the pass walked the crossed cell layer's
+   `Ny × Nz` interior edges in Python to append one face spec per
+   segment, and the harmonic combination selected every edge's
+   segments with `seg_edge_arr == flat` over the whole segment array —
+   O(edges × segments).  On the array the 0.3-mm floor absorbs 22 x-
+   and 23 y-planes (the strip edges of a corporate feed sit closer
+   than the floor to each other), 140 183 edges are written.
+2. `extract_feature_planes_per_shape` (the DD-191 geometry-edge
+   planes) — 18.6 s, against 0.7 s on Lange 16.  `_sharp_edges` groups
+   the faces at every edge by analytic surface, and `_same_surface`
+   built two `BRepAdaptor_Surface(face)` per comparison: 30 912
+   constructions at ~0.6 ms.  The restricted constructor (the default)
+   calls `BRepTools::UVBounds`, which walks every edge of the face for
+   its parametric bounds — on the fused coplanar caps of a large
+   layout (one face carrying the outlines of a thousand strips, DD-205)
+   that is O(edges of the face) per edge of the face.
+
+**Decision.**
+
+1. The series-ε pass lays out its specs as arrays: per absorbed plane
+   the crossed layer's interior edges come from one `meshgrid`
+   (row-major over the two transverse indices, as the loops ran),
+   PEC-adjacent edges are masked, segments are `tile`d along the edges
+   (edge-major, segment-minor — the order the sectioning batch and its
+   cache saw before).  The harmonic combination uses the runs of the
+   edge array (an edge's segments are contiguous: one layer per plane,
+   every edge in one layer) with `logical_or.reduceat` for the
+   incomplete-sectioning gate and **`_run_sums`** for the sums —
+   sequential accumulation over a zero-padded (runs × longest-run)
+   array, because `np.add.reduceat` rounds a run of three or more
+   differently from `np.sum` (82 of 250 random runs of four differ in
+   the last bit; array 4 × 4 had 172 of 3 985 edges off by one ulp with
+   `reduceat`).  Bit-identity was free once the accumulation order was
+   matched, so it was kept (`test_subcell_pipeline.py::TestRunSums`,
+   `test_mesh.py::…two_absorbed_planes_in_one_cell…` for the
+   three-segment run).
+2. `_sharp_edges` builds one adaptor per face, `BRepAdaptor_Surface(f,
+   False)` — no UV restriction (the analytic surface does not depend
+   on the bounds; the plane/cylinder/sphere comparisons are unchanged)
+   — cached by the face's hash with an `IsSame` guard.
+   `extract_singular_edge_planes` (DD-194) shares the generator and the
+   gain.
+
+**Result.**  Function level, old (`main`) against new on the same
+inputs (`probe_tier2_equivalence.py`): 16 × 16 array series-ε 26.9 →
+**1.73 s** (140 183 edges; ε, σ, f_A bit-identical), feature planes
+18.2 → **0.63 s** (733 planes, identical); 8 × 8 1.00 → 0.41 s and
+1.49 → 0.16 s; 4 × 4 0.22 → 0.13 s and 0.16 → 0.05 s; Lange 8 has no
+absorbed planes, planes 0.28 → 0.18 s.  Meshes bit-identical: 35 / 35
+arrays on posts 60, posts 240, Lange 4, 4 × 4 array
+(`probe_mesh_hash.py`).
+
+Full ladder (`--family all --pool off auto forced --json`, `auto`, CPU
+idle; before = DD-213's ladder):
+
+| family, n | cells | edges | total before → after | ε pass | µ pass |
+|---|---|---|---|---|---|
+| Lange 16 | 3.69 M | 214 k | 20.6 → 19.9 s | 3.7 → 3.6 | 5.7 → 5.6 |
+| Lange 8 | 1.84 M | 107 k | 9.0 → 8.7 s | 1.7 | 2.6 |
+| Lange 4 | 922 k | 54 k | 4.0 → 4.0 | 0.8 | 1.2 |
+| array 8 × 8 | 664 k | 153 k | 6.9 → **5.0 s** | 0.9 | 1.2 |
+| array 4 × 4 | 222 k | 45 k | 1.8 → 1.6 | 0.3 | 0.5 |
+| array 2 × 2 | 84 k | 14 k | 0.7 → 0.6 | 0.1 | 0.2 |
+| posts 240 | 385 k | 78 k | 20.5 → 20.2 | 5.9 | 8.0 |
+| posts 60 | 97 k | 20 k | 4.9 → 4.8 | 1.4 | 1.9 |
+| array 16 × 16 (off-ladder) | 1.82 M | 450 k | 65.4 → **20.6 s** | 2.9 | 3.6 |
+
+The pool arms agree with `auto` within noise (`forced` on the post rows
+pays its start-up as before).  On the 16 × 16 array
+(`probe_pass_breakdown.py`) `pass_edges_eps` 32.4 → 6.3 s and
+`planes_edges` 20.9 → 0.63 s; the remaining keys are unchanged
+(`sheets_detect` 4.7, `fuse` 4.0, `pass_faces_mu` 3.9, `areas_mu` 3.6,
+`areas_epsilon` 2.9, `areas_sigma` 2.0, `pec_fuse` 1.8).  Unit suite
+2 552 passed / 4 skipped, integration 398 passed / 5 skipped plus the
+four `test_tile_skip_solver` single-precision cases on the device with
+`CUPY_ACCELERATORS=""`; ruff, DD, API and import gates clean.
+
+**Open, re-ranked.**  With the two quadratic terms gone the 16 × 16
+array is at 20.6 s for 1.8 M cells — the same rate as the Lange row
+(19.9 s for 3.7 M) once the thin-sheet detection and the fuses are
+counted.  Next, in value order: (1) the 16 × 16 array's
+`sheets_detect` 4.7 s and `fuse` 4.0 s (DD-209's tree; the thin-sheet
+detection's own probes), together 40 % of that build; (2) the area
+passes of the Lange row (µ 5.6 + ε 3.6 of 19.9 s) and of the post row
+(8.0 + 5.9 of 20.2 s); (3) the raised-piece fuse (`pec_fuse` 1.8–2.0 s
+on the array and the Lange row); (4) the post row's kernel sections at
+the kernel's fixed cost per `BRepAlgoAPI_Section` (6 284 at 1–2 ms).
+
+**Files:** `src/magnelio/geo/_subcell.py` (`_apply_longitudinal_eps`,
+`_run_sums`), `src/magnelio/geo/_occ_backend.py` (`_sharp_edges`),
+`tests/unit/test_subcell_pipeline.py`, `tests/unit/test_mesh.py`,
+`CHANGELOG.md`, `benchmarks/results/bench_mesh_build.json` (re-run).

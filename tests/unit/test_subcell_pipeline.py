@@ -217,3 +217,37 @@ class TestComputeSubcellDataMu:
         n_Hz = Nx * Ny * (Nz + 1)
         assert fm.mu_avg.shape == (n_Hx + n_Hy + n_Hz,)
         assert np.all(np.isnan(fm.mu_avg))
+
+
+# ---------------------------------------------------------------------------
+# Run sums of the longitudinal (series) eps pass
+# ---------------------------------------------------------------------------
+
+
+class TestRunSums:
+    def test_matches_sequential_sum_per_run_bitwise(self):
+        """``_run_sums`` reproduces ``values[s:s + n].sum()`` bit for bit.
+
+        The series pass combines every edge's segments with a plain
+        ``sum``; ``np.add.reduceat`` rounds runs of three or more
+        differently, so the run sums are accumulated left to right.
+        """
+        from magnelio.geo._subcell import _run_sums
+
+        rng = np.random.default_rng(7)
+        counts = rng.integers(1, 7, size=400)
+        starts = np.concatenate(([0], np.cumsum(counts)[:-1]))
+        values = rng.random(int(counts.sum())) * 1e-3
+        got = _run_sums(values, starts, counts)
+        expected = np.array([values[s : s + n].sum() for s, n in zip(starts, counts)])
+        assert np.array_equal(got, expected)
+
+    def test_single_element_runs_and_empty(self):
+        from magnelio.geo._subcell import _run_sums
+
+        values = np.array([0.1, 0.2, 0.3])
+        starts = np.array([0, 1, 2])
+        counts = np.array([1, 1, 1])
+        assert np.array_equal(_run_sums(values, starts, counts), values)
+        empty = _run_sums(np.zeros(0), np.zeros(0, dtype=int), np.zeros(0, dtype=int))
+        assert empty.shape == (0,)

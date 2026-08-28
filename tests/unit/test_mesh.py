@@ -789,6 +789,71 @@ class TestHardMinCellSize:
         sel = eps_avg[1:-1, 1:-1, k]
         np.testing.assert_allclose(sel, expected, rtol=1e-3)
 
+    def test_two_absorbed_planes_in_one_cell_get_the_three_segment_series(self):
+        """Two sub-floor layers absorbed into one crossing cell: the edge
+        carries the three-segment series eps (the run-sum path of the
+        vectorised pass, DD-214)."""
+        pytest.importorskip("OCC.Core.BRepPrimAPI")
+        from magnelio.geo import Brick, GeometryModel
+        from magnelio.materials.material import Material
+        from magnelio.mesh.mesher import Mesh
+
+        h1, eps1 = 0.5e-3, 4.3
+        h2, eps2 = 30e-6, 8.0
+        h3, eps3 = 30e-6, 2.0
+        h4 = 1.0e-3
+        w = 2.0e-3
+        floor = 100e-6
+
+        m = GeometryModel()
+        m.add(
+            Brick(
+                origin=(0, 0, 0),
+                size=(1e-3, w, h1),
+                material=Material(name="d1", epsilon=(eps1,) * 3),
+            )
+        )
+        m.add(
+            Brick(
+                origin=(0, 0, h1),
+                size=(1e-3, w, h2),
+                material=Material(name="d2", epsilon=(eps2,) * 3),
+            )
+        )
+        m.add(
+            Brick(
+                origin=(0, 0, h1 + h2),
+                size=(1e-3, w, h3),
+                material=Material(name="d3", epsilon=(eps3,) * 3),
+            )
+        )
+        m.add(Brick(origin=(0, 0, h1 + h2 + h3), size=(1e-3, w, h4), material=Material.air()))
+        ctrl = MeshControl(
+            min_cells_per_feature=2,
+            growth_factor=1.3,
+            max_cell_size=floor,
+            min_cell_size=floor,
+        )
+        mesh = Mesh.from_geometry(m, ctrl, f_max=10e9)
+
+        gz = np.asarray(mesh.grid.z)
+        assert h1 in gz
+        assert not np.any(np.abs(gz - (h1 + h2)) < 1e-9)
+        assert not np.any(np.abs(gz - (h1 + h2 + h3)) < 1e-9)
+
+        k = int(np.argmin(np.abs(gz - h1)))
+        dz = gz[k + 1] - gz[k]
+        assert gz[k + 1] > h1 + h2 + h3
+        expected = dz / (h2 / eps2 + h3 / eps3 + (dz - h2 - h3) / 1.0)
+
+        Nx, Ny, Nz = mesh.Nx, mesh.Ny, mesh.Nz
+        n_Ex = Nx * (Ny + 1) * (Nz + 1)
+        n_Ey = (Nx + 1) * Ny * (Nz + 1)
+        em = mesh.edge_material
+        eps_avg = em.eps_avg[n_Ex + n_Ey :].reshape(Nx + 1, Ny + 1, Nz)
+        sel = eps_avg[1:-1, 1:-1, k]
+        np.testing.assert_allclose(sel, expected, rtol=1e-3)
+
     def test_session_91_refit_case_restored(self):
         """The measured 91.3/70.2 um ramp cells at a 100 um floor."""
         # Interior interval wide enough for the symmetric refit to

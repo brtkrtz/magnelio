@@ -13,7 +13,7 @@ parity — hollow conductors had lost the conformal correction at their
 inner walls (KB-031); how-to *coupled-line coupler* and tutorial 19
 *offset Cassegrain* (rendered, not executed; figures of a measured run
 embedded), every gallery 3D view carries an "Interactive Scene" tab,
-GitHub Discussions is the feedback channel.  Unit suite 2549 passed /
+GitHub Discussions is the feedback channel.  Unit suite 2552 passed /
 4 skipped; integration suite 402 passed / 5 skipped (2026-08-28)
 (edge-pass tangency rule, coax re-pin) and the KB-011 fixture re-pin
 (DD-199 fallout closed 2026-08-27; both unreleased on `main`).
@@ -349,31 +349,31 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
 * **Mesh-build speed.**  DD-101/102 (edge prefilter, planar section
   engine) took the slotline coupler 142 → 14 s; DD-141 admits the
   section pool on a measured sample; DD-199 gave free-form faces the
-  facet path; DD-202 the thin-sheet rasteriser one section instead of
-  a classification per edge; DD-205 the planar fuse and the per-body
-  PEC solid; DD-206 one classifier per shape for the point probes and
-  one Boolean per hub in the overlap check; DD-207 the side step of
+  facet path; DD-202 the thin-sheet rasteriser one section instead of a
+  classification per edge; DD-205 the planar fuse and the per-body PEC
+  solid; DD-206 one classifier per shape for the point probes and one
+  Boolean per hub in the overlap check; DD-207 the side step of
   degenerate planes and kernel sections over the faces a plane reaches;
   DD-208 the edge pass on carrier lines with in-house planar hits and
   2-D tiles; DD-209 the planar fuse up a bisection tree; DD-210 tiles
-  for the one planar face that carries every feature outline; DD-211
-  the engine's stitch and the conformal face collection as arrays;
-  DD-212 no PEC-by-PEC cuts and no overlap Boolean a `Difference`
-  already answers; DD-213 the edge pass in batch (a line table,
-  compiled bookkeeping, the boundary rule for points on corner lines).
+  for the one planar face that carries every feature outline; DD-211 the
+  engine's stitch and the conformal face collection as arrays; DD-212 no
+  PEC-by-PEC cuts and no overlap Boolean a `Difference` already answers;
+  DD-213 the edge pass in batch (line table, compiled bookkeeping,
+  boundary rule); DD-214 the series-ε pass as arrays and the sharp-edge
+  test without the kernel's UV walk (both quadratic in a planar layout).
   Ladder (`benchmarks/bench_mesh_build.py`, CPU, `auto` pool): 16 Lange
-  couplers (3.7 M cells) 21 s, 240 posts (385 k) 21 s, 4 × 4 patch
-  array with feed (222 k cells) 1.8 s, 8 × 8 (664 k) 6.9 s, 16 × 16
-  (1.8 M, off-ladder) 64 s; the edge pass is ≤ 2 % of every planar row;
-  the pool fires on no ladder row.  Open, in value order: (1) two terms
-  the bench table never showed (columns nest — read the JSON row or
-  `probe_pass_breakdown.py`): on the 16 × 16 array `compute_subcell_data`
-  spends ~24 s outside its area/edge kernels (1.4 s on Lange 16) and
-  `extract_feature_planes_per_shape` 21 s (0.7 s on Lange 16) — both
-  superlinear at that tier; (2) the area passes of the Lange row
-  (µ 5.7 + ε 3.7 of 21 s); (3) the N-ary fuse of the raised metal
-  pieces (`pec_fuse` 2.0 s); (4) the post row's kernel sections at the
-  kernel's fixed cost per `BRepAlgoAPI_Section` (6 284 at 1–2 ms).
+  couplers (3.7 M cells) 20 s, 240 posts (385 k) 20 s, 4 × 4 patch array
+  with feed (222 k cells) 1.6 s, 8 × 8 (664 k) 5.0 s, 16 × 16 (1.8 M,
+  off-ladder) 21 s; the edge pass is ≤ 2 % of every planar row; the pool
+  fires on no ladder row.  Open, in value order: (1) the 16 × 16 array's
+  thin-sheet detection (`sheets_detect` 4.7 s) and fuse tree (`fuse` 4.0
+  s) — 40 % of that build (read `probe_pass_breakdown.py`, the bench
+  columns nest); (2) the area passes of the Lange row (µ 5.6 + ε 3.6 of
+  19.9 s) and the post row (8.0 + 5.9 of 20.2 s); (3) the N-ary fuse of
+  the raised metal pieces (`pec_fuse` 1.8–2.0 s); (4) the post row's
+  kernel sections at the kernel's fixed cost per `BRepAlgoAPI_Section`
+  (6 284 at 1–2 ms).
 
 Closed construction sites are tombstoned where they were decided (the
 DD entry and `known-bugs.md`) and are not repeated here.
