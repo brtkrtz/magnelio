@@ -33,10 +33,10 @@ certificates named in their DD entries.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-217** (2026-08-28) — the post row's 6 284 kernel sections (14 of 20 s) were planes through cylindrical faces; the section engine now answers cylinders exactly — analytic crossings on rim circles, generatrices or the conic v(u) on the face, arcs tessellated at the kernel's 5°/δ rule, seams as self-closing chains — and delegates cones, spheres, tori and cylinders trimmed by other curves.  Posts 240 20.0 → 8.0 s, posts 60 4.8 → 1.9 s; sections agree with the kernel to rounding (Lange/array bit-identical, posts at the last bits).
 * **DD-216** (2026-08-28) — the area passes' time was around the sections: `compute_face_material_areas` rebuilt every shape's planar section engine on every call (26 builds on the 16 × 16 array, 1 422 on Lange 16), grouped its faces by plane in a Python loop over every face (5.7 M dict operations per build) and tested each plane against every shape's bounding box in Python.  One engine per (shape, scale, deflection) cached on the shape object, `_faces_by_plane` by one stable sort, `_shapes_reaching` as arrays.  16 × 16 array 17.4 → 12.6 s, Lange 16 19.9 → 17.1 s, 8 × 8 array 4.6 → 3.1 s, bit-identical meshes.
 * **DD-215** (2026-08-28) — DD-214's "sheets 4.7 s + fuse 4.0 s" nested (the sheet detection is the first caller of the copper union); the term was DD-209's fuse tree 2.7 s plus a Python box sweep 0.7 s.  Clusters of straight, axis-aligned caps are now united on the compressed grid of their vertex coordinates (winding-number fill, component labels, one compiled boundary walk; corner contacts resolved as the kernel resolves them), arcs and rotated edges keep the tree; `cluster_boxes` compares against its active set as arrays.  16 × 16 array 20.6 → 17.4 s (union 2.6 → 0.2 s), 8 × 8 5.0 → 4.6 s; the union's vertices are the input coordinates, so three 4 × 4 grid planes moved by the kernel's 1e-19 m rounding (hash references re-pinned), posts bit-identical.
 * **DD-214** (2026-08-28) — two quadratic terms one tier above the ladder: the series-ε pass walked `Ny × Nz` edges per floor-absorbed plane in Python (26.9 → 1.7 s as arrays, `_run_sums` for bit-identity — `reduceat` rounds runs ≥ 3 differently), and the sharp-edge test built a restricted `BRepAdaptor_Surface` per comparison whose `UVBounds` walks every edge of the fused cap (18.2 → 0.6 s with one unrestricted adaptor per face).  16 × 16 array 65 → 21 s, 8 × 8 6.9 → 5.0 s, bit-identical meshes.
-* **DD-213** (2026-08-28) — the edge pass in batch: one line table for all grid edges, compiled bookkeeping, and the boundary rule — every point the oblique last resort could not decide was classifier `ON` on a copper corner line.  Lange 8 5.9 → 0.26 s, 8 × 8 array 8.6 → 0.24 s in the pass, bit-identical.
 Older decisions: `design-decisions.md`.
 
 ## Working practices earned the hard way
@@ -341,37 +341,36 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
 * **Mesh-build speed.**  DD-101/102 (edge prefilter, planar section
   engine) took the slotline coupler 142 → 14 s; DD-141 admits the
   section pool on a measured sample; DD-199 gave free-form faces the
-  facet path; DD-202 the thin-sheet rasteriser one section instead of a
-  classification per edge; DD-205 the planar fuse and the per-body PEC
-  solid; DD-206 one classifier per shape for the point probes and one
-  Boolean per hub in the overlap check; DD-207 the side step of
-  degenerate planes and kernel sections over the faces a plane reaches;
-  DD-208 the edge pass on carrier lines with in-house planar hits and
-  2-D tiles; DD-209 the planar fuse up a bisection tree; DD-210 tiles
-  for the one planar face that carries every feature outline; DD-211 the
-  engine's stitch and the conformal face collection as arrays; DD-212 no
-  PEC-by-PEC cuts and no overlap Boolean a `Difference` already answers;
-  DD-213 the edge pass in batch (line table, compiled bookkeeping,
-  boundary rule); DD-214 the series-ε pass as arrays and the sharp-edge
-  test without the kernel's UV walk; DD-215 the union of rectilinear
-  caps on the compressed grid of their vertices (arcs and rotated edges
-  keep the tree) and the box sweep as arrays; DD-216 one section engine
-  per shape across the passes, faces grouped by one sort, the plane
-  reach test as arrays.
-  Ladder (`benchmarks/bench_mesh_build.py`, CPU, `auto` pool): 16 Lange
-  couplers (3.7 M cells) 17.1 s, 240 posts (385 k) 20.0 s, 4 × 4 patch
-  array with feed (222 k cells) 1.1 s, 8 × 8 (664 k) 3.1 s, 16 × 16
-  (1.8 M, off-ladder) 12.6 s; the edge pass is ≤ 2 % of every planar
-  row, the plane fuse ≤ 1 s everywhere; the pool fires on no ladder
-  row.  Open, in value order: (1) the post row's kernel sections —
-  `cross_section_polygons` 3 887 calls 10.5 s of a 25 s profiled
-  build at the kernel's 1.3 ms per `BRepAlgoAPI_Section`; (2) the
-  section engine's per-plane `section` (35 824 calls × 45 µs on Lange
-  16 plus a Python chain walk) — batch all planes of an axis per
-  engine; (3) the N-ary fuse of the raised metal pieces (`pec_fuse`
-  1.5 s on the 16 × 16 array, `fuse` 2.2 s on Lange 16); (4) the
-  thin-sheet rasteriser's section (1.3 of `sheets` 1.8 s on the 16 × 16
-  array).  Trap: bench columns nest — rank from `probe_pass_breakdown.py`.
+  facet path; the 2026-08-27/28 campaign DD-202…DD-217 moved the
+  thin-sheet rasteriser, the planar fuse and PEC solid, the point
+  probes and overlap check, the degenerate-plane side step, the edge
+  pass (carrier lines, batch), the plane fuse tree and tiles, the
+  area passes' loops, the construction-aware Booleans, the series-ε
+  pass, the rectilinear cap union and the engine bookkeeping off the
+  kernel and out of Python loops; DD-217 puts cylindrical faces and
+  circular edges into the section engine (exact generatrices / conic,
+  the kernel's 5°/δ tessellation) — cones, spheres, tori and cylinders
+  trimmed by other curves keep the kernel, `MAGNELIO_CYLINDER_SECTIONS=0`
+  for A/B.  Ladder (`benchmarks/bench_mesh_build.py`, CPU, `auto`
+  pool): 16 Lange couplers (3.7 M cells) 16.9 s, 240 posts (385 k)
+  8.0 s, 4 × 4 patch array with feed (222 k cells) 1.1 s, 8 × 8 (664 k)
+  3.2 s, 16 × 16 (1.8 M, off-ladder) 12.6 s; the edge pass is ≤ 2 % of
+  every planar row, the plane fuse ≤ 1 s everywhere, the pool fires on
+  no ladder row, and no row delegates more than the seam plane of its
+  cylinders to the kernel.  Open, in value order: (1) the post row's
+  remaining terms — `edge_fractions` 2.1 s (`IntCurvesFace` line
+  probes against the cylinders: the line × cylinder analogue of
+  DD-217), the area passes' 4 s (the per-face Python loop of
+  `_cylinder_pairs`, 240 faces × 26 planes; classifier and µ pass
+  sectioning the same cell-centre planes through separate caches);
+  (2) the section engine's per-plane `section` (35 824 calls × 45 µs
+  on Lange 16 plus a Python chain walk) — batch all planes of an axis
+  per engine; (3) the N-ary fuse of the raised metal pieces
+  (`pec_fuse` 1.5 s on the 16 × 16 array, `fuse` 2.0 s on Lange 16);
+  (4) the thin-sheet rasteriser's section (1.3 of `sheets` 1.8 s on
+  the 16 × 16 array); (5) spheres and cones in the engine once a
+  ladder row shows them.  Trap: bench columns nest — rank from
+  `probe_pass_breakdown.py`.
 
 Closed construction sites are tombstoned where they were decided (the
 DD entry and `known-bugs.md`) and are not repeated here.

@@ -15843,3 +15843,145 @@ section (1.3 of `sheets` 1.8 s on the 16 × 16 array).
 `_faces_by_plane`, `compute_face_material_areas`),
 `tests/unit/test_area_pass_bookkeeping.py` (new), `CHANGELOG.md`,
 `benchmarks/results/bench_mesh_build.json` (re-run).
+
+
+## DD-217 — Cylindrical faces are sectioned exactly by the engine
+
+**Status:** Decided and implemented 2026-08-28, branch
+`perf/quadric-facet-sections`.  DD-216's open item 1; the "exact
+plane × quadric section" DD-199 named as the DD-102 follow-up, for
+cylinders.
+
+**Problem.**  The post row was the one ladder row not bound by
+Python bookkeeping: 6 284 `cross_section_polygons` calls took 14.2 s
+of a 20.2 s build (internal dossier
+`investigations/mesh-build-bench/kernel/`, M20).  The DD-102 engine
+answers planar faces only, so every plane touching a post's
+cylindrical face — 2 160 x-planes per body returning one polygon of
+four or eight vertices, nine y-planes and thirteen z-planes crossing
+all 240 posts — went to `BRepAlgoAPI_Section` at 1–2 ms (x) and
+85–150 ms (y, z) a call.  Two routes were measured first:
+
+- *Batching the kernel* (one Boolean per axis and body over a
+  compound of plane faces): 0.7 → 0.3 ms per x-plane on the posts,
+  1.4 → 1.1 ms on the air body, superlinear beyond 64 planes per
+  call (2 160 planes: 6.2 ms each).  The cost is the kernel's
+  plane × cylinder pair, not the call.
+- *The DD-199 facet path for analytic curved faces* (one line): the
+  build went 20 → 32 s — the facet section has no slab prefilter and
+  runs every plane over every triangle edge of the body, O(planes ×
+  triangles) — and the areas moved by up to 4 % of a cell face
+  (`A_face_free` 8.6e-9 of 1.9e-7 m²): the kernel tessellates a rim
+  circle at 5° (72 points), `BRepMesh` at 0.5 rad (13), and on a
+  cylinder the one-step Newton lift of a chord crossing leaves a
+  residual of order δ rather than δ².
+
+**Decision.**  The engine represents cylindrical faces exactly.  Its
+B-Rep digest gains, per cylindrical face, the parametric frame
+P(u, v) = c + r (cos u X + sin u Y) + v A, the outward sense of the
+radial direction (the sign of det(X, Y, A), flipped for a reversed
+face) and the face's (u, v) bounds; per circular edge the frame
+P(t) = c + r (cos t X + sin t Y) and its parameter range; the seams
+of cylindrical faces (straight edges bordering one face twice); and
+every vertex.  A cylindrical face is *admitted* only while each of its
+boundary edges is one of its own parameter lines — a rim circle
+(coaxial, centred on the axis, at its radius) or a generatrix — so
+the face is a rectangle of its (u, v) domain; a cylinder trimmed by
+anything else (an oblique plane, another cylinder, a sphere) keeps
+the kernel, as do cones, spheres and tori.  Per plane n·P = pos:
+
+1. *Crossings.*  Straight edges as before; on a circular edge the
+   plane equation is ρ cos(t − φ) = pos − c·n with ρ = r √(A² + B²),
+   A = X·n, B = Y·n — two roots per full circle, those within the
+   range of an arc.
+2. *Planar faces* pair their crossings along the trace line as
+   before; a rim crossing is just another crossing of the floor face
+   with a hole.
+3. *Cylindrical faces.*  Plane parallel to the axis (A·n = 0): the
+   trace is the two generatrices at the roots u* of
+   r (A cos u + B sin u) = pos − c·n; each joins its two rim
+   crossings, directed along n × n_outward like the planar segments.
+   Otherwise the trace is the conic v(u) = (pos − c·n − r (A cos u +
+   B sin u)) / A·n, which the face's boundary crossings split into
+   arcs (the seam crossing alone on a full round face: one arc from
+   the seam around to itself); an arc belongs to the face where v(u)
+   lies within the face's v range, decided at its midpoint (a
+   midpoint within tolerance of a bound is a graze and delegates).
+   Interior vertices are placed at uniform u with the step
+   min(5° · |A·n|, √(8 δ |A·n|³ / r)) — the kernel's
+   `GCPnts_TangentialDeflection` rule (chord ≤ δ, turn ≤ 5°) applied
+   to the conic's curvature bound; on a circle (|A·n| = 1) it
+   reproduces the kernel's 72 vertices at the same angles.
+4. *Stitching* through shared crossing indices is unchanged
+   (`_chains_to_polygons` with the arcs' interior points, the facet
+   path's mechanism); a seam crossing is the start and the end of its
+   own chain.
+
+Delegation gains the cylinder cases: a plane tangent to an admitted
+cylinder or to a circular edge (a coplanar circle included), a
+vertex on the plane (now tested over all vertices — equivalent to the
+former straight-edge endpoint test, complete for circles), the
+generatrix roots or arc midpoints landing on a bound.
+`MAGNELIO_CYLINDER_SECTIONS=0` keeps cylinders on the kernel (A/B
+runs and the regression gate).  `batch_cross_sections` (the cell
+classifier's sections) now takes the shape's cached engine
+(`_section_engine`) instead of building its own.
+
+**Measured.**  Engine against kernel on the post row
+(`probe_cylinder_engine.py`): same contour and vertex counts on every
+plane (x: 4/8 vertices, y: 244, z: 61 contours × 72), vertex
+deviation 1e-17–1e-19 m, per plane 0.3 ms vs 1–2 ms (x), 3.6 vs 30 ms
+(y), 5 vs 21 ms (z).  One class of plane differs by more than
+rounding: 14 µm from a post's seam the *kernel* extends the cap chord
+to the diameter ends, a 0.19 µm spike inside its 2.1e-7 vertex
+tolerance — the engine's answer is the exact one; the unit gate
+compares within 3e-7 for that reason.  A/B of every mesh array with
+the toggle (`probe_ab_arrays.py`): posts 60 — 28 / 35 arrays
+identical, the rest within 1.4e-19 m² (areas) and 1.8e-14 (`f_A`,
+16 entries); array 4 and Lange 4 bit-identical (no admitted cylinder
+face reached).  `probe_pass_breakdown.py` (`auto`): **posts 240
+20.0 → 8.4 s** (`areas_mu` 7.7 → 2.5, `areas_epsilon` 5.9 → 1.6,
+`classify_sections` 4.2 → 0.7), posts 60 5.1 → 1.9 s.
+
+Full ladder (`--family all --pool off auto forced --json`, `auto`, CPU
+idle; before = DD-216's ladder):
+
+| family, n | cells | total before → after | ε pass | µ pass | kernel sections |
+|---|---|---|---|---|---|
+| posts 240 | 385 k | 20.0 → **8.0 s** | 5.9 → 1.6 | 7.7 → 2.5 | 6 284 → 2 |
+| posts 60 | 97 k | 4.8 → **1.9 s** | 1.4 → 0.4 | 1.8 → 0.6 | 1 604 → 2 |
+| Lange 16 | 3.69 M | 17.1 → 16.9 s | 3.4 → 3.3 | 4.0 → 3.9 | 192 |
+| Lange 8 | 1.84 M | 7.4 → 7.3 s | 1.5 | 1.7 | 96 |
+| Lange 4 | 922 k | 3.4 → 3.3 s | 0.7 | 0.8 | 48 |
+| array 8 × 8 | 664 k | 3.1 → 3.2 s | 0.6 | 0.6 → 0.7 | 1 |
+| array 4 × 4 | 222 k | 1.1 s | 0.3 | 0.3 | 1 |
+
+The two remaining post sections per body are the plane y = 0 through
+every seam; the Lange and array rows carry no admitted cylinder face
+and are bit-identical (hash gate 35 / 35 on array 4 and Lange 4; the
+post references re-pinned, the old ones kept as `*_pre_dd217.txt`).
+The pool arms agree with `auto` within noise.  Unit suite 2 583 passed / 4 skipped (6 new),
+integration 402 passed / 5 skipped (`CUPY_ACCELERATORS=""`); ruff, DD and import gates clean.
+
+**Open, re-ranked.**  In value order: (1) the post row's remaining
+terms — `edge_fractions` 2.2 s (`IntCurvesFace` line probes against
+the cylinders, 192 k `Perform` calls; the line × cylinder analogue of
+this DD), the area passes' remaining 4 s (the per-face Python loop
+of `_cylinder_pairs` on the y/z planes, 240 faces × 26 planes) and
+the classifier / µ pass sectioning the same cell-centre planes
+through separate caches (960 of 3 120 x-plane calls per body were
+repeats); (2) the engine's `section` per plane on Lange 16 (35 824
+calls × 45 µs, plus a Python chain walk) — a batch over all planes
+of an axis per engine; (3) the raised-piece fuse (`pec_fuse` 1.5 s
+on the 16 × 16 array, `fuse` 2.2 s on Lange 16); (4) the thin-sheet
+rasteriser's section (1.3 of `sheets` 1.8 s on the 16 × 16 array);
+(5) spheres and cones in the engine (circle and conic traces, the
+same machinery) when a model shows them on a ladder row.
+
+**Files:** `src/magnelio/geo/_occ_backend.py` (`_PlanarSectionEngine`
+`_build`/`_screen`/`section`, `_planar_pairs`, `_circle_crossings`,
+`_cylinder_pairs`, `_cylinder_face_pairs`, `_is_generatrix`,
+`_is_rim`, `_cylinder_sections_enabled`, `batch_cross_sections`),
+`tests/unit/test_planar_section_engine.py`
+(`TestCylinderSectionEngine`), `benchmarks/results/`, `CHANGELOG.md`,
+`STATUS.md`.
