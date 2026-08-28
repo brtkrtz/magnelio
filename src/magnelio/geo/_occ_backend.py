@@ -19,6 +19,8 @@ import warnings
 
 import numpy as np
 
+from magnelio.geo._line_kernels import axis_line_candidates, planar_point_state
+
 
 def _require_occ():
     """Import and return OCC modules, raising a helpful error if not installed."""
@@ -2779,15 +2781,9 @@ def _classification_pieces(face, lo: np.ndarray, hi: np.ndarray):
     from OCC.Core.Bnd import Bnd_Box  # noqa: PLC0415
     from OCC.Core.BRepAdaptor import BRepAdaptor_Surface  # noqa: PLC0415
     from OCC.Core.BRepBndLib import brepbndlib  # noqa: PLC0415
-    from OCC.Core.BRepBuilderAPI import (  # noqa: PLC0415
-        BRepBuilderAPI_MakeFace,
-        BRepBuilderAPI_MakePolygon,
-    )
     from OCC.Core.GeomAbs import GeomAbs_Plane  # noqa: PLC0415
-    from OCC.Core.gp import gp_Pnt  # noqa: PLC0415
-    from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_FACE, TopAbs_REVERSED  # noqa: PLC0415
+    from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_REVERSED  # noqa: PLC0415
     from OCC.Core.TopExp import TopExp_Explorer  # noqa: PLC0415
-    from OCC.Core.TopoDS import topods  # noqa: PLC0415
 
     n_edges = 0
     explorer = TopExp_Explorer(face, TopAbs_EDGE)
@@ -2824,26 +2820,16 @@ def _classification_pieces(face, lo: np.ndarray, hi: np.ndarray):
     u_lines = np.linspace(lo[u] - margin_u, hi[u] + margin_u, ku + 1)
     v_lines = np.linspace(lo[v] - margin_v, hi[v] + margin_v, kv + 1)
     level = 0.5 * (lo[axis] + hi[axis])
-    occ = _require_occ()
     pieces = []
     for i in range(ku):
         for j in range(kv):
-            corners = []
-            for cu, cv in ((i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1)):
-                xyz = [0.0, 0.0, 0.0]
-                xyz[axis] = level
-                xyz[u] = float(u_lines[cu])
-                xyz[v] = float(v_lines[cv])
-                corners.append(gp_Pnt(*xyz))
-            polygon = BRepBuilderAPI_MakePolygon(*corners, True)
-            rectangle = BRepBuilderAPI_MakeFace(polygon.Wire(), True).Face()
-            common = _run_bop(occ["Common"], [face], [rectangle])
-            parts = TopExp_Explorer(common, TopAbs_FACE)
-            while parts.More():
-                piece = topods.Face(parts.Current())
-                parts.Next()
-                if np.dot(effective_normal(piece), normal) < 0.0:
-                    piece = topods.Face(piece.Reversed())
+            rect = (
+                float(u_lines[i]),
+                float(v_lines[j]),
+                float(u_lines[i + 1]),
+                float(v_lines[j + 1]),
+            )
+            for piece in _face_tile_pieces(face, axis, level, rect):
                 box = Bnd_Box()
                 brepbndlib.Add(piece, box, False)
                 if box.IsVoid():
@@ -2852,6 +2838,173 @@ def _classification_pieces(face, lo: np.ndarray, hi: np.ndarray):
                 p_hi = np.array(box.Get()[3:])
                 pieces.append((piece, tuple(p_lo), tuple(p_hi)))
     return pieces or None
+
+
+def _face_tile_pieces(face, axis: int, level: float, rect) -> list:
+    """The faces of ``face ∩ tile`` — a coplanar ``Common`` with the
+    axis-aligned rectangle ``rect = (u_min, v_min, u_max, v_max)`` at
+    ``level`` on ``axis`` — each oriented like *face* (effective
+    normal), so the transitions they report are the face's."""
+    from OCC.Core.BRepAdaptor import BRepAdaptor_Surface  # noqa: PLC0415
+    from OCC.Core.BRepBuilderAPI import (  # noqa: PLC0415
+        BRepBuilderAPI_MakeFace,
+        BRepBuilderAPI_MakePolygon,
+    )
+    from OCC.Core.gp import gp_Pnt  # noqa: PLC0415
+    from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_REVERSED  # noqa: PLC0415
+    from OCC.Core.TopExp import TopExp_Explorer  # noqa: PLC0415
+    from OCC.Core.TopoDS import topods  # noqa: PLC0415
+
+    def effective_normal(f):
+        d = BRepAdaptor_Surface(f).Plane().Axis().Direction()
+        n = np.array((d.X(), d.Y(), d.Z()))
+        return -n if f.Orientation() == TopAbs_REVERSED else n
+
+    normal = effective_normal(face)
+    u, v = (k for k in range(3) if k != axis)
+    u_min, v_min, u_max, v_max = rect
+    corners = []
+    for cu, cv in ((u_min, v_min), (u_max, v_min), (u_max, v_max), (u_min, v_max)):
+        xyz = [0.0, 0.0, 0.0]
+        xyz[axis] = level
+        xyz[u] = cu
+        xyz[v] = cv
+        corners.append(gp_Pnt(*xyz))
+    polygon = BRepBuilderAPI_MakePolygon(*corners, True)
+    rectangle = BRepBuilderAPI_MakeFace(polygon.Wire(), True).Face()
+    common = _run_bop(_require_occ()["Common"], [face], [rectangle])
+    pieces = []
+    parts = TopExp_Explorer(common, TopAbs_FACE)
+    while parts.More():
+        piece = topods.Face(parts.Current())
+        parts.Next()
+        if np.dot(effective_normal(piece), normal) < 0.0:
+            piece = topods.Face(piece.Reversed())
+        pieces.append(piece)
+    return pieces
+
+
+#: In-house hits on planar axis-aligned rows of the edge pass (tests
+#: switch it off to compare against the kernel's intersector).
+_PLANAR_ROW_HITS = True
+
+
+def _planar_row(face):
+    """Plane data of a planar, axis-aligned, straight-edged face for the
+    in-house hit test of :class:`_PrefilteredLineSolid`, or ``None``.
+
+    Returns ``(axis, level, outward_sign, verts, offsets)``: the normal
+    axis, the plane's coordinate on it, the sign of the outward normal
+    (surface normal × face orientation) along that axis, and the wires
+    of the face as rings of ``(u, v)`` vertices (``u < v`` the other
+    two axes, in xyz order) packed back to back.
+    """
+    from OCC.Core.BRep import BRep_Tool  # noqa: PLC0415
+    from OCC.Core.BRepAdaptor import BRepAdaptor_Curve, BRepAdaptor_Surface  # noqa: PLC0415
+    from OCC.Core.BRepTools import BRepTools_WireExplorer  # noqa: PLC0415
+    from OCC.Core.GeomAbs import GeomAbs_Line, GeomAbs_Plane  # noqa: PLC0415
+    from OCC.Core.TopAbs import TopAbs_FORWARD, TopAbs_REVERSED, TopAbs_WIRE  # noqa: PLC0415
+    from OCC.Core.TopExp import TopExp_Explorer  # noqa: PLC0415
+    from OCC.Core.TopoDS import topods  # noqa: PLC0415
+
+    orientation = face.Orientation()
+    if orientation not in (TopAbs_FORWARD, TopAbs_REVERSED):
+        return None
+    surface = BRepAdaptor_Surface(face, False)
+    if surface.GetType() != GeomAbs_Plane:
+        return None
+    plane = surface.Plane()
+    d = plane.Axis().Direction()
+    normal = np.array((d.X(), d.Y(), d.Z()), dtype=np.float64)
+    if orientation == TopAbs_REVERSED:
+        normal = -normal
+    axis = int(np.argmax(np.abs(normal)))
+    if abs(normal[axis]) < 1.0 - 1e-12:
+        return None
+    u, v = (k for k in range(3) if k != axis)
+    loc = plane.Location()
+    level = float((loc.X(), loc.Y(), loc.Z())[axis])
+    rings: list[np.ndarray] = []
+    wires = TopExp_Explorer(face, TopAbs_WIRE)
+    while wires.More():
+        points: list[tuple[float, float]] = []
+        walker = BRepTools_WireExplorer(topods.Wire(wires.Current()), face)
+        while walker.More():
+            edge = topods.Edge(walker.Current())
+            if BRepAdaptor_Curve(edge).GetType() != GeomAbs_Line:
+                return None
+            p = BRep_Tool.Pnt(topods.Vertex(walker.CurrentVertex()))
+            xyz = (p.X(), p.Y(), p.Z())
+            points.append((xyz[u], xyz[v]))
+            walker.Next()
+        if len(points) < 3:
+            return None
+        rings.append(np.asarray(points, dtype=np.float64))
+        wires.Next()
+    if not rings:
+        return None
+    offsets = np.zeros(len(rings) + 1, dtype=np.int64)
+    offsets[1:] = np.cumsum([len(r) for r in rings])
+    return axis, level, float(np.sign(normal[axis])), np.vstack(rings), offsets
+
+
+def _planar_tiles(planar, lo: np.ndarray, hi: np.ndarray):
+    """Tile the rings of a large planar face for the in-house hit test.
+
+    The 2-D counterpart of :func:`_classification_pieces` for faces that
+    carry plane data: the same tile grid (count, overhang), but each
+    tile is the face's rings clipped to the tile rectangle
+    (Sutherland-Hodgman, ring by ring — clipping to one convex
+    rectangle keeps the even-odd parity of every point inside it) with
+    the box of what is left.  No kernel Boolean per tile: the cap of a
+    16 × 16 feed network cost 46 s in ``Common`` calls, the clip takes
+    milliseconds.  A point within tolerance of a tile border reads
+    ``ON`` from the clipped ring's border segment, as it did from the
+    kernel piece's edge.
+
+    Returns a list of ``(planar, lo, hi)`` rows or ``None`` when the
+    face is too simple to be worth it.
+    """
+    from magnelio.geo._polygon_clip import clip_polygon_to_rect  # noqa: PLC0415
+
+    axis, level, outward, verts, offsets = planar
+    if len(verts) < _PIECE_MIN_EDGES:
+        return None
+    u, v = (k for k in range(3) if k != axis)
+    extent_u, extent_v = hi[u] - lo[u], hi[v] - lo[v]
+    if extent_u <= 0.0 or extent_v <= 0.0:
+        return None
+    k = np.sqrt(len(verts) / _PIECE_TARGET_EDGES)
+    ku = int(np.clip(round(k * np.sqrt(extent_u / extent_v)), 1, _PIECE_MAX_PER_AXIS))
+    kv = int(np.clip(round(k * np.sqrt(extent_v / extent_u)), 1, _PIECE_MAX_PER_AXIS))
+    if ku * kv < 2:
+        return None
+    margin_u, margin_v = 0.01 * extent_u / ku, 0.01 * extent_v / kv
+    u_lines = np.linspace(lo[u] - margin_u, hi[u] + margin_u, ku + 1)
+    v_lines = np.linspace(lo[v] - margin_v, hi[v] + margin_v, kv + 1)
+    rings = [verts[offsets[r] : offsets[r + 1]] for r in range(len(offsets) - 1)]
+    tiles = []
+    for i in range(ku):
+        for j in range(kv):
+            rect = (
+                float(u_lines[i]),
+                float(v_lines[j]),
+                float(u_lines[i + 1]),
+                float(v_lines[j + 1]),
+            )
+            clipped = [c for c in (clip_polygon_to_rect(r, rect) for r in rings) if len(c) >= 3]
+            if not clipped:
+                continue
+            t_offsets = np.zeros(len(clipped) + 1, dtype=np.int64)
+            t_offsets[1:] = np.cumsum([len(c) for c in clipped])
+            t_verts = np.vstack(clipped)
+            t_lo = np.empty(3)
+            t_hi = np.empty(3)
+            t_lo[axis] = t_hi[axis] = level
+            t_lo[u], t_hi[u] = t_verts[:, 0].min(), t_verts[:, 0].max()
+            t_lo[v], t_hi[v] = t_verts[:, 1].min(), t_verts[:, 1].max()
+            tiles.append(((axis, level, outward, t_verts, t_offsets), tuple(t_lo), tuple(t_hi)))
+    return tiles or None
 
 
 class _PrefilteredLineSolid:
@@ -2881,6 +3034,18 @@ class _PrefilteredLineSolid:
     therefore represented by classification pieces
     (:func:`_classification_pieces`), each a candidate row of its own
     with its own box and intersector; the face itself is untouched.
+
+    Axis-aligned lines — every carrier line of a structured grid — meet
+    a planar axis-aligned row in one exactly known point, so those hits
+    are decided in-house (:func:`_planar_row`,
+    :func:`planar_point_state`): the plane gives the parameter, the
+    face's rings the state (inside, or within tolerance of an outline
+    = the kernel's ``ON``), the outward normal the transition; a line
+    parallel to the row's plane has no hit, in the plane or beside it
+    (measured: the kernel reports none either).  Oblique lines — the
+    fallback's last-resort probes, edges off the grid axes — are decided
+    the same way at the line's crossing point.  Curved rows keep the
+    kernel's intersector.
     """
 
     def __init__(self, solid, tolerance: float):
@@ -2936,28 +3101,80 @@ class _PrefilteredLineSolid:
         # of a large planar face, each with its own box; ``_row_face``
         # maps a row to its face (orientation bookkeeping), ``_row_shape``
         # is what the row's intersector is built from.
+        # A row's kernel intersector is keyed by ``_row_int_key``: the
+        # row itself for a kernel piece, the (negative) face index for a
+        # face taken whole or tiled in 2-D (a tile never needs the
+        # kernel — its plane data answers every line — but if one is
+        # asked, the face answers).
         rows_lo: list = []
         rows_hi: list = []
         row_face: list[int] = []
         row_shape: list = []
+        row_planar: list = []
+        row_int_key: list[int] = []
+
+        def planar_of(shape):
+            try:
+                return _planar_row(shape)
+            except Exception:  # noqa: BLE001 — the kernel path answers this row
+                return None
+
         for fi, face in enumerate(faces):
-            pieces = _classification_pieces(face, np.asarray(lo[fi]), np.asarray(hi[fi]))
+            planar = planar_of(face) if ori_ok[fi] else None
+            tiles = (
+                _planar_tiles(planar, np.asarray(lo[fi]), np.asarray(hi[fi]))
+                if planar is not None
+                else None
+            )
+            if tiles is not None:
+                for t_planar, t_lo, t_hi in tiles:
+                    rows_lo.append(t_lo)
+                    rows_hi.append(t_hi)
+                    row_face.append(fi)
+                    row_shape.append(face)
+                    row_planar.append(t_planar)
+                    row_int_key.append(-1 - fi)
+                continue
+            pieces = (
+                _classification_pieces(face, np.asarray(lo[fi]), np.asarray(hi[fi]))
+                if planar is None
+                else None
+            )
             if pieces is None:
-                pieces = [(face, lo[fi], hi[fi])]
+                rows_lo.append(lo[fi])
+                rows_hi.append(hi[fi])
+                row_face.append(fi)
+                row_shape.append(face)
+                row_planar.append(planar)
+                row_int_key.append(-1 - fi)
+                continue
             for shape, p_lo, p_hi in pieces:
                 rows_lo.append(p_lo)
                 rows_hi.append(p_hi)
                 row_face.append(fi)
                 row_shape.append(shape)
+                row_planar.append(planar_of(shape) if ori_ok[fi] else None)
+                row_int_key.append(len(row_int_key))
         self._row_face = np.asarray(row_face, dtype=np.intp)
         self._row_shape = row_shape
-        self._row_ints: list = [None] * len(row_shape)
+        self._row_planar = row_planar
+        self._row_int_key = row_int_key
+        self._ints: dict[int, object] = {}
         if row_shape:
             self._flo = np.asarray(rows_lo, dtype=np.float64)
             self._fhi = np.asarray(rows_hi, dtype=np.float64)
         else:
             self._flo = np.empty((0, 3))
             self._fhi = np.empty((0, 3))
+
+    def _intersector(self, row):
+        """The kernel intersector of a row's shape, built on first use."""
+        key = self._row_int_key[row]
+        it = self._ints.get(key)
+        if it is None:
+            it = self._Intersector(self._row_shape[row], self._tol)
+            self._ints[key] = it
+        return it
 
     def _line_candidates(self, p0, direction):
         """Candidate rows (faces or their classification pieces) whose
@@ -2968,6 +3185,23 @@ class _PrefilteredLineSolid:
         Returns ``(idx, w_in, w_out)`` sorted by ascending ``w_in``.
         """
         tol = self._tol
+        moving = [ax for ax in range(3) if abs(direction[ax]) > 1e-300]
+        if len(moving) == 1:
+            # Axis-aligned line — every carrier line of a structured
+            # grid: the two transverse slab tests select the rows, the
+            # third axis gives the parameter window.  Same arithmetic as
+            # the general loop below (division by ±1 is exact), so the
+            # result is identical; one compiled pass instead of three
+            # full-width NumPy passes.
+            ax = moving[0]
+            return axis_line_candidates(
+                self._flo,
+                self._fhi,
+                tol,
+                np.asarray(p0, dtype=np.float64),
+                ax,
+                float(direction[ax]),
+            )
         w_in = np.full(len(self._row_face), -np.inf)
         w_out = np.full(len(self._row_face), np.inf)
         for ax in range(3):
@@ -2988,34 +3222,66 @@ class _PrefilteredLineSolid:
         idx = keep[order]
         return idx, w_in[idx], w_out[idx]
 
-    def _intersect_faces(self, face_indices, line, w_lo, w_hi):
+    def _intersect_faces(self, face_indices, line, w_lo, w_hi, p0=None, direction=None):
         """Intersections of ``line`` with the given candidate rows, W in
         [w_lo, w_hi].  Returns ``(hits, clean)``: ``hits`` is a list of
         ``(w, step)`` with step ``+1`` entering the solid along +W,
         ``-1`` leaving, ``0`` tangential or untrusted; ``clean`` is
         False when any hit cannot anchor transition bookkeeping.
+        """
+        flagged = self.flagged_hits(face_indices, line, w_lo, w_hi, p0, direction)
+        return [(w, step) for w, step, _ in flagged], not any(u for _, _, u in flagged)
+
+    def flagged_hits(self, face_indices, line, w_lo, w_hi, p0=None, direction=None):
+        """Intersections of ``line`` with the given candidate rows, W in
+        [w_lo, w_hi], as ``(w, step, untrusted)`` triples: step ``+1``
+        entering the solid along +W, ``-1`` leaving, ``0`` tangential
+        or untrusted; ``untrusted`` marks a hit that cannot anchor
+        transition bookkeeping (a hit on a face border, or a face
+        without a usable orientation).  A carrier line's triples serve
+        every edge on the line: an edge's window is a W slice of them.
+
+        With ``p0`` and ``direction`` (``line`` runs through ``p0``
+        along the unit vector ``direction``), planar axis-aligned rows
+        are decided in-house for any line direction; the other rows go
+        to the kernel's intersector.
 
         ``IntCurvesFace_Intersector`` reports transitions relative to
         the *oriented* face (verified against the whole-shape
         intersector: identical W and state, orientation-resolved
         transition), so no orientation correction is needed here.
         """
-        hits: list[tuple[float, int]] = []
-        clean = True
-        row_ints = self._row_ints
+        hits: list[tuple[float, int, bool]] = []
+        tol = self._tol
+        in_house = _PLANAR_ROW_HITS and p0 is not None and direction is not None
         for row in face_indices:
-            it = row_ints[row]
-            if it is None:
-                it = self._Intersector(self._row_shape[row], self._tol)
-                row_ints[row] = it
-            it.Perform(line, -1e100, 1e100)
+            planar = self._row_planar[row] if in_house else None
+            if planar is not None:
+                axis, level, outward, verts, offsets = planar
+                d = float(direction[axis])
+                if abs(d) <= 1e-300:
+                    # Parallel to the row's plane: no hit — the kernel
+                    # reports none either, in the plane or beside it.
+                    continue
+                w = (level - float(p0[axis])) / d
+                if w_lo <= w <= w_hi:
+                    u, v = (k for k in range(3) if k != axis)
+                    pu = float(p0[u]) + w * float(direction[u])
+                    pv = float(p0[v]) + w * float(direction[v])
+                    state = planar_point_state(pu, pv, verts, offsets, tol)
+                    if state == 2:
+                        hits.append((w, 0, True))
+                    elif state == 1:
+                        hits.append((w, 1 if d * outward < 0.0 else -1, False))
+                continue
             ok = self._ori_ok[self._row_face[row]]
+            it = self._intersector(row)
+            it.Perform(line, -1e100, 1e100)
             for ip in range(1, it.NbPnt() + 1):
                 w = it.WParameter(ip)
                 if w_lo <= w <= w_hi:
                     if not ok or it.State(ip) != self._TopAbs_IN:
-                        clean = False
-                        hits.append((w, 0))
+                        hits.append((w, 0, True))
                     else:
                         tr = it.Transition(ip)
                         if tr == self._IN:
@@ -3024,10 +3290,10 @@ class _PrefilteredLineSolid:
                             step = -1
                         else:
                             step = 0
-                        hits.append((w, step))
-        return hits, clean
+                        hits.append((w, step, False))
+        return hits
 
-    def window_hits(self, candidates, line, length):
+    def window_hits(self, candidates, line, length, p0=None, direction=None):
         """Hits within the tolerance-inflated segment window [—tol,
         length + tol], given the line's candidate triple.  Returns
         ``(hits, clean)`` as in ``_intersect_faces``."""
@@ -3036,9 +3302,9 @@ class _PrefilteredLineSolid:
         m = (w_in <= length + tol) & (w_out >= -tol)
         if not m.any():
             return [], True
-        return self._intersect_faces(idx[m], line, -tol, length + tol)
+        return self._intersect_faces(idx[m], line, -tol, length + tol, p0, direction)
 
-    def _nearest_beyond(self, candidates, line, w_from, forward: bool):
+    def _nearest_beyond(self, candidates, line, w_from, forward: bool, p0=None, direction=None):
         """Nearest crossing strictly beyond ``w_from`` along the line
         (towards +W when ``forward``, else towards -W).
 
@@ -3077,6 +3343,8 @@ class _PrefilteredLineSolid:
                 line,
                 -np.inf,
                 np.inf,
+                p0,
+                direction,
             )
             for w, step in hits:
                 if not forward:
@@ -3097,16 +3365,16 @@ class _PrefilteredLineSolid:
             best_w = -best_w
         return best_w, best_step
 
-    def uniform_state(self, candidates, line, length):
+    def uniform_state(self, candidates, line, length, p0=None, direction=None):
         """Outside/inside state of a segment with no crossing inside its
         tolerance-inflated window: True = outside, False = inside, None
         = undetermined (fall back to point classification)."""
-        res = self._nearest_beyond(candidates, line, length + self._tol, True)
+        res = self._nearest_beyond(candidates, line, length + self._tol, True, p0, direction)
         if res is None:
             return True
         if res[1] != 0:
             return res[1] > 0
-        res = self._nearest_beyond(candidates, line, -self._tol, False)
+        res = self._nearest_beyond(candidates, line, -self._tol, False, p0, direction)
         if res is None:
             return True
         if res[1] != 0:
@@ -3132,7 +3400,7 @@ class _PrefilteredLineSolid:
                 self._gp_Dir(float(dvec[0]), float(dvec[1]), float(dvec[2])),
             )
             cand = self._line_candidates(point, dvec)
-            res = self._nearest_beyond(cand, line, -2.0 * tol, True)
+            res = self._nearest_beyond(cand, line, -2.0 * tol, True, point, dvec)
             if res is None:
                 return True
             w, step = res
@@ -3243,16 +3511,13 @@ def compute_edge_pec_fractions(
         )
         cand = prefiltered._line_candidates(origin, dvec)
         if cand[0].size:
-            line_hits, line_clean = prefiltered._intersect_faces(
-                cand[0],
-                axis_line,
-                -np.inf,
-                np.inf,
+            line_hits = sorted(
+                prefiltered.flagged_hits(cand[0], axis_line, -np.inf, np.inf, origin, dvec)
             )
         else:
-            line_hits, line_clean = [], True
-        crossings = sorted((w, s) for w, s in line_hits if s != 0)
-        ok = line_clean
+            line_hits = []
+        crossings = [(w, s) for w, s, _ in line_hits if s != 0]
+        ok = not any(untrusted for _, _, untrusted in line_hits)
         prev_step = 0
         for _w, step in crossings:
             if step == prev_step:
@@ -3265,6 +3530,8 @@ def compute_edge_pec_fractions(
         entry = {
             "origin_ax": origin[ax],
             "cand": cand,
+            "hits": line_hits,
+            "ws_all": [w for w, _, _ in line_hits],
             "ws": [w for w, _ in crossings],
             "ok": ok,
         }
@@ -3301,13 +3568,11 @@ def compute_edge_pec_fractions(
             continue
 
         direction = dx / length
-        line = gp_Lin(
-            gp_Pnt(float(p0[0]), float(p0[1]), float(p0[2])),
-            gp_Dir(float(direction[0]), float(direction[1]), float(direction[2])),
-        )
 
-        # Axis-aligned edges share their carrier line's candidate faces;
-        # anything else computes its own candidate intervals.
+        # Axis-aligned edges are windows of their carrier line: the
+        # line's hits (every candidate row, intersected once) are sliced
+        # at the edge's parameter window, no kernel call per edge.
+        # Anything else computes its own candidate intervals and hits.
         nz_axes = np.nonzero(dx)[0]
         entry = None
         offset = 0.0
@@ -3315,22 +3580,19 @@ def compute_edge_pec_fractions(
             ax = int(nz_axes[0])
             entry = line_entry(ax, p0)
             offset = float(p0[ax]) - entry["origin_ax"]
-            idx_l, win_l, wout_l = entry["cand"]
-            cut = np.searchsorted(win_l, offset + length + tolerance, side="right")
-            in_window = wout_l[:cut] >= offset - tolerance
-            window_faces = idx_l[:cut][in_window]
-            if window_faces.size:
-                hits, clean = prefiltered._intersect_faces(
-                    window_faces,
-                    line,
-                    -tolerance,
-                    length + tolerance,
-                )
-            else:
-                hits, clean = [], True
+            ws_all = entry["ws_all"]
+            lo_i = bisect.bisect_left(ws_all, offset - tolerance)
+            hi_i = bisect.bisect_right(ws_all, offset + length + tolerance)
+            window = entry["hits"][lo_i:hi_i]
+            hits = [(w - offset, step) for w, step, _ in window]
+            clean = not any(untrusted for _, _, untrusted in window)
         else:
+            line = gp_Lin(
+                gp_Pnt(float(p0[0]), float(p0[1]), float(p0[2])),
+                gp_Dir(float(direction[0]), float(direction[1]), float(direction[2])),
+            )
             candidates = prefiltered._line_candidates(p0, direction)
-            hits, clean = prefiltered.window_hits(candidates, line, length)
+            hits, clean = prefiltered.window_hits(candidates, line, length, p0, direction)
 
         # Collect surface crossing parameters within [0, length]
         raw_params = [max(0.0, min(w, length)) for w, _ in hits]
@@ -3379,6 +3641,8 @@ def compute_edge_pec_fractions(
                         candidates,
                         line,
                         length,
+                        p0,
+                        direction,
                     )
                     if uniform is None:
                         use_fallback = True

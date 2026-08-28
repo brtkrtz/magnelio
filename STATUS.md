@@ -13,7 +13,7 @@ parity — hollow conductors had lost the conformal correction at their
 inner walls (KB-031); how-to *coupled-line coupler* and tutorial 19
 *offset Cassegrain* (rendered, not executed; figures of a measured run
 embedded), every gallery 3D view carries an "Interactive Scene" tab,
-GitHub Discussions is the feedback channel.  Unit suite 2520 passed /
+GitHub Discussions is the feedback channel.  Unit suite 2528 passed /
 4 skipped; integration suite 402 passed / 5 skipped (2026-08-28)
 (edge-pass tangency rule, coax re-pin) and the KB-011 fixture re-pin
 (DD-199 fallout closed 2026-08-27; both unreleased on `main`).
@@ -33,6 +33,7 @@ certificates named in their DD entries.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-208** (2026-08-28) — the edge pass profiled: its cost was the set-up of carrier lines (49 k for 45 k edges — every fallback sub-segment midpoint casts probe lines of its own; NumPy slab test + kernel `Perform` per candidate row), plus one redundant kernel call per edge.  Now: an axis-aligned edge is a W slice of its line's hits; candidates come from a compiled pass; planar axis-aligned rows decide hits in-house for any line direction (plane level, even-odd over the rings with a tolerance band = the kernel's `ON`, outward normal), large faces are tiled in 2-D by clipping their rings (the DD-205 kernel pieces cost 46 s on a 16 × 16 cap).  8 × 8 array 34 → 15 s, Lange 16 55 → 43 s, 16 × 16 array 164 → 111 s; f_L identical except one edge on a copper corner line the kernel's classifier had missed.
 * **DD-207** (2026-08-28) — the face pass's superlinear term instrumented: every kernel section of the Lange build was a side step `p ± δ` of a degenerate plane (DD-106) that the exact engine had declined because δ = deflection (60 nm on a 6 µm grid) lay inside its tolerance screen, and at that distance the kernel reports the coincident face on *both* sides — faces in the fingers' end walls read blocked, wall jump zero (KB-036).  The step is now the larger of the deflection and four B-Rep tolerances (the engine answers the shifted planes exactly), and kernel sections run over a compound of the faces whose slab reaches the plane (`_FaceSlabIndex`, bit-identical contours).  Lange 16 66 → 55 s (pool off 95 → 55), Lange 8 35 → 24 s, posts 240 46 → 38 s; array unchanged.
 * **DD-206** (2026-08-28) — the Lange ladder's residual profiled, not guessed: the model's overlap check ran one Boolean per (air body, part) pair at the body's face count, and the singular-edge and thin-sheet probes loaded a fresh solid classifier per shape and point (283 000 loads).  `PointClassifierSet` (boxes once, one loaded classifier per shape, tolerance-padded screen) and a hub-first batched `Common` with bisection to the offending pairs (pairwise numbers unchanged); 16 Lange couplers 106 → 66 s, meshes unchanged; benchmark prints `singular` / `overlap` columns.
 * **DD-205** (2026-08-28) — planar fuse: `boolean_union` fuses operands that are prisms along one axis over the same interval through their caps in the plane and raises them once, the rest only inside interfering bounding-box clusters (the general fuser is superlinear in *interference*, not in N: 443 coplanar strips 16 s, the same strips moved apart 0.45 s; `GlueShift` refuted, wrong volume); `build_effective_pec_solid` cuts each PEC body once against its bounding-box neighbours instead of growing a pairwise union (Lange 16: 36 → 2 s); the edge pass, which had been living off the fuse seams (`Perform` classifies at O(edges of the face)), classifies large planar faces through coplanar pieces of ~12 edges, bit-identical f_L.  Union 8 × 8 array 16.1 → 0.8 s and 6 924 → 640 faces.
@@ -46,8 +47,6 @@ Newest first, one line each; the full record is the DD entry.
 * **DD-197** (2026-08-26) — `geo.Surface.parametric(fn, u=, v=, samples=)`: B-spline interpolation of a sampled map (pole rows allowed), `Sheet` → `PlanarSheet` marker hierarchy, `extruded()` on curved sheets (prism, robust), `thickened()` on curved sheets as a guarded offset cascade (volume check catches the kernel's folds), transforms keep the sheet marker (`Face.rotated().thickened()` works); methods chapter *Geometry construction*.
 * **DD-196** (2026-08-26) — K > 2 quasi-TEM ports solve `C v = ε_eff C₀ v` on the capacitance matrices of the per-conductor Laplace fields: channels are the line's modes (even/odd of a symmetric pair, each with its own `ε_eff` and `Z_0`, descending `ε_eff`), orthogonal in the capacitance-corrected mass, dual-basis projections for every multi-channel QTEM port; K = 2 bit-identical; `ModeReport.epsilon_eff`.
 * **DD-195** (2026-08-26) — eigenmode solver grows the ARPACK request at the same shift by the null-space artefact count (≤ 2 grows, one shared SuperLU factorisation via `OPinv`) before/instead of moving the shift; a pinned `sigma` no longer under-delivers when tiny conformal edges swell the residual null space (tutorial 13 at `singularity_refinement=2`: 5 of 7 vectors were artefacts).
-* **DD-194** (2026-08-25) — singularity refinement at conductor edges: `MeshControl(singularity_refinement=k)` grades the planes holding a singular metal edge (convex metal edge, or concave edge of a vacuum body with metal outside; kernel offset analysis, 5° tangency) from `h_fine / k` on both sides; per-plane fine sizes, asymmetric two-ramp / tent profile; default 1 (off) — on the S-parameter ladder the factor is cost-neutral (edge cell sets dt), it pays for impedance / ε_eff and under a `min_cell_size` floor.
-* **DD-193** (2026-08-25) — short-interval grading keeps the fine-end cell at `h_fine` and relaxes the growth ratio (`_ratio_for_exact_fill`) instead of letting the integer count push it up to 23 % below (DD-105 undershoot, made common by DD-192's air slabs above thin traces); buffered profile untouched; meshes with short graded intervals change.
 Older decisions: `design-decisions.md`.
 
 ## Working practices earned the hard way
@@ -353,27 +352,28 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   engine) took the slotline coupler 142 → 14 s; DD-141 admits the
   section pool on a measured sample; DD-199 gave free-form faces the
   facet path; DD-202 the thin-sheet rasteriser one section instead of
-  a classification per edge; DD-205 the planar fuse, the per-body PEC
-  solid and classification pieces; DD-206 one classifier per shape for
-  the point probes and one Boolean per hub in the overlap check;
-  DD-207 the side step of degenerate planes past the kernel tolerance
-  (the engine answers them) and kernel sections over the faces a
-  plane can reach.  Ladder (`benchmarks/bench_mesh_build.py`, CPU,
-  `auto` pool): 16 Lange couplers (3.7 M cells) 55 s, 240 posts
-  (385 k) 38 s, 4 × 4 patch array with feed (222 k cells, 415 faces)
-  9 s, 8 × 8 (664 k, 1 326 faces) 34 s; `other` ≤ 1.2 s on every row.
-  Open, in value order: (1) the edge pass at 10⁵ edges (26 of 34 s
-  on the 8 × 8, 27 of 55 s on Lange 16 — half the build): 70 % of
-  the edges go to the point-classifier fallback because copper
-  outlines lie on grid planes (DD-191) and graze the lines — the
-  per-line path fails there; a bin over face boxes is the DD-101
-  residue; (2) the post row is pool-bound: the prefill's 20 s
+  a classification per edge; DD-205 the planar fuse and the per-body
+  PEC solid; DD-206 one classifier per shape for the point probes and
+  one Boolean per hub in the overlap check; DD-207 the side step of
+  degenerate planes past the kernel tolerance and kernel sections over
+  the faces a plane can reach; DD-208 the edge pass on carrier lines
+  with in-house planar hits and 2-D tiles.  Ladder
+  (`benchmarks/bench_mesh_build.py`, CPU, `auto` pool): 16 Lange
+  couplers (3.7 M cells) 43 s, 240 posts (385 k) 36 s, 4 × 4 patch
+  array with feed (222 k cells) 4 s, 8 × 8 (664 k) 15 s, 16 × 16
+  (1.8 M, off-ladder) 111 s; `other` ≤ 1.2 s on every row.  Open, in
+  value order: (1) one tier up the thin-sheet rasteriser (19 s of the
+  16 × 16) and the planar fuse (14 s, superlinear in interference,
+  DD-205) lead; (2) the post row is pool-bound: the prefill's 20 s
   (worker start-up, serialisation, the along-the-row sections every
-  face qualifies for) is half of 38 s, while the sections across the
-  row cost 0.5 ms each since DD-207 — the admission sample should
-  see the slab-restricted cost, and the classification sections
-  (`batch_cross_sections`, 8.5 s) have no pool; (3) the analytic
-  quadrics could still get an exact plane × quadric section.
+  face qualifies for) is half of 36 s, while the sections across the
+  row cost 0.5 ms each since DD-207 — the admission sample should see
+  the slab-restricted cost, and the classification sections
+  (`batch_cross_sections`, 8.5 s) have no pool; (3) the edge pass's
+  remaining ~30 µs per edge is Python per line and edge — a batch
+  formulation (every planar row against all carrier lines through its
+  box in one compiled call, edge accounting vectorised per line) is
+  the next tier.
 
 Closed construction sites are tombstoned where they were decided (the
 DD entry and `known-bugs.md`) and are not repeated here.

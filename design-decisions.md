@@ -14918,3 +14918,142 @@ to the printed digit — the freed end-wall faces are 5 µm × 12.6 µm.
 `_SECTION_SHIFT_TOLERANCES`), `tests/unit/test_section_slab_index.py`
 (new), `docs/methods/meshing-conformal.md`, `known-bugs.md` (KB-036),
 `benchmarks/results/bench_mesh_build.json` (re-run).
+
+## DD-208 — The edge pass decides planar hits in-house and slices its carrier lines
+
+**Status:** Decided and implemented 2026-08-28, branch `perf/edge-pass-lines`.
+DD-207's re-ranked item 1.
+
+**Problem.**  The edge pass was the largest pass of every ladder row
+(26 of 34 s on the 8 × 8 array, 27 of 55 s on 16 Lange couplers) and
+STATUS had filed it as "70 % of the edges go to the point-classifier
+fallback because copper outlines graze the grid lines — a bin over
+face boxes is the DD-101 residue".  The profile
+(`investigations/mesh-build-bench/probe_edge_pass.py` — internal
+record) put the cost elsewhere: not in the fallback's classification
+but in the **set-up of carrier lines** — 49 k of them for the 45 k
+edges of the 4 × 4 array, because every fallback sub-segment midpoint
+casts probe lines of its own — at ~90 µs each: the general slab test
+over all rows in NumPy (28 µs), then the kernel's
+`IntCurvesFace_Intersector.Perform` on each candidate row (21 µs on a
+piece of the fused feed's cap, 7 µs on a brick face) — 156 k kernel
+calls, 3.3 of 7.9 s.  Half of those calls were spent twice: an
+axis-aligned edge asked the kernel for the hits in its own window
+although its carrier line had already been intersected end to end.
+
+**Decision.**
+
+1. **An axis-aligned edge is a W slice of its carrier line.**
+   `_PrefilteredLineSolid.flagged_hits` returns
+   ``(w, step, untrusted)`` triples; a line entry keeps every hit
+   sorted, and an edge takes the slice inside its tolerance-inflated
+   window (`bisect`), its ``clean`` flag being the absence of
+   untrusted hits in the slice.  No kernel call per edge; the W values
+   differ from the per-edge line's by the origin shift only (Δf_L ≤
+   2e-14 on 45 k + 54 k edges).
+
+2. **Candidates of an axis-aligned line come from a compiled pass**
+   (`_line_kernels.axis_line_candidates`): the two transverse slab
+   tests select the rows, the third axis gives the window, mergesort
+   keeps the general test's tie order — the same arithmetic (division
+   by ±1 is exact), so the output is identical (tested against the
+   general slab test on random rows and lines).
+
+3. **Planar axis-aligned rows are decided in-house**
+   (`_planar_row`, `_line_kernels.planar_point_state`).  At
+   construction every row that is a planar, axis-aligned,
+   straight-edged face with a usable orientation stores its normal
+   axis, level, outward sign and its wires as ``(u, v)`` rings.  For
+   an axis-aligned line crossing the row's axis the hit parameter is
+   the plane's level, the state is the even-odd rule over the rings
+   with a tolerance band along every segment (the kernel's ``ON``),
+   and the transition is the sign of the outward normal against the
+   line's direction.  A line parallel to the row's plane has no hit
+   unless it lies within tolerance of the plane — then, as for curved
+   rows, oblique lines and rows without plane data, the kernel's
+   intersector answers as before.  Measured against the kernel on
+   every carrier line of the 4 × 4 array and 4 Lange couplers (39 940
+   + 30 889 lines): identical parameters, steps and trust flags —
+   except **one** line, where the kernel's face classifier reported a
+   point lying exactly on an outline segment (distance 4e-19) as
+   *outside* at any tolerance up to 1e-6, so that a y-edge on the
+   copper's corner line (bottom face ∩ side wall) read as air while
+   its eleven neighbours on the same corner line read as conductor.
+   The geometric ``ON`` sends that edge to the fallback like its
+   neighbours.  That is the only edge of 45 026 whose f_L changed; a
+   comb test pins the in-house hits as at least as conservative as the
+   kernel's (every kernel hit reproduced, extras untrusted).
+
+4. **Large planar faces are tiled in 2-D** (`_planar_tiles`): the
+   DD-205 classification pieces cut a face into tiles with one
+   coplanar ``Common`` per tile, O(edges of the face) each — the cap of
+   a 16 × 16 feed network's fused copper paid 46 s for its pieces
+   before a single line was asked.  With the rings in hand the same
+   tile grid (count, overhang) is produced by clipping every ring to
+   the tile rectangle (Sutherland-Hodgman; clipping to one convex
+   rectangle keeps the even-odd parity of every point inside it) —
+   milliseconds, and a hit within tolerance of a tile border still
+   reads ``ON`` from the clipped ring's border segment.  Kernel pieces
+   remain for planar faces with arcs (a cap with a bore), which carry
+   no ring data.
+
+5. **Oblique lines are decided in-house on planar rows too**: the
+   crossing point ``p0 + w·d`` goes through the same ring test, so a
+   planar row never needs the kernel for any line — the fallback's
+   last-resort probes and off-axis edges included (tested against the
+   whole face's intersector on random oblique lines).  Lazily cutting
+   a kernel piece for a tile an oblique probe asks was tried first: 264
+   tiles of the 16 × 16 cap cost 130 ms each (34 s) — the coplanar
+   Boolean is O(edges of the face) however small the tile.
+
+**Refuted / not taken.**  A "bin over face boxes" attacks the 28 µs
+candidate search, which the compiled pass takes to ~2 µs at a few
+hundred rows without a spatial index; a bin would matter only once the
+row count reaches the thousands (the 16 × 16 array, below).  Changing
+the probe order (the axis normal to the grazed face first) would halve
+the probe lines of grazing edges but can change which exact probe
+answers — left out for bit-identity.
+
+**Measured.**  Edge pass under the profiler: 4 × 4 array 7.9 →
+**2.6 s** (kernel intersector calls 156 k → 0 on planar rows), 4
+Lange couplers 5.7 → **2.8 s**; f_L as above.  The 16 × 16 array's
+edge pass (450 k edges, 5 387 faces): 76 s profiled before, of it 46 s
+in the kernel pieces of the cap — **26.7 s** with the 2-D tiles and the
+in-house oblique hits, f_L identical on all 449 700 edges.  What remains is Python
+per line and per edge (~50 µs per edge all-in: the edge loop,
+`line_entry`, the row loop of `flagged_hits`); the batch formulation —
+every planar row against all carrier lines through its box in one
+compiled call, the edge accounting vectorised per line — is the next
+tier.  Off the ladder, the 16 × 16 array (1.8 M cells) built in 163 s
+before this change with the edge pass at 62 s, the thin-sheet
+rasteriser at 19 s and the planar fuse at 14 s; the latter two are the
+next superlinear terms one tier up.
+
+Full ladder (`benchmarks/bench_mesh_build.py --family all --pool off
+auto forced --json`, CPU idle, `auto` arm; before = DD-207's ladder):
+
+| family, n | cells | edges | total before → after | edge pass | ε pass | µ pass |
+|---|---|---|---|---|---|---|
+| array 8 × 8 | 664 k | 153 k | 34.1 → **14.8 s** | 23.5 → 3.9 | 26.5 → 7.0 | 3.3 → 3.5 |
+| array 4 × 4 | 222 k | 45 k | 9.1 → **4.0 s** | 6.2 → 1.2 | 7.1 → 2.1 | 1.2 |
+| array 2 × 2 | 84 k | 14 k | 2.9 → 1.4 | 1.8 → 0.4 | 2.2 → 0.7 | 0.5 |
+| Lange 16 | 3.69 M | 214 k | 54.9 → **43.4 s** | 17.3 → 5.8 | 26.7 → 15.2 | 14.6 |
+| Lange 8 | 1.84 M | 107 k | 23.9 → 18.7 | 7.9 → 2.7 | 12.0 → 6.7 | 6.6 |
+| Lange 4 | 922 k | 54 k | 11.0 → 8.5 | 3.8 → 1.3 | 5.7 → 3.2 | 3.1 |
+| posts 240 | 385 k | 78 k | 38.1 → 35.9 | 4.5 → 2.5 | 15.3 → 13.3 | 12.6 |
+| posts 60 | 97 k | 20 k | 7.2 → 6.6 | 1.0 → 0.6 | 3.0 → 2.6 | 2.7 |
+| array 16 × 16 (off-ladder) | 1.82 M | 450 k | 163.5 → **111.4 s** | 62.4 → 13.3 | — | — |
+
+The pool arms agree with `auto` within noise (Lange 16 off 43.5, array
+8 off 14.8).  The edge pass now scales linearly with the edge count
+across the array tier (26–29 µs per edge at 4 × 4, 8 × 8 and 16 × 16)
+and is a minor pass everywhere; the 16 × 16 row's remaining
+superlinear terms are the thin-sheet rasteriser (19 s) and the planar
+fuse (14 s).  Gallery plane pins (28 scripts) unchanged; unit suite
+2 528 passed, integration 402 passed (GPU tests on the device).
+
+**Files:** `src/magnelio/geo/_line_kernels.py` (new),
+`src/magnelio/geo/_occ_backend.py` (`_planar_row`,
+`_PrefilteredLineSolid.flagged_hits`/`_line_candidates`,
+`compute_edge_pec_fractions`), `tests/unit/test_edge_pass_lines.py`
+(new), `benchmarks/results/bench_mesh_build.json` (re-run).
