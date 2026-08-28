@@ -1428,6 +1428,7 @@ def cross_section_polygons(
     exact_at_faces: bool = False,
     nudge: float | None = None,
     context: str = "",
+    slab: _FaceSlabIndex | None = None,
 ) -> list[np.ndarray]:
     """Compute 2D polygon boundaries of a solid intersected with a plane.
 
@@ -1477,6 +1478,12 @@ def cross_section_polygons(
         Caller-supplied identification of *shape*, quoted in the
         open-chain warning so the user can tell which body of a scene
         is affected.
+    slab : _FaceSlabIndex, optional
+        Face slabs of *shape*.  When given, the section Boolean runs
+        over the faces whose slab reaches the plane instead of the whole
+        body — the same contours, a fraction of the kernel's per-shape
+        preparation on bodies with many faces.  Every position of the
+        degeneracy-escape ladder is restricted afresh.
 
     Returns
     -------
@@ -1554,7 +1561,7 @@ def cross_section_polygons(
         section = BRepAlgoAPI_Section()
         section.SetRunParallel(True)
         keep_operands_intact(section)
-        section.Init1(shape)
+        section.Init1(shape if slab is None else slab.restrict(axis_idx, position))
         section.Init2(pln)
         section.Build()
         if not section.IsDone():
@@ -1764,6 +1771,84 @@ def _facet_edge_table(con: np.ndarray):
     return keep, con, e_nodes, np.ascontiguousarray(t_e), e_f
 
 
+class _FaceSlabIndex:
+    """The faces of a shape with their axis slabs, so a section can be
+    taken over the faces a plane can touch instead of the whole body.
+
+    ``BRepAlgoAPI_Section`` prepares every sub-shape of its argument
+    before it looks for intersections, so one section of a body with
+    thousands of faces costs tens of milliseconds even when the plane
+    meets a handful of them (an air body with 1 062 pocket faces: 53 ms
+    per plane, 15 ms over the 29 faces the plane can reach; a row of
+    240 posts cut across the row: 4.7 ms → 0.5 ms).  The kernel only
+    intersects sub-shapes of *different* arguments, so a compound of
+    the candidate faces yields the same section edges as the solid —
+    adjacent candidates share their boundary ``TopoDS_Edge`` — and the
+    contours came back bit-identical on both bodies.  Positions and
+    extents are in the shape's scaled units.
+    """
+
+    def __init__(self, shape) -> None:
+        from OCC.Core.Bnd import Bnd_Box  # noqa: PLC0415
+        from OCC.Core.BRep import BRep_Tool  # noqa: PLC0415
+        from OCC.Core.BRepBndLib import brepbndlib  # noqa: PLC0415
+        from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_FACE, TopAbs_VERTEX  # noqa: PLC0415
+        from OCC.Core.TopExp import topexp  # noqa: PLC0415
+        from OCC.Core.TopoDS import topods  # noqa: PLC0415
+        from OCC.Core.TopTools import TopTools_IndexedMapOfShape  # noqa: PLC0415
+
+        self.shape = shape
+        fmap = TopTools_IndexedMapOfShape()
+        topexp.MapShapes(shape, TopAbs_FACE, fmap)
+        n_f = fmap.Size()
+        self.faces = [topods.Face(fmap.FindKey(i + 1)) for i in range(n_f)]
+        self.lo = np.empty((n_f, 3), dtype=np.float64)
+        self.hi = np.empty((n_f, 3), dtype=np.float64)
+        tol = 0.0
+        for i, face in enumerate(self.faces):
+            box = Bnd_Box()
+            # Geometry-only box (no triangulation) — KB-012.
+            brepbndlib.Add(face, box, False)
+            xmin, ymin, zmin, xmax, ymax, zmax = box.Get()
+            self.lo[i] = (xmin, ymin, zmin)
+            self.hi[i] = (xmax, ymax, zmax)
+            tol = max(tol, BRep_Tool.Tolerance(face))
+        for kind, cast in ((TopAbs_EDGE, topods.Edge), (TopAbs_VERTEX, topods.Vertex)):
+            smap = TopTools_IndexedMapOfShape()
+            topexp.MapShapes(shape, kind, smap)
+            for i in range(smap.Size()):
+                tol = max(tol, BRep_Tool.Tolerance(cast(smap.FindKey(i + 1))))
+        #: Largest B-Rep tolerance of any face, edge or vertex [scaled
+        #: units] — the distance within which the kernel treats a plane
+        #: as touching the shape.
+        self.tolerance = tol
+
+    @property
+    def n_faces(self) -> int:
+        return len(self.faces)
+
+    def restrict(self, axis: int, position: float):
+        """The shape itself when every face reaches the plane at
+        *position* [scaled units], else a compound of those that do."""
+        if not self.faces:
+            return self.shape
+        pad = 2.0 * self.tolerance + 1e-7
+        sel = np.flatnonzero(
+            (self.lo[:, axis] <= position + pad) & (self.hi[:, axis] >= position - pad)
+        )
+        if sel.size == len(self.faces):
+            return self.shape
+        from OCC.Core.BRep import BRep_Builder  # noqa: PLC0415
+        from OCC.Core.TopoDS import TopoDS_Compound  # noqa: PLC0415
+
+        compound = TopoDS_Compound()
+        builder = BRep_Builder()
+        builder.MakeCompound(compound)
+        for i in sel:
+            builder.Add(compound, self.faces[int(i)])
+        return compound
+
+
 class _PlanarSectionEngine:
     """Exact axis-aligned plane sections of planar-faced solid regions.
 
@@ -1822,6 +1907,14 @@ class _PlanarSectionEngine:
         #: Face count of the shape (0 until known) — the cost weight of
         #: one delegated OCC section for the pool-work estimate.
         self.face_count = 0
+        #: Face slabs of the shape for the delegated OCC sections
+        #: (:class:`_FaceSlabIndex`), ``None`` when the shape could not
+        #: be indexed.
+        self.slab = None
+        try:
+            self.slab = _FaceSlabIndex(shape)
+        except Exception:  # noqa: BLE001 — the OCC path sections the whole body
+            self.slab = None
         try:
             self._build(shape)
         except Exception:  # noqa: BLE001 — fall back to the OCC path
@@ -1880,17 +1973,22 @@ class _PlanarSectionEngine:
         f_planar = np.zeros(n_f, dtype=np.bool_)
         f_n = np.zeros((n_f, 3), dtype=np.float64)
         f_d = np.zeros(n_f, dtype=np.float64)
-        f_lo = np.empty((n_f, 3), dtype=np.float64)
-        f_hi = np.empty((n_f, 3), dtype=np.float64)
+        if self.slab is not None and self.slab.n_faces == n_f:
+            f_lo = self.slab.lo.copy()
+            f_hi = self.slab.hi.copy()
+        else:
+            f_lo = np.empty((n_f, 3), dtype=np.float64)
+            f_hi = np.empty((n_f, 3), dtype=np.float64)
+            for i in range(n_f):
+                box = Bnd_Box()
+                # Geometry-only box (no triangulation) — KB-012.
+                brepbndlib.Add(topods.Face(fmap.FindKey(i + 1)), box, False)
+                xmin, ymin, zmin, xmax, ymax, zmax = box.Get()
+                f_lo[i] = (xmin, ymin, zmin)
+                f_hi[i] = (xmax, ymax, zmax)
         free_form = False
         for i in range(n_f):
             face = topods.Face(fmap.FindKey(i + 1))
-            box = Bnd_Box()
-            # Geometry-only box (no triangulation) — KB-012.
-            brepbndlib.Add(face, box, False)
-            xmin, ymin, zmin, xmax, ymax, zmax = box.Get()
-            f_lo[i] = (xmin, ymin, zmin)
-            f_hi[i] = (xmax, ymax, zmax)
             ori = face.Orientation()
             if ori not in (TopAbs_FORWARD, TopAbs_REVERSED):
                 continue
@@ -2564,6 +2662,7 @@ def batch_cross_sections(
                         scale=scale,
                         nudge=nudge,
                         context=context,
+                        slab=engine.slab,
                     )
                 if polys:
                     key = (axis, idx)
@@ -3341,6 +3440,13 @@ def compute_edge_pec_fractions(
 # is faster (measured: a 540-query mesh build was 6.9 s sequential vs
 # 16.0 s pooled).
 _SECTION_PARALLEL_MIN_QUERIES = 1024
+#: Side step of a degenerate section plane (DD-106) in units of the
+#: largest B-Rep tolerance of the model (at least the kernel's
+#: confusion, 1e-7 scaled): the plane must leave the face it coincides
+#: with by more than the distance within which the kernel and the
+#: planar engine treat the two as touching (both were measured wrong
+#: at 1.3 tolerances and right from 2.7 on).
+_SECTION_SHIFT_TOLERANCES = 4.0
 
 # Alternative work-weighted trigger: queries that reach the prefill all
 # delegate to the OCC Boolean (the planar engine answers its planes
@@ -3384,6 +3490,7 @@ _SECTION_POOL_SPEEDUP_MARGIN = 1.5
 # Shapes broadcast to each worker process, keyed by shape index.
 # Populated once per worker by ``_section_worker_init``.
 _SECTION_WORKER_SHAPES: dict[int, object] = {}
+_SECTION_WORKER_SLABS: dict[int, _FaceSlabIndex] = {}
 
 
 def _section_worker_count() -> int:
@@ -3422,6 +3529,10 @@ def _section_worker_init(shape_blobs: list[tuple[int, bytes]]) -> None:
         shape = TopoDS_Shape()
         breptools.ReadFromString(blob, shape)
         _SECTION_WORKER_SHAPES[si] = shape
+        try:
+            _SECTION_WORKER_SLABS[si] = _FaceSlabIndex(shape)
+        except Exception:  # noqa: BLE001 — the worker sections the whole body
+            _SECTION_WORKER_SLABS.pop(si, None)
 
 
 def _section_worker(
@@ -3439,6 +3550,7 @@ def _section_worker(
         scale=scale,
         nudge=nudge,
         context=context,
+        slab=_SECTION_WORKER_SLABS.get(si),
     )
 
 
@@ -3506,6 +3618,7 @@ def _sample_and_admit(
     n_workers: int,
     nudge: float | None = None,
     contexts: list[str] | None = None,
+    slabs: list | None = None,
 ) -> list[tuple[int, float, int]]:
     """Time a sample of *queries*; return what is left worth pooling.
 
@@ -3541,6 +3654,7 @@ def _sample_and_admit(
             scale=scale,
             nudge=nudge,
             context=contexts[si] if contexts else "",
+            slab=slabs[si] if slabs else None,
         )
         section_cache[(axis, pos, si)] = _annotate_sections(polys, annotate)
     elapsed = time.perf_counter() - t0
@@ -3565,6 +3679,7 @@ def _parallel_section_prefill(
     scale: float = 1.0,
     nudge: float | None = None,
     contexts: list[str] | None = None,
+    slabs: list | None = None,
 ) -> None:
     """Fill ``section_cache`` for ``queries`` using a process pool.
 
@@ -3627,6 +3742,7 @@ def _parallel_section_prefill(
             n_workers,
             nudge,
             contexts,
+            slabs,
         )
         if not queries:
             return
@@ -3914,6 +4030,22 @@ def compute_face_material_areas(
         for shape_obj, _ in shapes_with_material
     ]
 
+    # DD-106 side step of a degenerate plane.  The tessellation
+    # deflection is the natural step, but a fine grid takes it below
+    # the kernel's tolerance (a 6 µm cell: 60 nm against edges of
+    # 1.5e-7), where the section Boolean still reports the face the
+    # plane was meant to leave: both sides come back equal, the wall
+    # jump reads zero and a face on a conductor's end wall is blocked
+    # instead of free.  The step therefore clears every shape's B-Rep
+    # tolerance with a margin — which also puts the shifted planes past
+    # the planar engine's own tolerance screen, so they are answered
+    # exactly instead of by the Boolean.
+    kernel_tol = max(
+        (engine.slab.tolerance for engine in engines if engine.slab is not None),
+        default=0.0,
+    )
+    shift = max(deflection, _SECTION_SHIFT_TOLERANCES * max(kernel_tol, 1e-7) / scale)
+
     def _shape_sections(si, axis, pos):
         polys = engines[si].section(axis, pos) if engines[si].enabled else None
         if polys is None:
@@ -3925,6 +4057,7 @@ def compute_face_material_areas(
                 scale=scale,
                 nudge=nudge,
                 context=contexts[si],
+                slab=engines[si].slab,
             )
         return polys
 
@@ -4029,7 +4162,7 @@ def compute_face_material_areas(
     prefill_queries: dict[tuple[int, float, int], None] = {}
     for axis, plane_pos in plane_to_face_indices:
         if plane_pec_degenerate[(axis, plane_pos)]:
-            positions = [plane_pos + deflection, plane_pos - deflection]
+            positions = [plane_pos + shift, plane_pos - shift]
         else:
             positions = [plane_pos]
         for pos in positions:
@@ -4062,6 +4195,7 @@ def compute_face_material_areas(
             scale=scale,
             nudge=nudge,
             contexts=contexts,
+            slabs=[engine.slab for engine in engines],
         )
 
     def _sections_at(axis: int, pos: float) -> list:
@@ -4106,8 +4240,8 @@ def compute_face_material_areas(
         if not degen:
             continue
         shifted_sections_per_plane[(axis, plane_pos)] = [
-            _sections_at(axis, plane_pos + deflection),
-            _sections_at(axis, plane_pos - deflection),
+            _sections_at(axis, plane_pos + shift),
+            _sections_at(axis, plane_pos - shift),
         ]
 
     def _clip_area(annotated_polys, rect) -> float:
