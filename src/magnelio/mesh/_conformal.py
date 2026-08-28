@@ -203,6 +203,7 @@ def _probe_eps(
     background,
     scale: float = 1.0,
     tolerance: float = 1e-7,
+    classifiers=None,
 ) -> float:
     """Effective permittivity of the material at *point*.
 
@@ -210,26 +211,19 @@ def _probe_eps(
     matching the cell-filling semantics) and classifies *point* against
     each candidate solid.  PEC neighbours and a PEC background count as
     eps = 1 — the substrate-side choice only needs a dielectric
-    ordering, not a physical value for conductors.
+    ordering, not a physical value for conductors.  *classifiers* is a
+    ``PointClassifierSet`` over *shapes* at *scale* and *tolerance*,
+    shared between the probes of one detection pass; built here when
+    not given.
     """
-    from magnelio.geo._occ_backend import point_in_shape  # noqa: PLC0415
+    from magnelio.geo._occ_backend import PointClassifierSet  # noqa: PLC0415
 
-    for shape in reversed(shapes):
-        if shape is skip_shape:
-            continue
-        try:
-            (bmin, bmax) = shape.bounding_box(scale)
-        except Exception:
-            continue
-        pad = 1e-12 * (1.0 + max(abs(c) for c in point))
-        if not all(bmin[d] - pad <= point[d] <= bmax[d] + pad for d in range(3)):
-            continue
-        try:
-            if point_in_shape(shape._occ_shape(scale), point, tolerance=tolerance, scale=scale):
-                mat = shape.material
-                return 1.0 if mat.is_pec else float(max(mat.epsilon))
-        except Exception:
-            continue
+    if classifiers is None:
+        classifiers = PointClassifierSet(shapes, scale=scale, tolerance=tolerance)
+    hit = classifiers.first_containing(point, skip=skip_shape, reverse=True)
+    if hit is not None:
+        mat = shapes[hit].material
+        return 1.0 if mat.is_pec else float(max(mat.epsilon))
     if background is not None and not background.is_pec:
         return float(max(background.epsilon))
     return 1.0
@@ -284,6 +278,7 @@ def detect_thin_metallizations(
         from the critical planes.
     """
     thin_sheets: list[ThinSheetSpec] = []
+    classifiers = None  # one loaded classifier per shape, shared by every probe
 
     for shape in shapes:
         if not shape.material.is_pec:
@@ -317,11 +312,27 @@ def detect_thin_metallizations(
         # hard floor reproduces the historical 1e-7 m at the typical
         # 100 um floor (this path only runs with min_cell_size set).
         probe_tol = 1e-3 * min_cell_size
+        if classifiers is None:
+            from magnelio.geo._occ_backend import PointClassifierSet  # noqa: PLC0415
+
+            classifiers = PointClassifierSet(shapes, scale=scale, tolerance=probe_tol)
         eps_lo = _probe_eps(
-            shapes, shape, tuple(p_lo), background, scale=scale, tolerance=probe_tol
+            shapes,
+            shape,
+            tuple(p_lo),
+            background,
+            scale=scale,
+            tolerance=probe_tol,
+            classifiers=classifiers,
         )
         eps_hi = _probe_eps(
-            shapes, shape, tuple(p_hi), background, scale=scale, tolerance=probe_tol
+            shapes,
+            shape,
+            tuple(p_hi),
+            background,
+            scale=scale,
+            tolerance=probe_tol,
+            classifiers=classifiers,
         )
         if eps_hi > eps_lo:
             position, far_position = bb_max[d], bb_min[d]

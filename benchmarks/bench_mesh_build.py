@@ -139,6 +139,8 @@ def instrument() -> PassTimer:
     t.wrap(_occ_backend, "_parallel_section_prefill", key="pool_prefill")
     t.wrap(_occ_backend, "_sample_and_admit", key="pool_admission", after=_pool_admitted)
     t.wrap(_conformal, "rasterize_thin_sheet_footprint", key="sheets")
+    t.wrap(_conformal, "detect_thin_metallizations", key="sheets_detect")
+    t.wrap(_occ_backend, "check_pairwise_overlaps", key="overlaps")
     # Every N-ary fuse, wherever it runs: the model's own Unions and the
     # tool fuses of Differences (CSG evaluation), but also the fuses
     # inside ``pec_fuse`` and the edge pass — nested, so not top-level.
@@ -485,6 +487,8 @@ def build_once(family: str, n: int, arm: str) -> dict:
         "pass_edges_eps",
         "pass_faces_mu",
         "sheets",
+        "sheets_detect",
+        "overlaps",
     )
     # What the wrapped passes do not cover: CSG evaluation of the
     # model's Booleans (``fuse`` reports the union share of it), plane
@@ -503,7 +507,10 @@ def write_report(rows) -> None:
             "order-dependent and do not sum to the total.  Times in seconds, "
             "fastest of --repeat builds, CPU; 'pool' is the section-pool arm "
             "(off / auto = production / forced = admission gates lowered).  "
-            "'sheets' is the thin-sheet footprint rasterisation (top-level); "
+            "'sheets' is the thin-sheet footprint rasterisation and 'sheets_detect' "
+            "the sheet detection (both top-level, printed as one column); "
+            "'planes_singular' the singular-edge planes, 'overlaps' the model's "
+            "overlap check (top-level); "
             "'fuse' is every N-ary boolean_union call, including those nested "
             "inside pec_fuse and the edge pass, so it is not part of 'other'."
         ),
@@ -528,7 +535,8 @@ def run(families, sizes, arms, repeat, warm, json_out=False):
         print(
             f"{'n':>5} {'pool':>6} {'cells':>10} {'faces':>6} {'edges':>9} {'total':>8} "
             f"{'edge_fr':>8} {'areas_eps':>9} {'areas_mu':>8} {'classify':>8} "
-            f"{'sheets':>7} {'fuse':>6} {'other':>7} {'sect':>6} {'pool':>4}"
+            f"{'sheets':>7} {'fuse':>6} {'singular':>8} {'overlap':>7} "
+            f"{'other':>7} {'sect':>6} {'pool':>4}"
         )
         for n in ladder:
             for arm in arms:
@@ -551,7 +559,10 @@ def run(families, sizes, arms, repeat, warm, json_out=False):
                     f"{best.get('edge_fractions', 0.0):>8.1f} "
                     f"{best.get('areas_epsilon', 0.0):>9.1f} {best.get('areas_mu', 0.0):>8.1f} "
                     f"{best.get('classify_sections', 0.0) + best.get('classify_fill', 0.0):>8.1f} "
-                    f"{best.get('sheets', 0.0):>7.1f} {best.get('fuse', 0.0):>6.1f} "
+                    f"{best.get('sheets', 0.0) + best.get('sheets_detect', 0.0):>7.1f} "
+                    f"{best.get('fuse', 0.0):>6.1f} "
+                    f"{best.get('planes_singular', 0.0):>8.1f} "
+                    f"{best.get('overlaps', 0.0):>7.1f} "
                     f"{best['other']:>7.1f} {best['sections']:>6} {best['pool_fired']:>4}",
                     flush=True,
                 )

@@ -3944,3 +3944,132 @@ class TestEdgeFeaturePlanes:
         for axis in "xyz":
             assert self._new(faces, edges, axis) == []
         assert 0.0 not in edges["y"]
+
+
+# ── Overlap detection: batched Booleans ──────────────────────────────────────
+
+
+class TestOverlapBatching:
+    """One Boolean per hub, bisection to the offending pairs, pairwise result."""
+
+    @staticmethod
+    def _pocketed(n_pockets: int, uncut: int = 0):
+        """An air body with pockets and the parts that fill them.
+
+        The last *uncut* parts are not subtracted from the body, so they
+        are genuine overlaps of the (air, part) kind.
+        """
+        from magnelio.geo import Brick, Difference
+
+        parts = [
+            Brick(
+                origin=(1e-3 + 2e-3 * k, 1e-3, 1e-3),
+                size=(1e-3, 1e-3, 1e-3),
+                material=Material.pec(),
+            )
+            for k in range(n_pockets)
+        ]
+        air = Brick(origin=(0, 0, 0), size=(2e-3 * n_pockets + 1e-3, 3e-3, 3e-3), material=_air())
+        cut = parts[: len(parts) - uncut] if uncut else parts
+        body = Difference(air, *cut, material=_air())
+        return [body, *parts]
+
+    @staticmethod
+    def _count_commons(monkeypatch):
+        from OCC.Core import BRepAlgoAPI
+
+        calls = []
+        original = BRepAlgoAPI.BRepAlgoAPI_Common
+
+        class Counting(original):
+            def __init__(self):
+                calls.append(1)
+                original.__init__(self)
+
+        monkeypatch.setattr(BRepAlgoAPI, "BRepAlgoAPI_Common", Counting)
+        return calls
+
+    @staticmethod
+    def _pairwise_reference(shapes, materials, scale):
+        """The pair-at-a-time check the batched one replaced."""
+        from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Common
+        from OCC.Core.BRepGProp import brepgprop
+        from OCC.Core.GProp import GProp_GProps
+
+        from magnelio.geo._occ_backend import _shape_list, keep_operands_intact
+
+        boxes = [s.bounding_box(scale) for s in shapes]
+        gprops = GProp_GProps()
+        found = []
+        for i in range(len(shapes)):
+            for j in range(i + 1, len(shapes)):
+                (alo, ahi), (blo, bhi) = boxes[i], boxes[j]
+                if any(alo[d] >= bhi[d] or blo[d] >= ahi[d] for d in range(3)):
+                    continue
+                if materials[i] == materials[j]:
+                    continue
+                common = BRepAlgoAPI_Common()
+                common.SetArguments(_shape_list([shapes[i]._occ_shape(scale)]))
+                common.SetTools(_shape_list([shapes[j]._occ_shape(scale)]))
+                keep_operands_intact(common)
+                common.Build()
+                brepgprop.VolumeProperties(common.Shape(), gprops)
+                volume = abs(gprops.Mass()) / scale**3
+                va = math.prod(ahi[d] - alo[d] for d in range(3))
+                vb = math.prod(bhi[d] - blo[d] for d in range(3))
+                if volume > 1e-12 * min(va, vb):
+                    found.append((i, j, volume))
+        return found
+
+    def test_clean_hub_costs_one_boolean(self, monkeypatch):
+        _occ()
+        from magnelio.geo._occ_backend import check_pairwise_overlaps
+
+        calls = self._count_commons(monkeypatch)
+        shapes = self._pocketed(24)
+        materials = [s.material for s in shapes]
+        assert check_pairwise_overlaps(shapes, materials=materials) == []
+        assert len(calls) == 1
+
+    def test_offenders_are_attributed_by_bisection(self, monkeypatch):
+        _occ()
+        from magnelio.geo._occ_backend import check_pairwise_overlaps
+
+        calls = self._count_commons(monkeypatch)
+        shapes = self._pocketed(16, uncut=1)
+        materials = [s.material for s in shapes]
+        overlaps = check_pairwise_overlaps(shapes, materials=materials)
+        assert [(i, j) for i, j, _ in overlaps] == [(0, 16)]
+        assert overlaps[0][2] == pytest.approx(1e-9, rel=1e-9)
+        assert len(calls) < 16  # 1 + 2 per bisection level, not one per pair
+
+    def test_batched_result_equals_the_pairwise_check(self):
+        _occ()
+        from magnelio.geo import Brick
+        from magnelio.geo._occ_backend import check_pairwise_overlaps
+        from magnelio.geo._scaling import model_scale
+
+        shapes = self._pocketed(6, uncut=2)
+        # A second hub straddling three parts, and a part overlapping two hubs.
+        shapes.append(
+            Brick(origin=(4.5e-3, 0.5e-3, 0.5e-3), size=(5e-3, 2e-3, 2e-3), material=_air())
+        )
+        shapes.append(
+            Brick(origin=(6e-3, 2e-3, 2e-3), size=(2e-3, 2e-3, 2e-3), material=Material.pec())
+        )
+        materials = [s.material for s in shapes]
+        scale = model_scale(shapes)
+        got = check_pairwise_overlaps(shapes, materials=materials, scale=scale)
+        want = self._pairwise_reference(shapes, materials, scale)
+        assert [(i, j) for i, j, _ in got] == [(i, j) for i, j, _ in want]
+        assert [v for _, _, v in got] == pytest.approx([v for _, _, v in want], rel=1e-9)
+
+    def test_absolute_tolerance_applies_to_the_batch(self):
+        _occ()
+        from magnelio.geo._occ_backend import check_pairwise_overlaps
+
+        shapes = self._pocketed(8, uncut=3)
+        materials = [s.material for s in shapes]
+        assert check_pairwise_overlaps(shapes, materials=materials, tolerance=2e-9) == []
+        found = check_pairwise_overlaps(shapes, materials=materials, tolerance=0.5e-9)
+        assert [(i, j) for i, j, _ in found] == [(0, 6), (0, 7), (0, 8)]
