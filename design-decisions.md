@@ -14906,7 +14906,10 @@ classification 15.5 → 8.5 s); pooled, the prefill's 20 s (worker
 start-up, serialisation, the along-the-row sections every face
 qualifies for) bound the row.  The array rows are unchanged within
 noise.  Gallery plane pins (28 scripts) unchanged; unit suite 2 520
-passed, integration 402 passed (the GPU tests on the device).
+passed, integration 402 passed (the GPU tests on the device).  The
+Lange how-to's scoreboard (`docs/howto/plot_lange_coupler.py`, GPU)
+repeats −2.72 / −3.32 dB, 0.60 dB balance, 89.8°, −31.90 / −32.06 dB
+to the printed digit — the freed end-wall faces are 5 µm × 12.6 µm.
 
 **Files:** `src/magnelio/geo/_occ_backend.py` (`_FaceSlabIndex`,
 `_PlanarSectionEngine.slab`, `cross_section_polygons(slab=)`,
