@@ -15624,3 +15624,131 @@ the kernel's fixed cost per `BRepAlgoAPI_Section` (6 284 at 1–2 ms).
 `_run_sums`), `src/magnelio/geo/_occ_backend.py` (`_sharp_edges`),
 `tests/unit/test_subcell_pipeline.py`, `tests/unit/test_mesh.py`,
 `CHANGELOG.md`, `benchmarks/results/bench_mesh_build.json` (re-run).
+
+## DD-215 — Rectilinear caps are united on the compressed grid of their vertices; the box sweep runs on arrays
+
+**Status:** Decided and implemented 2026-08-28, branch
+`perf/rectilinear-plane-union`.  DD-214's open item 1.
+
+**Problem.**  DD-214 filed the 16 × 16 array's `sheets_detect` 4.7 s
+and `fuse` 4.0 s as "40 % of the build" — the two nest (DD-209's own
+trap: `detect_thin_metallizations` is the first caller of the copper
+union's `_occ_shape()`, so the bench's `sheets_detect` key contains
+the fuse).  The real term is 4.7 s of 20.6 s, and it decomposes
+(internal dossier `investigations/mesh-build-bench/rect/`, M18) into
+DD-209's fuse tree 2.7 s (127 kernel fuses 2.0 s, 127 `unify` 0.5 s),
+`cluster_boxes` 0.7 s — a Python sweep with one `np.all` pair per
+(box, active box), 189 059 calls — `prism_candidates` 0.35 s and the
+thin-sheet detection's own 0.7 s.  DD-209 measured the in-house
+rectilinear union at 0.22 s for the same 1 787 caps and kept it as
+"the next tier if the plane fuse ever leads again".  It leads.
+
+**Decision.**
+
+1. **A cluster of straight, axis-aligned caps is united in-house**
+   (`magnelio.geo._rect_union`, called from `_fuse_group_in_plane`
+   before the fuse tree; any cluster with an arc, a rotated edge or a
+   non-planar cap is declined and climbs DD-209's tree as before).
+   The route: `_planar_row` reads every cap's rings (outer
+   counter-clockwise, holes clockwise, the face flipped as a whole
+   when its largest ring runs the other way); the distinct `u` and `v`
+   coordinates of all vertices are compressed to the kernel's
+   confusion tolerance (`_LEVEL_TOLERANCE`, the smallest of a run is
+   its representative); every edge along `v` adds its direction to
+   the cells on its `+u` side (two `np.add.at`, two `cumsum`), so that
+   the non-zero winding number is exactly the union — a cap's hole
+   subtracts inside that cap only, another cap covering the hole adds
+   again.  `scipy.ndimage.label` (4-connectivity) numbers the filled
+   pieces; the directed boundary edges (filled cell on the left) come
+   from four mask comparisons of the padded label grid; each edge's
+   successor is the edge leaving its end node, found by `searchsorted`
+   on the node keys; the cycles of that permutation are walked in one
+   compiled pass (`_cycles`), collinear vertices are dropped, and each
+   loop is an outer ring (positive area) or a hole of the piece whose
+   label its first edge carries.  Faces are built by
+   `BRepBuilderAPI_MakePolygon` / `MakeFace` with the holes added.
+2. **Corner contacts follow the kernel's answers by one rule.**  At a
+   node where two filled cells meet diagonally the walk has two ways
+   out.  Two pieces touching at a corner must become two faces (the
+   kernel's result; one self-touching ring is invalid), two holes
+   touching at a corner must stay two wires sharing a vertex, and a
+   hole touching the outline at a corner is a notch — all three follow
+   from the component labels: the two filled cells at the node are of
+   the same component exactly when the two empty ones are not (Jordan),
+   and then the walk turns right (keeps the empty cell on its right),
+   otherwise left (keeps its filled cell).  Tested on each
+   configuration and against the kernel's face count on a random
+   layout of 60 rectangles (`tests/unit/test_rect_union.py`).
+3. **`cluster_boxes` compares each box against its active set as
+   arrays** (one `np.all` pair per box instead of one per active
+   pair); the sweep order and the union-find are unchanged, so the
+   clusters and their order are identical — the post rows (arc caps,
+   tree route) are 35 / 35 bit-identical.
+
+**What changes in the result.**  The kernel builds the vertices of
+T-junctions and crossings by its intersection arithmetic and lands
+1–4 ulp off the input coordinate (13 of 194 vertices of the 4 × 4
+array's cap, 106 of 2 572 of the 16 × 16's); the in-house union's
+vertices *are* the input coordinates.  Where such a vertex was the
+source of a grid plane, the plane moves by that ulp: 4 × 4 array
+`grid.y` 3 of 114 planes by 1.6e-19 m (relative 3e-18), which
+propagates as ≤ 4.7e-14 relative in `eps_avg` / `f_A` and ≤ 1.4e-13
+in the face areas; on the Lange row the grid is unchanged and only the
+areas' summation order differs (≤ 1.3e-14 relative).  Bit-identity
+with the kernel would mean reproducing its rounding; the union's
+point set is the same (areas equal to 15 digits, face and vertex
+counts equal, `BRepCheck` valid), so the mesh hash references of the
+4 × 4 array and Lange 4 are re-pinned (`pool/hash_refs/*_pre_dd215.txt`
+keep the old ones); posts 60 / 240 unchanged.
+
+**Result.**  Function level, the caps of the array copper
+(`probe_rect_union.py`): 16 × 16 (1 787 caps) tree 2.63 → **0.21 s**,
+8 × 8 (443) 0.54 → 0.06 s, 4 × 4 (107) 0.11 → 0.02 s after the
+compile; one face, area equal to 15 digits, same vertex count, valid.
+
+Full ladder (`--family all --pool off auto forced --json`, `auto`, CPU
+idle; before = DD-214's ladder; `fuse` = the bench's union column):
+
+| family, n | cells | total before → after | fuse | sheets |
+|---|---|---|---|---|
+| Lange 16 | 3.69 M | 19.9 → 20.1 s | 2.0 (raised-piece fuse) | 1.7 |
+| Lange 8 | 1.84 M | 8.7 → 8.6 s | 0.8 | 0.7 |
+| Lange 4 | 922 k | 4.0 → 4.0 | 0.4 | 0.3 |
+| array 8 × 8 | 664 k | 5.0 → **4.6 s** | 0.65 → 0.2 | 1.1 → 0.5 |
+| array 4 × 4 | 222 k | 1.6 → 1.5 | 0.0 | 0.1 |
+| array 2 × 2 | 84 k | 0.6 → 0.6 | 0.0 | 0.0 |
+| posts 240 | 385 k | 20.2 → 20.2 | 0.2 | 0.0 |
+| posts 60 | 97 k | 4.8 → 4.8 | 0.0 | 0.0 |
+| array 16 × 16 (off-ladder) | 1.82 M | 20.6 → **17.4 s** | 3.96 → 0.85 | 4.7 → 1.85 |
+
+The pool arms agree with `auto` within noise (`forced` on the post rows
+pays its start-up as before).  On the 16 × 16 array
+(`probe_pass_breakdown.py`) `fuse` 3.96 → 0.85 s and `sheets_detect`
+4.67 → 1.85 s (of which the fuse 0.85 — the detection's own time is
+the model's one `Cut`, DD-212 territory, and two probe points); the
+0.85 s left in the union are `prism_candidates` 0.35 s and
+`_planar_row` over 1 787 caps 0.35 s, the grid union itself 0.05 s.
+Edge fractions against DD-208's references: 8 × 8 27 541 of 153 440
+edges differ by ≤ 2.3e-14, 16 × 16 70 736 of 449 700 by ≤ 2.3e-14,
+4 × 4 one edge by 1.0 — edge 19353, DD-208's own corrected edge, as in
+DD-209's check.  Mesh hashes after re-pinning 35 / 35 on all four
+families.  Unit suite 2 572 passed / 4 skipped (20 new), integration
+402 passed / 5 skipped (`CUPY_ACCELERATORS=""`); ruff, DD and import gates clean.
+
+**Open, re-ranked.**  The plane fuse is off the list on every
+row.  The 16 × 16 array's 17.4 s and the ladder rows now lead with the
+same terms, in value order: (1) the ε/µ/σ area passes —
+`compute_face_material_areas` 2.4 s of own time in six calls on the
+16 × 16 array (`areas_mu` 3.6 + `areas_epsilon` 2.9 + `areas_sigma`
+2.1 of 17.4 s), the Lange row (µ 6.0 + ε 3.7 of 20.1 s) and the post
+row (7.9 + 5.9 of 20.2 s); (2) the raised-piece fuse (`pec_fuse` 1.5 s
+on the 16 × 16 array, `fuse` 2.0 s on Lange 16 — one N-ary fuse of
+320 raised bodies); (3) the post row's kernel sections at the
+kernel's fixed cost per `BRepAlgoAPI_Section` (6 284 at 1–2 ms); (4)
+the thin-sheet rasteriser's section (1.3 s of `sheets` 1.8 s on the
+16 × 16 array).
+
+**Files:** `src/magnelio/geo/_rect_union.py` (new),
+`src/magnelio/geo/_prism_fuse.py` (`cluster_boxes`,
+`_fuse_group_in_plane`), `tests/unit/test_rect_union.py` (new),
+`CHANGELOG.md`, `benchmarks/results/bench_mesh_build.json` (re-run).
