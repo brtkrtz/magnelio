@@ -15752,3 +15752,94 @@ the thin-sheet rasteriser's section (1.3 s of `sheets` 1.8 s on the
 `src/magnelio/geo/_prism_fuse.py` (`cluster_boxes`,
 `_fuse_group_in_plane`), `tests/unit/test_rect_union.py` (new),
 `CHANGELOG.md`, `benchmarks/results/bench_mesh_build.json` (re-run).
+
+## DD-216 — The area passes keep one section engine per shape and group their faces by one sort
+
+**Status:** Decided and implemented 2026-08-28, branch
+`perf/area-pass-overheads`.  DD-215's open item 1.
+
+**Problem.**  With the plane fuse gone the ε/µ/σ area passes led on
+every ladder row (16 × 16 array µ 3.6 + ε 2.9 + σ 2.1 of 17.4 s;
+Lange 16 µ 6.0 + ε 3.7 of 20.1 s).  cProfile of both builds (internal
+dossier `investigations/mesh-build-bench/areas/`, M19) put the time
+not in the sections but around them:
+
+1. `compute_face_material_areas` built a fresh `_PlanarSectionEngine`
+   (face planes, edge lines, tolerances, the `_FaceSlabIndex` with
+   its tiles) for every shape on every call — 26 builds of 5 shapes
+   on the array (7.8 s of 25 s under the profiler), 1 422 builds of
+   355 shapes on the Lange row (3.8 s of 30 s).  The engine is a
+   read-only digest of an immutable shape; the `section_cache` the
+   passes already share across ε/σ/µ holds sections, not engines.
+2. Step 1 of the same function grouped the faces by plane with a
+   Python loop over every face (`setdefault`/`append`, 690 k faces ×
+   six passes on the array: 5.7 M dict operations, 2.4 s of own time;
+   4.4 M on the Lange row, 2.3 s).
+3. `_sections_at` and the pool's prefill loop tested each plane
+   against every shape's bounding box in Python — on the Lange row
+   8 257 planes × 355 shapes, 1.7 s of own time for a test that
+   rejects all but a handful of shapes per plane.
+
+**Decision.**
+
+1. **One engine per (shape, scale, deflection)**: `_section_engine`
+   keeps the engine in the shape object's `__dict__`
+   (`_section_engine_cache`, next to `cached_occ_shape`'s
+   `_occ_shape_cache` and under the same immutability argument — no
+   code path invalidates either).  Every pass of a build reuses it,
+   tiles included.
+2. **`_faces_by_plane`** groups the faces by one stable `lexsort` on
+   (axis, position): the faces of a plane stay in index order and the
+   planes in the order of their first face — the dict the loop built
+   — and `-0.0` / `0.0` remain one plane, as they were one dict key.
+   Step 3 consumes the index arrays where it consumed lists.
+3. **`_shapes_reaching`** answers the plane-versus-bounding-box test
+   for all shapes at once (the same slack), and `_sections_at` /
+   the prefill loop iterate the survivors only.
+
+All three are execution strategy: the sections, their order in the
+cache and every kernel input are unchanged, and the meshes are
+bit-identical (35 / 35 arrays on 4 × 4 array, Lange 4, posts 60,
+posts 240).
+
+**Result.**  `probe_pass_breakdown.py` (`auto`, CPU): 16 × 16 array
+**17.4 → 12.6 s** (`areas_mu` 3.6 → 1.7, `areas_epsilon` 2.9 → 1.8,
+`pass_faces_mu` 3.9 → 2.0, `pass_edges_eps` 6.4 → 3.5); Lange 16
+**20.1 → 17.1 s** (`areas_mu` 5.6 → 3.9, `areas_epsilon` 3.7 → 3.2,
+`pass_faces_mu` 6.0 → 4.4).
+
+Full ladder (`--family all --pool off auto forced --json`, `auto`, CPU
+idle; before = DD-215's ladder):
+
+| family, n | cells | total before → after | ε pass | µ pass |
+|---|---|---|---|---|
+| Lange 16 | 3.69 M | 19.9 → **17.1 s** | 3.7 → 3.4 | 6.0 → 4.0 |
+| Lange 8 | 1.84 M | 8.6 → 7.4 s | 1.7 → 1.5 | 2.5 → 1.7 |
+| Lange 4 | 922 k | 4.0 → 3.4 s | 0.8 → 0.7 | 1.2 → 0.8 |
+| Lange 2 | 461 k | 1.9 → 1.6 s | 0.4 | 0.6 → 0.4 |
+| array 8 × 8 | 664 k | 4.6 → **3.1 s** | 0.9 → 0.6 | 1.2 → 0.6 |
+| array 4 × 4 | 222 k | 1.5 → 1.1 s | 0.3 | 0.5 → 0.3 |
+| array 2 × 2 | 84 k | 0.6 → 0.5 s | 0.1 | 0.2 → 0.1 |
+| posts 240 | 385 k | 20.2 → 20.0 s | 5.9 | 7.9 → 7.7 |
+| posts 60 | 97 k | 4.8 → 4.8 s | 1.4 | 1.9 → 1.8 |
+| array 16 × 16 (off-ladder) | 1.82 M | 17.4 → **12.6 s** | 2.9 → 1.8 | 3.6 → 1.7 |
+
+The pool arms agree with `auto` within noise (`forced` on the post rows
+pays its start-up as before).  Unit suite 2 577 passed / 4 skipped
+(5 new), integration 402 passed / 5 skipped (`CUPY_ACCELERATORS=""`); ruff, DD and import
+gates clean.
+
+**Open, re-ranked.**  In value order: (1) the post row's
+kernel sections — `cross_section_polygons` 3 887 calls 10.5 s of a
+25 s profiled build, `BRepAlgoAPI_Section` 4 372 × 1.3 ms — now the
+one row whose passes are not Python-bound; (2) the engine's `section`
+per plane (35 824 calls × 45 µs on Lange 16, 1.6 s of own time, plus
+a Python chain walk per polygon) — a batch over all planes of an axis
+per engine; (3) the raised-piece fuse (`pec_fuse` 1.5 s on the 16 × 16
+array, `fuse` 2.2 s on Lange 16); (4) the thin-sheet rasteriser's
+section (1.3 of `sheets` 1.8 s on the 16 × 16 array).
+
+**Files:** `src/magnelio/geo/_occ_backend.py` (`_section_engine`,
+`_faces_by_plane`, `compute_face_material_areas`),
+`tests/unit/test_area_pass_bookkeeping.py` (new), `CHANGELOG.md`,
+`benchmarks/results/bench_mesh_build.json` (re-run).

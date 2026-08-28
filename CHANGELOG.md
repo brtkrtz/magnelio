@@ -11,6 +11,12 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- The conformal area passes of the mesh build no longer rebuild their
+  per-shape section engine for every pass, group their faces by plane
+  with one sort instead of a loop over every face, and test a plane
+  against all shapes' bounding boxes at once (a 16 × 16 patch array
+  17.4 s → 12.6 s, a row of 16 Lange couplers 20.1 s → 17.1 s;
+  identical meshes).
 - The union of coplanar rectangular conductors — the strips and pads
   of a planar layout — is computed on the grid of their vertex
   coordinates instead of by the geometry kernel's fuse (a 16 × 16
