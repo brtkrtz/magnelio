@@ -15985,3 +15985,123 @@ same machinery) when a model shows them on a ladder row.
 `tests/unit/test_planar_section_engine.py`
 (`TestCylinderSectionEngine`), `benchmarks/results/`, `CHANGELOG.md`,
 `STATUS.md`.
+
+## DD-218 — Grid lines meet cylindrical faces in closed form; a touched point is on the boundary
+
+**Status:** Decided and implemented 2026-08-28, branch
+`perf/cylinder-line-hits`.  DD-217's open item 1, first half: the
+line × cylinder analogue of the plane × cylinder sections.
+
+**Problem.**  After DD-217 the post row built in 8.5 s, with
+`edge_fractions` 2.2 s the largest single term: `_LineTable._hits`
+(DD-213) decides planar axis-aligned rows in-house and sends every
+other row of a line to the kernel's `IntCurvesFace_Intersector` —
+192 430 `Perform` calls (1.7 s with their getters) from 29 659 lines,
+each touching the side faces of several posts (internal dossier
+`investigations/mesh-build-bench/posts/`, M21).  The same cProfile
+put 0.96 s of the area passes' 1.7 s `_cylinder_face_pairs` in
+`np.cross` of a three-line closure.  DD-217's third sub-item, the
+"repeated sections" of the classifier and the µ pass, turned out not
+to exist: the 15 487 `section` calls of the build fall on five engines
+(two shapes in the classifier, three in the area passes) with zero
+repeats per engine — the same planes on different shapes.
+
+**Decision.**
+
+1. *Cylinder rows.*  `_PrefilteredLineSolid` tries `_cylinder_row`
+   on every face `_planar_row` declines: DD-217's admission rule
+   (every boundary edge a generatrix or a rim circle, so the face is a
+   rectangle of its (u, v) domain) and the same frame — centre, axis,
+   X, Y, radius, outward radial sense, (u, v) box — packed into
+   `_PlanarRows` (`is_cyl`, `cyl_*`).  `cylinder_line_hits` solves
+   |q⊥ + w d⊥|² = r² for a line p₀ + w d (q = p₀ − c, ⊥ the component
+   normal to the axis); each root is kept where its (u, v) lies in
+   the face, `ON` — untrusted — within the geometric tolerance of a
+   rim (tol in v) or a generatrix boundary (tol / r in u); a full
+   round face has no seam boundary.  The step is the sign of the
+   outward normal against d.  A line whose distance to the axis is
+   within tol of r reports one *tangential* hit (step 0, trusted); a
+   line parallel to the axis — in the surface, inside or beside it —
+   reports none, as a planar row does for a line in its plane.
+   `cylinder_pair_hits` runs the batch of `_hits`; `flagged_hits`
+   takes the single-line form for the oblique probes.
+   `MAGNELIO_CYLINDER_LINE_HITS=0` keeps cylinder rows on the kernel
+   (read at call time — a flag read at import defeats the in-process
+   A/B probe).
+2. *Touch rule.*  A trusted tangential hit was invisible to
+   `classify_on_lines` (crossings only): a probe line grazing a post at
+   the very point it classifies read "outside".  `_LineTable` keeps
+   the trusted tangential hits as a third CSR (`touch_offsets`,
+   `touch_w`) and a point within tolerance of one is on the boundary —
+   the classifier's `ON`, inside — like a point within tolerance of a
+   crossing.
+3. `direction` in `_cylinder_face_pairs` writes the cross product
+   with the plane's unit axis vector out (bit-identical).
+
+**Measured.**  Per-row hits of the 3 395 carrier lines of posts 60
+against the kernel (`probe_cylinder_hits.py`): 4 306 identical; the
+differences are the seam (kernel `ON`, engine a clean crossing — 300),
+grazing lines (kernel nothing, 504, *or* two crossings 5e-11 apart,
+350; engine one tangential hit) and both on a rim.  The edge fractions
+of both arms against the solid classifier at 33 points per edge
+(`probe_cylinder_hits_diff.py`): the *kernel* arm read 72 z-edges
+lying in a post's surface at (c ± r, c_y) and (c_x, c ± r) as free
+(f_L = 1 where the classifier says `ON` along the whole edge; its
+grazing y probe reported nothing, or a tangential hit that did not
+count), the in-house arm none beyond 0.03 (one sample of 33 on the
+tangent point).  Those edges are `pec_mask` from the midpoint
+classification, so `L_free`, `category` and `pec_mask` are identical
+in both arms of a full build; A/B of every mesh array
+(`probe_ab_arrays.py posts 60 MAGNELIO_CYLINDER_LINE_HITS`): 33 / 35
+identical, `enlarged_cell_area` 1.3e-18 of 1.9e-8 m² and
+`A_face_free` 5.5e-19 of 1.9e-7 (the point probes of the classifier
+and the sub-cell pass run through the same prefiltered solid).  Hash
+gate: array 4 and Lange 4 35 / 35; posts re-pinned, the old references
+kept as `*_pre_dd218.txt`.  `probe_pass_breakdown.py posts 240 auto`:
+8.5 → 7.1 s with the cylinder rows (`edge_fractions` 2.17 → 0.75),
+**→ 6.6 s** with `direction` (`areas_mu` 2.52 → 2.32, `areas_epsilon`
+1.72 → 1.51).
+
+Full ladder (`--family all --pool off auto forced --json`, `auto`, CPU
+idle; before = DD-217's ladder):
+
+| family, n | cells | total before → after | edge pass | ε pass | µ pass |
+|---|---|---|---|---|---|
+| posts 240 | 385 k | 8.0 → **6.1 s** | 2.1 → 0.7 | 1.6 → 1.4 | 2.5 → 2.3 |
+| posts 60 | 97 k | 1.9 → **1.5 s** | 0.5 → 0.2 | 0.4 → 0.3 | 0.6 → 0.5 |
+| Lange 16 | 3.69 M | 16.9 → 17.2 s | 0.4 | 3.3 | 3.9 → 4.1 |
+| Lange 8 | 1.84 M | 7.3 → 7.4 s | 0.2 | 1.5 | 1.7 |
+| array 8 × 8 | 664 k | 3.2 → 3.3 s | 0.2 | 0.6 | 0.7 |
+| array 4 × 4 | 222 k | 1.1 s | 0.1 | 0.2 → 0.3 | 0.3 |
+
+The Lange and array rows carry no admitted cylinder face and are
+bit-identical; their totals sit in the noise band of DD-216/217
+(16.9–17.2 s).  Unit suite 2 587 passed / 4 skipped (one test replaced
+by five), integration 402 passed / 5 skipped (`CUPY_ACCELERATORS=""`);
+ruff, DD and import gates clean.  The kernel's own cap rows, for the
+record, classify a z-line on the rim of a standalone post as `IN` and
+on the bench posts as `ON` — a test of the cylinder row isolates it.
+
+**Open, re-ranked.**  In value order: (1) the post row's remaining
+terms — the 480 **caps** (planar faces with a circular outline, which
+`_planar_row` declines for its straight-edge rings: 49 440 kernel
+`Perform` calls, 0.6 of the 0.75 s left in `edge_fractions`; an
+in-house planar test with arcs) and the area passes' per-plane Python
+(`_cylinder_face_pairs` 16 k calls, `_screen` 27 k × 30 µs,
+`orient_nested_contours`, `_chains_to_polygons`, `_planar_pairs` —
+3.7 s of the 6.1); (2) the engine's `section` per plane on Lange 16
+(35 824 calls × 45 µs, plus a Python chain walk) — a batch over all
+planes of an axis per engine, which also answers the `_screen` term;
+(3) the raised-piece fuse (`pec_fuse` 1.5 s on the 16 × 16 array,
+`fuse` 2.1 s on Lange 16); (4) the thin-sheet rasteriser's section
+(1.3 of `sheets` 1.7 s on the 16 × 16 array); (5) spheres and cones in
+the engine and the line table when a model shows them on a ladder row.
+
+**Files:** `src/magnelio/geo/_line_kernels.py` (`cylinder_line_hits`,
+`cylinder_pair_hits`, `classify_on_lines`),
+`src/magnelio/geo/_occ_backend.py` (`_cylinder_row`,
+`_cylinder_line_hits_enabled`, `_PrefilteredLineSolid.__init__` /
+`flagged_hits`, `_PlanarRows`, `_LineTable.__init__` / `_append` /
+`_hits` / `classify_point`, `compute_edge_pec_fractions`,
+`_cylinder_face_pairs`), `tests/unit/test_edge_pass_lines.py`,
+`benchmarks/results/`, `CHANGELOG.md`, `STATUS.md`.
