@@ -617,11 +617,15 @@ def _apply_longitudinal_eps(
     nudge = h_min * SECTION_NUDGE_FRACTION
 
     # Collect (flat_edge, segment) face specs across all axes, batch
-    # the OCC sectioning once.
-    face_specs_list: list[tuple[float, float, float, float, float]] = []
-    face_axes_list: list[int] = []
-    seg_edge: list[int] = []  # flat edge index per segment
-    seg_len: list[float] = []  # segment length per segment
+    # the OCC sectioning once.  Per absorbed plane every interior edge
+    # of the crossed cell layer is a candidate (a layer of Ny × Nz
+    # edges on x); the specs are laid out as arrays in the order
+    # edge-major (j, then k), segment-minor, which is the order the
+    # sectioning batch and its cache see them in.
+    spec_parts: list[np.ndarray] = []
+    axis_parts: list[np.ndarray] = []
+    edge_parts: list[np.ndarray] = []
+    len_parts: list[np.ndarray] = []
 
     axis_data = {
         "x": (0, x, xm),
@@ -641,54 +645,50 @@ def _apply_longitudinal_eps(
 
         for c, crossings in by_cell.items():
             bounds = [float(nodes[c]), *sorted(crossings), float(nodes[c + 1])]
-            seg_mids = [0.5 * (a + b) for a, b in zip(bounds, bounds[1:])]
-            seg_lens = [b - a for a, b in zip(bounds, bounds[1:])]
+            seg_mids = np.array([0.5 * (a + b) for a, b in zip(bounds, bounds[1:])])
+            seg_lens = np.array([b - a for a, b in zip(bounds, bounds[1:])])
+            n_seg = len(seg_mids)
 
+            # The interior edges of the crossed layer, row-major over
+            # the two transverse indices, and their dual-face windows.
             if axis == "x":
-                for j in range(1, Ny):
-                    for k in range(1, Nz):
-                        flat = c * (Ny + 1) * (Nz + 1) + j * (Nz + 1) + k
-                        if pec_adj_flat[flat]:
-                            continue
-                        for smid, slen in zip(seg_mids, seg_lens):
-                            face_specs_list.append(
-                                (smid, ym[j - 1], zm[k - 1], ym[j], zm[k]),
-                            )
-                            face_axes_list.append(0)
-                            seg_edge.append(flat)
-                            seg_len.append(slen)
+                jj, kk = np.meshgrid(np.arange(1, Ny), np.arange(1, Nz), indexing="ij")
+                jj, kk = jj.ravel(), kk.ravel()
+                flat = c * (Ny + 1) * (Nz + 1) + jj * (Nz + 1) + kk
+                lo_u, lo_v, hi_u, hi_v = ym[jj - 1], zm[kk - 1], ym[jj], zm[kk]
             elif axis == "y":
-                for i in range(1, Nx):
-                    for k in range(1, Nz):
-                        flat = n_Ex + i * Ny * (Nz + 1) + c * (Nz + 1) + k
-                        if pec_adj_flat[flat]:
-                            continue
-                        for smid, slen in zip(seg_mids, seg_lens):
-                            face_specs_list.append(
-                                (smid, xm[i - 1], zm[k - 1], xm[i], zm[k]),
-                            )
-                            face_axes_list.append(1)
-                            seg_edge.append(flat)
-                            seg_len.append(slen)
+                ii, kk = np.meshgrid(np.arange(1, Nx), np.arange(1, Nz), indexing="ij")
+                ii, kk = ii.ravel(), kk.ravel()
+                flat = n_Ex + ii * Ny * (Nz + 1) + c * (Nz + 1) + kk
+                lo_u, lo_v, hi_u, hi_v = xm[ii - 1], zm[kk - 1], xm[ii], zm[kk]
             else:  # z
-                for i in range(1, Nx):
-                    for j in range(1, Ny):
-                        flat = n_Ex + n_Ey + i * (Ny + 1) * Nz + j * Nz + c
-                        if pec_adj_flat[flat]:
-                            continue
-                        for smid, slen in zip(seg_mids, seg_lens):
-                            face_specs_list.append(
-                                (smid, xm[i - 1], ym[j - 1], xm[i], ym[j]),
-                            )
-                            face_axes_list.append(2)
-                            seg_edge.append(flat)
-                            seg_len.append(slen)
+                ii, jj = np.meshgrid(np.arange(1, Nx), np.arange(1, Ny), indexing="ij")
+                ii, jj = ii.ravel(), jj.ravel()
+                flat = n_Ex + n_Ey + ii * (Ny + 1) * Nz + jj * Nz + c
+                lo_u, lo_v, hi_u, hi_v = xm[ii - 1], ym[jj - 1], xm[ii], ym[jj]
+            keep = ~pec_adj_flat[flat]
+            if not keep.any():
+                continue
+            flat = flat[keep]
+            lo_u, lo_v, hi_u, hi_v = lo_u[keep], lo_v[keep], hi_u[keep], hi_v[keep]
+            n_edge = flat.size
+            # Edge-major, segment-minor.
+            specs = np.empty((n_edge * n_seg, 5), dtype=np.float64)
+            specs[:, 0] = np.tile(seg_mids, n_edge)
+            specs[:, 1] = np.repeat(lo_u, n_seg)
+            specs[:, 2] = np.repeat(lo_v, n_seg)
+            specs[:, 3] = np.repeat(hi_u, n_seg)
+            specs[:, 4] = np.repeat(hi_v, n_seg)
+            spec_parts.append(specs)
+            axis_parts.append(np.full(n_edge * n_seg, ax_idx, dtype=np.int32))
+            edge_parts.append(np.repeat(flat, n_seg))
+            len_parts.append(np.tile(seg_lens, n_edge))
 
-    if not face_specs_list:
+    if not spec_parts:
         return
 
-    face_specs = np.array(face_specs_list, dtype=np.float64)
-    face_axes = np.array(face_axes_list, dtype=np.int32)
+    face_specs = np.concatenate(spec_parts, axis=0)
+    face_axes = np.concatenate(axis_parts)
     eps_vals = compute_face_material_areas(
         shapes_with_material,
         material_library,
@@ -712,24 +712,54 @@ def _apply_longitudinal_eps(
         scale=scale,
     )
 
-    # Harmonic combination per edge.
-    seg_edge_arr = np.asarray(seg_edge, dtype=np.int64)
-    seg_len_arr = np.asarray(seg_len, dtype=np.float64)
-    for flat in np.unique(seg_edge_arr):
-        sel = seg_edge_arr == flat
-        eps_s = eps_vals[sel]
-        if np.any(np.isnan(eps_s)) or np.any(eps_s <= 0):
-            continue  # incomplete sectioning — leave the edge as-is
-        lens = seg_len_arr[sel]
-        L = lens.sum()
-        conf_eps[flat] = L / np.sum(lens / eps_s)
-        sig_s = sigma_vals[sel]
-        if np.any(np.isnan(sig_s)) or np.any(sig_s <= 0):
-            conf_sigma[flat] = 0.0
-        else:
-            conf_sigma[flat] = L / np.sum(lens / sig_s)
-        if np.isnan(conf_f_area[flat]):
-            conf_f_area[flat] = 1.0
+    # Harmonic combination per edge.  An edge's segments are contiguous
+    # (one cell layer per absorbed plane, every edge in one layer), so
+    # the groups are runs of the edge array.  The run sums are formed
+    # in sequential order — ``np.add.reduceat`` rounds a run of three
+    # or more differently from ``np.sum`` over the same run.
+    seg_edge_arr = np.concatenate(edge_parts)
+    seg_len_arr = np.concatenate(len_parts)
+    starts = np.flatnonzero(np.diff(seg_edge_arr) != 0) + 1
+    starts = np.concatenate(([0], starts))
+    counts = np.diff(np.append(starts, seg_edge_arr.size))
+    edges = seg_edge_arr[starts]
+    L = _run_sums(seg_len_arr, starts, counts)
+
+    eps_bad = np.isnan(eps_vals) | (eps_vals <= 0)
+    eps_ok = ~np.logical_or.reduceat(eps_bad, starts)
+    if not eps_ok.any():
+        return  # incomplete sectioning everywhere — leave the edges as-is
+    eps_safe = np.where(eps_bad, 1.0, eps_vals)
+    eps_series = L / _run_sums(seg_len_arr / eps_safe, starts, counts)
+
+    sig_bad = np.isnan(sigma_vals) | (sigma_vals <= 0)
+    sig_ok = ~np.logical_or.reduceat(sig_bad, starts)
+    sig_safe = np.where(sig_bad, 1.0, sigma_vals)
+    sig_series = np.where(sig_ok, L / _run_sums(seg_len_arr / sig_safe, starts, counts), 0.0)
+
+    sel = edges[eps_ok]
+    conf_eps[sel] = eps_series[eps_ok]
+    conf_sigma[sel] = sig_series[eps_ok]
+    f_nan = np.isnan(conf_f_area[sel])
+    conf_f_area[sel[f_nan]] = 1.0
+
+
+def _run_sums(values: np.ndarray, starts: np.ndarray, counts: np.ndarray) -> np.ndarray:
+    """Per-run sums of contiguous runs, accumulated left to right.
+
+    Bit-identical to ``values[s:s + n].sum()`` per run (a sequential
+    accumulation from zero); runs are padded with zeros to the longest.
+    """
+    n_runs = starts.size
+    width = int(counts.max()) if n_runs else 0
+    padded = np.zeros((n_runs, width), dtype=np.float64)
+    run = np.repeat(np.arange(n_runs), counts)
+    pos = np.arange(values.size) - np.repeat(starts, counts)
+    padded[run, pos] = values
+    acc = np.zeros(n_runs, dtype=np.float64)
+    for col in range(width):
+        acc = acc + padded[:, col]
+    return acc
 
 
 def compute_subcell_data(

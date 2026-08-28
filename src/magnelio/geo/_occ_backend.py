@@ -688,9 +688,27 @@ def _sharp_edges(occ_shape):
 
     align_tol = 1.0 - 1e-9  # |cos| threshold for "axis-parallel"
 
+    # One adaptor per face, built WITHOUT the UV restriction: the
+    # restricted constructor walks every edge of the face for its UV
+    # bounds (``BRepTools::UVBounds``), which on the fused coplanar
+    # caps of a large layout — one face carrying thousands of outline
+    # edges — costs ~0.6 ms per call and was paid twice per edge of
+    # that face (DD-214: 31 k constructions, 18 s on a 16 × 16 patch
+    # array).  The analytic surface (plane / cylinder / sphere) does
+    # not depend on the bounds.  Faces are keyed by their TShape-based
+    # hash, which ``emap`` shares across the edges of one face.
+    adaptors: dict[int, tuple[object, object]] = {}
+
+    def _adaptor(f):
+        key = hash(f)
+        entry = adaptors.get(key)
+        if entry is None or not entry[0].IsSame(f):
+            entry = adaptors[key] = (f, BRepAdaptor_Surface(f, False))
+        return entry[1]
+
     def _same_surface(f1, f2) -> bool:
         """Two faces on one analytic surface (plane / cylinder / sphere)."""
-        s1, s2 = BRepAdaptor_Surface(f1), BRepAdaptor_Surface(f2)
+        s1, s2 = _adaptor(f1), _adaptor(f2)
         t1, t2 = s1.GetType(), s2.GetType()
         if t1 != t2:
             return False
