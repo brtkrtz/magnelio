@@ -26,6 +26,8 @@ from magnelio.geo._line_kernels import (
     axis_line_pairs,
     boundary_on_lines,
     classify_on_lines,
+    cylinder_line_hits,
+    cylinder_pair_hits,
     line_flags,
     planar_pair_hits,
     planar_point_state,
@@ -3043,12 +3045,17 @@ class _PlanarSectionEngine:
         v = rel @ a
         a_n, b_n, c_n = float(x[axis]), float(y[axis]), float(a[axis])
         p = pos - float(c[axis])
-        n_plane = np.zeros(3)
-        n_plane[axis] = 1.0
 
         def direction(uu: float) -> np.ndarray:
-            # Segment direction n × n_outward at azimuth uu.
-            return np.cross(n_plane, sense * (math.cos(uu) * x + math.sin(uu) * y))
+            # Segment direction n × n_outward at azimuth uu, the cross
+            # product with the plane's axis vector written out (np.cross
+            # was 60 % of this function on the post row).
+            m = sense * (math.cos(uu) * x + math.sin(uu) * y)
+            if axis == 0:
+                return np.array((0.0, -m[2], m[1]))
+            if axis == 1:
+                return np.array((m[2], 0.0, -m[0]))
+            return np.array((-m[1], m[0], 0.0))
 
         first: list[int] = []
         second: list[int] = []
@@ -3429,6 +3436,14 @@ def _face_tile_pieces(face, axis: int, level: float, rect) -> list:
 #: In-house hits on planar axis-aligned rows of the edge pass (tests
 #: switch it off to compare against the kernel's intersector).
 _PLANAR_ROW_HITS = True
+_CYLINDER_ROW_HITS = True
+
+
+def _cylinder_line_hits_enabled() -> bool:
+    """``MAGNELIO_CYLINDER_LINE_HITS=0`` keeps cylindrical rows on the
+    kernel's intersector (A/B runs); tests monkeypatch
+    ``_CYLINDER_ROW_HITS`` instead."""
+    return _CYLINDER_ROW_HITS and os.environ.get("MAGNELIO_CYLINDER_LINE_HITS", "").strip() != "0"
 
 
 def _planar_row(face):
@@ -3488,6 +3503,82 @@ def _planar_row(face):
     offsets = np.zeros(len(rings) + 1, dtype=np.int64)
     offsets[1:] = np.cumsum([len(r) for r in rings])
     return axis, level, float(np.sign(normal[axis])), np.vstack(rings), offsets
+
+
+def _cylinder_row(face):
+    """Cylinder data of a face bounded by its own parameter lines for
+    the in-house hit test of :class:`_PrefilteredLineSolid`, or
+    ``None``.
+
+    Returns ``(c, a, x, y, r, sense, uv)``: the frame of P(u, v) = c +
+    r (cos u X + sin u Y) + v A, the outward radial sense (surface
+    normal × face orientation) and the face's (u, v) box — the
+    admission rule of the section engine: every boundary edge a
+    generatrix or a rim circle, so the face is a rectangle of its
+    parameter domain and the point test is a box test.
+    """
+    from OCC.Core.BRep import BRep_Tool  # noqa: PLC0415
+    from OCC.Core.BRepAdaptor import BRepAdaptor_Curve, BRepAdaptor_Surface  # noqa: PLC0415
+    from OCC.Core.BRepTools import breptools  # noqa: PLC0415
+    from OCC.Core.GeomAbs import GeomAbs_Circle, GeomAbs_Cylinder, GeomAbs_Line  # noqa: PLC0415
+    from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_FORWARD, TopAbs_REVERSED  # noqa: PLC0415
+    from OCC.Core.TopExp import TopExp_Explorer  # noqa: PLC0415
+    from OCC.Core.TopoDS import topods  # noqa: PLC0415
+
+    orientation = face.Orientation()
+    if orientation not in (TopAbs_FORWARD, TopAbs_REVERSED):
+        return None
+    surface = BRepAdaptor_Surface(face, False)
+    if surface.GetType() != GeomAbs_Cylinder:
+        return None
+    cyl = surface.Cylinder()
+    frame = cyl.Position()
+    loc = frame.Location()
+    c = np.array((loc.X(), loc.Y(), loc.Z()), dtype=np.float64)
+    a, x, y = (
+        np.array((vec.X(), vec.Y(), vec.Z()), dtype=np.float64)
+        for vec in (frame.Direction(), frame.XDirection(), frame.YDirection())
+    )
+    r = float(cyl.Radius())
+    if r <= 0.0:
+        return None
+    sense = 1.0 if float(np.dot(np.cross(x, y), a)) > 0.0 else -1.0
+    if orientation == TopAbs_REVERSED:
+        sense = -sense
+    exp = TopExp_Explorer(face, TopAbs_EDGE)
+    while exp.More():
+        edge = topods.Edge(exp.Current())
+        exp.Next()
+        if BRep_Tool.Degenerated(edge):
+            return None
+        tol = max(BRep_Tool.Tolerance(edge), 1e-9 * r)
+        curve = BRepAdaptor_Curve(edge)
+        ctype = curve.GetType()
+        if ctype == GeomAbs_Line:
+            p1 = curve.Value(curve.FirstParameter())
+            p2 = curve.Value(curve.LastParameter())
+            p1 = np.array((p1.X(), p1.Y(), p1.Z()))
+            p2 = np.array((p2.X(), p2.Y(), p2.Z()))
+            if not _is_generatrix(p1, p2, c, a, r, tol):
+                return None
+        elif ctype == GeomAbs_Circle:
+            circ = curve.Circle()
+            c_loc = circ.Position().Location()
+            c_dir = circ.Position().Direction()
+            if not _is_rim(
+                np.array((c_loc.X(), c_loc.Y(), c_loc.Z())),
+                np.array((c_dir.X(), c_dir.Y(), c_dir.Z())),
+                float(circ.Radius()),
+                c,
+                a,
+                r,
+                tol,
+            ):
+                return None
+        else:
+            return None
+    uv = np.asarray(breptools.UVBounds(face), dtype=np.float64)
+    return c, a, x, y, r, sense, uv
 
 
 def _planar_tiles(planar, lo: np.ndarray, hi: np.ndarray):
@@ -3654,6 +3745,7 @@ class _PrefilteredLineSolid:
         row_shape: list = []
         row_planar: list = []
         row_parent: list = []
+        row_cyl: list = []
         row_int_key: list[int] = []
 
         def planar_of(shape):
@@ -3661,6 +3753,8 @@ class _PrefilteredLineSolid:
                 return _planar_row(shape)
             except Exception:  # noqa: BLE001 — the kernel path answers this row
                 return None
+
+        cylinders_in_house = _cylinder_line_hits_enabled()
 
         for fi, face in enumerate(faces):
             planar = planar_of(face) if ori_ok[fi] else None
@@ -3677,6 +3771,7 @@ class _PrefilteredLineSolid:
                     row_shape.append(face)
                     row_planar.append(t_planar)
                     row_parent.append(planar)
+                    row_cyl.append(None)
                     row_int_key.append(-1 - fi)
                 continue
             pieces = (
@@ -3691,6 +3786,9 @@ class _PrefilteredLineSolid:
                 row_shape.append(face)
                 row_planar.append(planar)
                 row_parent.append(planar)
+                row_cyl.append(
+                    _cylinder_row(face) if planar is None and cylinders_in_house else None
+                )
                 row_int_key.append(-1 - fi)
                 continue
             for shape, p_lo, p_hi in pieces:
@@ -3700,6 +3798,7 @@ class _PrefilteredLineSolid:
                 row_shape.append(shape)
                 row_planar.append(planar_of(shape) if ori_ok[fi] else None)
                 row_parent.append(None)
+                row_cyl.append(None)
                 row_int_key.append(len(row_int_key))
         self._row_face = np.asarray(row_face, dtype=np.intp)
         self._row_shape = row_shape
@@ -3708,8 +3807,14 @@ class _PrefilteredLineSolid:
         # ``ON`` along the tile border; the face's rings tell a real
         # outline from a cut).
         self._row_parent = row_parent
+        # Cylindrical faces bounded by their parameter lines: the
+        # quadratic in-house (DD-218), as the planes are (DD-208).
+        self._row_cyl = row_cyl
         self._row_int_key = row_int_key
         self._ints: dict[int, object] = {}
+        self._cyl_w = np.empty(2, dtype=np.float64)
+        self._cyl_step = np.empty(2, dtype=np.int64)
+        self._cyl_untrusted = np.empty(2, dtype=np.bool_)
         if row_shape:
             self._flo = np.asarray(rows_lo, dtype=np.float64)
             self._fhi = np.asarray(rows_hi, dtype=np.float64)
@@ -3731,7 +3836,7 @@ class _PrefilteredLineSolid:
         on first use."""
         packed = self.__dict__.get("_planar_packed")
         if packed is None:
-            packed = _PlanarRows(self._row_planar, self._row_parent)
+            packed = _PlanarRows(self._row_planar, self._row_parent, self._row_cyl)
             self._planar_packed = packed
         return packed
 
@@ -3832,6 +3937,29 @@ class _PrefilteredLineSolid:
                         hits.append((w, 0, True))
                     elif state == 1:
                         hits.append((w, 1 if d * outward < 0.0 else -1, False))
+                continue
+            cyl = self._row_cyl[row] if p0 is not None and direction is not None else None
+            if cyl is not None:
+                c, a, x, y, r, sense, uv = cyl
+                cnt = cylinder_line_hits(
+                    np.asarray(p0, dtype=np.float64),
+                    np.asarray(direction, dtype=np.float64),
+                    c,
+                    a,
+                    x,
+                    y,
+                    r,
+                    sense,
+                    uv,
+                    tol,
+                    self._cyl_w,
+                    self._cyl_step,
+                    self._cyl_untrusted,
+                )
+                for k in range(cnt):
+                    w = float(self._cyl_w[k])
+                    if w_lo <= w <= w_hi:
+                        hits.append((w, int(self._cyl_step[k]), bool(self._cyl_untrusted[k])))
                 continue
             ok = self._ori_ok[self._row_face[row]]
             it = self._intersector(row)
@@ -3981,14 +4109,23 @@ _PROBE_ORDER = np.array([[1, 2, 0], [0, 2, 1], [0, 1, 2]], dtype=np.int64)
 
 
 class _PlanarRows:
-    """Plane data of a solid's rows packed for the compiled hit test."""
+    """Plane and cylinder data of a solid's rows packed for the
+    compiled hit tests."""
 
     __slots__ = (
         "axis",
+        "cyl_a",
+        "cyl_c",
+        "cyl_r",
+        "cyl_sense",
+        "cyl_uv",
+        "cyl_x",
+        "cyl_y",
         "face_hi",
         "face_lo",
         "face_ring_offsets",
         "face_verts",
+        "is_cyl",
         "is_planar",
         "level",
         "outward",
@@ -3998,8 +4135,30 @@ class _PlanarRows:
         "verts",
     )
 
-    def __init__(self, row_planar, row_parent=None):
+    def __init__(self, row_planar, row_parent=None, row_cyl=None):
         n = len(row_planar)
+        self.is_cyl = np.zeros(n, dtype=np.bool_)
+        self.cyl_c = np.zeros((n, 3), dtype=np.float64)
+        self.cyl_a = np.zeros((n, 3), dtype=np.float64)
+        self.cyl_x = np.zeros((n, 3), dtype=np.float64)
+        self.cyl_y = np.zeros((n, 3), dtype=np.float64)
+        self.cyl_r = np.ones(n, dtype=np.float64)
+        self.cyl_sense = np.ones(n, dtype=np.float64)
+        self.cyl_uv = np.zeros((n, 4), dtype=np.float64)
+        if row_cyl is not None:
+            for r, cyl in enumerate(row_cyl):
+                if cyl is None:
+                    continue
+                self.is_cyl[r] = True
+                (
+                    self.cyl_c[r],
+                    self.cyl_a[r],
+                    self.cyl_x[r],
+                    self.cyl_y[r],
+                    self.cyl_r[r],
+                    self.cyl_sense[r],
+                    self.cyl_uv[r],
+                ) = cyl
         self.is_planar = np.zeros(n, dtype=np.bool_)
         self.axis = np.full(n, -1, dtype=np.int64)
         self.level = np.zeros(n, dtype=np.float64)
@@ -4091,6 +4250,11 @@ class _LineTable:
         self.hit_row = np.empty(0, dtype=np.int64)
         self.cross_offsets = np.zeros(1, dtype=np.int64)
         self.cross_w = np.empty(0, dtype=np.float64)
+        # Trusted tangential hits (a line touching a curved face): not
+        # crossings, but a point within tolerance of one is on the
+        # surface — the classifier's ``ON``.
+        self.touch_offsets = np.zeros(1, dtype=np.int64)
+        self.touch_w = np.empty(0, dtype=np.float64)
 
     def resolve(self, ax, pu, pv, origin) -> np.ndarray:
         """Line ids of the given ``(ax, pu, pv)`` keys, adding the
@@ -4140,6 +4304,8 @@ class _LineTable:
         ok = line_flags(offsets, step, untrusted)
         crossing = step != 0
         cross_counts = np.bincount(line[crossing], minlength=n_new)
+        touch = (step == 0) & ~untrusted
+        touch_counts = np.bincount(line[touch], minlength=n_new)
         self.ax = np.concatenate([self.ax, ax])
         self.pu = np.concatenate([self.pu, pu])
         self.pv = np.concatenate([self.pv, pv])
@@ -4154,6 +4320,10 @@ class _LineTable:
             [self.cross_offsets, self.cross_offsets[-1] + np.cumsum(cross_counts)]
         )
         self.cross_w = np.concatenate([self.cross_w, w[crossing]])
+        self.touch_offsets = np.concatenate(
+            [self.touch_offsets, self.touch_offsets[-1] + np.cumsum(touch_counts)]
+        )
+        self.touch_w = np.concatenate([self.touch_w, w[touch]])
 
     def _hits(self, ax, pu, pv, origin):
         """Hits of new lines (local ids) on every row their transverse
@@ -4167,14 +4337,16 @@ class _LineTable:
         steps: list[np.ndarray] = []
         unts: list[np.ndarray] = []
         rows: list[np.ndarray] = []
+        planar = pf.planar_arrays()
         if _PLANAR_ROW_HITS:
-            planar = pf.planar_arrays()
             in_house = planar.is_planar[pair_row]
             normal = in_house & (planar.axis[pair_row] == ax[pair_line])
             kernel = ~in_house
         else:
             normal = np.zeros(pair_line.size, dtype=np.bool_)
             kernel = np.ones(pair_line.size, dtype=np.bool_)
+        curved = planar.is_cyl[pair_row]
+        kernel &= ~curved
         if normal.any():
             pl, prow = pair_line[normal], pair_row[normal]
             w, step, untrusted, valid = planar_pair_hits(
@@ -4196,6 +4368,28 @@ class _LineTable:
             steps.append(step[valid])
             unts.append(untrusted[valid])
             rows.append(prow[valid])
+        if curved.any():
+            cl, crow, w, step, untrusted = cylinder_pair_hits(
+                pair_line[curved],
+                pair_row[curved],
+                ax,
+                pu,
+                pv,
+                origin,
+                planar.cyl_c,
+                planar.cyl_a,
+                planar.cyl_x,
+                planar.cyl_y,
+                planar.cyl_r,
+                planar.cyl_sense,
+                planar.cyl_uv,
+                tol,
+            )
+            lines.append(cl)
+            ws.append(w)
+            steps.append(step)
+            unts.append(untrusted)
+            rows.append(crow)
         if kernel.any():
             kl, kr = pair_line[kernel], pair_row[kernel]
             order = np.argsort(kl, kind="stable")
@@ -4265,9 +4459,9 @@ class _LineTable:
 
     def classify_point(self, point, axes_order):
         """Classifier semantics from the table's lines for one point: a
-        point within tolerance of a crossing sits on the boundary
-        (``ON`` → PEC side, i.e. inside); otherwise crossing parity
-        decides.  With no parity on any probe line the boundary rule
+        point within tolerance of a crossing or of a trusted tangential
+        hit sits on the boundary (``ON`` → PEC side, i.e. inside);
+        otherwise crossing parity decides.  With no parity on any probe line the boundary rule
         (:meth:`on_boundary`) is tried over them.  Returns True =
         outside, False = inside, None = undecided."""
         lines = []
@@ -4284,7 +4478,14 @@ class _LineTable:
             lines.append((line, w_rel))
             state = int(
                 classify_on_lines(
-                    line, w_rel, self.cross_offsets, self.cross_w, self.ok, self._tol
+                    line,
+                    w_rel,
+                    self.cross_offsets,
+                    self.cross_w,
+                    self.touch_offsets,
+                    self.touch_w,
+                    self.ok,
+                    self._tol,
                 )[0]
             )
             if state == 2:
@@ -4469,7 +4670,14 @@ def compute_edge_pec_fractions(
                 probe_line = table.resolve(probe_ax, pu, pv, origin)
                 w_rel = origin - table.origin[probe_line]
                 state = classify_on_lines(
-                    probe_line, w_rel, table.cross_offsets, table.cross_w, table.ok, tolerance
+                    probe_line,
+                    w_rel,
+                    table.cross_offsets,
+                    table.cross_w,
+                    table.touch_offsets,
+                    table.touch_w,
+                    table.ok,
+                    tolerance,
                 )
                 decided = state != 2
                 outside[pending[decided]] = state[decided] == 0

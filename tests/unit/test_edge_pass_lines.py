@@ -196,19 +196,138 @@ def test_edge_fractions_with_and_without_in_house_hits(monkeypatch):
     assert 0.0 < in_house.mean() < 1.0
 
 
-def test_curved_rows_stay_with_the_kernel(monkeypatch):
+def _post():
     post = geo.Cylinder(origin=(MM, MM, 0), radius=0.4 * MM, height=MM, axis="z", material="pec")
-    occ = post._occ_shape(1.0)
+    return post._occ_shape(1.0)
+
+
+def test_cylinder_rows_reproduce_the_kernel_off_the_special_lines(monkeypatch):
+    occ = _post()
     solid = backend._PrefilteredLineSolid(occ, TOL)
-    assert all(r is None for r in solid._row_planar)
+    assert all(r is None for r in solid._row_planar)  # the caps have circular outlines
+    assert sum(c is not None for c in solid._row_cyl) == 1
+    rng = np.random.default_rng(7)
+    checked = 0
+    for _ in range(300):
+        ax = int(rng.integers(3))
+        p0 = rng.uniform((0.0, 0.0, -0.2 * MM), (2 * MM, 2 * MM, 1.2 * MM))
+        p0[ax] = 0.0
+        got = _hits(solid, p0, ax, True, monkeypatch)
+        monkeypatch.setattr(backend, "_CYLINDER_ROW_HITS", False)
+        ref = _hits(backend._PrefilteredLineSolid(occ, TOL), p0, ax, True, monkeypatch)
+        monkeypatch.setattr(backend, "_CYLINDER_ROW_HITS", True)
+        # Kernel hits on the seam (u = 0, +x of the axis) read ON there
+        # and a line grazing the post is the kernel's coin toss — the
+        # in-house answers for both are tested below.
+        if any(u for _, _, u in ref) or len(ref) != len(got):
+            continue
+        checked += 1
+        for (w1, s1, u1), (w2, s2, u2) in zip(got, ref, strict=True):
+            assert abs(w1 - w2) < 1e-12 and s1 == s2 and u1 == u2, (p0, ax, got, ref)
+    assert checked > 150
+
+
+def test_cylinder_rows_give_the_edge_fractions_of_the_kernel(monkeypatch):
+    occ = _post()
     x = np.linspace(0, 2 * MM, 9)
     z = np.array([-0.2 * MM, 0.3 * MM, 0.8 * MM, 1.2 * MM])
     edges = np.concatenate([_grid_edges(x, x, z, axis) for axis in range(3)])
     in_house = backend.compute_edge_pec_fractions([occ], edges, TOL)
-    monkeypatch.setattr(backend, "_PLANAR_ROW_HITS", False)
+    monkeypatch.setattr(backend, "_CYLINDER_ROW_HITS", False)
     kernel = backend.compute_edge_pec_fractions([occ], edges, TOL)
     assert np.allclose(in_house, kernel, atol=1e-12, rtol=0)
     assert 0.0 < in_house.mean() < 1.0
+
+
+def test_cylinder_seam_tangent_and_rim_hits(monkeypatch):
+    occ = _post()
+    solid = backend._PrefilteredLineSolid(occ, TOL)
+    c, r = MM, 0.4 * MM
+    # Through the axis along +x: enters at c − r, leaves at the seam
+    # c + r — a clean crossing (the kernel reads ON on its seam).
+    hits = _hits(solid, (0.0, c, 0.5 * MM), 0, True, monkeypatch)
+    assert [(round(w, 12), s, u) for w, s, u in hits] == [
+        (round(c - r, 12), 1, False),
+        (round(c + r, 12), -1, False),
+    ]
+    # Grazing the post at x = c + r: one trusted tangential hit mid-height,
+    # an untrusted one on the rim.
+    assert _hits(solid, (c + r, 0.0, 0.5 * MM), 1, True, monkeypatch) == [(c, 0, False)]
+    assert _hits(solid, (c + r, 0.0, MM), 1, True, monkeypatch) == [(c, 0, True)]
+    # Crossing at rim height: ON on both sides.
+    assert [(s, u) for _, s, u in _hits(solid, (0.0, c, MM), 0, True, monkeypatch)] == [
+        (0, True),
+        (0, True),
+    ]
+    # Parallel to the axis — in the surface, inside or beside it: no hit
+    # from the cylindrical row (the caps answer such lines).
+    (row,) = [i for i, cyl in enumerate(solid._row_cyl) if cyl is not None]
+    for x0 in (c + r, c, c + 2 * r):
+        line, dvec = _line((x0, c, 0.0), 2)
+        p0 = np.array([x0, c, 0.0])
+        assert solid.flagged_hits([row], line, -np.inf, np.inf, p0, dvec) == []
+
+
+def test_points_touched_by_a_probe_line_are_on_the_boundary():
+    occ = _post()
+    table = backend._LineTable(backend._PrefilteredLineSolid(occ, TOL), TOL)
+    c, r = MM, 0.4 * MM
+    # (c, c + r): the x probe line grazes the post there — the trusted
+    # tangential hit puts the point on the boundary, i.e. inside.
+    assert table.classify_point(np.array([c, c + r, 0.5 * MM]), [0, 1, 2]) is False
+    assert table.classify_point(np.array([c, c + r + 2e-8, 0.5 * MM]), [0, 1, 2]) is True
+    assert table.classify_point(np.array([c, c + r - 2e-8, 0.5 * MM]), [0, 1, 2]) is False
+    # An edge lying in the surface is a PEC edge (the classifier's ON
+    # along its whole length).
+    edges = np.array(
+        [[[c - r, c, 0.2 * MM], [c - r, c, 0.6 * MM]], [[c, c + r, 0.2 * MM], [c, c + r, 0.6 * MM]]]
+    )
+    assert np.array_equal(backend.compute_edge_pec_fractions([occ], edges, TOL), [0.0, 0.0])
+
+
+def test_partial_cylinders_are_admitted_and_pierced_ones_are_not(monkeypatch):
+    sector = geo.Cylinder(
+        origin=(MM, MM, 0),
+        radius=0.4 * MM,
+        height=MM,
+        axis="z",
+        angle_deg=(30.0, 250.0),
+        material="pec",
+    )
+    occ = sector._occ_shape(1.0)
+    solid = backend._PrefilteredLineSolid(occ, TOL)
+    assert sum(c is not None for c in solid._row_cyl) == 1
+    (cyl,) = [c for c in solid._row_cyl if c is not None]
+    assert cyl[6][1] - cyl[6][0] < 2 * np.pi - 1e-6
+    rng = np.random.default_rng(11)
+    checked = 0
+    for _ in range(300):
+        ax = int(rng.integers(3))
+        p0 = rng.uniform((0.0, 0.0, -0.2 * MM), (2 * MM, 2 * MM, 1.2 * MM))
+        p0[ax] = 0.0
+        got = _hits(solid, p0, ax, True, monkeypatch)
+        monkeypatch.setattr(backend, "_CYLINDER_ROW_HITS", False)
+        ref = _hits(backend._PrefilteredLineSolid(occ, TOL), p0, ax, True, monkeypatch)
+        monkeypatch.setattr(backend, "_CYLINDER_ROW_HITS", True)
+        if any(u for _, _, u in ref) or len(ref) != len(got):
+            continue
+        checked += 1
+        for (w1, s1, u1), (w2, s2, u2) in zip(got, ref, strict=True):
+            assert abs(w1 - w2) < 1e-12 and s1 == s2 and u1 == u2, (p0, ax, got, ref)
+    assert checked > 150
+    # A hit on the generatrix boundary of the sector is ON.
+    u0 = np.radians(30.0)
+    x0, y0 = MM + 0.4 * MM * np.cos(u0), MM + 0.4 * MM * np.sin(u0)
+    hits = _hits(solid, (x0, y0, 0.0), 2, True, monkeypatch)
+    hits_cyl = [h for h in hits]  # caps + cylinder: every hit ON
+    assert hits_cyl and all(u for _, _, u in hits_cyl), hits
+    # A post pierced by a hole: the cylindrical faces are bounded by
+    # intersection curves — kernel rows.
+    hole = geo.Cylinder(origin=(0, MM, 0.5 * MM), radius=0.1 * MM, height=2 * MM, axis="x")
+    pierced = geo.Difference(
+        geo.Cylinder(origin=(MM, MM, 0), radius=0.4 * MM, height=MM, axis="z"), hole, material="pec"
+    )._occ_shape(1.0)
+    assert all(c is None for c in backend._PrefilteredLineSolid(pierced, TOL)._row_cyl)
 
 
 def test_planar_tiles_keep_the_parity_of_the_face():
@@ -328,7 +447,8 @@ def test_line_flags_and_classification_follow_the_sequential_rules():
     ok = np.array([True, False])
     pts = np.array([0, 0, 0, 0, 0, 1])
     w = np.array([0.5, 2.0, 3.5, 1.0 + 5e-10, 3.0 - 5e-10, 0.0])
-    state = classify_on_lines(pts, w, cross_offsets, cross_w, ok, 1e-9)
+    touch_offsets = np.zeros(3, dtype=np.int64)
+    state = classify_on_lines(pts, w, cross_offsets, cross_w, touch_offsets, np.empty(0), ok, 1e-9)
     # outside, inside, outside, ON → inside, ON → inside, undecided
     assert state.tolist() == [0, 1, 0, 1, 1, 2]
 

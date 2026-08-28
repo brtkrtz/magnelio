@@ -11,6 +11,12 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- The edge pass of the mesh build intersects its grid lines with
+  cylindrical faces — posts, pins, vias, holes — in closed form
+  instead of through the geometry kernel's line–face intersector, and
+  a point that a probe line merely touches on a curved conductor now
+  counts as lying on it.  A row of 240 PEC posts meshes in 6.6 s
+  instead of 8.5 s; meshes change only in the last bits.
 - Planes through cylindrical faces — posts, pins, vias, holes, round
   wires, fillets — are sectioned by the mesher's own engine instead of
   the geometry kernel's Boolean: the crossing points of the rim circles

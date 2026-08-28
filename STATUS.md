@@ -13,7 +13,7 @@ parity — hollow conductors had lost the conformal correction at their
 inner walls (KB-031); how-to *coupled-line coupler* and tutorial 19
 *offset Cassegrain* (rendered, not executed; figures of a measured run
 embedded), every gallery 3D view carries an "Interactive Scene" tab,
-GitHub Discussions is the feedback channel.  Unit suite 2577 passed /
+GitHub Discussions is the feedback channel.  Unit suite 2587 passed /
 4 skipped; integration suite 402 passed / 5 skipped (2026-08-28)
 (edge-pass tangency rule, coax re-pin) and the KB-011 fixture re-pin
 (DD-199 fallout closed 2026-08-27; both unreleased on `main`).
@@ -341,36 +341,39 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
 * **Mesh-build speed.**  DD-101/102 (edge prefilter, planar section
   engine) took the slotline coupler 142 → 14 s; DD-141 admits the
   section pool on a measured sample; DD-199 gave free-form faces the
-  facet path; the 2026-08-27/28 campaign DD-202…DD-217 moved the
+  facet path; the 2026-08-27/28 campaign DD-202…DD-218 moved the
   thin-sheet rasteriser, the planar fuse and PEC solid, the point
   probes and overlap check, the degenerate-plane side step, the edge
   pass (carrier lines, batch), the plane fuse tree and tiles, the
   area passes' loops, the construction-aware Booleans, the series-ε
   pass, the rectilinear cap union and the engine bookkeeping off the
-  kernel and out of Python loops; DD-217 puts cylindrical faces and
-  circular edges into the section engine (exact generatrices / conic,
-  the kernel's 5°/δ tessellation) — cones, spheres, tori and cylinders
-  trimmed by other curves keep the kernel, `MAGNELIO_CYLINDER_SECTIONS=0`
-  for A/B.  Ladder (`benchmarks/bench_mesh_build.py`, CPU, `auto`
-  pool): 16 Lange couplers (3.7 M cells) 16.9 s, 240 posts (385 k)
-  8.0 s, 4 × 4 patch array with feed (222 k cells) 1.1 s, 8 × 8 (664 k)
-  3.2 s, 16 × 16 (1.8 M, off-ladder) 12.6 s; the edge pass is ≤ 2 % of
-  every planar row, the plane fuse ≤ 1 s everywhere, the pool fires on
-  no ladder row, and no row delegates more than the seam plane of its
-  cylinders to the kernel.  Open, in value order: (1) the post row's
-  remaining terms — `edge_fractions` 2.1 s (`IntCurvesFace` line
-  probes against the cylinders: the line × cylinder analogue of
-  DD-217), the area passes' 4 s (the per-face Python loop of
-  `_cylinder_pairs`, 240 faces × 26 planes; classifier and µ pass
-  sectioning the same cell-centre planes through separate caches);
-  (2) the section engine's per-plane `section` (35 824 calls × 45 µs
-  on Lange 16 plus a Python chain walk) — batch all planes of an axis
-  per engine; (3) the N-ary fuse of the raised metal pieces
-  (`pec_fuse` 1.5 s on the 16 × 16 array, `fuse` 2.0 s on Lange 16);
-  (4) the thin-sheet rasteriser's section (1.3 of `sheets` 1.8 s on
-  the 16 × 16 array); (5) spheres and cones in the engine once a
-  ladder row shows them.  Trap: bench columns nest — rank from
-  `probe_pass_breakdown.py`.
+  kernel and out of Python loops; DD-217 sections cylindrical faces
+  exactly in the engine and DD-218 intersects grid lines with them in
+  closed form (`_cylinder_row`, tangential hits count as `ON`) —
+  cones, spheres, tori and cylinders trimmed by other curves keep the
+  kernel, `MAGNELIO_CYLINDER_SECTIONS=0` /
+  `MAGNELIO_CYLINDER_LINE_HITS=0` for A/B.  Ladder
+  (`benchmarks/bench_mesh_build.py`, CPU, `auto` pool): 16 Lange
+  couplers (3.7 M cells) 17.2 s, 240 posts (385 k) 6.1 s, 4 × 4 patch
+  array with feed (222 k cells) 1.1 s, 8 × 8 (664 k) 3.3 s, 16 × 16
+  (1.8 M, off-ladder) 12.6 s; the edge pass is ≤ 2 % of every planar
+  row and 11 % of the post row, the plane fuse ≤ 1 s everywhere, the
+  pool fires on no ladder row, and no row delegates more than the seam
+  plane of its cylinders to the kernel.  Open, in value order: (1) the
+  post row's remaining terms — the 480 disc caps (planar faces with a
+  circular outline, which `_planar_row` declines: 49 k kernel line
+  probes, 0.6 s) and the area passes' per-plane Python
+  (`_cylinder_face_pairs`, `_screen`, `orient_nested_contours`,
+  `_chains_to_polygons`, `_planar_pairs` — 3.7 s of 6.1); (2) the
+  section engine's per-plane `section` (35 824 calls × 45 µs on Lange
+  16 plus a Python chain walk) — batch all planes of an axis per
+  engine; (3) the N-ary fuse of the raised metal pieces (`pec_fuse`
+  1.5 s on the 16 × 16 array, `fuse` 2.1 s on Lange 16); (4) the
+  thin-sheet rasteriser's section (1.3 of `sheets` 1.7 s on the
+  16 × 16 array); (5) spheres and cones in the engine and the line
+  table once a ladder row shows them.  Traps: bench columns nest —
+  rank from `probe_pass_breakdown.py`; "repeated" sections across
+  passes are the same planes on different shapes, not cache misses.
 
 Closed construction sites are tombstoned where they were decided (the
 DD entry and `known-bugs.md`) and are not repeated here.

@@ -1,4 +1,4 @@
-"""Kernels of the edge pass: axis-aligned line candidates and planar hits.
+"""Kernels of the edge pass: axis-aligned line candidates, planar and cylindrical hits.
 
 ``njit`` is a no-op decorator when Numba is unavailable; the kernels are
 plain loops and give the same results either way.
@@ -281,6 +281,190 @@ def planar_pair_hits(
 
 
 @njit(cache=True)
+def cylinder_line_hits(p0, d, c, a, x, y, r, sense, uv, tol, out_w, out_step, out_untrusted):
+    """Hits of the line ``p0 + w d`` (``d`` a unit vector) on a
+    cylindrical face bounded by its own parameter lines — the in-house
+    counterpart of the kernel's intersector for the rows of
+    :class:`~magnelio.geo._occ_backend._PrefilteredLineSolid` that
+    carry cylinder data.
+
+    The face is P(u, v) = c + r (cos u X + sin u Y) + v A with the
+    outward radial ``sense`` and the (u, v) box ``uv``; a full round
+    (``uv[1] - uv[0] >= 2π``) has no seam boundary.  Writes up to two
+    ``(w, step, untrusted)`` triples into the ``out_*`` arrays and
+    returns their count: the roots of |q⊥ + w d⊥|² = r² (q = p0 − c,
+    ⊥ the component normal to the axis), each kept when its (u, v)
+    lies in the face — within ``tol`` (geometric: ``tol / r`` in u) of
+    a rim or a generatrix boundary it is the kernel's ``ON``, i.e.
+    untrusted.  The step is the sign of the outward normal against
+    ``d`` (+1 entering the solid); a line touching the surface (its
+    distance to the axis within ``tol`` of ``r``) reports one
+    tangential hit, step 0; a line parallel to the axis — in the
+    surface, inside or beside it — reports none, as the kernel does
+    for a line in a planar row.
+    """
+    two_pi = 2.0 * np.pi
+    q0 = p0[0] - c[0]
+    q1 = p0[1] - c[1]
+    q2 = p0[2] - c[2]
+    qa = q0 * a[0] + q1 * a[1] + q2 * a[2]
+    da = d[0] * a[0] + d[1] * a[1] + d[2] * a[2]
+    qp0 = q0 - qa * a[0]
+    qp1 = q1 - qa * a[1]
+    qp2 = q2 - qa * a[2]
+    dp0 = d[0] - da * a[0]
+    dp1 = d[1] - da * a[1]
+    dp2 = d[2] - da * a[2]
+    aa = dp0 * dp0 + dp1 * dp1 + dp2 * dp2
+    if aa <= 1e-24:
+        return 0
+    bb = qp0 * dp0 + qp1 * dp1 + qp2 * dp2
+    # Distance of the line to the axis, from the perpendicular foot
+    # (q⊥ − (q⊥·d⊥) d⊥ / |d⊥|²) — well conditioned where the
+    # discriminant b² − a c cancels on a touching line.
+    t_foot = bb / aa
+    f0 = qp0 - t_foot * dp0
+    f1 = qp1 - t_foot * dp1
+    f2 = qp2 - t_foot * dp2
+    dist = np.sqrt(f0 * f0 + f1 * f1 + f2 * f2)
+    n_roots = 0
+    w_a = 0.0
+    w_b = 0.0
+    if abs(dist - r) <= tol:
+        n_roots = 1
+        w_a = -t_foot
+    elif dist < r:
+        half = np.sqrt((r - dist) * (r + dist) / aa)
+        n_roots = 2
+        w_a = -t_foot - half
+        w_b = -t_foot + half
+    else:
+        return 0
+    umin = uv[0]
+    umax = uv[1]
+    vmin = uv[2]
+    vmax = uv[3]
+    span = umax - umin
+    full = span >= two_pi - 1e-9
+    tol_u = tol / r
+    n_out = 0
+    for k in range(n_roots):
+        w = w_a if k == 0 else w_b
+        rel0 = q0 + w * d[0]
+        rel1 = q1 + w * d[1]
+        rel2 = q2 + w * d[2]
+        v = rel0 * a[0] + rel1 * a[1] + rel2 * a[2]
+        if v < vmin - tol or v > vmax + tol:
+            continue
+        on = v <= vmin + tol or v >= vmax - tol
+        if not full:
+            ru = rel0 * x[0] + rel1 * x[1] + rel2 * x[2]
+            rv = rel0 * y[0] + rel1 * y[1] + rel2 * y[2]
+            du = np.arctan2(rv, ru) - umin
+            du = du - two_pi * np.floor(du / two_pi)
+            if du >= two_pi - tol_u:
+                du -= two_pi
+            if du < -tol_u or du > span + tol_u:
+                continue
+            if du <= tol_u or du >= span - tol_u:
+                on = True
+        out_w[n_out] = w
+        if on:
+            out_step[n_out] = 0
+            out_untrusted[n_out] = True
+        elif n_roots == 1:
+            out_step[n_out] = 0
+            out_untrusted[n_out] = False
+        else:
+            # Outward normal = sense · (rel − v A) / r; entering where it
+            # points against the line direction.
+            dn = (
+                d[0] * (rel0 - v * a[0]) + d[1] * (rel1 - v * a[1]) + d[2] * (rel2 - v * a[2])
+            ) * sense
+            out_step[n_out] = 1 if dn < 0.0 else -1
+            out_untrusted[n_out] = False
+        n_out += 1
+    return n_out
+
+
+@njit(cache=True)
+def cylinder_pair_hits(
+    pair_line,
+    pair_row,
+    line_ax,
+    line_pu,
+    line_pv,
+    line_origin,
+    row_c,
+    row_a,
+    row_x,
+    row_y,
+    row_r,
+    row_sense,
+    row_uv,
+    tol,
+):
+    """In-house hits of axis-aligned lines on cylindrical rows —
+    :func:`cylinder_line_hits` for every ``(line, row)`` pair, the
+    line through ``(pu, pv)`` along its axis with parameters relative
+    to its origin coordinate.  Returns ``(line, row, w, step,
+    untrusted)`` of the hits found, in pair order.
+    """
+    n = pair_line.shape[0]
+    line_out = np.empty(2 * n, dtype=np.int64)
+    row_out = np.empty(2 * n, dtype=np.int64)
+    w_out = np.empty(2 * n, dtype=np.float64)
+    step_out = np.empty(2 * n, dtype=np.int64)
+    unt_out = np.empty(2 * n, dtype=np.bool_)
+    p0 = np.empty(3, dtype=np.float64)
+    d = np.zeros(3, dtype=np.float64)
+    tmp_w = np.empty(2, dtype=np.float64)
+    tmp_step = np.empty(2, dtype=np.int64)
+    tmp_unt = np.empty(2, dtype=np.bool_)
+    m = 0
+    for k in range(n):
+        line = pair_line[k]
+        row = pair_row[k]
+        ax = line_ax[line]
+        if ax == 0:
+            u, v = 1, 2
+        elif ax == 1:
+            u, v = 0, 2
+        else:
+            u, v = 0, 1
+        p0[ax] = line_origin[line]
+        p0[u] = line_pu[line]
+        p0[v] = line_pv[line]
+        d[0] = 0.0
+        d[1] = 0.0
+        d[2] = 0.0
+        d[ax] = 1.0
+        cnt = cylinder_line_hits(
+            p0,
+            d,
+            row_c[row],
+            row_a[row],
+            row_x[row],
+            row_y[row],
+            row_r[row],
+            row_sense[row],
+            row_uv[row],
+            tol,
+            tmp_w,
+            tmp_step,
+            tmp_unt,
+        )
+        for j in range(cnt):
+            line_out[m] = line
+            row_out[m] = row
+            w_out[m] = tmp_w[j]
+            step_out[m] = tmp_step[j]
+            unt_out[m] = tmp_unt[j]
+            m += 1
+    return line_out[:m], row_out[:m], w_out[:m], step_out[:m], unt_out[:m]
+
+
+@njit(cache=True)
 def line_flags(hit_offsets, hit_step, hit_untrusted):
     """Whether a line's sorted hits anchor parity: no untrusted hit,
     crossings alternate and the first one enters the solid."""
@@ -458,10 +642,11 @@ def axis_edge_fractions(
 
 
 @njit(cache=True)
-def classify_on_lines(pt_line, w_rel, cross_offsets, cross_w, line_ok, tol):
+def classify_on_lines(pt_line, w_rel, cross_offsets, cross_w, touch_offsets, touch_w, line_ok, tol):
     """State of points on their probe lines: ``0`` outside, ``1``
-    inside (within ``tol`` of a crossing counts as inside — the
-    classifier's ``ON``), ``2`` undecided (the line has no parity)."""
+    inside (within ``tol`` of a crossing or of a trusted tangential
+    hit counts as inside — the classifier's ``ON``), ``2`` undecided
+    (the line has no parity)."""
     n = pt_line.shape[0]
     state = np.empty(n, dtype=np.int64)
     for i in range(n):
@@ -473,7 +658,12 @@ def classify_on_lines(pt_line, w_rel, cross_offsets, cross_w, line_ok, tol):
         b = cross_offsets[line + 1]
         w = w_rel[i]
         pos = _bisect_left(cross_w, w - tol, a, b)
+        ta = touch_offsets[line]
+        tb = touch_offsets[line + 1]
+        tpos = _bisect_left(touch_w, w - tol, ta, tb)
         if pos < b and cross_w[pos] <= w + tol:
+            state[i] = 1
+        elif tpos < tb and touch_w[tpos] <= w + tol:
             state[i] = 1
         else:
             k = _bisect_right(cross_w, w, a, b) - a
