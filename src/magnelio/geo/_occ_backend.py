@@ -2852,10 +2852,15 @@ def build_effective_pec_solid(
 ):
     """Build the effective PEC solid respecting last-wins CSG ordering.
 
-    A PEC shape contributes its volume minus every higher-priority shape
-    (later in the list) that can reach it — one N-ary cut against the
-    shapes whose bounding boxes touch its own — and the contributions
-    are fused in one pass.  The former loop subtracted the *accumulated*
+    A PEC shape contributes its volume minus every higher-priority
+    non-PEC shape (later in the list) that can reach it — one N-ary cut
+    against the shapes whose bounding boxes touch its own — and the
+    contributions are fused in one pass.  A higher PEC shape is not a
+    tool: it is in the union anyway, so cutting it out first changes
+    nothing but costs a Boolean per pair (the PEC background brick of
+    a housing was cut by every one of 320 metal pieces, 3.5 s of a
+    4.7 s build step, for a solid the air body alone defines).  The
+    former loop subtracted the *accumulated*
     union of all higher shapes from each PEC shape and grew that union
     pairwise, so a row of 320 metal pieces cost 36 s where this takes
     1.1 s for the same solid (same volume, same face count).
@@ -2888,7 +2893,9 @@ def build_effective_pec_solid(
         higher = [
             occ_shapes[j]
             for j in range(i + 1, len(occ_shapes))
-            if np.all(boxes[j, 3:] >= lo - gap) and np.all(boxes[j, :3] <= hi + gap)
+            if not material_library[shapes_with_material[j][1]].is_pec
+            and np.all(boxes[j, 3:] >= lo - gap)
+            and np.all(boxes[j, :3] <= hi + gap)
         ]
         contributions.append(
             boolean_difference_many(occ_shapes[i], higher) if higher else occ_shapes[i]
@@ -6766,6 +6773,7 @@ def check_pairwise_overlaps(
     tolerance: float | None = None,
     materials: list | None = None,
     scale: float = 1.0,
+    disjoint: set[tuple[int, int]] | None = None,
 ) -> list[tuple[int, int, float]]:
     """Check all shape pairs for volumetric overlap.
 
@@ -6800,6 +6808,13 @@ def check_pairwise_overlaps(
         overlap is physically unambiguous (the overlap region gets that
         material either way), so it is allowed and costs no intersection
         computation.  ``None`` (default) reports every overlap.
+    disjoint : set of (int, int) or None
+        Index pairs ``(i, j)``, ``i < j``, known to be disjoint by
+        construction — a ``Difference`` and one of its own tools — and
+        skipped before the Boolean.  The air body of a housing is cut
+        by every metal piece in it, and its one batch Common against
+        all of them (2 118 faces against 320 tools, 3 s on a row of 16
+        couplers) proved what the construction already says.
 
     Returns
     -------
@@ -6832,6 +6847,8 @@ def check_pairwise_overlaps(
         meets = np.all(lo[i] < hi[i + 1 :], axis=1) & np.all(lo[i + 1 :] < hi[i], axis=1)
         for j in (np.flatnonzero(meets) + i + 1).tolist():
             if materials is not None and materials[i] == materials[j]:
+                continue
+            if disjoint is not None and (i, j) in disjoint:
                 continue
             partners[i].add(j)
             partners[j].add(i)
