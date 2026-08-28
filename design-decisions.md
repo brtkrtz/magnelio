@@ -15154,3 +15154,108 @@ item 2).
 (`TestFuseFacesTree`), `tests/unit/test_thin_sheet_footprint.py`
 (`test_contour_mask_windows_match_the_full_grid`),
 `benchmarks/results/bench_mesh_build.json` (re-run).
+
+## DD-210 — Heavy planar faces enter a section as tiles; contour winding is vectorised
+
+**Status:** Decided and implemented 2026-08-28, branch `perf/slab-face-pieces`.
+DD-209's open item "the post row is pool-bound".
+
+**Problem.**  STATUS carried the post row (240 posts, 385 k cells, 36 s
+`auto`) as pool-bound: "the prefill's 20 s are half the build".
+Profiled (internal dossier `investigations/mesh-build-bench/probe_pool_posts.py`,
+M13), the 20 s decomposed into two pool spawns of 5.2 s (one pool per
+ε and µ pass), a `map` slower per task than the parent (8.7 vs 7.4 ms
+on 8 workers), and 6 s of parent-side "annotate" — and the pool was
+accelerating sections that should not have cost what they cost.  Two
+findings:
+
+1. **One face is the body.**  The slab compound of DD-207 hands a
+   plane across the row six faces of the air body — but 254 edges,
+   because the floor carries the outline of all 240 post pockets (244
+   edges).  A raw `BRepAlgoAPI_Section`: all six candidates 6.67 ms,
+   without the floor 0.88 ms, the floor alone 6.19 ms.  The kernel's
+   cost is the sub-shape count of its argument, and a face with every
+   feature outline on it *is* the body's sub-shape count.  3 120 such
+   sections per build: 23 of the 31 s of kernel sections.  The class
+   is general — any ground plane, floor or lid under a field of
+   features (DD-207's Lange air body: "the z = h face carries every
+   pocket outline").
+2. **The pair loop.**  `orient_nested_contours` compared every pair of
+   contours in Python; the z-section of the air body has 241 contours,
+   57 840 pairs, 283 ms — 26 such sections along the row, 6–7 s in
+   both pool arms (in the pooled arm it showed as the parent's
+   "annotate").
+
+**Decision.**
+
+1. `_FaceSlabIndex` tiles heavy faces on first demand.  A planar,
+   axis-aligned face with at least `_SLAB_TILE_MIN_EDGES` (24) edges is
+   cut by one `BRepAlgoAPI_Splitter` into a `ku × kv` grid of tiles
+   along its in-plane axes (counts from the edge count and the aspect,
+   as the edge pass's classification pieces; cut lines phase-shifted
+   off the equal-split fractions so they do not sit on a layout's own
+   rational positions).  The floor of the post row: 31 strips, 42 ms.
+   Tiling is lazy — a face is tiled the first time `restrict` selects
+   it — so bodies the planar engine answers (the arrays' caps with
+   1 787 vertices) never pay for it.
+2. `restrict` substitutes a tile for its face **only when exactly one
+   tile reaches the plane within the tolerance pad and no cut line of
+   that axis lies within the pad**; a plane on or near a cut, one that
+   crosses several tiles (every plane along the row), and one parallel
+   to the face take the whole face as before.  Inside one tile the
+   section line meets only edges the face has itself, or parts of
+   them, so a cut line never becomes a section edge and the contours
+   are bit-identical — measured on the post row for 8, 16, 32 and 64
+   strips, and on 174 x-planes including planes on and 5e-8 / 3e-7
+   from every cut line (`tests/unit/test_section_slab_index.py::TestTiledFaces`).
+3. `orient_nested_contours` does its coincidence and containment box
+   tests with NumPy in row blocks (bounded temporaries) and runs the
+   point-in-polygon vote only for nested pairs — 241 of 57 840 on the
+   floor section; 290 → 6 ms, output identical on 300 random nested
+   sets and on the row's sections (`tests/unit/test_section_contour_orientation.py`).
+4. The DD-141 admission sample projects the remainder **per axis**,
+   and samples every axis at least twice.  With the floor tiled the
+   post row's true remainder is 5–6 s (20 planes along the row at
+   ~140 ms plus 1 900 across it at ~1.5 ms), yet the stride sample over
+   the rarest-axis-first schedule held one plane along and 23 across,
+   and the blended mean put on the cheap remainder projected 15 s —
+   the pool was built and lost 2 s (ladder `auto` 25.3 s against `off`
+   23.4 s).  Per axis it projects the true remainder and declines; a
+   rare axis that is worth a pool on its own still admits one
+   (`tests/unit/test_geometry.py::test_sample_projects_the_cost_per_axis`).
+   The pool's measured economics (5.2 s per spawn, one spawn per pass,
+   3.8× on 8 workers, the map slower per task than the parent) are on
+   record in M13 for the day a curved-face class brings it back; the
+   pool fires on no ladder row now.
+
+**Result.**  Post row, pool off: build 45.9 → **23.5 s** (x-sections of
+the air body 7.4 → ~1.5 ms; every mesh array bit-identical, 35 / 35 —
+`probe_mesh_hash.py` on posts 60 / 240, Lange 4, 4 × 4 array).
+Full ladder (`--family all --pool off auto forced --json`, CPU idle;
+internal dossier `investigations/mesh-build-bench/pool/`): 240 posts
+`off` 45.7 → **23.3 s**, `auto` 35.9 → **23.3 s** (pool declined,
+sample 0.6 s per pass), `forced` 26.1 s; 60 posts 6.6 → 5.5 s; Lange 16
+43.7 s and 8 × 8 array 14.5 s unchanged (no kernel section touches a
+tiled face there — the tiling is lazy and never ran).  The post row's
+x-sections of the air body now cost 2.0 ms (7.4), the union's 1.05 ms:
+the kernel's fixed cost per `BRepAlgoAPI_Section` over three faces.
+Unit suite 2 538 passed / 4 skipped, integration 402 passed / 5 skipped
+(the four GPU single-precision tests on the device); ruff, DD, API and
+import gates clean.
+
+**Open, re-ranked.**  The post row's 23 s are now 14.6 s of kernel
+sections at the kernel's floor (6 284 across the row at 1–2 ms, 44
+along it at ~120 ms with every face a candidate) plus the area passes;
+the edge pass's batch formulation (DD-208 item 3: Lange 16 5.7 s, 8 × 8
+array 4.1 s) leads the ladder again, then the ε/µ area passes at
+millions of cells.
+
+**Files:** `src/magnelio/geo/_occ_backend.py` (`_FaceTiles`,
+`_FaceSlabIndex.tiles` / `_tile` / `restrict`, `_SLAB_TILE_*`,
+`_sample_and_admit`), `src/magnelio/geo/_polygon_clip.py`
+(`orient_nested_contours`), `tests/unit/test_section_slab_index.py`
+(`TestTiledFaces`), `tests/unit/test_section_contour_orientation.py`
+(`test_many_holes_with_islands_shuffled`), `tests/unit/test_geometry.py`
+(`test_sample_projects_the_cost_per_axis`),
+`docs/methods/meshing-conformal.md`, `CHANGELOG.md`,
+`benchmarks/results/bench_mesh_build.json` (re-run).

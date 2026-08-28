@@ -11,6 +11,14 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Mesh build of a body whose one planar face carries the outline of
+  hundreds of features — an air body over a row of posts or vias, a
+  ground layer under many pads — no longer pays for that face on every
+  section across the row: the face is cut once into tiles and each
+  plane is sectioned over the tile it crosses (a row of 240 posts:
+  46 s → 24 s for the build, identical mesh).  Winding the contours
+  of a section with hundreds of holes is vectorised (290 ms → 6 ms per
+  section).
 - A union of thousands of coplanar bodies — the copper of a large
   patch array with its feed, an imported layer of pads and traces —
   no longer spends its build in one kernel fuse of all of them: the
