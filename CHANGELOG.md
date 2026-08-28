@@ -11,6 +11,12 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Mesh build time on large models drops by about a third: the planar
+  section engine pairs a plane's crossings for all faces at once
+  instead of face by face, and the conformal passes collect the
+  boundary faces of the grid as arrays instead of walking every face
+  in Python (a row of eight Lange couplers, 1.8 M cells: 20 s → 14 s;
+  an 8 × 8 patch array: 15 s → 12 s; identical meshes).
 - Mesh build of a body whose one planar face carries the outline of
   hundreds of features — an air body over a row of posts or vias, a
   ground layer under many pads — no longer pays for that face on every
