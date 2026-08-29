@@ -835,9 +835,9 @@ suffix-free name is the contract protocol (`ScatteringResult`).
 
 | Class | Status | Base | Result |
 |-------|--------|------|--------|
-| `AnalysisScatteringTD` | shipped | `AnalysisTD` (after Phase B) | `ScatteringTDResult` |
-| `AnalysisEigenmode` | shipped | `_AnalysisBase` | `EigenmodeResult` |
-| `AnalysisTD` | Phase B | `_AnalysisBase` | `TDResult` |
+| `AnalysisScatteringTD` | shipped | `AnalysisTD` | `ScatteringTDResult` |
+| `AnalysisEigenmode` | shipped | (`_AnalysisBase` pending) | `EigenmodeResult` |
+| `AnalysisTD` | shipped (Phase B) | `_AnalysisBase` | `TDResult` |
 | `AnalysisWakefieldTD` | reserved | `AnalysisTD` | `WakefieldTDResult` |
 | `AnalysisPIC` | reserved | `AnalysisTD` | `PICResult` |
 | `AnalysisFD` | reserved | `_AnalysisBase` | `FDResult` |
@@ -853,7 +853,10 @@ with a bandwidth (ABC `Waveform`; the recipe serialises them by
 class-name tag), and the core `Excitation(source, mode=, waveform=,
 amplitude=, delay=, phase=)` binds one to the other in
 `run(excitations=[…])` — simultaneous in one run (`AnalysisTD`,
-Phase B).  Sequential channel runs stay
+shipped in Phase B: `run(t_end=, name=)`, continuous-wave rules,
+delay-aware run-length estimate, one excitation buffer per port mode,
+`TDResult`, project-store runs by name with `Project.result(name)`;
+store schema 2.0 with `mesh.h5:element`).  Sequential channel runs stay
 `AnalysisScatteringTD.run(excited=…)`, with `waveform=` as the
 override of the per-mode default.  The full reserved
 vocabulary (sources, waveforms, monitors, namespaces, engines,

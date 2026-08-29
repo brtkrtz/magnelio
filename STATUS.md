@@ -1,27 +1,20 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-29.*  **Released v0.4.7**
-(2026-08-26): multi-conductor quasi-TEM ports return the modal
-(even/odd) basis (DD-196), `geo.Surface.parametric` builds curved
-sheets that `extruded()` turns into reflector shells (DD-197),
-waveguide-port windows may sit in absorbing faces — with the conformal
-sub-cell data continued into the PML (KB-029) and TE/TM-fed monitors
-normalised to the launched incident power (KB-030) — (DD-198),
-free-form faces are sectioned on a lifted triangulation (Cassegrain
-mesh 372 s → 58 s, DD-199) and section contours are wound by nesting
-parity — hollow conductors had lost the conformal correction at their
-inner walls (KB-031); how-to *coupled-line coupler* and tutorial 19
-*offset Cassegrain* (rendered, not executed; figures of a measured run
-embedded), every gallery 3D view carries an "Interactive Scene" tab,
-GitHub Discussions is the feedback channel.  Unit suite 2687 passed /
-4 skipped; integration suite 402 passed / 5 skipped (2026-08-29)
-(edge-pass tangency rule, coax re-pin) and the KB-011 fixture re-pin
-(DD-199 fallout closed 2026-08-27; both unreleased on `main`).
-Previous release v0.4.6
-(2026-08-26): slab wavelength rule (DD-192), short-interval fit
-(DD-193), opt-in singularity refinement (DD-194), ARPACK request growth
-(DD-195).  Channels: GitHub, PyPI, conda-forge, docs (`/stable/` =
-tag, `/dev/` = main).
+*Last updated: 2026-08-29.*  **Released v0.4.8** (2026-08-29; the
+mesh-build campaign DD-201…DD-223 and the 16 × 16-array ladder).
+Unreleased on `main`: DD-224 Phases A and B — the API grammar for the
+years ahead, `Waveform*` classes, core `Excitation`, sources on the
+model, **`AnalysisTD` + `TDResult`** with `AnalysisScatteringTD`
+re-based on the shared transient engine, one excitation buffer per
+port mode, project-store schema 2.0 (`Project.result(name)`, runs by
+name, `resume(project, name)`), tutorial 20 *plane-wave scattering*
+(PEC-sphere RCS against the Mie series).  Unit suite 2716 passed /
+4 skipped; integration suite 398 passed / 5 skipped (2026-08-29; the
+GPU files need `CUPY_ACCELERATORS=""` outside the sandbox).  Previous
+release v0.4.7 (2026-08-26): modal basis of multi-conductor QTEM ports
+(DD-196), `geo.Surface.parametric` (DD-197), port windows in absorbing
+faces (DD-198), facet section engine (DD-199).  Channels: GitHub, PyPI,
+conda-forge, docs (`/stable/` = tag, `/dev/` = main).
 
 This file states what *is*.  The chronology is `git log
 --first-parent main` (one feature per merge), the reasoning is
@@ -33,7 +26,7 @@ certificates named in their DD entries.
 
 Newest first, one line each; the full record is the DD entry.
 
-* **DD-224** (2026-08-29) — the API grammar for the years ahead: `Analysis<Problem><Formulation>` (suffix = TD/FD formulation, method from the mesh's element type), general `AnalysisTD`/`AnalysisFD`, the excitation triad `Source*` (on the model) / `Waveform*` (`signals`) / core `Excitation`, reserved names for wakefield, PIC/tracking, statics, FD scattering, `fields`/`particles`/`optimize`.  **Phase A shipped** (2026-08-29, unreleased): `Waveform` ABC + `WaveformGaussian`/`GaussianModulated`/`Sine`/`Step`/`Table`/`Function`, core `Excitation` (11 names), `SourceFieldIncident`/`SourcePlaneWave` with `add_source`/`Mesh.sources`, `AnalysisScatteringTD(waveform=)`, `ExcitationSpec` removed, `MonitorFarField` → `MonitorFarFieldFrequency`, `MonitorFluxTime`/`MonitorWallLoss` on `normal=`/`position=`.  Phase B (`AnalysisTD`, schema 2.0) next.
+* **DD-224** (2026-08-29) — the API grammar for the years ahead: `Analysis<Problem><Formulation>` (suffix = TD/FD formulation, method from the mesh's element type), general `AnalysisTD`/`AnalysisFD`, the excitation triad `Source*` (on the model) / `Waveform*` (`signals`) / core `Excitation`, reserved names for wakefield, PIC/tracking, statics, FD scattering, `fields`/`particles`/`optimize`.  **Phase A shipped** (2026-08-29): `Waveform` ABC + six classes, core `Excitation`, `SourceFieldIncident`/`SourcePlaneWave` with `add_source`/`Mesh.sources`, `AnalysisScatteringTD(waveform=)`, `ExcitationSpec` removed, the three monitor migrations.  **Phase B shipped** (2026-08-29, unreleased): `AnalysisTD` + `TDResult` on `_AnalysisBase` (`method=`/`solver=`), `AnalysisScatteringTD(AnalysisTD)` with its channel runs on the shared engine (bit-identical to the old code with the old pulse term; the DD's delay-aware estimate `max(delay + t_end)` lengthens TE/TM-fed runs and moves their stop step, in-band |ΔS| ≤ 5·10⁻⁴), `run(t_end=, name=)`, CW rules, per-mode port excitation buffers, `results.h5` `excitations` attribute + one sampled drive per excitation, `Project.result(name)`, `resume(project, name)`, schema 2.0 with `mesh.h5:element`, `source` grid planes at TF/SF corners, default TF/SF box past the absorber, tutorial 20, core pin 12.  Phase C (`magnelio.fields.FieldState`, `SourceFieldInitial`) next.
 * **DD-223** (2026-08-29) — a `Difference` whose tools' kernel boxes lie inside a box-shaped base (the air body of every housing) is served from its operands throughout the build: box, face and edge planes, singular edges (tool convexity flipped inside the box, convex on its boundary), section contours (`_CsgSectionEngine`: the base's contours plus the tools' reversed) and its place in the effective PEC solid — the kernel cut (1.03 s on the 16 × 16 array) is never built.  16 × 16 7.8 → 6.4 s, posts 240 2.1 → 1.8 s, Lange 16 9.8 → 9.6 s; meshes differ in the last bits of the area arrays.
 Older decisions: `design-decisions.md`.
 
@@ -82,7 +75,7 @@ Older decisions: `design-decisions.md`.
 ## Script directories
 
 `examples/` is the public-API surface — `examples/tutorials/` holds
-the 19 gallery tutorials, no internal imports.  All run to completion
+the 20 gallery tutorials, no internal imports.  All run to completion
 on the GPU box on pure defaults: the DD-096 port-signal criterion is
 on by default (DD-114) because the energy criterion alone never fires
 on the TM-cut-off plateau of a shielded lossless structure.
@@ -184,19 +177,28 @@ overlays and ParaView mirror the recorded half on read.  Certificate:
 ``validation/symmetry_full_vs_half_certificate.py`` (|Δ|S|| ≤ 1.5e-3,
 a-peak Δ 0.064 %, flux Δ 0.12 %).
 
-Public API (thin core + domain namespaces; DD-117, refines DD-108):
-* **Core** — the top-level ``magnelio`` namespace (10 names, pinned
+Public API (thin core + domain namespaces; DD-117, refines DD-108;
+grammar DD-224):
+* **Core** — the top-level ``magnelio`` namespace (12 names, pinned
   in ``check_api_surface.py``): ``GeometryModel``, ``Material``,
-  ``Mesh``/``MeshControl``, ``BoundaryConditions``, the problem
-  classes ``AnalysisScatteringTD``/``AnalysisEigenmode``, and
-  ``resume``/``open_project``.  Ports are declared on the model
-  before meshing (DD-109).  ``port_model`` (DD-063/DD-064) selects
+  ``Mesh``/``MeshControl``, ``BoundaryConditions``, ``Excitation``,
+  the problem classes ``AnalysisTD``/``AnalysisScatteringTD``/
+  ``AnalysisEigenmode``, and ``resume``/``open_project``.  Ports,
+  elements and sources are declared on the model before meshing
+  (DD-109, DD-123, DD-224) and travel with the mesh.  ``AnalysisTD``
+  is one leapfrog march under any list of simultaneous excitations
+  (``run(excitations=[Excitation(name, mode=, waveform=, amplitude=,
+  delay=, phase=)], t_end=, name=)`` → ``TDResult``: port signals,
+  sampled drives, ``a``/``b``, energy trace, monitors);
+  ``AnalysisScatteringTD`` derives from it and drives one channel per
+  run (``run(excited=…)``).  ``port_model`` (DD-063/DD-064) selects
   the port pipeline: ``"modal"`` (default), ``"band"`` (DD-057), or
-  ``"auto"``.  Both result implementations (in-RAM and ``Project``
-  reader) satisfy the shared scattering-result contract
+  ``"auto"``.  Both scattering result implementations (in-RAM and
+  ``Project`` reader) satisfy the shared scattering-result contract
   (``magnelio.analysis.result_interface``):
   ``S``/``db``/``phase``/``a``/``b``/``plot_s``/``to_touchstone``/
-  ``to_skrf``/``settings``.
+  ``to_skrf``/``settings``; ``Project.result(name)`` rebuilds the
+  ``TDResult`` of any stored run.
 * **Domain namespaces** — one per subject area, curated ``__all__``,
   one documented home per name: ``magnelio.geo`` (``Shape`` — the base
   class documenting the operators and verbs — primitives, CSG,
@@ -321,16 +323,22 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
 
 ## Open construction sites
 
-* **API blueprint (DD-224) — Phase B open.**  Phase A is on `main`
-  (waveforms, `Excitation`, sources on the model, the monitor
-  migrations); the old recipe spellings (`MonitorFarField` tag,
-  `plane`/`reference_plane` pairs) are read until schema 2.0.  Phase B:
-  `AnalysisTD` + `TDResult` (`t_end`, `name`, CW rules, delay-aware step
-  estimate, per-mode excitation buffers), `AnalysisScatteringTD`
-  re-based on `_run_transient` (S-parameters bit-identical),
-  `results.h5` `excitations` attribute, schema 2.0 with
-  `mesh.h5:element`, grid planes on the TF/SF box corners, plane-wave
-  tutorial.  Blueprint: internal record `investigations/api-blueprint/`.
+* **API blueprint (DD-224) — Phase C open.**  Phases A and B are on
+  `main` (waveforms, `Excitation`, sources on the model, `AnalysisTD`
+  + `TDResult`, scattering on the shared engine, store schema 2.0,
+  tutorial 20).  Phase C: `magnelio.fields.FieldState` (the public
+  field container with grid and Yee-offset convention),
+  `SourceFieldInitial` (eigenmode ring-down from a project; PEC/PMC
+  walls and non-dispersive materials only until CPML/ADE/SIBC states
+  get a consistent start), `SourceFieldIncident` beyond the plane
+  wave; also `AnalysisEigenmode` onto `_AnalysisBase`.  Known from
+  Phase B: the sphere-RCS tutorial sits within 1 % at the resonance
+  peak but 5–17 % on the flanks of the Mie curve at 20 cells/λ — a
+  1–2 % effective-size error of the conformal sphere (11 cells per
+  radius) on flanks with d ln σ/d ka ≈ 4; the pulse-length estimate of
+  TE/TM-fed scattering runs now follows `waveform.t_end`.  Blueprint:
+  internal record `investigations/api-blueprint/` (Phase B probes in
+  `phase-b/`).
 * **Symmetry planes — known limitations (DD-154/DD-155/DD-172).**
   Lumped ports/elements on a symmetry plane are corrected since
   DD-172 (full-model declaration, internal half-device scaling, exact
@@ -346,34 +354,22 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   0.8 mm FR4 microstrip at 15 GHz, growing with substrate thickness,
   zero for ε_r = 1.  Needs a frequency-dependent quasi-TEM mode to
   close; until then keep quasi-TEM feeds short or compare raw S.
-* **Mesh-build speed.**  DD-101/102 (edge prefilter, planar section
-  engine) took the slotline coupler 142 → 14 s; DD-141 admits the
-  section pool on a measured sample; DD-199 gave free-form faces the
-  facet path; the 2026-08-27/29 campaign DD-202…DD-222 moved the
-  thin-sheet rasteriser, the fuses and the PEC solid, the point probes
-  and overlap check, the edge pass (carrier lines, batch, cylinders
-  and round outlines in closed form), the area passes and the engine
-  bookkeeping off the kernel and out of Python loops (DD-217…DD-223) — no
-  Lange or array row runs a kernel section or a kernel Boolean of a
-  model node any more; A/B switches `MAGNELIO_*=0` per DD-217…219 and
-  DD-223 (`MAGNELIO_CSG_NODES`).  Ladder (`benchmarks/bench_mesh_build.py`,
-  CPU, `auto` pool): 16 Lange couplers (3.7 M cells) 9.6 s, 240 posts
-  (385 k) 1.8 s, 4 × 4 patch array with feed (222 k) 0.6 s, 8 × 8
-  (664 k) 1.8 s, 16 × 16 (1.8 M, off-ladder) 6.4 s; the pool fires on
-  no ladder row; every row matches its reference (`pool/hash_refs/`,
-  re-pinned at DD-223, `*_pre_dd223.txt` kept).  **Campaign closed 2026-08-29** (the rest
-  is tenths of a second); deferred, in value order:
+* **Mesh-build speed — campaign closed 2026-08-29** (DD-101/102,
+  DD-141, DD-199, DD-202…DD-223): no Lange or array row runs a kernel
+  section or a kernel Boolean of a model node any more; A/B switches
+  `MAGNELIO_*=0` per DD-217…219 and DD-223.  Ladder
+  (`benchmarks/bench_mesh_build.py`, CPU, `auto` pool): 16 Lange
+  couplers (3.7 M cells) 9.6 s, 240 posts (385 k) 1.8 s, 4 × 4 patch
+  array with feed (222 k) 0.6 s, 8 × 8 (664 k) 1.8 s, 16 × 16 (1.8 M,
+  off-ladder) 6.4 s; every row matches its reference
+  (`pool/hash_refs/`, re-pinned at DD-223).  Deferred, in value order:
   (1) the tools' union where it is not a model shape (Lange 16: 320
-  pieces, 0.46 s, of which 32 eight-body kernel fuses on three z
-  intervals 0.38 s) — the effective PEC solid could take the pieces
+  pieces, 0.46 s) — the effective PEC solid could take the pieces
   unfused if the edge pass counted crossings by depth instead of
-  parity; (2) the post row's `pass_faces_mu` (0.87 s beyond its
-  sections), `section_calls` (0.39 s posts, 1.2 s 16 × 16) and
-  `planes_material` (0.34 s posts); (3) spheres and cones once a
-  ladder row shows them.
-  Traps are listed in DD-217…DD-223 (`_occ_shape()` rebuilds the cut,
-  nested bench columns, ufunc ulps, conservative analytic boxes,
-  `probe_mesh_hash.py` saves a missing reference).
+  parity; (2) the post row's `pass_faces_mu` (0.87 s), `section_calls`
+  (0.39 s posts, 1.2 s 16 × 16) and `planes_material` (0.34 s);
+  (3) spheres and cones once a ladder row shows them.  Traps are
+  listed in DD-217…DD-223.
 
 Closed construction sites are tombstoned where they were decided (the
 DD entry and `known-bugs.md`) and are not repeated here.

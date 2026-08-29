@@ -386,3 +386,38 @@ class TestCarriage:
             x=np.linspace(0, 1e-3, 4), y=np.linspace(0, 1e-3, 4), z=np.linspace(0, 1e-3, 4)
         )
         assert Mesh.from_grid(grid, [], background="air").planes is None
+
+
+class TestSourcePlanes:
+    """A source's total-field box asks for grid planes at its corners (DD-224)."""
+
+    @pytest.fixture(autouse=True)
+    def _occ(self):
+        pytest.importorskip("OCC.Core.BRepPrimAPI")
+
+    def test_box_corners_become_source_planes(self):
+        from magnelio import sources
+        from magnelio.geo import Brick, GeometryModel
+        from magnelio.mesh.mesher import Mesh, MeshControl
+
+        m = GeometryModel()
+        m.add(Brick(origin=(-5e-3, -4e-3, 0.0), size=(10e-3, 8e-3, 6e-3), material="air"))
+        m.add_source(
+            sources.SourcePlaneWave(
+                name="pw",
+                direction=(0, 0, 1),
+                polarization=(1, 0, 0),
+                corners=((-3.3e-3, None, 1.1e-3), (3.3e-3, None, 4.9e-3)),
+            )
+        )
+        mesh = Mesh.from_geometry(m, MeshControl(min_nodes_per_wavelength=6), f_max=10e9)
+        for axis, positions in (("x", (-3.3e-3, 3.3e-3)), ("z", (1.1e-3, 4.9e-3))):
+            for pos in positions:
+                recs = [r for r in mesh.planes.records(axis) if abs(r.position - pos) < 1e-9]
+                assert len(recs) == 1, (axis, pos)
+                assert "source" in recs[0].kinds
+                assert any(s.kind == "source" and s.label == "pw" for s in recs[0].sources)
+                assert getattr(mesh.grid, axis)[recs[0].node] == pytest.approx(pos)
+        # the open y sides asked for nothing
+        assert not any("source" in r.kinds for r in mesh.planes.records("y"))
+        assert PlaneSource.parse("source pw") == PlaneSource("source", None, "pw")

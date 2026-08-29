@@ -434,7 +434,7 @@ class TestFullModelPowerSemantics:
         assert I == 2.0
 
     def test_excitation_scale_is_the_inverse_wave_scale(self):
-        from magnelio.analysis.scattering_td import _excitation_scale
+        from magnelio.analysis.time_domain import _excitation_scale
 
         assert _excitation_scale(self._StubPort("p", ())) == 1.0
         assert _excitation_scale(

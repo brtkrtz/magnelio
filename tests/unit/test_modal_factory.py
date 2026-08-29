@@ -94,7 +94,7 @@ def _operator_signature(op: PortOperatorModal) -> dict:
         "h_u_profiles": [np.array(dm.h_u_profile) for dm in op.discrete_modes],
         "h_v_profiles": [np.array(dm.h_v_profile) for dm in op.discrete_modes],
         "mode_omega_c": [dm.mode.omega_c for dm in op.discrete_modes],
-        "excitation_mode": op._excitation_mode,
+        "excited_modes": op.excited_modes,
     }
 
 
@@ -238,12 +238,12 @@ def test_coax_factory_excitation_routing(coax_occ_mesh):
     )
     op = build_modal_port(spec, mesh, m_eps, m_mu, dt=dt, f_calc=10e9)
     op.set_excitation(0, WaveformGaussian(f_max=10e9))
-    assert op._excitation_mode == 0
+    assert op.excited_modes == (0,)
     t_test = float(np.linspace(0.0, 4.0 / 10e9, 7)[3])
     # DD-078: set_excitation scales the user waveform (a(t) in √W) into
     # the operator's internal basis units by source_scale.
     expected = float(gaussian(t_test, 10e9)) * float(op._source_scale[0])
-    actual = op._excitation_waveform(t_test)
+    actual = op.excitation_waveform(0)(t_test)
     assert actual == pytest.approx(expected)
 
 
@@ -343,12 +343,12 @@ def test_rectwg_factory_excitation_modulated_gaussian(wr90_mesh):
     )
     op = build_modal_port(spec, mesh, m_eps, m_mu, dt=dt, f_calc=f_calc)
     op.set_excitation(0, WaveformGaussianModulated(f_min=8.2e9, f_max=12.4e9))
-    assert op._excitation_mode == 0
+    assert op.excited_modes == (0,)
 
     t_test = 4.0 / (12.4e9 - 8.2e9)
     # DD-078: user waveform (√W) × source_scale = internal basis units.
     expected = float(modulated_gaussian(t_test, 12.4e9, 8.2e9)) * float(op._source_scale[0])
-    actual = op._excitation_waveform(t_test)
+    actual = op.excitation_waveform(0)(t_test)
     assert actual == pytest.approx(expected)
 
 
@@ -619,12 +619,12 @@ class TestPortSpecNumericalFactory:
         )
         op = build_modal_port(spec, mesh, m_eps, m_mu, dt=dt, f_calc=10e9)
         op.set_excitation(0, WaveformGaussianModulated(f_min=8.2e9, f_max=12.4e9))
-        assert op._excitation_mode == 0
+        assert op.excited_modes == (0,)
         # Excited waveform matches the modulated-gaussian closure scaled
         # into basis units (DD-078 source_scale).
         t_test = 4.0 / (12.4e9 - 8.2e9)
         expected = float(modulated_gaussian(t_test, 12.4e9, 8.2e9)) * float(op._source_scale[0])
-        assert op._excitation_waveform(t_test) == pytest.approx(expected)
+        assert op.excitation_waveform(0)(t_test) == pytest.approx(expected)
 
     def test_pec_mask_consolidated_via_with_pec_boundaries(
         self,

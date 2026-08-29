@@ -54,6 +54,43 @@ a source injects: `operator.set_excitation(mode, waveform)` and
 `source.set_excitation(waveform, amplitude=..., delay=...)` — the
 solver-facing form of the same triad.
 
+## The general time-domain analysis
+
+`AnalysisTD` is the problem class behind every time-domain run: one
+leapfrog march under a list of excitations applied *simultaneously*,
+returning a `TDResult` — the recorded modal voltage and current of
+every port channel (`result.signal(port, mode)`), the sampled drive of
+every excitation (`result.excitation_signal(name)`), the power waves
+`a(t)` / `b(t)` where a port defines them, the stored-energy trace and
+the monitors.  No S-parameters: a scattering matrix needs one channel
+per run, and that is what `AnalysisScatteringTD` — a subclass — does
+with `run(excited=[...])`, on the very same engine.
+
+Three rules follow from the waveforms:
+
+- The run length is estimated from the drives: the time the last
+  excitation has died out, `max(delay + waveform.t_end)`, plus a
+  generous number of diagonal transits of the domain.  The estimate
+  sets the energy-check cadence and the checkpoint stride; the run
+  itself ends on the energy or port-signal criterion.
+- A continuous-wave waveform (`WaveformSine`, a `WaveformStep`
+  without `fall_time`) never decays, so such a run needs an explicit
+  length — `run(t_end=…)` in seconds or `total_time_steps=` — and
+  the decay criteria are switched off.
+- Frequency-domain monitors keep their raw transient bins.  With
+  several drives there is no single reference spectrum to divide out,
+  so `result.renormalize(name)` names the excitation the monitors
+  should refer to; the scattering analysis does this for you with the
+  excited channel's waveform.
+
+Several modes of one port may be driven in the same run (two `TE11`
+modes at 90° make a circularly polarised feed), and a run may combine
+ports and sources — an antenna under plane-wave illumination is one
+`excitations=[...]` list.  With `project=` the run streams into a
+project store under a name (`run(name=…)`, default `run_<n>`), resumes
+with `resume(project, name)`, and `project.result(name)` rebuilds its
+`TDResult`.
+
 ## Plane-wave source (TF/SF)
 
 Plane-wave illumination uses the **total-field/scattered-field

@@ -232,8 +232,8 @@ class SourcePlaneWave(SourceFieldIncident):
         self._dy_avg = _build_avg_d(self._dy, self._Ny)
         self._dz_avg = _build_avg_d(self._dz, self._Nz)
 
-        # Snap TF/SF box to grid nodes
-        self._box = self._snap_box(grid)
+        # Snap TF/SF box to grid nodes, past the mesher's absorber cells
+        self._box = self._snap_box(grid, getattr(solver.mesh, "pml_cells", None))
         self._patches_E, self._patches_H = self._build_patches()
         self._attached = True
 

@@ -165,27 +165,6 @@ class TestWaveformRecipe:
         assert _waveform_to_dict(None) is None
         assert _waveform_from_dict(None) is None
 
-    def test_legacy_excitation_dict_maps_onto_a_waveform(self):
-        from magnelio.analysis._recipe import _waveform_from_recipe
-
-        assert _waveform_from_recipe({"waveform": None}) is None
-        assert _waveform_from_recipe({}) is None
-        gauss = _waveform_from_recipe(
-            {"excitation": {"f_min": 0.0, "f_max": 9e9, "mode_index": 0, "waveform": "gaussian"}}
-        )
-        assert gauss == signals.WaveformGaussian(f_max=9e9)
-        mod = _waveform_from_recipe(
-            {
-                "excitation": {
-                    "f_min": 8.2e9,
-                    "f_max": 12.4e9,
-                    "mode_index": 1,
-                    "waveform": "modulated_gaussian",
-                }
-            }
-        )
-        assert mod == signals.WaveformGaussianModulated(f_min=8.2e9, f_max=12.4e9)
-
     def test_function_waveform_is_written_but_not_rebuilt(self):
         wf = signals.WaveformFunction(lambda t: 0.0, f_max=5e9, t_end=1e-9)
         d = _waveform_to_dict(wf)
@@ -213,32 +192,20 @@ class TestMonitorRecipe:
         back = _monitor_from_dict(d)
         assert (back.normal, back.position) == ("x", 1e-3)
 
-    def test_legacy_plane_pairs_still_read(self):
-        flux = _monitor_from_dict({"type": "MonitorFluxTime", "plane": ["z", 5e-3], "name": "f"})
-        assert (flux.normal, flux.position) == ("z", 5e-3)
-        wl = _monitor_from_dict(
-            {
-                "type": "MonitorWallLoss",
-                "freqs": [1e9],
-                "reference_plane": ["z", 1e-3],
-                "sigma": 5.8e7,
-                "mu": 1.0,
-                "roughness": None,
-                "bc_faces": ["zmin"],
-                "name": "wl",
-            }
-        )
-        assert (wl.normal, wl.position) == ("z", 1e-3)
+    def test_legacy_plane_pairs_are_no_longer_read(self):
+        with pytest.raises(KeyError):
+            _monitor_from_dict({"type": "MonitorFluxTime", "plane": ["z", 5e-3], "name": "f"})
 
-    def test_far_field_tag_and_legacy_alias(self):
+    def test_far_field_tag_and_retired_alias(self):
         ff = monitors.MonitorFarFieldFrequency(freqs=[2e9], margin_cells=2, name="ff")
         d = _monitor_to_dict(ff)
         assert d["type"] == "MonitorFarFieldFrequency"
-        assert isinstance(_monitor_from_dict(d), monitors.MonitorFarFieldFrequency)
-        legacy = dict(d, type="MonitorFarField")
-        back = _monitor_from_dict(legacy)
+        back = _monitor_from_dict(d)
         assert isinstance(back, monitors.MonitorFarFieldFrequency)
         assert back.margin_cells == 2
+        # The pre-DD-224 tag retired with schema 2.0.
+        with pytest.raises(TypeError, match="unknown monitor type"):
+            _monitor_from_dict(dict(d, type="MonitorFarField"))
 
 
 # ── the scattering analysis takes waveform=, not excitations= ───────────────

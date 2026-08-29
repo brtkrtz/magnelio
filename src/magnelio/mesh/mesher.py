@@ -721,6 +721,21 @@ class Mesh:
                     plane_sources[axis].extend(
                         ((w_min[ax_i], _src("extent", w)), (w_max[ax_i], _src("extent", w)))
                     )
+        # A source's total-field box (DD-224) wants its corners on grid
+        # nodes, so the TF/SF split lands exactly where it was declared
+        # instead of snapping to the nearest node; open sides (``None``
+        # / ``±inf``) have no plane to ask for.
+        for source in getattr(geometry, "sources", ()) or ():
+            corners = getattr(source, "corners", None)
+            if corners is None:
+                continue
+            for point in corners:
+                for ax_i, axis in enumerate(("x", "y", "z")):
+                    v = point[ax_i]
+                    if v is None or not math.isfinite(float(v)):
+                        continue
+                    critical_raw[axis].append((float(v), True))
+                    plane_sources[axis].append((float(v), _src("source", None, source.name)))
 
         # The far-side face of a thin sheet re-enters through the
         # *negative imprint* of the metal in the surrounding dielectric

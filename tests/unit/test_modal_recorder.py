@@ -127,9 +127,11 @@ class TestPortSignalRecorderConstruction:
         with pytest.raises(ValueError, match="dt"):
             PortSignalRecorder(dt=0.0, ports=[op])
 
-    def test_rejects_empty_ports(self):
-        with pytest.raises(ValueError, match="non-empty"):
-            PortSignalRecorder(dt=1e-12, ports=[])
+    def test_accepts_empty_ports(self):
+        # A source-only run (DD-224) records no channel but still counts steps.
+        rec = PortSignalRecorder(dt=1e-12, ports=[])
+        assert rec.channels == []
+        assert rec.finalize() == {}
 
     def test_rejects_duplicate_names(self):
         _, _, op1, dt, _, _ = _wr90_setup()

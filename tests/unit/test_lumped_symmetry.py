@@ -197,7 +197,7 @@ class TestPlumbing:
         assert single.z_full_scale == pytest.approx(2.0)
 
     def test_excitation_scale_is_the_inverse_wave_scale(self):
-        from magnelio.analysis.scattering_td import _excitation_scale
+        from magnelio.analysis.time_domain import _excitation_scale
 
         mesh = _mesh(zmin=("SymmetryPEC", 0.0))
         op = _port(mesh, (MID, MID, -2 * H), (MID, MID, 2 * H))

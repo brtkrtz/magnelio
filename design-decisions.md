@@ -16734,11 +16734,42 @@ survey it was checked against).  **Phase A shipped 2026-08-29** (branch
 with the per-mode default unchanged (the S-parameter suites pass
 bit-identically: the classes wrap the same closed forms), the three
 monitor migrations with the old recipe spellings still read until
-schema 2.0.  Deferred to Phase B as planned: `AnalysisTD`, the
-`results.h5` `excitations` attribute, schema 2.0, the plane-wave
-tutorial; and, noticed in Phase A, grid planes on the TF/SF box corners
-(today the box snaps to the nearest nodes — the mesher does not yet
-read `model.sources`).  Phases B ff. follow in the last section.
+schema 2.0.  **Phase B shipped 2026-08-29** (branch `feat/api-phase-b`):
+`AnalysisTD` + `TDResult` on a private `_AnalysisBase` (`method=`,
+`solver=` validated; `analysis/time_domain.py`), `AnalysisScatteringTD`
+derived from it with its channel runs on the shared engine
+(`_prepare_run` / `_build_solver` / `_resume_transient`) — pinned
+bit-identical on a TEM and a TE10 guide against `main` with the
+pre-Phase-B pulse term (internal record
+`investigations/api-blueprint/phase-b/probe_s_bit_identity.py`); the
+run-length estimate now uses `max_i(delay_i + t_end_i)` as decided
+below, which lengthens TE/TM-fed runs (`8/(f_max − f_min)` instead of
+`8/f_max`) and moves their stop step a little (in-band |ΔS| ≤ 5·10⁻⁴
+on the two guides; TEM/lumped runs unchanged, `t_end = 8/f_max`);
+`run(t_end=, name=)`, the CW rules and the delay-aware estimate;
+`PortOperatorModal.set_excitation` holds one waveform and one
+source-history buffer *per mode* (checkpoint keys `src_buffers` /
+`src_maxlens`); `results.h5` carries the `excitations` attribute and
+one sampled drive per excitation (`excitations/ex<i>/signal`),
+`excited_name`/`excited_mode` only on scattering channel runs, the run
+index `excitations` for every run; `ProjectStore.open_run` /
+`reopen_run` / `register_planned_runs((name, entry))`,
+`Project.result(name)` rebuilds a `TDResult` (scattering channel runs
+included, by their excited pair), `resume(project, name)` for
+`AnalysisTD`; one project holds one analysis kind (a mismatch raises).
+Schema 2.0: `mesh.h5:element = "hexahedral"` (the loader rejects
+anything else), the legacy readers of Phase A retired
+(`MonitorFarField` tag, `plane`/`reference_plane` pairs, the
+`excitation` recipe key), `SCHEMA_VERSION = "2.0"`.  The mesher adds
+`source` grid planes at a source's finite box corners; the default
+TF/SF box sits two cells inside the *physical* domain (past the
+absorber cells — in Phase A the default box began two cells from the
+outer edge, i.e. inside the CPML).  `PortSignalRecorder` accepts an
+empty port list (source-only runs).  Tutorial 20 *plane-wave
+scattering* (PEC sphere, monostatic RCS against the Mie series) and
+the *general time-domain analysis* section in
+`docs/methods/sources-monitors.md`.  Core pin 11 → 12 (`AnalysisTD`).
+Phases C ff. follow in the last section.
 
 **Problem.**  Two problem classes exist (`AnalysisScatteringTD`,
 `AnalysisEigenmode`) and one excitation reaches the analysis level:

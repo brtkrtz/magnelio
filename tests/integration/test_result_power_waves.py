@@ -18,10 +18,8 @@ from magnelio import (
     AnalysisScatteringTD,
     Mesh,
 )
-from magnelio.analysis.scattering_td import (
-    ScatteringTDResult,
-    _LumpedModeStub,
-)
+from magnelio.analysis.scattering_td import ScatteringTDResult
+from magnelio.analysis.time_domain import _LumpedModeStub
 from magnelio.mesh import BoxFace
 from magnelio.mesh.grid import GridLines
 from magnelio.ports import PortSpecMultiConductor

@@ -19,7 +19,7 @@ underscore modules are internal.
 from magnelio._version import __version__
 
 # Problem classes + project store entry points
-from magnelio.analysis import AnalysisEigenmode, AnalysisScatteringTD, resume
+from magnelio.analysis import AnalysisEigenmode, AnalysisScatteringTD, AnalysisTD, resume
 
 # Run vocabulary — one port or source bound to a waveform (DD-224)
 from magnelio.analysis.excitation import Excitation
@@ -45,6 +45,7 @@ __all__ = [
     "MeshControl",
     "BoundaryConditions",
     "Excitation",
+    "AnalysisTD",
     "AnalysisScatteringTD",
     "AnalysisEigenmode",
     "resume",
