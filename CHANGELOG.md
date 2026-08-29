@@ -11,6 +11,16 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- The mesh build no longer evaluates the kernel Boolean of a
+  `Difference` whose tools lie inside a box-shaped base — the air
+  body of every housing.  Its bounding box, grid planes, singular
+  conductor edges, section contours and share of the effective PEC
+  solid are read off the base and the tools instead, so the imprint
+  of every metal piece in the air is never computed.  A 16 × 16 patch
+  array with feed meshes in 6.4 s instead of 7.8 s, 240 posts in
+  1.8 s instead of 2.1 s, sixteen Lange couplers in 9.6 s instead of
+  9.8 s; meshes change only in the last bits of the conformal area
+  arrays (a different polygon decomposition of the same region).
 - The mesh build's thin-sheet pass sections a sheet's solid through
   the same in-house section engine the material passes use, paints
   its boundary band only where a segment can reach, and decides the

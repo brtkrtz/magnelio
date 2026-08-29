@@ -171,10 +171,13 @@ class Difference(Shape):
     def _occ_tools(self, scale=1.0):
         """The tools fused into one kernel shape at *scale*, cached per instance.
 
-        Kept beside the result because the effective PEC solid of a
-        housing reads it: the housing brick minus this Difference is
-        the brick minus the base plus the tools, and the tools' union
-        has been paid for once.
+        Kept beside the result because the mesher reads it in place of
+        the result wherever the tools lie inside a box-shaped base:
+        the effective PEC solid of a housing (the housing brick minus
+        this Difference is the brick minus the base plus the tools),
+        the section contours, face and edge planes and edge convexity
+        of the body (the base's and the tools' union's) — the cut
+        itself is then never built.
         """
         cache = self.__dict__.setdefault("_occ_tools_cache", {})
         key = float(scale)
