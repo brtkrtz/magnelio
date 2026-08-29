@@ -11,6 +11,15 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- Field sources — reuse what a model radiates instead of meshing it
+  again.  `monitors.MonitorFieldSurface` records the tangential fields
+  on a closed box over time; `sources.SourceFieldSurface` replays them
+  as an equivalent source in a second model, at any position and
+  turned by any multiple of 90°.  The recording is a
+  `magnelio.fields.SurfaceRecording` with `save`/`load`, so the two
+  runs share nothing but the file — no grid, no geometry, no project.
+  Replayed on the grid it was recorded on the field is reproduced
+  exactly; across grids it is the interpolation that limits.
 - `magnelio.fields.FieldState`, the public field container: the six
   Yee-staggered components in physical units together with the grid
   they live on, with the sample positions of every component

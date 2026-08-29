@@ -17136,3 +17136,131 @@ buffer and is not a conserved quantity.  Recovering `h^{n+1/2}` from
 more expensive than the copy.  Smoothing the trace in post-processing
 was rejected: the ripple is a property of the quantity, not of the
 plot, and the same number feeds the stop criterion.
+
+---
+
+## DD-226 — Huygens field sources: record a surface, replay it as a source
+
+**Status:** Decided 2026-08-29 (DD-224 Phase D, first half; branch
+`feat/huygens-field-source`).  Measurements in the internal record
+`investigations/api-blueprint/phase-d/`.
+
+**Problem.**  A radiator that has been simulated once has to be
+simulated again every time it appears in a larger model — the antenna
+inside the platform, the connector inside the housing.  The
+equivalence principle says it does not: the tangential **E** and **H**
+on a closed surface stand for everything inside it, so a recording of
+that surface can drive a second model in the radiator's place.
+Magnelio had the pieces (a Huygens box in the far-field monitor
+(DD-173), the TF/SF face corrections of `SourceFieldIncident`
+(DD-224 Phase C)) but no way to move a field from one run to another.
+
+**Decision.**  `MonitorFieldSurface` records the tangential fields on
+a closed box of grid-node planes; `SourceFieldSurface` replays them on
+a box in a second model; `magnelio.fields.SurfaceRecording` is the
+object between them, with `save`/`load` as the exchange format — the
+two models share no grid, no geometry and no project.  The box
+placement, face sampling and exclusions are shared with the far-field
+monitor (`monitors/_huygens.py`), which was refactored onto it.
+
+*The replay is the incident construction with its regions exchanged.*
+An incident field is total inside the box and scattered outside; an
+equivalent source is the reverse.  The two differ by the sign of every
+face correction, so `SourceFieldSurface` subclasses
+`SourceFieldIncident` and negates the folded coefficients rather than
+reimplementing the twelve face corrections.
+
+That sign, note, does not by itself *choose* the region: negating the
+corrections is algebraically the same as `F → −F`, and which of the
+two readings the march produces is settled by causality.  "Total
+outside" is the causal one only for an **outgoing** field.  A plane
+wave replayed this way therefore does not appear outside the box at
+all — it would have to arrive from the absorber — and the march
+returns the other decomposition instead (measured: inside at the full
+amplitude, outside at 0.1 %).  This is not a defect; it is what an
+equivalent source means, and it is why the tests use an outgoing field
+(a localised initial pulse, a sphere's scattered field) and not a
+plane wave.
+
+*Sampled on native Yee positions, not cell centres.*  The first
+implementation reused the far-field monitor's cell-centre
+interpolation, which averages each component over its four staggered
+neighbours.  For a plot that is right; for an equivalent source it is
+not: the cancellation inside the box is an exact algebraic relation
+between neighbouring grid values, and a smoothed sample leaks at the
+level of its own smoothing error.  Each component is now taken on its
+own Yee positions and converted per edge (`E = e/l`, `H = h/l_dual`,
+DD-085), with no averaging anywhere in the path.
+
+*Two magnetic layers.*  The face corrections need **E** on the node
+plane and **H** half a cell outside it — by the spacing of the grid
+that *replays* the recording, not the one that took it.  H is
+therefore recorded on both cell-centre layers adjacent to each face and
+the replay interpolates between them.  With H collapsed onto the node
+plane instead, the half-cell offset costs about 15° of phase at twelve
+cells per wavelength: measured 11 % in amplitude and −15 dB in
+residual.
+
+*Placement: free translation, quarter turns only.*  `position=` moves
+the box, `rotation=(axis, degrees)` turns it.  A TF/SF box is spanned
+by grid-node planes, so only the axis-preserving rotations are
+representable; a free angle would put the recorded surface obliquely
+across the target grid, where the patches have no samples.  Free
+angles raise rather than snapping to the nearest quarter turn.  The
+transform is a signed permutation matrix, applied to the sample
+positions, to the face identification and to the component the
+recording is read from — a quarter turn of the sphere case reproduces
+the untouched replay exactly (recorded `Ex` read back as `Ey`, same
+0.988 ratio and −41.3 dB).
+
+*Sampling rate: eight per period, not four.*  The replay interpolates
+linearly in time, whose error falls with the square of the sample
+spacing rather than obeying the sampling theorem.  On the sphere's
+scattered field (band-limited by the excitation at `f_max = 15 GHz`,
+twelve nodes per wavelength):
+
+| samples/period at `f_max` | outside amplitude | inside leakage |
+|---|---|---|
+| 4 | 0.980 | −26.1 dB |
+| 8 | 0.988 | −41.3 dB |
+| 16 | 0.996 | −41.4 dB |
+| 32 | 0.998 | −42.4 dB |
+
+The residual saturates at eight — beyond it the spatial interpolation
+across the two grids limits — so `oversample` defaults to 8.  What the
+rate has to follow is the bandwidth the field carries, which is not
+always the model's `f_max`: the localised initial pulse used in the
+tests puts 90 % of its energy above 50 GHz on a 15 GHz model, and its
+replay needs the full step rate.
+
+**Measured.**  On the recording's own grid and in its own place the
+replay is exact: outside amplitude ratio 1.0000, residual −83.6 dB
+(the single-precision floor), inside −96.8 dB.  Across grids, on the
+sphere's scattered field: same place 0.988 / −41.3 dB; box moved 4 mm
+1.012 / −36.9 dB; target grid refined from 12 to 16 nodes per
+wavelength 0.977 / −32.8 dB.  The exact case is what the integration
+suite holds (`tests/integration/test_source_field_surface.py`); the
+cross-grid numbers are the internal record's.
+
+**Limits.**  The recording is held in memory for the length of the run
+and written at the end — faces × patches × samples — so a box drawn
+close around the radiator is the way to keep it small; no streaming
+write-through and no project-store integration yet (the file is the
+interface).  A conductor crossing a box face is warned about, not
+handled: the recording then stands for only part of the radiator.  A
+box left open at a PEC/PMC wall records fewer than six faces and is
+valid only in a model that continues that wall — the replay raises if
+it needs a face the recording does not have.  Symmetry planes are not
+completed by image theory on replay.
+
+**Alternatives.**  Recording in the frequency domain (a surface DFT
+per frequency, as the far-field monitor does) is far more compact but
+returns a time-domain replay only as CW or as a synthesis over many
+bins; the time-domain form is the one a transient solver can replay
+directly, and the rate table above is what it costs.  Cubic or
+band-limited interpolation in time instead of eight samples per
+period: fewer samples for the same error, at the price of a wider
+stencil and an interpolation the store has to agree on; the factor of
+two in memory was the cheaper trade.  Resampling the recording onto
+the target patches lazily each step instead of once at attach: half
+the memory, but a gather per patch per step in the time loop.

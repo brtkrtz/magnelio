@@ -8,10 +8,12 @@ sources *and* loads and stay in :mod:`magnelio.ports`.
 
 from magnelio.sources.field_incident import SourceFieldIncident
 from magnelio.sources.field_initial import SourceFieldInitial
+from magnelio.sources.field_surface import SourceFieldSurface
 from magnelio.sources.plane_wave import SourcePlaneWave
 
 __all__ = [
     "SourceFieldIncident",
     "SourceFieldInitial",
+    "SourceFieldSurface",
     "SourcePlaneWave",
 ]
