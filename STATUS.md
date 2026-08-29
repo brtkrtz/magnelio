@@ -34,7 +34,6 @@ certificates named in their DD entries.
 Newest first, one line each; the full record is the DD entry.
 
 * **DD-223** (2026-08-29) — a `Difference` whose tools' kernel boxes lie inside a box-shaped base (the air body of every housing) is served from its operands throughout the build: box, face and edge planes, singular edges (tool convexity flipped inside the box, convex on its boundary), section contours (`_CsgSectionEngine`: the base's contours plus the tools' reversed) and its place in the effective PEC solid — the kernel cut (1.03 s on the 16 × 16 array) is never built.  16 × 16 7.8 → 6.4 s, posts 240 2.1 → 1.8 s, Lange 16 9.8 → 9.6 s; meshes differ in the last bits of the area arrays.
-* **DD-220** (2026-08-29) — the post row's last kernel rows in the edge pass were its 480 caps (planar faces with a circular outline, 49 k `Perform` calls); `_planar_row` now admits circular edges as v-monotone arc segments (cut at ±π/2), `planar_point_state` crosses them in closed form and measures the ON band on the circle; 3-vector helpers of the row constructor written out.  Posts 240 3.0 → 2.4 s, every mesh bit-identical.
 Older decisions: `design-decisions.md`.
 
 ## Working practices earned the hard way
@@ -358,7 +357,8 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   (664 k) 1.8 s, 16 × 16 (1.8 M, off-ladder) 6.4 s; the pool fires on
   no ladder row; every row matches its reference (`pool/hash_refs/`,
   re-pinned at DD-223 — rounding of a different polygon
-  decomposition, `*_pre_dd223.txt` kept).  Open, in value order:
+  decomposition, `*_pre_dd223.txt` kept).  **Campaign closed 2026-08-29** (the rest
+  is tenths of a second); deferred, in value order:
   (1) the tools' union where it is not a model shape (Lange 16: 320
   pieces, 0.46 s, of which 32 eight-body kernel fuses on three z
   intervals 0.38 s) — the effective PEC solid could take the pieces
