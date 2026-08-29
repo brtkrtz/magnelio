@@ -174,10 +174,70 @@ Whether the field you load is the mode you meant, and whether the
 decay you see is the one you wanted to measure, are modelling
 questions — not something the library decides for you.
 
+## Field sources: reusing what a model radiates
+
+A radiator that has been simulated once does not have to be simulated
+again.  The equivalence principle says that the tangential **E** and
+**H** on a closed surface stand for everything inside it: replayed on
+that surface in a second model, they radiate the same field outwards
+and nothing inwards.  Magnelio spells this as a pair —
+`MonitorFieldSurface` records, `SourceFieldSurface` replays — with a
+`magnelio.fields.SurfaceRecording` between them:
+
+```python
+# Run 1 — the antenna, on its own, in a small domain
+box = monitors.MonitorFieldSurface(name="antenna", corners=((-8e-3,) * 3, (8e-3,) * 3))
+...
+box.recording().save("antenna.h5")
+
+# Run 2 — the platform, driven by the antenna without meshing it
+model.add_source(
+    sources.SourceFieldSurface.from_file(
+        "antenna.h5", name="antenna", position=(0.0, 0.0, 0.25), rotation=("z", 90)
+    )
+)
+```
+
+The recording file is the whole interface: the two models share no
+grid, no geometry and no project.  The replaying box may sit anywhere
+and be turned by a multiple of 90°; free angles are refused rather
+than rounded, because the box is spanned by grid-node planes and a
+tilted recording would cross the target grid obliquely, with no
+samples where the corrections are applied.  The excitation that drives
+the source carries no waveform — the recording *is* the time function
+— only a scale factor and a delay.
+
+What the surface must enclose is every source of the field it stands
+for.  A conductor cutting through a face carries current across it and
+the recording is then short of exactly that part; the monitor says so.
+A ground plane is the licit exception: it closes a domain face, so the
+box is left open there, and the recording is valid in a second model
+that continues that plane.
+
+Two things decide the accuracy.  The first is the sampling rate.  The
+replay interpolates the recording linearly in time, and that error
+falls with the square of the sample spacing rather than obeying the
+sampling theorem, so the default records eight samples per period at
+`f_max` — twice Nyquist is measurably not enough.  What matters is the
+bandwidth the field actually carries, which is not always the model's
+`f_max`: a field started from a sharply localised initial state
+carries energy far above it, and then the rate has to follow the field
+rather than the setting.
+
+The second is the grid.  Replayed on the grid it was recorded on, and
+in the same place, the interpolation reads its own samples and the
+replay is exact — measured at the single-precision floor, with the
+inside of the box quiet to −97 dB.  Across grids it is the spatial
+interpolation that limits: a scattered field recorded at twelve nodes
+per wavelength and replayed on a different grid reproduces the outside
+field to about a percent, with the inside quiet to roughly −40 dB.
+
 ## Field, flux and frequency monitors
 
 - **MonitorFieldTime** — time snapshots of E/H in a region, streamed
   to the on-disk store.
+- **MonitorFieldSurface** — the tangential fields on a closed box over
+  time, for reuse as a field source (above).
 - **MonitorFieldFrequency** — running (accumulated) discrete Fourier
   transform of the fields at selected frequencies during the march;
   the running-DFT-during-timestepping technique is standard practice

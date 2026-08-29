@@ -26,8 +26,16 @@ from typing import Optional
 import numpy as np
 
 from magnelio.monitors._dft import DFTAccumulator, divide_by_spectrum, source_spectrum
-from magnelio.monitors.base import _cell_centres, _interp_to_cell_centres
-from magnelio.post._symmetry import mirror_spec_for_face
+from magnelio.monitors._huygens import (
+    _AXES,
+    _TANGENTIALS,
+    _BoxFace,
+    build_faces,
+    exclude_pec_patches,
+    face_node_indices,
+    image_planes_for,
+)
+from magnelio.monitors.base import _interp_to_cell_centres
 from magnelio.post.far_field import (
     FarFieldResult,
     ImagePlane,
@@ -39,33 +47,6 @@ from magnelio.post.far_field import (
 # Closure tolerance of the radiated power against the surface power;
 # beyond it the box samples the near zone too closely (see result()).
 _CLOSURE_TOLERANCE = 0.05
-
-_AXES = "xyz"
-_FACE_NAMES = ("xmin", "xmax", "ymin", "ymax", "zmin", "zmax")
-# Tangential (E, H) component names per face axis.
-_TANGENTIALS = {
-    0: ("Ey", "Ez", "Hy", "Hz"),
-    1: ("Ex", "Ez", "Hx", "Hz"),
-    2: ("Ex", "Ey", "Hx", "Hy"),
-}
-
-
-@dataclass
-class _BoxFace:
-    """One sampled face of the Huygens box (internal)."""
-
-    name: str
-    axis: int
-    sign: float  # outward normal component (±1)
-    plane: float  # node-plane coordinate [m]
-    slab: tuple  # (ix, iy, iz) slices, 2 cells thick along axis
-    weight: float  # linear weight of the inner->outer layer pair
-    tangent_axes: tuple  # (t1, t2)
-    c1: np.ndarray  # patch centres along t1 [m]
-    c2: np.ndarray
-    w1: np.ndarray  # patch widths along t1 [m]
-    w2: np.ndarray
-    keep: np.ndarray | None = None  # (c1, c2) patch weights: 0 = excluded
 
 
 @dataclass
@@ -148,110 +129,33 @@ class MonitorFarFieldFrequency:
 
     def attach(self, mesh) -> None:
         """Place the box on *mesh* and allocate fresh DFT accumulators."""
-        from magnelio.boundaries.boundary_conditions import (  # noqa: PLC0415
-            bc_type_entries,
-            cpml_thickness_of,
-            symmetry_entries,
-        )
-
+        label = f"far-field monitor {self.name!r}"
         grid = mesh.grid
         self._grid = grid
-        bc = mesh.boundary_conditions
-        types = bc_type_entries(bc)
-        sym = symmetry_entries(bc)
-        pml = getattr(mesh, "pml_cells", None) or {}
 
-        nodes = (grid.x, grid.y, grid.z)
-        n_cells = (grid.Nx, grid.Ny, grid.Nz)
-
-        lo_n = [0, 0, 0]
-        hi_n = list(n_cells)
-        open_faces: list[str] = []
-        self._image_planes = []
-        for face in _FACE_NAMES:
-            axis = _AXES.index(face[0])
-            at_low = face.endswith("min")
-            kind = types[face]
-            if kind == "CPML":
-                # Absorber depth: mesher-extended cells, or the declared
-                # in-domain thickness on a hand-built grid.
-                n_abs = pml.get(face) or cpml_thickness_of(bc)
-                # A face that a feed guide crosses (DD-198) is sampled at
-                # the absorber interface itself: every cell of guide
-                # outside the box carries wall currents the surface
-                # cannot see, and inside the absorber those currents die
-                # with the profile.
-                margin = 0 if face in self._port_footprints else self.margin_cells
-                idx = n_abs + margin
-                if at_low:
-                    lo_n[axis] = idx
-                else:
-                    hi_n[axis] = n_cells[axis] - idx
-                open_faces.append(face)
-            elif kind in ("PEC", "PMC"):
-                spec = mirror_spec_for_face(face, kind, nodes[axis])
-                self._image_planes.append(
-                    ImagePlane(
-                        axis=axis,
-                        position=spec.wall,
-                        kind=kind,
-                        at_low=at_low,
-                        physical_halfspace=face not in sym,
-                    )
-                )
-            else:
-                raise ValueError(
-                    f"far-field monitor {self.name!r}: face {face!r} is "
-                    f"{kind!r} — the radiated field of a periodic model "
-                    f"is not defined by a Huygens box."
-                )
+        lo_n, hi_n, open_faces = face_node_indices(
+            mesh,
+            margin_cells=self.margin_cells,
+            zero_margin_faces=tuple(self._port_footprints),
+            label=label,
+        )
+        self._image_planes = image_planes_for(mesh, open_faces)
 
         if not open_faces:
             raise ValueError(
-                f"far-field monitor {self.name!r}: every domain face is a "
-                f"wall; a closed cavity has no radiated field."
+                f"{label}: every domain face is a wall; a closed cavity has no radiated field."
             )
         for axis in range(3):
             if hi_n[axis] - lo_n[axis] < 2:
                 raise ValueError(
-                    f"far-field monitor {self.name!r}: after excluding the "
-                    f"absorber and {self.margin_cells} margin cell(s), only "
+                    f"{label}: after excluding the absorber and "
+                    f"{self.margin_cells} margin cell(s), only "
                     f"{hi_n[axis] - lo_n[axis]} cell(s) remain along "
                     f"{_AXES[axis]} — the model needs more physical volume "
                     f"around the radiator."
                 )
 
-        centres = [_cell_centres(nodes[a]) for a in range(3)]
-        widths = [np.asarray(d, dtype=float) for d in (grid.dx, grid.dy, grid.dz)]
-
-        self._faces = []
-        for face in open_faces:
-            axis = _AXES.index(face[0])
-            at_low = face.endswith("min")
-            nn = lo_n[axis] if at_low else hi_n[axis]
-            t1, t2 = [a for a in range(3) if a != axis]
-            slices = [None, None, None]
-            slices[axis] = slice(nn - 1, nn + 1)
-            slices[t1] = slice(lo_n[t1], hi_n[t1])
-            slices[t2] = slice(lo_n[t2], hi_n[t2])
-            cc = centres[axis]
-            w = float((nodes[axis][nn] - cc[nn - 1]) / (cc[nn] - cc[nn - 1]))
-            self._faces.append(
-                _BoxFace(
-                    name=face,
-                    axis=axis,
-                    sign=-1.0 if at_low else 1.0,
-                    plane=float(nodes[axis][nn]),
-                    slab=tuple(slices),
-                    weight=w,
-                    tangent_axes=(t1, t2),
-                    c1=centres[t1][lo_n[t1] : hi_n[t1]].copy(),
-                    c2=centres[t2][lo_n[t2] : hi_n[t2]].copy(),
-                    w1=widths[t1][lo_n[t1] : hi_n[t1]].copy(),
-                    w2=widths[t2][lo_n[t2] : hi_n[t2]].copy(),
-                )
-            )
-
+        self._faces = build_faces(grid, lo_n, hi_n, open_faces)
         self._exclude_metal_and_feeds(mesh, lo_n)
 
         self._acc = {}
@@ -264,39 +168,14 @@ class MonitorFarFieldFrequency:
     def _exclude_metal_and_feeds(self, mesh, lo_n) -> None:
         """Zero the patch weights inside conductors and feed guides.
 
-        A Huygens face cuts through whatever the model puts there.  A
-        patch whose sampled cells are perfect conductor on both sides
-        of the face carries no field and no source; a patch inside the
-        footprint of a waveguide-port window on an absorbing face
-        (DD-198) samples the guided wave of the feed, which is not an
-        external source — the equivalent surface is closed by the
-        guide's outer wall instead, whose currents beyond the box the
-        absorber removes.  Both are left out; the remaining surface is
-        the usual approximation for a waveguide-fed radiator.
+        The exclusions are shared with the other Huygens-box monitors
+        (:mod:`magnelio.monitors._huygens`): a patch that is perfect
+        conductor on both sides of the face carries no field and no
+        source, and a patch inside a waveguide-port window (DD-198)
+        samples the feed rather than an external source.  What remains
+        is the usual approximation for a waveguide-fed radiator.
         """
-        material_id = getattr(mesh, "material_id", None)
-        library = getattr(mesh, "material_library", None) or {}
-        pec_ids = [mid for mid, mat in library.items() if getattr(mat, "is_pec", False)]
-        for bf in self._faces:
-            keep = np.ones((bf.c1.size, bf.c2.size), dtype=float)
-            t1, t2 = bf.tangent_axes
-            if material_id is not None and pec_ids:
-                inner = list(bf.slab)
-                outer = list(bf.slab)
-                nn = bf.slab[bf.axis].stop - 1
-                inner[bf.axis] = nn - 1
-                outer[bf.axis] = nn
-                pec_in = np.isin(material_id[tuple(inner)], pec_ids)
-                pec_out = np.isin(material_id[tuple(outer)], pec_ids)
-                keep[pec_in & pec_out] = 0.0
-            for win in self._port_footprints.get(bf.name, ()):
-                sl = [slice(None), slice(None)]
-                for pos, t in enumerate((t1, t2)):
-                    if t in win:
-                        lo, hi = (int(v) for v in win[t])
-                        sl[pos] = slice(max(lo - lo_n[t], 0), max(hi - lo_n[t], 0))
-                keep[tuple(sl)] = 0.0
-            bf.keep = keep if (keep < 1.0).any() else None
+        exclude_pec_patches(mesh, self._faces, lo_n, self._port_footprints)
 
     def record(self, fields, n: int, t: float, dt: float) -> None:
         """Accumulate this step's surface DFT contribution.

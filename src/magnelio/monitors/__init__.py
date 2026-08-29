@@ -7,6 +7,7 @@ the run.
 from magnelio.monitors.base import MonitorRegion
 from magnelio.monitors.far_field import MonitorFarFieldFrequency
 from magnelio.monitors.field_frequency import MonitorFieldFrequency
+from magnelio.monitors.field_surface import MonitorFieldSurface
 from magnelio.monitors.field_time import MonitorFieldTime
 from magnelio.monitors.flux import MonitorFluxTime
 from magnelio.monitors.wall_loss import MonitorWallLoss
@@ -14,6 +15,7 @@ from magnelio.monitors.wall_loss import MonitorWallLoss
 __all__ = [
     "MonitorFieldTime",
     "MonitorFieldFrequency",
+    "MonitorFieldSurface",
     "MonitorFluxTime",
     "MonitorFarFieldFrequency",
     "MonitorWallLoss",
