@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=4e2bec15"></script>
+    <script src="../_static/documentation_options.js?v=57adb930"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -535,12 +535,27 @@ parity (holes against their outer boundary) before the area kernels
 sum them, whatever path produced them.  The kernel’s section runs over
 the faces whose extent reaches the plane rather than over the whole
 body — the same curves, without the kernel preparing a thousand faces
-the plane never meets.  A grid plane that coincides with a face of the
+the plane never meets — and a planar face that carries the outline of
+every feature on it (the floor of an air body under a row of posts)
+is cut once into tiles, so that a plane crossing one tile is
+sectioned over that tile alone; a plane on a cut line or across
+several tiles takes the whole face.  A grid plane that coincides with a face of the
 model is never sectioned in place: the fractions there come from
 sections a small step to either side, and the step clears the kernel’s
 tolerance by a margin (four times the largest tolerance in the model,
 or the section deflection if that is larger), because a section within
 the tolerance of a face reports that face on both sides.</p>
+<p>The free length of a grid edge — the part outside any conductor —
+comes from the crossings of its carrier line with the conductor’s
+faces.  Every edge of a structured grid lies on one of comparatively
+few such lines; the lines are collected once and intersected in bulk,
+planar faces at their exactly known crossing points and curved faces
+through the kernel, and each edge reads the crossings inside its own
+window.  An edge whose crossings cannot anchor the inside/outside
+bookkeeping — a crossing on a face outline, as on every edge that runs
+along a conductor’s corner — classifies its sub-segment midpoints on
+probe lines of their own, and a midpoint within tolerance of a face
+counts as conductor, as the kernel’s classifier would have it.</p>
 </section>
 <section id="graded-cartesian-mesh">
 <h2>Graded Cartesian mesh<a class="headerlink" href="#graded-cartesian-mesh" title="Link to this heading">#</a></h2>
@@ -783,7 +798,10 @@ mid-thickness gives the outline, and every tangential edge of the sheet
 plane is tested against it by the even-odd rule — holes stay open, and
 edges on the outline count as metal — the same path the cell
 classifier uses, so a copper layer of thousands of faces costs one
-section, not one solid classification per edge.</p>
+section, not one solid classification per edge.  Each contour of the
+section is tested only on the edges inside its own bounding box, so a
+layer of many small pads costs the sum of their boxes, not pads ×
+plane.</p>
 </section>
 <section id="thin-wire-sub-cell-model">
 <h2>Thin-wire sub-cell model<a class="headerlink" href="#thin-wire-sub-cell-model" title="Link to this heading">#</a></h2>

@@ -660,7 +660,7 @@ the result would remove the quasi-static phase only.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (3 minutes 0.636 seconds)
+   **Total running time of the script:** (4 minutes 41.567 seconds)
 
 
 .. _sphx_glr_download_howto_plot_lange_coupler.py:

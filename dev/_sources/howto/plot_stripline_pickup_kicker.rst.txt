@@ -795,7 +795,7 @@ the distance between the two feeds, not the strip's own length.
       K_par  = 0.395  (ideal 0.471)
       K_perp = 2.763  (ideal 3.373)
       R_par T^2  =    8.2 ohm  (ideal   11.6 ohm)
-      R_perp T^2 =  399.6 ohm  (ideal  595.6 ohm)
+      R_perp T^2 =  399.5 ohm  (ideal  595.6 ohm)
 
 
 
@@ -902,7 +902,7 @@ that move the real device toward, or away from, the ideal stripline.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (7 minutes 56.271 seconds)
+   **Total running time of the script:** (10 minutes 17.904 seconds)
 
 
 .. _sphx_glr_download_howto_plot_stripline_pickup_kicker.py:

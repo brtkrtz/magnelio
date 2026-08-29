@@ -804,7 +804,7 @@ straight one used here.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (15 minutes 48.377 seconds)
+   **Total running time of the script:** (20 minutes 25.866 seconds)
 
 
 .. _sphx_glr_download_howto_plot_patch_array.py:

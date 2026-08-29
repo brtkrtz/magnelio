@@ -43,8 +43,12 @@ A union of bodies that are prisms along one axis over the same
 interval — the strips of a feed network, the pads of a layer, a row of
 posts — is fused in their common plane and raised once, so the result
 carries no seams between its operands; whatever else a union holds is
-fused in space, and only where it meets something.  The point set is
-the same either way; the face count is what the mesher sees.
+fused in space, and only where it meets something.  In the plane the
+operands are fused pairwise up a spatial bisection tree, with the
+seams removed at every node, so a network of thousands of coplanar
+strips costs seconds rather than the minutes a single fuse of all of
+them takes.  The point set is the same either way; the face count is
+what the mesher sees.
 
 ## From a map to a reflector: parametric surfaces
 
