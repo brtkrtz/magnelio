@@ -114,3 +114,103 @@ def test_shapes_the_kernel_cannot_handle_are_skipped():
     classifiers = PointClassifierSet(shapes, scale=1.0)
     assert classifiers.first_containing((1e-3, 1e-3, 1e-3)) == 2
     assert classifiers.first_containing((1e-3, 1e-3, 1e-3), reverse=True) == 2
+
+
+def _csg_model():
+    """A pocketed slab (brick and cylinder pockets), a union, an intersection, a nested cut."""
+    from magnelio.geo import Intersection, Union
+
+    slab = Brick(origin=(0, 0, 0), size=(6e-3, 4e-3, 2e-3), material=AIR)
+    pocket = Brick(origin=(1e-3, 1e-3, 1e-3), size=(1e-3, 1e-3, 2e-3), material=PEC)
+    bore = Cylinder(origin=(4e-3, 2e-3, 0.5e-3), radius=0.6e-3, height=1e-3, axis="z", material=PEC)
+    pocketed = Difference(slab, pocket, bore)
+    union = Union(
+        Brick(origin=(0, 0, 3e-3), size=(3e-3, 4e-3, 1e-3), material=PEC),
+        Brick(origin=(2e-3, 0, 3e-3), size=(4e-3, 4e-3, 1e-3), material=PEC),
+        material=PEC,
+    )
+    inter = Intersection(
+        Brick(origin=(0, 0, 5e-3), size=(4e-3, 4e-3, 1e-3), material=AIR),
+        Brick(origin=(2e-3, 1e-3, 5e-3), size=(4e-3, 2e-3, 1e-3), material=AIR),
+    )
+    nested = Difference(
+        union,
+        Difference(
+            Brick(origin=(2e-3, 1e-3, 3e-3), size=(2e-3, 2e-3, 1e-3), material=PEC),
+            Brick(origin=(2.5e-3, 1.5e-3, 3e-3), size=(1e-3, 1e-3, 1e-3), material=PEC),
+        ),
+    )
+    return [pocketed, union, inter, nested]
+
+
+def test_csg_nodes_are_answered_from_their_operands():
+    """Difference / Union / Intersection states follow the point-set identities,
+    including the ON band on the pocket walls, and match the kernel's answer on
+    the Boolean solid."""
+    tol = 1e-6
+    shapes = _csg_model()
+    classifiers = PointClassifierSet(shapes, scale=1.0, tolerance=tol)
+    rng = np.random.default_rng(11)
+    points = list(map(tuple, rng.uniform((-1e-3, -1e-3, -1e-3), (7e-3, 5e-3, 7e-3), size=(400, 3))))
+    # The pocket wall at x = 1e-3, from both sides, within and beyond the band;
+    # the bore wall; the cut-out of the nested difference (the inner brick is
+    # metal again); the union's seam plane.
+    points += [
+        (1e-3 - 0.5 * tol, 1.5e-3, 1.5e-3),
+        (1e-3 + 0.5 * tol, 1.5e-3, 1.5e-3),
+        (1e-3 + 3 * tol, 1.5e-3, 1.5e-3),
+        (1e-3 - 3 * tol, 1.5e-3, 1.5e-3),
+        (4e-3 + 0.6e-3 + 0.5 * tol, 2e-3, 1e-3),
+        (4e-3 + 0.6e-3 - 0.5 * tol, 2e-3, 1e-3),
+        (4e-3, 2e-3, 1e-3),
+        (3e-3, 2e-3, 3.5e-3),
+        (2.2e-3, 1.2e-3, 3.5e-3),
+        (2e-3, 2e-3, 3.5e-3),
+        (3e-3, 2e-3, 5.5e-3),
+        (1e-3, 2e-3, 5.5e-3),
+    ]
+    for p in points:
+        for k, shape in enumerate(shapes):
+            expected = point_in_shape(shape._occ_shape(1.0), p, tolerance=tol)
+            assert classifiers.contains(k, p) == expected, (k, p)
+
+
+def test_only_leaf_classifiers_are_loaded(monkeypatch):
+    from OCC.Core import BRepClass3d
+
+    loads = []
+    original = BRepClass3d.BRepClass3d_SolidClassifier
+
+    class Counting(original):
+        def Load(self, shape):  # noqa: N802 — kernel spelling
+            loads.append(shape)
+            return original.Load(self, shape)
+
+    monkeypatch.setattr(BRepClass3d, "BRepClass3d_SolidClassifier", Counting)
+    shapes = _csg_model()
+    pocketed = shapes[0]
+    classifiers = PointClassifierSet(shapes, scale=1.0, tolerance=1e-6)
+    assert classifiers.contains(0, (0.5e-3, 0.5e-3, 0.5e-3))  # slab, no pocket box holds it
+    assert len(loads) == 1
+    assert not classifiers.contains(0, (1.5e-3, 1.5e-3, 1.5e-3))  # in the brick pocket
+    assert len(loads) == 2
+    assert classifiers.contains(0, (1.5e-3, 1.5e-3, 0.5e-3))  # below the pocket, same boxes
+    assert len(loads) == 2
+    assert all(not s.IsSame(pocketed._occ_shape(1.0)) for s in loads)
+    # The nested cut: union pieces and the inner difference's operands, never a Boolean solid.
+    assert classifiers.contains(3, (3e-3, 2e-3, 3.5e-3))
+    assert all(not s.IsSame(node._occ_shape(1.0)) for s in loads for node in (shapes[1], shapes[3]))
+
+
+def test_a_node_with_an_unboxable_operand_falls_back_to_its_own_solid():
+    class Unboxable(Brick):
+        def bounding_box(self, scale=None):
+            raise RuntimeError("no box")
+
+    hole = Unboxable(origin=(1e-3, 1e-3, 1e-3), size=(1e-3, 1e-3, 2e-3), material=PEC)
+    slab = Brick(origin=(0, 0, 0), size=(6e-3, 4e-3, 2e-3), material=AIR)
+    shapes = [Difference(slab, hole)]
+    classifiers = PointClassifierSet(shapes, scale=1.0, tolerance=1e-6)
+    assert classifiers.contains(0, (0.5e-3, 0.5e-3, 0.5e-3))
+    assert not classifiers.contains(0, (1.5e-3, 1.5e-3, 1.5e-3))
+    assert classifiers._operand_boxes[id(shapes[0])] is None

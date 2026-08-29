@@ -228,3 +228,33 @@ def test_contour_mask_windows_match_the_full_grid():
     in_hole = contour_mask(UU, VV, contours, 0.05)[i, j]
     assert not in_hole
     assert contour_mask(UU[:0], VV[:0], contours, 0.05).shape == (0, 131)
+
+
+def test_engine_section_matches_the_kernel_section(monkeypatch):
+    """The sheet's planar section engine and the kernel section paint the same edges."""
+    with_engine = _l_shape_mesh().pec_mask_edges.copy()
+    engine_calls = []
+    monkeypatch.setattr(
+        _conformal,
+        "_sheet_section_by_engine",
+        lambda *a, **k: engine_calls.append(a) or None,
+    )
+    with_kernel = _l_shape_mesh().pec_mask_edges.copy()
+    assert engine_calls and with_engine.any()
+    np.testing.assert_array_equal(with_engine, with_kernel)
+
+
+def test_sheet_section_does_not_run_the_kernel_section(monkeypatch):
+    from magnelio.geo import _occ_backend
+
+    original = _occ_backend.cross_section_polygons
+    contexts = []
+
+    def spy(*args, **kwargs):
+        contexts.append(kwargs.get("context", ""))
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(_occ_backend, "cross_section_polygons", spy)
+    mesh = _l_shape_mesh()
+    assert mesh.pec_mask_edges.any()
+    assert not [c for c in contexts if str(c).startswith("thin sheet")]

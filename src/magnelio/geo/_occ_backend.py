@@ -1066,6 +1066,28 @@ def point_in_shape(
     return state in (TopAbs_IN, TopAbs_ON)
 
 
+_STATE_OUT, _STATE_ON, _STATE_IN = 0, 1, 2
+
+
+def _boolean_operands(shape) -> tuple[str | None, tuple]:
+    """``(kind, operands)`` of a CSG node the point rules can take apart.
+
+    Exact types only: a subclass may give ``_occ_shape`` another
+    meaning, and the rules stand on the construction ``Difference``,
+    ``Union`` and ``Intersection`` state.
+    """
+    from magnelio.geo.operations import Difference, Intersection, Union  # noqa: PLC0415
+
+    kind = type(shape)
+    if kind is Difference:
+        return "difference", (shape.base, *shape.tools)
+    if kind is Union:
+        return "union", tuple(shape.shapes)
+    if kind is Intersection:
+        return "intersection", (shape.shape_a, shape.shape_b)
+    return None, ()
+
+
 class PointClassifierSet:
     """Point-in-shape probes against a fixed list of model shapes.
 
@@ -1073,14 +1095,33 @@ class PointClassifierSet:
     per call, and loading is O(faces) of the solid — some 15 ms for an
     air body with a few hundred pockets — so a probe that walks every
     shape of the model pays that once per shape and per point.  This
-    set keeps one loaded classifier per shape, screens the shapes by
+    set keeps one loaded classifier per solid, screens the shapes by
     bounding box before it asks any of them, and walks the survivors in
     list order or reversed.  Shapes the kernel cannot box or classify
     are skipped, as the per-call loop skipped them.
 
+    A CSG node is answered from its operands, never from its own
+    kernel solid: with the states ``OUT`` / ``ON`` (within the
+    tolerance of the surface) / ``IN`` of the operands,
+
+    - ``base − tools`` is ``OUT`` where the base is or where a tool is
+      ``IN``, ``ON`` where the base is or where a tool is (the pocket
+      wall), ``IN`` otherwise;
+    - a union is ``IN`` where any piece is, else ``ON`` where any
+      piece is, else ``OUT``;
+    - an intersection is ``OUT`` where any operand is, else ``ON``
+      where any operand is, else ``IN``
+
+    — the point-set identities of the three operations, applied
+    recursively down to the leaves, whose classifiers are the only
+    ones loaded.  The kernel's ``Perform`` on a Boolean solid walks its
+    faces: 2.3 ms per probe on a housing's air body with 320 pockets
+    (4 044 faces), against microseconds for the six-face bricks it was
+    built from.
+
     The bounding-box screen is padded by the classification tolerance,
     so a point the classifier would report ``ON`` is never screened
-    out.
+    out; operands are screened the same way.
 
     Parameters
     ----------
@@ -1097,37 +1138,101 @@ class PointClassifierSet:
         self._shapes = list(shapes)
         self._scale = float(scale)
         self._tolerance = float(tolerance)
-        boxes = np.full((len(self._shapes), 6), np.nan)
-        for k, shape in enumerate(self._shapes):
+        self._boxes = self._boxes_of(self._shapes)
+        #: Loaded leaf classifiers by ``id(shape)``.
+        self._classifiers: dict[int, object] = {}
+        #: Operand boxes of the CSG nodes met so far, by ``id(node)``
+        #: (``None`` where an operand could not be boxed: the node is
+        #: then classified on its own kernel solid).
+        self._operand_boxes: dict[int, np.ndarray | None] = {}
+
+    def _boxes_of(self, shapes: list) -> np.ndarray:
+        boxes = np.full((len(shapes), 6), np.nan)
+        for k, shape in enumerate(shapes):
             try:
-                lo, hi = shape.bounding_box(scale)
+                lo, hi = shape.bounding_box(self._scale)
             except Exception:  # noqa: BLE001 — exotic shape: never a candidate
                 continue
             boxes[k, :3], boxes[k, 3:] = lo, hi
-        self._boxes = boxes
-        self._classifiers: dict[int, object] = {}
+        return boxes
+
+    def _screen(self, boxes: np.ndarray, point) -> np.ndarray:
+        """Which of *boxes*, padded by the tolerance, hold *point* [m]."""
+        p = np.asarray(point, dtype=float)
+        pad = self._tolerance + 1e-12 * (1.0 + float(np.abs(p).max()))
+        inside = np.all(boxes[:, :3] - pad <= p, axis=1)
+        inside &= np.all(p <= boxes[:, 3:] + pad, axis=1)
+        return inside
 
     def candidates(self, point) -> np.ndarray:
         """Indices (list order) of the shapes whose padded box holds *point* [m]."""
-        p = np.asarray(point, dtype=float)
-        pad = self._tolerance + 1e-12 * (1.0 + float(np.abs(p).max()))
-        inside = np.all(self._boxes[:, :3] - pad <= p, axis=1)
-        inside &= np.all(p <= self._boxes[:, 3:] + pad, axis=1)
-        return np.flatnonzero(inside)
+        return np.flatnonzero(self._screen(self._boxes, point))
 
-    def contains(self, index: int, point) -> bool:
-        """Whether shape *index* contains *point* [m] (inside or on its surface)."""
+    def _leaf_state(self, shape, point) -> int:
         from OCC.Core.BRepClass3d import BRepClass3d_SolidClassifier  # noqa: PLC0415
         from OCC.Core.gp import gp_Pnt  # noqa: PLC0415
         from OCC.Core.TopAbs import TopAbs_IN, TopAbs_ON  # noqa: PLC0415
 
-        classifier = self._classifiers.get(index)
+        classifier = self._classifiers.get(id(shape))
         if classifier is None:
             classifier = BRepClass3d_SolidClassifier()
-            classifier.Load(self._shapes[index]._occ_shape(self._scale))
-            self._classifiers[index] = classifier
+            classifier.Load(shape._occ_shape(self._scale))
+            self._classifiers[id(shape)] = classifier
         classifier.Perform(gp_Pnt(*_scale3(point, self._scale)), self._tolerance * self._scale)
-        return classifier.State() in (TopAbs_IN, TopAbs_ON)
+        state = classifier.State()
+        if state == TopAbs_IN:
+            return _STATE_IN
+        return _STATE_ON if state == TopAbs_ON else _STATE_OUT
+
+    def _state(self, shape, point) -> int:
+        """``_STATE_OUT`` / ``_STATE_ON`` / ``_STATE_IN`` of *point* [m] for *shape*."""
+        kind, operands = _boolean_operands(shape)
+        if kind is None:
+            return self._leaf_state(shape, point)
+        key = id(shape)
+        if key not in self._operand_boxes:
+            boxes = self._boxes_of(list(operands))
+            self._operand_boxes[key] = None if np.isnan(boxes).any() else boxes
+        boxes = self._operand_boxes[key]
+        if boxes is None:
+            return self._leaf_state(shape, point)
+        inside = self._screen(boxes, point)
+        if kind == "difference":
+            if not inside[0]:
+                return _STATE_OUT
+            state = self._state(operands[0], point)
+            if state == _STATE_OUT:
+                return _STATE_OUT
+            for k in np.flatnonzero(inside[1:]) + 1:
+                tool = self._state(operands[k], point)
+                if tool == _STATE_IN:
+                    return _STATE_OUT
+                if tool == _STATE_ON:
+                    state = _STATE_ON
+            return state
+        if kind == "union":
+            state = _STATE_OUT
+            for k in np.flatnonzero(inside):
+                piece = self._state(operands[k], point)
+                if piece == _STATE_IN:
+                    return _STATE_IN
+                if piece == _STATE_ON:
+                    state = _STATE_ON
+            return state
+        if not inside.all():
+            return _STATE_OUT
+        state = _STATE_IN
+        for operand in operands:
+            s = self._state(operand, point)
+            if s == _STATE_OUT:
+                return _STATE_OUT
+            if s == _STATE_ON:
+                state = _STATE_ON
+        return state
+
+    def contains(self, index: int, point) -> bool:
+        """Whether shape *index* contains *point* [m] (inside or on its surface)."""
+        return self._state(self._shapes[index], point) != _STATE_OUT
 
     def first_containing(self, point, skip=None, reverse: bool = False) -> int | None:
         """Index of the first shape containing *point* [m]; ``None`` if none does.
@@ -5708,6 +5813,21 @@ def _section_engine(shape_obj, scale: float, deflection: float | None):
     if engines is not None:
         engines[key] = engine
     return engine
+
+
+def _finest_section_engine(shape_obj, scale: float):
+    """The cached section engine of *shape_obj* at *scale* with the
+    smallest deflection, or ``None`` when none has been built — for a
+    consumer whose own chord budget is coarser than the material
+    passes' and that would otherwise rebuild the digest it can reuse."""
+    engines = getattr(shape_obj, "__dict__", {}).get("_section_engine_cache", {})
+    best = None
+    for (engine_scale, deflection), engine in engines.items():
+        if engine_scale != float(scale) or deflection is None:
+            continue
+        if best is None or deflection < best[0]:
+            best = (deflection, engine)
+    return None if best is None else best[1]
 
 
 def compute_face_material_areas(

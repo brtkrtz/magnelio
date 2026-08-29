@@ -486,6 +486,16 @@ def rasterize_thin_sheet_footprint(mesh, spec: ThinSheetSpec, scale: float = 1.0
     selection of the rect path and the OCC ``ON`` state of the
     classifier.
 
+    The section is asked of the shape's planar section engine first
+    (:func:`magnelio.geo._occ_backend._section_engine`, the digest the
+    ε/σ/µ passes built and cached on the shape): on a copper network
+    of straight strips it answers in milliseconds where the kernel's
+    section of the whole solid took a second (1.19 s for the 229
+    contours of a 16 × 16 patch array's feed).  A plane the engine
+    declines — through a vertex, tangent to a cylinder, a free-form
+    face without facets — goes to ``cross_section_polygons`` as
+    before.
+
     Classifying each midpoint against the solid instead costs
     O(candidates × faces): 15 ms per point on a 1 300-face copper
     network, minutes per sheet on a patch array.  That path stays as
@@ -522,19 +532,21 @@ def rasterize_thin_sheet_footprint(mesh, spec: ThinSheetSpec, scale: float = 1.0
     nudge = SECTION_NUDGE_FRACTION * h_min
     if spec.far_position is not None:
         nudge = min(nudge, 0.5 * tol)
-    try:
-        contours = cross_section_polygons(
-            occ,
-            spec.axis,
-            probe,
-            deflection=deflection,
-            scale=scale,
-            exact_at_faces=spec.far_position is None,
-            nudge=nudge,
-            context=f"thin sheet {getattr(spec.shape, 'name', '') or ''}".rstrip(),
-        )
-    except Exception:  # noqa: BLE001 — the classifier path answers instead
-        contours = []
+    contours = _sheet_section_by_engine(spec, probe, scale, deflection)
+    if contours is None:
+        try:
+            contours = cross_section_polygons(
+                occ,
+                spec.axis,
+                probe,
+                deflection=deflection,
+                scale=scale,
+                exact_at_faces=spec.far_position is None,
+                nudge=nudge,
+                context=f"thin sheet {getattr(spec.shape, 'name', '') or ''}".rstrip(),
+            )
+        except Exception:  # noqa: BLE001 — the classifier path answers instead
+            contours = []
     if not contours:
         _rasterize_by_classifier(mesh, spec, scale)
         return
@@ -543,6 +555,30 @@ def rasterize_thin_sheet_footprint(mesh, spec: ThinSheetSpec, scale: float = 1.0
         UU, VV = _sheet_candidate_points(grid, spec, comp, iu_sel, iv_sel)
         mask = contour_mask(UU, VV, contours, tol)
         _paint_sheet_edges(mesh, spec, comp, iu_sel, iv_sel, mask)
+
+
+def _sheet_section_by_engine(spec: ThinSheetSpec, probe: float, scale: float, deflection: float):
+    """Contours of the sheet's solid at *probe* [m] from its section engine.
+
+    The finest engine the material passes cached on the shape is
+    reused — their chord budget is an order below this path's, and
+    the digest's build is a third of a second on a 1 787-strip copper
+    union, a millisecond on each of 192 finger bricks; only a shape
+    no pass has sectioned gets an engine at *deflection*.  ``None``
+    when the engine cannot digest the shape or declines the plane, so
+    the caller takes the kernel section.
+    """
+    from magnelio.geo._occ_backend import _finest_section_engine, _section_engine  # noqa: PLC0415
+
+    try:
+        engine = _finest_section_engine(spec.shape, scale)
+        if engine is None:
+            engine = _section_engine(spec.shape, scale, deflection)
+        if not engine.enabled:
+            return None
+        return engine.section("xyz".index(spec.axis), probe)
+    except Exception:  # noqa: BLE001 — a shape the engine cannot digest: kernel section
+        return None
 
 
 def contour_mask(UU, VV, contours, tol: float) -> np.ndarray:
@@ -556,7 +592,10 @@ def contour_mask(UU, VV, contours, tol: float) -> np.ndarray:
     many small contours (the pads of an array) costs the sum of their
     boxes instead of contours × grid.
     """
-    from magnelio.geo._polygon_clip import points_in_polygon, points_near_polygon  # noqa: PLC0415
+    from magnelio.geo._polygon_clip import (  # noqa: PLC0415
+        points_in_polygon,
+        points_near_polygon_grid,
+    )
 
     mask = np.zeros(UU.shape, dtype=bool)
     if UU.size == 0:
@@ -572,6 +611,6 @@ def contour_mask(UU, VV, contours, tol: float) -> np.ndarray:
             windows.append((poly, (slice(i0, i1), slice(j0, j1))))
     for poly, window in windows:
         mask[window] ^= points_in_polygon(UU[window], VV[window], poly)
-    for poly, window in windows:
-        mask[window] |= points_near_polygon(UU[window], VV[window], poly, tol)
+    for poly, (wu, wv) in windows:
+        mask[wu, wv] |= points_near_polygon_grid(u_vals[wu], v_vals[wv], poly, tol)
     return mask
