@@ -11,6 +11,30 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- `magnelio.AnalysisTD`, the general time-domain analysis: one march
+  under any set of *simultaneous* excitations — port channels and
+  model sources, each with its own waveform, amplitude and delay —
+  returning a `magnelio.analysis.TDResult` with the recorded port
+  signals, the sampled excitation signals, the energy trace and the
+  monitors (`result.signal(port)`, `excitation_signal(name)`, `a()` /
+  `b()`, `renormalize(name)`, `plot_signals()`).  `run(t_end=…)` fixes
+  the physical duration; continuous-wave waveforms require it.
+  `AnalysisScatteringTD` now derives from it and drives its channel
+  runs on the same engine.
+- Several modes of one port may be driven in the same run, each with
+  its own waveform.
+- Project store: `AnalysisTD` runs stream into a project like
+  scattering runs (`run(name=…)`, default `run_<n>`) and resume with
+  `magnelio.resume(project, name)`; `Project.result(name)` rebuilds
+  the `TDResult` of any run — a scattering channel run included.
+  Every run records its excitations.
+- Tutorial *Plane-wave scattering: the radar cross section of a
+  sphere* — the first source-driven run, checked against the Mie
+  series — and the concept section *The general time-domain analysis*
+  in the methods guide.
+- A source's total-field box asks for grid planes at its corners, so
+  the box lands where it was declared (`mesh.planes` reports them as
+  `source` planes).
 - Excitation waveforms as objects: `magnelio.signals.Waveform` with
   `WaveformGaussian`, `WaveformGaussianModulated`, `WaveformSine`,
   `WaveformStep`, `WaveformTable` and `WaveformFunction`.  A waveform
@@ -30,6 +54,23 @@ major version is 0, minor releases may change the public API.
 
 ### Changed
 
+- Project-store schema 2.0: `results.h5` names a run by its
+  excitations (`excited_name`/`excited_mode` only on scattering
+  channel runs), `mesh.h5` records the mesh's element type, port
+  checkpoints hold one source-history buffer per excited mode, and
+  the pre-DD-224 spellings the 1.0 readers still accepted
+  (`MonitorFarField` tag, `plane`/`reference_plane` pairs, the
+  `excitation` recipe key) are no longer read.  Projects written by
+  earlier releases must be re-run.
+- The auto-sized run length of a band-limited pulse follows the
+  pulse's own duration (`waveform.t_end`, plus any delay) instead of
+  `8 / f_max`; a TE/TM-fed scattering run therefore checks its stop
+  criterion on a slightly different cadence and may stop a few steps
+  later (in-band |S| changes below 5·10⁻⁴ on the reference guides;
+  TEM and lumped runs are unchanged).
+- The default total-field box of a plane wave now sits two cells
+  inside the *physical* domain, past the absorber cells the mesher
+  appends.
 - `AnalysisScatteringTD(excitation=ExcitationSpec(...))` is now
   `AnalysisScatteringTD(waveform=...)` taking any `Waveform`; the
   per-mode default is unchanged (Gaussian for TEM and lumped ports,

@@ -220,8 +220,8 @@ class TestPlannedRunProtocol:
         store = self._store(tmp_path)
         store.register_planned_runs(
             [
-                ("port1_mode0", ("port1", 0)),
-                ("port2_mode0", ("port2", 0)),
+                ("port1_mode0", {"excited": ["port1", 0]}),
+                ("port2_mode0", {"excited": ["port2", 0]}),
             ]
         )
         p = open_project(store.path)
@@ -235,12 +235,12 @@ class TestPlannedRunProtocol:
 
     def test_register_keeps_existing_entries(self, tmp_path):
         store = self._store(tmp_path)
-        store.register_planned_runs([("port1_mode0", ("port1", 0))])
+        store.register_planned_runs([("port1_mode0", {"excited": ["port1", 0]})])
         store._finalize_run("port1_mode0", 42, "done")
         store.register_planned_runs(
             [
-                ("port1_mode0", ("port1", 0)),
-                ("port2_mode0", ("port2", 0)),
+                ("port1_mode0", {"excited": ["port1", 0]}),
+                ("port2_mode0", {"excited": ["port2", 0]}),
             ]
         )
         p = open_project(store.path)
@@ -253,8 +253,8 @@ class TestPlannedRunProtocol:
         store = self._store(tmp_path)
         store.register_planned_runs(
             [
-                ("port1_mode0", ("port1", 0)),
-                ("port2_mode0", ("port2", 0)),
+                ("port1_mode0", {"excited": ["port1", 0]}),
+                ("port2_mode0", {"excited": ["port2", 0]}),
             ]
         )
         p = open_project(store.path)

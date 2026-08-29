@@ -517,3 +517,42 @@ class TestDTBCSelection:
                 omega_calc=2 * math.pi * 10e9,
                 termination="pml",
             )
+
+
+class TestSimultaneousModeExcitation:
+    """Several modes of one port drive at once (DD-224 Phase B)."""
+
+    def test_two_modes_each_keep_their_own_buffer(self):
+        from magnelio.signals import WaveformGaussian, WaveformGaussianModulated
+
+        _mesh, _plane, op, _discrete = _wr90_setup(n_modes=2, f_calc=16e9)
+        assert op.excited_modes == ()
+        op.set_excitation(0, WaveformGaussianModulated(f_min=7e9, f_max=16e9))
+        op.set_excitation(1, WaveformGaussian(f_max=16e9))
+        assert op.excited_modes == (0, 1)
+        assert op.excitation_waveform(0) is not None
+        assert op.excitation_waveform(2) is None
+        sd = op.state_dict()
+        assert set(sd["src_buffers"]) == {"0", "1"}
+        assert all(v >= 5 for v in sd["src_maxlens"].values())
+        # A second call on the same mode replaces its waveform, the
+        # other mode's binding survives.
+        op.set_excitation(0, WaveformGaussian(f_max=16e9))
+        assert op.excited_modes == (0, 1)
+        op.clear_excitation()
+        assert op.excited_modes == ()
+        assert op.state_dict()["src_buffers"] == {}
+
+    def test_checkpoint_needs_the_same_excited_modes(self):
+        from magnelio.signals import WaveformGaussian
+
+        _mesh, _plane, op, _discrete = _wr90_setup(n_modes=2, f_calc=16e9)
+        op.set_excitation(1, WaveformGaussian(f_max=16e9))
+        sd = op.state_dict()
+        op.clear_excitation()
+        op.set_excitation(0, WaveformGaussian(f_max=16e9))
+        with pytest.raises(ValueError, match="does not excite"):
+            op.load_state_dict(sd)
+        op.set_excitation(1, WaveformGaussian(f_max=16e9))
+        op.load_state_dict(sd)
+        assert op.excited_modes == (0, 1)

@@ -4,8 +4,10 @@ Each ``Analysis*`` class solves a specific physical question in one
 ``run()`` call:
 
 * :class:`AnalysisEigenmode` — resonant eigenmodes of a closed cavity.
-* :class:`AnalysisScatteringTD` — S-parameters of a multi-port network
-  via FIT time-domain simulation.
+* :class:`AnalysisTD` — one time-domain march under any set of
+  simultaneous excitations; returns a :class:`TDResult`.
+* :class:`AnalysisScatteringTD` — S-parameters of a multi-port network,
+  one channel per time-domain run.
 
 :func:`resume` continues a time-domain run persisted in a project store
  from its last checkpoint — see the function docstring.
@@ -18,9 +20,11 @@ from magnelio.analysis.result_interface import (
     ScatteringResultMixin,
 )
 from magnelio.analysis.scattering_td import AnalysisScatteringTD, ScatteringTDResult
+from magnelio.analysis.time_domain import AnalysisTD, TDResult
 
 __all__ = [
     "ScatteringTDResult",
+    "TDResult",
     "RunSettings",
     "ScatteringResult",
 ]
@@ -54,7 +58,8 @@ def resume(
     project : str or Path or Project
         The project directory (or an open reader) to continue.
     excited : str or (str, int), optional
-        Which run to resume, by its excited ``(port, mode)`` pair.  May
+        Which run to resume: a scattering run by its excited
+        ``(port, mode)`` pair, an ``AnalysisTD`` run by its name.  May
         be omitted when the project holds exactly one run.
     energy_stop_db : float, optional
         New stop threshold, dB below the *original* peak energy.  Default
@@ -117,13 +122,26 @@ def resume(
             checkpoint_interval=checkpoint_interval,
             verbose=verbose,
         )
+    if kind == "AnalysisTD":
+        from magnelio.analysis.time_domain import _resume_td
+
+        return _resume_td(
+            proj,
+            excited,
+            energy_stop_db=energy_stop_db,
+            total_time_steps=total_time_steps,
+            port_signal_stop_db=port_signal_stop_db,
+            max_time_steps=max_time_steps,
+            checkpoint_interval=checkpoint_interval,
+            verbose=verbose,
+        )
     if kind is None:
         raise ValueError(
             f"project {proj.path} has no analysis metadata; cannot resume.",
         )
     raise NotImplementedError(
         f"resume is not defined for analysis kind {kind!r}: only time-domain "
-        f"runs (AnalysisScatteringTD) carry the leapfrog state a resume "
-        f"continues.  An eigenmode result has none — re-run AnalysisEigenmode "
-        f"with more modes / a different sigma instead.",
+        f"runs (AnalysisTD, AnalysisScatteringTD) carry the leapfrog state a "
+        f"resume continues.  An eigenmode result has none — re-run "
+        f"AnalysisEigenmode with more modes / a different sigma instead.",
     )

@@ -50,6 +50,14 @@ class RunSettings:
     precision: str | None = None
     backend: str | None = None
     port_model_used: str | None = None
+    # Requested physical duration [s] of a general time-domain run
+    # (``AnalysisTD.run(t_end=…)``); ``None`` when the run length came
+    # from a stop criterion or a step count.
+    t_end: float | None = None
+    # The ``(name, mode)`` keys of the run's excitations — the channels
+    # driven one per run on a scattering analysis, the simultaneous
+    # drives of a general time-domain run.
+    excitations: tuple | None = None
 
 
 class ScatteringResultMixin(SDerivedAccessors):

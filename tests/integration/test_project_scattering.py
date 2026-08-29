@@ -293,7 +293,7 @@ def test_pending_second_run_reader_state(tmp_path):
     model, mesh, f_max = _model_and_mesh()
     p = tmp_path / "pp"
     _analysis(mesh, model, f_max, project=p).run(excited=[("port1", 0)])
-    ProjectStore(p).register_planned_runs([("port2_mode0", ("port2", 0))])
+    ProjectStore(p).register_planned_runs([("port2_mode0", {"excited": ["port2", 0]})])
     proj = open_project(p)
     assert proj.status == "running"  # not "done": run 2 planned
     assert proj.runs["port2_mode0"]["state"] == "pending"

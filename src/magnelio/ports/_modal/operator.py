@@ -513,8 +513,10 @@ class PortOperatorModal:
         self.discrete_modes = list(discrete_modes)
         self._n_modes = len(self.discrete_modes)
         self._dt = dt
-        self._excitation_mode: int | None = None
-        self._excitation_waveform = None
+        # Excited modes (DD-224): ``{mode_idx: (waveform_fn, source-history
+        # ring buffer)}``.  Several modes of one port may be driven in one
+        # run, each with its own waveform and TF/SF retardation buffer.
+        self._excitations: dict[int, tuple] = {}
 
         # Pre-extract M_eps slices (port + interior planes) and M_mu slice.
         self._me_u_port = np.asarray(m_eps_flat[plane.e_u_indices], dtype=float)
@@ -628,11 +630,6 @@ class PortOperatorModal:
         self._g_int_e = np.concatenate([plane.e_u_indices_interior, plane.e_v_indices_interior])
         self._g_port_h = np.concatenate([plane.h_u_indices, plane.h_v_indices])
         self._dev_idx: dict | None = None
-
-        # Source-history ring buffer for TF/SF incident-field look-up;
-        # allocated lazily by ``set_excitation`` and disabled by default
-        # so that absorber-only operators carry no buffer overhead.
-        self._src_buffer: collections.deque = collections.deque(maxlen=0)
 
         # |V| envelope accumulator for the solver's port-signal stop
         # criterion (DD-096); polled and reset via poll_signal_absmax.
@@ -991,18 +988,24 @@ class PortOperatorModal:
     # ------------------------------------------------------------------
 
     def state_dict(self) -> dict:
-        """Checkpoint the Mur previous-values, the TF/SF source-history
-        ring buffer, and every per-mode DTBC convolution history.
+        """Checkpoint the Mur previous-values, the per-mode TF/SF
+        source-history ring buffers, and every per-mode DTBC convolution
+        history.
 
-        The excitation waveform itself is *not* stored (it is re-set on
-        resume); everything here is state the leapfrog update mutates and
-        a bit-exact continuation must restore.
+        The excitation waveforms themselves are *not* stored (they are
+        re-set on resume); everything here is state the leapfrog update
+        mutates and a bit-exact continuation must restore.
         """
         sd = {
             "V_port_prev": self._V_port_prev.copy(),
             "V_interior_prev": self._V_interior_prev.copy(),
-            "src_buffer": np.array(self._src_buffer, dtype=float),
-            "src_maxlen": (0 if self._src_buffer.maxlen is None else int(self._src_buffer.maxlen)),
+            "src_buffers": {
+                str(m): np.array(buf, dtype=float) for m, (_, buf) in self._excitations.items()
+            },
+            "src_maxlens": {
+                str(m): (0 if buf.maxlen is None else int(buf.maxlen))
+                for m, (_, buf) in self._excitations.items()
+            },
             "dtbc": {
                 str(m): term.state_dict() for m, term in enumerate(self._dtbc) if term is not None
             },
@@ -1020,11 +1023,23 @@ class PortOperatorModal:
         """Restore state written by :meth:`state_dict` (bit-exact resume)."""
         self._V_port_prev[:] = np.asarray(sd["V_port_prev"], dtype=float)
         self._V_interior_prev[:] = np.asarray(sd["V_interior_prev"], dtype=float)
-        maxlen = int(sd["src_maxlen"])
-        self._src_buffer = collections.deque(
-            np.asarray(sd["src_buffer"], dtype=float).tolist(),
-            maxlen=maxlen,
-        )
+        # The waveforms were re-bound by the caller (set_excitation before
+        # the load); only the retardation buffers are restored, per mode.
+        for m_str, buf in sd["src_buffers"].items():
+            m = int(m_str)
+            if m not in self._excitations:
+                raise ValueError(
+                    f"checkpoint carries a source-history buffer for mode {m} "
+                    f"of port {self.name!r}, which the rebuilt run does not excite",
+                )
+            fn = self._excitations[m][0]
+            self._excitations[m] = (
+                fn,
+                collections.deque(
+                    np.asarray(buf, dtype=float).tolist(),
+                    maxlen=int(sd["src_maxlens"][m_str]),
+                ),
+            )
         for m_str, tsd in sd["dtbc"].items():
             term = self._dtbc[int(m_str)]
             if term is None:
@@ -1134,10 +1149,12 @@ class PortOperatorModal:
     ) -> None:
         """Activate the TF/SF source on mode ``mode_idx``.
 
-        Allocates the source-history ring buffer sized for the chosen
-        mode's propagation delay ``τ_m = dx_n / v_p,m`` plus a 3-sample
-        safety margin.  Calling :meth:`set_excitation` more than once
-        replaces any previously active excitation.
+        Allocates the mode's source-history ring buffer sized for its
+        propagation delay ``τ_m = dx_n / v_p,m`` plus a 3-sample safety
+        margin.  Each mode carries its own excitation: a second call on
+        another mode drives both modes simultaneously (DD-224), a second
+        call on the same mode replaces its waveform.
+        :meth:`clear_excitation` drops every excitation.
 
         Parameters
         ----------
@@ -1155,7 +1172,6 @@ class PortOperatorModal:
             raise ValueError(
                 f"mode_idx {mode_idx} out of range [0, {self._n_modes})",
             )
-        self._excitation_mode = mode_idx
         # DD-078: the user waveform is the incident power-wave amplitude
         # a(t) in √W; convert to the operator's internal basis units so
         # that record_scale·V projects back to physical volts.
@@ -1166,20 +1182,27 @@ class PortOperatorModal:
                 return _s * _fn(t)
 
             waveform_fn = _scaled_wf
-        self._excitation_waveform = waveform_fn
 
         tau_exc = self._tau_m[mode_idx]
         buf_len = max(
             int(math.ceil((tau_exc + self._dt) / self._dt)) + 3,
             5,
         )
-        self._src_buffer = collections.deque(maxlen=buf_len)
+        self._excitations[mode_idx] = (waveform_fn, collections.deque(maxlen=buf_len))
 
     def clear_excitation(self) -> None:
-        """Deactivate the TF/SF source — operator becomes a passive absorber."""
-        self._excitation_mode = None
-        self._excitation_waveform = None
-        self._src_buffer = collections.deque(maxlen=0)
+        """Deactivate every TF/SF source — operator becomes a passive absorber."""
+        self._excitations = {}
+
+    @property
+    def excited_modes(self) -> tuple[int, ...]:
+        """Mode indices currently driven through :meth:`set_excitation`."""
+        return tuple(sorted(self._excitations))
+
+    def excitation_waveform(self, mode_idx: int):
+        """The (basis-scaled) waveform bound to ``mode_idx``, or ``None``."""
+        entry = self._excitations.get(mode_idx)
+        return None if entry is None else entry[0]
 
     # ------------------------------------------------------------------
     # Projections
@@ -1432,24 +1455,25 @@ class PortOperatorModal:
         # overridden below for the excited mode via TF/SF.
         V_port_corr = self._V_interior_prev + self._mur_r * (V_int_new - self._V_port_prev)
 
-        if self._excitation_mode is not None and self._dtbc[self._excitation_mode] is None:
-            m_exc = self._excitation_mode
-            src_val_new = float(self._excitation_waveform(t))
-            self._src_buffer.append(src_val_new)
+        for m_exc, (exc_fn, src_buffer) in self._excitations.items():
+            if self._dtbc[m_exc] is not None:
+                continue  # DTBC modes take the incident at the ghost plane below
+            src_val_new = float(exc_fn(t))
+            src_buffer.append(src_val_new)
 
             tau = self._tau_m[m_exc]
             v_inc_int_now = _interp_delayed(
-                self._src_buffer,
+                src_buffer,
                 tau,
                 self._dt,
             )
             v_inc_int_prev = _interp_delayed(
-                self._src_buffer,
+                src_buffer,
                 tau + self._dt,
                 self._dt,
             )
             v_inc_face_prev = _interp_delayed(
-                self._src_buffer,
+                src_buffer,
                 self._dt,
                 self._dt,
             )
@@ -1474,8 +1498,9 @@ class PortOperatorModal:
             if term is None:
                 continue
             src = 0.0
-            if m == self._excitation_mode:
-                src = float(self._excitation_waveform(t - self._dt))
+            exc = self._excitations.get(m)
+            if exc is not None:
+                src = float(exc[0](t - self._dt))
             V_port_corr[m] = term.advance(
                 float(self._V_interior_prev[m]),
                 src,

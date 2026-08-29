@@ -244,3 +244,24 @@ class TestBoxSnapping:
         ix0, ix1, iy0, iy1, iz0, iz1 = pw._box
         assert 1 <= ix0 < ix1 <= solver.mesh.Nx
         assert 1 <= iz0 < iz1 <= solver.mesh.Nz
+
+
+class TestBoxBehindTheAbsorber:
+    """The default box sits two bulk cells inside the *physical* domain (DD-224 Phase B)."""
+
+    def test_default_box_skips_the_absorber_cells(self):
+        pw = _pw()
+        pw.set_excitation(WaveformGaussian(f_max=5e9))
+        solver = _make_solver(Nx=12, Ny=12, Nz=12)
+        pw._Nx = pw._Ny = pw._Nz = 12
+        box = pw._snap_box(solver.mesh.grid, {"xmin": 3, "xmax": 3, "zmax": 4})
+        assert box == (5, 8, 2, 11, 2, 7)
+
+    def test_explicit_box_is_clamped_into_the_bulk(self):
+        solver = _make_solver(Nx=12, Ny=12, Nz=12)
+        x = np.asarray(solver.mesh.grid.x)
+        pw = _pw(corners=((x[0], x[0], x[0]), (x[12], x[12], x[12])))
+        pw._Nx = pw._Ny = pw._Nz = 12
+        box = pw._snap_box(solver.mesh.grid, {"xmin": 3, "xmax": 3})
+        assert box[0] == 4 and box[1] == 8  # one bulk cell of scattered field each side
+        assert box[2] == 1 and box[3] == 11

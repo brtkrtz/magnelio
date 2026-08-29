@@ -23,10 +23,10 @@ import math
 import re
 from dataclasses import dataclass, field, replace
 
-_KINDS = ("face", "extent", "edge", "sheet", "wire", "symmetry", "forced")
+_KINDS = ("face", "extent", "edge", "sheet", "wire", "source", "symmetry", "forced")
 # Kinds a WP-M3 floor merge may absorb into a neighbouring plane
 # (material planes); an edge plane below the floor is *dropped* instead.
-_ABSORBABLE = frozenset({"face", "extent", "sheet", "wire"})
+_ABSORBABLE = frozenset({"face", "extent", "sheet", "wire", "source"})
 _AXES = ("x", "y", "z")
 
 __all__ = [
@@ -62,14 +62,15 @@ class PlaneSource:
         extent of a shape), ``"edge"`` (a B-rep edge lying flat in the
         plane — a chamfer or fillet onset, a loft section), ``"sheet"``
         (the grid plane of a thin metallisation), ``"wire"`` (a
-        thin-wire vertex), ``"symmetry"`` (a symmetry face with a
+        thin-wire vertex), ``"source"`` (a corner of a source's
+        total-field box), ``"symmetry"`` (a symmetry face with a
         position) or ``"forced"`` (``MeshControl.forced_planes``).
     shape : int or None
         Index of the contributing shape in the model's shape list;
-        ``None`` for forced and symmetry planes.
+        ``None`` for forced, source and symmetry planes.
     label : str
-        Human-readable shape label (``"#1 Cylinder(pec)"``), or the face
-        name of a symmetry plane (``"xmin"``).
+        Human-readable shape label (``"#1 Cylinder(pec)"``), the face
+        name of a symmetry plane (``"xmin"``) or the name of a source.
     """
 
     kind: str
@@ -87,7 +88,7 @@ class PlaneSource:
     def parse(cls, text: str) -> PlaneSource:
         """Inverse of :meth:`__str__`."""
         kind, _, rest = text.strip().partition(" ")
-        if kind == "symmetry":
+        if kind in ("symmetry", "source"):
             return cls(kind, None, rest)
         m = re.match(r"#(\d+)\b", rest)
         return cls(kind, int(m.group(1)) if m else None, rest)

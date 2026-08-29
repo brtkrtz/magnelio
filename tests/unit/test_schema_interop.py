@@ -11,14 +11,14 @@ from magnelio.post import SParameterResult
 
 
 class TestSchemaValidation:
-    def test_current_version_is_one_dot_zero(self):
-        assert SCHEMA_VERSION == "1.0"
+    def test_current_version_is_two_dot_zero(self):
+        assert SCHEMA_VERSION == "2.0"
 
     def test_old_project_json_raises(self, tmp_path):
         (tmp_path / "project.json").write_text(
             json.dumps(
                 {
-                    "schema_version": "2.0",
+                    "schema_version": "1.0",
                     "setup": {},
                     "runs": {},
                 }

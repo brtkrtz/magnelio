@@ -485,6 +485,10 @@ def _save_mesh(f, mesh) -> None:
     grid.create_dataset("z", data=np.asarray(mesh.grid.z))
 
     mg = f.create_group("mesh")
+    # Element type (DD-224 §6): today's Mesh is the hexahedral Yee grid;
+    # the loader dispatches on this tag once tetrahedral and surface
+    # meshes exist, without another schema bump.
+    mg.attrs["element"] = "hexahedral"
     mg.create_dataset("material_id", data=mesh.material_id)
     mg.create_dataset("pec_mask_edges", data=mesh.pec_mask_edges)
     mg.attrs["material_library"] = json.dumps(
@@ -562,6 +566,11 @@ def _load_mesh(f):
         z=f["grid/z"][()],
     )
     mg = f["mesh"]
+    element = str(mg.attrs.get("element", "hexahedral"))
+    if element != "hexahedral":
+        raise ValueError(
+            f"mesh.h5 holds a {element!r} mesh; this release reads hexahedral meshes only",
+        )
     library = {
         int(mid): _material_from_dict(d)
         for mid, d in json.loads(mg.attrs["material_library"]).items()
@@ -744,7 +753,7 @@ class _RunResultWriter:
       in every :meth:`append`), and the mutable run ``state`` lives in
       ``project.json``, not here.
 
-    The live streaming sink (:class:`_ScatteringRunSink`) drives one
+    The live streaming sink (:class:`_RunSink`) drives one
     :meth:`append` per solver flush; a finished-in-RAM result would drive
     a single :meth:`append` — one schema, one reader, whichever the
     cadence.
@@ -759,7 +768,8 @@ class _RunResultWriter:
         run_dir: Path,
         *,
         dt: float,
-        excited: tuple[str, int],
+        excitations: list,
+        excited: tuple[str, int] | None,
         f_axis,
         channels: list,
         port_modes: dict,
@@ -774,9 +784,15 @@ class _RunResultWriter:
         self._f = f = h5py.File(run_dir / "results.h5", "w", libver="latest")
         f.attrs["schema_version"] = SCHEMA_VERSION
         f.attrs["dt"] = float(dt)
-        f.attrs["excited_name"] = excited[0]
-        f.attrs["excited_mode"] = int(excited[1])
-        f.create_dataset("f_axis", data=np.asarray(f_axis, dtype=float))
+        # The run's excitations (DD-224): a JSON list of Excitation
+        # dicts (waveform by class-name tag).  A scattering channel run
+        # additionally names its excited pair — the S-matrix column.
+        f.attrs["excitations"] = json.dumps(list(excitations))
+        if excited is not None:
+            f.attrs["excited_name"] = excited[0]
+            f.attrs["excited_mode"] = int(excited[1])
+        if f_axis is not None:
+            f.create_dataset("f_axis", data=np.asarray(f_axis, dtype=float))
 
         self._ref = f.create_dataset(
             "reference",
@@ -785,6 +801,23 @@ class _RunResultWriter:
             dtype="f8",
             chunks=(4096,),
         )
+        # One sampled drive per excitation (amplitude and delay
+        # included), in excitation order; ``reference`` duplicates the
+        # first one and stays the committed-count stream.
+        xg = f.create_group("excitations")
+        self._exc: list = []
+        for i, exc in enumerate(excitations):
+            g = xg.create_group(f"ex{i}")
+            g.attrs["name"] = exc["source"]
+            g.attrs["mode"] = int(exc.get("mode", 0))
+            ds = g.create_dataset(
+                "signal",
+                shape=(0,),
+                maxshape=(None,),
+                dtype="f8",
+                chunks=(4096,),
+            )
+            self._exc.append(ds)
         chg = f.create_group("channels")
         self._chan: list = []  # ordered [((label, mode), V_ds, I_ds), ...]
         for i, (label, mode) in enumerate(channels):
@@ -1014,11 +1047,11 @@ class _RunResultWriter:
         """Number of signal samples committed so far."""
         return self._n
 
-    def append(self, v_by_channel: dict, i_by_channel: dict, reference) -> None:
-        """Append a block of V/I/reference samples (equal length) and flush.
+    def append(self, v_by_channel: dict, i_by_channel: dict, reference, excitation_blocks=()):
+        """Append a block of V/I/excitation samples (equal length) and flush.
 
-        ``reference`` is grown last, so its length is the committed
-        sample count a live reader observes.
+        ``reference`` (the first excitation's drive) is grown last, so
+        its length is the committed sample count a live reader observes.
         """
         ref = np.asarray(reference, dtype=float)
         length = ref.shape[0]
@@ -1030,6 +1063,9 @@ class _RunResultWriter:
             v_ds[n0:n1] = np.asarray(v_by_channel[key], dtype=float)
             i_ds.resize((n1,))
             i_ds[n0:n1] = np.asarray(i_by_channel[key], dtype=float)
+        for ds, blk in zip(self._exc, excitation_blocks):
+            ds.resize((n1,))
+            ds[n0:n1] = np.asarray(blk, dtype=float)
         self._ref.resize((n1,))
         self._ref[n0:n1] = ref
         self._n = n1
@@ -1076,6 +1112,13 @@ class _RunResultWriter:
         self._f = f = h5py.File(run_dir / "results.h5", "a", libver="latest")
         self._ref = f["reference"]
         self._ref.resize((n_keep,))
+        self._exc = []
+        if "excitations" in f:
+            xg = f["excitations"]
+            for i in range(len(xg)):
+                ds = xg[f"ex{i}"]["signal"]
+                ds.resize((n_keep,))
+                self._exc.append(ds)
         self._chan = []
         chg = f["channels"]
         for name in chg:
@@ -1145,13 +1188,13 @@ class _RunResultWriter:
         return self
 
 
-class _ScatteringRunSink:
+class _RunSink:
     """Live streaming sink attached to the FIT-TD solver (DD-070, WP-S5).
 
     Owns one run's :class:`_RunResultWriter` and, at every solver flush,
     pulls the newly recorded V/I tail from the
     :class:`~magnelio.ports.recorder.PortSignalRecorder`, sampling the
-    reference waveform in lockstep so a separate reader process can
+    excitation drives in lockstep so a separate reader process can
     derive converging S-parameters mid-run.  The solver calls
     :meth:`flush` at each energy-check interval and once at exit; the
     analysis calls :meth:`close` to flip the run to ``done`` in
@@ -1162,7 +1205,7 @@ class _ScatteringRunSink:
         self,
         writer,
         recorder,
-        waveform_fn,
+        excitation_fns,
         dt,
         *,
         store,
@@ -1177,8 +1220,10 @@ class _ScatteringRunSink:
         grid=None,
     ) -> None:
         self._writer = writer
+        # ``[(key, fn), ...]`` — one drive per excitation, the first
+        # doubling as the run's ``reference`` stream.
         self._recorder = recorder
-        self._waveform_fn = waveform_fn
+        self._excitation_fns = [fn for _, fn in excitation_fns]
         self._dt = float(dt)
         self._store = store
         self._run_name = run_name
@@ -1268,14 +1313,18 @@ class _ScatteringRunSink:
         if n_rec > self._n_flushed:
             tail = self._recorder.tail(self._n_flushed)
             off = self._step_offset
-            ref = np.array(
-                [self._waveform_fn((off + k) * self._dt) for k in range(self._n_flushed, n_rec)],
-                dtype=float,
-            )
+            blocks = [
+                np.array(
+                    [fn((off + k) * self._dt) for k in range(self._n_flushed, n_rec)],
+                    dtype=float,
+                )
+                for fn in self._excitation_fns
+            ]
             self._writer.append(
                 {key: vi[0] for key, vi in tail.items()},
                 {key: vi[1] for key, vi in tail.items()},
-                ref,
+                blocks[0],
+                blocks,
             )
             self._n_flushed = n_rec
         # Drain field monitors *before* the checkpoint, so the checkpoint's
@@ -1454,11 +1503,24 @@ def _read_run_results(run_dir: Path) -> dict:
             str(run_dir / "results.h5"),
         )
         dt = float(f.attrs["dt"])
-        excited = (str(f.attrs["excited_name"]), int(f.attrs["excited_mode"]))
-        f_axis = f["f_axis"][()]
+        excited = (
+            (str(f.attrs["excited_name"]), int(f.attrs["excited_mode"]))
+            if "excited_name" in f.attrs
+            else None
+        )
+        excitations = json.loads(f.attrs["excitations"]) if "excitations" in f.attrs else []
+        f_axis = f["f_axis"][()] if "f_axis" in f else None
 
         chan_items = []  # (label, mode, V_ds, I_ds)
         lengths = [int(f["reference"].shape[0])]
+        exc_items = []  # (key, ds)
+        if "excitations" in f:
+            xg = f["excitations"]
+            for i in range(len(xg)):
+                g = xg[f"ex{i}"]
+                ds = g["signal"]
+                lengths.append(int(ds.shape[0]))
+                exc_items.append(((str(g.attrs["name"]), int(g.attrs["mode"])), ds))
         for name in f["channels"]:
             cg = f["channels"][name]
             v_ds, i_ds = cg["V"], cg["I"]
@@ -1481,6 +1543,16 @@ def _read_run_results(run_dir: Path) -> dict:
             v = Signal1D(t=t, values=v_ds[:n_steps], dt=dt, label=f"{label}_mode{mode}_V")
             i = Signal1D(t=t, values=i_ds[:n_steps], dt=dt, label=f"{label}_mode{mode}_I")
             signals[(label, mode)] = (v, i)
+        single = len(exc_items) == 1
+        excitation_signals = {
+            key: Signal1D(
+                t=t,
+                values=ds[:n_steps],
+                dt=dt,
+                label="excitation" if single else f"excitation{key}",
+            )
+            for key, ds in exc_items
+        }
 
         eg = f["energy"]
         # Same common-prefix rule as the signals: the three energy
@@ -1518,6 +1590,8 @@ def _read_run_results(run_dir: Path) -> dict:
 
     return dict(
         excited=excited,
+        excitations=excitations,
+        excitation_signals=excitation_signals,
         signals=signals,
         reference=reference,
         dt=dt,
@@ -1918,6 +1992,11 @@ class _LoadedFreqMonitor:
                     np.asarray(values, dtype=float),
                 )
         return self._incident_ratio
+
+    def renormalize(self, source_signal) -> None:
+        """Set (or replace) the excitation the bins are divided by."""
+        self._reference = source_signal
+        self._spectrum = None
 
     @property
     def data(self) -> dict:
@@ -2365,6 +2444,12 @@ class _LoadedFarFieldMonitor:
         """Alias of :attr:`f` (the in-RAM monitor's attribute name)."""
         return self._hydrate().freqs
 
+    def renormalize(self, source_signal) -> None:
+        """Set (or replace) the excitation the surface DFT is divided by."""
+        self._reference = lambda: source_signal
+        if self._monitor is not None:
+            self._monitor.renormalize(source_signal)
+
     def result(self, *args, **kwargs):
         return self._hydrate().result(*args, **kwargs)
 
@@ -2576,8 +2661,10 @@ class ProjectStore:
     def register_planned_runs(self, planned) -> None:
         """Pre-register planned runs as ``pending`` in the run index.
 
-        ``planned`` is an iterable of ``(run_name, excited)`` pairs, one
-        per excitation the caller is about to stream.  Registering them
+        ``planned`` is an iterable of ``(run_name, entry)`` pairs, one
+        per run the caller is about to stream, ``entry`` the index
+        payload (``{"excited": [port, mode]}`` for a scattering
+        channel).  Registering them
         up front closes the status gap between sequential runs: without
         it, finishing run *k* while run *k+1* is not yet in the index
         made :meth:`_finalize_run` report ``status = "done"`` for a
@@ -2588,36 +2675,34 @@ class ProjectStore:
         Existing entries are left untouched (fill-in: a second analysis
         adding excitations must not clobber ``done``/``aborted`` runs).
         ``pending`` entries carry no run directory on disk; they are
-        replaced wholesale when :meth:`open_scattering_run` starts the
+        replaced wholesale when :meth:`open_run` starts the
         run.
         """
 
         def _upd(meta: dict) -> None:
             runs = meta.setdefault("runs", {})
-            for run_name, excited in planned:
+            for run_name, entry in planned:
                 runs.setdefault(
                     _safe_run_name(run_name),
-                    {
-                        "excited": [excited[0], int(excited[1])],
-                        "state": "pending",
-                    },
+                    {**dict(entry), "state": "pending"},
                 )
             meta["status"] = "running"
 
         _update_meta(self.path, _upd)
 
-    def open_scattering_run(
+    def open_run(
         self,
         run_name: str,
         *,
-        excited: tuple[str, int],
+        excitations: list,
+        excited: tuple[str, int] | None,
         dt: float,
         f_axis,
         channels,
         port_modes: dict,
         port_normal_dx: dict,
         port_line_params: dict,
-        waveform_fn,
+        excitation_fns,
         recorder,
         port_model: str = "modal",
         energy_stop_db: float | None = None,
@@ -2626,17 +2711,21 @@ class ProjectStore:
         taper_signals: bool = False,
         monitors=None,
         grid=None,
-    ) -> "_ScatteringRunSink":
-        """Open a live streaming sink for one scattering excitation.
+    ) -> "_RunSink":
+        """Open a live streaming sink for one time-domain run.
 
         Declares the run's resizable ``results.h5`` streams (HDF5-SWMR),
         registers the run in ``project.json`` as ``running`` (replacing a
         ``pending`` pre-registration, see :meth:`register_planned_runs`),
         and returns
-        a solver-attachable :class:`_ScatteringRunSink`.  The solver
+        a solver-attachable :class:`_RunSink`.  The solver
         appends the V/I and energy tails during ``run()``; call
-        :meth:`_ScatteringRunSink.close` when the run finishes to flip its
+        :meth:`_RunSink.close` when the run finishes to flip its
         state to ``done``.  ``run_name`` is sanitised for the filesystem.
+        ``excitations`` are the run's Excitation dicts (DD-224),
+        ``excited`` the S-matrix column of a scattering channel run
+        (``None`` on a general time-domain run), ``excitation_fns`` the
+        ``[(key, drive), ...]`` sampled alongside the signals.
 
         ``energy_stop_db`` / ``total_time_steps`` are recorded in the run
         index so ``resume()`` can default to the run's original
@@ -2653,6 +2742,7 @@ class ProjectStore:
         writer = _RunResultWriter(
             run_dir,
             dt=dt,
+            excitations=excitations,
             excited=excited,
             f_axis=f_axis,
             channels=list(channels),
@@ -2665,7 +2755,8 @@ class ProjectStore:
 
         def _upd(meta: dict) -> None:
             meta.setdefault("runs", {})[safe] = {
-                "excited": [excited[0], int(excited[1])],
+                "excited": None if excited is None else [excited[0], int(excited[1])],
+                "excitations": [[e["source"], int(e.get("mode", 0))] for e in excitations],
                 "n_steps": 0,
                 "dt": float(dt),
                 "port_model": port_model,
@@ -2678,10 +2769,10 @@ class ProjectStore:
             meta["status"] = "running"
 
         _update_meta(self.path, _upd)
-        return _ScatteringRunSink(
+        return _RunSink(
             writer,
             recorder,
-            waveform_fn,
+            excitation_fns,
             dt,
             store=self,
             run_name=safe,
@@ -2694,12 +2785,12 @@ class ProjectStore:
             grid=grid,
         )
 
-    def reopen_scattering_run(
+    def reopen_run(
         self,
         run_name: str,
         *,
         recorder,
-        waveform_fn,
+        excitation_fns,
         dt: float,
         n_keep: int,
         step_offset: int,
@@ -2707,7 +2798,7 @@ class ProjectStore:
         grid=None,
         monitor_keep: dict | None = None,
         flux_keep: dict | None = None,
-    ) -> "_ScatteringRunSink":
+    ) -> "_RunSink":
         """Reopen a run's streams to append a resumed tail.
 
         Truncates ``results.h5`` back to ``n_keep`` (the checkpoint's
@@ -2733,10 +2824,10 @@ class ProjectStore:
             meta["status"] = "running"
 
         _update_meta(self.path, _upd)
-        return _ScatteringRunSink(
+        return _RunSink(
             writer,
             recorder,
-            waveform_fn,
+            excitation_fns,
             dt,
             store=self,
             run_name=safe,
@@ -3002,6 +3093,7 @@ class Project(ScatteringResultMixin):
         self,
         excited: str | tuple[str, int] | None,
     ) -> str:
+        """Resolve a run: by name, or by its excited ``(port, mode)`` pair."""
         names = list(self.runs)
         if not names:
             raise ValueError(f"project {self.path} has no runs")
@@ -3009,15 +3101,65 @@ class Project(ScatteringResultMixin):
             if len(names) == 1:
                 return self._require_started(names[0])
             raise ValueError(
-                f"project holds {len(names)} runs; pass excited= to select one",
+                f"project holds {len(names)} runs {names}; pass the run name "
+                f"(or a scattering run's excited pair) to select one",
             )
+        if isinstance(excited, str) and excited in self.runs:
+            return self._require_started(excited)
         key = [excited, 0] if isinstance(excited, str) else [excited[0], excited[1]]
         for name, info in self.runs.items():
-            if list(info["excited"]) == key:
+            if info.get("excited") is not None and list(info["excited"]) == key:
                 return self._require_started(name)
         raise KeyError(
-            f"no run excited at {tuple(key)!r}; "
-            f"available: {[tuple(v['excited']) for v in self.runs.values()]}",
+            f"no run named {excited!r} and none excited at {tuple(key)!r}; runs: {names}",
+        )
+
+    def _run_excitations(self, name: str) -> list:
+        """The Excitation dicts stored with a run (DD-224)."""
+        return list(self._load_run(name).get("excitations", []))
+
+    def result(self, name: str | tuple[str, int] | None = None):
+        """One run as a :class:`~magnelio.analysis.TDResult`.
+
+        Rebuilds the in-RAM result object of the run from the store:
+        the recorded port signals, the sampled excitations, the energy
+        trace and lazy readers for the run's monitors.  ``name`` is
+        the run name (``run_1``, or the ``name=`` given to
+        :meth:`~magnelio.AnalysisTD.run`); a scattering channel run may
+        be named by its excited pair.  May be omitted when the project
+        holds one run.
+        """
+        from magnelio.analysis._recipe import excitation_from_dict  # noqa: PLC0415
+        from magnelio.analysis.time_domain import TDResult  # noqa: PLC0415
+
+        run_name = self._run_name_for_excited(name)
+        d = self._load_run(run_name)
+        info = self.runs.get(run_name, {})
+        settings = RunSettings(
+            **{
+                **self.settings.__dict__,
+                "dt": float(d["dt"]),
+                "n_actual_steps": int(d["n_steps"]),
+                "energy_stop_db": info.get("energy_stop_db"),
+                "port_signal_stop_db": info.get("port_signal_stop_db"),
+                "stop_reason": info.get("stop_reason"),
+                "final_port_signal_db": info.get("final_port_signal_db"),
+                "excitations": tuple(tuple(e) for e in info.get("excitations", ())),
+            }
+        )
+        return TDResult(
+            excitations=tuple(excitation_from_dict(e) for e in d.get("excitations", [])),
+            dt=float(d["dt"]),
+            n_steps=int(d["n_steps"]),
+            signals=d["signals"],
+            excitation_signals=d.get("excitation_signals", {}),
+            energy_trace=d["energy_trace"],
+            monitors=self.monitors_for(run_name),
+            port_modes=d["port_modes"],
+            port_normal_dx=d["port_normal_dx"],
+            port_line_params=d["port_line_params"],
+            settings=settings,
+            name=run_name,
         )
 
     def _first_started_run(self) -> str:
@@ -3042,7 +3184,7 @@ class Project(ScatteringResultMixin):
         """``{excited_key: {(port, mode): (V, I)}}`` across all runs."""
         out = {}
         for name, d in self._all_runs().items():
-            out[d["excited"]] = d["signals"]
+            out[d["excited"] if d["excited"] is not None else name] = d["signals"]
         return out
 
     @property
@@ -3076,6 +3218,11 @@ class Project(ScatteringResultMixin):
         """
         run_name = self._run_name_for_excited(excited)
         run_dir = self.path / "runs" / run_name
+        # A scattering channel run renormalises its frequency monitors
+        # with the channel's reference waveform; a general time-domain
+        # run keeps them raw (several drives, no single reference —
+        # ``TDResult.renormalize`` is the user's call).
+        scattering = self.runs.get(run_name, {}).get("excited") is not None
         out: dict = {
             name: _LoadedFieldMonitor(run_dir, name, grid=self.grid)
             for name in _list_run_monitors(run_dir)
@@ -3086,9 +3233,11 @@ class Project(ScatteringResultMixin):
             out[name] = _LoadedFreqMonitor(
                 run_dir,
                 name,
-                reference=lambda rn=run_name: self._load_run(rn)["reference"],
+                reference=(lambda rn=run_name: self._load_run(rn)["reference"])
+                if scattering
+                else None,
                 grid=self.grid,
-                incident=lambda rn=run_name: self._incident_ratio(rn),
+                incident=(lambda rn=run_name: self._incident_ratio(rn)) if scattering else None,
             )
         for name in _list_run_wall_loss(run_dir):
             out[name] = _LoadedMonitorWallLoss(run_dir, name)
@@ -3096,8 +3245,10 @@ class Project(ScatteringResultMixin):
             out[name] = _LoadedFarFieldMonitor(
                 run_dir,
                 name,
-                reference=lambda rn=run_name: self._load_run(rn)["reference"],
-                incident=lambda rn=run_name: self._incident_ratio(rn),
+                reference=(lambda rn=run_name: self._load_run(rn)["reference"])
+                if scattering
+                else None,
+                incident=(lambda rn=run_name: self._incident_ratio(rn)) if scattering else None,
             )
         return out
 
@@ -3117,7 +3268,7 @@ class Project(ScatteringResultMixin):
             return cache[run_name]
         d = self._load_run(run_name)
         signals = d.get("signals")
-        if not signals or d.get("reference") is None:
+        if not signals or d.get("reference") is None or d.get("excited") is None:
             cache[run_name] = None
             return None
         f_axis = np.asarray(d["f_axis"], dtype=float)
@@ -3289,6 +3440,13 @@ class Project(ScatteringResultMixin):
         runs = self._all_runs()
         if not runs:
             raise ValueError(f"project {self.path} has no started runs")
+        general = [name for name, d in runs.items() if d.get("excited") is None]
+        if general:
+            raise ValueError(
+                f"runs {general} are general time-domain runs (AnalysisTD) without "
+                f"an excited channel; S-parameters are a scattering result — read "
+                f"them with project.result(name)",
+            )
         # Cache the derived S-matrix only once every run is finished — a
         # partial (live) run yields a converging-but-not-final S.
         all_done = all(info.get("state", "done") == "done" for info in self.runs.values())

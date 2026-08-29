@@ -1,13 +1,15 @@
-"""Reconstruction recipe for a project-backed scattering analysis (DD-070, WP-S8).
+"""Reconstruction recipe for a project-backed time-domain analysis (DD-070, WP-S8).
 
 A streamed run persists its *model* (``mesh.h5``) and *results*
 (``results.h5`` + ``checkpoint.h5``), but the operators that terminate
 and drive the run are re-built on resume — WP-S6 established that
 constant operators (material matrices, DTBC kernels) are re-derived on
 the resuming solver, never stored.  To rebuild them, :func:`resume`
-needs the *run recipe*: the resolved port specs, the boundary closure,
-and the excitation — everything the constructor of
-:class:`~magnelio.analysis.scattering_td.AnalysisScatteringTD` consumed.
+needs the *run recipe*: the resolved port specs, the monitors, the
+waveform and band settings — everything the constructor of
+:class:`~magnelio.AnalysisTD` or
+:class:`~magnelio.AnalysisScatteringTD` consumed; the excitations of
+a run travel with the run itself (``results.h5``).
 
 This module is the pure (JSON-serialisable) codec for that recipe.  It
 knows only the declarative spec / boundary vocabulary
@@ -214,6 +216,37 @@ def _waveform_from_dict(d: dict | None):
             "WaveformSine, WaveformStep or WaveformTable) to make it resumable.",
         )
     raise TypeError(f"unknown waveform type {t!r} in recipe")
+
+
+# ═════════════════════════════════════════════════════════════════════
+# Excitations (DD-224) — stored per run, next to its signals
+# ═════════════════════════════════════════════════════════════════════
+
+
+def excitation_to_dict(exc) -> dict:
+    """Serialise an :class:`~magnelio.Excitation` (waveform by class-name tag)."""
+    return {
+        "source": exc.source,
+        "mode": int(exc.mode),
+        "waveform": _waveform_to_dict(exc.waveform),
+        "amplitude": float(exc.amplitude),
+        "delay": float(exc.delay),
+        "phase": float(exc.phase),
+    }
+
+
+def excitation_from_dict(d: dict):
+    """Inverse of :func:`excitation_to_dict`."""
+    from magnelio.analysis.excitation import Excitation  # noqa: PLC0415
+
+    return Excitation(
+        d["source"],
+        mode=int(d.get("mode", 0)),
+        waveform=_waveform_from_dict(d.get("waveform")),
+        amplitude=float(d.get("amplitude", 1.0)),
+        delay=float(d.get("delay", 0.0)),
+        phase=float(d.get("phase", 0.0)),
+    )
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -487,14 +520,6 @@ def _monitor_to_dict(mon) -> dict:
     )
 
 
-def _plane_from_recipe(d: dict, legacy_key: str) -> tuple[str, float]:
-    """``normal``/``position`` of a monitor recipe, or the pre-DD-224 pair."""
-    if "normal" in d:
-        return str(d["normal"]), float(_num_from_json(d["position"]))
-    pair = d[legacy_key]
-    return str(pair[0]), float(_num_from_json(pair[1]))
-
-
 def _monitor_from_dict(d: dict):
     from magnelio.monitors.field_frequency import (  # noqa: PLC0415
         MonitorFieldFrequency,
@@ -515,9 +540,11 @@ def _monitor_from_dict(d: dict):
             name=d["name"],
         )
     if d["type"] == "MonitorFluxTime":
-        # Recipes written before DD-224 carry the plane as a pair.
-        normal, position = _plane_from_recipe(d, "plane")
-        return MonitorFluxTime(normal=normal, position=position, name=d["name"])
+        return MonitorFluxTime(
+            normal=str(d["normal"]),
+            position=float(_num_from_json(d["position"])),
+            name=d["name"],
+        )
     if d["type"] == "MonitorFieldFrequency":
         return MonitorFieldFrequency(
             corners=_corners_from_json(d["corners"]),
@@ -529,20 +556,17 @@ def _monitor_from_dict(d: dict):
         from magnelio.io.project import _roughness_from_dict  # noqa: PLC0415
         from magnelio.monitors.wall_loss import MonitorWallLoss  # noqa: PLC0415
 
-        normal, position = _plane_from_recipe(d, "reference_plane")
         return MonitorWallLoss(
             freqs=[float(fr) for fr in d["freqs"]],  # __post_init__ asarrays
-            normal=normal,
-            position=position,
+            normal=str(d["normal"]),
+            position=float(_num_from_json(d["position"])),
             sigma=None if d["sigma"] is None else float(d["sigma"]),
             mu=float(d["mu"]),
             roughness=_roughness_from_dict(d.get("roughness")),
             bc_faces=tuple(d["bc_faces"]),
             name=d["name"],
         )
-    # "MonitorFarField" is the pre-DD-224 tag of the same monitor; it is
-    # read until the schema bump retires it.
-    if d["type"] in ("MonitorFarFieldFrequency", "MonitorFarField"):
+    if d["type"] == "MonitorFarFieldFrequency":
         from magnelio.monitors.far_field import MonitorFarFieldFrequency  # noqa: PLC0415
 
         return MonitorFarFieldFrequency(
@@ -558,13 +582,15 @@ def _monitor_from_dict(d: dict):
 # ═════════════════════════════════════════════════════════════════════
 
 
-def build_scattering_recipe(analysis) -> dict:
+def build_recipe(analysis) -> dict:
     """Capture everything needed to reconstruct ``analysis`` for a resume.
 
     The mesh is *not* part of the recipe (it round-trips through
-    ``mesh.h5``); the returned dict carries the resolved port specs, the
-    excitation, the field monitors, and the scalar band settings.
-    Stored under ``setup['recipe']``.
+    ``mesh.h5``, ports, elements and sources with it); the returned
+    dict carries the resolved port specs, the field monitors, the wall
+    model and the band settings — plus, for the scattering analysis,
+    its frequency axis and explicit waveform.  Stored under
+    ``setup['recipe']``.
 
     The boundary closure is *not* here either — since DD-103 it belongs
     to the mesh, and round-trips with it through ``mesh.h5``.
@@ -578,14 +604,12 @@ def build_scattering_recipe(analysis) -> dict:
     # raw None sentinel: a resume must reproduce the dtype the run actually
     # used, independent of MAGNELIO_PRECISION at resume time (plan WP3).
     real_dtype, _ = resolve_precision(analysis.precision)
-    return {
+    recipe = {
         "schema_version": RECIPE_SCHEMA_VERSION,
+        "analysis": type(analysis).__name__,
         "precision": "single" if real_dtype.itemsize == 4 else "double",
         "ports": [_spec_to_dict(s) for s in analysis.ports],
         "f_max": float(analysis.f_max),
-        "f_min": float(analysis.f_min),
-        "n_freq": int(analysis.n_freq),
-        "waveform": _waveform_to_dict(analysis.waveform),
         "port_model": analysis.port_model,
         # SIBC wall model (WP-D5): the switch + overrides suffice — the
         # spec itself (surfaces, fits) is re-derived from the stored
@@ -603,6 +627,17 @@ def build_scattering_recipe(analysis) -> dict:
         # _serialisable_monitors.
         "monitors": [_monitor_to_dict(m) for m in _serialisable_monitors(analysis.monitors)],
     }
+    # The scattering analysis adds its frequency axis and the explicit
+    # waveform; the general time-domain analysis has neither.
+    if hasattr(analysis, "n_freq"):
+        recipe["f_min"] = float(analysis.f_min)
+        recipe["n_freq"] = int(analysis.n_freq)
+        recipe["waveform"] = _waveform_to_dict(analysis.waveform)
+    return recipe
+
+
+# The name the scattering analysis used before DD-224 Phase B.
+build_scattering_recipe = build_recipe
 
 
 def _serialisable_monitors(monitors) -> list:
@@ -638,52 +673,29 @@ def _serialisable_monitors(monitors) -> list:
     ]
 
 
-def _waveform_from_recipe(recipe: dict):
-    """The run's explicit waveform, or ``None`` for the per-mode default.
-
-    Recipes written before DD-224 carry an ``"excitation"`` dict
-    (``f_min``, ``f_max``, ``waveform`` kind) instead of ``"waveform"``;
-    it is mapped onto the class it stood for, so a resume drives the
-    same pulse.  Read until the schema bump retires it.
-    """
-    if "waveform" in recipe:
-        return _waveform_from_dict(recipe["waveform"])
-    legacy = recipe.get("excitation")
-    if legacy is None:
-        return None
-    from magnelio.signals.waveforms import (  # noqa: PLC0415
-        WaveformGaussian,
-        WaveformGaussianModulated,
-    )
-
-    if legacy["waveform"] == "gaussian":
-        return WaveformGaussian(f_max=float(legacy["f_max"]))
-    return WaveformGaussianModulated(f_min=float(legacy["f_min"]), f_max=float(legacy["f_max"]))
-
-
 def recipe_kwargs(recipe: dict) -> dict:
-    """Reconstruct the ``AnalysisScatteringTD`` constructor kwargs (sans mesh).
+    """Reconstruct the analysis constructor kwargs (sans mesh).
 
-    Returns the ports / boundary_conditions / monitors / band settings; the
-    caller supplies ``mesh=`` (from the store) and ``verbose=``.
+    Returns the ports / monitors / wall model / band settings the
+    recipe holds — the scattering keys (``f_min``, ``n_freq``,
+    ``waveform``) only when present; the caller supplies ``mesh=``
+    (from the store) and ``verbose=``.
     """
     from magnelio.io.project import _roughness_from_dict  # noqa: PLC0415
 
-    return {
+    kwargs = {
         "ports": [_spec_from_dict(d) for d in recipe["ports"]],
         "f_max": float(recipe["f_max"]),
-        "f_min": float(recipe["f_min"]),
-        "n_freq": int(recipe["n_freq"]),
-        "waveform": _waveform_from_recipe(recipe),
         "port_model": recipe["port_model"],
-        # Precision was added in a later WP (DD-094); a recipe predating it
-        # ran in the old double-only default, so a missing key means double.
-        "precision": recipe.get("precision", "double"),
-        # Monitors were added in a later WP; tolerate older recipes.
+        "precision": recipe["precision"],
         "monitors": tuple(_monitor_from_dict(d) for d in recipe.get("monitors", [])),
-        # SIBC wall model (WP-D5); absent in pre-WP-D5 recipes.
         "wall_model": recipe.get("wall_model", "perturbative"),
         "wall_sigma": (None if recipe.get("wall_sigma") is None else float(recipe["wall_sigma"])),
         "wall_mu": float(recipe.get("wall_mu", 1.0)),
         "wall_roughness": _roughness_from_dict(recipe.get("wall_roughness")),
     }
+    if "n_freq" in recipe:
+        kwargs["f_min"] = float(recipe["f_min"])
+        kwargs["n_freq"] = int(recipe["n_freq"])
+        kwargs["waveform"] = _waveform_from_dict(recipe.get("waveform"))
+    return kwargs

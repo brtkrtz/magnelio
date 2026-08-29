@@ -1,16 +1,20 @@
 """Project-store schema version — one constant, hard validation.
 
-Schema 1.0 is the first published store format.  Every artefact the
-store writes (``project.json``, ``results.h5``, ``checkpoint.h5``, the
-setup recipe) is stamped with :data:`SCHEMA_VERSION` and every reader
-validates it via :func:`validate_schema` — an unknown or missing
-version fails loudly instead of silently degrading, because a store is
-a contract from the moment the format is public.
+Schema 1.0 was the first published store format; 2.0 (DD-224 Phase B)
+names runs by their excitations instead of one excited port channel,
+records the mesh's element type, keys the port checkpoints per excited
+mode, and retired the pre-DD-224 spellings the 1.0 readers still
+accepted.  Every artefact the store writes (``project.json``,
+``results.h5``, ``checkpoint.h5``, the setup recipe) is stamped with
+:data:`SCHEMA_VERSION` and every reader validates it via
+:func:`validate_schema` — an unknown or missing version fails loudly
+instead of silently degrading, because a store is a contract from the
+moment the format is public.
 """
 
 from __future__ import annotations
 
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "2.0"
 
 
 class ProjectSchemaError(ValueError):
@@ -32,7 +36,7 @@ def validate_schema(found, where: str) -> None:
         raise ProjectSchemaError(
             f"{where}: schema version {found!r} is not supported "
             f"(current: {SCHEMA_VERSION!r}). This store was written by "
-            f"a pre-release magnelio — re-run the simulation to "
+            f"another magnelio release — re-run the simulation to "
             f"regenerate it."
         )
 

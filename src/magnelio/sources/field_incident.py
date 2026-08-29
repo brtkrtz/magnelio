@@ -170,7 +170,7 @@ class SourceFieldIncident(Source):
 
     # ── TF/SF box ────────────────────────────────────────────────────────
 
-    def _snap_box(self, grid) -> tuple[int, int, int, int, int, int]:
+    def _snap_box(self, grid, pml_cells=None) -> tuple[int, int, int, int, int, int]:
         """Snap the TF-region corners to nearest grid node indices.
 
         Returns (ix0, ix1, iy0, iy1, iz0, iz1) such that the TF region
@@ -178,34 +178,49 @@ class SourceFieldIncident(Source):
 
         The corners are normalised per axis (order does not matter, the
         shared ``corners=`` contract), and ``None``/``±inf`` components
-        fall back to the default extent on that side.  A box that leaves
-        no scattered-field shell is clamped inward — that is a property
-        of the TF/SF split, not a silent reinterpretation of the input.
+        fall back to the default extent on that side: two bulk cells
+        inside the physical domain, i.e. past the absorber cells the
+        mesher appended (``pml_cells``, per face).  A box that leaves no
+        scattered-field shell in the bulk is clamped inward — that is a
+        property of the TF/SF split, not a silent reinterpretation of
+        the input.
         """
+        pml = pml_cells or {}
+        n_hi = (self._Nx, self._Ny, self._Nz)
+        # Bulk range per axis: the first and last node outside the absorber.
+        bulk_lo = [int(pml.get(f"{ax}min", 0) or 0) for ax in "xyz"]
+        bulk_hi = [n - int(pml.get(f"{ax}max", 0) or 0) for ax, n in zip("xyz", n_hi)]
+        default_lo = [b + 2 for b in bulk_lo]
+        default_hi = [b - 1 for b in bulk_hi]
         if self.corners is None:
-            # Default: 2 cells inset from each face
-            return (2, self._Nx - 1, 2, self._Ny - 1, 2, self._Nz - 1)
+            return (
+                default_lo[0],
+                default_hi[0],
+                default_lo[1],
+                default_hi[1],
+                default_lo[2],
+                default_hi[2],
+            )
 
         p, q = self.corners
         lo, hi = [], []
-        for a, b, default_lo, default_hi in zip(
-            p, q, (2, 2, 2), (self._Nx - 1, self._Ny - 1, self._Nz - 1)
-        ):
+        for a, b, d_lo, d_hi in zip(p, q, default_lo, default_hi):
             aa = None if a is None or not np.isfinite(a) else float(a)
             bb = None if b is None or not np.isfinite(b) else float(b)
             if aa is not None and bb is not None and bb < aa:
                 aa, bb = bb, aa
-            lo.append((aa, default_lo))
-            hi.append((bb, default_hi))
+            lo.append((aa, d_lo))
+            hi.append((bb, d_hi))
 
         x, y, z = np.asarray(grid.x), np.asarray(grid.y), np.asarray(grid.z)
-        n_hi = (self._Nx, self._Ny, self._Nz)
         idx = []
-        for axis, (nodes, n) in enumerate(zip((x, y, z), n_hi)):
-            a, default_lo = lo[axis]
-            b, default_hi = hi[axis]
-            i0 = default_lo if a is None else int(np.searchsorted(nodes, a).clip(1, n - 1))
-            i1 = default_hi if b is None else int(np.searchsorted(nodes, b).clip(i0 + 1, n))
+        for axis, nodes in enumerate((x, y, z)):
+            a, d_lo = lo[axis]
+            b, d_hi = hi[axis]
+            # One bulk cell of scattered field on each side at least.
+            i_min, i_max = bulk_lo[axis] + 1, bulk_hi[axis] - 1
+            i0 = d_lo if a is None else int(np.searchsorted(nodes, a).clip(i_min, i_max - 1))
+            i1 = d_hi if b is None else int(np.searchsorted(nodes, b).clip(i0 + 1, i_max))
             idx += [i0, i1]
 
         return tuple(idx)

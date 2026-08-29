@@ -126,8 +126,6 @@ class PortSignalRecorder:
         if dt <= 0.0:
             raise ValueError("dt must be positive")
         ports_list = list(ports)
-        if not ports_list:
-            raise ValueError("ports must be non-empty")
         labels = [p.name for p in ports_list]
         if len(set(labels)) != len(labels):
             raise ValueError(
