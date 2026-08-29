@@ -16719,3 +16719,222 @@ engine and the line table when a ladder row shows them.
 `src/magnelio/mesh/_conformal.py` (`detect_thin_metallizations`),
 `tests/unit/test_csg_node_operands.py`, `CHANGELOG.md`, `STATUS.md`,
 `benchmarks/results/bench_mesh_build.json` (re-run).
+
+## DD-224 — API grammar for problem classes, sources, waveforms and excitations
+
+**Status:** Decided 2026-08-29 (blueprint session with the developer;
+internal record `investigations/api-blueprint/` holds the suite-convention
+survey it was checked against).  Nothing implemented yet — this entry
+fixes the vocabulary; the phases in the last section ship it.
+
+**Problem.**  Two problem classes exist (`AnalysisScatteringTD`,
+`AnalysisEigenmode`) and one excitation reaches the analysis level:
+one `(port, mode)` channel per solver run, its waveform an
+`ExcitationSpec`.  `PlaneWaveSource` carries its own waveform and
+hangs off `FITTimeDomainSolver(sources=…)` only — no analysis class
+reaches it.  Time offsets, simultaneous excitation, loaded or
+analytic initial fields, wake beams and particle sources have no
+home.  DD-153 deferred the unification of `PlaneWaveSource.waveform`
+with `ExcitationSpec` as "its own design pass".  Meanwhile the store
+uses class names as its vocabulary (`setup["analysis"]`, monitor and
+recipe type tags, DD-117 §3), so every later rename also breaks
+saved projects; and the solvers to come — FIT-FD, FEM on tetrahedra,
+BEM on surfaces, statics, wakefield, tracking/PIC — need names that
+do not collide with the ones chosen now.  At MAJOR = 0 with no
+external users a rename is cheap today and expensive in a year.
+
+**Decision — the grammar.**
+
+1. *Problem classes* are `Analysis<Problem><Formulation>`.  `Problem`
+   ∈ {∅, `Scattering`, `Eigenmode`, `Wakefield`, `PIC`,
+   `ParticleTracking`, `Electrostatic`, `Magnetostatic`,
+   `CurrentStatic`}; `Formulation` ∈ {`TD`, `FD`} and is written
+   **only** where the same problem exists in both formulations
+   (Scattering, Wakefield, ∅).  The suffix names the formulation the
+   user reasons in, never the discretisation: the method (FIT, FEM,
+   BEM) follows from the mesh's element type, overridable by
+   `method=`; the algebraic solver by `solver=` (as `AnalysisEigenmode`
+   already does).  The same S-parameter problem on a hexahedral or a
+   tetrahedral mesh is one class, one result contract.
+2. *General classes* `AnalysisTD` / `AnalysisFD` carry the empty
+   problem: arbitrary simultaneous excitations, signals in and out
+   with their spectra, monitors, energy — no S-parameters.
+   `AnalysisScatteringTD`, `AnalysisWakefieldTD` and `AnalysisPIC`
+   derive from `AnalysisTD` (shared configuration, shared
+   `_run_transient(excitations, …) -> TDResult`; the derived `run()`
+   keeps its own signature and return type — a deliberate LSP
+   exception).  `AnalysisScatteringFD` derives from `AnalysisFD`.
+   A private `_AnalysisBase` holds `mesh`, `verbose`, `project`,
+   `geometry`, `params`, `backend`, `precision`, `method`, `solver`.
+3. *Results* are `<Problem><Formulation>Result` (SciPy style).  Where
+   `Problem` ≠ ∅ the suffix-free name is the contract protocol
+   (`ScatteringResult`, DD-112), satisfied by every formulation and
+   by the `Project` reader; where `Problem` = ∅ the class is the
+   contract (`TDResult`, `FDResult`).  One `RunSettings` for all
+   formulations (fields already optional).  Post-processing stays a
+   method on the result — `renormalize(z0)`, `Z()`, `Y()`, `tdr()`,
+   `vswr()`, `group_delay()` are reserved on `ScatteringResult` — and
+   never becomes an analysis class.
+4. *Excitation triad.*  `Source<Kind>` (`magnelio.sources`) is a
+   model object declared before meshing — `model.add_source(…)`,
+   carried as `Mesh.sources` next to `Mesh.ports`/`Mesh.elements`,
+   `Mesh.with_sources()` on the `from_grid` path — because the TF/SF
+   box, a beam axis and an emission face all shape the mesh.
+   `Waveform<Kind>` (`magnelio.signals`, ABC `Waveform`) is a pure
+   time function with a bandwidth: `__call__(t)`, `f_max`, `f_min`,
+   `f_center` (`None` for baseband), `t_end` (`inf` for CW forms),
+   `sample(dt, n) -> Signal1D`, `spectrum(f)`; `Signal1D` remains the
+   sampled series on the result side.  `Excitation` (core) binds one
+   source or port to a waveform and a weight:
+
+   ```python
+   Excitation(source, *, mode=0, waveform=None, amplitude=1.0,
+              delay=0.0, phase=0.0)
+   ```
+
+   `run(excitations=[…])` is simultaneous in one run; sequential is
+   several `run()` calls or a specialised class.  `waveform=None`
+   derives the modal waveform from the port's cut-off (today's
+   `ExcitationSpec` logic) or `WaveformGaussian(f_max=mesh.f_max)` for
+   a non-port source.  `amplitude` is in the source's natural unit,
+   published as `Source.amplitude_unit` (`"sqrt(W)"` ports, `"V/m"`
+   plane wave, `"C"` beam, `"A"` current path, `"V"` voltage source,
+   `"1"` initial field).  `phase` is the FD phasor; in TD it is
+   allowed only with a carrier (`waveform.f_center`), converted to a
+   delay internally — circular polarisation from two TE11 modes at
+   90° needs it — and a `ValueError` on baseband forms.  Shorthands
+   `"port1"` / `("port1", 1)` are accepted.  `AnalysisScatteringTD`
+   keeps `run(excited=…)` — *channels*, one run each — and rejects
+   `excitations=` with a message; its `excitation: ExcitationSpec`
+   field becomes `waveform: Waveform | None`.
+5. *Monitors* keep `Monitor<Quantity>[<Domain>]`; the domain suffix
+   appears as soon as both domains exist, so `MonitorFarField` becomes
+   `MonitorFarFieldFrequency` now and `MonitorFarFieldTime` is
+   reserved.  Planes are `normal=` + `position=` everywhere (DD-153);
+   `MonitorFluxTime(plane=…)` and `MonitorWallLoss(reference_plane=…)`
+   migrate.  Point probes are a `MonitorFieldTime` with point
+   `corners` — no probe class.
+6. *Mesh family.*  `Mesh` stays the name users write and analyses
+   accept.  When tetrahedra or surfaces arrive, `Mesh` becomes the
+   base, today's body moves to `MeshHexahedral(Mesh)`,
+   `MeshTetrahedral` / `MeshSurface` join, `Mesh.from_geometry` stays
+   the one entry and returns the subclass; the discriminator is
+   `MeshControl(element="hexahedral")`.  Checked: `Mesh(` is
+   constructed directly only in `mesh/mesher.py` (self-copies →
+   `type(self)`) and the `io/project.py` loader (→ dispatch on an
+   `element` tag); no `isinstance(…, Mesh)` in the package;
+   `dataclasses.replace` is subclass-safe.  `mesh.h5` gains the
+   `element` attribute with the same schema bump as the rest.
+7. *Common arguments* on every analysis: `method` (`"auto"` = hex →
+   fit, tet → fem, surface → bem; `"fit"`, `"fem"`, `"bem"`),
+   `solver` (algebraic), `backend`, `precision`, `verbose`,
+   `project`, `geometry`, `params`.
+8. *Store.*  `setup["analysis"]` takes the new class names;
+   `AnalysisTD` runs are `run_<n>` or `run(name=…)` (collision with
+   any existing run name, including `<port>_mode<k>`, is an error).
+   `results.h5` loses its scattering-centric mandatory
+   `excited_name`/`excited_mode` for a JSON `excitations` attribute
+   (`excited_*` derived for scattering runs); the recipe serialises
+   sources, excitations and waveforms by class-name tag —
+   `WaveformFunction` is not serialisable and `resume` says so.
+   `SCHEMA_VERSION` → `"2.0"`, hard-validated (DD-111).
+
+**Reserved names** (fixed now so later DDs do not reinvent them;
+none exists yet):
+
+| Family | Names |
+|---|---|
+| Analyses | `AnalysisTD`, `AnalysisFD`, `AnalysisScatteringFD`, `AnalysisWakefieldTD`, `AnalysisPIC`, `AnalysisParticleTracking`, `AnalysisElectrostatic`, `AnalysisMagnetostatic`, `AnalysisCurrentStatic` |
+| Results | `TDResult`, `FDResult`, `ScatteringFDResult`, `WakefieldTDResult` (`wake_potential`, `wake_impedance`, `loss_factor`, `kick_factor`), `PICResult`, `ParticleTrackingResult`, `ElectrostaticResult` (`capacitance_matrix`), `MagnetostaticResult` (`inductance_matrix`), `CurrentStaticResult` (`conductance_matrix`) |
+| Sources | `SourcePlaneWave` (renamed from `PlaneWaveSource`, waveform removed) as a subclass of `SourceFieldIncident` (analytic/tabulated incident field on the TF/SF box), `SourceFieldInitial` (E/H at t = 0 from a project, function or arrays — limited to PEC/PMC walls and non-dispersive materials until CPML/ADE/SIBC states get a consistent start), `SourceFieldSurface` (Huygens currents from `MonitorFieldSurface`), `SourceCurrentPath`, `SourceVoltage`, `SourceBeam` (line charge: `charge`, `sigma`, `beta`, `axis`, `offset`), `SourceParticle` (face/point, `species`, `emission`), `SourcePotential`, `SourceCharge`, `SourceCoil` |
+| Waveforms | `WaveformGaussian(f_max)`, `WaveformGaussianModulated(f_min, f_max)`, `WaveformSine(f, phase, rise_time)`, `WaveformStep(rise_time, hold, fall_time)`, `WaveformTable(t, values)`, `WaveformFunction(fn, f_max)` — the free functions `gaussian`/`modulated_gaussian`/`waveform_for_mode` become internal |
+| Monitors | `MonitorFarFieldTime`, `MonitorVoltage`, `MonitorCurrent`, `MonitorPowerLoss`, `MonitorFieldSurface`, `MonitorParticle`, `MonitorParticleCurrent` |
+| Ports | `PortFloquet` (unit cells); `phase_advance_deg` (DD-182) is the one Bloch/scan vocabulary for every FD class |
+| Namespaces | `magnelio.fields` (public `FieldState` = the flat `_fields.FieldState` plus `GridLines` and the Yee offset convention: `component`, `at(points)`, `plot`; the coupling channel between monitors, eigenmodes, statics and `SourceField*`), `magnelio.particles` (`Species`, `Emission*`, `SecondaryEmission*`), `magnelio.optimize` (sweeps/optimisers — until then `run()` is a pure function of its arguments and a Python loop is the sweep; `params=` stays the store hook, DD-111) |
+| Engines | `FITFrequencyDomainSolver`, `FEMFrequencyDomainSolver`, `BEMFrequencyDomainSolver` under `magnelio.solver` (`fit_fd.py`, `fem/`, `bem/`, `statics/`, `particles/`) |
+| Arguments | `AnalysisFD(equation="full_wave"|"mqs"|"eqs", sweep="discrete"|"adaptive"|"reduced_order")`, `AnalysisTD.run(t_end=…, name=…)`, `AnalysisWakefieldTD.run(wake_length, integration="direct"|"indirect")` |
+
+Deliberately **not** taken up: TLM (an octree mesh with cell lumping
+is not a second discretisation of the same hexahedral grid — no
+`method="tlm"`; if ever, `MeshControl(element="octree")`), thermal and
+mechanical solvers (the grammar carries `AnalysisThermal` /
+`AnalysisThermalTD`; not planned), sensitivity and yield analysis
+(→ `optimize`), asymptotic/SBR.
+
+**Numerical rules the signatures must honour** (found while checking
+the blueprint against the solver; each becomes a test in its phase):
+
+* A CW waveform (`t_end = inf`) has no energy decay — `run()` then
+  requires `t_end=` (seconds, the physical duration; exclusive with
+  `total_time_steps`) and disables `energy_stop_db` and
+  `port_signal_stop_db`.
+* The step estimate becomes
+  `max_i(delay_i + waveform_i.t_end) + n_traversals · t_diag`; today's
+  `_estimate_steps` knows only bandwidth and diagonal.
+* `port_signal_stop_db="auto"` resolves to `None` when no modal port
+  is present (`FITTimeDomainSolver` raises otherwise).
+* `PortOperatorModal.set_excitation` holds one mode and one
+  retardation buffer; two modes of the same port in one excitation
+  list need a per-mode buffer (Phase B).  Different ports are
+  independent operators already.
+* Frequency monitors in a `TDResult` stay raw (`data_raw`);
+  `renormalize(excitation_name)` is the user's call — with several
+  waveforms there is no single reference spectrum.
+  `ScatteringTDResult` renormalises as today (one channel per run).
+* `Waveform.f_max > mesh.f_max` warns (DD-186 pattern), never raises.
+
+**Rejected.**  Method in the class name (`AnalysisScatteringFITTD`,
+`AnalysisEigenmodeTet`): multiplies classes by problem × method × mesh
+and makes the user choose numerics before stating the problem.
+`AnalysisTransient`/`AnalysisDriven`: readable, but break the TD/FD
+symmetry with `AnalysisScatteringTD`.  `Excitation` in a domain
+namespace: it is run vocabulary like `BoundaryConditions`, used by
+every TD/FD script.  Sources on the analysis instead of the model:
+the mesher could not see them — a later break for beams and emission
+faces.  `AnalysisStationaryCurrent` (the suite's word): breaks the
+`-static` triple; `AnalysisElectrostatics` etc. (nouns): a taste
+question decided for the adjective form.  Keeping `MonitorFarField`
+suffix-free: would force the rename on the day a time-domain far
+field arrives.
+
+**Migration (today → blueprint).**  `PlaneWaveSource(waveform,
+f_center, f_max, …)` → `SourcePlaneWave(name, direction, polarization,
+corners)` + `Excitation(waveform=…)`; `ports.ExcitationSpec` removed;
+`signals.gaussian`/`modulated_gaussian`/`waveform_for_mode` internal;
+`AnalysisScatteringTD(excitation=)` → `(waveform=)`;
+`GeometryModel.add_source`, `Mesh.sources`, `Mesh.with_sources`;
+`MonitorFarField` → `MonitorFarFieldFrequency` (store tag, recipe
+whitelist, `docs/api/monitors.md`, `docs/methods/far-field.md`, the
+antenna tutorials and the patch-array how-to); `MonitorFluxTime` /
+`MonitorWallLoss` to `normal=`/`position=`; core pin
+`EXPECTED_CORE` 10 → 12 (`AnalysisTD`, `Excitation`).  Unchanged:
+`AnalysisEigenmode`, `AnalysisScatteringTD.run(excited=…)`,
+`ScatteringTDResult`, `EigenmodeResult`, the other `Monitor*`,
+`Port*`/`PortSpec*`, `BoundaryConditions`, `Mesh`/`MeshControl`,
+`GeometryModel`, `Material`, `open_project`/`resume`.
+
+**Phases** (one feature branch each, `--no-ff` merge citing this DD;
+gates: full suite, `check_api_surface.py`, `check_imports.py` over the
+internal script directories, the S-parameter ladder bit-identical):
+
+* **A** — `Waveform` ABC and classes, `Excitation`,
+  `SourceFieldIncident`/`SourcePlaneWave` with `amplitude_unit`,
+  `add_source`/`Mesh.sources`, `ExcitationSpec` removed,
+  `AnalysisScatteringTD.waveform`, the three monitor migrations.
+* **B** — `AnalysisTD` + `TDResult` (`t_end`, `name`, CW rules,
+  delay-aware step estimate, per-mode excitation buffers),
+  `AnalysisScatteringTD` on `_run_transient`, the `results.h5`
+  writer's `excitations` attribute, recipe/store/`resume` for
+  `AnalysisTD`, schema 2.0 with `mesh.h5:element`; tutorial
+  *plane-wave scattering* (the first non-port excitation with a home)
+  and a concept page in `docs/methods/`.
+* **C** — `magnelio.fields.FieldState`, `SourceFieldInitial`
+  (eigenmode ring-down from a project), `SourceFieldIncident`
+  beyond the plane wave.
+* **D** — `SourceFieldSurface` + `MonitorFieldSurface`,
+  `SourceCurrentPath`.
+* **E ff.** — `AnalysisWakefieldTD`/`SourceBeam`;
+  `AnalysisScatteringFD`/`AnalysisFD` (FIT-FD on hexahedra first);
+  statics; `MeshTetrahedral`/FEM; `MeshSurface`/BEM;
+  `particles`/PIC/tracking — each its own DD, names from the table
+  above.

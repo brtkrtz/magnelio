@@ -33,6 +33,7 @@ certificates named in their DD entries.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-224** (2026-08-29) — the API grammar for the years ahead, decided, not yet shipped: `Analysis<Problem><Formulation>` (suffix = TD/FD formulation, method from the mesh's element type), general `AnalysisTD`/`AnalysisFD`, the excitation triad `Source*` (on the model) / `Waveform*` (`signals`) / core `Excitation` (`run(excitations=…)`, simultaneous), reserved names for wakefield, PIC/tracking, statics, FD scattering, `fields`/`particles`/`optimize`; `MonitorFarField` → `MonitorFarFieldFrequency`, `PlaneWaveSource` → `SourcePlaneWave`, `ExcitationSpec` removed, schema 2.0 — all in Phase A/B.
 * **DD-223** (2026-08-29) — a `Difference` whose tools' kernel boxes lie inside a box-shaped base (the air body of every housing) is served from its operands throughout the build: box, face and edge planes, singular edges (tool convexity flipped inside the box, convex on its boundary), section contours (`_CsgSectionEngine`: the base's contours plus the tools' reversed) and its place in the effective PEC solid — the kernel cut (1.03 s on the 16 × 16 array) is never built.  16 × 16 7.8 → 6.4 s, posts 240 2.1 → 1.8 s, Lange 16 9.8 → 9.6 s; meshes differ in the last bits of the area arrays.
 Older decisions: `design-decisions.md`.
 
@@ -320,6 +321,15 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
 
 ## Open construction sites
 
+* **API blueprint (DD-224) — Phase A open.**  The vocabulary is
+  fixed; nothing is built.  Phase A: `Waveform` ABC + classes,
+  `Excitation`, `SourceFieldIncident`/`SourcePlaneWave`,
+  `add_source`/`Mesh.sources`, `ExcitationSpec` removed, the three
+  monitor migrations.  Phase B: `AnalysisTD` + `TDResult`,
+  `AnalysisScatteringTD` re-based on it (S-parameters bit-identical),
+  `results.h5` `excitations` attribute, schema 2.0, plane-wave
+  tutorial.  Blueprint and suite-convention survey: internal record
+  `investigations/api-blueprint/`.
 * **Symmetry planes — known limitations (DD-154/DD-155/DD-172).**
   Lumped ports/elements on a symmetry plane are corrected since
   DD-172 (full-model declaration, internal half-device scaling, exact
@@ -342,13 +352,7 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   thin-sheet rasteriser, the fuses and the PEC solid, the point probes
   and overlap check, the edge pass (carrier lines, batch, cylinders
   and round outlines in closed form), the area passes and the engine
-  bookkeeping off the kernel and out of Python loops (DD-217…222:
-  exact cylinder sections, one compiled pass per axis, grid lines on
-  the circle, the PEC solid without the housing fuse, thin sheets
-  through the cached engine and CSG nodes classified from their
-  operands; DD-223: a Difference with its tools inside a box-shaped
-  base served from its operands — box, planes, singular edges,
-  sections, PEC solid — so the housing's cut is never built) — no
+  bookkeeping off the kernel and out of Python loops (DD-217…DD-223) — no
   Lange or array row runs a kernel section or a kernel Boolean of a
   model node any more; A/B switches `MAGNELIO_*=0` per DD-217…219 and
   DD-223 (`MAGNELIO_CSG_NODES`).  Ladder (`benchmarks/bench_mesh_build.py`,
@@ -367,13 +371,9 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   sections), `section_calls` (0.39 s posts, 1.2 s 16 × 16) and
   `planes_material` (0.34 s posts); (3) spheres and cones once a
   ladder row shows them.
-  Traps: any `_occ_shape()` call on a model node rebuilds the whole
-  cut (`bool/probe_no_cut.py` forbids it); bench columns nest — rank
-  from `probe_pass_breakdown.py`; NumPy's `arctan2`/`arccos`/`hypot`
-  are an ulp off `math.*`; kernel cap rows read IN on a standalone
-  post's rim; analytic boxes of round primitives are conservative —
-  use kernel boxes; `_section_engine` keys on deflection;
-  `probe_mesh_hash.py` saves a reference when none exists.
+  Traps are listed in DD-217…DD-223 (`_occ_shape()` rebuilds the cut,
+  nested bench columns, ufunc ulps, conservative analytic boxes,
+  `probe_mesh_hash.py` saves a missing reference).
 
 Closed construction sites are tombstoned where they were decided (the
 DD entry and `known-bugs.md`) and are not repeated here.

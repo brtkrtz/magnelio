@@ -617,7 +617,7 @@ The public API is organised SciPy-style along one axis — the domain
 | Tier | Import path | Contents |
 |------|-------------|----------|
 | **Core** | `magnelio` (10 names) | The model container and run vocabulary (`GeometryModel`, `Material`, `Mesh`/`MeshControl`, `BoundaryConditions`), the problem classes (`AnalysisScatteringTD`, `AnalysisEigenmode`), the store entry points (`open_project`, `resume`), and `__version__`. |
-| **Domain namespaces** | `magnelio.<domain>` | One namespace per subject area: `geo` (primitives, CSG, `Curve`, `ThinWire`), `materials` (dispersion, roughness, impedance fits), `mesh` (`GridLines`, `BoxFace`), `boundaries` (BC classes), `ports` (declarative `Port*` trio, `PortSpec*` family, conductor specs, `Mode`/`ModeType`, reports), `sources`, `monitors` (the four `Monitor*` classes), `circuit` (`SeriesRLC`/`ParallelRLC`, `EdgePath`, curve rasteriser), `signals`, `solver`, `analysis` (result types), `post` (S-parameter pipeline), `plots`, `io`, `constants`. |
+| **Domain namespaces** | `magnelio.<domain>` | One namespace per subject area: `geo` (primitives, CSG, `Curve`, `ThinWire`), `materials` (dispersion, roughness, impedance fits), `mesh` (`GridLines`, `BoxFace`), `boundaries` (BC classes), `ports` (declarative `Port*` trio, `PortSpec*` family, conductor specs, `Mode`/`ModeType`, reports), `sources`, `monitors` (the four `Monitor*` classes), `circuit` (`SeriesRLC`/`ParallelRLC`, `EdgePath`, curve rasteriser), `signals`, `solver`, `analysis` (result types), `post` (S-parameter pipeline), `plots`, `io`, `constants`.  Reserved (DD-224, not yet shipped): `fields` (public field container), `particles` (species, emission models), `optimize` (sweeps/optimisers). |
 | Internals | underscore modules; names outside `__all__` | No stability guarantee (`magnelio._operators`, `magnelio.ports._modal`, …; plumbing such as port builders/operators, the V/I recorder and `MonitorRegion` is importable but not part of the documented surface). |
 
 Placement rule: the core holds the model container, run vocabulary and
@@ -823,6 +823,37 @@ All operators implement the :class:`Port` protocol: ``project_V``,
 ``project_I``, ``update_e``, ``set_excitation``, ``clear_excitation``,
 ``name``, ``n_modes``.  This is what allows the unified
 ``PortSignalRecorder`` and the single ``ports=[…]`` slot on the solver.
+
+### 8.7 Problem-class roadmap (DD-224)
+
+Problem classes are `Analysis<Problem><Formulation>`: the suffix names
+the formulation the user reasons in (`TD`/`FD`, written only where a
+problem exists in both), never the discretisation — the method follows
+from the mesh's element type (`method=` overrides), the algebraic solver
+from `solver=`.  Results are `<Problem><Formulation>Result`; the
+suffix-free name is the contract protocol (`ScatteringResult`).
+
+| Class | Status | Base | Result |
+|-------|--------|------|--------|
+| `AnalysisScatteringTD` | shipped | `AnalysisTD` (after Phase B) | `ScatteringTDResult` |
+| `AnalysisEigenmode` | shipped | `_AnalysisBase` | `EigenmodeResult` |
+| `AnalysisTD` | Phase B | `_AnalysisBase` | `TDResult` |
+| `AnalysisWakefieldTD` | reserved | `AnalysisTD` | `WakefieldTDResult` |
+| `AnalysisPIC` | reserved | `AnalysisTD` | `PICResult` |
+| `AnalysisFD` | reserved | `_AnalysisBase` | `FDResult` |
+| `AnalysisScatteringFD` | reserved | `AnalysisFD` | `ScatteringFDResult` |
+| `AnalysisElectrostatic` / `AnalysisMagnetostatic` / `AnalysisCurrentStatic` | reserved | `_AnalysisBase` | `ElectrostaticResult` / `MagnetostaticResult` / `CurrentStaticResult` |
+| `AnalysisParticleTracking` | reserved | `_AnalysisBase` | `ParticleTrackingResult` |
+
+Excitation triad (DD-224): `Source<Kind>` objects are declared on the
+model before meshing (`model.add_source`, carried as `Mesh.sources`),
+`Waveform<Kind>` objects in `magnelio.signals` are pure time functions
+with a bandwidth, and the core `Excitation(source, mode=, waveform=,
+amplitude=, delay=, phase=)` binds one to the other in
+`run(excitations=[…])` — simultaneous in one run.  Sequential channel
+runs stay `AnalysisScatteringTD.run(excited=…)`.  The full reserved
+vocabulary (sources, waveforms, monitors, namespaces, engines,
+arguments) is the table in DD-224.
 
 ---
 ## 9. AnalysisScatteringTD.run() — convenience parameters
