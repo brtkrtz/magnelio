@@ -365,3 +365,36 @@ class TestPointsNearPolygon:
         assert near.tolist() == [True, False]
         sq = np.array([[0, 0], [1, 0], [1, 1], [0, 1]], dtype=float)
         assert not points_near_polygon(np.array([0.0]), np.array([0.0]), sq, 0.0).any()
+
+
+def _random_polygons(rng):
+    """Closed random outlines: a star, a thin sliver, a rectangle with a repeated vertex."""
+    n = 9
+    angles = np.sort(rng.uniform(0, 2 * np.pi, n))
+    radii = rng.uniform(0.5, 3.0, n)
+    star = np.column_stack((3.0 + radii * np.cos(angles), 3.0 + radii * np.sin(angles)))
+    sliver = np.array([(0.2, 0.2), (7.9, 0.25), (7.8, 0.35)])
+    rect = np.array([(1.0, 4.0), (5.0, 4.0), (5.0, 4.0), (5.0, 6.5), (1.0, 6.5)])
+    return [star, sliver, rect]
+
+
+@pytest.mark.parametrize("numba", [True, False])
+def test_points_near_polygon_grid_matches_the_point_version(monkeypatch, numba):
+    from magnelio.geo import _polygon_clip as pc
+
+    if numba and not pc.HAS_NUMBA:
+        pytest.skip("numba not installed")
+    monkeypatch.setattr(pc, "HAS_NUMBA", numba)
+    rng = np.random.default_rng(5)
+    u = np.sort(rng.uniform(0.0, 8.0, 211))
+    v = np.sort(rng.uniform(0.0, 7.0, 157))
+    UU, VV = np.meshgrid(u, v, indexing="ij")
+    for poly in _random_polygons(rng):
+        for tol in (1e-12, 0.01, 0.07, 0.5, 3.0):
+            got = pc.points_near_polygon_grid(u, v, poly, tol)
+            expected = pc.points_near_polygon(UU, VV, poly, tol)
+            np.testing.assert_array_equal(got, expected)
+            assert got.dtype == bool and got.shape == UU.shape
+    assert not pc.points_near_polygon_grid(u, v, _random_polygons(rng)[0], 0.0).any()
+    assert pc.points_near_polygon_grid(u[:0], v, _random_polygons(rng)[0], 0.1).shape == (0, 157)
+    assert not pc.points_near_polygon_grid(u, v, np.zeros((1, 2)), 0.1).any()

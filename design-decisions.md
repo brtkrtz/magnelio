@@ -16452,3 +16452,128 @@ ladder row shows them.
 (`Difference._occ_tools`), `tests/unit/test_prism_fuse.py`
 (`TestContainedPecContributions`), `CHANGELOG.md`, `STATUS.md`,
 `benchmarks/results/bench_mesh_build.json` (re-run).
+
+## DD-222 — The thin-sheet path asks the section engine, its band the grid, and CSG nodes their operands
+
+**Status:** Decided and implemented 2026-08-29, branch
+`perf/sheet-section-engine`.  DD-221's open item 1: the thin-sheet
+rasteriser and the detection's probes.
+
+**Problem.**  Three leftovers of the sheet path, none of them the
+footprint logic (internal dossier
+`investigations/mesh-build-bench/sheets/`, M25).  (1)
+`rasterize_thin_sheet_footprint` sectioned the sheet's solid through
+`cross_section_polygons` — the kernel's `BRepAlgoAPI_Section` over
+the whole body — while the ε/σ/µ passes had long stopped doing so
+(DD-216 caches a `_PlanarSectionEngine` per shape): 1.19 s for the
+229 contours of the 16 × 16 patch array's copper union, 0.18 s for the
+192 finger bricks of sixteen Lange couplers, the last kernel sections
+of both rows (`sect` column 192 / 1).  (2) `contour_mask` ORed the
+boundary band through `points_near_polygon`, a NumPy pass over every
+point of a contour's window for every segment: the feed network's
+one contour spans the whole plane, 1.7 M candidate edges × its
+segments, 0.61 s.  (3) `detect_thin_metallizations` decides the
+substrate side by two probes per sheet through `PointClassifierSet`,
+whose `contains` ran the kernel classifier on the model shape hit by
+the box screen — on the Lange row the air body, a `Difference` with
+320 pockets and 4 044 faces, 2.3 ms per `Perform`, 256 probes, 0.6 s;
+on the array 44 ms for its single probe.
+
+**Decision.**
+
+1. *Engine first.*  The sheet section is asked of the shape's section
+   engine (`_sheet_section_by_engine`): the finest engine the passes
+   cached on the shape (`_finest_section_engine` — their chord budget
+   is an order below this path's `CLASSIFY_DEFLECTION_FRACTION`, so
+   any of them is at least as faithful; the classification key
+   itself missed and rebuilt the digest, 0.37 s on the copper union),
+   else one built at the path's own deflection.  A declined plane —
+   vertex, tangency, free-form without facets, or `enabled` False —
+   takes the kernel section exactly as before, and an empty result
+   still falls to the classifier path.  The masks are identical on
+   both rows (A/B on every sheet, `probe_sheet_split.py`).
+2. *Band on the grid.*  `points_near_polygon_grid` evaluates each
+   segment only on the grid block inside its bounding box padded by
+   twice the tolerance (`searchsorted` on the sorted coordinate
+   vectors, a numba kernel with the NumPy formula, a NumPy fallback):
+   a point outside the block is farther than the tolerance by at
+   least the tolerance, beyond any rounding of the distance
+   arithmetic, so the result equals the all-points evaluation bit for
+   bit (tested against `points_near_polygon` on random outlines,
+   both paths).  `contour_mask` uses it; the even-odd half stays on
+   the parallel `points_in_polygon` (0.02 s on the same window).
+3. *CSG nodes from their operands.*  `PointClassifierSet` classifies
+   a `Difference`, `Union` or `Intersection` (exact types) by the
+   point-set identities on the ``OUT`` / ``ON`` / ``IN`` states of its
+   operands — ``base − tools`` is OUT where the base is or a tool is
+   IN, ON where the base is or a tool is, IN otherwise; a union IN
+   where any piece is, else ON where any is; an intersection OUT
+   where any operand is, else ON where any is — recursively down to
+   the leaves, whose classifiers are the only ones loaded; operands
+   are box-screened like the model shapes, and a node with an
+   operand the kernel cannot box is classified on its own solid as
+   before.  The tolerance band is the kernel's: a point within the
+   tolerance of a pocket wall is ON for the tool and hence ON for the
+   cut, which is what the classifier reported on the Boolean solid
+   (tested on pocket, bore and nested cut against `point_in_shape`).
+
+**Measured** (`probe_sheet_split.py`, `probe_sheet_split2.py`; before
+= DD-221's `main`).  16 × 16 array: `sheets` 1.84 → **0.04 s**
+(section 1.19 s → 3 ms, band 0.61 s → ms), the probe 44 → 2 ms;
+build 9.6 → **7.8 s**.  Lange 16: `sheets` 0.24 → 0.05 s, the
+detection's probes 0.61 → 0.03 s, `sheets_detect` 1.65 → 1.05 s —
+what remains of it is the housing's first `_occ_shape()` (tool union
+0.5 s, cut 0.33 s) reached through `bounding_box` in the set's
+constructor, and on the array the copper fuse 0.6 s plus the air
+body's cut 1.0 s the same way: the model's kernel shapes, built once
+wherever they are first touched.
+
+Full ladder (`--family all --pool auto`, CPU idle; before = DD-221's):
+
+| family, n | cells | total before → after | `sheets` (bench column) | `sect` |
+|---|---|---|---|---|
+| Lange 16 | 3.69 M | 10.6 → **9.8 s** | 1.6 → 0.9 | 192 → 0 |
+| Lange 8 | 1.84 M | 4.5 → **4.2 s** | 0.7 → 0.4 | 96 → 0 |
+| Lange 4 | 922 k | 2.0 → 2.0 s | 0.3 → 0.2 | 48 → 0 |
+| array 8 × 8 | 664 k | 2.3 → **2.0 s** | 0.5 → 0.3 | 1 → 0 |
+| array 4 × 4 | 222 k | 0.7 → 0.7 s | | 1 → 0 |
+| posts 240 | 385 k | 2.0 → 2.1 s (no sheets) | | 2 → 2 |
+| posts 60 | 97 k | 0.5 → 0.5 s | | |
+| 16 × 16 (off-ladder) | 1.8 M | 9.6 → **7.8 s** | 3.7 → 1.9 | 1 → 0 |
+
+Hash gate 35 / 35 on posts 60 / 240, Lange 4 and array 4 against the
+DD-221 references; Lange 8 and array 8 pinned from `main` in a
+worktree (`pool/hash_refs/lange8.txt`, `array8.txt`) and 35 / 35
+against them.  Unit suite 2 611 passed / 4 skipped (seven new tests: engine
+section against the kernel section on the L-shape, no kernel
+section for a sheet, the grid band against the point band on star,
+sliver and repeated-vertex outlines on both paths, CSG states
+against the kernel on pocket, bore, union seam, intersection and
+nested cut, leaf-only loads, the unboxable-operand fallback),
+integration 402 passed / 5 skipped (`CUPY_ACCELERATORS=""`); `ruff check` / `ruff
+format --check` clean; `check_dd_references.py` and
+`check_imports.py` on `investigations/` and `userscripts/` clean.
+
+**Open, re-ranked.**  In value order: (1) the model's kernel
+Booleans built on first touch — the air body's cut (`Cut` air −
+copper 1.0 s on the 16 × 16 array, 0.33 s on Lange 16; the imprint of
+every metal piece, needed by the material filling as a solid today;
+a section-level `base − tools` would make it a 2-D difference per
+plane) and the copper fuse ahead of it (0.6 s on the array, the tool
+union 0.5 s on Lange 16 of which 32 eight-body kernel fuses 0.38 s:
+prisms of one axis on three z intervals, which the planar route
+takes one interval at a time); (2) the post row's `pass_faces_mu`
+0.87 s beyond its sections and the classifier's `section_calls`
+(0.39 s on the posts, 1.2 s on the 16 × 16 array) with
+`planes_material` (0.34 s on the posts); (3) spheres and cones in
+the engine and the line table when a ladder row shows them.
+
+**Files:** `src/magnelio/mesh/_conformal.py`
+(`_sheet_section_by_engine`, `rasterize_thin_sheet_footprint`,
+`contour_mask`), `src/magnelio/geo/_polygon_clip.py`
+(`points_near_polygon_grid`), `src/magnelio/geo/_occ_backend.py`
+(`_finest_section_engine`, `_boolean_operands`,
+`PointClassifierSet`), `tests/unit/test_thin_sheet_footprint.py`,
+`tests/unit/test_polygon_clip.py`,
+`tests/unit/test_point_classifier_set.py`, `CHANGELOG.md`,
+`STATUS.md`, `benchmarks/results/bench_mesh_build.json` (re-run).

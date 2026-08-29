@@ -11,6 +11,14 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- The mesh build's thin-sheet pass sections a sheet's solid through
+  the same in-house section engine the material passes use, paints
+  its boundary band only where a segment can reach, and decides the
+  substrate side of a sheet from the construction of the surrounding
+  bodies instead of classifying points against a pocketed Boolean
+  solid.  A 16 × 16 patch array with feed meshes in 7.8 s instead of
+  9.6 s, sixteen Lange couplers in 9.8 s instead of 10.6 s; meshes
+  are unchanged.
 - The mesh build no longer fuses the metal of a PEC housing into the
   housing's own cut when constructing the effective PEC solid — the
   cut holds it already — and cuts the housing by an air box rather
