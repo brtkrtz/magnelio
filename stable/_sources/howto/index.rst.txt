@@ -41,6 +41,23 @@ the tutorials instead.
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="A single pair of coupled microstrip lines cannot reach 3 dB coupling on a substrate anyone can fabricate — the gap would have to be a few micrometres.  Lange&#x27;s answer (1969) is to split each line into two narrow fingers and interleave them, so every finger couples to two neighbours; bond wires join the fingers of one line at both ends.  The result is a quarter-wave 3-dB quadrature coupler with fabricable gaps, the workhorse of balanced amplifiers and image-reject mixers.  This guide designs one at 10 GHz on 254 µm alumina and reads coupling, phase and match off a four-port run.">
+
+.. only:: html
+
+  .. image:: /howto/images/thumb/sphx_glr_plot_lange_coupler_thumb.png
+    :alt:
+
+  :doc:`/howto/plot_lange_coupler`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Lange coupler: a 3-dB interdigitated coupler dimensioned with the port solver</div>
+    </div>
+
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="A PortLumped terminates a line in a single chain of grid edges — cheap, DC-capable, and available where a waveguide port window does not fit.  The price is that it is not an exact line termination: a residual self-reflection and a phase error remain, and both depend on the grid at the gap, on the gap geometry and position, and on the port impedance.  Rules of thumb exist, but none of them tells you how good your termination is on your mesh, or up to which frequency you can trust it.">
 
 .. only:: html
@@ -126,6 +143,23 @@ the tutorials instead.
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="A single rectangular patch is the textbook printed antenna — a half-wave resonator on a grounded substrate, 7 dBi of directivity, a few percent of bandwidth.  Four of them on a lattice of three quarters of a wavelength, fed in phase, give 13 dBi and a beam that the array factor sharpens in both planes.  This guide designs the element, then the corporate feed that splits one 50 Ω input into four equal, in-phase branches, and reads match, directivity and the two principal-plane cuts off the array run — with the element pattern times the array factor as the independent check.">
+
+.. only:: html
+
+  .. image:: /howto/images/thumb/sphx_glr_plot_patch_array_thumb.png
+    :alt:
+
+  :doc:`/howto/plot_patch_array`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Patch array: a 2 × 2 corporate-fed microstrip array from element to pattern</div>
+    </div>
+
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="A pair of stripline electrodes in a beam pipe is a workhorse of beam instrumentation: read out, it is a broadband pickup (a beam position monitor); driven, it is a kicker that deflects the beam.  Neither role is an S-parameter — a port model has no beam — yet both follow from one S-parameter simulation.  This guide walks the route used to design such devices (Goldberg and Lambertson, AIP Conf. Proc. 249, 537 (1992)):">
 
 .. only:: html
@@ -152,11 +186,13 @@ the tutorials instead.
    :hidden:
 
    /howto/plot_coupled_line_coupler
+   /howto/plot_lange_coupler
    /howto/plot_lumped_port_investigations
    /howto/plot_lumped_port_tuning_coax
    /howto/plot_lumped_port_tuning_cpw
    /howto/plot_lumped_port_tuning_microstrip
    /howto/plot_mesh_convergence
+   /howto/plot_patch_array
    /howto/plot_stripline_pickup_kicker
 
 

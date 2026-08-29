@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=a78bb796"></script>
+    <script src="../_static/documentation_options.js?v=4f911454"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -618,6 +618,375 @@ forward modal waves).</p>
 
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.mesh.GridPlanes">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.mesh.</span></span><span class="sig-name descname"><span class="pre">GridPlanes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h_bulk</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropped</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absorbed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unplaced</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pml_cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.mesh.GridPlanes" title="Link to this definition">#</a></dt>
+<dd><p>Provenance of every grid plane of a mesh, per axis.</p>
+<p>Returned as <code class="docutils literal notranslate"><span class="pre">mesh.planes</span></code> by <code class="xref py py-meth docutils literal notranslate"><span class="pre">Mesh.from_geometry()</span></code>
+(<code class="docutils literal notranslate"><span class="pre">None</span></code> on meshes built from a grid or loaded from an older
+store).  <code class="docutils literal notranslate"><span class="pre">print(mesh.planes)</span></code> gives the report; <a class="reference internal" href="#magnelio.mesh.GridPlanes.as_dict" title="magnelio.mesh.GridPlanes.as_dict"><code class="xref py py-meth docutils literal notranslate"><span class="pre">as_dict()</span></code></a>
+a JSON-serialisable form used by the store and by the example-model
+pins of the test suite.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>tuple</em><em>[</em><a class="reference internal" href="#magnelio.mesh.PlaneRecord" title="magnelio.mesh._planes.PlaneRecord"><em>PlaneRecord</em></a><em>, </em><em>...</em><em>]</em>)</p></li>
+<li><p><strong>y</strong> (<em>tuple</em><em>[</em><a class="reference internal" href="#magnelio.mesh.PlaneRecord" title="magnelio.mesh._planes.PlaneRecord"><em>PlaneRecord</em></a><em>, </em><em>...</em><em>]</em>)</p></li>
+<li><p><strong>z</strong> (<em>tuple</em><em>[</em><a class="reference internal" href="#magnelio.mesh.PlaneRecord" title="magnelio.mesh._planes.PlaneRecord"><em>PlaneRecord</em></a><em>, </em><em>...</em><em>]</em>)</p></li>
+<li><p><strong>h_bulk</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>tuple</em><em>[</em><em>float</em><em>, </em><em>...</em><em>]</em><em>]</em>)</p></li>
+<li><p><strong>dropped</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>tuple</em><em>[</em><a class="reference internal" href="#magnelio.mesh.PlaneRecord" title="magnelio.mesh._planes.PlaneRecord"><em>PlaneRecord</em></a><em>, </em><em>...</em><em>]</em><em>]</em>)</p></li>
+<li><p><strong>absorbed</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>tuple</em><em>[</em><a class="reference internal" href="#magnelio.mesh.PlaneRecord" title="magnelio.mesh._planes.PlaneRecord"><em>PlaneRecord</em></a><em>, </em><em>...</em><em>]</em><em>]</em>)</p></li>
+<li><p><strong>unplaced</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>tuple</em><em>[</em><a class="reference internal" href="#magnelio.mesh.PlaneRecord" title="magnelio.mesh._planes.PlaneRecord"><em>PlaneRecord</em></a><em>, </em><em>...</em><em>]</em><em>]</em>)</p></li>
+<li><p><strong>n_nodes</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>int</em><em>]</em>)</p></li>
+<li><p><strong>pml_cells</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>int</em><em>]</em>)</p></li>
+<li><p><strong>feature_gap</strong> (<em>float</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">x,</span> <span class="pre">y,</span> <span class="pre">z</span></span></dt>
+<dd><p>The planes of each axis in ascending order — the interval
+boundaries of the graded grid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple of <a class="reference internal" href="#magnelio.mesh.PlaneRecord" title="magnelio.mesh.PlaneRecord">PlaneRecord</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.mesh.GridPlanes.h_bulk">
+<span class="sig-name descname"><span class="pre">h_bulk</span></span><a class="headerlink" href="#magnelio.mesh.GridPlanes.h_bulk" title="Link to this definition">#</a></dt>
+<dd><p>The bulk cell size [m] of every interval of each axis (one entry
+fewer than planes).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict of str to tuple of float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.mesh.GridPlanes.dropped">
+<span class="sig-name descname"><span class="pre">dropped</span></span><a class="headerlink" href="#magnelio.mesh.GridPlanes.dropped" title="Link to this definition">#</a></dt>
+<dd><p>Edge planes below the edge floor, reported by the mesher’s
+warning; <code class="docutils literal notranslate"><span class="pre">gap</span></code> holds the cell they would have created.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict of str to tuple of <a class="reference internal" href="#magnelio.mesh.PlaneRecord" title="magnelio.mesh.PlaneRecord">PlaneRecord</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.mesh.GridPlanes.absorbed">
+<span class="sig-name descname"><span class="pre">absorbed</span></span><a class="headerlink" href="#magnelio.mesh.GridPlanes.absorbed" title="Link to this definition">#</a></dt>
+<dd><p>Material planes merged into a neighbour by the hard
+<code class="docutils literal notranslate"><span class="pre">min_cell_size</span></code> floor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict of str to tuple of <a class="reference internal" href="#magnelio.mesh.PlaneRecord" title="magnelio.mesh.PlaneRecord">PlaneRecord</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.mesh.GridPlanes.unplaced">
+<span class="sig-name descname"><span class="pre">unplaced</span></span><a class="headerlink" href="#magnelio.mesh.GridPlanes.unplaced" title="Link to this definition">#</a></dt>
+<dd><p>Requested planes that match no outcome.  Empty in a consistent
+build; a non-empty list points at a rule that discards a plane
+without recording it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict of str to tuple of <a class="reference internal" href="#magnelio.mesh.PlaneRecord" title="magnelio.mesh.PlaneRecord">PlaneRecord</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.mesh.GridPlanes.n_nodes">
+<span class="sig-name descname"><span class="pre">n_nodes</span></span><a class="headerlink" href="#magnelio.mesh.GridPlanes.n_nodes" title="Link to this definition">#</a></dt>
+<dd><p>Node count of each axis of the final grid (absorber cells
+included).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict of str to int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.mesh.GridPlanes.pml_cells">
+<span class="sig-name descname"><span class="pre">pml_cells</span></span><a class="headerlink" href="#magnelio.mesh.GridPlanes.pml_cells" title="Link to this definition">#</a></dt>
+<dd><p>Absorber cells per domain face, as <code class="docutils literal notranslate"><span class="pre">mesh.pml_cells</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict of str to int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.mesh.GridPlanes.feature_gap">
+<span class="sig-name descname"><span class="pre">feature_gap</span></span><a class="headerlink" href="#magnelio.mesh.GridPlanes.feature_gap" title="Link to this definition">#</a></dt>
+<dd><p>The clustering tolerance [m] the planes were merged with.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.mesh.GridPlanes.from_dict">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.mesh.GridPlanes.from_dict" title="Link to this definition">#</a></dt>
+<dd><p>Inverse of <a class="reference internal" href="#magnelio.mesh.GridPlanes.as_dict" title="magnelio.mesh.GridPlanes.as_dict"><code class="xref py py-meth docutils literal notranslate"><span class="pre">as_dict()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>d</strong> (<em>dict</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.mesh.GridPlanes" title="magnelio.mesh._planes.GridPlanes"><em>GridPlanes</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.mesh.GridPlanes.as_dict">
+<span class="sig-name descname"><span class="pre">as_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">rounded</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.mesh.GridPlanes.as_dict" title="Link to this definition">#</a></dt>
+<dd><p>JSON-serialisable form (deterministic key order).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rounded</strong> (<em>bool</em><em>, </em><em>default True</em>) – Round positions to three decimals below the feature gap and
+cell sizes to four significant digits — the form the
+example-model pins are written in.  <code class="docutils literal notranslate"><span class="pre">False</span></code> keeps every
+float verbatim (the store).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.mesh.GridPlanes.records">
+<span class="sig-name descname"><span class="pre">records</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axis</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.mesh.GridPlanes.records" title="Link to this definition">#</a></dt>
+<dd><p>The planes of one axis (<code class="docutils literal notranslate"><span class="pre">&quot;x&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;y&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;z&quot;</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>axis</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple[<a class="reference internal" href="#magnelio.mesh.PlaneRecord" title="magnelio.mesh._planes.PlaneRecord"><em>PlaneRecord</em></a>, …]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.mesh.GridPlanes.summary">
+<span class="sig-name descname"><span class="pre">summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.mesh.GridPlanes.summary" title="Link to this definition">#</a></dt>
+<dd><p>Multi-line human-readable report (used by <code class="docutils literal notranslate"><span class="pre">str()</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>scale_mm</strong> (<em>bool</em><em>, </em><em>default True</em>) – Print lengths in millimetres; <code class="docutils literal notranslate"><span class="pre">False</span></code> prints metres.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.mesh.PlaneRecord">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.mesh.</span></span><span class="sig-name descname"><span class="pre">PlaneRecord</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">singular</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h_fine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moved_to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.mesh.PlaneRecord" title="Link to this definition">#</a></dt>
+<dd><p>One grid plane (or one plane that did not make it into the grid).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>position</strong> (<em>float</em>)</p></li>
+<li><p><strong>sources</strong> (<em>tuple</em><em>[</em><a class="reference internal" href="#magnelio.mesh.PlaneSource" title="magnelio.mesh._planes.PlaneSource"><em>PlaneSource</em></a><em>, </em><em>...</em><em>]</em>)</p></li>
+<li><p><strong>node</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>singular</strong> (<em>bool</em>)</p></li>
+<li><p><strong>domain_end</strong> (<em>bool</em>)</p></li>
+<li><p><strong>h_fine</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>moved_to</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>gap</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.mesh.PlaneRecord.position">
+<span class="sig-name descname"><span class="pre">position</span></span><a class="headerlink" href="#magnelio.mesh.PlaneRecord.position" title="Link to this definition">#</a></dt>
+<dd><p>The merged plane coordinate [m] — the geometry position the
+grid line stands for, before absorber cells are appended and
+before a PMC face pulls its end node inwards.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.mesh.PlaneRecord.sources">
+<span class="sig-name descname"><span class="pre">sources</span></span><a class="headerlink" href="#magnelio.mesh.PlaneRecord.sources" title="Link to this definition">#</a></dt>
+<dd><p>Every rule and shape that asked for this plane, sorted.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple of <a class="reference internal" href="#magnelio.mesh.PlaneSource" title="magnelio.mesh.PlaneSource">PlaneSource</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.mesh.PlaneRecord.node">
+<span class="sig-name descname"><span class="pre">node</span></span><a class="headerlink" href="#magnelio.mesh.PlaneRecord.node" title="Link to this definition">#</a></dt>
+<dd><p>Index of the plane’s node in <code class="docutils literal notranslate"><span class="pre">mesh.grid.&lt;axis&gt;</span></code>; <code class="docutils literal notranslate"><span class="pre">None</span></code> for
+planes that are not in the grid (dropped, absorbed, unplaced).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.mesh.PlaneRecord.singular">
+<span class="sig-name descname"><span class="pre">singular</span></span><a class="headerlink" href="#magnelio.mesh.PlaneRecord.singular" title="Link to this definition">#</a></dt>
+<dd><p>The plane holds a conductor edge with a field singularity and
+grades from the refined fine size.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.mesh.PlaneRecord.domain_end">
+<span class="sig-name descname"><span class="pre">domain_end</span></span><a class="headerlink" href="#magnelio.mesh.PlaneRecord.domain_end" title="Link to this definition">#</a></dt>
+<dd><p>First or last plane of the axis (the domain bounding box).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.mesh.PlaneRecord.h_fine">
+<span class="sig-name descname"><span class="pre">h_fine</span></span><a class="headerlink" href="#magnelio.mesh.PlaneRecord.h_fine" title="Link to this definition">#</a></dt>
+<dd><p>The fine cell size [m] the grading starts from at this plane.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.mesh.PlaneRecord.moved_to">
+<span class="sig-name descname"><span class="pre">moved_to</span></span><a class="headerlink" href="#magnelio.mesh.PlaneRecord.moved_to" title="Link to this definition">#</a></dt>
+<dd><p>Where the node actually sits when a PMC face pulled it inside
+the bounding box; <code class="docutils literal notranslate"><span class="pre">None</span></code> when the node is at <code class="docutils literal notranslate"><span class="pre">position</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.mesh.PlaneRecord.gap">
+<span class="sig-name descname"><span class="pre">gap</span></span><a class="headerlink" href="#magnelio.mesh.PlaneRecord.gap" title="Link to this definition">#</a></dt>
+<dd><p>For a dropped edge plane: the cell it would have created [m].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.mesh.PlaneRecord.kinds">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">kinds</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">frozenset</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#magnelio.mesh.PlaneRecord.kinds" title="Link to this definition">#</a></dt>
+<dd><p>The set of source kinds behind this plane.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.mesh.PlaneSource">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.mesh.</span></span><span class="sig-name descname"><span class="pre">PlaneSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.mesh.PlaneSource" title="Link to this definition">#</a></dt>
+<dd><p>One reason for a grid plane.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kind</strong> (<em>str</em>)</p></li>
+<li><p><strong>shape</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>label</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.mesh.PlaneSource.kind">
+<span class="sig-name descname"><span class="pre">kind</span></span><a class="headerlink" href="#magnelio.mesh.PlaneSource.kind" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">&quot;face&quot;</span></code> (analytic material face), <code class="docutils literal notranslate"><span class="pre">&quot;extent&quot;</span></code> (bounding-box
+extent of a shape), <code class="docutils literal notranslate"><span class="pre">&quot;edge&quot;</span></code> (a B-rep edge lying flat in the
+plane — a chamfer or fillet onset, a loft section), <code class="docutils literal notranslate"><span class="pre">&quot;sheet&quot;</span></code>
+(the grid plane of a thin metallisation), <code class="docutils literal notranslate"><span class="pre">&quot;wire&quot;</span></code> (a
+thin-wire vertex), <code class="docutils literal notranslate"><span class="pre">&quot;symmetry&quot;</span></code> (a symmetry face with a
+position) or <code class="docutils literal notranslate"><span class="pre">&quot;forced&quot;</span></code> (<code class="docutils literal notranslate"><span class="pre">MeshControl.forced_planes</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.mesh.PlaneSource.shape">
+<span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#magnelio.mesh.PlaneSource.shape" title="Link to this definition">#</a></dt>
+<dd><p>Index of the contributing shape in the model’s shape list;
+<code class="docutils literal notranslate"><span class="pre">None</span></code> for forced and symmetry planes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.mesh.PlaneSource.label">
+<span class="sig-name descname"><span class="pre">label</span></span><a class="headerlink" href="#magnelio.mesh.PlaneSource.label" title="Link to this definition">#</a></dt>
+<dd><p>Human-readable shape label (<code class="docutils literal notranslate"><span class="pre">&quot;#1</span> <span class="pre">Cylinder(pec)&quot;</span></code>), or the face
+name of a symmetry plane (<code class="docutils literal notranslate"><span class="pre">&quot;xmin&quot;</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.mesh.PlaneSource.parse">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">parse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.mesh.PlaneSource.parse" title="Link to this definition">#</a></dt>
+<dd><p>Inverse of <code class="xref py py-meth docutils literal notranslate"><span class="pre">__str__()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>text</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.mesh.PlaneSource" title="magnelio.mesh._planes.PlaneSource"><em>PlaneSource</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
@@ -684,6 +1053,39 @@ forward modal waves).</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.GridLines.dy"><code class="docutils literal notranslate"><span class="pre">GridLines.dy</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.GridLines.dz"><code class="docutils literal notranslate"><span class="pre">GridLines.dz</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.GridLines.n_cells"><code class="docutils literal notranslate"><span class="pre">GridLines.n_cells</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.GridPlanes"><code class="docutils literal notranslate"><span class="pre">GridPlanes</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.GridPlanes.h_bulk"><code class="docutils literal notranslate"><span class="pre">GridPlanes.h_bulk</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.GridPlanes.dropped"><code class="docutils literal notranslate"><span class="pre">GridPlanes.dropped</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.GridPlanes.absorbed"><code class="docutils literal notranslate"><span class="pre">GridPlanes.absorbed</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.GridPlanes.unplaced"><code class="docutils literal notranslate"><span class="pre">GridPlanes.unplaced</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.GridPlanes.n_nodes"><code class="docutils literal notranslate"><span class="pre">GridPlanes.n_nodes</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.GridPlanes.pml_cells"><code class="docutils literal notranslate"><span class="pre">GridPlanes.pml_cells</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.GridPlanes.feature_gap"><code class="docutils literal notranslate"><span class="pre">GridPlanes.feature_gap</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.GridPlanes.from_dict"><code class="docutils literal notranslate"><span class="pre">GridPlanes.from_dict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.GridPlanes.as_dict"><code class="docutils literal notranslate"><span class="pre">GridPlanes.as_dict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.GridPlanes.records"><code class="docutils literal notranslate"><span class="pre">GridPlanes.records()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.GridPlanes.summary"><code class="docutils literal notranslate"><span class="pre">GridPlanes.summary()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.PlaneRecord"><code class="docutils literal notranslate"><span class="pre">PlaneRecord</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.PlaneRecord.position"><code class="docutils literal notranslate"><span class="pre">PlaneRecord.position</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.PlaneRecord.sources"><code class="docutils literal notranslate"><span class="pre">PlaneRecord.sources</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.PlaneRecord.node"><code class="docutils literal notranslate"><span class="pre">PlaneRecord.node</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.PlaneRecord.singular"><code class="docutils literal notranslate"><span class="pre">PlaneRecord.singular</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.PlaneRecord.domain_end"><code class="docutils literal notranslate"><span class="pre">PlaneRecord.domain_end</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.PlaneRecord.h_fine"><code class="docutils literal notranslate"><span class="pre">PlaneRecord.h_fine</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.PlaneRecord.moved_to"><code class="docutils literal notranslate"><span class="pre">PlaneRecord.moved_to</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.PlaneRecord.gap"><code class="docutils literal notranslate"><span class="pre">PlaneRecord.gap</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.PlaneRecord.kinds"><code class="docutils literal notranslate"><span class="pre">PlaneRecord.kinds</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.PlaneSource"><code class="docutils literal notranslate"><span class="pre">PlaneSource</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.PlaneSource.kind"><code class="docutils literal notranslate"><span class="pre">PlaneSource.kind</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.PlaneSource.shape"><code class="docutils literal notranslate"><span class="pre">PlaneSource.shape</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.PlaneSource.label"><code class="docutils literal notranslate"><span class="pre">PlaneSource.label</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.mesh.PlaneSource.parse"><code class="docutils literal notranslate"><span class="pre">PlaneSource.parse()</span></code></a></li>
 </ul>
 </li>
 </ul>

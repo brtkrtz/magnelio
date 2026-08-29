@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=a78bb796"></script>
+    <script src="../_static/documentation_options.js?v=4f911454"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -1760,7 +1760,7 @@ versions that forced it); the finiteness check excludes those.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.Mesh">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.</span></span><span class="sig-name descname"><span class="pre">Mesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material_library</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pec_mask_edges</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">face_material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pec_surface</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary_conditions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ports</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_wall_backup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.Mesh" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.</span></span><span class="sig-name descname"><span class="pre">Mesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material_library</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pec_mask_edges</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">face_material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pec_surface</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary_conditions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ports</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">planes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_wall_backup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.Mesh" title="Link to this definition">#</a></dt>
 <dd><p>Structured non-uniform hexahedral mesh with material assignments.</p>
 <p>See <code class="docutils literal notranslate"><span class="pre">spec.md</span></code> for the data-structure specification.</p>
 <dl class="field-list simple">
@@ -1777,6 +1777,7 @@ versions that forced it); the finiteness check excludes those.</p>
 <li><p><strong>boundary_conditions</strong> (<em>object</em>)</p></li>
 <li><p><strong>ports</strong> (<em>tuple</em>)</p></li>
 <li><p><strong>elements</strong> (<em>tuple</em>)</p></li>
+<li><p><strong>planes</strong> (<a class="reference internal" href="mesh.html#magnelio.mesh.GridPlanes" title="magnelio.mesh.GridPlanes"><em>GridPlanes</em></a><em> | </em><em>None</em>)</p></li>
 <li><p><strong>_wall_backup</strong> (<em>dict</em>)</p></li>
 </ul>
 </dd>
@@ -1893,6 +1894,26 @@ extend it for CPML or pull a PMC line in.</p></li>
 <span class="n">mesh</span> <span class="o">=</span> <span class="n">Mesh</span><span class="o">.</span><span class="n">from_grid</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="p">[(</span><span class="n">fr4</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">10e-3</span><span class="p">,</span> <span class="mf">10e-3</span><span class="p">,</span> <span class="mf">1.6e-3</span><span class="p">))])</span>
 </pre></div>
 </div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.Mesh.plot_section">
+<span class="sig-name descname"><span class="pre">plot_section</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">normal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.Mesh.plot_section" title="Link to this definition">#</a></dt>
+<dd><p>Plot an axis-aligned section of the mesh: cells and grid lines by origin.</p>
+<p>Thin wrapper around <a class="reference internal" href="plots.html#magnelio.plots.plot_mesh_section" title="magnelio.plots.plot_mesh_section"><code class="xref py py-func docutils literal notranslate"><span class="pre">magnelio.plots.plot_mesh_section()</span></code></a>;
+see there for the keyword arguments — <code class="docutils literal notranslate"><span class="pre">geometry=</span></code> overlays
+the model’s section outline, <code class="docutils literal notranslate"><span class="pre">fill=</span></code> picks the cell shading
+(PEC coverage by default, classification, or the permittivity
+the normal edges see), <code class="docutils literal notranslate"><span class="pre">edges=True</span></code> adds the PEC-masked and
+partially free edges.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>normal</strong> (<em>str</em>)</p></li>
+<li><p><strong>position</strong> (<em>float</em>)</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -2080,6 +2101,11 @@ backstop for faces that were never buffered.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="magnelio.Mesh.pec_surface">
 <span class="sig-name descname"><span class="pre">pec_surface</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">PECSurfaceData</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#magnelio.Mesh.pec_surface" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.Mesh.planes">
+<span class="sig-name descname"><span class="pre">planes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mesh.html#magnelio.mesh.GridPlanes" title="magnelio.mesh.GridPlanes"><span class="pre">GridPlanes</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#magnelio.Mesh.planes" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
@@ -2483,6 +2509,7 @@ watchdog.  Not inherited — each segment gets its own.</p></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Mesh"><code class="docutils literal notranslate"><span class="pre">Mesh</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Mesh.from_geometry"><code class="docutils literal notranslate"><span class="pre">Mesh.from_geometry()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Mesh.from_grid"><code class="docutils literal notranslate"><span class="pre">Mesh.from_grid()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Mesh.plot_section"><code class="docutils literal notranslate"><span class="pre">Mesh.plot_section()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Mesh.with_boundary_conditions"><code class="docutils literal notranslate"><span class="pre">Mesh.with_boundary_conditions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Mesh.with_elements"><code class="docutils literal notranslate"><span class="pre">Mesh.with_elements()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Mesh.with_pec_boundaries"><code class="docutils literal notranslate"><span class="pre">Mesh.with_pec_boundaries()</span></code></a></li>
@@ -2500,6 +2527,7 @@ watchdog.  Not inherited — each segment gets its own.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Mesh.material_library"><code class="docutils literal notranslate"><span class="pre">Mesh.material_library</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Mesh.pec_mask_edges"><code class="docutils literal notranslate"><span class="pre">Mesh.pec_mask_edges</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Mesh.pec_surface"><code class="docutils literal notranslate"><span class="pre">Mesh.pec_surface</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Mesh.planes"><code class="docutils literal notranslate"><span class="pre">Mesh.planes</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Mesh.pml_cells"><code class="docutils literal notranslate"><span class="pre">Mesh.pml_cells</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.Mesh.ports"><code class="docutils literal notranslate"><span class="pre">Mesh.ports</span></code></a></li>
 </ul>

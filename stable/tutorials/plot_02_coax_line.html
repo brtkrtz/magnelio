@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=a78bb796"></script>
+    <script src="../_static/documentation_options.js?v=4f911454"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -669,6 +669,31 @@ dielectric gap.</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>grid: 25 x 25 x 67 cells
 </pre></div>
 </div>
+<p>Which geometry put each grid line where it is?  The mesh keeps that
+record.  Every plane lists the rule and the shape that asked for it:
+here the tangent planes of the two cylinders (<code class="docutils literal notranslate"><span class="pre">face</span></code>) and the
+bounding boxes that coincide with them (<code class="docutils literal notranslate"><span class="pre">extent</span></code>); <code class="docutils literal notranslate"><span class="pre">domain</span> <span class="pre">end</span></code>
+marks the box.  A plane you cannot explain from this list is a plane
+worth questioning.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">planes</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Grid planes — feature gap 0.117 µm; nodes x 26, y 26, z 68
+x: 4 planes  (h_bulk 1.666 mm, h_fine 0.2025 mm)
+  [0]  -1.475 mm   face #0 Difference(polyethylene); extent #0   domain end
+  [1]  -0.405 mm   face #0 Difference(polyethylene) #1 Cylinder(PEC); extent #1
+  [2]   0.405 mm   face #0 Difference(polyethylene) #1 Cylinder(PEC); extent #1
+  [3]   1.475 mm   face #0 Difference(polyethylene); extent #0   domain end
+y: 4 planes  (h_bulk 1.666 mm, h_fine 0.2025 mm)
+  [0]  -1.475 mm   face #0 Difference(polyethylene); extent #0   domain end
+  [1]  -0.405 mm   face #0 Difference(polyethylene) #1 Cylinder(PEC); extent #1
+  [2]   0.405 mm   face #0 Difference(polyethylene) #1 Cylinder(PEC); extent #1
+  [3]   1.475 mm   face #0 Difference(polyethylene); extent #0   domain end
+z: 2 planes  (h_bulk 1.666 mm, h_fine 1.666 mm)
+  [0]  0 mm   face #0 Difference(polyethylene) #1 Cylinder(PEC); edge #0 #1; extent #0 #1   domain end
+  [1]  8 mm   face #0 Difference(polyethylene) #1 Cylinder(PEC); edge #0 #1; extent #0 #1   domain end
+</pre></div>
+</div>
 <p>The 3D view shows the line opened along its axis, the grid cells on
 the cut coloured by material, and the two port windows on the domain
 faces.</p>
@@ -697,9 +722,67 @@ Static Scene</label><div class="sd-tab-content docutils">
 Interactive Scene</label><div class="sd-tab-content docutils">
 <iframe src='../_static/static_viewer.html?fileURL=../_images/tutorials/images/sphx_glr_plot_02_coax_line_003.vtksz' width='100%%' height='400px' frameborder='0'></iframe></div>
 </div>
-<p>The circle is rendered on a rectangular grid as a staircase, with
-partially filled cells treated by conformal material matrices — keep
-this picture in mind when reading the port report below.</p>
+<p>The same section seen from the mesh’s side, three times.  Every grid
+line is drawn in the style of the rule that placed it — material
+faces solid, the graded fill between them as hairlines — and the
+exact contour on top.  What differs is the cell shading.</p>
+<ul class="simple">
+<li><p>Left, the <em>classification</em>: the material whose volume contains
+each cell’s centre.  A circle on a rectangular grid looks like a
+staircase here, and this picture is often mistaken for the
+accuracy of the discretisation.  It is not — it is only the
+baseline the sub-cell treatment starts from.</p></li>
+<li><p>Middle, the <em>coverage</em>: the exact area share of each cell that lies
+inside a conductor, as the sub-cell classifier measured it.  The
+pin is a disc again and the outer wall a smooth ring.  The edge
+layer adds what happens on the grid lines: edges held at conductor
+potential in dark grey, edges only partly inside the conductor in
+orange, and the short ones the solver lends to a longer neighbour
+marked with a cross.</p></li>
+<li><p>Right, the permittivity the electric material matrix holds for the
+field component <em>normal</em> to the cut, on the dual cells around the
+nodes (0 = conductor).  Edges running along a conductor surface are
+held at its potential, so the masked cells reach one node beyond
+the contour.  For a TEM line this component carries no field; the
+picture matters for structures with a field along the cut normal.</p></li>
+</ul>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a> <span class="o">=</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mf">4.8</span><span class="p">))</span>
+<span class="n">plots</span><span class="o">.</span><span class="n">plot_mesh_section</span><span class="p">(</span>
+    <span class="n">mesh</span><span class="p">,</span>
+    <span class="s2">"z"</span><span class="p">,</span>
+    <span class="n">L</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">fill</span><span class="o">=</span><span class="s2">"material"</span><span class="p">,</span>
+    <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a><span class="o">=</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+    <span class="n">legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">"Cell classification"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plots</span><span class="o">.</span><span class="n">plot_mesh_section</span><span class="p">(</span>
+    <span class="n">mesh</span><span class="p">,</span>
+    <span class="s2">"z"</span><span class="p">,</span>
+    <span class="n">L</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">fill</span><span class="o">=</span><span class="s2">"coverage"</span><span class="p">,</span>
+    <span class="n">edges</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a><span class="o">=</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">"Conductor coverage and edge treatment"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plots</span><span class="o">.</span><span class="n">plot_mesh_section</span><span class="p">(</span>
+    <span class="n">mesh</span><span class="p">,</span>
+    <span class="s2">"z"</span><span class="p">,</span>
+    <span class="n">L</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">fill</span><span class="o">=</span><span class="s2">"conformal"</span><span class="p">,</span>
+    <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a><span class="o">=</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+    <span class="n">legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">"Permittivity seen by the normal component"</span><span class="p">,</span>
+<span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_02_coax_line_004.png" srcset="../_images/sphx_glr_plot_02_coax_line_004.png" alt="Cell classification, Conductor coverage and edge treatment, Permittivity seen by the normal component" class = "sphx-glr-single-img"/><p>The middle picture is the one to keep in mind when reading the port
+report below: the conductor contours enter the material matrices with
+their exact area and length shares, not as the staircase on the left.</p>
 </section>
 <section id="numerical-mode-vs-analytical-reference">
 <h2>Numerical mode vs. analytical reference<a class="headerlink" href="#numerical-mode-vs-analytical-reference" title="Link to this heading">#</a></h2>
@@ -736,7 +819,7 @@ conductor, the tinted annulus the dielectric:</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">report</span><span class="o">.</span><span class="n">modes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">field</span><span class="o">=</span><span class="s2">"E"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Coax TEM mode, transverse E"</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_02_coax_line_004.png" srcset="../_images/sphx_glr_plot_02_coax_line_004.png" alt="Coax TEM mode, transverse E" class = "sphx-glr-single-img"/></section>
+<img src="../_images/sphx_glr_plot_02_coax_line_005.png" srcset="../_images/sphx_glr_plot_02_coax_line_005.png" alt="Coax TEM mode, transverse E" class = "sphx-glr-single-img"/></section>
 <section id="run-and-s-parameters">
 <h2>Run and S-parameters<a class="headerlink" href="#run-and-s-parameters" title="Link to this heading">#</a></h2>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">excited</span><span class="o">=</span><span class="p">[(</span><span class="s2">"port1"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)])</span>
@@ -757,7 +840,7 @@ conductor, the tinted annulus the dielectric:</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"max |S11| in band: </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11_db</span></a><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">6.1f</span><span class="si">}</span><span class="s2"> dB"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_02_coax_line_005.png" srcset="../_images/sphx_glr_plot_02_coax_line_005.png" alt="RG-58 class coax, 8 mm" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S11| in band: -109.9 dB
+<img src="../_images/sphx_glr_plot_02_coax_line_006.png" srcset="../_images/sphx_glr_plot_02_coax_line_006.png" alt="RG-58 class coax, 8 mm" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S11| in band: -110.0 dB
 </pre></div>
 </div>
 <p>As for every uniform matched line, <code class="docutils literal notranslate"><span class="pre">|S21|</span></code> sits at 0 dB and
@@ -786,7 +869,7 @@ length <span class="math notranslate nohighlight">\(\beta L\)</span> with
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"max phase deviation: </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">degrees</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">phase_sim</span></a><span class="w"> </span><span class="o">-</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">phase_ref</span></a><span class="p">))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> deg"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_02_coax_line_006.png" srcset="../_images/sphx_glr_plot_02_coax_line_006.png" alt="Transmission phase vs. analytic" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max phase deviation: 0.099 deg
+<img src="../_images/sphx_glr_plot_02_coax_line_007.png" srcset="../_images/sphx_glr_plot_02_coax_line_007.png" alt="Transmission phase vs. analytic" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max phase deviation: 0.099 deg
 </pre></div>
 </div>
 </section>
@@ -801,7 +884,7 @@ numerical-vs-reference reading of a port report.  The next tutorial
 excites <em>both</em> ports of this line and assembles the full S-matrix —
 including what to check when a device has more ports than modes of
 interest.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 8.063 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 7.913 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-02-coax-line-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/ce2371532972a7a4335b8427c05db663/plot_02_coax_line.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_02_coax_line.ipynb</span></code></a></p>

@@ -520,11 +520,11 @@ against the isolated one — and match.
  .. code-block:: none
 
     --- current settings — tune s and w until this meets your spec ---
-    coupling |S31| at f0   : -10.03 dB  (target -10 dB)
-    peak coupling          : -10.01 dB at 4.80 GHz
-    directivity at f0      :  14.09 dB
-    isolation |S41| at f0  : -24.12 dB
-    match |S11| at f0      : -20.04 dB
+    coupling |S31| at f0   : -10.02 dB  (target -10 dB)
+    peak coupling          : -10.00 dB at 4.80 GHz
+    directivity at f0      :  14.06 dB
+    isolation |S41| at f0  : -24.08 dB
+    match |S11| at f0      : -20.09 dB
     through |S21| at f0    :  -0.52 dB
 
 
@@ -613,7 +613,7 @@ chapter of the methods section.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (2 minutes 7.008 seconds)
+   **Total running time of the script:** (1 minutes 6.987 seconds)
 
 
 .. _sphx_glr_download_howto_plot_coupled_line_coupler.py:

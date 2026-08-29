@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=a78bb796"></script>
+    <script src="../_static/documentation_options.js?v=4f911454"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -63,7 +63,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Lumped port tuning: coaxial line" href="plot_lumped_port_tuning_coax.html" />
-    <link rel="prev" title="Coupled-line directional coupler: dimensioning the pair with the port solver" href="plot_coupled_line_coupler.html" />
+    <link rel="prev" title="Lange coupler: a 3-dB interdigitated coupler dimensioned with the port solver" href="plot_lange_coupler.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -432,11 +432,13 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="plot_coupled_line_coupler.html">Coupled-line directional coupler: dimensioning the pair with the port solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lange_coupler.html">Lange coupler: a 3-dB interdigitated coupler dimensioned with the port solver</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Lumped ports: investigations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_coax.html">Lumped port tuning: coaxial line</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_cpw.html">Lumped port tuning: coplanar waveguide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_microstrip.html">Lumped port tuning: microstrip</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_mesh_convergence.html">Mesh convergence: a ladder around your simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_patch_array.html">Patch array: a 2 × 2 corporate-fed microstrip array from element to pattern</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_stripline_pickup_kicker.html">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</a></li>
 </ul>
 </div>
@@ -680,7 +682,7 @@ reactance is what reflects at the top of the band.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_lumped_port_investigations_001.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_001.png" alt="Coax: gap length moves the reflection level" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f890b7c7390&gt;
+<img src="../_images/sphx_glr_plot_lumped_port_investigations_001.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_001.png" alt="Coax: gap length moves the reflection level" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f42ba7e2fd0&gt;
 </pre></div>
 </div>
 <p><strong>Gap position</strong> moves the phase error.  The termination does not
@@ -709,7 +711,7 @@ coax, gap start at -1·gap: max |phase error|  17.40 deg
 coax, gap start at -2·gap: max |phase error|   5.83 deg
 coax, gap start at -3·gap: max |phase error|   5.74 deg
 
-&lt;matplotlib.legend.Legend object at 0x7f890ba0d090&gt;
+&lt;matplotlib.legend.Legend object at 0x7f432151b6d0&gt;
 </pre></div>
 </div>
 <p><strong>Port impedance</strong> sets the low-frequency floor: the constant
@@ -734,7 +736,7 @@ mismatch.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_lumped_port_investigations_003.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_003.png" alt="Coax: port impedance sets the low-frequency floor" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f892025fe50&gt;
+<img src="../_images/sphx_glr_plot_lumped_port_investigations_003.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_003.png" alt="Coax: port impedance sets the low-frequency floor" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f4324fe9a10&gt;
 </pre></div>
 </div>
 </section>
@@ -847,7 +849,7 @@ microstrip, trace end at -0.5·h_sub: max |phase error|  10.59 deg
 microstrip, trace end at -1.0·h_sub: max |phase error|   2.53 deg
 microstrip, trace end at -1.5·h_sub: max |phase error|  15.63 deg
 
-&lt;matplotlib.legend.Legend object at 0x7f890bfba1d0&gt;
+&lt;matplotlib.legend.Legend object at 0x7f43234acf50&gt;
 </pre></div>
 </div>
 </section>
@@ -1016,7 +1018,7 @@ catalogue value leaves a visible broadband pedestal.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_lumped_port_investigations_006.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_006.png" alt="CPW: impedance mismatch floor" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f8952da1f50&gt;
+<img src="../_images/sphx_glr_plot_lumped_port_investigations_006.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_006.png" alt="CPW: impedance mismatch floor" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f42ba3dbf90&gt;
 </pre></div>
 </div>
 </section>
@@ -1059,7 +1061,7 @@ worst |S11| in band :  -26.6 dB
 max |phase error|   :  21.35 deg
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 45.142 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 51.897 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-lumped-port-investigations-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/c9ef743082ff880408b55ba207ef6782/plot_lumped_port_investigations.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_lumped_port_investigations.ipynb</span></code></a></p>
@@ -1086,12 +1088,12 @@ max |phase error|   :  21.35 deg
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="plot_coupled_line_coupler.html"
+       href="plot_lange_coupler.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Coupled-line directional coupler: dimensioning the pair with the port solver</p>
+        <p class="prev-next-title">Lange coupler: a 3-dB interdigitated coupler dimensioned with the port solver</p>
       </div>
     </a>
     <a class="right-next"

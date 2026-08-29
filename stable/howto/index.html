@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=a78bb796"></script>
+    <script src="../_static/documentation_options.js?v=4f911454"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -430,11 +430,13 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="plot_coupled_line_coupler.html">Coupled-line directional coupler: dimensioning the pair with the port solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lange_coupler.html">Lange coupler: a 3-dB interdigitated coupler dimensioned with the port solver</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_investigations.html">Lumped ports: investigations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_coax.html">Lumped port tuning: coaxial line</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_cpw.html">Lumped port tuning: coplanar waveguide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_microstrip.html">Lumped port tuning: microstrip</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_mesh_convergence.html">Mesh convergence: a ladder around your simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_patch_array.html">Patch array: a 2 × 2 corporate-fed microstrip array from element to pattern</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_stripline_pickup_kicker.html">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</a></li>
 </ul>
 </div>
@@ -504,6 +506,9 @@ the tutorials instead.</p>
 <div id='sg-tag-list' class='sphx-glr-tag-list'></div><div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="Two microstrip lines running side by side for a quarter wavelength form a directional coupler: a fraction of the power entering one line leaves the near end of the other, and — ideally — nothing leaves its far end.  The classic single-section design has two knobs, the gap between the lines and their width, and one number to hit: the coupling at the centre frequency.  This guide sets a −10 dB coupler at 5 GHz on a 0.813 mm substrate and reads the result off a four-port S-parameter run."><img alt="" src="../_images/sphx_glr_plot_coupled_line_coupler_thumb.png" />
 <p><a class="reference internal" href="plot_coupled_line_coupler.html"><span class="doc">Coupled-line directional coupler: dimensioning the pair with the port solver</span></a></p>
   <div class="sphx-glr-thumbnail-title">Coupled-line directional coupler: dimensioning the pair with the port solver</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="A single pair of coupled microstrip lines cannot reach 3 dB coupling on a substrate anyone can fabricate — the gap would have to be a few micrometres.  Lange&#x27;s answer (1969) is to split each line into two narrow fingers and interleave them, so every finger couples to two neighbours; bond wires join the fingers of one line at both ends.  The result is a quarter-wave 3-dB quadrature coupler with fabricable gaps, the workhorse of balanced amplifiers and image-reject mixers.  This guide designs one at 10 GHz on 254 µm alumina and reads coupling, phase and match off a four-port run."><img alt="" src="../_images/sphx_glr_plot_lange_coupler_thumb.png" />
+<p><a class="reference internal" href="plot_lange_coupler.html"><span class="doc">Lange coupler: a 3-dB interdigitated coupler dimensioned with the port solver</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Lange coupler: a 3-dB interdigitated coupler dimensioned with the port solver</div>
 </div><div class="sphx-glr-thumbcontainer" tooltip="A PortLumped terminates a line in a single chain of grid edges — cheap, DC-capable, and available where a waveguide port window does not fit.  The price is that it is not an exact line termination: a residual self-reflection and a phase error remain, and both depend on the grid at the gap, on the gap geometry and position, and on the port impedance.  Rules of thumb exist, but none of them tells you how good your termination is on your mesh, or up to which frequency you can trust it."><img alt="" src="../_images/sphx_glr_plot_lumped_port_investigations_thumb.png" />
 <p><a class="reference internal" href="plot_lumped_port_investigations.html"><span class="doc">Lumped ports: investigations</span></a></p>
   <div class="sphx-glr-thumbnail-title">Lumped ports: investigations</div>
@@ -519,6 +524,9 @@ the tutorials instead.</p>
 </div><div class="sphx-glr-thumbcontainer" tooltip="Nothing inside a single run tells you how far its result is from the converged one.  The instrument that does is a ladder: the same model on successively finer meshes, one number read off each rung, and a stop rule for the number.  Commercial suites hide this loop behind an &quot;adaptive mesh refinement&quot; button; this page is the loop, written out, so it wraps around whatever you are simulating."><img alt="" src="../_images/sphx_glr_plot_mesh_convergence_thumb.png" />
 <p><a class="reference internal" href="plot_mesh_convergence.html"><span class="doc">Mesh convergence: a ladder around your simulation</span></a></p>
   <div class="sphx-glr-thumbnail-title">Mesh convergence: a ladder around your simulation</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="A single rectangular patch is the textbook printed antenna — a half-wave resonator on a grounded substrate, 7 dBi of directivity, a few percent of bandwidth.  Four of them on a lattice of three quarters of a wavelength, fed in phase, give 13 dBi and a beam that the array factor sharpens in both planes.  This guide designs the element, then the corporate feed that splits one 50 Ω input into four equal, in-phase branches, and reads match, directivity and the two principal-plane cuts off the array run — with the element pattern times the array factor as the independent check."><img alt="" src="../_images/sphx_glr_plot_patch_array_thumb.png" />
+<p><a class="reference internal" href="plot_patch_array.html"><span class="doc">Patch array: a 2 × 2 corporate-fed microstrip array from element to pattern</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Patch array: a 2 × 2 corporate-fed microstrip array from element to pattern</div>
 </div><div class="sphx-glr-thumbcontainer" tooltip="A pair of stripline electrodes in a beam pipe is a workhorse of beam instrumentation: read out, it is a broadband pickup (a beam position monitor); driven, it is a kicker that deflects the beam.  Neither role is an S-parameter — a port model has no beam — yet both follow from one S-parameter simulation.  This guide walks the route used to design such devices (Goldberg and Lambertson, AIP Conf. Proc. 249, 537 (1992)):"><img alt="" src="../_images/sphx_glr_plot_stripline_pickup_kicker_thumb.png" />
 <p><a class="reference internal" href="plot_stripline_pickup_kicker.html"><span class="doc">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</span></a></p>
   <div class="sphx-glr-thumbnail-title">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</div>

@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=a78bb796"></script>
+    <script src="../_static/documentation_options.js?v=4f911454"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -63,7 +63,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="API reference" href="../api/index.html" />
-    <link rel="prev" title="Mesh convergence: a ladder around your simulation" href="plot_mesh_convergence.html" />
+    <link rel="prev" title="Patch array: a 2 × 2 corporate-fed microstrip array from element to pattern" href="plot_patch_array.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -432,11 +432,13 @@
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="plot_coupled_line_coupler.html">Coupled-line directional coupler: dimensioning the pair with the port solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lange_coupler.html">Lange coupler: a 3-dB interdigitated coupler dimensioned with the port solver</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_investigations.html">Lumped ports: investigations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_coax.html">Lumped port tuning: coaxial line</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_cpw.html">Lumped port tuning: coplanar waveguide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_microstrip.html">Lumped port tuning: microstrip</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_mesh_convergence.html">Mesh convergence: a ladder around your simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_patch_array.html">Patch array: a 2 × 2 corporate-fed microstrip array from element to pattern</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</a></li>
 </ul>
 </div>
@@ -755,13 +757,17 @@ once more without changing the mode.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_002.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_002.png" alt="Strip impedance from the port solver" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>UserWarning: 2 geometry-edge planes (1 on x, 1 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0225167 m, would create a 0.000866 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=8.7) keeps it, or refine the mesh.
+<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_002.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_002.png" alt="Strip impedance from the port solver" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0239035 m, would create a 0.0011 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=6.9) keeps it, or refine the mesh.
+UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0232202 m, would create a 0.00157 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=4.8) keeps it, or refine the mesh.
+UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.02397 m, would create a 0.00103 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=7.3) keeps it, or refine the mesh.
+UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0225167 m, would create a 0.000866 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=8.7) keeps it, or refine the mesh.
+UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0269002 m, would create a 0.0009 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=8.4) keeps it, or refine the mesh.
 h = 5 mm: Z_strip =  40.8 ohm (sum)   39.7 ohm (difference)
-h = 6 mm: Z_strip =  45.3 ohm (sum)   43.9 ohm (difference)
-h = 7 mm: Z_strip =  48.8 ohm (sum)   47.2 ohm (difference)
-h = 8 mm: Z_strip =  51.5 ohm (sum)   49.7 ohm (difference)
-h = 9 mm: Z_strip =  53.7 ohm (sum)   51.8 ohm (difference)
-strip height for a 50 ohm strip in the difference mode: 8.16 mm
+h = 6 mm: Z_strip =  45.0 ohm (sum)   43.7 ohm (difference)
+h = 7 mm: Z_strip =  48.4 ohm (sum)   46.8 ohm (difference)
+h = 8 mm: Z_strip =  51.3 ohm (sum)   49.6 ohm (difference)
+h = 9 mm: Z_strip =  53.6 ohm (sum)   51.7 ohm (difference)
+strip height for a 50 ohm strip in the difference mode: 8.23 mm
 </pre></div>
 </div>
 <p>The two modes differ by a few percent: the strips are shielded from
@@ -774,7 +780,7 @@ impedances for the design follow, together with the mode itself:</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"design: Z_strip = </span><span class="si">{</span><span class="n">Z_SUM</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> ohm (sum), </span><span class="si">{</span><span class="n">Z_DIFF</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> ohm (difference)"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>design: Z_strip = 51.8 ohm (sum), 50.0 ohm (difference)
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>design: Z_strip = 52.8 ohm (sum), 51.0 ohm (difference)
 </pre></div>
 </div>
 </section>
@@ -842,12 +848,12 @@ actually landed on.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_003.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_003.png" alt="Mid-plane of the half model (x = 0)" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>UserWarning: 4 geometry-edge planes (1 on x, 1 on y, 2 on z) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at z = 0.149896 m, would create a 0.00175 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=4.3) keeps it, or refine the mesh.
+<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_003.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_003.png" alt="Mid-plane of the half model (x = 0)" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>UserWarning: 10 geometry-edge planes (3 on x, 3 on y, 4 on z) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at z = 0.149896 m, would create a 0.00175 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=4.3) keeps it, or refine the mesh.
 UserWarning: Modal port 'upstream': the feed-chain mass slabs deviate by 2.85e-01 (relative, worst entry) across the first cells behind the port plane — the 2D port modes do not propagate as exact discrete chain modes, so the exact DTBC is withheld and all channels fall back to modal Mur-1st.  Typical causes: a feed that is not translation-invariant along the port normal.
 UserWarning: Modal port 'downstream': the feed-chain mass slabs deviate by 2.85e-01 (relative, worst entry) across the first cells behind the port plane — the 2D port modes do not propagate as exact discrete chain modes, so the exact DTBC is withheld and all channels fall back to modal Mur-1st.  Typical causes: a feed that is not translation-invariant along the port normal.
-grid: 41 x 50 x 209 cells
+grid: 46 x 56 x 209 cells
 coax port impedance on the grid: 52.3 ohm
-field line recorded at y = 0.98 mm, 209 points
+field line recorded at y = 0.90 mm, 209 points
 </pre></div>
 </div>
 <p>The S-parameters say what a network analyser would: the feeds are
@@ -1043,10 +1049,10 @@ the distance between the two feeds, not the strip’s own length.</p>
 </pre></div>
 </div>
 <img src="../_images/sphx_glr_plot_stripline_pickup_kicker_007.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_007.png" alt="Longitudinal shunt impedance, Transverse shunt impedance" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>at 0.5 GHz:
-  K_par  = 0.401  (ideal 0.466)
-  K_perp = 2.799  (ideal 3.340)
-  R_par T^2  =    8.4 ohm  (ideal   11.4 ohm)
-  R_perp T^2 =  409.7 ohm  (ideal  583.4 ohm)
+  K_par  = 0.395  (ideal 0.471)
+  K_perp = 2.763  (ideal 3.373)
+  R_par T^2  =    8.2 ohm  (ideal   11.6 ohm)
+  R_perp T^2 =  399.5 ohm  (ideal  595.6 ohm)
 </pre></div>
 </div>
 <p>The ideal curves reproduce the shape — the lobes, the maximum near
@@ -1103,7 +1109,7 @@ frequency.</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  = </span><span class="si">{</span><span class="mf">0.1</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sens</span></a><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> %/mm   (ideal </span><span class="si">{</span><span class="mf">0.1</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">sensitivity_ideal</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> %/mm)"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_008.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_008.png" alt="Pickup: sum signal, Pickup: difference signal" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>position sensitivity over 0.25-0.75 GHz: 72 ... 73 /m
+<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_008.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_008.png" alt="Pickup: sum signal, Pickup: difference signal" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>position sensitivity over 0.25-0.75 GHz: 73 ... 74 /m
   = 7.3 %/mm   (ideal 7.6 %/mm)
 </pre></div>
 </div>
@@ -1119,7 +1125,7 @@ particle velocity enters only through <span class="math notranslate nohighlight"
 one and watch the lobes shift down in frequency and the transverse
 response change), and the pit depth and feed offsets are the knobs
 that move the real device toward, or away from, the ideal stripline.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (6 minutes 15.733 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (5 minutes 29.428 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-stripline-pickup-kicker-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/4f45f16660f9674c2e4e6eb9a377a83f/plot_stripline_pickup_kicker.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_stripline_pickup_kicker.ipynb</span></code></a></p>
@@ -1146,12 +1152,12 @@ that move the real device toward, or away from, the ideal stripline.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="plot_mesh_convergence.html"
+       href="plot_patch_array.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Mesh convergence: a ladder around your simulation</p>
+        <p class="prev-next-title">Patch array: a 2 × 2 corporate-fed microstrip array from element to pattern</p>
       </div>
     </a>
     <a class="right-next"

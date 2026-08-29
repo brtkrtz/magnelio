@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=a78bb796"></script>
+    <script src="../_static/documentation_options.js?v=4f911454"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -569,7 +569,10 @@ a symmetric pair), its eigenvalue the modal <span class="math notranslate nohigh
 and its impedance <span class="math notranslate nohighlight">\(Z_0 = 1/(c\sqrt{C'_v C'_{0,v}})\)</span> with the modal
 capacitances <span class="math notranslate nohighlight">\(C'_v = \mathbf v^\top\mathbf C\,\mathbf v\)</span> for the
 unit-Euclidean pattern <span class="math notranslate nohighlight">\(\mathbf v\)</span> — for a symmetric pair exactly
-<span class="math notranslate nohighlight">\(Z_{0e}\)</span> and <span class="math notranslate nohighlight">\(Z_{0o}\)</span>.  Channels are ordered by descending
+<span class="math notranslate nohighlight">\(Z_{0e}\)</span> and <span class="math notranslate nohighlight">\(Z_{0o}\)</span>.  Dimensioning a coupled section from these two
+modes alone — a pair of lines, or one pair of a Lange coupler’s
+fingers — is the subject of the how-to guides <em>Coupled-line
+directional coupler</em> and <em>Lange coupler</em>.  Channels are ordered by descending
 <span class="math notranslate nohighlight">\(\varepsilon_{\text{eff}}\)</span> and are orthogonal in the port’s
 capacitance-corrected mass.  A single signal conductor is the <span class="math notranslate nohighlight">\(1
 \times 1\)</span> case of the same construction.  For a homogeneous filling
@@ -597,8 +600,12 @@ because the feed <em>is</em> uniform there.  And the window must be enclosed
 by conductor on the port slab: the lateral edge of the absorber
 switch-off then lies on metal, where it cannot scatter.  A port that
 covers the whole absorbing face, or a window whose ring lies in free
-space, is refused with a pointer to these rules.  The far-field
-monitor knows about such feeds (far-field chapter).</p>
+space, is refused with a pointer to these rules.  A printed line —
+a microstrip feeding a patch array — satisfies them through a short
+shielded launch: two walls and a roof around the trace where it meets
+the wall, the window in the launch’s cross-section, the way a
+connector body encloses the line (how-to <em>patch array</em>).  The
+far-field monitor knows about such feeds (far-field chapter).</p>
 </section>
 </section>
 <section id="exact-discrete-transparent-boundary-conditions-dtbc">
