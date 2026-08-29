@@ -7,7 +7,58 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
-## [Unreleased]
+## [0.4.8] - 2026-08-29
+
+### Added
+
+- Far-field power balance: `FarFieldResult.surface_power` is the real
+  power the recorded fields carry out of the far-field monitor's box,
+  `power_balance` its ratio to `P_rad`, and `monitor.result(f)` warns
+  when the two differ by more than 5 % — the sign of a box that sits
+  too close to the radiator (the box lies at the absorbing faces, so
+  the cure is clearance; half a wavelength in the direction of the
+  main beam is enough for a patch).  Realized gain and gain are low by
+  that factor when it fires; directivity is not affected.  Tutorial 19
+  (Cassegrain) quotes its balance next to the radiated-over-accepted
+  power, to show how the two numbers separate a close box from a
+  feed guide's wall current.
+- How-to *Patch array*: a 2 × 2 corporate-fed microstrip patch array
+  designed from the element up — inset sweep and length trim of the
+  patch, a feed network on the port solver's line impedances, in-phase
+  feeding of the second row by a quarter-wave offset of the
+  distribution line, a microstrip window port in the absorbing wall
+  through a shielded launch, and the principal-plane cuts checked
+  against element pattern times array factor.
+- `mesh.planes` records where every grid plane came from — the material
+  face, bounding box, geometry edge, thin sheet, wire, symmetry face or
+  forced position that asked for it, per shape — together with the
+  requested planes that were dropped or absorbed; `print(mesh.planes)`
+  prints the report.  Meshes in a project store carry it.
+- `plots.plot_mesh_section` / `mesh.plot_section`: a section of the mesh
+  itself — grid lines styled by origin, absorber cells hatched, the
+  model's exact outline on top, and the cells shaded by the exact
+  conductor area share the sub-cell classifier measured
+  (`fill="coverage"`, default), by the classified material
+  (`fill="material"`) or by the permittivity the normal field component
+  sees (`fill="conformal"`); `edges=True` adds the PEC-masked, partly
+  free and borrowed edges.  `plot_cross_section(fill=False)` draws
+  outlines only.
+- The unit suite pins the grid planes of every example model
+  (`tests/unit/data/gallery_planes/`), so a change of the meshing rules
+  fails with a per-axis diff instead of a physics test downstream.
+- Methods chapter *Mesh generation*: section *Inspecting the grid*;
+  tutorial 02 prints the record and shows the mesh section.
+- How-to guide *Lange coupler*: a 3-dB interdigitated coupler at 10 GHz
+  on 254 µm alumina, dimensioned with the port solver alone — the
+  interdigital synthesis gives the even- and odd-mode impedances one
+  finger pair must have, sixteen slice meshes find the finger width and
+  gap that deliver them on the grid the coupler is then solved on —
+  with ribbon bonds as resolved metal and the coupling, quadrature
+  phase, match and isolation read off the four-port run.
+- Benchmark `benchmarks/bench_mesh_build.py`: mesh-build wall time per
+  mesher pass on three production geometry classes (a row of Lange
+  couplers, a patch array with corporate feed, a post row), with the
+  section process pool off, in production mode or forced.
 
 ### Fixed
 
@@ -171,56 +222,19 @@ major version is 0, minor releases may change the public API.
   body: the face pass of 16 Lange couplers no longer grows faster than
   the cell count.
 
-### Added
-
-- Far-field power balance: `FarFieldResult.surface_power` is the real
-  power the recorded fields carry out of the far-field monitor's box,
-  `power_balance` its ratio to `P_rad`, and `monitor.result(f)` warns
-  when the two differ by more than 5 % — the sign of a box that sits
-  too close to the radiator (the box lies at the absorbing faces, so
-  the cure is clearance; half a wavelength in the direction of the
-  main beam is enough for a patch).  Realized gain and gain are low by
-  that factor when it fires; directivity is not affected.  Tutorial 19
-  (Cassegrain) quotes its balance next to the radiated-over-accepted
-  power, to show how the two numbers separate a close box from a
-  feed guide's wall current.
-- How-to *Patch array*: a 2 × 2 corporate-fed microstrip patch array
-  designed from the element up — inset sweep and length trim of the
-  patch, a feed network on the port solver's line impedances, in-phase
-  feeding of the second row by a quarter-wave offset of the
-  distribution line, a microstrip window port in the absorbing wall
-  through a shielded launch, and the principal-plane cuts checked
-  against element pattern times array factor.
-- `mesh.planes` records where every grid plane came from — the material
-  face, bounding box, geometry edge, thin sheet, wire, symmetry face or
-  forced position that asked for it, per shape — together with the
-  requested planes that were dropped or absorbed; `print(mesh.planes)`
-  prints the report.  Meshes in a project store carry it.
-- `plots.plot_mesh_section` / `mesh.plot_section`: a section of the mesh
-  itself — grid lines styled by origin, absorber cells hatched, the
-  model's exact outline on top, and the cells shaded by the exact
-  conductor area share the sub-cell classifier measured
-  (`fill="coverage"`, default), by the classified material
-  (`fill="material"`) or by the permittivity the normal field component
-  sees (`fill="conformal"`); `edges=True` adds the PEC-masked, partly
-  free and borrowed edges.  `plot_cross_section(fill=False)` draws
-  outlines only.
-- The unit suite pins the grid planes of every example model
-  (`tests/unit/data/gallery_planes/`), so a change of the meshing rules
-  fails with a per-axis diff instead of a physics test downstream.
-- Methods chapter *Mesh generation*: section *Inspecting the grid*;
-  tutorial 02 prints the record and shows the mesh section.
-- How-to guide *Lange coupler*: a 3-dB interdigitated coupler at 10 GHz
-  on 254 µm alumina, dimensioned with the port solver alone — the
-  interdigital synthesis gives the even- and odd-mode impedances one
-  finger pair must have, sixteen slice meshes find the finger width and
-  gap that deliver them on the grid the coupler is then solved on —
-  with ribbon bonds as resolved metal and the coupling, quadrature
-  phase, match and isolation read off the four-port run.
-- Benchmark `benchmarks/bench_mesh_build.py`: mesh-build wall time per
-  mesher pass on three production geometry classes (a row of Lange
-  couplers, a patch array with corporate feed, a post row), with the
-  section process pool off, in production mode or forced.
+- `model.plot()` and the ParaView export no longer fail on bodies of a
+  few tens of micrometres (a bond post, a via barrel): the tessellation
+  deflection is floored at the kernel's precision instead of below it.
+- Two thin metallisations at the same nominal height — a brick and a
+  traced track on one substrate, say — no longer leave a pair of grid
+  planes a float-rounding apart: sheet planes within the feature gap
+  now share one plane (and snap onto a forced plane there), so the
+  misleading "forced planes … closer than min_feature_gap" warning and
+  the growth-factor warning that came with it are gone.
+- A curved body touching a flat face — a cylinder inscribed in a box,
+  a round hole reaching a wall — no longer places a grid plane through
+  its own axis: the Boolean's split line along the touching line is
+  not a geometry edge.  Such meshes are what they were in 0.4.4.
 
 ### Changed
 
@@ -239,22 +253,6 @@ major version is 0, minor releases may change the public API.
   (its edge pass 62 → 13 s), with the same fractions.  A grid edge lying exactly on a
   conductor's corner line that the kernel's classifier had missed now
   reads as conductor like its neighbours.
-
-### Fixed
-
-- `model.plot()` and the ParaView export no longer fail on bodies of a
-  few tens of micrometres (a bond post, a via barrel): the tessellation
-  deflection is floored at the kernel's precision instead of below it.
-- Two thin metallisations at the same nominal height — a brick and a
-  traced track on one substrate, say — no longer leave a pair of grid
-  planes a float-rounding apart: sheet planes within the feature gap
-  now share one plane (and snap onto a forced plane there), so the
-  misleading "forced planes … closer than min_feature_gap" warning and
-  the growth-factor warning that came with it are gone.
-- A curved body touching a flat face — a cylinder inscribed in a box,
-  a round hole reaching a wall — no longer places a grid plane through
-  its own axis: the Boolean's split line along the touching line is
-  not a geometry edge.  Such meshes are what they were in 0.4.4.
 
 ## [0.4.7] - 2026-08-26
 
