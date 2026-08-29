@@ -11,6 +11,19 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- `sources.SourceCurrentPath`: an impressed current along a curve
+  through the model — a Hertzian dipole, a loop standing in for a
+  coil, an injection probe on a harness, a lightning channel.  The
+  path is a list of points or any `geo.Curve` (polyline, arc, spline,
+  helix, or a chain of them), its vertices become grid planes, and the
+  excitation that names it carries the current in amperes.  The
+  current is prescribed rather than solved for, which is what
+  separates it from a port: an open path accumulates exactly the time
+  integral of its current at its two ends and radiates as a dipole,
+  and a closed one is a magnetic dipole.  A path that leaves the
+  meshed domain is refused; edges the solver holds at zero — inside a
+  perfect conductor, or along a PEC wall — are reported instead of
+  quietly taking no current.  New how-to *Impressed currents*.
 - Field sources — reuse what a model radiates instead of meshing it
   again.  `monitors.MonitorFieldSurface` records the tangential fields
   on a closed box over time; `sources.SourceFieldSurface` replays them

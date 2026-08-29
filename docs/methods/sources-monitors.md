@@ -8,9 +8,13 @@ distinct jobs:
 - A **source** is a model object — declared on the
   `GeometryModel` before meshing with `add_source`, exactly like a
   port with `add_port` — that says *where* and *how* energy enters
-  the domain: a plane wave on a total-field/scattered-field box
-  (`sources.SourcePlaneWave`), and in later releases incident fields,
-  current paths and beams.  Ports are sources *and* loads and keep
+  the domain: a plane wave or any other incident field on a
+  total-field/scattered-field box (`sources.SourcePlaneWave`,
+  `sources.SourceFieldIncident`), a field present at `t = 0`
+  (`sources.SourceFieldInitial`), a recorded Huygens surface
+  (`sources.SourceFieldSurface`), an impressed current along a curve
+  (`sources.SourceCurrentPath`), and in later releases charged
+  beams.  Ports are sources *and* loads and keep
   their own namespace, `magnelio.ports`.  Sources travel with the
   mesh (`mesh.sources`, next to `mesh.ports` and `mesh.elements`;
   `Mesh.with_sources` attaches them to a grid built without a model)
@@ -231,6 +235,67 @@ inside of the box quiet to −97 dB.  Across grids it is the spatial
 interpolation that limits: a scattered field recorded at twelve nodes
 per wavelength and replayed on a different grid reproduces the outside
 field to about a percent, with the inside quiet to roughly −40 dB.
+
+## Impressed currents on a path
+
+Where the current distribution is known, the current itself is the
+source.  `SourceCurrentPath` prescribes `I(t)` along a curve through
+the model, and the fields it radiates follow: a short filament is a
+Hertzian dipole, a closed one a magnetic dipole standing in for a
+coil, and a long one an injection probe on a harness or a lightning
+channel.  The excitation carries the current, in amperes:
+
+```python
+model.add_source(
+    sources.SourceCurrentPath(name="dip", path=[(0, 0, -1e-3), (0, 0, 1e-3)])
+)
+analysis.run(excitations=[mio.Excitation("dip", waveform=wf, amplitude=1e-3)])
+```
+
+The path is either a sequence of points or any `geo.Curve` — a
+polyline, an arc, a spline, a helix, or a chain of them — and is
+rasterised onto the grid edges by the same rasteriser that lumped
+elements and voltage probes use, so a filament and a voltage probe can
+never disagree about which edges a curve occupies.  The vertices of
+the path become grid planes, so a filament ends where it was declared
+to end rather than at the nearest node.
+
+The current is prescribed, not solved for.  That is the whole
+difference between this source and a wire: nothing the model does
+changes `I(t)`, so a current path is the right description of a driven
+coil or a known interference current, and the wrong one for an antenna
+whose current distribution is the answer — feed that with a port.
+
+Two properties follow from the discrete operators rather than from any
+correction applied on top of them, and they are worth knowing because
+they bound what the source can and cannot do.
+
+*The dipole moment is exact.*  An oblique path is walked as a
+staircase, but the staircase runs monotonically from the start node to
+the end node, so the signed sum of its steps is exactly the chord
+between them.  The first moment of the current is therefore what was
+asked for on any grid; only the higher multipoles see the steps.
+
+*The charge at the ends is exact.*  The discrete divergence of a
+discrete curl vanishes identically, so an open filament accumulates
+precisely the time integral of its current on its two end nodes and no
+charge anywhere else — to the last bit of double precision.  An open
+current path *is* a consistent oscillating dipole, with the right
+near-zone electrostatic part; there is nothing to clean up.
+
+Edges the solver holds at zero — inside a perfect conductor, or
+tangential to a PEC wall — cannot take an impressed current.  A path
+crossing such a region radiates less than it was asked to, and says so
+rather than doing it quietly.  Under a symmetry declaration the mesh
+is the kept half: give the path in that half and let the symmetry wall
+supply its image.
+
+Measured against the closed-form short dipole — a 2.5 mm filament at
+10 GHz in an air cube — the radiated power approaches the analytic
+value from below as the grid is refined, 0.964 at ten nodes per
+wavelength to 0.983 at eighteen, with the residual tracking the
+near-to-far-field box's own closure and not the source.  The pattern
+is `sin θ` and the peak directivity 1.5 throughout.
 
 ## Field, flux and frequency monitors
 

@@ -1,0 +1,175 @@
+{
+ "axes": {
+  "x": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.002498,
+    0.002498
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.002498,
+     "moved_to": null,
+     "node": 9,
+     "position": -0.09,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(air)",
+      "extent #0 Brick(air)",
+      "face #0 Brick(air)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.002498,
+     "moved_to": null,
+     "node": 46,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "source fil"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.002498,
+     "moved_to": null,
+     "node": 83,
+     "position": 0.09,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(air)",
+      "extent #0 Brick(air)",
+      "face #0 Brick(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "y": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.002498,
+    0.002498
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.002498,
+     "moved_to": null,
+     "node": 9,
+     "position": -0.09,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(air)",
+      "extent #0 Brick(air)",
+      "face #0 Brick(air)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.002498,
+     "moved_to": null,
+     "node": 46,
+     "position": 0.0,
+     "singular": false,
+     "sources": [
+      "source fil"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.002498,
+     "moved_to": null,
+     "node": 83,
+     "position": 0.09,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(air)",
+      "extent #0 Brick(air)",
+      "face #0 Brick(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  },
+  "z": {
+   "absorbed": [],
+   "dropped": [],
+   "h_bulk": [
+    0.002498,
+    0.002498,
+    0.002498
+   ],
+   "planes": [
+    {
+     "domain_end": true,
+     "h_fine": 0.00125,
+     "moved_to": null,
+     "node": 9,
+     "position": -0.09,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(air)",
+      "extent #0 Brick(air)",
+      "face #0 Brick(air)"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.00125,
+     "moved_to": null,
+     "node": 46,
+     "position": -0.0025,
+     "singular": false,
+     "sources": [
+      "source fil"
+     ]
+    },
+    {
+     "domain_end": false,
+     "h_fine": 0.00125,
+     "moved_to": null,
+     "node": 50,
+     "position": 0.0025,
+     "singular": false,
+     "sources": [
+      "source fil"
+     ]
+    },
+    {
+     "domain_end": true,
+     "h_fine": 0.00125,
+     "moved_to": null,
+     "node": 87,
+     "position": 0.09,
+     "singular": false,
+     "sources": [
+      "edge #0 Brick(air)",
+      "extent #0 Brick(air)",
+      "face #0 Brick(air)"
+     ]
+    }
+   ],
+   "unplaced": []
+  }
+ },
+ "feature_gap": 3.11769e-06,
+ "n_nodes": {
+  "x": 93,
+  "y": 93,
+  "z": 97
+ },
+ "pml_cells": {
+  "xmax": 9,
+  "xmin": 9,
+  "ymax": 9,
+  "ymin": 9,
+  "zmax": 9,
+  "zmin": 9
+ },
+ "schema": 1
+}

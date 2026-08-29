@@ -1,19 +1,20 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-29.*  **Released v0.4.8** (2026-08-29; the
+*Last updated: 2026-08-30.*  **Released v0.4.8** (2026-08-29; the
 mesh-build campaign DD-201…DD-223 and the 16 × 16-array ladder).
-Unreleased on `main`: DD-224 Phases A–C and the first half of D — the
-API grammar for the years ahead (`Waveform*`, core `Excitation`,
-sources on the model), **`AnalysisTD` + `TDResult`** with
+Unreleased on `main`: **DD-224 Phases A–D complete** — the API
+grammar for the years ahead (`Waveform*`, core `Excitation`, sources
+on the model), **`AnalysisTD` + `TDResult`** with
 `AnalysisScatteringTD` on the shared transient engine, project-store
 schema 2.0, tutorial 20 *plane-wave scattering*,
 **`magnelio.fields.FieldState`** with `SourceFieldInitial` and a
-general `SourceFieldIncident` (how-to *Ring-down*), and **Huygens
-field sources** (DD-226): `MonitorFieldSurface` records a closed box,
-`SourceFieldSurface` replays it in a second model at any position and
-quarter turn (how-to *Field sources*).
-Unit suite 2765 passed / 4 skipped; integration suite 424 passed /
-5 skipped (2026-08-29; the four single-precision GPU tests need
+general `SourceFieldIncident` (how-to *Ring-down*), **Huygens field
+sources** (DD-226: `MonitorFieldSurface` records a closed box,
+`SourceFieldSurface` replays it at any position and quarter turn;
+how-to *Field sources*), and **`SourceCurrentPath`** (DD-227: an
+impressed current along any curve; how-to *Impressed currents*).
+Unit suite 2782 passed / 4 skipped; integration suite 426 passed /
+5 skipped (2026-08-30; the four single-precision GPU tests need
 `CUPY_ACCELERATORS=""` and nvrtc, absent in the sandbox).
 Previous release v0.4.7 (2026-08-26): DD-196…DD-199.  Channels:
 GitHub, PyPI, conda-forge, docs (`/stable/` = tag, `/dev/` = main).
@@ -27,10 +28,9 @@ the `validation/` certificates named in their DD entries.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-227** (2026-08-30) — `SourceCurrentPath`: an impressed current along any `geo.Curve` (or a point list), the excitation carrying the current in amperes.  Ampère's law puts it straight on the right-hand side of the FIT E update — `e ← e − sign·β·I(t^{n+1/2})`, a voltage on any grid with no cell-size factor — so the source is a scatter-add on the edges the DD-076 rasteriser hands back, folded per distinct edge (fancy-index `+=` does not accumulate over repeats, and folding is what makes a doubled-back segment cancel).  Two properties come from the operators, not from corrections: the monotone staircase makes the dipole moment exactly the chord between the snapped endpoints, and `S·C̃ᵀ = 0` makes an open filament accumulate precisely `∓∫I dt` on its two end nodes (measured ratio 1.0000000000) — an open path *is* a consistent oscillating dipole.  A source that exposes a `curve` now contributes `"source"` grid planes at its wire vertices, so the filament is as long as declared.  Against the closed-form uniform filament: 0.9642 at ten nodes per wavelength to 0.9831 at eighteen, order ≈ 1.3, the residual tracking the far-field box's own closure.  Paths leaving the meshed domain are refused; edges held at zero are reported, not silently dropped.
 * **DD-226** (2026-08-29) — Huygens field sources: a radiator simulated once drives any later model.  `MonitorFieldSurface` records the tangential fields on a closed box of node planes, `SourceFieldSurface` replays them as an equivalent source, `fields.SurfaceRecording` (`save`/`load`) is the only thing the two runs share.  The replay is the incident TF/SF construction with its regions exchanged (every face correction negated), which is causal only for an *outgoing* field — a plane wave replayed this way appears inside the box, not outside.  Sampling had to move off the far-field monitor's cell-centre averaging onto native Yee positions (the cancellation inside the box is exact algebra; a smoothed sample leaks at the level of its own smoothing), and H is kept on both cell-centre layers so the replay can hit whatever dual plane *its* grid has (collapsing it onto the node plane cost 11 % and −15 dB).  Free rotation angles are refused, not rounded.  On its own grid the replay is exact (ratio 1.0000, residual −83.6 dB, inside −96.8 dB); across grids 0.977…1.012 with the inside −33…−41 dB.  `oversample` defaults to 8, not Nyquist's 4: linear time interpolation, measured to saturate there.
 * **DD-225** (2026-08-29) — the recorded energy (and the `energy_stop_db` criterion reading it) is the quantity the leapfrog conserves, pairing the two H half-steps that straddle each E sample; the old expression mixed samples half a step apart and rippled at 2f with amplitude sin(ω·dt/2) — 9.5 % measured on a 12-cells-per-wavelength ring-down, aliased by the check cadence into a zig-zag. Ripple 0.0946 → 0.0051, endpoint drift 1.9 % → 0.08 %; no pinned S-parameter moved.  Cost: an H-sized buffer, written once per check interval, filled in the same step (no new checkpoint key).
-* **DD-224** (2026-08-29) — the API grammar for the years ahead: `Analysis<Problem><Formulation>` (suffix = TD/FD formulation, method from the mesh's element type), general `AnalysisTD`/`AnalysisFD`, the excitation triad `Source*` (on the model) / `Waveform*` (`signals`) / core `Excitation`, reserved names for wakefield, PIC/tracking, statics, FD scattering, `fields`/`particles`/`optimize`.  **Phase A shipped** (2026-08-29): `Waveform` ABC + six classes, core `Excitation`, `SourceFieldIncident`/`SourcePlaneWave` with `add_source`/`Mesh.sources`, `AnalysisScatteringTD(waveform=)`, `ExcitationSpec` removed, the three monitor migrations.  **Phase B shipped** (2026-08-29, unreleased): `AnalysisTD` + `TDResult` on `_AnalysisBase` (`method=`/`solver=`), `AnalysisScatteringTD(AnalysisTD)` with its channel runs on the shared engine (bit-identical to the old code with the old pulse term; the DD's delay-aware estimate `max(delay + t_end)` lengthens TE/TM-fed runs and moves their stop step, in-band |ΔS| ≤ 5·10⁻⁴), `run(t_end=, name=)`, CW rules, per-mode port excitation buffers, `results.h5` `excitations` attribute + one sampled drive per excitation, `Project.result(name)`, `resume(project, name)`, schema 2.0 with `mesh.h5:element`, `source` grid planes at TF/SF corners, default TF/SF box past the absorber, tutorial 20, core pin 12.  **Phase C shipped** (2026-08-29, unreleased): `magnelio.fields.FieldState` (grid + Yee positions + physical units; `positions`/`at`/`cell_centred`/`plot`), `EigenmodeResult.field(n)`, `SourceFieldInitial` (`from_project`/`from_function`/`from_arrays`; `e(0)` on the edges and `h(+dt/2)` from the discrete Faraday law — ring-down 8.2375 GHz vs eigensolver 8.2312 GHz, +0.076 %; several initial fields superpose; no consistency gate — every auxiliary state starts quiescent, measured stable, and a SIBC ring-down reads Q_wall to −0.31 % of the perturbative value; field arrays in `mesh.h5` under `mesh/sources/<name>`), a concrete `SourceFieldIncident` taking any `field(x, y, z, t, drive)` on the TF/SF box (the plane wave spelled out reproduces `SourcePlaneWave` to ≤ 1e-12 of the peak), `AnalysisEigenmode` on `_AnalysisBase`; ports of either kind may sit next to an initial field (a waveguide port's transparent boundary needs only a quiet *exterior*, a discrete port is a stateless resistor — a first implementation gated both plus a −60 dB port-plane test, retired by measurement: a field *on* the plane biases a fitted Q by 0.4 % at −14 dB, 2 % at −6 dB, nothing below −26 dB), which is what lets a coupled resonator be rung down; how-to *Ring-down* on an iris-coupled cavity measures all three channels: `ω₀ε/σ` to −0.007 %, Q_wall against the perturbative value to −0.31 %, the sum rule to −0.01 %.  Phase D half done (DD-226); `SourceCurrentPath` next.
-* **DD-223** (2026-08-29) — a `Difference` whose tools' kernel boxes lie inside a box-shaped base (the air body of every housing) is served from its operands throughout the build: box, face and edge planes, singular edges (tool convexity flipped inside the box, convex on its boundary), section contours (`_CsgSectionEngine`: the base's contours plus the tools' reversed) and its place in the effective PEC solid — the kernel cut (1.03 s on the 16 × 16 array) is never built.  16 × 16 7.8 → 6.4 s, posts 240 2.1 → 1.8 s, Lange 16 9.8 → 9.6 s; meshes differ in the last bits of the area arrays.
 Older decisions: `design-decisions.md`.
 
 ## Working practices earned the hard way
@@ -82,7 +82,7 @@ the 20 gallery tutorials, no internal imports.  All run to completion
 on the GPU box on pure defaults: the DD-096 port-signal criterion is
 on by default (DD-114) because the energy criterion alone never fires
 on the TM-cut-off plateau of a shielded lossless structure.
-`validation/` holds the 29 scripts that legitimately use internals:
+`validation/` holds the 30 scripts that legitimately use internals:
 the certificates that regenerate the measured floors quoted below, and
 the spikes whose conclusions became DD entries.  `benchmarks/` is
 runtime and memory profiling.  The `investigations/<topic>/` dossiers
