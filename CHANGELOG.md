@@ -11,6 +11,35 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- `magnelio.fields.FieldState`, the public field container: the six
+  Yee-staggered components in physical units together with the grid
+  they live on, with the sample positions of every component
+  (`positions`), interpolation to arbitrary points (`at`), averaging
+  onto cell centres (`cell_centred`) and a slice plot (`plot`).  It is
+  the common currency of eigenmodes, monitors and field sources —
+  `EigenmodeResult.field(n)` hands a mode over in it.
+- `magnelio.sources.SourceFieldInitial`: the field a transient run
+  starts from, at `t = 0`, built `from_project` (an eigenmode of a
+  stored project), `from_function` or `from_arrays`.  Its excitation
+  carries the amplitude alone; the magnetic field is placed half a
+  leapfrog step ahead so a mode starts as exactly that mode and rings
+  down without a transient; several initial fields superpose.  No part
+  of the model is off limits: ports of either kind, absorbing
+  boundaries, dispersive materials and surface-impedance walls all
+  start from their quiescent state, so a coupled resonator can be rung
+  down and its loaded frequency, external Q and wall Q measured in one
+  place.
+- `magnelio.sources.SourceFieldIncident` takes any incident field as
+  `field(x, y, z, t, drive)` and injects it on the total-field box, so
+  beams, superpositions and tabulated fields no longer need to be
+  plane waves; `SourcePlaneWave` remains the fast analytic path.
+- How-to *Ring-down: the loaded frequency and Q budget of a coupled
+  resonator* — filling, wall and external Q each from their own run,
+  checked against the closed form and the sum rule —
+  and the concept sections *Incident fields on a total-field/
+  scattered-field box*, *Initial fields* and *From a mode into the
+  time domain* in the methods guide.
+
 - `magnelio.AnalysisTD`, the general time-domain analysis: one march
   under any set of *simultaneous* excitations — port channels and
   model sources, each with its own waveform, amplitude and delay —
@@ -54,6 +83,18 @@ major version is 0, minor releases may change the public API.
 
 ### Changed
 
+- The energy trace a run records — and the `energy_stop_db` criterion
+  reading it — is now the quantity the leapfrog conserves, pairing the
+  two magnetic half-steps that straddle each electric sample.  The
+  earlier expression mixed field samples half a step apart and
+  therefore oscillated at twice the resonance frequency with an
+  amplitude of `sin(omega*dt/2)`, about 10 % on a 12-cells-per-
+  wavelength grid; a ring-down decay now reads off it directly.
+- `AnalysisEigenmode` accepts the arguments every analysis shares
+  (`params=` reaches the project store; `backend`, `precision` and
+  `method` are validated and rejected where the eigensolver cannot
+  follow them), and validates `n_modes` and `solver` on construction
+  instead of at solve time.
 - Project-store schema 2.0: `results.h5` names a run by its
   excitations (`excited_name`/`excited_mode` only on scattering
   channel runs), `mesh.h5` records the mesh's element type, port

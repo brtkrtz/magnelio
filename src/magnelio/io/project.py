@@ -416,11 +416,18 @@ def _source_to_dict(source) -> dict:
     """
     import dataclasses  # noqa: PLC0415
 
+    from magnelio.fields import FieldState  # noqa: PLC0415
+
     d = {"type": type(source).__name__}
     for f in dataclasses.fields(source):
         if not f.init:
             continue
         v = getattr(source, f.name)
+        if isinstance(v, FieldState) or callable(v):
+            # Array payloads travel as datasets (``_store_payload``);
+            # a Python callable cannot be stored at all — the tag and
+            # the remaining fields keep the recipe readable.
+            continue
         if f.name == "corners" and v is not None:
             v = [[None if c is None else float(c) for c in point] for point in v]
         elif isinstance(v, tuple):
@@ -429,15 +436,37 @@ def _source_to_dict(source) -> dict:
     return d
 
 
-def _source_from_dict(d: dict):
-    """Rebuild a declarative source written by :func:`_source_to_dict`."""
-    from magnelio.sources import SourcePlaneWave  # noqa: PLC0415
+def _source_from_dict(d: dict, payload: dict | None = None):
+    """Rebuild a declarative source written by :func:`_source_to_dict`.
 
-    registry = {"SourcePlaneWave": SourcePlaneWave}
+    *payload* holds the datasets a source stored next to its recipe
+    (an initial field's arrays); a source needing one is rebuilt by
+    its own ``_from_store_payload``.
+    """
+    from magnelio.sources import (  # noqa: PLC0415
+        SourceFieldIncident,
+        SourceFieldInitial,
+        SourcePlaneWave,
+    )
+
+    registry = {
+        "SourcePlaneWave": SourcePlaneWave,
+        "SourceFieldInitial": SourceFieldInitial,
+        "SourceFieldIncident": SourceFieldIncident,
+    }
     d = dict(d)
     tag = d.pop("type")
     if tag not in registry:
         raise ValueError(f"unknown source type {tag!r} in mesh.h5")
+    if tag == "SourceFieldInitial":
+        if payload is None:
+            raise ValueError(f"source {d.get('name')!r}: mesh.h5 holds no field arrays for it")
+        return SourceFieldInitial._from_store_payload(d, payload)
+    if tag == "SourceFieldIncident":
+        raise ValueError(
+            f"source {d.get('name')!r} is a SourceFieldIncident with a Python callable, "
+            f"which the store cannot rebuild; declare it again on the reloaded mesh",
+        )
     if d.get("corners") is not None:
         d["corners"] = tuple(tuple(c) for c in d["corners"])
     for key in ("direction", "polarization"):
@@ -525,6 +554,13 @@ def _save_mesh(f, mesh) -> None:
         mg.attrs["sources"] = json.dumps(
             [_source_to_dict(src) for src in mesh.sources],
         )
+        for src in mesh.sources:
+            payload = getattr(src, "_store_payload", None)
+            if payload is None:
+                continue
+            grp = mg.create_group(f"sources/{src.name}")
+            for key, arr in payload().items():
+                grp.create_dataset(key, data=np.asarray(arr))
     # Design frequency (DD-186) — travels with the mesh like the
     # closure and the ports.
     if getattr(mesh, "f_max", None) is not None:
@@ -610,11 +646,14 @@ def _load_mesh(f):
         else ()
     )
     sources_attr = mg.attrs.get("sources")
-    sources = (
-        tuple(_source_from_dict(d) for d in json.loads(sources_attr))
-        if sources_attr is not None
-        else ()
-    )
+    sources = ()
+    if sources_attr is not None:
+        rebuilt = []
+        for d in json.loads(sources_attr):
+            grp = mg.get(f"sources/{d.get('name')}")
+            payload = {k: grp[k][()] for k in grp} if grp is not None else None
+            rebuilt.append(_source_from_dict(d, payload))
+        sources = tuple(rebuilt)
     planes = None
     if "planes_json" in mg:
         raw = mg["planes_json"][()]

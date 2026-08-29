@@ -652,6 +652,17 @@ class FITTimeDomainSolver:
             if hasattr(src, "attach"):
                 src.attach(self)
 
+        # A source may have written an initial field into the state.  The
+        # modal ports difference their plane against the previous step, so
+        # they must capture that field once before the first one — with
+        # ``V_prev = 0`` the Mur formula would read the initial condition
+        # as a step and reflect it (DD-224).  Done after *all* sources, so
+        # superposed initial fields are seen as one.
+        if any(getattr(src, "writes_initial_field", False) for src in self.sources):
+            for op in self.ports:
+                if hasattr(op, "initialize_state"):
+                    op.initialize_state(self._fields.e_flat)
+
         # Attach diagnostic probes (after BCs are initialized so CPML sigma is available)
         for probe in self.diagnostics:
             if hasattr(probe, "attach"):
@@ -806,6 +817,8 @@ class FITTimeDomainSolver:
         )
         energy_falling = False
         energy_trace: list[tuple[int, float]] = []
+        # H half-step buffer of the energy evaluation (allocated on first use)
+        h_prev = None
         # Port-signal stop criterion (DD-096): ports accumulate the |V|
         # envelope between checks; resume-aware like the energy peak.
         signal_stop = self.port_signal_stop_db
@@ -1013,6 +1026,16 @@ class FITTimeDomainSolver:
             if self.recorder is not None:
                 self.recorder.record(e, h)
 
+            # The stored energy below is evaluated from ``e`` at t^{n+1}
+            # and the two ``h`` half-steps that straddle it, so the
+            # H-side sample taken *before* this step's H update is kept
+            # (only on the steps that actually evaluate; the buffer is
+            # half a field state and is allocated on first use).
+            if n % check_interval == 0:
+                if h_prev is None:
+                    h_prev = self._xp.empty_like(h)
+                h_prev[:] = h
+
             # ── H phase (device-only segment; WP-G3 graph site) ────────
             if gpu_graphs is not None:
                 gpu_graphs.run_phase("H", h_phase_device)
@@ -1044,10 +1067,24 @@ class FITTimeDomainSolver:
             # the whole grid keeps its dynamic range, so the energy-decay stop
             # criterion behaves identically to the double path.
             if n % check_interval == 0:
-                current_energy = 0.5 * (
-                    float(self._xp.sum(M_eps_diag * e * e, dtype=np.float64))
-                    + float(self._xp.sum(M_mu_diag * h * h, dtype=np.float64))
-                )
+                # Leapfrog energy (DD-225): ``e`` sits at t^{n+1} while
+                # ``h`` sits half a step later, so the naive
+                # ½(e·M_ε·e + h·M_μ·h) oscillates at 2f with relative
+                # amplitude sin(ω·dt/2) — 10 % on a 12-cells-per-
+                # wavelength grid, and aliased into a ragged zig-zag by
+                # the check cadence.  Pairing the two H half-steps that
+                # straddle t^{n+1} gives the quantity the leapfrog
+                # actually conserves.  Should a pathological medium make
+                # it non-positive (the pairing is positive definite only
+                # under the CFL limit), the naive form stands in, so the
+                # decay stop always sees a usable number.
+                energy_E = float(self._xp.sum(M_eps_diag * e * e, dtype=np.float64))
+                energy_H = float(self._xp.sum(M_mu_diag * h_prev * h, dtype=np.float64))
+                current_energy = 0.5 * (energy_E + energy_H)
+                if not current_energy > 0.0:
+                    current_energy = 0.5 * (
+                        energy_E + float(self._xp.sum(M_mu_diag * h * h, dtype=np.float64))
+                    )
                 energy_trace.append((n, current_energy))
 
                 # Stream the newly recorded V/I tail + this energy sample

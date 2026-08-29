@@ -10,9 +10,10 @@ This namespace is the **core**: the model container and run vocabulary
 public name lives in exactly one domain namespace —
 ``magnelio.geo``, ``magnelio.materials``, ``magnelio.mesh``,
 ``magnelio.boundaries``, ``magnelio.ports``, ``magnelio.sources``,
-``magnelio.monitors``, ``magnelio.circuit``, ``magnelio.signals``,
-``magnelio.solver``, ``magnelio.analysis``, ``magnelio.post``,
-``magnelio.plots``, ``magnelio.io``, ``magnelio.constants`` — and
+``magnelio.monitors``, ``magnelio.fields``, ``magnelio.circuit``,
+``magnelio.signals``, ``magnelio.solver``, ``magnelio.analysis``,
+``magnelio.post``, ``magnelio.plots``, ``magnelio.io``,
+``magnelio.constants`` — and
 underscore modules are internal.
 """
 

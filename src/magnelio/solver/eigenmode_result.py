@@ -64,6 +64,26 @@ class EigenmodeResult:
         f_max = self.frequencies[-1] / 1e9
         return f"EigenmodeResult(n_modes={n}, f=[{f_min:.4f}, {f_max:.4f}] GHz)"
 
+    def field(self, mode: int = 0):
+        """The mode's field pattern as a :class:`~magnelio.fields.FieldState`.
+
+        The eigenvector is normalised to ``e^T M_eps e = 1``, i.e. to a
+        peak stored electric energy of 0.5 J; the physical amplitude
+        follows from that, the spatial pattern is the physical content.
+        A Bloch mode with a phase advance other than 0 or 180 degrees is
+        complex.
+
+        Parameters
+        ----------
+        mode : int
+            Mode index (ascending in frequency).
+        """
+        from magnelio.fields import FieldState as _PublicFieldState  # noqa: PLC0415
+
+        if not 0 <= mode < self.n_modes:
+            raise IndexError(f"mode must be in [0, {self.n_modes}); got {mode}")
+        return _PublicFieldState._from_raw(self.mesh.grid, self.modes[mode])
+
     def plot(
         self,
         mode: int = 0,
@@ -87,13 +107,14 @@ class EigenmodeResult:
 
         The staggered Yee-grid components are interpolated onto cell
         centres and rendered on the plane selected by *normal* and
-        *position*.  Mode fields are normalised eigenvectors, so the
-        amplitudes are in arbitrary units; the spatial pattern is the
-        physical content.  A complex mode (Bloch phase advance other
-        than 0 or 180 degrees) is drawn as the real snapshot at the
-        instant of maximum field energy on the slice — the global phase
-        of an eigenvector is arbitrary, and this choice makes the
-        picture independent of it.
+        *position* (:meth:`magnelio.fields.FieldState.plot`).  Mode
+        fields are normalised eigenvectors, so the amplitudes are in
+        arbitrary units; the spatial pattern is the physical content.
+        A complex mode (Bloch phase advance other than 0 or 180
+        degrees) is drawn as the real snapshot at the instant of
+        maximum field energy on the slice — the global phase of an
+        eigenvector is arbitrary, and this choice makes the picture
+        independent of it.
 
         Parameters
         ----------
@@ -134,116 +155,39 @@ class EigenmodeResult:
         """
         from magnelio.monitors.base import (  # noqa: PLC0415
             _AXES,
-            _interp_to_cell_centres,
-            _resolve_component,
-            plane_slab_halfwidth,
             resolve_plane_view,
             resolve_region,
         )
-        from magnelio.post.plot_field import (  # noqa: PLC0415
-            CrossSectionOverlay,
-            plot_field_scalar,
-            plot_field_vector,
-        )
 
-        if not 0 <= mode < self.n_modes:
-            raise IndexError(f"mode must be in [0, {self.n_modes}); got {mode}")
-
-        grid = self.mesh.grid
-        region = resolve_region(None, grid)
-        pv = resolve_plane_view(region, normal, position)
-        (i0, c0), (i1, c1) = pv.free
-
-        is_magnitude = component in ("E", "H", "|E|", "|H|")
-        is_field_group = component in ("E", "H")
-        field_group = component.strip("|")[:1]
-        valid = {f"{g}{a}" for g in ("E", "H") for a in _AXES}
-        if not is_magnitude and component not in valid:
-            raise KeyError(f"component must be E/H (or |E|/|H|) or one of {sorted(valid)}.")
-        comps = [f"{field_group}{a}" for a in _AXES] if is_magnitude else [component]
-
-        # Interpolate only the requested slab, not the full volume
-        slabs = [region.ix, region.iy, region.iz]
-        if pv.slice_index is not None:
-            base = slabs[pv.normal_idx].start
-            slabs[pv.normal_idx] = slice(base + pv.slice_index, base + pv.slice_index + 1)
-        data = _interp_to_cell_centres(self.modes[mode], comps, *slabs, grid)
-        data = {c: np.squeeze(a, axis=pv.normal_idx) for c, a in data.items()}
-        data = _real_snapshot(data)
-
-        overlay = None
-        if geometry is not None:
-            overlay = CrossSectionOverlay(
-                geometry=geometry,
-                normal=_AXES[pv.normal_idx],
-                position=pv.normal_pos,
-                slab=plane_slab_halfwidth(grid, pv.normal_idx, pv.normal_pos),
-            )
-
+        field = self.field(mode)
+        pv = resolve_plane_view(resolve_region(None, self.mesh.grid), normal, position)
         pos_txt = (
             f"{_AXES[pv.normal_idx]}={pv.normal_pos * 1e3:.3g} mm"
             if scale_mm
             else f"{_AXES[pv.normal_idx]}={pv.normal_pos:.3g} m"
         )
         f_ghz = self.frequencies[mode] / 1e9
-
-        if plot_type == "vector":
-            if not is_field_group:
-                raise ValueError("Vector plots need component='E' or 'H'.")
-            title = f"Mode {mode} ({f_ghz:.3f} GHz) — {field_group}-field, {pos_txt}"
-            return plot_field_vector(
-                c0,
-                c1,
-                data[f"{field_group}{_AXES[i0]}"],
-                data[f"{field_group}{_AXES[i1]}"],
-                w=data[f"{field_group}{_AXES[pv.normal_idx]}"],
-                xlabel=_AXES[i0],
-                ylabel=_AXES[i1],
-                wlabel=_AXES[pv.normal_idx],
-                title=title,
-                clabel=f"|{field_group}| (arb. units)",
-                ax=ax,
-                scale_mm=scale_mm,
-                cmap=cmap or "viridis",
-                density=density,
-                normalize_arrows=normalize_arrows,
-                vmax=vmax,
-                threshold=threshold,
-                flip=flip,
-                geometry=overlay,
-            )
-
-        # Scalar plot (color / contour)
-        vals = _resolve_component(data, field_group if is_magnitude else component)
-        if is_magnitude:
-            label = f"|{field_group}|"
-            effective_cmap = cmap or "viridis"
-            sym = False
-            if vmin is None:
-                vmin = 0.0
-        else:
-            label = component
-            effective_cmap = cmap or "RdBu_r"
-            sym = True
-        title = f"Mode {mode} ({f_ghz:.3f} GHz) — {label}, {pos_txt}"
-
-        return plot_field_scalar(
-            c0,
-            c1,
-            vals,
-            xlabel=_AXES[i0],
-            ylabel=_AXES[i1],
-            title=title,
-            clabel=f"{label} (arb. units)",
+        group = component.strip("|")[:1]
+        label = f"{group}-field" if component in ("E", "H") and plot_type == "vector" else None
+        if label is None:
+            label = f"|{group}|" if component in ("E", "H", "|E|", "|H|") else component
+        return field.plot(
+            component,
+            normal=normal,
+            position=position,
+            plot_type=plot_type,
             ax=ax,
             scale_mm=scale_mm,
-            cmap=effective_cmap,
+            cmap=cmap,
+            geometry=geometry,
+            flip=flip,
             vmin=vmin,
             vmax=vmax,
-            symmetric=sym,
-            plot_type=plot_type,
-            flip=flip,
-            geometry=overlay,
+            density=density,
+            normalize_arrows=normalize_arrows,
+            threshold=threshold,
+            title=f"Mode {mode} ({f_ghz:.3f} GHz) — {label}, {pos_txt}",
+            unit="arb. units",
         )
 
     @staticmethod

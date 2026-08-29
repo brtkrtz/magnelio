@@ -121,6 +121,16 @@ def _drive_function(exc: Excitation):
     return _drive
 
 
+def _impulse_drive(amplitude: float):
+    """The "signal" of an initial field: its amplitude at t = 0, nothing after."""
+    amplitude = float(amplitude)
+
+    def _drive(t, _a=amplitude):
+        return _a if float(t) == 0.0 else 0.0
+
+    return _drive
+
+
 def _excitation_scale(op) -> float:
     """Injection amplitude scale for full-model power semantics (DD-155).
 
@@ -982,7 +992,9 @@ class AnalysisTD(_AnalysisBase):
             # must not gain a step for it.
             total_time_steps = int(math.ceil(t_end / dt - 1e-9))
         cw = [
-            _excitation_key(e) for e in prepared.excitations if math.isinf(float(e.waveform.t_end))
+            _excitation_key(e)
+            for e in prepared.excitations
+            if e.waveform is not None and math.isinf(float(e.waveform.t_end))
         ]
         if cw:
             if total_time_steps is None:
@@ -1113,12 +1125,31 @@ class AnalysisTD(_AnalysisBase):
                     op.set_excitation(exc.mode, fn)
             else:
                 src = source_by_name[exc.source]
-                waveform = exc.waveform
-                if waveform is None:
-                    waveform = WaveformGaussian(f_max=self.f_max)
-                exc = dataclasses.replace(exc, waveform=waveform)
-                fn = _drive_function(exc)
-                src.set_excitation(waveform, amplitude=exc.amplitude, delay=exc.effective_delay())
+                if not getattr(src, "has_waveform", True):
+                    # An initial field exists at t = 0: the excitation
+                    # is its amplitude alone, and the recorded
+                    # "signal" is that amplitude at the first sample.
+                    if exc.waveform is not None:
+                        raise ValueError(
+                            f"Excitation({exc.source!r}): source {exc.source!r} is an "
+                            f"initial field and takes no waveform",
+                        )
+                    if exc.delay != 0.0 or exc.phase != 0.0:
+                        raise ValueError(
+                            f"Excitation({exc.source!r}): an initial field cannot be "
+                            f"delayed or phased (got delay={exc.delay!r}, phase={exc.phase!r})",
+                        )
+                    fn = _impulse_drive(exc.amplitude)
+                    src.set_excitation(None, amplitude=exc.amplitude)
+                else:
+                    waveform = exc.waveform
+                    if waveform is None:
+                        waveform = WaveformGaussian(f_max=self.f_max)
+                    exc = dataclasses.replace(exc, waveform=waveform)
+                    fn = _drive_function(exc)
+                    src.set_excitation(
+                        waveform, amplitude=exc.amplitude, delay=exc.effective_delay()
+                    )
                 sources.append(src)
             resolved.append(exc)
             drives[_excitation_key(exc)] = fn
@@ -1168,7 +1199,7 @@ class AnalysisTD(_AnalysisBase):
         ends = [
             float(e.effective_delay()) + float(e.waveform.t_end)
             for e in excitations
-            if not math.isinf(float(e.waveform.t_end))
+            if e.waveform is not None and not math.isinf(float(e.waveform.t_end))
         ]
         return max(ends) if ends else 0.0
 
