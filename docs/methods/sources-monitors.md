@@ -91,13 +91,13 @@ project store under a name (`run(name=…)`, default `run_<n>`), resumes
 with `resume(project, name)`, and `project.result(name)` rebuilds its
 `TDResult`.
 
-## Plane-wave source (TF/SF)
+## Incident fields on a total-field/scattered-field box
 
-Plane-wave illumination uses the **total-field/scattered-field
+Illumination from outside uses the **total-field/scattered-field
 (TF/SF)** technique: the domain is split by a virtual box; consistency
 corrections on the six box faces inject the incident wave into the
 total-field region while the exterior carries only scattered field
-(`sources/plane_wave.py`, DD-013).  The TF/SF formulation is due to
+(DD-013).  The TF/SF formulation is due to
 Merewether, Fisher and Smith {cite}`merewether1980` and
 Umashankar and Taflove {cite}`umashankartaflove1982`;
 textbook treatment in {cite}`taflovehagness2005`.
@@ -107,6 +107,72 @@ in-house calibration (DD-085).  `SourcePlaneWave(name, direction,
 polarization, corners)` declares the wave and its box; the excitation
 that names it supplies the waveform and the peak field.  Propagation
 is along a grid axis.
+
+Any other incident field is `SourceFieldIncident(name, field,
+corners)`, whose `field(x, y, z, t, drive)` returns `((Ex, Ey, Ez),
+(Hx, Hy, Hz))` at the sample positions of one box face — a
+superposition of waves, a tabulated measured field, a beam.  `drive`
+is the excitation's time function, so a retarded field reads
+`drive(t - k·r/c0)`.  The plane wave is the special case in which the
+retardation collapses to one delay per face, which is why it has its
+own class and evaluates the waveform on a handful of values per step
+instead of on the face.
+
+The incident field must solve the free-space Maxwell equations by
+itself; the box corrections assume it does.  An E/H pair that does not
+(a transversally tapered "beam" whose longitudinal components are
+dropped, say) radiates the inconsistency into the scattered-field
+region, where it is indistinguishable from a scattered wave.
+
+## Initial fields
+
+A transient run can also start *from* a field instead of being driven
+into one.  `SourceFieldInitial(name, field)` carries a
+`magnelio.fields.FieldState` that becomes the state at `t = 0`;
+`SourceFieldInitial.from_project(project, name=…, mode=…)` takes it
+from the eigenmodes of a stored project, `from_function` and
+`from_arrays` from a formula or from data.  Its excitation has no
+waveform — the amplitude alone scales the field (`amplitude_unit` is
+`"1"`) — and the run then rings down freely, which is how a Q is
+measured (how-to *Ring-down*).
+
+The electric field is written on the primal edges and the magnetic
+field half a leapfrog step ahead, following the discrete Faraday law,
+so a mode of the discrete operator starts as exactly that mode and
+oscillates without a transient.  Several initial fields in one run
+superpose.
+
+Nothing about the model restricts an initial field.  Where the run
+carries state besides the fields — an absorber's convolutions, the
+pole currents of a dispersive material, the branch currents of a
+surface-impedance wall, a port's boundary history — that state starts
+at zero, which is the quiescent condition: the absorber is empty, the
+material unpolarised, the wall carries no current, the exterior of a
+port was quiet.  That is a well-defined initial-value problem, and a
+stable one, but it is not the *steady* state a mode would have built
+up around itself.
+
+In practice the difference is small, because those states relax on
+their own time scale.  A copper-walled cavity rung down with
+`wall_model="sibc"` — whose branch currents start at zero — returns a
+wall Q within a third of a percent of the perturbative
+surface-resistance evaluation on the same mode, two independent routes
+to the same loss.
+
+Ports are what make the ring-down of a coupled resonator possible: a
+waveguide port's transparent boundary assumes only a quiet *exterior*
+before `t = 0`, and the field reaching it during the run is the whole
+point of an external-Q measurement.  A discrete port is a resistor
+without memory and has no start condition at all.  An initial field
+sitting *on* a port plane is allowed too; what it costs is worth
+knowing, since it leaves as a prompt burst (about four times the
+steady port signal at 20 % of the field peak) and biases a fitted
+external Q by roughly 0.4 % at −14 dB and 2 % at −6 dB, with nothing
+measurable below −26 dB.
+
+Whether the field you load is the mode you meant, and whether the
+decay you see is the one you wanted to measure, are modelling
+questions — not something the library decides for you.
 
 ## Field, flux and frequency monitors
 

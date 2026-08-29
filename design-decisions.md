@@ -16769,7 +16769,99 @@ empty port list (source-only runs).  Tutorial 20 *plane-wave
 scattering* (PEC sphere, monostatic RCS against the Mie series) and
 the *general time-domain analysis* section in
 `docs/methods/sources-monitors.md`.  Core pin 11 → 12 (`AnalysisTD`).
-Phases C ff. follow in the last section.
+**Phase C shipped 2026-08-29** (branch `feat/api-phase-c`):
+`magnelio.fields.FieldState` — the public container that wraps the flat
+`_fields.FieldState` together with its `GridLines` and converts the FIT
+grid quantities to physical fields (`component`, `positions`, `at`,
+`cell_centred`, `scaled`, `real`, `plot`); `EigenmodeResult.field(n)`
+returns one and `EigenmodeResult.plot` now delegates its slice to it.
+`SourceFieldInitial` (`from_project` / `from_function` / `from_arrays`,
+`has_waveform = False` on the `Source` contract, excitation = amplitude
+only) writes `e(0)` on the primal edges (PEC edges zeroed) and
+`h(+dt/2) = h(0) − ½·β_H·(C e(0))`, the leapfrog half-step from the
+discrete Faraday law, so a discrete eigenmode started at its E maximum
+rings as that mode: measured 8.2375 GHz against the eigensolver's
+8.2312 GHz on a 15×7×20 WR-90 box (+0.076 %; with the sign inverted the
+same run reads −1.07 %, the tell-tale of a start half a step off).  The
+source imposes **no consistency gate at all** (decided with the
+developer, 2026-08-29, after a first implementation gated ports,
+absorbers, dispersive materials and surface-impedance walls); several
+initial fields superpose (the write adds onto the solver's zeroed
+state).  Every auxiliary state simply starts at its quiescent value —
+absorber empty, material unpolarised, wall stateless, port exterior
+quiet — which is a well-defined initial-value problem.  Measured
+stable in every case (`probe_aux_state_start.py`,
+`probe_sibc_start.py`): peak stored energy never exceeds the start,
+CPML with a packet straddling the absorber ends at 0.228 of the start
+against 0.250 for the same packet in the middle, and a Debye fill
+started unpolarised decays without incident.  The strongest check is
+SIBC: a copper-walled WR-90 cavity rung down from its TE101 mode reads
+Q_wall = 7745 against the perturbative surface-resistance evaluation's
+7769 (−0.31 %) — two independent routes to the same loss, so the
+zero-current start costs nothing measurable.  The *steady* state a mode
+would have built up around itself is a different matter, but judging
+that is the user's: `AnalysisTD` is the level at which arbitrary fields
+are loaded on purpose.
+
+The port evidence, gathered while the gate still stood.  A waveguide port's transparent boundary
+assumes only a quiet *exterior* at t = 0;
+`PortOperatorModal.initialize_state`, which already existed for the
+silence test, is called by the solver after all sources attached, so
+superposed fields are captured as one.  A discrete port is the
+`SeriesRLC(R = Z0)` special case whose companion is stateless — there
+is no start condition to violate.  The first implementation refused
+both kinds and imposed a −60 dB quiescence test on the port plane
+besides; measurement retired all of it (internal record
+`investigations/api-blueprint/phase-c/probe_port_start_q2.py`).  With a
+constant continuation of amplitude α through the feed line, the fitted
+external Q of the iris cavity moves +0.03 % at −26 dB, +0.37 % at
+−13.9 dB and +2.2 % at −6 dB — monotone, no instability — and
+`initialize_state` changes those figures only in the third decimal,
+because the start jump it repairs is the same order as the disturbance
+the misplaced field causes anyway.  The mismatch leaves as a prompt
+burst (≈ 4× the steady port signal at α = 0.2); no energy floor
+appears, so the decay criterion is not blocked.  A discrete port
+loading a mode shows the other half: 18 dB in 2 ns at Q ≈ 104, then
+Q ≈ 666 for the families the probe couples to weakly — the setup's own
+mode selectivity, not a start artefact.  Judging whether a loaded field
+is the mode one meant is the user's, `AnalysisTD` being the level at
+which arbitrary fields are loaded on purpose.  Worth recording all the
+same: the eigenmode of a *coupled* model is not a ring-down start, the
+eigensolver seeing metal where the port is, so its mode lives in the
+feed line too — a modelling error, and by the numbers above a cheap one
+(−14 dB, 0.4 %), not a numerical failure.
+
+Its store payload
+rides in `mesh.h5` as datasets under `mesh/sources/<name>` (grid lines
+plus the six grid-quantity components) because attributes hold JSON
+only.  `SourceFieldIncident` becomes concrete: the whole TF/SF face
+table moved into it and now folds `beta·metric·sign` per face with the
+incident component evaluated from a user `field(x, y, z, t, drive)`,
+while `SourcePlaneWave` overrides `_patch`/`_apply` to keep the
+analytic delay table (a plane wave spelled out as a general field
+reproduces it to ≤ 10⁻¹² of the peak; two crossed plane waves match the
+same pair driven simultaneously, internal record
+`tests/integration/test_source_field_incident.py`).  A field that does
+not solve Maxwell itself leaks: the tapered "beam" without its
+longitudinal components leaks at 116 % of the total field, which is why
+the docs state the requirement.  `AnalysisEigenmode` moved onto
+`_AnalysisBase` (gains `params`, validates `backend`/`precision`/
+`method`/`solver`/`n_modes`; the eigensolve stays CPU/double).  How-to
+*Ring-down* takes an iris-coupled WR-90 cavity through one run per loss
+channel and hits three closed values: the filling Q against `ω₀ε/σ`
+(2015.8 vs 2016.0, −0.007 %), the wall Q of copper against the
+perturbative surface-resistance evaluation on the same mode (7745.2 vs
+7768.9, −0.31 %) and the sum rule `1/Q_L = 1/Q_fill + 1/Q_ext` (944.7
+vs 944.8, −0.01 %).  The iris pulls the resonance 1.24 % below the
+sealed eigenfrequency — the number a beam model has to match.  Two
+traps measured on the way: a fit to a field probe's `|E|` reads the
+zeros along with the peaks and lands 35 % high, so the energy trace is
+the instrument; and the filling Q must be taken at the *loaded*
+frequency, a conductivity being a loss tangent that falls with
+frequency (worth 0.6 % here).  The frequency-domain route is the
+expensive one on a high-Q structure: a scattering run of 450 000 steps
+still read a group-delay Q 10 % below the ring-down of a 39 000-step
+run, `|S₁₁|` at 0.94 rather than 1.  Phases D ff. follow in the last section.
 
 **Problem.**  Two problem classes exist (`AnalysisScatteringTD`,
 `AnalysisEigenmode`) and one excitation reaches the analysis level:
@@ -16972,9 +17064,10 @@ internal script directories, the S-parameter ladder bit-identical):
   `AnalysisTD`, schema 2.0 with `mesh.h5:element`; tutorial
   *plane-wave scattering* (the first non-port excitation with a home)
   and a concept page in `docs/methods/`.
-* **C** — `magnelio.fields.FieldState`, `SourceFieldInitial`
+* ~~**C** — `magnelio.fields.FieldState`, `SourceFieldInitial`
   (eigenmode ring-down from a project), `SourceFieldIncident`
-  beyond the plane wave.
+  beyond the plane wave.~~ Shipped 2026-08-29 (see Status);
+  `AnalysisEigenmode` moved onto `_AnalysisBase` with it.
 * **D** — `SourceFieldSurface` + `MonitorFieldSurface`,
   `SourceCurrentPath`.
 * **E ff.** — `AnalysisWakefieldTD`/`SourceBeam`;
@@ -16982,3 +17075,64 @@ internal script directories, the S-parameter ladder bit-identical):
   statics; `MeshTetrahedral`/FEM; `MeshSurface`/BEM;
   `particles`/PIC/tracking — each its own DD, names from the table
   above.
+
+---
+
+## DD-225 — the energy trace is the conserved leapfrog energy
+
+**Status:** Decided 2026-08-29 (measured on the ring-down how-to of
+DD-224 Phase C).
+
+**Problem.**  The stored energy was evaluated as
+`½(eᵀM_ε e + hᵀM_μ h)` from the state at the end of a step — but the
+leapfrog holds `e` at t^{n+1} and `h` at t^{n+3/2}, half a step later.
+The two terms are therefore not co-temporal, and for a single mode
+(`E ∝ cos ωt`, `H ∝ sin ωt`) the sum is
+
+```
+W(t) = W₀ · [1 + sin(ω·dt/2) · sin(2ωt + ω·dt/2)]
+```
+
+— an oscillation at twice the mode frequency with relative amplitude
+`sin(ω·dt/2) ≈ ω·dt/2`.  Measured on the ring-down case (WR-90 box,
+TE101 at 8.22 GHz, 12 nodes per wavelength, dt = 3.81 ps): predicted
+0.0981, measured 0.0946 — ±0.4 dB on every trace.  The energy check
+cadence (100 steps) samples that ripple at 0.16 periods per sample, so
+it arrives aliased: a ragged zig-zag on a curve users read as a decay,
+and an endpoint-to-endpoint drift of 1.9 % on a run that conserves
+energy to far better than that.
+
+**Decision.**  Evaluate the quantity the leapfrog actually conserves,
+pairing the two H half-steps that straddle the E sample:
+
+```
+W^n = ½ · eᵀ M_ε e  +  ½ · h^{n+1/2 T} M_μ h^{n+3/2}
+```
+
+The H sample from before the step's own H update is kept in a buffer
+filled *in the same step*, only on the steps that evaluate — so nothing
+is carried across steps and `resume` needs no new checkpoint key.  The
+buffer is allocated on first use and is half a field state (≈ 0.7 % of
+the run's peak RSS at 1.8 M cells, single precision); the copy runs
+once per check interval.  Where the pairing is not positive (it is
+positive definite only under the CFL limit) the naive form stands in,
+so the decay stop always sees a usable number.
+
+**Measured.**  Same case: ripple 0.0946 → 0.0051 (a factor 19),
+endpoint drift 1.9 % → 0.08 %.  The ring-down Q of the how-to reads the
+slope of this trace.
+
+**Consequences.**  `energy_stop_db` and `peak_energy` are computed from
+the new quantity, so a run's stop step can move by a fraction of a
+ripple period — the criterion is *sharper* than before, because the
+threshold is no longer chased by a ±0.4 dB oscillation.  Checkpoints
+written before this change carry a `peak_energy` of the old definition
+(≈ 1 % different); resuming across the change is harmless, both sides
+being far from the threshold at that point.
+
+**Alternatives.**  Averaging `h` over the two half-steps costs the same
+buffer and is not a conserved quantity.  Recovering `h^{n+1/2}` from
+`h^{n+3/2}` through the update relation needs a full curl per check —
+more expensive than the copy.  Smoothing the trace in post-processing
+was rejected: the ripple is a property of the quantity, not of the
+plot, and the same number feeds the stop criterion.

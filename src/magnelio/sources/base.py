@@ -29,22 +29,37 @@ class Source(ABC):
         source (``"V/m"`` for an incident field, …).
     ``excitable``
         Whether an excitation may name it.
+    ``has_waveform``
+        Whether the excitation drives it with a time function; an
+        initial field has none — its excitation carries only the
+        amplitude.
+    ``writes_initial_field``
+        Whether :meth:`attach` writes the solver's field state rather
+        than injecting every step.
     """
 
     amplitude_unit: str = "1"
     excitable: bool = True
+    has_waveform: bool = True
+    # Whether ``attach`` writes into the solver's field state, so the
+    # port operators must capture its trace before the first step.
+    writes_initial_field: bool = False
 
     # -- excitation binding (solver-facing, like Port.set_excitation) --
 
     @abstractmethod
     def set_excitation(
         self,
-        waveform: Waveform,
+        waveform: Waveform | None,
         *,
         amplitude: float = 1.0,
         delay: float = 0.0,
     ) -> None:
-        """Bind the waveform (and weight) the source injects."""
+        """Bind the waveform (and weight) the source injects.
+
+        A source without a waveform (``has_waveform = False``) takes
+        ``None`` and the amplitude only.
+        """
 
     @abstractmethod
     def clear_excitation(self) -> None:

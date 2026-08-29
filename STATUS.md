@@ -2,19 +2,22 @@
 
 *Last updated: 2026-08-29.*  **Released v0.4.8** (2026-08-29; the
 mesh-build campaign DD-201…DD-223 and the 16 × 16-array ladder).
-Unreleased on `main`: DD-224 Phases A and B — the API grammar for the
-years ahead, `Waveform*` classes, core `Excitation`, sources on the
+Unreleased on `main`: DD-224 Phases A, B and C — the API grammar for
+the years ahead, `Waveform*` classes, core `Excitation`, sources on the
 model, **`AnalysisTD` + `TDResult`** with `AnalysisScatteringTD`
 re-based on the shared transient engine, one excitation buffer per
 port mode, project-store schema 2.0 (`Project.result(name)`, runs by
 name, `resume(project, name)`), tutorial 20 *plane-wave scattering*
-(PEC-sphere RCS against the Mie series).  Unit suite 2716 passed /
-4 skipped; integration suite 398 passed / 5 skipped (2026-08-29; the
-GPU files need `CUPY_ACCELERATORS=""` outside the sandbox).  Previous
-release v0.4.7 (2026-08-26): modal basis of multi-conductor QTEM ports
-(DD-196), `geo.Surface.parametric` (DD-197), port windows in absorbing
-faces (DD-198), facet section engine (DD-199).  Channels: GitHub, PyPI,
-conda-forge, docs (`/stable/` = tag, `/dev/` = main).
+(PEC-sphere RCS against the Mie series), **`magnelio.fields.FieldState`**
+as the public field container with `SourceFieldInitial` (eigenmode
+ring-down), a general `SourceFieldIncident` and the how-to *Ring-down*.
+Unit suite 2748 passed / 4 skipped; integration suite 419 passed /
+5 skipped (2026-08-29; the four single-precision GPU tests need
+`CUPY_ACCELERATORS=""` and a working nvrtc, absent in the sandbox).
+Previous release v0.4.7 (2026-08-26): modal basis of multi-conductor
+QTEM ports (DD-196), `geo.Surface.parametric` (DD-197), port windows in
+absorbing faces (DD-198), facet section engine (DD-199).  Channels:
+GitHub, PyPI, conda-forge, docs (`/stable/` = tag, `/dev/` = main).
 
 This file states what *is*.  The chronology is `git log
 --first-parent main` (one feature per merge), the reasoning is
@@ -26,7 +29,8 @@ certificates named in their DD entries.
 
 Newest first, one line each; the full record is the DD entry.
 
-* **DD-224** (2026-08-29) — the API grammar for the years ahead: `Analysis<Problem><Formulation>` (suffix = TD/FD formulation, method from the mesh's element type), general `AnalysisTD`/`AnalysisFD`, the excitation triad `Source*` (on the model) / `Waveform*` (`signals`) / core `Excitation`, reserved names for wakefield, PIC/tracking, statics, FD scattering, `fields`/`particles`/`optimize`.  **Phase A shipped** (2026-08-29): `Waveform` ABC + six classes, core `Excitation`, `SourceFieldIncident`/`SourcePlaneWave` with `add_source`/`Mesh.sources`, `AnalysisScatteringTD(waveform=)`, `ExcitationSpec` removed, the three monitor migrations.  **Phase B shipped** (2026-08-29, unreleased): `AnalysisTD` + `TDResult` on `_AnalysisBase` (`method=`/`solver=`), `AnalysisScatteringTD(AnalysisTD)` with its channel runs on the shared engine (bit-identical to the old code with the old pulse term; the DD's delay-aware estimate `max(delay + t_end)` lengthens TE/TM-fed runs and moves their stop step, in-band |ΔS| ≤ 5·10⁻⁴), `run(t_end=, name=)`, CW rules, per-mode port excitation buffers, `results.h5` `excitations` attribute + one sampled drive per excitation, `Project.result(name)`, `resume(project, name)`, schema 2.0 with `mesh.h5:element`, `source` grid planes at TF/SF corners, default TF/SF box past the absorber, tutorial 20, core pin 12.  Phase C (`magnelio.fields.FieldState`, `SourceFieldInitial`) next.
+* **DD-225** (2026-08-29) — the recorded energy (and the `energy_stop_db` criterion reading it) is the quantity the leapfrog conserves, pairing the two H half-steps that straddle each E sample; the old expression mixed samples half a step apart and rippled at 2f with amplitude sin(ω·dt/2) — 9.5 % measured on a 12-cells-per-wavelength ring-down, aliased by the check cadence into a zig-zag. Ripple 0.0946 → 0.0051, endpoint drift 1.9 % → 0.08 %; no pinned S-parameter moved.  Cost: an H-sized buffer, written once per check interval, filled in the same step (no new checkpoint key).
+* **DD-224** (2026-08-29) — the API grammar for the years ahead: `Analysis<Problem><Formulation>` (suffix = TD/FD formulation, method from the mesh's element type), general `AnalysisTD`/`AnalysisFD`, the excitation triad `Source*` (on the model) / `Waveform*` (`signals`) / core `Excitation`, reserved names for wakefield, PIC/tracking, statics, FD scattering, `fields`/`particles`/`optimize`.  **Phase A shipped** (2026-08-29): `Waveform` ABC + six classes, core `Excitation`, `SourceFieldIncident`/`SourcePlaneWave` with `add_source`/`Mesh.sources`, `AnalysisScatteringTD(waveform=)`, `ExcitationSpec` removed, the three monitor migrations.  **Phase B shipped** (2026-08-29, unreleased): `AnalysisTD` + `TDResult` on `_AnalysisBase` (`method=`/`solver=`), `AnalysisScatteringTD(AnalysisTD)` with its channel runs on the shared engine (bit-identical to the old code with the old pulse term; the DD's delay-aware estimate `max(delay + t_end)` lengthens TE/TM-fed runs and moves their stop step, in-band |ΔS| ≤ 5·10⁻⁴), `run(t_end=, name=)`, CW rules, per-mode port excitation buffers, `results.h5` `excitations` attribute + one sampled drive per excitation, `Project.result(name)`, `resume(project, name)`, schema 2.0 with `mesh.h5:element`, `source` grid planes at TF/SF corners, default TF/SF box past the absorber, tutorial 20, core pin 12.  **Phase C shipped** (2026-08-29, unreleased): `magnelio.fields.FieldState` (grid + Yee positions + physical units; `positions`/`at`/`cell_centred`/`plot`), `EigenmodeResult.field(n)`, `SourceFieldInitial` (`from_project`/`from_function`/`from_arrays`; `e(0)` on the edges and `h(+dt/2)` from the discrete Faraday law — ring-down 8.2375 GHz vs eigensolver 8.2312 GHz, +0.076 %; several initial fields superpose; no consistency gate — every auxiliary state starts quiescent, measured stable, and a SIBC ring-down reads Q_wall to −0.31 % of the perturbative value; field arrays in `mesh.h5` under `mesh/sources/<name>`), a concrete `SourceFieldIncident` taking any `field(x, y, z, t, drive)` on the TF/SF box (the plane wave spelled out reproduces `SourcePlaneWave` to ≤ 1e-12 of the peak), `AnalysisEigenmode` on `_AnalysisBase`; ports of either kind may sit next to an initial field (a waveguide port's transparent boundary needs only a quiet *exterior*, a discrete port is a stateless resistor — a first implementation gated both plus a −60 dB port-plane test, retired by measurement: a field *on* the plane biases a fitted Q by 0.4 % at −14 dB, 2 % at −6 dB, nothing below −26 dB), which is what lets a coupled resonator be rung down; how-to *Ring-down* on an iris-coupled cavity measures all three channels: `ω₀ε/σ` to −0.007 %, Q_wall against the perturbative value to −0.31 %, the sum rule to −0.01 %.  Phase D (`SourceFieldSurface` + `MonitorFieldSurface`, `SourceCurrentPath`) next.
 * **DD-223** (2026-08-29) — a `Difference` whose tools' kernel boxes lie inside a box-shaped base (the air body of every housing) is served from its operands throughout the build: box, face and edge planes, singular edges (tool convexity flipped inside the box, convex on its boundary), section contours (`_CsgSectionEngine`: the base's contours plus the tools' reversed) and its place in the effective PEC solid — the kernel cut (1.03 s on the 16 × 16 array) is never built.  16 × 16 7.8 → 6.4 s, posts 240 2.1 → 1.8 s, Lange 16 9.8 → 9.6 s; meshes differ in the last bits of the area arrays.
 Older decisions: `design-decisions.md`.
 
@@ -323,22 +327,21 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
 
 ## Open construction sites
 
-* **API blueprint (DD-224) — Phase C open.**  Phases A and B are on
-  `main` (waveforms, `Excitation`, sources on the model, `AnalysisTD`
-  + `TDResult`, scattering on the shared engine, store schema 2.0,
-  tutorial 20).  Phase C: `magnelio.fields.FieldState` (the public
-  field container with grid and Yee-offset convention),
-  `SourceFieldInitial` (eigenmode ring-down from a project; PEC/PMC
-  walls and non-dispersive materials only until CPML/ADE/SIBC states
-  get a consistent start), `SourceFieldIncident` beyond the plane
-  wave; also `AnalysisEigenmode` onto `_AnalysisBase`.  Known from
-  Phase B: the sphere-RCS tutorial sits within 1 % at the resonance
-  peak but 5–17 % on the flanks of the Mie curve at 20 cells/λ — a
-  1–2 % effective-size error of the conformal sphere (11 cells per
-  radius) on flanks with d ln σ/d ka ≈ 4; the pulse-length estimate of
-  TE/TM-fed scattering runs now follows `waveform.t_end`.  Blueprint:
-  internal record `investigations/api-blueprint/` (Phase B probes in
-  `phase-b/`).
+* **API blueprint (DD-224) — Phase D open.**  Phases A, B and C are
+  on `main` (waveforms, `Excitation`, sources on the model,
+  `AnalysisTD` + `TDResult`, scattering on the shared engine, store
+  schema 2.0, tutorial 20, `magnelio.fields.FieldState`,
+  `SourceFieldInitial`, the general `SourceFieldIncident`).  Phase D:
+  `SourceFieldSurface` + `MonitorFieldSurface` (Huygens coupling) and
+  `SourceCurrentPath`.  Known limits: an initial field starts every
+  auxiliary state (absorber, ADE, SIBC, port) quiescent rather than in
+  the steady state a mode would have built up around itself — measured
+  stable throughout, and worth −0.31 % on a SIBC wall Q against the
+  perturbative value; judging whether the loaded field is the mode one
+  meant is the user's.  A general incident field is evaluated on the
+  box faces every step (the plane wave's delay table is the cheap
+  path) and must solve Maxwell itself, or it leaks at the level of the
+  total field.  Blueprint: `investigations/api-blueprint/`.
 * **Symmetry planes — known limitations (DD-154/DD-155/DD-172).**
   Lumped ports/elements on a symmetry plane are corrected since
   DD-172 (full-model declaration, internal half-device scaling, exact

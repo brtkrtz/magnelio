@@ -175,3 +175,54 @@ class TestSparseHighContrastCavity:
             ).run()
         assert len(result.frequencies) < 6
         assert result.solver_info["n_modes_found"] < 6
+
+
+class TestSharedAnalysisArguments:
+    """``AnalysisEigenmode`` on the shared analysis base (DD-224 Phase C)."""
+
+    @pytest.fixture
+    def small_mesh(self):
+        grid = GridLines(
+            x=np.linspace(0, 10e-3, 6),
+            y=np.linspace(0, 6e-3, 4),
+            z=np.linspace(0, 14e-3, 8),
+        )
+        return Mesh.from_grid(grid)
+
+    def test_rejects_other_meshes_methods(self, small_mesh):
+        with pytest.raises(ValueError, match="tetrahedral"):
+            AnalysisEigenmode(mesh=small_mesh, method="fem")
+
+    def test_rejects_gpu_and_single_precision(self, small_mesh):
+        with pytest.raises(ValueError, match="CPU"):
+            AnalysisEigenmode(mesh=small_mesh, backend="cupy")
+        with pytest.raises(ValueError, match="double"):
+            AnalysisEigenmode(mesh=small_mesh, precision="single")
+
+    def test_rejects_unknown_solver_and_n_modes(self, small_mesh):
+        with pytest.raises(ValueError, match="solver must be"):
+            AnalysisEigenmode(mesh=small_mesh, solver="pardiso")
+        with pytest.raises(ValueError, match="n_modes"):
+            AnalysisEigenmode(mesh=small_mesh, n_modes=0)
+
+    def test_params_reach_the_project(self, small_mesh, tmp_path):
+        project = AnalysisEigenmode(
+            mesh=small_mesh,
+            n_modes=1,
+            verbose=False,
+            params={"gap_mm": 1.5},
+            project=tmp_path / "swept",
+        ).run()
+        assert project.params == {"gap_mm": 1.5}
+
+    def test_field_is_a_public_field_state(self, small_mesh):
+        from magnelio.fields import FieldState as PublicFieldState
+
+        result = AnalysisEigenmode(mesh=small_mesh, n_modes=1, verbose=False).run()
+        field = result.field(0)
+        assert isinstance(field, PublicFieldState)
+        assert field.grid is small_mesh.grid
+        # the raw mode is a grid quantity; the public one is V/m
+        assert np.abs(field.Ey).max() > 0.0
+        with pytest.raises(IndexError):
+            result.field(result.n_modes)

@@ -15,13 +15,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from magnelio.mesh.mesher import Mesh
+from magnelio.analysis._base import _AnalysisBase
 from magnelio.solver._eigenmode_3d import EigenmodeSolver3D
 from magnelio.solver.eigenmode_result import EigenmodeResult
 
+_SOLVERS = (None, "arpack-amg", "arpack-superlu")
+
 
 @dataclass
-class AnalysisEigenmode:
+class AnalysisEigenmode(_AnalysisBase):
     """High-level eigenmode analysis for 3D cavities.
 
     Parameters
@@ -47,6 +49,14 @@ class AnalysisEigenmode:
         ``RuntimeWarning`` either way.
     verbose : bool
         Print solver progress information.
+    project, geometry, params
+        Project-store hooks: ``project`` names a directory the model
+        and the result are written into, ``geometry`` the model to
+        store with it, ``params`` a free dict recorded alongside.
+    backend, precision, method
+        The arguments every analysis shares.  The eigenmode solve runs
+        in double precision on the CPU (ARPACK), so only the defaults
+        ``"auto"`` / ``None`` are accepted here.
     phase_advance_deg : float, dict or None
         Bloch phase advance [degrees] across the mesh's ``"Periodic"``
         face pair — the phase by which the field in one period leads
@@ -58,14 +68,26 @@ class AnalysisEigenmode:
         (SuperLU) solver.
     """
 
-    mesh: Mesh
     n_modes: int = 5
-    solver: str | None = None
     sigma: float | None = None
-    verbose: bool = True
-    project: object | None = None
-    geometry: object | None = None
     phase_advance_deg: float | dict[str, float] | None = None
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if self.backend not in ("auto", "numpy"):
+            raise ValueError(
+                f"backend={self.backend!r}: the eigenmode solve runs on the CPU "
+                f"(ARPACK); leave backend at 'auto'",
+            )
+        if self.precision not in (None, "double"):
+            raise ValueError(
+                f"precision={self.precision!r}: the eigenmode solve is double "
+                f"precision; leave precision at None",
+            )
+        if self.solver not in _SOLVERS:
+            raise ValueError(f"solver must be one of {_SOLVERS}; got {self.solver!r}")
+        if not isinstance(self.n_modes, int) or self.n_modes < 1:
+            raise ValueError(f"n_modes must be a positive integer; got {self.n_modes!r}")
 
     @property
     def boundary_conditions(self) -> dict[str, str]:
@@ -150,6 +172,7 @@ class AnalysisEigenmode:
             "analysis": "AnalysisEigenmode",
             "n_modes": int(self.n_modes),
             "boundary_conditions": dict(self.boundary_conditions),
+            "params": dict(self.params or {}),
         }
         if (path / "project.json").exists():
             store = ProjectStore(path)
