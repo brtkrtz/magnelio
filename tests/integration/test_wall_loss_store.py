@@ -39,7 +39,8 @@ _BCS = {
 def _monitor(**kw):
     return MonitorWallLoss(
         freqs=FREQS,
-        reference_plane=("z", 2e-3),
+        normal="z",
+        position=2e-3,
         sigma=SIGMA_CU,
         bc_faces=("ymin", "ymax"),
         name="walls",
@@ -129,7 +130,7 @@ def test_recipe_roundtrip_carries_the_spec():
     mon = _monitor(roughness=Hammerstad(1e-6), mu=1.0)
     back = _monitor_from_dict(_monitor_to_dict(mon))
     assert back.name == mon.name
-    assert back.reference_plane == mon.reference_plane
+    assert (back.normal, back.position) == (mon.normal, mon.position)
     assert back.sigma == mon.sigma
     assert back.mu == mon.mu
     assert back.bc_faces == mon.bc_faces
@@ -175,7 +176,7 @@ def test_legacy_project_without_the_group_loads(tmp_path):
 
     p = tmp_path / "no_wl"
     _analysis(
-        MonitorFluxTime(plane=("z", 0.015), name="flux"),
+        MonitorFluxTime(normal="z", position=0.015, name="flux"),
         project=p,
     ).run(excited=[("port1", 0)], energy_stop_db=None, total_time_steps=60)
 

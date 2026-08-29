@@ -174,7 +174,8 @@ wg_mesh = mio.Mesh.from_geometry(wg, mio.MeshControl(min_nodes_per_wavelength=18
 def run_waveguide(**wall_kwargs):
     monitor = monitors.MonitorWallLoss(
         freqs=np.linspace(f_lo, f_hi, 9),
-        reference_plane=("z", 5e-3),
+        normal="z",
+        position=5e-3,
         sigma=sigma_steel,
         bc_faces=("xmin", "xmax", "ymin", "ymax"),
     )

@@ -41,7 +41,6 @@ from magnelio.io._schema import SCHEMA_VERSION as RECIPE_SCHEMA_VERSION
 from magnelio.ports._lumped import PortSpecLumped
 from magnelio.ports._modal.factory import (
     BoxFace,
-    ExcitationSpec,
     ModeType,
     PortSpecCoax,
     PortSpecMultiConductor,
@@ -104,30 +103,117 @@ def _corners_from_json(v) -> tuple:
 
 
 # ═════════════════════════════════════════════════════════════════════
-# Excitation
+# Waveforms (DD-224: the class name is the type tag)
 # ═════════════════════════════════════════════════════════════════════
 
 
-def _excitation_to_dict(exc: ExcitationSpec | None) -> dict | None:
-    if exc is None:
+def _waveform_to_dict(wf) -> dict | None:
+    """Serialise a waveform by class-name tag and init fields.
+
+    A ``WaveformFunction`` carries a Python callable the store cannot
+    hold; its bandwidth is written so the recipe stays complete, and
+    :func:`_waveform_from_dict` refuses to rebuild it.
+    """
+    from magnelio.signals.waveforms import (  # noqa: PLC0415
+        WaveformFunction,
+        WaveformGaussian,
+        WaveformGaussianModulated,
+        WaveformSine,
+        WaveformStep,
+        WaveformTable,
+    )
+
+    if wf is None:
         return None
-    return {
-        "f_min": float(exc.f_min),
-        "f_max": float(exc.f_max),
-        "mode_index": int(exc.mode_index),
-        "waveform": exc.waveform,
-    }
+    if isinstance(wf, WaveformGaussian):
+        return {"type": "WaveformGaussian", "f_max": float(wf.f_max)}
+    if isinstance(wf, WaveformGaussianModulated):
+        return {
+            "type": "WaveformGaussianModulated",
+            "f_min": float(wf.f_min),
+            "f_max": float(wf.f_max),
+        }
+    if isinstance(wf, WaveformSine):
+        return {
+            "type": "WaveformSine",
+            "f": float(wf.f),
+            "phase": float(wf.phase),
+            "rise_time": None if wf.rise_time is None else float(wf.rise_time),
+        }
+    if isinstance(wf, WaveformStep):
+        return {
+            "type": "WaveformStep",
+            "rise_time": float(wf.rise_time),
+            "hold": None if wf.hold is None else float(wf.hold),
+            "fall_time": None if wf.fall_time is None else float(wf.fall_time),
+        }
+    if isinstance(wf, WaveformTable):
+        return {
+            "type": "WaveformTable",
+            "t": [float(v) for v in wf.t],
+            "values": [float(v) for v in wf.values],
+            "f_max": float(wf.f_max),
+            "f_min": float(wf.f_min),
+            "f_center": None if wf.f_center is None else float(wf.f_center),
+        }
+    if isinstance(wf, WaveformFunction):
+        return {
+            "type": "WaveformFunction",
+            "f_max": float(wf.f_max),
+            "f_min": float(wf.f_min),
+            "f_center": None if wf.f_center is None else float(wf.f_center),
+            "t_end": None if math.isinf(wf.t_end) else float(wf.t_end),
+        }
+    raise NotImplementedError(
+        f"resume cannot serialise waveform type {type(wf).__name__}",
+    )
 
 
-def _excitation_from_dict(d: dict | None) -> ExcitationSpec | None:
+def _waveform_from_dict(d: dict | None):
+    """Inverse of :func:`_waveform_to_dict`."""
+    from magnelio.signals.waveforms import (  # noqa: PLC0415
+        WaveformGaussian,
+        WaveformGaussianModulated,
+        WaveformSine,
+        WaveformStep,
+        WaveformTable,
+    )
+
     if d is None:
         return None
-    return ExcitationSpec(
-        f_min=float(d["f_min"]),
-        f_max=float(d["f_max"]),
-        mode_index=int(d["mode_index"]),
-        waveform=d["waveform"],
-    )
+    t = d["type"]
+    if t == "WaveformGaussian":
+        return WaveformGaussian(f_max=float(d["f_max"]))
+    if t == "WaveformGaussianModulated":
+        return WaveformGaussianModulated(f_min=float(d["f_min"]), f_max=float(d["f_max"]))
+    if t == "WaveformSine":
+        return WaveformSine(
+            f=float(d["f"]),
+            phase=float(d.get("phase", 0.0)),
+            rise_time=None if d.get("rise_time") is None else float(d["rise_time"]),
+        )
+    if t == "WaveformStep":
+        return WaveformStep(
+            rise_time=float(d["rise_time"]),
+            hold=None if d.get("hold") is None else float(d["hold"]),
+            fall_time=None if d.get("fall_time") is None else float(d["fall_time"]),
+        )
+    if t == "WaveformTable":
+        return WaveformTable(
+            t=[float(v) for v in d["t"]],
+            values=[float(v) for v in d["values"]],
+            f_max=float(d["f_max"]),
+            f_min=float(d.get("f_min", 0.0)),
+            f_center=None if d.get("f_center") is None else float(d["f_center"]),
+        )
+    if t == "WaveformFunction":
+        raise NotImplementedError(
+            "this run was driven by a WaveformFunction, whose Python callable the "
+            "project store cannot hold — it cannot be resumed.  Re-run with a "
+            "storable waveform (WaveformGaussian, WaveformGaussianModulated, "
+            "WaveformSine, WaveformStep or WaveformTable) to make it resumable.",
+        )
+    raise TypeError(f"unknown waveform type {t!r} in recipe")
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -158,7 +244,6 @@ def _spec_to_dict(spec) -> dict:
         "name": spec.name,
         "plane": spec.plane.value,
         "n_modes": int(spec.n_modes),
-        "excitation": _excitation_to_dict(spec.excitation),
     }
     if isinstance(spec, PortSpecCoax):
         d.update(
@@ -225,7 +310,6 @@ def _spec_from_dict(d: dict):
             element=element,
         )
     plane = BoxFace(d["plane"])
-    exc = _excitation_from_dict(d["excitation"])
     if t == "PortSpecCoax":
         return PortSpecCoax(
             name=d["name"],
@@ -235,7 +319,6 @@ def _spec_from_dict(d: dict):
             epsilon_r=float(d["epsilon_r"]),
             center=_to_tuple(d["center"]),
             n_modes=int(d["n_modes"]),
-            excitation=exc,
         )
     if t == "PortSpecRectWG":
         return PortSpecRectWG(
@@ -246,7 +329,6 @@ def _spec_from_dict(d: dict):
             epsilon_r=float(d["epsilon_r"]),
             center=_to_tuple(d["center"]),
             n_modes=int(d["n_modes"]),
-            excitation=exc,
         )
     if t == "PortSpecNumerical":
         return PortSpecNumerical(
@@ -255,7 +337,6 @@ def _spec_from_dict(d: dict):
             n_modes=int(d["n_modes"]),
             epsilon_r=float(d["epsilon_r"]),
             mode_type=None if d["mode_type"] is None else ModeType(d["mode_type"]),
-            excitation=exc,
             window=_to_tuple(d["window"]),
         )
     if t == "PortSpecMultiConductor":
@@ -265,7 +346,6 @@ def _spec_from_dict(d: dict):
             conductors=None,
             epsilon_r=None if d["epsilon_r"] is None else float(d["epsilon_r"]),
             n_modes=int(d["n_modes"]),
-            excitation=exc,
             window=_to_tuple(d["window"]),
         )
     raise TypeError(f"unknown port spec type {t!r} in recipe")
@@ -359,7 +439,8 @@ def _monitor_to_dict(mon) -> dict:
     if isinstance(mon, MonitorFluxTime):
         return {
             "type": "MonitorFluxTime",
-            "plane": [mon.plane[0], float(mon.plane[1])],
+            "normal": mon.normal,
+            "position": float(mon.position),
             "name": mon.name,
         }
     if isinstance(mon, MonitorFieldFrequency):
@@ -379,18 +460,19 @@ def _monitor_to_dict(mon) -> dict:
         return {
             "type": "MonitorWallLoss",
             "freqs": [float(fr) for fr in mon.freqs],
-            "reference_plane": [mon.reference_plane[0], _num_to_json(mon.reference_plane[1])],
+            "normal": mon.normal,
+            "position": _num_to_json(mon.position),
             "sigma": None if mon.sigma is None else float(mon.sigma),
             "mu": float(mon.mu),
             "roughness": (None if mon.roughness is None else _roughness_to_dict(mon.roughness)),
             "bc_faces": list(mon.bc_faces),
             "name": mon.name,
         }
-    from magnelio.monitors.far_field import MonitorFarField  # noqa: PLC0415
+    from magnelio.monitors.far_field import MonitorFarFieldFrequency  # noqa: PLC0415
 
-    if isinstance(mon, MonitorFarField):
+    if isinstance(mon, MonitorFarFieldFrequency):
         return {
-            "type": "MonitorFarField",
+            "type": "MonitorFarFieldFrequency",
             "freqs": [float(fr) for fr in mon.freqs],
             "margin_cells": int(mon.margin_cells),
             "name": mon.name,
@@ -399,10 +481,18 @@ def _monitor_to_dict(mon) -> dict:
     raise NotImplementedError(
         f"resume cannot serialise monitor type {type(mon).__name__}; "
         f"only MonitorFieldTime, MonitorFluxTime, MonitorFieldFrequency, "
-        f"MonitorWallLoss and MonitorFarField are streamed to the project "
+        f"MonitorWallLoss and MonitorFarFieldFrequency are streamed to the project "
         f"store.  Run without project= to keep it in RAM, or drop it for "
         f"the streamed run.",
     )
+
+
+def _plane_from_recipe(d: dict, legacy_key: str) -> tuple[str, float]:
+    """``normal``/``position`` of a monitor recipe, or the pre-DD-224 pair."""
+    if "normal" in d:
+        return str(d["normal"]), float(_num_from_json(d["position"]))
+    pair = d[legacy_key]
+    return str(pair[0]), float(_num_from_json(pair[1]))
 
 
 def _monitor_from_dict(d: dict):
@@ -425,10 +515,9 @@ def _monitor_from_dict(d: dict):
             name=d["name"],
         )
     if d["type"] == "MonitorFluxTime":
-        return MonitorFluxTime(
-            plane=(str(d["plane"][0]), float(d["plane"][1])),
-            name=d["name"],
-        )
+        # Recipes written before DD-224 carry the plane as a pair.
+        normal, position = _plane_from_recipe(d, "plane")
+        return MonitorFluxTime(normal=normal, position=position, name=d["name"])
     if d["type"] == "MonitorFieldFrequency":
         return MonitorFieldFrequency(
             corners=_corners_from_json(d["corners"]),
@@ -440,19 +529,23 @@ def _monitor_from_dict(d: dict):
         from magnelio.io.project import _roughness_from_dict  # noqa: PLC0415
         from magnelio.monitors.wall_loss import MonitorWallLoss  # noqa: PLC0415
 
+        normal, position = _plane_from_recipe(d, "reference_plane")
         return MonitorWallLoss(
             freqs=[float(fr) for fr in d["freqs"]],  # __post_init__ asarrays
-            reference_plane=(d["reference_plane"][0], _num_from_json(d["reference_plane"][1])),
+            normal=normal,
+            position=position,
             sigma=None if d["sigma"] is None else float(d["sigma"]),
             mu=float(d["mu"]),
             roughness=_roughness_from_dict(d.get("roughness")),
             bc_faces=tuple(d["bc_faces"]),
             name=d["name"],
         )
-    if d["type"] == "MonitorFarField":
-        from magnelio.monitors.far_field import MonitorFarField  # noqa: PLC0415
+    # "MonitorFarField" is the pre-DD-224 tag of the same monitor; it is
+    # read until the schema bump retires it.
+    if d["type"] in ("MonitorFarFieldFrequency", "MonitorFarField"):
+        from magnelio.monitors.far_field import MonitorFarFieldFrequency  # noqa: PLC0415
 
-        return MonitorFarField(
+        return MonitorFarFieldFrequency(
             freqs=[float(fr) for fr in d["freqs"]],
             margin_cells=int(d.get("margin_cells", 3)),
             name=d["name"],
@@ -492,7 +585,7 @@ def build_scattering_recipe(analysis) -> dict:
         "f_max": float(analysis.f_max),
         "f_min": float(analysis.f_min),
         "n_freq": int(analysis.n_freq),
-        "excitation": _excitation_to_dict(analysis.excitation),
+        "waveform": _waveform_to_dict(analysis.waveform),
         "port_model": analysis.port_model,
         # SIBC wall model (WP-D5): the switch + overrides suffice — the
         # spec itself (surfaces, fits) is re-derived from the stored
@@ -521,7 +614,7 @@ def _serialisable_monitors(monitors) -> list:
     abort).  The cost is that a new persisted monitor kind has to be
     added here as well, or it is silently dropped from the rebuilt run.
     """
-    from magnelio.monitors.far_field import MonitorFarField  # noqa: PLC0415
+    from magnelio.monitors.far_field import MonitorFarFieldFrequency  # noqa: PLC0415
     from magnelio.monitors.field_frequency import (  # noqa: PLC0415
         MonitorFieldFrequency,
     )
@@ -539,10 +632,33 @@ def _serialisable_monitors(monitors) -> list:
                 MonitorFluxTime,
                 MonitorFieldFrequency,
                 MonitorWallLoss,
-                MonitorFarField,
+                MonitorFarFieldFrequency,
             ),
         )
     ]
+
+
+def _waveform_from_recipe(recipe: dict):
+    """The run's explicit waveform, or ``None`` for the per-mode default.
+
+    Recipes written before DD-224 carry an ``"excitation"`` dict
+    (``f_min``, ``f_max``, ``waveform`` kind) instead of ``"waveform"``;
+    it is mapped onto the class it stood for, so a resume drives the
+    same pulse.  Read until the schema bump retires it.
+    """
+    if "waveform" in recipe:
+        return _waveform_from_dict(recipe["waveform"])
+    legacy = recipe.get("excitation")
+    if legacy is None:
+        return None
+    from magnelio.signals.waveforms import (  # noqa: PLC0415
+        WaveformGaussian,
+        WaveformGaussianModulated,
+    )
+
+    if legacy["waveform"] == "gaussian":
+        return WaveformGaussian(f_max=float(legacy["f_max"]))
+    return WaveformGaussianModulated(f_min=float(legacy["f_min"]), f_max=float(legacy["f_max"]))
 
 
 def recipe_kwargs(recipe: dict) -> dict:
@@ -558,7 +674,7 @@ def recipe_kwargs(recipe: dict) -> dict:
         "f_max": float(recipe["f_max"]),
         "f_min": float(recipe["f_min"]),
         "n_freq": int(recipe["n_freq"]),
-        "excitation": _excitation_from_dict(recipe["excitation"]),
+        "waveform": _waveform_from_recipe(recipe),
         "port_model": recipe["port_model"],
         # Precision was added in a later WP (DD-094); a recipe predating it
         # ran in the old double-only default, so a missing key means double.

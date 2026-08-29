@@ -49,7 +49,7 @@ class SurfacePatchSet:
     """Sampled tangential fields on one part of a Huygens surface.
 
     All arrays share the leading patch count ``n``.  Produced by
-    ``MonitorFarField`` (one set per box face) or assembled directly
+    ``MonitorFarFieldFrequency`` (one set per box face) or assembled directly
     from analytic fields in tests.
 
     Attributes

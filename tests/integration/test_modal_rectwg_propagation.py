@@ -36,12 +36,12 @@ from magnelio.mesh.grid import GridLines
 from magnelio.mesh.mesher import Mesh
 from magnelio.ports._modal import (
     BoxFace,
-    ExcitationSpec,
     PortSpecRectWG,
     build_modal_port,
 )
 from magnelio.ports.recorder import PortSignalRecorder
 from magnelio.post import compute_s_parameters
+from magnelio.signals import Waveform, WaveformGaussianModulated
 from magnelio.signals.signal_1d import Signal1D
 from magnelio.signals.waveforms import modulated_gaussian
 from magnelio.solver.fit_td import FITTimeDomainSolver
@@ -82,7 +82,7 @@ def _build_ports(
     dt: float,
     f_calc: float,
     n_modes: int,
-    excitation: ExcitationSpec,
+    waveform: Waveform,
 ):
     spec_src = PortSpecRectWG(
         name="port1",
@@ -90,7 +90,6 @@ def _build_ports(
         width_a=WR90_A,
         height_b=WR90_B,
         n_modes=n_modes,
-        excitation=excitation,
     )
     spec_load = PortSpecRectWG(
         name="port2",
@@ -100,6 +99,7 @@ def _build_ports(
         n_modes=n_modes,
     )
     op_src = build_modal_port(spec_src, mesh, m_eps, m_mu, dt=dt, f_calc=f_calc)
+    op_src.set_excitation(0, waveform)
     op_load = build_modal_port(spec_load, mesh, m_eps, m_mu, dt=dt, f_calc=f_calc)
     return op_src, op_load
 
@@ -117,7 +117,7 @@ def test_rectwg_te10_wave_arrival():
     f_max = 12.4e9
     f_calc = 10.0e9
 
-    excitation = ExcitationSpec(f_min=f_min, f_max=f_max, mode_index=0)
+    waveform = WaveformGaussianModulated(f_min=f_min, f_max=f_max)
     op_src, op_load = _build_ports(
         mesh,
         m_eps,
@@ -125,7 +125,7 @@ def test_rectwg_te10_wave_arrival():
         dt,
         f_calc,
         n_modes=1,
-        excitation=excitation,
+        waveform=waveform,
     )
     rec = PortSignalRecorder(dt=dt, ports=[op_src, op_load])
 
@@ -231,7 +231,7 @@ def test_rectwg_te10_no_higher_mode_leakage():
     f_max = 12.4e9
     f_calc = 10.0e9
 
-    excitation = ExcitationSpec(f_min=f_min, f_max=f_max, mode_index=0)
+    waveform = WaveformGaussianModulated(f_min=f_min, f_max=f_max)
     op_src, op_load = _build_ports(
         mesh,
         m_eps,
@@ -239,7 +239,7 @@ def test_rectwg_te10_no_higher_mode_leakage():
         dt,
         f_calc,
         n_modes=3,
-        excitation=excitation,
+        waveform=waveform,
     )
     rec = PortSignalRecorder(dt=dt, ports=[op_src, op_load])
 
@@ -347,7 +347,7 @@ def test_rectwg_te10_te20_propagating_no_leakage():
     f_max = 14.5e9
     f_calc = 14.0e9
 
-    excitation = ExcitationSpec(f_min=f_min, f_max=f_max, mode_index=0)
+    waveform = WaveformGaussianModulated(f_min=f_min, f_max=f_max)
     # n_modes=2 (TE10 + TE20).  The original Phase-1 test asked for 5
     # modes to keep the analytical solver in a TE/TM mixed regime; with
     # the DD-048 path-(b) numerical solver, requesting TM on a coarse
@@ -360,7 +360,7 @@ def test_rectwg_te10_te20_propagating_no_leakage():
         dt,
         f_calc,
         n_modes=2,
-        excitation=excitation,
+        waveform=waveform,
     )
 
     # Sanity: physical TE20 (mode index 1 at both ports) is propagating

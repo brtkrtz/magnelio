@@ -69,7 +69,8 @@ def _tem_analysis(project=None):
     )
     analysis.monitors = (
         MonitorFluxTime(
-            plane=("z", 0.0),
+            normal="z",
+            position=0.0,
             name="flux_z",
         ),
     )

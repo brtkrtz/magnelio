@@ -140,7 +140,8 @@ class TestSpecBuild:
     def test_wire_wall_monitors_sets_spec(self):
         mon = MonitorWallLoss(
             freqs=np.linspace(2e9, 10e9, 5),
-            reference_plane=("z", 2e-3),
+            normal="z",
+            position=2e-3,
             sigma=SIG,
             bc_faces=("ymin", "ymax"),
         )
@@ -155,7 +156,8 @@ class TestSpecBuild:
     def test_perturbative_leaves_monitors_untouched(self):
         mon = MonitorWallLoss(
             freqs=np.linspace(2e9, 10e9, 5),
-            reference_plane=("z", 2e-3),
+            normal="z",
+            position=2e-3,
             sigma=SIG,
             bc_faces=("ymin", "ymax"),
         )
@@ -223,7 +225,8 @@ class TestMonitorSIBCAccounting:
         freqs = np.array([2e9, 5e9, 1e10])
         mon = MonitorWallLoss(
             freqs=freqs,
-            reference_plane=("z", 2e-3),
+            normal="z",
+            position=2e-3,
             sibc=spec,
         )
         mon.attach(mesh)
@@ -253,7 +256,8 @@ class TestMonitorSIBCAccounting:
         spec, mesh = self._spec_and_mesh()
         mon = MonitorWallLoss(
             freqs=np.array([2e9, 1e10]),
-            reference_plane=("z", 2e-3),
+            normal="z",
+            position=2e-3,
             sibc=spec,
         )
         mon.attach(mesh)
@@ -277,7 +281,8 @@ class TestMonitorSIBCAccounting:
         broken = SIBCSpec(surfaces=spec.surfaces, fits={"ymin": spec.fits["ymin"]})
         mon = MonitorWallLoss(
             freqs=np.array([2e9]),
-            reference_plane=("z", 2e-3),
+            normal="z",
+            position=2e-3,
             sibc=broken,
         )
         with pytest.raises(ValueError, match="no impedance fit"):

@@ -128,7 +128,7 @@ def test_plate_line_alpha_with_roughness():
         y=np.linspace(0, gap_b, 6),
         z=np.linspace(0, length, 61),
     )
-    common = dict(reference_plane=("z", 2e-3), sigma=SIGMA_CU, bc_faces=("ymin", "ymax"))
+    common = dict(normal="z", position=2e-3, sigma=SIGMA_CU, bc_faces=("ymin", "ymax"))
     mon_smooth = MonitorWallLoss(freqs=freqs, name="smooth", **common)
     mon_rough = MonitorWallLoss(freqs=freqs, name="rough", roughness=rough, **common)
     ana = AnalysisScatteringTD(

@@ -96,7 +96,7 @@ class TestOpenEnd:
     def radiating(self):
         model = _tube_model(length=25e-3, box_x=60e-3)
         mesh = _mesh(model)
-        ff = monitors.MonitorFarField(freqs=[10e9], name="ff")
+        ff = monitors.MonitorFarFieldFrequency(freqs=[10e9], name="ff")
         analysis = mio.AnalysisScatteringTD(mesh=mesh, f_min=8.5e9, monitors=(ff,), verbose=False)
         result = analysis.run(f_axis=F_AXIS, excited=["feed"])
         return result, ff

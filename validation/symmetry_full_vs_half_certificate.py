@@ -105,7 +105,7 @@ def run_case(symmetric: bool) -> dict:
         mio.MeshControl(min_nodes_per_wavelength=20),
         f_max=F_MAX,
     )
-    flux = MonitorFluxTime(plane=("z", L / 4), name="flux_feed")
+    flux = MonitorFluxTime(normal="z", position=L / 4, name="flux_feed")
     # 1-W field probe beside the strip edge, inside the meshed half of
     # both runs (the point snaps to slightly different cells on the two
     # grids — a discretisation-level comparison).

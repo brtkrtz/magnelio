@@ -1,15 +1,29 @@
-"""Signal components — time series and excitation waveforms."""
+"""Signals — excitation waveforms and sampled time series.
+
+A :class:`Waveform` is the time function an :class:`~magnelio.Excitation`
+binds to a port or source (unit peak, known bandwidth and duration);
+:class:`Signal1D` is a *sampled* series on the result side, with its
+spectrum.
+"""
 
 from magnelio.signals.signal_1d import Signal1D
 from magnelio.signals.waveforms import (
-    gaussian,
-    modulated_gaussian,
-    waveform_for_mode,
+    Waveform,
+    WaveformFunction,
+    WaveformGaussian,
+    WaveformGaussianModulated,
+    WaveformSine,
+    WaveformStep,
+    WaveformTable,
 )
 
 __all__ = [
     "Signal1D",
-    "gaussian",
-    "modulated_gaussian",
-    "waveform_for_mode",
+    "Waveform",
+    "WaveformGaussian",
+    "WaveformGaussianModulated",
+    "WaveformSine",
+    "WaveformStep",
+    "WaveformTable",
+    "WaveformFunction",
 ]

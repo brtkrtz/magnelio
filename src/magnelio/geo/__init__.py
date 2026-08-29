@@ -194,6 +194,7 @@ class GeometryModel:
         self.allow_overlaps: bool = allow_overlaps
         self.ports: list = []
         self.elements: list = []
+        self.sources: list = []
 
     def add(self, shape) -> "GeometryModel":
         """Add a CSG shape (or list of shapes) to the model.
@@ -271,10 +272,7 @@ class GeometryModel:
                 f"ports carry solver detail the model must not depend "
                 f"on — pass those to the analysis via ports=."
             )
-        if any(p.name == port.name for p in self.ports) or any(
-            e.name == port.name for e in self.elements
-        ):
-            raise ValueError(f"duplicate port name {port.name!r} on this model")
+        self._check_unique_name(port.name, "port")
         self.ports.append(port)
         return self
 
@@ -306,12 +304,47 @@ class GeometryModel:
                 f"add_element() takes a magnelio.circuit.LumpedElement, "
                 f"got {type(element).__name__}."
             )
-        if any(p.name == element.name for p in self.ports) or any(
-            e.name == element.name for e in self.elements
-        ):
-            raise ValueError(f"duplicate element name {element.name!r} on this model")
+        self._check_unique_name(element.name, "element")
         self.elements.append(element)
         return self
+
+    def add_source(self, source) -> "GeometryModel":
+        """Declare a field source on the model, before meshing.
+
+        Accepts a :class:`magnelio.sources.SourceFieldIncident` (such
+        as :class:`~magnelio.sources.SourcePlaneWave`).  Like ports and
+        elements, sources travel with the mesh to the analysis, and an
+        :class:`~magnelio.Excitation` drives one by name — so ports,
+        elements and sources share one name namespace.
+
+        Parameters
+        ----------
+        source : magnelio.sources.Source
+            Declarative source; its name must be unique among the
+            ports, elements and sources of this model.
+
+        Returns
+        -------
+        GeometryModel
+            ``self``, for chaining.
+        """
+        from magnelio.sources.base import Source  # noqa: PLC0415
+
+        if not isinstance(source, Source):
+            raise TypeError(
+                f"add_source() takes a magnelio.sources source (SourcePlaneWave, ...), "
+                f"got {type(source).__name__}."
+            )
+        self._check_unique_name(source.name, "source")
+        self.sources.append(source)
+        return self
+
+    def _check_unique_name(self, name: str, kind: str) -> None:
+        """Ports, elements and sources share one name namespace (DD-123, DD-224)."""
+        taken = [p.name for p in self.ports] + [e.name for e in self.elements]
+        taken += [s.name for s in self.sources]
+        if name in taken:
+            raise ValueError(f"duplicate {kind} name {name!r} on this model")
 
     def bounding_box(self) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
         """Return the axis-aligned bounding box of all shapes combined.

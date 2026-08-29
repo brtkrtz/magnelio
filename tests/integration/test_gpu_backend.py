@@ -462,7 +462,8 @@ class TestWallLossMonitorGPU:
         def run(backend):
             mon = MonitorWallLoss(
                 freqs=freqs,
-                reference_plane=("z", 2e-3),
+                normal="z",
+                position=2e-3,
                 sigma=5.8e7,
                 bc_faces=("ymin", "ymax"),
             )

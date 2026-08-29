@@ -1,5 +1,5 @@
 """
-Integration test: PlaneWaveSource TF/SF injection smoke test.
+Integration test: SourcePlaneWave TF/SF injection smoke test.
 
 Runs a small FIT-TD simulation with a +z-propagating, x-polarised Gaussian
 pulse injected via the TF/SF formulation.  After ~25 steps the wave front
@@ -29,9 +29,10 @@ def _build_mesh(Nx=8, Ny=8, Nz=16):
 def test_plane_wave_smoke():
     """TF/SF: Ex is non-zero inside TF box after sufficient steps."""
     from magnelio.boundaries.pec import PECBoundary
+    from magnelio.signals import WaveformGaussian
     from magnelio.solver.fit_td import FITTimeDomainSolver
     from magnelio.solver.stability import courant_dt
-    from magnelio.sources.plane_wave import PlaneWaveSource
+    from magnelio.sources import SourcePlaneWave
 
     mesh, grid = _build_mesh(Nx=8, Ny=8, Nz=16)
     dt = courant_dt(grid, accuracy="normal")
@@ -41,13 +42,13 @@ def test_plane_wave_smoke():
     tf_box = ((x[2], y[2], z[2]), (x[6], y[6], z[14]))
 
     f_max = 20e9
-    src = PlaneWaveSource(
+    src = SourcePlaneWave(
+        name="pw",
         direction=(0.0, 0.0, 1.0),
         polarization=(1.0, 0.0, 0.0),
         corners=tf_box,
-        f_max=f_max,
-        waveform="gaussian",
     )
+    src.set_excitation(WaveformGaussian(f_max=f_max))
 
     bcs = {face: PECBoundary(face) for face in ("xmin", "xmax", "ymin", "ymax", "zmin", "zmax")}
 
@@ -90,9 +91,10 @@ def _tfsf_amplitude_and_leakage(direction, polarization, n=24, inset=6):
     from magnelio.boundaries.pec import PECBoundary
     from magnelio.mesh.grid import GridLines
     from magnelio.mesh.mesher import Mesh
+    from magnelio.signals import WaveformGaussian
     from magnelio.solver.fit_td import FITTimeDomainSolver
     from magnelio.solver.stability import courant_dt
-    from magnelio.sources.plane_wave import PlaneWaveSource
+    from magnelio.sources import SourcePlaneWave
 
     L = 24e-3
     # The incident field is retarded from the origin, so the domain is laid
@@ -107,16 +109,16 @@ def _tfsf_amplitude_and_leakage(direction, polarization, n=24, inset=6):
     dt = courant_dt(grid, accuracy="normal")
 
     f_max = 6e9  # ~30 cells per wavelength: dispersion well below the leakage floor
-    src = PlaneWaveSource(
+    src = SourcePlaneWave(
+        name="pw",
         direction=direction,
         polarization=polarization,
         corners=(
             tuple(ax[inset] for ax in axes),
             tuple(ax[n - inset] for ax in axes),
         ),
-        f_max=f_max,
-        waveform="gaussian",
     )
+    src.set_excitation(WaveformGaussian(f_max=f_max))
     bcs = {f: PECBoundary(f) for f in ("xmin", "xmax", "ymin", "ymax", "zmin", "zmax")}
 
     # Stop with the pulse peak at the centre of the box, which it reaches at

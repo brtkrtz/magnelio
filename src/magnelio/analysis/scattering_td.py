@@ -18,9 +18,9 @@ DTBC-terminated and band-pipeline channels are exact per frequency and
 do not depend on it), and caps the default excitation waveform, which
 is derived per excited mode: DC-inclusive Gaussian for TEM/lumped,
 band-limited modulated Gaussian over ``[max(f_cutoff, f_min), f_max]``
-for TE/TM.  An explicit ``excitation=ExcitationSpec(...)`` stays
-available as an override, as does ``run(f_axis=...)`` for a custom
-frequency axis.
+for TE/TM.  An explicit ``waveform=`` (any
+:class:`magnelio.signals.Waveform`) stays available as an override, as
+does ``run(f_axis=...)`` for a custom frequency axis.
 
 Port pipeline dispatch.  The default is the **modal
 pipeline** (``port_model="modal"``): exact DTBC on certified uniform
@@ -84,11 +84,10 @@ Supported port specs
 
 Note
 ----
-The per-spec ``excitation`` field on modal specs is ignored —
-``AnalysisScatteringTD`` uses its own ``excitation`` argument and
-applies it via ``set_excitation`` per excited pair.  Component-level
-scripts that build operators directly from specs continue to honour
-``spec.excitation``.
+The analysis drives the excited channel through the operator's
+``set_excitation`` per excited pair, with its own ``waveform`` argument
+(or the per-mode default).  Component-level scripts that build
+operators directly from specs bind a waveform the same way.
 """
 
 # Design: DD-063/DD-064 (port pipeline dispatch, modal default for QTEM lines),
@@ -121,7 +120,6 @@ from magnelio.mesh.mesher import Mesh
 from magnelio.ports._lumped import PortSpecLumped, build_lumped_element, build_lumped_port
 from magnelio.ports._modal.band_dtbc import band_source_spectrum
 from magnelio.ports._modal.factory import (
-    ExcitationSpec,
     PortSpecCoax,
     PortSpecMultiConductor,
     PortSpecNumerical,
@@ -144,6 +142,11 @@ from magnelio.post.modal_sparameters import (
 )
 from magnelio.post.sparameter_result import SParameterResult
 from magnelio.signals.signal_1d import Signal1D
+from magnelio.signals.waveforms import (
+    Waveform,
+    WaveformGaussian,
+    WaveformGaussianModulated,
+)
 from magnelio.solver.fit_td import FITTimeDomainSolver
 from magnelio.solver.stability import (
     spectral_dt,
@@ -768,17 +771,19 @@ class AnalysisScatteringTD:
         (see ``_band_setup``).
     n_freq : int, default 201
         Number of points on the default frequency axis.
-    excitation : ExcitationSpec, optional
+    waveform : magnelio.signals.Waveform, optional
         Source waveform applied to every excited ``(port, mode)``.
         Default (``None``): derived *per excited mode* — the lower band
         edge is ``max(f_cutoff, f_min)`` with ``f_cutoff`` the excited
         mode's cut-off frequency (zero for TEM and lumped ports).  A
-        zero lower edge yields a DC-inclusive ``gaussian``; a positive
-        one a band-limited ``modulated_gaussian`` over
-        ``[max(f_cutoff, f_min), f_max]``, which keeps the pulse energy
-        of TE/TM excitations above cut-off.  Raises at run time when
-        ``f_max`` does not exceed the excited mode's cut-off.
-        Per-spec ``excitation`` fields are ignored.
+        zero lower edge yields a DC-inclusive
+        :class:`~magnelio.signals.WaveformGaussian`; a positive one a
+        band-limited :class:`~magnelio.signals.WaveformGaussianModulated`
+        over ``[max(f_cutoff, f_min), f_max]``, which keeps the pulse
+        energy of TE/TM excitations above cut-off.  Raises at run time
+        when ``f_max`` does not exceed the excited mode's cut-off.  An
+        explicit waveform whose ``f_max`` exceeds the analysis band
+        warns.
     monitors : iterable, default ()
         Field monitors forwarded to every ``FITTimeDomainSolver`` run.
     verbose : bool, default True
@@ -903,7 +908,7 @@ class AnalysisScatteringTD:
     elements: Sequence | None = None
     f_min: float = 0.0
     n_freq: int = 201
-    excitation: ExcitationSpec | None = None
+    waveform: Waveform | None = None
     monitors: tuple = field(default_factory=tuple)
     verbose: bool = True
     port_model: str = "modal"
@@ -973,6 +978,21 @@ class AnalysisScatteringTD:
                 UserWarning,
                 stacklevel=3,
             )
+        if self.waveform is not None:
+            if not isinstance(self.waveform, Waveform):
+                raise TypeError(
+                    f"waveform must be a magnelio.signals.Waveform; "
+                    f"got {type(self.waveform).__name__}"
+                )
+            if self.waveform.f_max > self.f_max:
+                warnings.warn(
+                    f"waveform f_max = {self.waveform.f_max:.4g} Hz exceeds the "
+                    f"analysis band f_max = {self.f_max:.4g} Hz: the pulse "
+                    f"carries energy the grid and the frequency axis do not "
+                    f"resolve.",
+                    UserWarning,
+                    stacklevel=3,
+                )
         if not 0.0 <= self.f_min < self.f_max:
             raise ValueError(
                 f"f_min must satisfy 0 <= f_min < f_max; "
@@ -1143,8 +1163,14 @@ class AnalysisScatteringTD:
         checkpoint_interval: int | None = None,
         port_signal_stop_db: float | str | None = "auto",
         max_time_steps: int | str | None = "auto",
+        excitations=None,
     ) -> ScatteringTDResult:
         """Run one FIT-TD simulation per excited (port, mode) and merge.
+
+        ``excitations=`` is not accepted here: a scattering analysis
+        excites *channels*, one independent run each (``excited``);
+        simultaneous excitations belong to the general time-domain
+        analysis.
 
         Parameters
         ----------
@@ -1266,6 +1292,12 @@ class AnalysisScatteringTD:
         override for the record length, and the built band ports are
         reused across excitations (state reset, kernels kept).
         """
+        if excitations is not None:
+            raise TypeError(
+                "AnalysisScatteringTD.run() takes excited=[...] (port channels, one "
+                "run each), not excitations=: simultaneous excitations of ports and "
+                "sources are the general time-domain analysis's business."
+            )
         f_axis = self.f_axis if f_axis is None else np.asarray(f_axis, dtype=float)
 
         excited_list = self._resolve_excited(excited)
@@ -1342,7 +1374,7 @@ class AnalysisScatteringTD:
             per_excitation.append(
                 self._run_one_excitation(
                     excited_chan=excited_chan,
-                    excitation=self.excitation,
+                    waveform=self.waveform,
                     m_eps=m_eps,
                     m_mu=m_mu,
                     dt=dt,
@@ -1423,7 +1455,7 @@ class AnalysisScatteringTD:
     def _prepare_excitation_run(
         self,
         excited_chan: tuple[str, int],
-        excitation: ExcitationSpec | None,
+        waveform: Waveform | None,
         m_eps: np.ndarray,
         m_mu: np.ndarray,
         dt: float,
@@ -1471,15 +1503,15 @@ class AnalysisScatteringTD:
 
         label_to_op = {op.name: op for op in operators}
         excited_op = label_to_op[excited_chan[0]]
-        excitation = self._resolve_excitation(
-            excitation,
+        waveform = self._resolve_waveform(
+            waveform,
             excited_op,
             excited_chan[1],
         )
-        n_steps_estimate = self._estimate_steps(self.mesh.grid, excitation, dt)
+        n_steps_estimate = self._estimate_steps(self.mesh.grid, waveform, dt)
         for op in operators:
             op.clear_excitation()
-        waveform_fn = excitation.build_waveform()
+        waveform_fn = waveform
         # DD-155: a port cut by symmetry planes injects ×1/√2 per plane
         # so the declared waveform amplitude is a full-model √W — the
         # meshed half then carries exactly half the full-model power and
@@ -1575,7 +1607,7 @@ class AnalysisScatteringTD:
     def _run_one_excitation(
         self,
         excited_chan: tuple[str, int],
-        excitation: ExcitationSpec | None,
+        waveform: Waveform | None,
         m_eps: np.ndarray,
         m_mu: np.ndarray,
         dt: float,
@@ -1600,7 +1632,7 @@ class AnalysisScatteringTD:
             port_line_params,
         ) = self._prepare_excitation_run(
             excited_chan,
-            excitation,
+            waveform,
             m_eps,
             m_mu,
             dt,
@@ -1739,7 +1771,7 @@ class AnalysisScatteringTD:
         # another kind is present, so its absence from the reader is not a
         # silent surprise (test control monitors are not magnelio monitors, so
         # they do not trip this).
-        from magnelio.monitors.far_field import MonitorFarField  # noqa: PLC0415
+        from magnelio.monitors.far_field import MonitorFarFieldFrequency  # noqa: PLC0415
         from magnelio.monitors.field_frequency import (  # noqa: PLC0415
             MonitorFieldFrequency,
         )
@@ -1750,7 +1782,7 @@ class AnalysisScatteringTD:
             MonitorFieldTime,
             MonitorFluxTime,
             MonitorFieldFrequency,
-            MonitorFarField,
+            MonitorFarFieldFrequency,
         )
         not_streamed = sorted(
             {
@@ -1780,7 +1812,7 @@ class AnalysisScatteringTD:
                 port_line_params,
             ) = self._prepare_excitation_run(
                 excited_chan,
-                self.excitation,
+                self.waveform,
                 m_eps,
                 m_mu,
                 dt,
@@ -2317,7 +2349,7 @@ class AnalysisScatteringTD:
         """Arm the band port's source; returns (n_syn, scalar series).
 
         The default drive is the flat-spectrum erfc-product band pulse
-        over the measurement span; an explicit ``excitation=``
+        over the measurement span; an explicit ``waveform=``
         override is sampled and launched through the frequency-tracked
         ghost source instead.  Both paths retry with a doubled
         synthesis window when the compactness gate rejects the pulse
@@ -2335,7 +2367,7 @@ class AnalysisScatteringTD:
         last_err: Exception | None = None
         for _ in range(4):
             try:
-                if self.excitation is None:
+                if self.waveform is None:
                     op.set_excitation_band(
                         mode_idx,
                         cfg["f_span"],
@@ -2354,7 +2386,7 @@ class AnalysisScatteringTD:
                         n=n_syn,
                     )
                 else:
-                    waveform_fn = self.excitation.build_waveform()
+                    waveform_fn = self.waveform
                     if exc_scale != 1.0:
                         op.set_excitation(
                             mode_idx,
@@ -2408,26 +2440,25 @@ class AnalysisScatteringTD:
             return [dm.mode for dm in op.discrete_modes]
         return [_LumpedModeStub(z0=op.Z0)]
 
-    def _resolve_excitation(
+    def _resolve_waveform(
         self,
-        excitation: ExcitationSpec | None,
+        waveform: Waveform | None,
         excited_op,
         mode_idx: int,
-    ) -> ExcitationSpec:
+    ) -> Waveform:
         """Return the explicit override or derive a per-mode waveform.
 
-        Auto rule (ports the legacy ``waveform_for_mode`` selection):
-        the effective lower band edge is ``max(f_cutoff, f_min)``,
-        where ``f_cutoff`` is the excited mode's cut-off frequency
-        (zero for TEM modes and lumped ports).  A zero edge yields a
-        DC-inclusive ``gaussian``; a positive one a band-limited
-        ``modulated_gaussian`` over ``[edge, f_max]`` — for TE/TM
-        modes this keeps the pulse spectrum above cut-off, where a
-        DC-inclusive pulse would put ~half its energy below cut-off
-        (total reflection, slow Mur-ABC ringing).
+        Auto rule: the effective lower band edge is ``max(f_cutoff,
+        f_min)``, where ``f_cutoff`` is the excited mode's cut-off
+        frequency (zero for TEM modes and lumped ports).  A zero edge
+        yields a DC-inclusive ``WaveformGaussian``; a positive one a
+        band-limited ``WaveformGaussianModulated`` over ``[edge,
+        f_max]`` — for TE/TM modes this keeps the pulse spectrum above
+        cut-off, where a DC-inclusive pulse would put ~half its energy
+        below cut-off (total reflection, slow Mur-ABC ringing).
         """
-        if excitation is not None:
-            return excitation
+        if waveform is not None:
+            return waveform
         modes = self._modes_for_operator(excited_op)
         if not 0 <= mode_idx < len(modes):
             raise ValueError(
@@ -2445,14 +2476,11 @@ class AnalysisScatteringTD:
                 f"band edge {eff_f_min:.4g} Hz of excited mode "
                 f"{mode_label!r} on port {excited_op.name!r} "
                 f"(cut-off {f_cutoff:.4g} Hz, f_min {self.f_min:.4g} Hz); "
-                f"increase f_max or pass an explicit excitation=",
+                f"increase f_max or pass an explicit waveform=",
             )
-        waveform = "gaussian" if eff_f_min <= 0.0 else "modulated_gaussian"
-        return ExcitationSpec(
-            f_min=eff_f_min,
-            f_max=self.f_max,
-            waveform=waveform,
-        )
+        if eff_f_min <= 0.0:
+            return WaveformGaussian(f_max=self.f_max)
+        return WaveformGaussianModulated(f_min=eff_f_min, f_max=self.f_max)
 
     def _resolve_excited(
         self,
@@ -2602,10 +2630,10 @@ class AnalysisScatteringTD:
         interior out of the equivalent surface.  Runtime wiring like the
         accepted-power curve — refreshed per run, not serialised.
         """
-        from magnelio.monitors.far_field import MonitorFarField  # noqa: PLC0415
+        from magnelio.monitors.far_field import MonitorFarFieldFrequency  # noqa: PLC0415
         from magnelio.ports._modal.port_plane import PortPlane  # noqa: PLC0415
 
-        ff = [m for m in self.monitors if isinstance(m, MonitorFarField)]
+        ff = [m for m in self.monitors if isinstance(m, MonitorFarFieldFrequency)]
         if not ff:
             return
         types = bc_type_entries(self.boundary_conditions)
@@ -2636,9 +2664,9 @@ class AnalysisScatteringTD:
         ``radiation_efficiency``.  Runtime wiring like the wall-loss
         accounting: not part of the recipe, refreshed per run.
         """
-        from magnelio.monitors.far_field import MonitorFarField  # noqa: PLC0415
+        from magnelio.monitors.far_field import MonitorFarFieldFrequency  # noqa: PLC0415
 
-        ff = [m for m in self.monitors if isinstance(m, MonitorFarField)]
+        ff = [m for m in self.monitors if isinstance(m, MonitorFarFieldFrequency)]
         if not ff:
             return
         accepted = np.ones(len(f_axis))
@@ -2747,7 +2775,7 @@ class AnalysisScatteringTD:
     @staticmethod
     def _estimate_steps(
         grid,
-        excitation: ExcitationSpec,
+        waveform: Waveform,
         dt: float,
         n_traversals: int = 25,
     ) -> int:
@@ -2773,11 +2801,11 @@ class AnalysisScatteringTD:
         resonator that never decays 70 dB simply keeps marching (the
         motivating resume case) unless an explicit cap is set.
         """
-        if excitation.f_max <= 0.0:
-            raise ValueError("excitation.f_max must be positive")
+        if waveform.f_max <= 0.0:
+            raise ValueError("waveform.f_max must be positive")
         bandwidth = max(
-            excitation.f_max - max(excitation.f_min, 0.0),
-            excitation.f_max,  # lower-bound: at least one f_max-period
+            waveform.f_max - max(waveform.f_min, 0.0),
+            waveform.f_max,  # lower-bound: at least one f_max-period
         )
         t0_pulse = 4.0 / bandwidth
         Lx = float(grid.x[-1] - grid.x[0])
@@ -2887,7 +2915,7 @@ def _load_wall_loss_accumulators(project_path, run_name, monitors, n_completed):
 
 
 def _load_far_field_accumulators(project_path, run_name, monitors, n_completed):
-    """Restore MonitorFarField accumulators from far_field.h5 (resume).
+    """Restore MonitorFarFieldFrequency accumulators from far_field.h5 (resume).
 
     Same contract as the frequency and wall-loss dumps: reloaded only
     when the file's step matches the checkpoint's ``n_completed``.  A
@@ -2896,9 +2924,9 @@ def _load_far_field_accumulators(project_path, run_name, monitors, n_completed):
     from pathlib import Path  # noqa: PLC0415
 
     from magnelio.io.project import _read_far_field_dump  # noqa: PLC0415
-    from magnelio.monitors.far_field import MonitorFarField  # noqa: PLC0415
+    from magnelio.monitors.far_field import MonitorFarFieldFrequency  # noqa: PLC0415
 
-    ff_mons = [m for m in monitors if isinstance(m, MonitorFarField)]
+    ff_mons = [m for m in monitors if isinstance(m, MonitorFarFieldFrequency)]
     if not ff_mons:
         return
     ff = Path(project_path) / "runs" / run_name / "far_field.h5"
@@ -3043,7 +3071,7 @@ def _resume_scattering(
         port_line_params,
     ) = analysis._prepare_excitation_run(
         excited_chan,
-        analysis.excitation,
+        analysis.waveform,
         m_eps,
         m_mu,
         dt,

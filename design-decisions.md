@@ -16724,8 +16724,21 @@ engine and the line table when a ladder row shows them.
 
 **Status:** Decided 2026-08-29 (blueprint session with the developer;
 internal record `investigations/api-blueprint/` holds the suite-convention
-survey it was checked against).  Nothing implemented yet — this entry
-fixes the vocabulary; the phases in the last section ship it.
+survey it was checked against).  **Phase A shipped 2026-08-29** (branch
+`feat/api-phase-a`): `Waveform` ABC + six classes, core `Excitation`
+(pin 10 → 11), `SourceFieldIncident`/`SourcePlaneWave` with
+`set_excitation` as the solver-facing binding, `add_source` /
+`Mesh.sources` / `with_sources` with the `mesh.h5` `sources` attribute,
+`ExcitationSpec` and the `PortSpec*.excitation` field removed
+(component drives bind on the operator), `AnalysisScatteringTD.waveform`
+with the per-mode default unchanged (the S-parameter suites pass
+bit-identically: the classes wrap the same closed forms), the three
+monitor migrations with the old recipe spellings still read until
+schema 2.0.  Deferred to Phase B as planned: `AnalysisTD`, the
+`results.h5` `excitations` attribute, schema 2.0, the plane-wave
+tutorial; and, noticed in Phase A, grid planes on the TF/SF box corners
+(today the box snaps to the nearest nodes — the mesher does not yet
+read `model.sources`).  Phases B ff. follow in the last section.
 
 **Problem.**  Two problem classes exist (`AnalysisScatteringTD`,
 `AnalysisEigenmode`) and one excitation reaches the analysis level:

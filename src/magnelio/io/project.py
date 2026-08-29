@@ -408,6 +408,44 @@ def _declarative_port_from_dict(d: dict):
     return cls(**d)
 
 
+def _source_to_dict(source) -> dict:
+    """Serialise a declarative source (DD-224) for the mesh round-trip.
+
+    The class name is the type tag; the dataclass init fields are the
+    payload (the excitation binding is run state, not model data).
+    """
+    import dataclasses  # noqa: PLC0415
+
+    d = {"type": type(source).__name__}
+    for f in dataclasses.fields(source):
+        if not f.init:
+            continue
+        v = getattr(source, f.name)
+        if f.name == "corners" and v is not None:
+            v = [[None if c is None else float(c) for c in point] for point in v]
+        elif isinstance(v, tuple):
+            v = [float(c) for c in v]
+        d[f.name] = v
+    return d
+
+
+def _source_from_dict(d: dict):
+    """Rebuild a declarative source written by :func:`_source_to_dict`."""
+    from magnelio.sources import SourcePlaneWave  # noqa: PLC0415
+
+    registry = {"SourcePlaneWave": SourcePlaneWave}
+    d = dict(d)
+    tag = d.pop("type")
+    if tag not in registry:
+        raise ValueError(f"unknown source type {tag!r} in mesh.h5")
+    if d.get("corners") is not None:
+        d["corners"] = tuple(tuple(c) for c in d["corners"])
+    for key in ("direction", "polarization"):
+        if key in d and d[key] is not None:
+            d[key] = tuple(d[key])
+    return registry[tag](**d)
+
+
 def _lumped_element_to_dict(element) -> dict:
     """Serialise a declarative LumpedElement (DD-123) for the mesh round-trip."""
     return {
@@ -477,6 +515,11 @@ def _save_mesh(f, mesh) -> None:
     if getattr(mesh, "elements", ()):
         mg.attrs["elements"] = json.dumps(
             [_lumped_element_to_dict(e) for e in mesh.elements],
+        )
+    # Field sources (DD-224) travel with the mesh like ports.
+    if getattr(mesh, "sources", ()):
+        mg.attrs["sources"] = json.dumps(
+            [_source_to_dict(src) for src in mesh.sources],
         )
     # Design frequency (DD-186) — travels with the mesh like the
     # closure and the ports.
@@ -557,6 +600,12 @@ def _load_mesh(f):
         if elements_attr is not None
         else ()
     )
+    sources_attr = mg.attrs.get("sources")
+    sources = (
+        tuple(_source_from_dict(d) for d in json.loads(sources_attr))
+        if sources_attr is not None
+        else ()
+    )
     planes = None
     if "planes_json" in mg:
         raw = mg["planes_json"][()]
@@ -566,6 +615,7 @@ def _load_mesh(f):
     return Mesh(
         ports=ports,
         elements=elements,
+        sources=sources,
         planes=planes,
         grid=grid,
         material_id=mg["material_id"][()],
@@ -882,8 +932,8 @@ class _RunResultWriter:
                 root = f.create_group("flux")
             fg = root.create_group(mon.name)
             fg.attrs["type"] = "MonitorFluxTime"
-            fg.attrs["plane_normal"] = mon.plane[0]
-            fg.attrs["plane_position"] = float(mon.plane[1])
+            fg.attrs["plane_normal"] = mon.normal
+            fg.attrs["plane_position"] = float(mon.position)
             times_ds = fg.create_dataset(
                 "times",
                 shape=(0,),
@@ -1515,12 +1565,12 @@ def _freq_monitors(monitors) -> list:
 
 
 def _far_field_monitors(monitors) -> list:
-    """The ``MonitorFarField`` subset of a list (DD-173)."""
+    """The ``MonitorFarFieldFrequency`` subset of a list (DD-173)."""
     if not monitors:
         return []
-    from magnelio.monitors.far_field import MonitorFarField  # noqa: PLC0415
+    from magnelio.monitors.far_field import MonitorFarFieldFrequency  # noqa: PLC0415
 
-    return [m for m in monitors if isinstance(m, MonitorFarField)]
+    return [m for m in monitors if isinstance(m, MonitorFarFieldFrequency)]
 
 
 def _wall_loss_monitors(monitors) -> list:
@@ -1695,7 +1745,8 @@ class _LoadedFluxMonitor:
         self.name = name
         with h5py.File(self._run_dir / "results.h5", "r", swmr=True) as f:
             fg = f["flux"][name]
-            self.plane = (str(fg.attrs["plane_normal"]), float(fg.attrs["plane_position"]))
+            self.normal = str(fg.attrs["plane_normal"])
+            self.position = float(fg.attrs["plane_position"])
             self._t = fg["times"][()]
             self._power = fg["power"][()]
 
@@ -1721,10 +1772,7 @@ class _LoadedFluxMonitor:
         """Build an in-RAM :class:`MonitorFluxTime` for plotting reuse."""
         from magnelio.monitors.flux import MonitorFluxTime  # noqa: PLC0415
 
-        mon = MonitorFluxTime(
-            plane=self.plane,
-            name=self.name,
-        )
+        mon = MonitorFluxTime(normal=self.normal, position=self.position, name=self.name)
         mon._times = [float(x) for x in self._t]
         mon._power = [float(x) for x in self._power]
         return mon
@@ -2193,9 +2241,9 @@ class _LoadedMonitorWallLoss:
 
 
 def _write_far_field_h5(path, dumps: dict, n_completed: int) -> None:
-    """Atomically write MonitorFarField results to *path*.
+    """Atomically write MonitorFarFieldFrequency results to *path*.
 
-    ``dumps`` maps monitor name -> :meth:`MonitorFarField.result_dump`.
+    ``dumps`` maps monitor name -> :meth:`MonitorFarFieldFrequency.result_dump`.
     Written to ``<path>.tmp`` then ``os.replace``-d; ``n_completed``
     ties the accumulators to ``checkpoint.h5`` for the resume check.
     """
@@ -2273,7 +2321,7 @@ def _list_run_far_field(run_dir: Path) -> list[str]:
 
 
 class _LoadedFarFieldMonitor:
-    """Lazy reader over one persisted ``MonitorFarField`` (DD-173).
+    """Lazy reader over one persisted ``MonitorFarFieldFrequency`` (DD-173).
 
     Hydrates the dump into a result-serving monitor on first access and
     delegates, so the reader serves exactly the in-RAM API —
@@ -2289,10 +2337,10 @@ class _LoadedFarFieldMonitor:
 
     def _hydrate(self):
         if self._monitor is None:
-            from magnelio.monitors.far_field import MonitorFarField  # noqa: PLC0415
+            from magnelio.monitors.far_field import MonitorFarFieldFrequency  # noqa: PLC0415
 
             dump = _read_far_field_dump(self._run_dir, self.name)
-            self._monitor = MonitorFarField.from_result_dump(dump)
+            self._monitor = MonitorFarFieldFrequency.from_result_dump(dump)
             if not self._monitor.is_renormalized and self._reference is not None:
                 # The streamed run renormalises after its final flush, so
                 # the file carries raw bins; the run's reference waveform

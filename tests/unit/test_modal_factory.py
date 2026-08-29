@@ -12,7 +12,7 @@ These tests cover:
 1. ``PortSpecRectWG`` / ``PortSpecCoax`` UV-convention: width_a/height_b
    and center swap correctly between MIN and MAX faces (both reference
    and operator-consistent path see the right geometry).
-2. ``ExcitationSpec`` wires into the operator.
+2. A waveform bound with ``set_excitation`` wires into the operator.
 3. ``port_report`` carries both reference and operator values; for a
    refined coax mesh, ``z_line_num`` ≈ ``z_line_ref``.
 4. ``PortSpecCoax`` auto-detection rejects geometries that do not
@@ -33,7 +33,6 @@ from magnelio.mesh.grid import GridLines
 from magnelio.mesh.mesher import Mesh, MeshControl
 from magnelio.ports._modal import (
     BoxFace,
-    ExcitationSpec,
     PortOperatorModal,
     PortOperatorReport,
     PortPlane,
@@ -41,6 +40,7 @@ from magnelio.ports._modal import (
     PortSpecRectWG,
     build_modal_port,
 )
+from magnelio.signals import WaveformGaussian, WaveformGaussianModulated
 from magnelio.signals.waveforms import gaussian, modulated_gaussian
 from magnelio.solver.stability import courant_dt
 
@@ -227,7 +227,7 @@ def test_coax_factory_xmin_xmax_match(coax_occ_mesh):
 
 
 def test_coax_factory_excitation_routing(coax_occ_mesh):
-    """ExcitationSpec(gaussian) wires through to operator."""
+    """A baseband Gaussian bound with set_excitation wires through to the operator."""
     mesh, m_eps, m_mu, dt, D_i, D_a, eps_r = coax_occ_mesh
     spec = PortSpecCoax(
         name="p1",
@@ -235,14 +235,9 @@ def test_coax_factory_excitation_routing(coax_occ_mesh):
         inner_radius=D_i / 2,
         outer_radius=D_a / 2,
         epsilon_r=eps_r,
-        excitation=ExcitationSpec(
-            f_min=0.0,
-            f_max=10e9,
-            mode_index=0,
-            waveform="gaussian",
-        ),
     )
     op = build_modal_port(spec, mesh, m_eps, m_mu, dt=dt, f_calc=10e9)
+    op.set_excitation(0, WaveformGaussian(f_max=10e9))
     assert op._excitation_mode == 0
     t_test = float(np.linspace(0.0, 4.0 / 10e9, 7)[3])
     # DD-078: set_excitation scales the user waveform (a(t) in √W) into
@@ -336,7 +331,7 @@ def test_rectwg_factory_xmax_uv_convention_via_port_report(wr90_mesh):
 
 
 def test_rectwg_factory_excitation_modulated_gaussian(wr90_mesh):
-    """ExcitationSpec(modulated_gaussian) wires through to operator."""
+    """A modulated Gaussian bound with set_excitation wires through to the operator."""
     mesh, m_eps, m_mu, dt = wr90_mesh
     f_calc = 10e9
 
@@ -345,9 +340,9 @@ def test_rectwg_factory_excitation_modulated_gaussian(wr90_mesh):
         plane=BoxFace.X_MIN,
         width_a=WR90_A,
         height_b=WR90_B,
-        excitation=ExcitationSpec(f_min=8.2e9, f_max=12.4e9, mode_index=0),
     )
     op = build_modal_port(spec, mesh, m_eps, m_mu, dt=dt, f_calc=f_calc)
+    op.set_excitation(0, WaveformGaussianModulated(f_min=8.2e9, f_max=12.4e9))
     assert op._excitation_mode == 0
 
     t_test = 4.0 / (12.4e9 - 8.2e9)
@@ -355,12 +350,6 @@ def test_rectwg_factory_excitation_modulated_gaussian(wr90_mesh):
     expected = float(modulated_gaussian(t_test, 12.4e9, 8.2e9)) * float(op._source_scale[0])
     actual = op._excitation_waveform(t_test)
     assert actual == pytest.approx(expected)
-
-
-def test_excitation_spec_unknown_waveform_raises():
-    spec = ExcitationSpec(f_min=1e9, f_max=2e9, waveform="bogus")  # type: ignore[arg-type]
-    with pytest.raises(ValueError, match="unknown waveform"):
-        spec.build_waveform()
 
 
 def test_build_modal_port_invalid_spec_type(wr90_mesh):
@@ -623,19 +612,13 @@ class TestPortSpecNumericalFactory:
 
     def test_excitation_routed_through_factory(self, wr90_mesh_high_res):
         mesh, m_eps, m_mu, dt = wr90_mesh_high_res
-        excitation = ExcitationSpec(
-            f_min=8.2e9,
-            f_max=12.4e9,
-            mode_index=0,
-            waveform="modulated_gaussian",
-        )
         spec = PortSpecNumerical(
             name="port_num",
             plane=BoxFace.X_MIN,
             n_modes=1,
-            excitation=excitation,
         )
         op = build_modal_port(spec, mesh, m_eps, m_mu, dt=dt, f_calc=10e9)
+        op.set_excitation(0, WaveformGaussianModulated(f_min=8.2e9, f_max=12.4e9))
         assert op._excitation_mode == 0
         # Excited waveform matches the modulated-gaussian closure scaled
         # into basis units (DD-078 source_scale).

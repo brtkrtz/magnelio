@@ -29,10 +29,10 @@ from magnelio.mesh.grid import GridLines
 from magnelio.mesh.mesher import Mesh
 from magnelio.ports._modal import (
     BoxFace,
-    ExcitationSpec,
     PortSpecRectWG,
     build_modal_port,
 )
+from magnelio.signals import WaveformGaussianModulated
 from magnelio.solver.fit_td import FITTimeDomainSolver
 from magnelio.solver.stability import courant_dt
 
@@ -51,7 +51,6 @@ def _wr90_solver(n_steps):
     m_eps = build_M_eps(mesh)
     m_mu = build_M_mu(mesh)
     dt = courant_dt(grid, accuracy="normal")
-    excitation = ExcitationSpec(f_min=8.2e9, f_max=12.4e9, mode_index=0)
     op_src = build_modal_port(
         PortSpecRectWG(
             name="port1",
@@ -59,7 +58,6 @@ def _wr90_solver(n_steps):
             width_a=WR90_A,
             height_b=WR90_B,
             n_modes=1,
-            excitation=excitation,
         ),
         mesh,
         m_eps,
@@ -67,6 +65,7 @@ def _wr90_solver(n_steps):
         dt=dt,
         f_calc=10.0e9,
     )
+    op_src.set_excitation(0, WaveformGaussianModulated(f_min=8.2e9, f_max=12.4e9))
     op_load = build_modal_port(
         PortSpecRectWG(
             name="port2",

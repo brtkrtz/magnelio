@@ -1,10 +1,12 @@
 """
-Plane-wave source using the Total-Field / Scattered-Field (TF/SF) technique.
+SourcePlaneWave — a plane wave injected on a total-field/scattered-field box.
 
 The TF/SF formulation divides the domain into a Total-Field (TF) region
 containing the incident wave, and a Scattered-Field (SF) region outside.
 Corrections are applied at the 6 faces of the TF/SF box after each E and H
-update to inject the incident plane wave.
+update to inject the incident plane wave.  The waveform and the peak
+field come from the :class:`~magnelio.Excitation` that drives the source
+(bound through :meth:`SourceFieldIncident.set_excitation`).
 
 The solver states are FIT grid quantities: the incident
 samples are converted per edge/face (``e = E_inc·l_primal``,
@@ -15,16 +17,17 @@ corrections carry the sign of the kernel's ``H = a·H − β·curl`` form
 amplitude with massive SF leakage; now SF leakage sits at the numeric
 dispersion floor).
 
-v1.0 supports axis-aligned propagation only (k in {±x, ±y, ±z}).
+Axis-aligned propagation only (k in {±x, ±y, ±z}).
 """
 
 # Design: DD-085 (FIT grid-quantity states; the pre-DD-085 implementation had
 # the H-side correction sign inverted), DD-177 (the face corrections are a
-# precomputed coefficient table, not a Python loop over boundary cells).
+# precomputed coefficient table, not a Python loop over boundary cells),
+# DD-224 (waveform and amplitude live on the excitation; the source is a
+# model object).
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from dataclasses import field as dc_field
 
@@ -33,6 +36,7 @@ import numpy as np
 # Free-space constants
 from magnelio.constants import C0 as _C0  # noqa: E402
 from magnelio.constants import ETA0 as _ETA0
+from magnelio.sources.field_incident import SourceFieldIncident
 
 # Axis-aligned unit vectors
 _AXES = {
@@ -55,58 +59,52 @@ def _classify_axis(d: np.ndarray) -> tuple[int, int]:
     ax = int(np.argmax(abs_d))
     if abs_d[ax] < 0.999:
         raise NotImplementedError(
-            "Oblique plane-wave incidence is not supported in v1.0; "
-            f"direction must be axis-aligned, got {d}"
+            f"Oblique plane-wave incidence is not supported; direction must be "
+            f"axis-aligned, got {d}"
         )
     return ax, int(np.sign(d[ax]))
 
 
 @dataclass
-class PlaneWaveSource:
-    """Plane-wave excitation via TF/SF formulation.
+class SourcePlaneWave(SourceFieldIncident):
+    """Plane-wave illumination on a total-field/scattered-field box.
+
+    Declared on the model with :meth:`~magnelio.GeometryModel.add_source`
+    and driven by an :class:`~magnelio.Excitation` naming it; the
+    excitation's ``amplitude`` is the peak incident field in V/m and
+    its ``waveform`` the time function.  Propagation must be along a
+    grid axis.
 
     Parameters
     ----------
+    name : str
+        Source name — the handle an :class:`~magnelio.Excitation` uses.
     direction : tuple of float
-        Propagation direction unit vector ``(kx, ky, kz)``.
+        Propagation direction ``(kx, ky, kz)``; normalised, must be
+        axis-aligned.
     polarization : tuple of float
-        E-field polarization unit vector (⊥ *direction*).
+        E-field polarization vector; its component along *direction*
+        is projected out and the rest normalised.
     corners : tuple of tuple, optional
-        Two opposite corners ``((x0, y0, z0), (x1, y1, z1))`` of the
-        total-field region [m] — the same form as
-        :meth:`~magnelio.geo.Brick.from_corners`.  Corner order does
-        not matter, and a component may be ``None`` (or ``±math.inf``)
-        to fall back to the default extent on that side (two bulk
-        cells inside the domain boundary — the scattered-field shell
-        the TF/SF split needs).  Snapped to the nearest grid nodes.
-        ``None`` (default) uses the default extent on all six sides.
-    amplitude : float
-        Peak E-field amplitude [V/m].
-    waveform : {"gaussian", "sine"}
-        Excitation waveform.
-    f_center : float, optional
-        Center frequency for the sine waveform [Hz].
-    f_max : float, optional
-        Bandwidth parameter for the Gaussian waveform [Hz].
+        Two opposite corners of the total-field region [m]; see
+        :class:`SourceFieldIncident`.  ``None`` (default) leaves a
+        two-cell scattered-field shell inside every domain face.
+
+    Examples
+    --------
+    >>> from magnelio import sources
+    >>> pw = sources.SourcePlaneWave(name="pw", direction=(0, 0, 1), polarization=(1, 0, 0))
     """
 
     direction: tuple[float, float, float] = (0.0, 0.0, 1.0)
     polarization: tuple[float, float, float] = (1.0, 0.0, 0.0)
-    corners: tuple[tuple, tuple] | None = None
-    amplitude: float = 1.0
-    waveform: str = "gaussian"
-    f_center: float | None = None
-    f_max: float | None = None
 
     # --- internal state (set by attach) ---
-    _attached: bool = dc_field(default=False, repr=False, init=False)
     _prop_axis: int = dc_field(default=0, repr=False, init=False)
     _prop_sign: int = dc_field(default=1, repr=False, init=False)
     _k_hat: np.ndarray | None = dc_field(default=None, repr=False, init=False)
     _e_hat: np.ndarray | None = dc_field(default=None, repr=False, init=False)
     _h_hat: np.ndarray | None = dc_field(default=None, repr=False, init=False)
-    # TF/SF box node indices: (ix0, ix1, iy0, iy1, iz0, iz1)
-    _box: tuple[int, ...] | None = dc_field(default=None, repr=False, init=False)
     # Cached solver arrays
     _beta_E: np.ndarray | None = dc_field(default=None, repr=False, init=False)
     _beta_H: np.ndarray | None = dc_field(default=None, repr=False, init=False)
@@ -116,9 +114,6 @@ class PlaneWaveSource:
     _n_Hy: int = dc_field(default=0, repr=False, init=False)
     _grid: object = dc_field(default=None, repr=False, init=False)
     _dt: float = dc_field(default=0.0, repr=False, init=False)
-    _Nx: int = dc_field(default=0, repr=False, init=False)
-    _Ny: int = dc_field(default=0, repr=False, init=False)
-    _Nz: int = dc_field(default=0, repr=False, init=False)
     # Array module, field dtype and its scalar type — the injection writes
     # into the solver's own arrays, so it must match both.
     _xp: object = dc_field(default=None, repr=False, init=False)
@@ -130,83 +125,37 @@ class PlaneWaveSource:
 
     # ── initialisation ────────────────────────────────────────────────────
 
-    @classmethod
-    def from_ranges(
-        cls,
-        *,
-        x1=None,
-        x2=None,
-        dx=None,
-        y1=None,
-        y2=None,
-        dy=None,
-        z1=None,
-        z2=None,
-        dz=None,
-        **kwargs,
-    ):
-        """Build the same source from one coordinate range per axis.
-
-        The range spelling of ``corners=``, as in
-        :meth:`~magnelio.geo.Brick.from_ranges`: each axis takes up to
-        two of its three keywords — the two bounds (``x1``, ``x2``) or
-        a bound and an extent (``x1``, ``dx`` / ``x2``, ``dx``).  Here
-        an axis may also be open: give nothing for the whole domain
-        extent, or a single bound to reach the domain boundary on the
-        other side.  All remaining keyword arguments are forwarded to
-        the constructor.
-
-        Examples
-        --------
-        >>> src = PlaneWaveSource.from_ranges(x1=1e-3, x2=9e-3, y1=1e-3, y2=9e-3, z1=1e-3, z2=19e-3)
-        """
-        from magnelio.geo._ranges import corners_from_ranges  # noqa: PLC0415
-
-        return cls(
-            corners=corners_from_ranges(x1, x2, dx, y1, y2, dy, z1, z2, dz),
-            **kwargs,
-        )
-
     def __post_init__(self) -> None:
+        super().__post_init__()
         d = np.array(self.direction, dtype=float)
-        d /= np.linalg.norm(d)
-        self.direction = tuple(d)
+        norm_d = np.linalg.norm(d)
+        if not norm_d > 0.0:
+            raise ValueError(f"direction must be a non-zero vector; got {self.direction}")
+        # Normalise only when needed, so a stored (already unit) vector
+        # reloads bit-identically.
+        if abs(norm_d - 1.0) > 1e-12:
+            d /= norm_d
+        self.direction = tuple(float(v) for v in d)
 
         p = np.array(self.polarization, dtype=float)
-        p -= np.dot(p, d) * d
+        if abs(np.dot(p, d)) > 1e-12:
+            p -= np.dot(p, d) * d
         norm_p = np.linalg.norm(p)
         if norm_p < 1e-10:
             raise ValueError(
                 "polarization must not be parallel to direction; "
                 f"got direction={self.direction}, polarization={self.polarization}"
             )
-        p /= norm_p
-        self.polarization = tuple(p)
-
-    # ── waveform ──────────────────────────────────────────────────────────
-
-    def excitation(self, t):
-        """Waveform value at time *t* [s].
-
-        Accepts a scalar or an array of times and follows the input: the
-        TF/SF injection evaluates a whole box face in one call.
-        """
-        if self.waveform == "gaussian":
-            f_max = self.f_max or 1e9
-            t0 = 4.0 / f_max
-            sigma = 2.0 / (math.pi * f_max)
-            return self.amplitude * np.exp(-((t - t0) ** 2) / (2 * sigma**2))
-        elif self.waveform == "sine":
-            f = self.f_center or 1e9
-            return self.amplitude * np.sin(2 * math.pi * f * t)
-        raise ValueError(f"Unknown waveform: {self.waveform!r}")
+        if abs(norm_p - 1.0) > 1e-12:
+            p /= norm_p
+        self.polarization = tuple(float(v) for v in p)
 
     # ── incident field evaluation ─────────────────────────────────────────
 
     def _waveform_at(self, t: float, pos_along_k: float) -> float:
-        """Evaluate waveform f(t − r·k̂/c₀) at a point along k̂."""
+        """Evaluate the drive A·w(t − r·k̂/c₀ − delay) at a point along k̂."""
         t_ret = t - pos_along_k / _C0
-        return self.excitation(t_ret)
+        return self._drive(t_ret)
 
     def incident_E(self, r: np.ndarray, t: float) -> np.ndarray:
         """Incident E-field vector [V/m] at position *r* and time *t*.
@@ -229,8 +178,10 @@ class PlaneWaveSource:
     def attach(self, solver) -> None:
         """Cache solver coefficients and snap TF/SF box to grid nodes.
 
-        Called once from ``FITTimeDomainSolver.setup()``.
+        Called once from ``FITTimeDomainSolver.setup()``.  Requires a
+        bound waveform (:meth:`set_excitation`).
         """
+        self._require_waveform()
         grid = solver.mesh.grid
         self._grid = grid
         self._dt = solver.dt
@@ -259,11 +210,12 @@ class PlaneWaveSource:
         self._k_hat = k
         self._prop_axis, self._prop_sign = _classify_axis(k)
 
-        # Polarisation & H-direction
+        # Polarisation & H-direction (unit incident field; the amplitude
+        # multiplies the drive)
         e = np.array(self.polarization, dtype=float)
-        self._e_hat = e * self.amplitude
+        self._e_hat = e
         h = np.cross(k, e)
-        self._h_hat = h * (self.amplitude / _ETA0)
+        self._h_hat = h / _ETA0
 
         # DD-085: the solver states are FIT grid quantities
         # (e = E·l_primal, h = H·l_dual), so the injected incident
@@ -284,46 +236,6 @@ class PlaneWaveSource:
         self._box = self._snap_box(grid)
         self._patches_E, self._patches_H = self._build_patches()
         self._attached = True
-
-    def _snap_box(self, grid) -> tuple[int, int, int, int, int, int]:
-        """Snap the TF-region corners to nearest grid node indices.
-
-        Returns (ix0, ix1, iy0, iy1, iz0, iz1) such that the TF region
-        spans cells [ix0, ix1) × [iy0, iy1) × [iz0, iz1) in node indexing.
-
-        The corners are normalised per axis (order does not matter, the
-        shared ``corners=`` contract), and ``None``/``±inf`` components
-        fall back to the default extent on that side.  A box that leaves
-        no scattered-field shell is clamped inward — that is a property
-        of the TF/SF split, not a silent reinterpretation of the input.
-        """
-        if self.corners is None:
-            # Default: 2 cells inset from each face
-            return (2, self._Nx - 1, 2, self._Ny - 1, 2, self._Nz - 1)
-
-        p, q = self.corners
-        lo, hi = [], []
-        for a, b, default_lo, default_hi in zip(
-            p, q, (2, 2, 2), (self._Nx - 1, self._Ny - 1, self._Nz - 1)
-        ):
-            aa = None if a is None or not np.isfinite(a) else float(a)
-            bb = None if b is None or not np.isfinite(b) else float(b)
-            if aa is not None and bb is not None and bb < aa:
-                aa, bb = bb, aa
-            lo.append((aa, default_lo))
-            hi.append((bb, default_hi))
-
-        x, y, z = np.asarray(grid.x), np.asarray(grid.y), np.asarray(grid.z)
-        n_hi = (self._Nx, self._Ny, self._Nz)
-        idx = []
-        for axis, (nodes, n) in enumerate(zip((x, y, z), n_hi)):
-            a, default_lo = lo[axis]
-            b, default_hi = hi[axis]
-            i0 = default_lo if a is None else int(np.searchsorted(nodes, a).clip(1, n - 1))
-            i1 = default_hi if b is None else int(np.searchsorted(nodes, b).clip(i0 + 1, n))
-            idx += [i0, i1]
-
-        return tuple(idx)
 
     # ── TF/SF face corrections ────────────────────────────────────────────
     #
@@ -709,7 +621,7 @@ class PlaneWaveSource:
     def _apply(self, patches, fields, t: float) -> None:
         """Add every face correction at time level *t*."""
         for comp, index, delay, coef in patches:
-            wave = self.excitation(t - delay)
+            wave = self._drive(t - delay)
             wave = (
                 wave.astype(self._dtype, copy=False)
                 if getattr(wave, "ndim", 0)
@@ -733,8 +645,5 @@ class PlaneWaveSource:
         if self._attached:
             self._apply(self._patches_H, fields, t_H - self._dt / 2)
 
-    def __repr__(self) -> str:
-        return (
-            f"PlaneWaveSource(dir={self.direction}, pol={self.polarization}, "
-            f"waveform={self.waveform!r})"
-        )
+
+__all__ = ["SourcePlaneWave"]

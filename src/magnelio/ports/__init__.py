@@ -14,7 +14,6 @@ from magnelio.ports._lumped import (
 from magnelio.ports._modal import (
     BboxLateralConductor,
     ConductorSpec,
-    ExcitationSpec,
     LevelResult,
     Mode,
     ModeRefinementReport,
@@ -48,7 +47,6 @@ __all__ = [
     "PortSpecNumerical",
     "PortSpecMultiConductor",
     "PortSpecLumped",
-    "ExcitationSpec",
     "ConductorSpec",
     "WallConductor",
     "RegionConductor",

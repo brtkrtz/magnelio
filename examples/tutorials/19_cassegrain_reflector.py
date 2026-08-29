@@ -343,7 +343,7 @@ print(analysis.solve_ports()["feed"])
 # and the normalisation refers to the incident power the TE10 port
 # launched at each frequency.
 
-farfield = monitors.MonitorFarField(freqs=[f0], name="farfield")
+farfield = monitors.MonitorFarFieldFrequency(freqs=[f0], name="farfield")
 analysis = mio.AnalysisScatteringTD(mesh=mesh, f_min=8.5e9, monitors=(farfield,), verbose=False)
 f_axis = np.linspace(8.5e9, 11.5e9, 31)
 result = analysis.run(f_axis=f_axis, excited=["feed"])

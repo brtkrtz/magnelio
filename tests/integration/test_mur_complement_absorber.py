@@ -28,9 +28,10 @@ from magnelio.geo import Brick, GeometryModel
 from magnelio.materials.material import Material
 from magnelio.mesh.mesher import Mesh, MeshControl
 from magnelio.ports import PortWaveguide
-from magnelio.ports._modal.factory import ExcitationSpec, build_modal_port
+from magnelio.ports._modal.factory import build_modal_port
 from magnelio.ports.declarative import resolve_declarative_port
 from magnelio.ports.recorder import PortSignalRecorder
+from magnelio.signals import WaveformGaussianModulated
 from magnelio.solver.fit_td import FITTimeDomainSolver
 from magnelio.solver.stability import (
     compute_min_effective_eps,
@@ -104,8 +105,9 @@ def _build_ports(mesh, eps_lower: float, excite_mode: int | None):
             ops.append(build_modal_port(spec, mesh, m_eps, m_mu, dt=dt, f_calc=F_CALC))
     if excite_mode is not None:
         f_c = getattr(ops[0].discrete_modes[excite_mode].mode, "omega_c", 0.0) / (2.0 * math.pi)
-        exc = ExcitationSpec(f_min=max(f_c, 1.0e9), f_max=F_CALC, waveform="modulated_gaussian")
-        ops[0].set_excitation(excite_mode, exc.build_waveform())
+        ops[0].set_excitation(
+            excite_mode, WaveformGaussianModulated(f_min=max(f_c, 1.0e9), f_max=F_CALC)
+        )
     return ops, dt
 
 

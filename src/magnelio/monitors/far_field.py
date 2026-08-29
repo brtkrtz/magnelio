@@ -1,4 +1,4 @@
-"""MonitorFarField — running surface DFT on a closed Huygens box.
+"""MonitorFarFieldFrequency — running surface DFT on a closed Huygens box.
 
 The monitor places an axis-aligned box a few cells inside the physical
 domain, accumulates the DFT of the tangential E and H on its faces
@@ -69,8 +69,8 @@ class _BoxFace:
 
 
 @dataclass
-class MonitorFarField:
-    """Far-field (antenna pattern) monitor on an automatic Huygens box.
+class MonitorFarFieldFrequency:
+    """Far-field (antenna pattern) monitor at fixed frequencies on an automatic Huygens box.
 
     Records the surface DFT of the tangential fields on a closed box
     placed ``margin_cells`` inside the physical domain (the absorber
@@ -109,7 +109,7 @@ class MonitorFarField:
     Examples
     --------
     >>> from magnelio import monitors
-    >>> ff = monitors.MonitorFarField(freqs=[2.45e9], name="pattern")
+    >>> ff = monitors.MonitorFarFieldFrequency(freqs=[2.45e9], name="pattern")
     """
 
     freqs: np.ndarray
@@ -572,7 +572,7 @@ class MonitorFarField:
         return dump
 
     @classmethod
-    def from_result_dump(cls, dump: dict) -> "MonitorFarField":
+    def from_result_dump(cls, dump: dict) -> "MonitorFarFieldFrequency":
         """Rebuild a result-serving monitor from a :meth:`result_dump`.
 
         The store reader's path: the dump carries the box geometry and
@@ -650,6 +650,6 @@ class MonitorFarField:
     def __repr__(self) -> str:
         n_freqs = self.freqs.size
         return (
-            f"MonitorFarField(name={self.name!r}, n_freqs={n_freqs}, "
+            f"MonitorFarFieldFrequency(name={self.name!r}, n_freqs={n_freqs}, "
             f"margin_cells={self.margin_cells})"
         )
