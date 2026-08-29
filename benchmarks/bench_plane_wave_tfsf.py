@@ -25,9 +25,10 @@ import numpy as np
 from magnelio.boundaries.pec import PECBoundary
 from magnelio.mesh.grid import GridLines
 from magnelio.mesh.mesher import Mesh
+from magnelio.signals import WaveformGaussian
 from magnelio.solver.fit_td import FITTimeDomainSolver
 from magnelio.solver.stability import courant_dt
-from magnelio.sources.plane_wave import PlaneWaveSource
+from magnelio.sources import SourcePlaneWave
 
 # Box extents as a fraction of the domain, plus the full-domain box.
 FRACTIONS = (0.1, 0.25, 0.5, 0.75, 1.0)
@@ -51,13 +52,14 @@ def source_for(grid, fraction: float, f_max: float):
         span = np.asarray(grid.x)[-1]
         lo, hi = (0.5 - half) * span, (0.5 + half) * span
         corners = ((lo, lo, lo), (hi, hi, hi))
-    return PlaneWaveSource(
+    src = SourcePlaneWave(
+        name="pw",
         direction=(0, 0, 1),
         polarization=(1, 0, 0),
         corners=corners,
-        waveform="gaussian",
-        f_max=f_max,
     )
+    src.set_excitation(WaveformGaussian(f_max=f_max))
+    return src
 
 
 def time_run(mesh, grid, dt, sources, backend: str) -> float:

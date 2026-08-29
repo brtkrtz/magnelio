@@ -7,6 +7,56 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Added
+
+- Excitation waveforms as objects: `magnelio.signals.Waveform` with
+  `WaveformGaussian`, `WaveformGaussianModulated`, `WaveformSine`,
+  `WaveformStep`, `WaveformTable` and `WaveformFunction`.  A waveform
+  is a unit-peak time function that reports its band (`f_min`,
+  `f_max`, `f_center`) and duration (`t_end`), samples into a
+  `Signal1D` and gives its spectrum in closed form where one exists.
+- `magnelio.Excitation`: one port channel or model source, named,
+  bound to a waveform, an amplitude in the source's natural unit, a
+  delay and — on carrier waveforms — a phase.  Bare names and
+  `(name, mode)` pairs are accepted as shorthands.
+- Sources are model objects: `GeometryModel.add_source`,
+  `Mesh.sources` and `Mesh.with_sources`, stored with the mesh in the
+  project.  `magnelio.sources.SourceFieldIncident` is the base of the
+  incident-field sources; every source publishes `amplitude_unit`.
+- Concept section *Sources, waveforms and excitations* in the methods
+  guide.
+
+### Changed
+
+- `AnalysisScatteringTD(excitation=ExcitationSpec(...))` is now
+  `AnalysisScatteringTD(waveform=...)` taking any `Waveform`; the
+  per-mode default is unchanged (Gaussian for TEM and lumped ports,
+  modulated Gaussian above a mode's cut-off).  A waveform reaching
+  above the analysis band warns.  `run(excitations=...)` is rejected
+  with a pointer to `excited=`.
+- `PlaneWaveSource(waveform, f_center, f_max, amplitude, ...)` is now
+  `SourcePlaneWave(name, direction, polarization, corners)`; the
+  waveform and the peak field come from the excitation (at the
+  component level: `source.set_excitation(waveform, amplitude=...)`).
+- `MonitorFarField` is now `MonitorFarFieldFrequency`.
+- `MonitorFluxTime(plane=("z", 5e-3))` is now
+  `MonitorFluxTime(normal="z", position=5e-3)`, and
+  `MonitorWallLoss(reference_plane=("z", 1e-3))` is now
+  `MonitorWallLoss(normal="z", position=1e-3)` — the one plane
+  vocabulary of the library.  Project recipes written with the old
+  spellings are still read.
+- The `PortSpec*` classes lost their `excitation` field; a soft-source
+  drive at the component level is bound on the built operator with
+  `set_excitation(mode, waveform)`, as before.
+
+### Removed
+
+- `magnelio.ports.ExcitationSpec`, and the module-level waveform
+  functions `gaussian`, `modulated_gaussian` and `waveform_for_mode`
+  from `magnelio.signals` (the waveform classes replace them).
+
 ## [0.4.8] - 2026-08-29
 
 ### Added

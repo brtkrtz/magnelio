@@ -49,10 +49,13 @@ class MonitorWallLoss:
     ----------
     freqs : array_like
         Evaluation frequencies [Hz].
-    reference_plane : tuple[str, float]
-        ``(axis, position)`` of the power-reference cross-section, e.g.
-        ``("z", 1e-3)`` — a plane between the excited port and the lossy
-        walls.  Snapped to the nearest grid node.
+    normal : str
+        Normal axis (``"x"``, ``"y"`` or ``"z"``) of the power-reference
+        cross-section — a plane between the excited port and the lossy
+        walls.
+    position : float
+        Position of that plane along its normal axis [m]; snapped to
+        the nearest grid node.
     sigma : float, optional
         Conductivity [S/m] for walls that are not lossy metals
         (plain-PEC solids and PEC boundary walls); lossy-metal solids
@@ -80,7 +83,8 @@ class MonitorWallLoss:
     """
 
     freqs: np.ndarray
-    reference_plane: tuple[str, float]
+    normal: str
+    position: float
     sigma: float | None = None
     mu: float = 1.0
     roughness: object = None
@@ -110,9 +114,9 @@ class MonitorWallLoss:
 
     def __post_init__(self) -> None:
         self.freqs = np.asarray(self.freqs, dtype=float)
-        axis, _ = self.reference_plane
-        if axis not in ("x", "y", "z"):
-            raise ValueError(f"reference_plane axis must be x/y/z, got {axis!r}")
+        if self.normal not in ("x", "y", "z"):
+            raise ValueError(f"normal must be 'x', 'y' or 'z'; got {self.normal!r}")
+        self.position = float(self.position)
 
     # ------------------------------------------------------------------
     # Monitor protocol
@@ -143,7 +147,7 @@ class MonitorWallLoss:
                 stacklevel=2,
             )
             self.bc_faces = tuple(f for f in self.bc_faces if f not in sym)
-        ref_axis = self.reference_plane[0]
+        ref_axis = self.normal
         n_parallel = sum(1 for face in sym if face[0] == ref_axis)
         self._sym_fraction_factor = float(2**n_parallel)
         if self.sibc is not None:
@@ -180,7 +184,7 @@ class MonitorWallLoss:
         self._h_bins = [np.zeros((nf, len(s.comp)), dtype=complex) for s in self._surfaces]
         self._gather_idx = None  # rebuilt lazily on the first record
 
-        axis, pos = self.reference_plane
+        axis, pos = self.normal, self.position
         grid = mesh.grid
         nodes = {"x": grid.x, "y": grid.y, "z": grid.z}[axis]
         n_cells = {"x": grid.Nx, "y": grid.Ny, "z": grid.Nz}[axis]
@@ -214,7 +218,7 @@ class MonitorWallLoss:
 
     def _ref_slabs(self, fields):
         """The four (E1, H2, E2, H1) state slabs of the reference plane."""
-        axis, _ = self.reference_plane
+        axis = self.normal
         k = self._k_ref
         if axis == "z":  # S_z = Ex*Hy - Ey*Hx
             return (fields.Ex[:, :, k], fields.Hy[:, :, k], fields.Ey[:, :, k], fields.Hx[:, :, k])

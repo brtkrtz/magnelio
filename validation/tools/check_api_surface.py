@@ -30,7 +30,8 @@ import magnelio
 
 # The DD-117 thin core: the model container and run vocabulary, the
 # problem classes, and the project-store entry points.  Growing this
-# set is an API decision — record it in a DD before editing.
+# set is an API decision — record it in a DD before editing
+# (``Excitation``: DD-224).
 EXPECTED_CORE = frozenset(
     {
         "__version__",
@@ -39,6 +40,7 @@ EXPECTED_CORE = frozenset(
         "Mesh",
         "MeshControl",
         "BoundaryConditions",
+        "Excitation",
         "AnalysisScatteringTD",
         "AnalysisEigenmode",
         "resume",

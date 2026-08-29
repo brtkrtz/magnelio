@@ -110,7 +110,8 @@ class TestMixedPortPower:
         """
         model, mesh = _model_and_mesh()
         mon = MonitorFluxTime(
-            plane=("z", LH / 2),
+            normal="z",
+            position=LH / 2,
             name="flux",
         )
         res = _analysis(model, mesh, monitors=(mon,)).run(

@@ -13,7 +13,7 @@ parity — hollow conductors had lost the conformal correction at their
 inner walls (KB-031); how-to *coupled-line coupler* and tutorial 19
 *offset Cassegrain* (rendered, not executed; figures of a measured run
 embedded), every gallery 3D view carries an "Interactive Scene" tab,
-GitHub Discussions is the feedback channel.  Unit suite 2624 passed /
+GitHub Discussions is the feedback channel.  Unit suite 2687 passed /
 4 skipped; integration suite 402 passed / 5 skipped (2026-08-29)
 (edge-pass tangency rule, coax re-pin) and the KB-011 fixture re-pin
 (DD-199 fallout closed 2026-08-27; both unreleased on `main`).
@@ -33,7 +33,7 @@ certificates named in their DD entries.
 
 Newest first, one line each; the full record is the DD entry.
 
-* **DD-224** (2026-08-29) — the API grammar for the years ahead, decided, not yet shipped: `Analysis<Problem><Formulation>` (suffix = TD/FD formulation, method from the mesh's element type), general `AnalysisTD`/`AnalysisFD`, the excitation triad `Source*` (on the model) / `Waveform*` (`signals`) / core `Excitation` (`run(excitations=…)`, simultaneous), reserved names for wakefield, PIC/tracking, statics, FD scattering, `fields`/`particles`/`optimize`; `MonitorFarField` → `MonitorFarFieldFrequency`, `PlaneWaveSource` → `SourcePlaneWave`, `ExcitationSpec` removed, schema 2.0 — all in Phase A/B.
+* **DD-224** (2026-08-29) — the API grammar for the years ahead: `Analysis<Problem><Formulation>` (suffix = TD/FD formulation, method from the mesh's element type), general `AnalysisTD`/`AnalysisFD`, the excitation triad `Source*` (on the model) / `Waveform*` (`signals`) / core `Excitation`, reserved names for wakefield, PIC/tracking, statics, FD scattering, `fields`/`particles`/`optimize`.  **Phase A shipped** (2026-08-29, unreleased): `Waveform` ABC + `WaveformGaussian`/`GaussianModulated`/`Sine`/`Step`/`Table`/`Function`, core `Excitation` (11 names), `SourceFieldIncident`/`SourcePlaneWave` with `add_source`/`Mesh.sources`, `AnalysisScatteringTD(waveform=)`, `ExcitationSpec` removed, `MonitorFarField` → `MonitorFarFieldFrequency`, `MonitorFluxTime`/`MonitorWallLoss` on `normal=`/`position=`.  Phase B (`AnalysisTD`, schema 2.0) next.
 * **DD-223** (2026-08-29) — a `Difference` whose tools' kernel boxes lie inside a box-shaped base (the air body of every housing) is served from its operands throughout the build: box, face and edge planes, singular edges (tool convexity flipped inside the box, convex on its boundary), section contours (`_CsgSectionEngine`: the base's contours plus the tools' reversed) and its place in the effective PEC solid — the kernel cut (1.03 s on the 16 × 16 array) is never built.  16 × 16 7.8 → 6.4 s, posts 240 2.1 → 1.8 s, Lange 16 9.8 → 9.6 s; meshes differ in the last bits of the area arrays.
 Older decisions: `design-decisions.md`.
 
@@ -206,7 +206,7 @@ Public API (thin core + domain namespaces; DD-117, refines DD-108):
   trio, ``PortSpec*`` family, conductor specs, ``Mode``/``ModeType``,
   reports), ``magnelio.sources``, ``magnelio.monitors``
   (``MonitorFieldTime``, ``MonitorFieldFrequency``,
-  ``MonitorFluxTime``, ``MonitorWallLoss``, ``MonitorFarField``),
+  ``MonitorFluxTime``, ``MonitorWallLoss``, ``MonitorFarFieldFrequency``),
   ``magnelio.circuit``
   (``SeriesRLC``/``ParallelRLC``, ``EdgePath``, curve rasteriser),
   ``magnelio.signals``, ``magnelio.solver``, ``magnelio.analysis``
@@ -321,15 +321,16 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
 
 ## Open construction sites
 
-* **API blueprint (DD-224) — Phase A open.**  The vocabulary is
-  fixed; nothing is built.  Phase A: `Waveform` ABC + classes,
-  `Excitation`, `SourceFieldIncident`/`SourcePlaneWave`,
-  `add_source`/`Mesh.sources`, `ExcitationSpec` removed, the three
-  monitor migrations.  Phase B: `AnalysisTD` + `TDResult`,
-  `AnalysisScatteringTD` re-based on it (S-parameters bit-identical),
-  `results.h5` `excitations` attribute, schema 2.0, plane-wave
-  tutorial.  Blueprint and suite-convention survey: internal record
-  `investigations/api-blueprint/`.
+* **API blueprint (DD-224) — Phase B open.**  Phase A is on `main`
+  (waveforms, `Excitation`, sources on the model, the monitor
+  migrations); the old recipe spellings (`MonitorFarField` tag,
+  `plane`/`reference_plane` pairs) are read until schema 2.0.  Phase B:
+  `AnalysisTD` + `TDResult` (`t_end`, `name`, CW rules, delay-aware step
+  estimate, per-mode excitation buffers), `AnalysisScatteringTD`
+  re-based on `_run_transient` (S-parameters bit-identical),
+  `results.h5` `excitations` attribute, schema 2.0 with
+  `mesh.h5:element`, grid planes on the TF/SF box corners, plane-wave
+  tutorial.  Blueprint: internal record `investigations/api-blueprint/`.
 * **Symmetry planes — known limitations (DD-154/DD-155/DD-172).**
   Lumped ports/elements on a symmetry plane are corrected since
   DD-172 (full-model declaration, internal half-device scaling, exact
@@ -360,8 +361,7 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   (385 k) 1.8 s, 4 × 4 patch array with feed (222 k) 0.6 s, 8 × 8
   (664 k) 1.8 s, 16 × 16 (1.8 M, off-ladder) 6.4 s; the pool fires on
   no ladder row; every row matches its reference (`pool/hash_refs/`,
-  re-pinned at DD-223 — rounding of a different polygon
-  decomposition, `*_pre_dd223.txt` kept).  **Campaign closed 2026-08-29** (the rest
+  re-pinned at DD-223, `*_pre_dd223.txt` kept).  **Campaign closed 2026-08-29** (the rest
   is tenths of a second); deferred, in value order:
   (1) the tools' union where it is not a model shape (Lange 16: 320
   pieces, 0.46 s, of which 32 eight-body kernel fuses on three z

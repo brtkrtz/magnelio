@@ -1,4 +1,4 @@
-"""MonitorFarField project-store integration (DD-173).
+"""MonitorFarFieldFrequency project-store integration (DD-173).
 
 Same store contract as the frequency and wall-loss monitors: a
 fixed-size running DFT dumped whole and atomically to its own
@@ -16,7 +16,7 @@ import pytest
 from magnelio import AnalysisScatteringTD, Mesh, open_project, resume
 from magnelio.boundaries.boundary_conditions import BoundaryConditions
 from magnelio.mesh.grid import GridLines
-from magnelio.monitors import MonitorFarField
+from magnelio.monitors import MonitorFarFieldFrequency
 from magnelio.ports import PortSpecLumped
 
 H = 2e-3
@@ -50,7 +50,7 @@ def _analysis(mon, project=None):
 
 
 def _monitor():
-    return MonitorFarField(freqs=[F0], margin_cells=1, name="pattern")
+    return MonitorFarFieldFrequency(freqs=[F0], margin_cells=1, name="pattern")
 
 
 _ANGLES = {"theta": np.linspace(0, np.pi, 19), "phi": np.linspace(0, 2 * np.pi, 37)}
@@ -118,7 +118,7 @@ def test_stale_result_file_is_rejected(tmp_path):
 def test_recipe_roundtrip_carries_the_spec():
     from magnelio.analysis._recipe import _monitor_from_dict, _monitor_to_dict
 
-    mon = MonitorFarField(freqs=[1e9, 2e9], margin_cells=4, name="ff")
+    mon = MonitorFarFieldFrequency(freqs=[1e9, 2e9], margin_cells=4, name="ff")
     back = _monitor_from_dict(_monitor_to_dict(mon))
     assert back.name == mon.name
     assert back.margin_cells == mon.margin_cells

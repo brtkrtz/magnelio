@@ -845,13 +845,17 @@ suffix-free name is the contract protocol (`ScatteringResult`).
 | `AnalysisElectrostatic` / `AnalysisMagnetostatic` / `AnalysisCurrentStatic` | reserved | `_AnalysisBase` | `ElectrostaticResult` / `MagnetostaticResult` / `CurrentStaticResult` |
 | `AnalysisParticleTracking` | reserved | `_AnalysisBase` | `ParticleTrackingResult` |
 
-Excitation triad (DD-224): `Source<Kind>` objects are declared on the
-model before meshing (`model.add_source`, carried as `Mesh.sources`),
+Excitation triad (DD-224, shipped in Phase A): `Source<Kind>` objects
+are declared on the model before meshing (`model.add_source`, carried
+as `Mesh.sources`, stored in `mesh.h5` by class-name tag),
 `Waveform<Kind>` objects in `magnelio.signals` are pure time functions
-with a bandwidth, and the core `Excitation(source, mode=, waveform=,
+with a bandwidth (ABC `Waveform`; the recipe serialises them by
+class-name tag), and the core `Excitation(source, mode=, waveform=,
 amplitude=, delay=, phase=)` binds one to the other in
-`run(excitations=[…])` — simultaneous in one run.  Sequential channel
-runs stay `AnalysisScatteringTD.run(excited=…)`.  The full reserved
+`run(excitations=[…])` — simultaneous in one run (`AnalysisTD`,
+Phase B).  Sequential channel runs stay
+`AnalysisScatteringTD.run(excited=…)`, with `waveform=` as the
+override of the per-mode default.  The full reserved
 vocabulary (sources, waveforms, monitors, namespaces, engines,
 arguments) is the table in DD-224.
 
@@ -948,7 +952,7 @@ Each module is independently testable without running the full solver.
 | `test_port_waveguide.py` | WaveguidePort: TE/TM/TEM modes, Z_pi, β(f_ref), H-field profiles, modal ABC |
 | `test_solver.py`         | Single Leapfrog step energy conservation (lossless), Courant formula |
 | `test_fit_td.py`         | FITTimeDomainSolver integration (energy stopping, port excitation) |
-| `test_sources.py`        | PlaneWaveSource TF/SF injection |
+| `test_sources.py`        | SourcePlaneWave TF/SF injection |
 | `test_postprocessing.py` | S-parameter FFT, field probes |
 | `test_io.py`             | HDF5 roundtrip, VTK export |
 

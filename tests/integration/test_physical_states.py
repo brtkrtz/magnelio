@@ -102,7 +102,7 @@ def test_flux_monitor_watts(grid_fn):
     pulse energy minus the reflected/back-absorbed part — in joules,
     on both grids.  (S11 sits at the DTBC floor, so the transmitted
     fraction is 1 to well below the gate tolerance.)"""
-    flux = MonitorFluxTime(plane=("z", L / 2), name="fluxz")
+    flux = MonitorFluxTime(normal="z", position=L / 2, name="fluxz")
     res, _ = _run_plate(grid_fn(), [flux])
 
     a1 = res.a("p1")
@@ -126,7 +126,7 @@ def test_grid_independence_absolute_values():
             fields=["Ey"],
             name="pt",
         )
-        flux = MonitorFluxTime(plane=("z", L / 2), name="fluxz")
+        flux = MonitorFluxTime(normal="z", position=L / 2, name="fluxz")
         res, _ = _run_plate(grid_fn(), [mon, flux])
         mon.renormalize(res.reference_signal)
         a1 = res.a("p1")
@@ -220,9 +220,10 @@ def test_plane_wave_amplitude_is_physical():
     quantities, the monitor converts back."""
     from magnelio.boundaries.pec import PECBoundary
     from magnelio.monitors.field_time import MonitorFieldTime
+    from magnelio.signals import WaveformGaussian
     from magnelio.solver.fit_td import FITTimeDomainSolver
     from magnelio.solver.stability import courant_dt
-    from magnelio.sources.plane_wave import PlaneWaveSource
+    from magnelio.sources import SourcePlaneWave
 
     grid = GridLines(
         x=np.linspace(0, 8e-3, 9),
@@ -233,14 +234,13 @@ def test_plane_wave_amplitude_is_physical():
     dt = courant_dt(grid, accuracy="normal")
     f_max = 20e9
     x, y, z = grid.x, grid.y, grid.z
-    src = PlaneWaveSource(
+    src = SourcePlaneWave(
+        name="pw",
         direction=(0, 0, 1.0),
         polarization=(1.0, 0, 0),
         corners=((x[2], y[2], z[2]), (x[6], y[6], z[14])),
-        f_max=f_max,
-        amplitude=1.0,
-        waveform="gaussian",
     )
+    src.set_excitation(WaveformGaussian(f_max=f_max), amplitude=1.0)
     c0 = 299_792_458.0
     t_end = 4.0 / f_max + z[10] / c0 + 2.0 / f_max
     n_steps = int(np.ceil(t_end / dt)) + 5

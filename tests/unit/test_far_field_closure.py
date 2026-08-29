@@ -15,7 +15,7 @@ import warnings
 import numpy as np
 import pytest
 
-from magnelio.monitors.far_field import _CLOSURE_TOLERANCE, MonitorFarField
+from magnelio.monitors.far_field import _CLOSURE_TOLERANCE, MonitorFarFieldFrequency
 from magnelio.post.far_field import FarFieldResult, SurfacePatchSet, ntff_transform, surface_power
 from magnelio.signals.signal_1d import Signal1D
 from tests.unit.test_monitor_far_field import _cw_state, _mesh
@@ -85,7 +85,7 @@ class TestMonitorWarning:
         dt = (2.0 * np.pi / omega) / 64.0
         n_steps = 640
         mesh = _mesh(pml_cells=2, **bc)
-        mon = MonitorFarField(freqs=[f0], margin_cells=1, name="box")
+        mon = MonitorFarFieldFrequency(freqs=[f0], margin_cells=1, name="box")
         mon.attach(mesh)
         for n in range(n_steps):
             mon.record(_cw_state(mesh.grid, 0.0, 0.0, n * dt, dt, omega), n, n * dt, dt)

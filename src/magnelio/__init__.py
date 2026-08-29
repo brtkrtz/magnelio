@@ -4,8 +4,9 @@ simulation.
 
 This namespace is the **core**: the model container and run vocabulary
 (``GeometryModel``, ``Material``, ``Mesh``/``MeshControl``,
-``BoundaryConditions``), the problem classes (``Analysis*``) and the
-project-store entry points (``open_project``, ``resume``).  Every other
+``BoundaryConditions``, ``Excitation``), the problem classes
+(``Analysis*``) and the project-store entry points (``open_project``,
+``resume``).  Every other
 public name lives in exactly one domain namespace —
 ``magnelio.geo``, ``magnelio.materials``, ``magnelio.mesh``,
 ``magnelio.boundaries``, ``magnelio.ports``, ``magnelio.sources``,
@@ -19,6 +20,9 @@ from magnelio._version import __version__
 
 # Problem classes + project store entry points
 from magnelio.analysis import AnalysisEigenmode, AnalysisScatteringTD, resume
+
+# Run vocabulary — one port or source bound to a waveform (DD-224)
+from magnelio.analysis.excitation import Excitation
 
 # Model vocabulary — boundary closure (DD-103)
 from magnelio.boundaries.boundary_conditions import BoundaryConditions
@@ -40,6 +44,7 @@ __all__ = [
     "Mesh",
     "MeshControl",
     "BoundaryConditions",
+    "Excitation",
     "AnalysisScatteringTD",
     "AnalysisEigenmode",
     "resume",

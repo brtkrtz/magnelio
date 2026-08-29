@@ -1,7 +1,7 @@
 """
 Benchmark: Plane-wave pulse propagation and timing accuracy.
 
-A Gaussian pulse is injected via the TF/SF PlaneWaveSource (+z, x-polarised)
+A Gaussian pulse is injected via the TF/SF SourcePlaneWave (+z, x-polarised)
 into a PEC-walled domain.  A 0D field monitor records Ex at the midpoint.
 
 Acceptance criteria:
@@ -29,9 +29,10 @@ def run_benchmark():
     from magnelio.mesh.grid import GridLines
     from magnelio.mesh.mesher import Mesh
     from magnelio.monitors.field_time import MonitorFieldTime
+    from magnelio.signals import WaveformGaussian
     from magnelio.solver.fit_td import FITTimeDomainSolver
     from magnelio.solver.stability import courant_dt
-    from magnelio.sources.plane_wave import PlaneWaveSource
+    from magnelio.sources import SourcePlaneWave
 
     # Uniform grid — chosen so numerical dispersion < 1 % at f_max
     Nx, Ny, Nz = 8, 8, 24
@@ -51,13 +52,13 @@ def run_benchmark():
     x, y, z = grid.x, grid.y, grid.z
     tf_box = ((x[2], y[2], z[2]), (x[Nx - 2], y[Ny - 2], z[Nz - 2]))
 
-    src = PlaneWaveSource(
+    src = SourcePlaneWave(
+        name="pw",
         direction=(0.0, 0.0, 1.0),
         polarization=(1.0, 0.0, 0.0),
         corners=tf_box,
-        f_max=f_max,
-        waveform="gaussian",
     )
+    src.set_excitation(WaveformGaussian(f_max=f_max))
 
     # Probe at z = L_z/2, inside TF box: a 0D field monitor sampling Ex
     # (x-polarised plane wave) at every time step.

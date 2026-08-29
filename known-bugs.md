@@ -63,7 +63,7 @@ to `P_rad` itself, was right.  The window port adds only the
 documented few percent of outer-wall current beyond the box
 (`P_surf/P_acc` 0.965 on the launch), which the balance does not see.
 Fix: `FarFieldResult.surface_power`/`power_balance` and a warning
-from `MonitorFarField.result` beyond 5 % imbalance; the how-to's
+from `MonitorFarFieldFrequency.result` beyond 5 % imbalance; the how-to's
 `h_box` is 0.7 λ.  Measured in `investigations/patch-array/MEASUREMENTS.md`
 (M18, internal record); `tests/unit/test_far_field_closure.py`.
 

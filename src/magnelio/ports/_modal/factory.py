@@ -8,7 +8,7 @@ plane, build the operator with the full ``(m_eps, m_mu, dt, omega_calc)``
 plumbing, and optionally wire a soft-source closure for the excitation.
 
 This module exposes the public, face-agnostic description of a modal
-port (``PortSpecCoax`` / ``PortSpecRectWG`` / ``ExcitationSpec``) and a
+port (``PortSpecCoax`` / ``PortSpecRectWG``) and a
 single :func:`build_modal_port` factory that turns a spec + mesh +
 material matrices into a ready-to-use :class:`PortOperatorModal`.
 
@@ -45,7 +45,7 @@ import math
 import time
 import warnings
 from dataclasses import dataclass
-from typing import Callable, Literal, Optional, Union
+from typing import Optional, Union
 
 import numpy as np
 
@@ -90,7 +90,6 @@ from magnelio.ports._modal.tem_laplace import (
     solve_qtem_laplace,
     solve_tem_laplace,
 )
-from magnelio.signals.waveforms import gaussian, modulated_gaussian
 
 
 def _with_symmetry_faces(
@@ -139,45 +138,6 @@ def _with_symmetry_faces(
 
 
 @dataclass(frozen=True)
-class ExcitationSpec:
-    """Soft-source description for a modal port.
-
-    Parameters
-    ----------
-    f_min, f_max : float
-        Lower / upper passband edges [Hz].  ``f_max`` doubles as the
-        Gaussian-pulse bandwidth when ``waveform == "gaussian"``.
-    mode_index : int, default 0
-        Index of the mode to drive (in the spec's ``n_modes`` list).
-    waveform : {"modulated_gaussian", "gaussian"}, default "modulated_gaussian"
-        ``modulated_gaussian`` for band-limited TE/TM excitation;
-        ``gaussian`` for DC-inclusive TEM excitation.
-    """
-
-    f_min: float
-    f_max: float
-    mode_index: int = 0
-    waveform: Literal["modulated_gaussian", "gaussian"] = "modulated_gaussian"
-
-    def build_waveform(self) -> Callable[[float], float]:
-        if self.waveform == "modulated_gaussian":
-            f_min, f_max = self.f_min, self.f_max
-
-            def _wf(t: float) -> float:
-                return float(modulated_gaussian(t, f_max, f_min))
-
-            return _wf
-        if self.waveform == "gaussian":
-            f_max = self.f_max
-
-            def _wf_g(t: float) -> float:
-                return float(gaussian(t, f_max))
-
-            return _wf_g
-        raise ValueError(f"unknown waveform {self.waveform!r}")
-
-
-@dataclass(frozen=True)
 class PortSpecCoax:
     """Coaxial-line modal port (TEM, Phase 1).
 
@@ -196,9 +156,6 @@ class PortSpecCoax:
         first).  See module docstring for the convention.
     n_modes : int, default 1
         Phase 1 supports only ``n_modes = 1`` (TEM).
-    excitation : ExcitationSpec or None
-        If given, the port is a soft source.  Otherwise it is an
-        absorber-only modal Mur-1st port.
     """
 
     name: str
@@ -208,7 +165,6 @@ class PortSpecCoax:
     epsilon_r: float = 1.0
     center: tuple[float, float] = (0.0, 0.0)
     n_modes: int = 1
-    excitation: Optional[ExcitationSpec] = None
 
 
 @dataclass(frozen=True)
@@ -235,8 +191,6 @@ class PortSpecRectWG:
     n_modes : int, default 1
         Number of modes returned by the analytical solver, ordered by
         ascending cutoff frequency.
-    excitation : ExcitationSpec or None
-        Soft-source spec; ``None`` for an absorber-only port.
     """
 
     name: str
@@ -246,7 +200,6 @@ class PortSpecRectWG:
     epsilon_r: float = 1.0
     center: tuple[float, float] = (0.0, 0.0)
     n_modes: int = 1
-    excitation: Optional[ExcitationSpec] = None
 
 
 @dataclass(frozen=True)
@@ -290,8 +243,6 @@ class PortSpecNumerical:
         one operator injects/records/terminates every mode on the
         face (unified multi-mode port, WP-R3).  Pass ``ModeType.TE``
         or ``ModeType.TM`` to restrict to one family.
-    excitation : ExcitationSpec or None
-        Soft-source spec; ``None`` for an absorber-only port.
     window : tuple of two corner points, optional
         Sub-rectangle of the face as two opposite corners in *global*
         tangential-axis ordering (:meth:`PortPlane.from_mesh`
@@ -306,7 +257,6 @@ class PortSpecNumerical:
     n_modes: int = 1
     epsilon_r: float = 1.0
     mode_type: Optional[ModeType] = None
-    excitation: Optional[ExcitationSpec] = None
     window: Optional[tuple] = None
 
 
@@ -432,8 +382,6 @@ class PortSpecMultiConductor:
         docstring.  The QTEM extension requires the requested modes
         to propagate at ``f_calc`` and raises with guidance
         otherwise.
-    excitation : ExcitationSpec or None, default None
-        Soft-source spec; ``None`` for an absorber-only port.
     window : tuple of two corner points, optional
         Sub-rectangle of the face as two opposite corners in *global*
         tangential-axis ordering (:meth:`PortPlane.from_mesh`
@@ -456,7 +404,6 @@ class PortSpecMultiConductor:
     conductors: Optional[tuple[ConductorSpec, ...]] = None
     epsilon_r: Optional[float] = None
     n_modes: int = 1
-    excitation: Optional[ExcitationSpec] = None
     window: Optional[tuple] = None
 
     def __post_init__(self) -> None:
@@ -1935,11 +1882,6 @@ def build_modal_port(
             mesh.boundary_conditions,
         ),
     )
-    if spec.excitation is not None:
-        op.set_excitation(
-            spec.excitation.mode_index,
-            spec.excitation.build_waveform(),
-        )
     return op
 
 
@@ -1983,9 +1925,9 @@ def build_cw_true_mode_port(
         Port description; ``epsilon_r=None`` selects the QTEM
         Laplace bootstrap (the standard inhomogeneous case),
         a float value the homogeneous TEM bootstrap.  The spec's
-        ``excitation`` field is ignored — CW drives are set by the
+        CW drive is set by the
         caller via ``op.set_excitation`` (the waveform is a ramped
-        monochromatic tone, not an ``ExcitationSpec`` pulse).
+        monochromatic tone, not a pulsed waveform).
     mesh, m_eps, m_mu, dt
         As in :func:`build_modal_port`.
     f_cw : float
@@ -2290,8 +2232,7 @@ def build_band_dtbc_port(
     ----------
     spec : PortSpecMultiConductor
         Port description; ``epsilon_r=None`` selects the QTEM
-        Laplace bootstrap.  The spec's ``excitation`` field is
-        ignored — pulsed drives are set via ``op.set_excitation``.
+        Laplace bootstrap.  Pulsed drives are set via ``op.set_excitation``.
     mesh, m_eps, m_mu, dt
         As in :func:`build_modal_port`.
     f_band : (float, float)

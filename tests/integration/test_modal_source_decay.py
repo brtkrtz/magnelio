@@ -24,11 +24,11 @@ from magnelio.boundaries.pec import PECBoundary
 from magnelio.mesh.mesher import Mesh, MeshControl
 from magnelio.ports._modal import (
     BoxFace,
-    ExcitationSpec,
     PortSpecCoax,
     build_modal_port,
 )
 from magnelio.ports.recorder import PortSignalRecorder
+from magnelio.signals import WaveformGaussian
 from magnelio.signals.signal_1d import Signal1D
 from magnelio.signals.waveforms import gaussian
 from magnelio.solver.fit_td import FITTimeDomainSolver
@@ -101,19 +101,12 @@ def _make_coax_occ_mesh(L_x: float, L_yz: float, r_i: float, r_o: float, f_max: 
 
 def _coax_specs(L_yz: float, r_i: float, r_o: float, f_max: float):
     """Source + load Coax port specs sharing the same TEM cross-section."""
-    excitation = ExcitationSpec(
-        f_min=0.0,
-        f_max=f_max,
-        mode_index=0,
-        waveform="gaussian",
-    )
     spec_src = PortSpecCoax(
         name="port1",
         plane=BoxFace.X_MIN,
         inner_radius=r_i,
         outer_radius=r_o,
         center=(L_yz / 2, L_yz / 2),
-        excitation=excitation,
     )
     spec_load = PortSpecCoax(
         name="port2",
@@ -139,6 +132,7 @@ def test_coax_source_cutoff_energy_decay():
 
     spec_src, spec_load = _coax_specs(L_yz, r_i, r_o, f_max)
     op_src = build_modal_port(spec_src, mesh, m_eps, m_mu, dt=dt, f_calc=f_calc)
+    op_src.set_excitation(0, WaveformGaussian(f_max=f_max))
     op_load = build_modal_port(spec_load, mesh, m_eps, m_mu, dt=dt, f_calc=f_calc)
 
     t_total = 1.5e-9
@@ -199,6 +193,7 @@ def test_coax_source_decay_with_modal_recorder():
 
     spec_src, spec_load = _coax_specs(L_yz, r_i, r_o, f_max)
     op_src = build_modal_port(spec_src, mesh, m_eps, m_mu, dt=dt, f_calc=f_calc)
+    op_src.set_excitation(0, WaveformGaussian(f_max=f_max))
     op_load = build_modal_port(spec_load, mesh, m_eps, m_mu, dt=dt, f_calc=f_calc)
 
     rec = PortSignalRecorder(dt=dt, ports=[op_src, op_load])
@@ -310,6 +305,7 @@ def test_coax_pec_confined_wave_arrival():
 
     spec_src, spec_load = _coax_specs(L_yz, r_i, r_o, f_max)
     op_src = build_modal_port(spec_src, mesh, m_eps, m_mu, dt=dt, f_calc=f_calc)
+    op_src.set_excitation(0, WaveformGaussian(f_max=f_max))
     op_load = build_modal_port(spec_load, mesh, m_eps, m_mu, dt=dt, f_calc=f_calc)
     rec = PortSignalRecorder(dt=dt, ports=[op_src, op_load])
 

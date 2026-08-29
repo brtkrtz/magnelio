@@ -22,7 +22,8 @@ from magnelio.boundaries import CPMLBoundary, PECBoundary
 from magnelio.mesh import BoxFace
 from magnelio.mesh.grid import GridLines
 from magnelio.mesh.mesher import Mesh
-from magnelio.ports import ExcitationSpec, PortSpecLumped, PortSpecRectWG
+from magnelio.ports import PortSpecLumped, PortSpecRectWG
+from magnelio.signals import WaveformGaussian, WaveformGaussianModulated
 
 WR90_A = 22.86e-3
 WR90_B = 10.16e-3
@@ -49,14 +50,13 @@ def _lateral_pec_bcs() -> dict:
     }
 
 
-def _wr90_specs(excitation: ExcitationSpec | None = None):
+def _wr90_specs():
     spec_src = PortSpecRectWG(
         name="port1",
         plane=BoxFace.X_MIN,
         width_a=WR90_A,
         height_b=WR90_B,
         n_modes=1,
-        excitation=excitation,
     )
     spec_load = PortSpecRectWG(
         name="port2",
@@ -160,7 +160,7 @@ def test_default_f_axis_construction():
 
 
 def test_excitation_auto_derived_per_mode():
-    """``excitation=None`` derives the waveform from the excited mode.
+    """``waveform=None`` derives the waveform from the excited mode.
 
     WP3.2 rule (ports the legacy ``waveform_for_mode`` selection): the
     effective lower band edge is ``max(f_cutoff, f_min)``; zero edge →
@@ -186,14 +186,14 @@ def test_excitation_auto_derived_per_mode():
         f_max=10e9,
     )
     # TEM (omega_c = 0) with f_min = 0 → DC-inclusive gaussian.
-    exc = a._resolve_excitation(None, _op(0.0), 0)
-    assert exc.waveform == "gaussian"
+    exc = a._resolve_waveform(None, _op(0.0), 0)
+    assert isinstance(exc, WaveformGaussian)
     assert exc.f_max == 10e9
 
     # TE/TM: the cut-off sets the lower band edge even for f_min = 0.
     f_c = 6.5e9
-    exc = a._resolve_excitation(None, _op(2 * np.pi * f_c, "TE10"), 0)
-    assert exc.waveform == "modulated_gaussian"
+    exc = a._resolve_waveform(None, _op(2 * np.pi * f_c, "TE10"), 0)
+    assert isinstance(exc, WaveformGaussianModulated)
     np.testing.assert_allclose(exc.f_min, f_c)
     assert exc.f_max == 10e9
 
@@ -204,26 +204,26 @@ def test_excitation_auto_derived_per_mode():
         f_min=8.2e9,
     )
     # Explicit f_min above the cut-off wins.
-    exc = band._resolve_excitation(None, _op(2 * np.pi * f_c, "TE10"), 0)
-    assert exc.waveform == "modulated_gaussian"
+    exc = band._resolve_waveform(None, _op(2 * np.pi * f_c, "TE10"), 0)
+    assert isinstance(exc, WaveformGaussianModulated)
     assert (exc.f_min, exc.f_max) == (8.2e9, 12.4e9)
 
     # f_min > 0 keeps the band rule for TEM modes (bandpass request).
-    exc = band._resolve_excitation(None, _op(0.0), 0)
-    assert exc.waveform == "modulated_gaussian"
+    exc = band._resolve_waveform(None, _op(0.0), 0)
+    assert isinstance(exc, WaveformGaussianModulated)
     assert (exc.f_min, exc.f_max) == (8.2e9, 12.4e9)
 
     # Explicit excitation stays as override, untouched.
-    override = ExcitationSpec(f_min=1e9, f_max=9e9, waveform="gaussian")
-    assert a._resolve_excitation(override, _op(0.0), 0) is override
+    override = WaveformGaussian(f_max=9e9)
+    assert a._resolve_waveform(override, _op(0.0), 0) is override
 
     # Cut-off at/above f_max: no usable band → clear error.
     with pytest.raises(ValueError, match="cut-off"):
-        a._resolve_excitation(None, _op(2 * np.pi * 12e9, "TE30"), 0)
+        a._resolve_waveform(None, _op(2 * np.pi * 12e9, "TE30"), 0)
 
     # Mode index beyond the operator's mode list → clear error.
     with pytest.raises(ValueError, match="out of range"):
-        a._resolve_excitation(None, _op(0.0), 1)
+        a._resolve_waveform(None, _op(0.0), 1)
 
 
 def test_auto_excitation_te10_uses_real_cutoff():
@@ -246,9 +246,9 @@ def test_auto_excitation_te10_uses_real_cutoff():
         dt=1e-13,
         f_calc=12.4e9,
     )
-    exc = analysis._resolve_excitation(None, op, 0)
+    exc = analysis._resolve_waveform(None, op, 0)
     f_c_te10 = 299_792_458.0 / (2.0 * WR90_A)
-    assert exc.waveform == "modulated_gaussian"
+    assert isinstance(exc, WaveformGaussianModulated)
     # The operator carries the discrete mode's cut-off, which deviates
     # from the analytic value by the grid dispersion (~0.1 % here).
     np.testing.assert_allclose(exc.f_min, f_c_te10, rtol=2e-3)
@@ -284,18 +284,18 @@ def test_run_full_band_te10_auto_waveform():
 def test_run_returns_single_excitation_result():
     """Single-excitation run produces a 1-column SParameterResult.
 
-    Uses the explicit ``excitation=`` override path; the other run
+    Uses the explicit ``waveform=`` override path; the other run
     tests exercise the band-derived default.
     """
     mesh = Mesh.from_grid(_wr90_grid_30mm())
-    excitation = ExcitationSpec(f_min=8.2e9, f_max=12.4e9)
+    waveform = WaveformGaussianModulated(f_min=8.2e9, f_max=12.4e9)
 
     analysis = AnalysisScatteringTD(
         mesh=mesh.with_boundary_conditions(_lateral_pec_bcs()),
         ports=_wr90_specs(),
         f_max=12.4e9,
         f_min=8.2e9,
-        excitation=excitation,
+        waveform=waveform,
         verbose=False,
     )
 

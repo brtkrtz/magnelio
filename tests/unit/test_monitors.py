@@ -788,13 +788,13 @@ class TestDFTAccumulator:
 
 class TestMonitorFluxTime:
     def test_validation(self):
-        """The plane must be a (normal, position) pair."""
-        with pytest.raises(ValueError, match="normal, position"):
-            MonitorFluxTime(plane=((-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)))
-        with pytest.raises(ValueError, match="normal, position"):
-            MonitorFluxTime(plane=("q", 0.0))
-        with pytest.raises(ValueError, match="normal, position"):
-            MonitorFluxTime(plane=None)  # a plane needs normal and position
+        """The plane is a normal axis plus a finite position."""
+        with pytest.raises(ValueError, match="normal must be"):
+            MonitorFluxTime(normal="q", position=0.0)
+        with pytest.raises(ValueError, match="position must be"):
+            MonitorFluxTime(normal="z", position=None)
+        with pytest.raises(ValueError, match="position must be"):
+            MonitorFluxTime(normal="z", position=float("nan"))
 
     def test_records_power(self):
         grid = _make_grid(4, 5, 6)
@@ -802,7 +802,8 @@ class TestMonitorFluxTime:
         fields = _make_fields(grid)
 
         mon = MonitorFluxTime(
-            plane=("z", 0.015),
+            normal="z",
+            position=0.015,
             name="flux_z",
         )
         mon.attach(mesh)

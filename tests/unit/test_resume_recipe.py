@@ -28,7 +28,6 @@ from magnelio.monitors import MonitorFieldTime
 from magnelio.ports._lumped import PortSpecLumped
 from magnelio.ports._modal.factory import (
     BoxFace,
-    ExcitationSpec,
     ModeType,
     PortSpecCoax,
     PortSpecMultiConductor,
@@ -46,7 +45,6 @@ from magnelio.ports._modal.factory import (
             width_a=22.86e-3,
             height_b=10.16e-3,
             n_modes=2,
-            excitation=ExcitationSpec(f_min=8.2e9, f_max=12.4e9, mode_index=1),
         ),
         PortSpecCoax(
             name="p_coax",

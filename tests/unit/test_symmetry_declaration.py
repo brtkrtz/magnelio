@@ -592,7 +592,7 @@ class TestFluxUnderSymmetry:
         from magnelio.monitors.flux import MonitorFluxTime
 
         mesh = Mesh.from_geometry(_layered_model(0.0, decl), CONTROL, F_MAX)
-        mon = MonitorFluxTime(plane=("z", 2e-3), name="f")
+        mon = MonitorFluxTime(normal="z", position=2e-3, name="f")
         mon.attach(mesh)
         mon.record(self._Ones(mesh.grid), 0, 0.0, 1e-12)
         return float(mon.power[0])
@@ -612,13 +612,14 @@ class TestWallLossFullModel:
     """DD-154: wall-loss fractions carry full-model semantics and a
     symmetry face never books as a physical wall."""
 
-    def _monitor(self, decl, *, reference_plane, bc_faces=("zmin",)):
+    def _monitor(self, decl, *, normal, position, bc_faces=("zmin",)):
         from magnelio.monitors.wall_loss import MonitorWallLoss
 
         mesh = Mesh.from_geometry(_layered_model(0.0, decl), CONTROL, F_MAX)
         mon = MonitorWallLoss(
             freqs=[10e9],
-            reference_plane=reference_plane,
+            normal=normal,
+            position=position,
             sigma=5.8e7,
             bc_faces=bc_faces,
         )
@@ -628,14 +629,16 @@ class TestWallLossFullModel:
     def test_transverse_symmetry_leaves_the_fraction_factor_at_one(self):
         mon = self._monitor(
             {"xmin": "ForceSymmetryPMC"},
-            reference_plane=("y", 2e-3),
+            normal="y",
+            position=2e-3,
         )
         assert mon._sym_fraction_factor == 1.0
 
     def test_parallel_symmetry_doubles_the_fraction_factor(self):
         mon = self._monitor(
             {"xmin": "ForceSymmetryPMC"},
-            reference_plane=("x", 2e-3),
+            normal="x",
+            position=2e-3,
         )
         assert mon._sym_fraction_factor == 2.0
 
@@ -643,7 +646,8 @@ class TestWallLossFullModel:
         with pytest.warns(UserWarning, match="not a physical wall"):
             mon = self._monitor(
                 {"xmin": "ForceSymmetryPEC"},
-                reference_plane=("y", 2e-3),
+                normal="y",
+                position=2e-3,
                 bc_faces=("xmin", "zmin"),
             )
         assert mon.bc_faces == ("zmin",)

@@ -81,7 +81,8 @@ def test_parallel_plate_sibc_alpha_and_monitor():
     monitor reports the SIBC's own extraction (windows measured above)."""
     mon = MonitorWallLoss(
         freqs=FREQS,
-        reference_plane=("z", 2e-3),
+        normal="z",
+        position=2e-3,
         sigma=SIGMA,
         bc_faces=("ymin", "ymax"),
     )

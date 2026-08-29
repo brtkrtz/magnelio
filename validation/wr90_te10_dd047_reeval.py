@@ -29,7 +29,7 @@ condition for TE/TM therefore still holds.
 Setup mirrors the session-54 benchmark:
 - WR-90 dimensions (a = 22.86 mm, b = 10.16 mm), L_x = 30 mm, vacuum.
 - Both ports are ``PortSpecRectWG(n_modes=1)`` (TE10).
-- Source: ``ExcitationSpec`` modulated Gaussian on [8.2, 12.4] GHz.
+- Source: ``WaveformGaussianModulated`` on [8.2, 12.4] GHz.
 - Lateral PEC walls via ``PECBoundary`` on the four lateral bbox faces.
 - Two mesh resolutions: baseline (24×11 transversal) and 2× refined.
 """
@@ -47,11 +47,11 @@ from magnelio.mesh.mesher import Mesh
 from magnelio.ports import PortSignalRecorder
 from magnelio.ports._modal import (
     BoxFace,
-    ExcitationSpec,
     PortSpecRectWG,
     build_modal_port,
 )
 from magnelio.post import compute_s_parameters
+from magnelio.signals import WaveformGaussianModulated
 from magnelio.signals.signal_1d import Signal1D
 from magnelio.signals.waveforms import modulated_gaussian
 from magnelio.solver.fit_td import FITTimeDomainSolver
@@ -85,14 +85,12 @@ def run_variant(label: str, refine: int = 1) -> None:
     m_mu = build_M_mu(mesh)
     dt = courant_dt(mesh.grid, accuracy="normal")
 
-    excitation = ExcitationSpec(f_min=F_MIN, f_max=F_MAX, mode_index=0)
     spec_src = PortSpecRectWG(
         name="port1",
         plane=BoxFace.X_MIN,
         width_a=WR90_A,
         height_b=WR90_B,
         n_modes=1,
-        excitation=excitation,
     )
     spec_load = PortSpecRectWG(
         name="port2",
@@ -102,6 +100,7 @@ def run_variant(label: str, refine: int = 1) -> None:
         n_modes=1,
     )
     op_src = build_modal_port(spec_src, mesh, m_eps, m_mu, dt=dt, f_calc=F_CALC)
+    op_src.set_excitation(0, WaveformGaussianModulated(f_min=F_MIN, f_max=F_MAX))
     op_load = build_modal_port(spec_load, mesh, m_eps, m_mu, dt=dt, f_calc=F_CALC)
     print(f"  Path-(a) cutoff_ref = {op_src.port_report.cutoff_ref / 1e9:.4f} GHz")
     print(f"  Path-(b) cutoff_num = {op_src.port_report.cutoff_num / 1e9:.4f} GHz")

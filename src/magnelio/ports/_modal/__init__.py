@@ -5,7 +5,7 @@ Public exports:
 - ``Mode``, ``ModeType`` — passive modal data class.
 - ``ModeSolver`` — Protocol for analytical and numerical solvers.
 - ``CoaxAnalyticalModeSolver`` — closed-form TEM solver for coaxial lines.
-- ``PortSpecCoax`` / ``PortSpecRectWG`` / ``ExcitationSpec`` /
+- ``PortSpecCoax`` / ``PortSpecRectWG`` /
   ``build_modal_port`` — public, face-agnostic port factory.
 
 Constants ``EPS0``, ``MU0``, ``C0``, ``ETA0`` are re-exported from
@@ -25,7 +25,6 @@ from magnelio.ports._modal.discrete import DiscreteMode, discretize_modes, gram_
 from magnelio.ports._modal.factory import (
     BboxLateralConductor,
     ConductorSpec,
-    ExcitationSpec,
     PortSpecCoax,
     PortSpecMultiConductor,
     PortSpecNumerical,
@@ -73,7 +72,6 @@ __all__ = [
     "DiscreteMode",
     "EPS0",
     "ETA0",
-    "ExcitationSpec",
     "MU0",
     "PortOperatorModal",
     "Mode",

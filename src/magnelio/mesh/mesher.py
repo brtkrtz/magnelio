@@ -316,6 +316,10 @@ class Mesh:
     # via add_element.  Carried alongside the ports for the same
     # reason; the mesher itself never reads them.
     elements: tuple = ()
+    # Field sources (DD-224), declared on the GeometryModel via
+    # add_source and driven by an Excitation naming them.  Carried like
+    # the ports and elements; the mesher itself never reads them.
+    sources: tuple = ()
     # Provenance of every grid plane (DD-200): which rule and which
     # shape asked for it, which requested planes were dropped or
     # absorbed.  Set by ``from_geometry``; ``None`` on the ``from_grid``
@@ -1491,6 +1495,7 @@ class Mesh:
             f_max=f_max,
             ports=tuple(getattr(geometry, "ports", ()) or ()),
             elements=tuple(getattr(geometry, "elements", ()) or ()),
+            sources=tuple(getattr(geometry, "sources", ()) or ()),
             planes=grid_planes,
             _wall_backup=wall_backup,
         )
@@ -1663,6 +1668,7 @@ class Mesh:
             boundary_conditions=self.boundary_conditions,
             ports=self.ports,
             elements=self.elements,
+            sources=self.sources,
             planes=self.planes,
         )
 
@@ -1690,6 +1696,7 @@ class Mesh:
         """
         ports = tuple(ports)
         labels = [p.name for p in ports] + [e.name for e in self.elements]
+        labels += [s.name for s in self.sources]
         if len(set(labels)) != len(labels):
             raise ValueError(f"port names must be unique; got {labels}")
         return dataclasses.replace(self, ports=ports)
@@ -1717,9 +1724,38 @@ class Mesh:
         """
         elements = tuple(elements)
         labels = [e.name for e in elements] + [p.name for p in self.ports]
+        labels += [s.name for s in self.sources]
         if len(set(labels)) != len(labels):
             raise ValueError(f"element names must be unique; got {labels}")
         return dataclasses.replace(self, elements=elements)
+
+    def with_sources(self, sources) -> "Mesh":
+        """Attach field sources to an already-built mesh.
+
+        The late-declaration path for meshes not built through
+        :meth:`from_geometry`, mirroring :meth:`with_ports`: the
+        returned mesh carries *sources* exactly as if they had been
+        declared on the :class:`~magnelio.geo.GeometryModel` via
+        ``add_source``, and an :class:`~magnelio.Excitation` drives
+        them by name.
+
+        Parameters
+        ----------
+        sources : sequence of magnelio.sources.Source
+            Declarative sources; labels must be unique among the ports,
+            elements *and* sources of this mesh.
+
+        Returns
+        -------
+        Mesh
+            New mesh sharing all data with ``self`` plus the sources.
+        """
+        sources = tuple(sources)
+        labels = [s.name for s in sources] + [p.name for p in self.ports]
+        labels += [e.name for e in self.elements]
+        if len(set(labels)) != len(labels):
+            raise ValueError(f"source names must be unique; got {labels}")
+        return dataclasses.replace(self, sources=sources)
 
     def with_boundary_conditions(self, boundary_conditions) -> "Mesh":
         """Re-declare the boundary closure of an already-built mesh.
@@ -1788,6 +1824,7 @@ class Mesh:
             boundary_conditions=resolved,
             ports=self.ports,
             elements=self.elements,
+            sources=self.sources,
             planes=self.planes,
             _wall_backup=backup,
         )

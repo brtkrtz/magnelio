@@ -1,5 +1,59 @@
 # Sources, monitors and post-processing
 
+## Sources, waveforms and excitations
+
+A time-domain drive is described by three objects with three
+distinct jobs:
+
+- A **source** is a model object — declared on the
+  `GeometryModel` before meshing with `add_source`, exactly like a
+  port with `add_port` — that says *where* and *how* energy enters
+  the domain: a plane wave on a total-field/scattered-field box
+  (`sources.SourcePlaneWave`), and in later releases incident fields,
+  current paths and beams.  Ports are sources *and* loads and keep
+  their own namespace, `magnelio.ports`.  Sources travel with the
+  mesh (`mesh.sources`, next to `mesh.ports` and `mesh.elements`;
+  `Mesh.with_sources` attaches them to a grid built without a model)
+  and share one name namespace with ports and elements.
+- A **waveform** (`magnelio.signals`) is a pure, unit-peak function
+  of time that knows its own bandwidth: `WaveformGaussian(f_max)` for
+  DC-inclusive drives, `WaveformGaussianModulated(f_min, f_max)` for a
+  band-limited pulse on a carrier, `WaveformSine` and `WaveformStep`
+  for continuous-wave and step drives (infinite duration, so the run
+  needs an explicit length), `WaveformTable` for measured or imported
+  samples and `WaveformFunction` for an arbitrary callable.  Every
+  waveform reports `f_min`, `f_max`, `f_center` (the carrier, or
+  `None` for baseband forms) and `t_end`, can be sampled into a
+  `Signal1D`, and gives its spectrum in closed form where one exists.
+  Amplitude, delay and phase are *not* part of a waveform — one
+  waveform object can drive several ports and sources.
+- An **excitation** (`magnelio.Excitation`) binds a port channel or a
+  source, *by name*, to a waveform and a weight: `amplitude` in the
+  source's natural unit (`sqrt(W)` — the incident power wave — for
+  ports, `V/m` for a plane wave; every source publishes it as
+  `amplitude_unit`), a `delay`, and on carrier waveforms a `phase`,
+  which is applied as a delay of `phase / (360 · f_center)`.  Two
+  modes of one port at 90° make a circularly polarised feed; a phase
+  on a baseband pulse is rejected because such a pulse has none.
+
+The scattering analysis excites *channels* — one `(port, mode)` per
+independent run, listed in `run(excited=...)` — and derives the
+waveform per excited mode from the analysis band: a Gaussian
+pulse over `[0, f_max]` for TEM and lumped ports, a modulated
+Gaussian over `[max(f_cutoff, f_min), f_max]` above a mode's
+cut-off, so that no pulse energy sits below cut-off where it would
+be totally reflected.  `AnalysisScatteringTD(waveform=...)` overrides
+that choice with any waveform; a waveform reaching above the
+analysis band warns.  Simultaneous excitations of several ports and
+sources in one run (`excitations=[Excitation(...), ...]`) are the
+business of the general time-domain analysis, not of the scattering
+analysis, which rejects the argument.
+
+At the component level a bound waveform is what a port operator or
+a source injects: `operator.set_excitation(mode, waveform)` and
+`source.set_excitation(waveform, amplitude=..., delay=...)` — the
+solver-facing form of the same triad.
+
 ## Plane-wave source (TF/SF)
 
 Plane-wave illumination uses the **total-field/scattered-field
@@ -12,7 +66,10 @@ Umashankar and Taflove {cite}`umashankartaflove1982`;
 textbook treatment in {cite}`taflovehagness2005`.
 The incident samples are converted to FIT grid quantities per
 edge/face, so amplitudes are physical (V/m) on any grid — an
-in-house calibration (DD-085).
+in-house calibration (DD-085).  `SourcePlaneWave(name, direction,
+polarization, corners)` declares the wave and its box; the excitation
+that names it supplies the waveform and the peak field.  Propagation
+is along a grid axis.
 
 ## Field, flux and frequency monitors
 

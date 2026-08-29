@@ -49,21 +49,22 @@ class MonitorFluxTime:
 
     Parameters
     ----------
-    plane : tuple[str, float]
-        The cross-section plane as a ``(normal, position)`` pair:
-        normal axis (``'x'``/``'y'``/``'z'``) and its position along
-        that axis [m], e.g. ``("z", 5e-3)`` — the same plane
-        vocabulary as :attr:`MonitorWallLoss.reference_plane`.
-        Snapped to the nearest grid node.
+    normal : str
+        Normal axis of the cross-section plane (``"x"``, ``"y"`` or
+        ``"z"``).
+    position : float
+        Position of the plane along that axis [m]; snapped to the
+        nearest grid node.
     name : str
         Monitor label.
 
     Examples
     --------
-    >>> flux = MonitorFluxTime(plane=("z", 5e-3), name="flux_z")
+    >>> flux = MonitorFluxTime(normal="z", position=5e-3, name="flux_z")
     """
 
-    plane: tuple
+    normal: str
+    position: float
     name: str = ""
 
     # --- internal ---
@@ -78,21 +79,22 @@ class MonitorFluxTime:
     _sym_factor: float = field(default=1.0, repr=False, init=False)
 
     def __post_init__(self) -> None:
+        if self.normal not in ("x", "y", "z"):
+            raise ValueError(
+                f"MonitorFluxTime normal must be 'x', 'y' or 'z'; got {self.normal!r}",
+            )
         try:
-            axis, pos = self.plane
+            pos = float(self.position)
         except (TypeError, ValueError):
             raise ValueError(
-                f"MonitorFluxTime plane must be a (normal, position) pair "
-                f"like ('z', 5e-3); got {self.plane!r}",
+                f"MonitorFluxTime position must be a finite number [m]; got {self.position!r}",
             ) from None
-        if axis not in ("x", "y", "z") or not isfinite(float(pos)):
+        if not isfinite(pos):
             raise ValueError(
-                f"MonitorFluxTime plane must be a (normal, position) pair "
-                f"with normal 'x', 'y' or 'z' and a finite position; "
-                f"got {self.plane!r}",
+                f"MonitorFluxTime position must be a finite number [m]; got {self.position!r}",
             )
-        self._axis = axis
-        self._pos = float(pos)
+        self._axis = self.normal
+        self._pos = pos
         if not self.name:
             self.name = f"flux_{self._axis}_{id(self):x}"
 

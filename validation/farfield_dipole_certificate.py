@@ -1,4 +1,4 @@
-"""Certificate: MonitorFarField against textbook antennas (DD-173).
+"""Certificate: MonitorFarFieldFrequency against textbook antennas (DD-173).
 
 Three gates on the thin-wire dipole family:
 
@@ -26,7 +26,7 @@ from magnelio.circuit.rasterize import EdgePath
 from magnelio.mesh._thin_wire import apply_thin_wire_path
 from magnelio.mesh.grid import GridLines
 from magnelio.mesh.indexing import edge_index_Ez
-from magnelio.monitors import MonitorFarField
+from magnelio.monitors import MonitorFarFieldFrequency
 from magnelio.ports import PortSpecLumped
 
 D = 1e-3
@@ -61,7 +61,7 @@ def _wire_mesh(z_nodes, t_nodes, wire_ks):
 
 def _run(mesh, grid, i0, j0, s, e, bc):
     x0, y0 = float(grid.x[i0]), float(grid.y[j0])
-    ff = MonitorFarField(freqs=[F0], margin_cells=2, name="pattern")
+    ff = MonitorFarFieldFrequency(freqs=[F0], margin_cells=2, name="pattern")
     ana = AnalysisScatteringTD(
         mesh=mesh.with_boundary_conditions(bc),
         ports=[PortSpecLumped(name="feed", start=(x0, y0, s), end=(x0, y0, e), Z0=Z0_FEED)],
