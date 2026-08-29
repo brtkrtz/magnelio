@@ -1,6 +1,6 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-28.*  **Released v0.4.7**
+*Last updated: 2026-08-29.*  **Released v0.4.7**
 (2026-08-26): multi-conductor quasi-TEM ports return the modal
 (even/odd) basis (DD-196), `geo.Surface.parametric` builds curved
 sheets that `extruded()` turns into reflector shells (DD-197),
@@ -13,7 +13,7 @@ parity — hollow conductors had lost the conformal correction at their
 inner walls (KB-031); how-to *coupled-line coupler* and tutorial 19
 *offset Cassegrain* (rendered, not executed; figures of a measured run
 embedded), every gallery 3D view carries an "Interactive Scene" tab,
-GitHub Discussions is the feedback channel.  Unit suite 2611 passed /
+GitHub Discussions is the feedback channel.  Unit suite 2624 passed /
 4 skipped; integration suite 402 passed / 5 skipped (2026-08-29)
 (edge-pass tangency rule, coax re-pin) and the KB-011 fixture re-pin
 (DD-199 fallout closed 2026-08-27; both unreleased on `main`).
@@ -33,10 +33,8 @@ certificates named in their DD entries.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-223** (2026-08-29) — a `Difference` whose tools' kernel boxes lie inside a box-shaped base (the air body of every housing) is served from its operands throughout the build: box, face and edge planes, singular edges (tool convexity flipped inside the box, convex on its boundary), section contours (`_CsgSectionEngine`: the base's contours plus the tools' reversed) and its place in the effective PEC solid — the kernel cut (1.03 s on the 16 × 16 array) is never built.  16 × 16 7.8 → 6.4 s, posts 240 2.1 → 1.8 s, Lange 16 9.8 → 9.6 s; meshes differ in the last bits of the area arrays.
 * **DD-220** (2026-08-29) — the post row's last kernel rows in the edge pass were its 480 caps (planar faces with a circular outline, 49 k `Perform` calls); `_planar_row` now admits circular edges as v-monotone arc segments (cut at ±π/2), `planar_point_state` crosses them in closed form and measures the ON band on the circle; 3-vector helpers of the row constructor written out.  Posts 240 3.0 → 2.4 s, every mesh bit-identical.
-* **DD-219** (2026-08-28) — the post row's remaining terms were the section engine's per-plane Python (15 487 `section` calls, ~50 NumPy calls each on arrays a handful of entries long — one post per plane).  `_section_kernels.section_planes` answers every grid plane of an axis in one compiled pass (candidates by `searchsorted` windows, the per-plane pipeline in Numba loops, packed output), `orient_annotate_packed` winds and annotates the batch; `compute_face_material_areas` and `batch_cross_sections` ask per (shape, axis).  Posts 240 7.1 → 3.5 s, Lange 16 17.2 → 12.9 s, Lange 8 7.4 → 5.2 s; planar rows bit-identical, the posts moved by the ulps of NumPy's `arctan2`/`arccos`/`hypot` (both paths now call `math.*`).
-* **DD-218** (2026-08-28) — the edge pass sent every grid line touching a post's side face to the kernel's line–face intersector (192 k `Perform` calls); `_cylinder_row` + `cylinder_line_hits` solve line × cylinder in closed form, a trusted tangential hit within tolerance counts as `ON` (the kernel arm had read 72 edges in a post's surface as free).  Posts 240 8.5 → 6.6 s, Lange/array bit-identical.
-* **DD-217** (2026-08-28) — the post row's 6 284 kernel sections (14 of 20 s) were planes through cylindrical faces; the section engine now answers cylinders exactly — analytic crossings on rim circles, generatrices or the conic v(u) on the face, arcs tessellated at the kernel's 5°/δ rule, seams as self-closing chains — and delegates cones, spheres, tori and cylinders trimmed by other curves.  Posts 240 20.0 → 8.0 s, posts 60 4.8 → 1.9 s; sections agree with the kernel to rounding (Lange/array bit-identical, posts at the last bits).
 Older decisions: `design-decisions.md`.
 
 ## Working practices earned the hard way
@@ -349,31 +347,33 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   exact cylinder sections, one compiled pass per axis, grid lines on
   the circle, the PEC solid without the housing fuse, thin sheets
   through the cached engine and CSG nodes classified from their
-  operands) — no Lange or array row runs a kernel section any more
-  (`sect` 0); A/B switches `MAGNELIO_*=0` per DD-217…219.  Ladder
-  (`benchmarks/bench_mesh_build.py`, CPU, `auto` pool): 16 Lange
-  couplers (3.7 M cells) 9.8 s, 240 posts (385 k) 2.1 s, 4 × 4 patch
-  array with feed (222 k) 0.7 s, 8 × 8 (664 k) 2.0 s, 16 × 16 (1.8 M,
-  off-ladder) 7.8 s; the pool fires on no ladder row; every row is
-  bit-identical to its reference (`pool/hash_refs/`, Lange 8 and
-  array 8 pinned from `main` at DD-222).  Open, in value order:
-  (1) the model's kernel Booleans built on first touch (they surface
-  as `sheets_detect`) — the air body's cut (`Cut` air − copper 1.0 s
-  on the 16 × 16 array, 0.33 s on Lange 16; a section-level `base −
-  tools` would make it a 2-D difference per plane) and the copper
-  fuse ahead of it (0.6 s on the array; Lange 16's 32 eight-body
-  kernel fuses, 0.38 s: one axis, three z intervals); (2) the post row's
-  `pass_faces_mu` (0.87 s beyond its sections), `section_calls`
-  (0.39 s posts, 1.2 s 16 × 16) and `planes_material` (0.34 s posts);
-  (3) spheres and cones once a ladder row shows them.
-  Traps: bench columns nest — rank from `probe_pass_breakdown.py`
-  (`sheets_detect` holds the first `_occ_shape()`); NumPy's
-  `arctan2`/`arccos`/`hypot` are an ulp off `math.*`; kernel cap rows
-  read IN on a standalone post's rim, ON on a fused row; analytic
-  boxes of round primitives are conservative (±r) — use kernel boxes;
-  `_section_engine` keys on deflection (ask `_finest_section_engine`);
-  `probe_mesh_hash.py` saves a reference when none exists — pin from
-  `main` in a worktree first.
+  operands; DD-223: a Difference with its tools inside a box-shaped
+  base served from its operands — box, planes, singular edges,
+  sections, PEC solid — so the housing's cut is never built) — no
+  Lange or array row runs a kernel section or a kernel Boolean of a
+  model node any more; A/B switches `MAGNELIO_*=0` per DD-217…219 and
+  DD-223 (`MAGNELIO_CSG_NODES`).  Ladder (`benchmarks/bench_mesh_build.py`,
+  CPU, `auto` pool): 16 Lange couplers (3.7 M cells) 9.6 s, 240 posts
+  (385 k) 1.8 s, 4 × 4 patch array with feed (222 k) 0.6 s, 8 × 8
+  (664 k) 1.8 s, 16 × 16 (1.8 M, off-ladder) 6.4 s; the pool fires on
+  no ladder row; every row matches its reference (`pool/hash_refs/`,
+  re-pinned at DD-223 — rounding of a different polygon
+  decomposition, `*_pre_dd223.txt` kept).  Open, in value order:
+  (1) the tools' union where it is not a model shape (Lange 16: 320
+  pieces, 0.46 s, of which 32 eight-body kernel fuses on three z
+  intervals 0.38 s) — the effective PEC solid could take the pieces
+  unfused if the edge pass counted crossings by depth instead of
+  parity; (2) the post row's `pass_faces_mu` (0.87 s beyond its
+  sections), `section_calls` (0.39 s posts, 1.2 s 16 × 16) and
+  `planes_material` (0.34 s posts); (3) spheres and cones once a
+  ladder row shows them.
+  Traps: any `_occ_shape()` call on a model node rebuilds the whole
+  cut (`bool/probe_no_cut.py` forbids it); bench columns nest — rank
+  from `probe_pass_breakdown.py`; NumPy's `arctan2`/`arccos`/`hypot`
+  are an ulp off `math.*`; kernel cap rows read IN on a standalone
+  post's rim; analytic boxes of round primitives are conservative —
+  use kernel boxes; `_section_engine` keys on deflection;
+  `probe_mesh_hash.py` saves a reference when none exists.
 
 Closed construction sites are tombstoned where they were decided (the
 DD entry and `known-bugs.md`) and are not repeated here.

@@ -285,7 +285,9 @@ def detect_thin_metallizations(
             continue
 
         try:
-            (bb_min, bb_max) = shape.bounding_box(scale)
+            from magnelio.geo._occ_backend import _screen_bbox  # noqa: PLC0415
+
+            (bb_min, bb_max) = _screen_bbox(shape, scale)
         except Exception:
             continue
         extents = [bb_max[d] - bb_min[d] for d in range(3)]

@@ -481,7 +481,7 @@ def extract_critical_planes_per_shape(
         # Outer bounding box (legacy behaviour): silhouette extents of
         # the whole shape, covers tilted/free-form faces conservatively.
         try:
-            (xmin, ymin, zmin), (xmax, ymax, zmax) = shape.bounding_box(scale)
+            (xmin, ymin, zmin), (xmax, ymax, zmax) = _screen_bbox(shape, scale)
         except ImportError:
             # pythonocc-core is missing altogether.  Skipping here would
             # leave every axis without a critical plane and the failure
@@ -497,7 +497,7 @@ def extract_critical_planes_per_shape(
         critical["z"].extend([(zmin, False), (zmax, False)])
 
         try:
-            planes = _face_critical_planes(shape._occ_shape(scale))
+            planes = _node_face_critical_planes(shape, scale)
         except ImportError:
             raise
         except Exception:
@@ -652,7 +652,7 @@ def extract_feature_planes_per_shape(
     shapes = list(geometry) if hasattr(geometry, "__iter__") else [geometry]
     for shape in shapes:
         try:
-            planes = _edge_feature_planes(shape._occ_shape(scale))
+            planes = _node_edge_feature_planes(shape, scale)
         except ImportError:
             raise
         except Exception:  # noqa: BLE001 — exotic shape, no edge planes
@@ -918,8 +918,11 @@ def extract_singular_edge_planes(
         hit = classifiers.first_containing(point_m, skip=exclude)
         return background if hit is None else getattr(shapes[hit], "material", None)
 
-    def _open_wedge_probe(edge, faces):
-        """A point a short way into the open (non-shape) wedge at the edge."""
+    def _open_wedge_probe(edge, faces, into: float = 1.0):
+        """A point a short way into the open (non-shape) wedge at the
+        edge — along the bisector of the faces' normals, *into* = +1
+        outward of the faces' solid, −1 inward (the faces of a tool,
+        seen from the cut)."""
         curve = BRepAdaptor_Curve(edge)
         u_mid = 0.5 * (curve.FirstParameter() + curve.LastParameter())
         p = curve.Value(u_mid)
@@ -929,9 +932,9 @@ def extract_singular_edge_planes(
             uv = pcurve.Value(0.5 * (pcurve.FirstParameter() + pcurve.LastParameter()))
             pnt, normal = occ["gp_Pnt"](), occ["gp_Vec"]()
             BRepGProp_Face(face).Normal(uv.X(), uv.Y(), pnt, normal)
-            bisector[0] += normal.X()
-            bisector[1] += normal.Y()
-            bisector[2] += normal.Z()
+            bisector[0] += into * normal.X()
+            bisector[1] += into * normal.Y()
+            bisector[2] += into * normal.Z()
         norm = math.sqrt(sum(c * c for c in bisector))
         if norm <= 1e-12:
             return None
@@ -941,31 +944,72 @@ def extract_singular_edge_planes(
 
     found: dict[str, set[float]] = {"x": set(), "y": set(), "z": set()}
     angle = math.radians(_SINGULAR_EDGE_ANGLE_DEG)
-    for shape in shapes:
-        material = getattr(shape, "material", None)
-        metal = _is_metal(material)
-        if not metal and not metal_outside_possible:
-            continue
-        try:
-            occ_shape = shape._occ_shape(scale)
-            analyse = BRepOffset_Analyse(occ_shape, angle)
-            edges = list(_sharp_edges(occ_shape))
-        except ImportError:
-            raise
-        except Exception:  # noqa: BLE001 — exotic shape, no singular edges
-            continue
+    # One offset analysis and sharp-edge scan per kernel shape: the
+    # tools' union of a Difference served from its operands is, on a
+    # housing, the very solid of the metal model shape.
+    analysed: dict[int, tuple[object, object, list]] = {}
+
+    def _edge_kinds_of(occ_shape, into: float):
+        key = hash(occ_shape)
+        entry = analysed.get(key)
+        if entry is None or not entry[0].IsSame(occ_shape):
+            entry = analysed[key] = (
+                occ_shape,
+                BRepOffset_Analyse(occ_shape, angle),
+                list(_sharp_edges(occ_shape)),
+            )
+        _, analyse, edges = entry
         for edge, faces in edges:
             if len(faces) != 2:
                 continue
             kinds = analyse.Type(edge)
             if kinds.Size() == 0:
                 continue
-            kind = kinds.First().Type()
+            yield edge, faces, kinds.First().Type(), into
+
+    def _edge_kinds(shape):
+        """``(edge, faces, kind, into)`` per sharp two-face edge of the
+        shape's solid: the kernel's convexity of the edge and the sense
+        of the open wedge on the faces' normals.  For a Difference
+        served from its operands the cut's edges are the base's,
+        unchanged, and the tools' union's: inside the box a tool edge
+        keeps its two faces with reversed orientation — convex turns
+        concave and back, the open wedge points into the tool — and on
+        the box's boundary the cut's wedge at it is the base's
+        half-space less the tool's: convex."""
+        if not _operand_route(shape, scale):
+            yield from _edge_kinds_of(shape._occ_shape(scale), 1.0)
+            return
+        base_occ = shape.base._occ_shape(scale)
+        yield from _edge_kinds_of(base_occ, 1.0)
+        box = np.concatenate(bounding_box(base_occ, 1.0))
+        for edge, faces, kind, _ in _edge_kinds_of(shape._occ_tools(scale), -1.0):
+            if _edge_on_box_boundary(edge, box):
+                yield edge, faces, ChFiDS_Convex, -1.0
+            elif kind == ChFiDS_Convex:
+                yield edge, faces, ChFiDS_Concave, -1.0
+            elif kind == ChFiDS_Concave:
+                yield edge, faces, ChFiDS_Convex, -1.0
+            else:
+                yield edge, faces, kind, -1.0
+
+    for shape in shapes:
+        material = getattr(shape, "material", None)
+        metal = _is_metal(material)
+        if not metal and not metal_outside_possible:
+            continue
+        try:
+            items = list(_edge_kinds(shape))
+        except ImportError:
+            raise
+        except Exception:  # noqa: BLE001 — exotic shape, no singular edges
+            continue
+        for edge, faces, kind, into in items:
             if metal:
                 singular = kind == ChFiDS_Convex
             elif kind == ChFiDS_Concave:
                 try:
-                    probe = _open_wedge_probe(edge, faces)
+                    probe = _open_wedge_probe(edge, faces, into)
                 except Exception:  # noqa: BLE001 — no usable normals
                     probe = None
                 singular = probe is not None and _is_metal(_material_at(probe, shape))
@@ -976,6 +1020,30 @@ def extract_singular_edge_planes(
             for axis, positions in _edge_flat_planes(edge).items():
                 found[axis] |= positions
     return {axis: sorted(p / scale for p in found[axis]) for axis in ("x", "y", "z")}
+
+
+def _edge_on_box_boundary(edge, box: np.ndarray) -> bool:
+    """Whether the whole *edge* lies in a face plane of the axis-aligned
+    *box* ``(x0, y0, z0, x1, y1, z1)`` [build units]: flat along an
+    axis, at that face's level, within the edge's tolerance."""
+    occ = _require_occ()
+    from OCC.Core.BRep import BRep_Tool  # noqa: PLC0415
+
+    bnd = occ["Bnd_Box"]()
+    occ["brepbndlib"].Add(edge, bnd, False)  # geometry only, no triangulation
+    if bnd.IsVoid():
+        return False
+    lo, hi, gap = bnd.CornerMin(), bnd.CornerMax(), bnd.GetGap()
+    lo_xyz = (lo.X() + gap, lo.Y() + gap, lo.Z() + gap)
+    hi_xyz = (hi.X() - gap, hi.Y() - gap, hi.Z() - gap)
+    tol = max(BRep_Tool.Tolerance(edge), 1e-7)
+    for k in range(3):
+        if hi_xyz[k] - lo_xyz[k] > tol:
+            continue
+        level = 0.5 * (lo_xyz[k] + hi_xyz[k])
+        if abs(level - box[k]) <= tol or abs(level - box[3 + k]) <= tol:
+            return True
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -1088,6 +1156,111 @@ def _boolean_operands(shape) -> tuple[str | None, tuple]:
     return None, ()
 
 
+def _csg_nodes_enabled() -> bool:
+    """``MAGNELIO_CSG_NODES=0`` builds the kernel Boolean of every CSG
+    node the mesher meets (A/B runs); anything else serves a
+    ``Difference`` whose tools lie inside a box-shaped base from its
+    operands (read at call time)."""
+    return os.environ.get("MAGNELIO_CSG_NODES", "").strip() != "0"
+
+
+def _operand_route(shape, scale: float) -> bool:
+    """Whether *shape* is a ``Difference`` the mesher serves from its operands.
+
+    The rule: the base fills its bounding box (a brick, in any
+    construction) and every tool's kernel box lies inside that box —
+    then ``base − tools`` is the box with the tools' union removed
+    *inside* it, and its box, its face and edge planes, the convexity
+    of its edges and its section contours are all read off the
+    operands (:func:`_screen_bbox`, :func:`_node_face_critical_planes`,
+    :func:`_node_edge_feature_planes`, :func:`extract_singular_edge_planes`,
+    :class:`_CsgSectionEngine`); the cut itself — the imprint of every
+    metal piece in an air body, 2 807 faces and a second on a 16 × 16
+    patch array — is never built.  Decided once per shape and scale on
+    the operands' kernel shapes only; exact type, as in
+    :func:`_boolean_operands`.
+    """
+    if not _csg_nodes_enabled():
+        return False
+    kind, _operands = _boolean_operands(shape)
+    if kind != "difference":
+        return False
+    attrs = getattr(shape, "__dict__", None)
+    if attrs is None:
+        return False
+    cache = attrs.setdefault("_operand_route_cache", {})
+    key = float(scale)
+    if key not in cache:
+        cache[key] = _tools_inside_box_base(shape, key)
+    return cache[key]
+
+
+def _tools_inside_box_base(shape, scale: float) -> bool:
+    """The base of the ``Difference`` *shape* fills its box and every
+    tool's kernel box lies inside it (``Precision::Confusion`` slack)."""
+    try:
+        base = shape.base._occ_shape(scale)
+        box = np.concatenate(bounding_box(base, 1.0))
+        if not _box_shaped(base, box):
+            return False
+        gap = 1e-7
+        for tool in shape.tools:
+            t = np.concatenate(bounding_box(tool._occ_shape(scale), 1.0))
+            if np.isnan(t).any() or np.any(t[:3] < box[:3] - gap) or np.any(t[3:] > box[3:] + gap):
+                return False
+    except ImportError:
+        raise
+    except Exception:  # noqa: BLE001 — an operand the kernel cannot box: the node's own solid
+        return False
+    return True
+
+
+def _screen_bbox(shape, scale: float):
+    """``shape.bounding_box(scale)`` [m] for the mesher's screens — read
+    off the base for a Difference served from its operands (the tools
+    lie inside it, so the two boxes are one)."""
+    if _operand_route(shape, scale):
+        return _screen_bbox(shape.base, scale)
+    return shape.bounding_box(scale)
+
+
+def _merge_axis_planes(*plane_dicts: dict) -> dict[str, list[float]]:
+    """Per-axis union of plane lists, sorted and without duplicates."""
+    merged: dict[str, set[float]] = {"x": set(), "y": set(), "z": set()}
+    for planes in plane_dicts:
+        for axis in ("x", "y", "z"):
+            merged[axis].update(planes[axis])
+    return {axis: sorted(merged[axis]) for axis in ("x", "y", "z")}
+
+
+def _node_face_critical_planes(shape, scale: float) -> dict[str, list[float]]:
+    """:func:`_face_critical_planes` of a model shape [build units] — the
+    base's and the tools' union's for a Difference served from its
+    operands (every tool face inside the box is a face of the cut, a
+    tool face on the box's boundary shares its plane)."""
+    if _operand_route(shape, scale):
+        return _merge_axis_planes(
+            _face_critical_planes(shape.base._occ_shape(scale)),
+            _face_critical_planes(shape._occ_tools(scale)),
+        )
+    return _face_critical_planes(shape._occ_shape(scale))
+
+
+def _node_edge_feature_planes(shape, scale: float) -> dict[str, list[float]]:
+    """:func:`_edge_feature_planes` of a model shape [build units] — the
+    base's and the tools' union's for a Difference served from its
+    operands (the cut's edges are the base's, trimmed, and the tools'
+    union's: a tool edge inside the box survives, one on the box's
+    boundary becomes the trim of the base's face along the same
+    curve; nothing else meets, as no tool face crosses a base face)."""
+    if _operand_route(shape, scale):
+        return _merge_axis_planes(
+            _edge_feature_planes(shape.base._occ_shape(scale)),
+            _edge_feature_planes(shape._occ_tools(scale)),
+        )
+    return _edge_feature_planes(shape._occ_shape(scale))
+
+
 class PointClassifierSet:
     """Point-in-shape probes against a fixed list of model shapes.
 
@@ -1150,7 +1323,7 @@ class PointClassifierSet:
         boxes = np.full((len(shapes), 6), np.nan)
         for k, shape in enumerate(shapes):
             try:
-                lo, hi = shape.bounding_box(self._scale)
+                lo, hi = _screen_bbox(shape, self._scale)
             except Exception:  # noqa: BLE001 — exotic shape: never a candidate
                 continue
             boxes[k, :3], boxes[k, 3:] = lo, hi
@@ -3058,6 +3231,12 @@ class _PlanarSectionEngine:
             return self._screen_facets(axis, pos * self._scale)
         return self._screen(axis, pos * self._scale) is not None
 
+    @property
+    def tolerance(self) -> float:
+        """The kernel tolerance of the shape (the largest over its faces,
+        edges and vertices, :class:`_FaceSlabIndex`), 0 when unknown."""
+        return 0.0 if self.slab is None else float(self.slab.tolerance)
+
     # -- every plane of an axis in one compiled pass (DD-219) --------------
 
     @property
@@ -3486,11 +3665,10 @@ def batch_cross_sections(
     cache: dict[tuple[str, int], list[tuple[int, list[np.ndarray]]]] = {}
 
     for shape_obj, mat_id in shapes_with_material:
-        occ_shape = shape_obj._occ_shape(scale)
         name = getattr((material_library or {}).get(mat_id), "name", mat_id)
         context = f"the {name!r} solid"
         engine = _section_engine(shape_obj, scale, deflection)
-        (xmin, ymin, zmin), (xmax, ymax, zmax) = shape_obj.bounding_box(scale)
+        (xmin, ymin, zmin), (xmax, ymax, zmax) = _screen_bbox(shape_obj, scale)
         bbox_flat = (xmin, ymin, zmin, xmax, ymax, zmax)
 
         for axis, positions in plane_positions.items():
@@ -3519,15 +3697,15 @@ def batch_cross_sections(
                         engine.section(_axis_to_int[axis], float(pos)) if engine.enabled else None
                     )
                 if polys is None:
-                    polys = cross_section_polygons(
-                        occ_shape,
+                    polys = _delegated_section(
+                        shape_obj,
+                        engine,
                         axis,
                         float(pos),
                         deflection=deflection,
                         scale=scale,
                         nudge=nudge,
                         context=context,
-                        slab=engine.slab,
                     )
                 if polys:
                     key = (axis, idx)
@@ -3638,14 +3816,22 @@ def build_effective_pec_solid(
         return None
     shape_objs = [shape_obj for shape_obj, _ in shapes_with_material]
     is_pec = np.array([material_library[mat_id].is_pec for _, mat_id in shapes_with_material])
-    occ_shapes = [shape_obj._occ_shape(scale) for shape_obj in shape_objs]
-    boxes = np.array([_bounding_box(s) for s in occ_shapes])
+    # Kernel shapes on demand: a Difference served from its operands
+    # is boxed by its base and, as a cut tool of a box-shaped PEC
+    # contribution, replaced by its operands below — its own solid is
+    # never asked for.
+    occ_shapes = _LazyOccShapes(shape_objs, scale)
+    box_shapes = [
+        shape_obj.base._occ_shape(scale) if _operand_route(shape_obj, scale) else occ_shapes[k]
+        for k, shape_obj in enumerate(shape_objs)
+    ]
+    boxes = np.array([_bounding_box(s) for s in box_shapes])
     # ``_bounding_box`` pads by the shapes' tolerance; the containment
     # rule needs exact touching and reads the kernel's optimal boxes
     # (``AddOptimal`` without tolerance: the vertices of a brick, the
     # exact extent of a cylinder — the analytic boxes are conservative
     # for round primitives and would keep a post out of its housing).
-    exact = np.array([np.concatenate(bounding_box(s, 1.0)) for s in occ_shapes])
+    exact = np.array([np.concatenate(bounding_box(s, 1.0)) for s in box_shapes])
     contained = _contained_pec_shapes(shape_objs, is_pec, occ_shapes, exact)
     gap = 1e-7  # Precision::Confusion — touching counts as reaching
     contributions = []
@@ -3660,12 +3846,13 @@ def build_effective_pec_solid(
             and np.all(boxes[j, 3:] >= lo - gap)
             and np.all(boxes[j, :3] <= hi + gap)
         ]
-        tools = [occ_shapes[j] for j in higher]
         extra: list = []
         if higher and _box_shaped(occ_shapes[i], exact[i]):
             tools, extra = _difference_tools_as_pieces(
                 i, higher, shape_objs, occ_shapes, exact, scale
             )
+        else:
+            tools = [occ_shapes[j] for j in higher]
         contributions.append(
             boolean_difference_many(occ_shapes[i], tools) if tools else occ_shapes[i]
         )
@@ -3701,7 +3888,7 @@ def _difference_tools_as_pieces(
     gap = 1e-7
     index = {id(s): k for k, s in enumerate(shape_objs)}
     disjoint = _disjoint_by_construction(shape_objs)
-    tools = [occ_shapes[j] for j in higher]
+    tools: list = [None] * len(higher)
     pieces = []
     for slot, j in enumerate(higher):
         difference = shape_objs[j]
@@ -3726,7 +3913,28 @@ def _difference_tools_as_pieces(
         tools[slot] = difference.base._occ_shape(scale)
         fused = difference._occ_tools(scale)
         pieces.append(boolean_difference_many(fused, others) if others else fused)
+    for slot, j in enumerate(higher):
+        if tools[slot] is None:
+            tools[slot] = occ_shapes[j]
     return tools, pieces
+
+
+class _LazyOccShapes:
+    """The kernel shapes of a list of model shapes, each built on first
+    access (``shape._occ_shape(scale)`` is cached on the shape itself)."""
+
+    def __init__(self, shape_objs: list, scale: float) -> None:
+        self._shapes = list(shape_objs)
+        self._scale = scale
+        self._built: dict[int, object] = {}
+
+    def __len__(self) -> int:
+        return len(self._shapes)
+
+    def __getitem__(self, k: int):
+        if k not in self._built:
+            self._built[k] = self._shapes[k]._occ_shape(self._scale)
+        return self._built[k]
 
 
 # ---------------------------------------------------------------------------
@@ -5793,6 +6001,135 @@ def _faces_by_plane(
     return groups
 
 
+class _CsgSectionEngine:
+    """Sections of a ``Difference`` served from its operands.
+
+    With the tools inside a box-shaped base (:func:`_operand_route`)
+    the contours of ``base − tools`` at a plane are the base's contours
+    and the contours of the tools' union *reversed*: the union's section
+    lies inside the base's, so the signed-sum area kernels book it
+    negative — a boundary segment the two share cancels exactly — and
+    its rings toggle the even-odd cell fill off.  These are the cut's
+    own contours, drawn with the operands' vertices instead of the
+    kernel Boolean's.  The base's engine is the base's; the tools'
+    is the one cached on the single tool, else one built on the fused
+    tools (:meth:`Difference._occ_tools`, paid once for the effective
+    PEC solid anyway).  A plane the base's engine declines is declined
+    — the caller sections the node's kernel solid, built then; one only
+    the tools' engine declines takes the kernel section of the tools'
+    union (:func:`_delegated_section`), so a vertex of a post on a
+    plane never builds the cut.
+    """
+
+    def __init__(self, shape, scale: float = 1.0, deflection: float | None = None) -> None:
+        self._shape = shape
+        self._scale = float(scale)
+        self._base = _section_engine(shape.base, scale, deflection)
+        if len(shape.tools) == 1:
+            self._tools = _section_engine(shape.tools[0], scale, deflection)
+        else:
+            key = (float(scale), None if deflection is None else float(deflection))
+            cache = shape.__dict__.setdefault("_tools_section_engine_cache", {})
+            if key not in cache:
+                cache[key] = _PlanarSectionEngine(
+                    shape._occ_tools(scale), scale=scale, deflection=deflection
+                )
+            self._tools = cache[key]
+        self.enabled = bool(self._base.enabled and self._tools.enabled)
+        self.facetted = False
+        self.face_count = int(self._base.face_count + self._tools.face_count)
+        #: No face slabs of its own: a delegated plane is sectioned on
+        #: the node's kernel solid as a whole.
+        self.slab = None
+        self.tolerance = max(self._base.tolerance, self._tools.tolerance)
+
+    @property
+    def batchable(self) -> bool:
+        """Answers a list of planes at once whenever enabled (the
+        operands' engines batch or loop as they can)."""
+        return self.enabled
+
+    def can_fast(self, axis: int, pos: float) -> bool:
+        return self.enabled and self._base.can_fast(axis, pos) and self._tools.can_fast(axis, pos)
+
+    def _tools_occ(self):
+        """The kernel shape the tools' engine digests."""
+        if len(self._shape.tools) == 1:
+            return self._shape.tools[0]._occ_shape(self._scale)
+        return self._shape._occ_tools(self._scale)
+
+    @staticmethod
+    def _combine(base_polys, tool_polys):
+        if base_polys is None or tool_polys is None:
+            return None
+        if not base_polys:
+            return []
+        return list(base_polys) + [np.ascontiguousarray(p[::-1]) for p in tool_polys]
+
+    @staticmethod
+    def _combine_annotated(base_items, tool_items):
+        if base_items is None or tool_items is None:
+            return None
+        if not base_items:
+            return []
+        return list(base_items) + [
+            (np.ascontiguousarray(poly[::-1]), bb, -area) for poly, bb, area in tool_items
+        ]
+
+    def section(self, axis: int, pos: float) -> list[np.ndarray] | None:
+        if not self.enabled:
+            return None
+        return self._combine(self._base.section(axis, pos), self._tools.section(axis, pos))
+
+    def sections(self, axis: int, positions) -> list[list[np.ndarray] | None]:
+        if not self.enabled:
+            return [None] * len(positions)
+        return [
+            self._combine(b, t)
+            for b, t in zip(
+                self._base.sections(axis, positions),
+                self._tools.sections(axis, positions),
+                strict=True,
+            )
+        ]
+
+    def annotated_sections(self, axis: int, positions) -> list[list | None]:
+        if not self.enabled:
+            return [None] * len(positions)
+        return [
+            self._combine_annotated(b, t)
+            for b, t in zip(
+                self._base.annotated_sections(axis, positions),
+                self._tools.annotated_sections(axis, positions),
+                strict=True,
+            )
+        ]
+
+
+def _delegated_section(shape_obj, engine, axis: str, pos: float, **kernel_kwargs):
+    """The kernel section of a model shape at a plane its engine declined.
+
+    A :class:`_CsgSectionEngine` whose base answers the plane sections
+    only the tools' union with the kernel and combines as the engine
+    does; every other engine, and a declined base, sections the shape's
+    own kernel solid (built now if never before).
+    """
+    if isinstance(engine, _CsgSectionEngine) and engine.enabled:
+        base_polys = engine._base.section("xyz".index(axis), pos)
+        if base_polys is not None:
+            tool_polys = cross_section_polygons(
+                engine._tools_occ(), axis, pos, slab=engine._tools.slab, **kernel_kwargs
+            )
+            return engine._combine(base_polys, tool_polys)
+    return cross_section_polygons(
+        shape_obj._occ_shape(kernel_kwargs.get("scale", 1.0)),
+        axis,
+        pos,
+        slab=engine.slab,
+        **kernel_kwargs,
+    )
+
+
 def _section_engine(shape_obj, scale: float, deflection: float | None):
     """The planar section engine of a shape object, built once per (scale, deflection).
 
@@ -5809,7 +6146,12 @@ def _section_engine(shape_obj, scale: float, deflection: float | None):
     engines = attrs.setdefault("_section_engine_cache", {}) if attrs is not None else None
     if engines is not None and key in engines:
         return engines[key]
-    engine = _PlanarSectionEngine(shape_obj._occ_shape(scale), scale=scale, deflection=deflection)
+    if _operand_route(shape_obj, scale):
+        engine = _CsgSectionEngine(shape_obj, scale=scale, deflection=deflection)
+    else:
+        engine = _PlanarSectionEngine(
+            shape_obj._occ_shape(scale), scale=scale, deflection=deflection
+        )
     if engines is not None:
         engines[key] = engine
     return engine
@@ -6058,7 +6400,7 @@ def compute_face_material_areas(
     # are untouched by the DD-120 scaling.
     shape_bboxes = []
     for shape_obj, _ in shapes_with_material:
-        (xmin, ymin, zmin), (xmax, ymax, zmax) = shape_obj.bounding_box(scale)
+        (xmin, ymin, zmin), (xmax, ymax, zmax) = _screen_bbox(shape_obj, scale)
         shape_bboxes.append((xmin, ymin, zmin, xmax, ymax, zmax))
 
     # Planar fast path (one engine per shape): planes whose candidate
@@ -6088,24 +6430,21 @@ def compute_face_material_areas(
     # tolerance with a margin — which also puts the shifted planes past
     # the planar engine's own tolerance screen, so they are answered
     # exactly instead of by the Boolean.
-    kernel_tol = max(
-        (engine.slab.tolerance for engine in engines if engine.slab is not None),
-        default=0.0,
-    )
+    kernel_tol = max((engine.tolerance for engine in engines), default=0.0)
     shift = max(deflection, _SECTION_SHIFT_TOLERANCES * max(kernel_tol, 1e-7) / scale)
 
     def _shape_sections(si, axis, pos):
         polys = engines[si].section(axis, pos) if engines[si].enabled else None
         if polys is None:
-            polys = cross_section_polygons(
-                shapes_with_material[si][0]._occ_shape(scale),
+            polys = _delegated_section(
+                shapes_with_material[si][0],
+                engines[si],
                 axis_letter[axis],
                 pos,
                 deflection=deflection,
                 scale=scale,
                 nudge=nudge,
                 context=contexts[si],
-                slab=engines[si].slab,
             )
         return polys
 
@@ -6161,7 +6500,7 @@ def compute_face_material_areas(
             per_axis = section_cache[t_key]
         else:
             try:
-                scaled_planes = _face_critical_planes(shape_obj._occ_shape(scale))
+                scaled_planes = _node_face_critical_planes(shape_obj, scale)
                 per_axis = {axl: [p / scale for p in scaled_planes[axl]] for axl in ("x", "y", "z")}
             except Exception:  # noqa: BLE001 — bbox extents still apply
                 per_axis = {"x": [], "y": [], "z": []}
@@ -8434,7 +8773,7 @@ def check_pairwise_overlaps(
 
     boxes = np.empty((n, 6))
     for k, s in enumerate(shapes):
-        (xmin, ymin, zmin), (xmax, ymax, zmax) = s.bounding_box(scale)
+        (xmin, ymin, zmin), (xmax, ymax, zmax) = _screen_bbox(s, scale)
         boxes[k] = (xmin, ymin, zmin, xmax, ymax, zmax)
     aabb_volumes = np.prod(boxes[:, 3:] - boxes[:, :3], axis=1)
     lo, hi = boxes[:, :3], boxes[:, 3:]

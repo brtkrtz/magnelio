@@ -16577,3 +16577,145 @@ the engine and the line table when a ladder row shows them.
 `tests/unit/test_polygon_clip.py`,
 `tests/unit/test_point_classifier_set.py`, `CHANGELOG.md`,
 `STATUS.md`, `benchmarks/results/bench_mesh_build.json` (re-run).
+
+## DD-223 — A Difference with its tools inside a box-shaped base is served from its operands
+
+**Status:** Decided and implemented 2026-08-29, branch
+`perf/csg-node-operands`.  DD-222's open item 1: the model's kernel
+Booleans built on first touch.
+
+**Problem.**  The housing pattern of every practical model — an air
+brick minus the metal inside it, the metal added again as shapes of
+its own — leaves the mesher one kernel Boolean it never needed: the
+cut of the brick by the metal's union, the imprint of every piece in
+the air body (2 807 faces and 1.03 s on a 16 × 16 patch array, 0.32 s
+on sixteen Lange couplers, 0.17 s on 240 posts; internal dossier
+`investigations/mesh-build-bench/bool/`, M26).  `_occ_shape()` is
+cached, so the cut is paid by whoever asks first — `Shape.bounding_box`
+in `PointClassifierSet`'s constructor, reached from the thin-sheet
+detection — and every later stage reads it: the face and edge planes
+of the plane stage, the singular-edge scan (`BRepOffset_Analyse` over
+the whole body), the section engine of the area passes and the cell
+fill, the effective PEC solid's box list and the overlap check.
+Removing the Boolean from one stage moves it to the next; only a
+route through all of them gains anything.  The N-ary cut over the
+individual tools is no way out (1.42 s on Lange 16), and the tools'
+union stays paid for regardless (the effective PEC solid holds it as
+a piece, DD-221).
+
+**Decision.**  A `Difference` whose base fills its bounding box (a
+brick in any construction, decided by volume) and whose every tool's
+kernel box lies inside that box (`_operand_route`, once per node and
+scale) is served from its operands throughout the build; the cut is
+never built.
+
+1. *Box.*  `_screen_bbox` reads the base's box — the tools lie inside
+   it, so the cut's box is the same (measured bit-equal on all three
+   families).  Every screening use of `bounding_box` in the build
+   (plane stage, classifier set, area passes, cell fill, overlap
+   check, sheet detection) goes through it; the public
+   `Shape.bounding_box` keeps its kernel meaning.
+2. *Planes.*  `_node_face_critical_planes` and
+   `_node_edge_feature_planes` unite the base's and the tools'
+   union's: a tool face inside the box is a face of the cut, one on
+   the box's boundary shares its plane; the cut's edges are the base's
+   (trimmed along the same lines) and the tools' union's (an edge
+   inside the box survives, one on the boundary becomes the trim of
+   the base's face along the same curve — no tool face crosses a base
+   face, so nothing else meets).  The tools' union rather than the
+   tools: a face or edge one tool buries in another is not a boundary.
+3. *Singular edges.*  `extract_singular_edge_planes` takes the base's
+   edges as analysed on the base and the tools' union's edges with
+   their convexity flipped — inside the box a tool edge keeps its two
+   faces with reversed orientation, so convex turns concave and the
+   open wedge points into the tool (`_open_wedge_probe(…, into=-1)`);
+   a tool edge lying in a face plane of the box
+   (`_edge_on_box_boundary`) bounds the base's half-space less the
+   tool's wedge, which is convex.  One offset analysis per kernel
+   shape: on a housing the tools' union *is* the metal model shape's
+   solid.
+4. *Sections.*  `_CsgSectionEngine` answers a plane with the base
+   engine's contours plus the tools' engine's contours reversed
+   (annotated: signed area negated).  With the tools inside the base
+   the winding number is +1 on ``base − tools`` and 0 on the tools, so
+   the signed-sum area kernels (DD-215's budget) and the even-odd cell
+   fill read the cut's region from the operands' vertices; a boundary
+   segment the two share cancels exactly.  The tools' engine is the
+   single tool's own (shared with the metal model shape) or one built
+   on the fused tools.  A plane only the tools' engine declines — the
+   post row's one, through the seam vertices of the cylinders — takes
+   the kernel section of the tools' union alone
+   (`_delegated_section`); a plane the base declines takes the node's
+   kernel solid as before, built then.  `MAGNELIO_CSG_NODES=0`
+   restores the kernel route.
+5. *Effective PEC solid.*  The shapes' kernel solids are fetched on
+   demand (`_LazyOccShapes`); a served Difference is boxed by its base
+   and, as the cut tool of a box-shaped PEC contribution, replaced by
+   its operands (DD-221) without ever being built.
+
+Everything else — a base that is not its box, a tool sticking out, a
+`Union` or `Intersection` node — keeps the kernel Boolean, lazily.
+
+**Measured** (`probe_operand_equivalence.py`, `probe_no_cut.py` with
+`Difference._occ_shape` forbidden; before = DD-222's `main`).  On the
+three families the cut's box equals the base's bit for bit, the slab
+tolerances are equal, the edge planes identical, the face planes of
+the operands hold one plane more — the copper's underside an ulp above
+the floor, which the copper model shape contributes anyway — and the
+node's singular planes are a subset of the tools'.  No build of the
+ladder calls `Difference._occ_shape`.  Meshes are not bit-identical:
+the box's rectangle minus the tools' rectangles rounds differently
+from the cut's notched contour — areas by up to 4e-19 m² on cell
+faces of 1e-9…1e-6 m², ε averages by 3e-13 relative
+(`ab_compare.log`); the pair ladder's ``> 1e-12`` no-op gate
+(`material_matrices.py`) then writes or skips 22 of 2.8 M faces on
+Lange 4 (category 2 ↔ 1 at PEC fractions of 1e-14).  Hash references
+re-pinned (`pool/hash_refs/*_pre_dd223.txt` kept).
+
+Full ladder (`--family all --pool auto`, CPU idle; before = DD-222's):
+
+| family, n | cells | total before → after | `sheets` (bench column) | `Difference._occ_shape` |
+|---|---|---|---|---|
+| Lange 16 | 3.69 M | 9.8 → **9.6 s** | 0.9 → 0.1 | 1 → 0 |
+| Lange 8 | 1.84 M | 4.2 → **4.1 s** | 0.4 → 0.0 | 1 → 0 |
+| Lange 4 | 922 k | 2.0 → **1.9 s** | 0.2 → 0.0 | 1 → 0 |
+| array 8 × 8 | 664 k | 2.0 → **1.8 s** | 0.3 → 0.1 | 1 → 0 |
+| array 4 × 4 | 222 k | 0.7 → **0.6 s** | | 1 → 0 |
+| posts 240 | 385 k | 2.1 → **1.8 s** | | 1 → 0 |
+| posts 60 | 97 k | 0.5 → **0.4 s** | | 1 → 0 |
+| 16 × 16 (off-ladder) | 1.8 M | 7.8 → **6.4 s** | 1.9 → 0.1 | 1 → 0 |
+
+Unit suite 2 624 passed / 4 skipped (thirteen new tests: the route's
+predicate on tools inside, a tool sticking out, a round base, a
+`Union`, the switch; box, face and edge planes against the cut's;
+singular planes of void pockets in a PEC background and of a metal
+block with pockets against the kernel route; the engine's contours
+and annotation, the delegated seam-vertex plane without the cut; a
+housing mesh against the kernel route's arrays and built with
+`Difference._occ_shape` forbidden; the effective PEC solid's volume
+without the cut), integration 402 passed / 5 skipped
+(`CUPY_ACCELERATORS=""`); `ruff check` / `ruff format --check`
+clean; `check_dd_references.py` and `check_imports.py` on
+`investigations/` and `userscripts/` clean.
+
+**Open, re-ranked.**  In value order: (1) the tools' union itself
+where it is not a model shape (Lange 16: 320 pieces, 0.46 s of which
+32 eight-body kernel fuses 0.38 s across three z intervals) — the
+effective PEC solid could take the pieces unfused if the edge pass
+counted crossings by depth instead of parity; (2) the post row's
+`pass_faces_mu` beyond its sections, the classifier's `section_calls`
+(posts, 16 × 16) and `planes_material`; (3) spheres and cones in the
+engine and the line table when a ladder row shows them.
+
+**Files:** `src/magnelio/geo/_occ_backend.py` (`_operand_route`,
+`_tools_inside_box_base`, `_screen_bbox`, `_node_face_critical_planes`,
+`_node_edge_feature_planes`, `_edge_on_box_boundary`,
+`extract_singular_edge_planes`, `_CsgSectionEngine`,
+`_delegated_section`, `_section_engine`, `_LazyOccShapes`,
+`build_effective_pec_solid`, `_difference_tools_as_pieces`,
+`compute_face_material_areas`, `batch_cross_sections`,
+`check_pairwise_overlaps`, `PointClassifierSet`),
+`src/magnelio/geo/operations.py` (`Difference._occ_tools` docstring),
+`src/magnelio/mesh/_conformal.py` (`detect_thin_metallizations`),
+`tests/unit/test_csg_node_operands.py`, `CHANGELOG.md`, `STATUS.md`,
+`benchmarks/results/bench_mesh_build.json` (re-run).
