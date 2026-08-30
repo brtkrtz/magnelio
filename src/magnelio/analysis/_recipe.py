@@ -633,6 +633,16 @@ def build_recipe(analysis) -> dict:
         recipe["f_min"] = float(analysis.f_min)
         recipe["n_freq"] = int(analysis.n_freq)
         recipe["waveform"] = _waveform_to_dict(analysis.waveform)
+        # Band-pipeline settings.  These size the ghost excitation and
+        # the subspace, so a run rebuilt without them is a *different*
+        # run: n_syn in particular falls back to auto-sizing and the
+        # synthesised pulse changes, which a resume would splice onto
+        # the recorded one mid-record.
+        if getattr(analysis, "band_options", None):
+            recipe["band_options"] = {
+                k: (list(v) if isinstance(v, tuple) else v)
+                for k, v in dict(analysis.band_options).items()
+            }
     return recipe
 
 
@@ -698,4 +708,12 @@ def recipe_kwargs(recipe: dict) -> dict:
         kwargs["f_min"] = float(recipe["f_min"])
         kwargs["n_freq"] = int(recipe["n_freq"])
         kwargs["waveform"] = _waveform_from_dict(recipe.get("waveform"))
+        band_opts = recipe.get("band_options")
+        if band_opts:
+            # f_band round-trips through JSON as a list; the sizing code
+            # indexes it either way, but a tuple keeps the rebuilt
+            # analysis equal to the one that was stored.
+            kwargs["band_options"] = {
+                k: (tuple(v) if isinstance(v, list) else v) for k, v in dict(band_opts).items()
+            }
     return kwargs

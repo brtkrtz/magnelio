@@ -17958,3 +17958,97 @@ point) and by the exact convolution (`O(N^2)` over a run) — those are
 the levers, and they are untouched here.  DD-231's other two
 blockers, `a()`/`b()` and resume, are likewise untouched, so the
 `port_model` default stays `"modal"`.
+
+## DD-233 — a band run is resumable, and it never needed the recursion
+
+**Status:** Decided 2026-08-31 (branch `feat/band-kernel-fit`).  Gates:
+`tests/unit/test_band_dtbc.py::TestBoundaryCheckpoint`,
+`tests/integration/test_analysis_scattering_band.py::test_band_run_resumes_bit_exactly`,
+`::test_band_run_checkpoints_its_boundary`.  Measurements: internal
+record `investigations/port-model-default/` (MEASUREMENTS.md sections
+11-12; `probe_kernel_vf.py`, `probe_kernel_zvs_era.py`,
+`probe_kernel_longwindow.py`, `probe_band_reproducibility.py`,
+`probe_band_resume_seam.py`).
+
+**Problem.**  DD-231 kept `port_model="modal"` on three structural
+grounds, one of which was that a band run cannot be resumed.  DD-230
+had stated the reason: the band boundary carries the projected exterior
+state and two convolution histories and has no `state_dict`, so the
+solver's checkpoint — which collects port state by
+`hasattr(op, "state_dict")` — would omit them silently and a resume
+would restart the boundary from zero mid-record.  The plan of record
+was to earn resume as a by-product of replacing the full-history
+convolution with a K-term recursion, which would shrink the boundary
+state to K numbers.
+
+**What the measurements found.**  Both halves of that plan are wrong,
+in opposite directions.
+
+*The recursion is not available.*  A contour fit of the kernel cannot
+reach the accuracy the pipeline exists for: least squares on |z| = rho
+minimises `sum_m |dL_m|^2 rho^-2m` by Parseval, an exponentially
+down-weighted coefficient norm, while the kernel decays *algebraically*
+and carries real energy in its late taps (|L_m|/|L_1| = 61 at
+m = 4095).  Measured on one surrogate with one error norm: ERA -129.9
+dB, the best contour fit -57.6 dB.  Nor does a realisation from the
+*coefficients* survive the record: from a 1024-tap window it reaches
+-17.5 dB over 16384 taps with the error growing monotonically along the
+record, and raising the order past the window's information content
+lands eigenvalues at |lambda| = 1.18 and errors of 1e13.  The AAK bound
+that made the recursion look cheap was measured on a 1024x1024 Hankel
+matrix — taps 1..2048 of a 16384-tap kernel — and re-measuring it on a
+tall block Hankel shows it does not converge in the block-column count
+either.  Neither number is the bound; both read their own window.
+
+*And resume never needed it.*  The history is `2 * n_steps * p`
+numbers — 2.4 MB at 12288 steps and p = 12.  Nothing about that size
+requires a recursion.
+
+**What actually blocked it** was reproducibility, and it was not known.
+Two builds of the same band port gave projected exterior blocks
+differing by 35-113 %, in one process as much as across two, because
+`find_propagating_modes` called ARPACK without a start vector and the
+subspace is spanned by the tracked families' traces.  Removing the SVD
+sign gauge left 9.1e-6 of genuine variation.  A resume rebuilds its
+operators from the recipe and reloads the boundary state from the
+checkpoint; a rebuilt subspace differing from the recorded one makes
+the two inconsistent while every norm still looks right.  That is
+KB-037, the same defect as KB-010 (DD-142) in a third call site.
+
+**Decision.**  Resume is implemented directly, on three pieces:
+
+1. **A fixed ARPACK start vector**, now shared by every sparse
+   eigensolve (`magnelio._arpack.arpack_v0`).  Two builds of the same
+   band port are bit-identical, in one process and across processes.
+2. **`state_dict` / `load_state_dict` on the band boundary and its port
+   operator** — exactly what `reset_state` clears: the projected state,
+   both histories (filled prefix only) and the interior trace.  The
+   kernels are *not* stored: they are a deterministic function of the
+   rebuilt blocks, which is only true because of (1).  A restore into a
+   subspace of different rank is refused, as is a source history
+   without an incoming kernel.
+3. **`band_options` in the run recipe.**  They size the ghost
+   excitation and the subspace, and were not persisted, so a run
+   rebuilt from a project silently auto-sized `n_syn` differently
+   (measured 8192 against the recorded 3072) — which alone made the
+   seam non-exact and would equally affect any other rebuild from a
+   store.
+
+The resume path itself is parameterised rather than duplicated: the
+band pipeline supplies its own `_PreparedRun` and reuses the shared
+sink reopening, checkpoint loading and monitor restoration.
+
+**Measured.**  A band run continued from a checkpoint reproduces an
+uninterrupted run **bit-exactly** — the recorded V/I waves are equal
+sample for sample over the whole record, and the S-parameters derived
+on read are equal element for element.  Before the recipe fix the waves
+were identical up to sample 2431 and parted exactly at the checkpoint
+step.
+
+**What this does not change.**  `port_model` stays `"modal"`
+(DD-231): resume was one of three grounds, and the other two —
+`a()`/`b()` time-domain power waves, and the runtime ratio — stand.
+The convolution still costs ~13 % of the run; an *exact* fast method
+(blocked FFT convolution) remains available and is not attempted here,
+while the kernel build's 71 % is not reachable by any contour fit.
+

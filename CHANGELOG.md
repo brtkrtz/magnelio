@@ -103,14 +103,13 @@ major version is 0, minor releases may change the public API.
 - Concept section *Sources, waveforms and excitations* in the methods
   guide.
 
-- A broadband band-pipeline run streamed into a project now writes
-  resume checkpoints.  The band boundary's memory reaches over the whole
-  record, so it is checkpointed in full — the projected exterior state
-  and both convolution histories — and restoring it continues the march
-  bit-exactly.  Resuming such a run from the API is still refused, for
-  the remaining reason that the resume path rebuilds a run on the modal
-  pipeline; the checkpoints are what a band run was missing to make that
-  possible.
+- A broadband band-pipeline run can be resumed.  Interrupt one — Ctrl-C,
+  a wall-clock cap, a crash — and `magnelio.resume(project, excited=…)`
+  continues it, or runs a finished one longer, exactly as on the default
+  port model.  The band boundary remembers the whole record, so its
+  memory is checkpointed in full and the continuation is bit-exact: the
+  recorded waves and the S-parameters are identical to an uninterrupted
+  run of the same length, sample for sample.
 
 ### Changed
 
@@ -237,6 +236,10 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Band-pipeline settings (`band_options`) are now stored with a project,
+  so re-opening or continuing a run reproduces the run that was
+  recorded.  Without them a rebuilt run silently re-derived its own
+  synthesis window and excited the model with a different pulse.
 - Two builds of the same band-pipeline port now give bit-identical
   results.  The eigensolve behind the mode tracking started from a
   random vector, so the subspace the band boundary rests on differed
