@@ -330,6 +330,12 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
 
 ## Open construction sites
 
+* **Band-pipeline runtime** — 690x modal on the DD-232 fixture; split
+  at p = 12: kernel 71 %, convolution 13 %, march 4 %, postprocessing
+  14 %.  Rank reduction rejected (2.2x for 60 dB).  Next: a rational
+  kernel (~200 poles by the AAK bound, unstable poles routine), which
+  also restores ``a()``/``b()`` and resume.  Dossier:
+  `investigations/port-model-default/` (internal record).
 * **API blueprint (DD-224) — Phases A–D complete** (listed above).
   Phase E ff. is a reserved-name roadmap, not scheduled work: each
   entry earns its own DD.  Field-source limits: the recording lives
@@ -380,13 +386,7 @@ DD entry and `known-bugs.md`) and are not repeated here.
 
 ## Deferred / nice-to-have
 
-* **Time-domain power waves on band results** — band channels are
-  fixed subspace projections; calibrated a/b series need per-frequency
-  phasor synthesis.  ``result.a()/b()`` raise with guidance (DD-063).
-* **Cheap single-profile QTEM port upgrade** — refuted at the DD-064
-  state (loses at the lower edge, pollutes |S21| by 1.2 dB).
-* **Pulsed band-edge S-parameters on dispersive lines** are
-  record-truncation limited; candidate: late-time AR estimation.
+* **Pulsed band-edge S-parameters on dispersive lines** are record-truncation limited; candidate: late-time AR estimation.
 * **A third compute backend** — assessed, nothing built (DD-180);
   blocker is `xp is not np` as the capability test.  Metal rejected
   (no FP64); CuPy on ROCm is the candidate, gates are local runs.
