@@ -330,6 +330,14 @@ class Mesh:
     # itself is lossy).  Not serialised: a reloaded mesh keeps the
     # closure it was stored with.
     _wall_backup: dict = field(default_factory=dict, repr=False)
+    # Provenance of the DD-053 pair-coupling pass (DD-228): which face
+    # masses rest on a ladder the pairing accepted without pinning it
+    # to the tolerance the transparent-boundary gate certifies at.
+    # Read by the modal port build to name the cause when a channel
+    # loses the exact DTBC (KB-022).  Not serialised: a reloaded mesh
+    # still reports the withheld DTBC, only without the mesh-side
+    # cause.
+    _pair_coupling: object = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         from magnelio.boundaries.boundary_conditions import (  # noqa: PLC0415
@@ -1558,7 +1566,7 @@ class Mesh:
                 couple_face_material_pairs,
             )
 
-            couple_face_material_pairs(mesh)
+            mesh._pair_coupling = couple_face_material_pairs(mesh)
             # NOT wired here: the H-face enlarged-cell donor pass
             # (``assign_h_face_donors``, WP-R5).  The trigger benchmark
             # (``validation/iris_cavity_donor_trigger.py``)

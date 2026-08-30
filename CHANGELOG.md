@@ -105,6 +105,42 @@ major version is 0, minor releases may change the public API.
 
 ### Changed
 
+- Ports keep the exact transparent boundary condition on conformal
+  feeds that used to lose it.  A port earns the exact termination by
+  proving its feed cross-section is a uniform discrete chain, and the
+  threshold for that proof was set as a category test — far tighter
+  than the reflection it was guarding against.  It is now derived from
+  that reflection instead: measured through the solver on three
+  waveguide fixtures, the residual a non-uniform cross-section leaves
+  behind stays below −114 dB across the whole range the gate now
+  accepts, which is far below the level any port is held to.  The
+  practical effect is that a conformal cross-section carrying ordinary
+  CAD tolerance — a body built by mirroring or unioning is the usual
+  case — keeps a reflection floor below −114 dB instead of dropping to
+  the −30 dB of the first-order absorber.  Inhomogeneous lines are
+  unaffected: they miss the threshold by five orders of magnitude,
+  as they should, and belong on `port_model="auto"`.  Each channel now
+  publishes what its own cross-section costs it, in dB:
+  `analysis.solve_ports()[name].modes[i].chain_floor_db`.
+- A port channel that cannot be given the exact transparent boundary
+  condition now says so.  The exact termination is earned, not chosen:
+  the feed section behind a port has to be a uniform discrete chain,
+  and where it is not, the channel falls back to a first-order
+  absorber whose reflection floor is around −30 dB instead of below
+  −100 dB.  One of the two tests behind that decision used to be
+  silent, so a port could quietly run on the weaker termination while
+  its twin on the same model kept the exact one.  It now warns, names
+  the channel and the measured deviation, and where the mesh explains
+  it — a feed whose conformal cross-section carries geometric
+  tolerance, typically from a mirrored or unioned solid — says that
+  too.  It stays quiet where the fallback is the model rather than a
+  surprise: a quasi-TEM line is inhomogeneous by construction and
+  never qualified for the exact termination, and that calls for a
+  different port model, not a warning on every run.  The choice is
+  also published per mode:
+  `analysis.solve_ports()[name].modes[i].termination` is `"dtbc"` or
+  `"mur"`, with the measurement in `chain_spread`, so it can be
+  checked before a run rather than after.
 - The energy trace a run records — and the `energy_stop_db` criterion
   reading it — is now the quantity the leapfrog conserves, pairing the
   two magnetic half-steps that straddle each electric sample.  The

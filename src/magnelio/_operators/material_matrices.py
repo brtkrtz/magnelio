@@ -19,6 +19,7 @@ See spec.md for update equation context.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -46,6 +47,75 @@ from magnelio.constants import EPS0, MU0  # noqa: E402
 # ``compute_min_effective_mu`` mirror this value; keep the three in
 # step.
 _FREE_AREA_FLOOR = 0.01
+
+# Certification tolerance of a DD-053 ladder target (DD-228/DD-229).
+# The pairing accepts candidates at ``rtol`` (1e-6, loose on purpose:
+# rejecting a ladder does not fall back to a better value, it falls
+# back to Krietenstein, which is the wrong LC partner on a line), and
+# the transparent-boundary gate downstream certifies at this value.
+#
+# KB-022 was the *inversion* of these two: the gate used to certify at
+# 1e-8, a hundred times tighter than the pairing accepted, so the
+# pairing could hand the port a target the port then refused — quietly.
+# Since DD-229 set the gate from its reflection budget instead of from
+# a category split, the ordering is the right way round: every target
+# the pairing accepts (residual <= 1e-6) clears the gate (2e-6) with a
+# factor of two to spare, and the mesh can no longer produce a face
+# that costs a port its exact termination.
+#
+# The ``PairCouplingProvenance`` record therefore reads empty on a
+# healthy model, and is kept as the standing check that the ordering
+# still holds — if a face ever lands above this value again, the port
+# warning has its cause ready.  Mirrors
+# ``ports._modal.operator._DTBC_PAIR_SPREAD_TOL``; the two are locked
+# together by ``test_operators.py``.
+_PAIR_CERTIFY_RTOL = 2e-6
+
+
+# ``eq=False``: the payload is numpy arrays, and a generated __eq__
+# would raise on the ambiguous truth value instead of comparing.
+@dataclass(frozen=True, eq=False)
+class PairCouplingProvenance:
+    """Which DD-053 ladder targets were accepted but not pinned.
+
+    Attributes
+    ----------
+    faces : numpy.ndarray
+        Flat H-face indices (``[Hx | Hy | Hz]`` concatenation) whose
+        pair-coupled mass rests on a ladder that agreed only inside
+        the band ``(certify_rtol, rtol]``.
+    residual : numpy.ndarray
+        Per-face relative disagreement behind the accepted target —
+        the larger of the chosen ladder's own partner residual and,
+        where both ladders were valid, their mutual disagreement.
+    n_coupled : int
+        Total number of faces the pass overrode, loose ones included.
+    rtol, certify_rtol : float
+        The two tolerances the band is spanned by.
+    """
+
+    faces: np.ndarray
+    residual: np.ndarray
+    n_coupled: int
+    rtol: float
+    certify_rtol: float
+
+    @property
+    def worst(self) -> float:
+        """Largest recorded residual; ``0.0`` when nothing is loose."""
+        return float(self.residual.max()) if self.residual.size else 0.0
+
+    def at(self, faces) -> "PairCouplingProvenance":
+        """Restrict the record to ``faces`` (flat H-face indices)."""
+        keep = np.isin(self.faces, np.asarray(faces, dtype=np.int64))
+        return PairCouplingProvenance(
+            faces=self.faces[keep],
+            residual=self.residual[keep],
+            n_coupled=self.n_coupled,
+            rtol=self.rtol,
+            certify_rtol=self.certify_rtol,
+        )
+
 
 # ---------------------------------------------------------------------------
 # Vectorised helpers
@@ -803,7 +873,11 @@ def _staircase_mu_faces(mesh: Mesh) -> np.ndarray:
     )
 
 
-def couple_face_material_pairs(mesh: Mesh, rtol: float = 1e-6) -> None:
+def couple_face_material_pairs(
+    mesh: Mesh,
+    rtol: float = 1e-6,
+    certify_rtol: float = _PAIR_CERTIFY_RTOL,
+) -> PairCouplingProvenance:
     """LC-consistent conformal M_μ coupling (DD-053).  Mutates the mesh.
 
     The conformal ``M_ε`` on a curved-PEC edge is the physically
@@ -850,11 +924,27 @@ def couple_face_material_pairs(mesh: Mesh, rtol: float = 1e-6) -> None:
     ``compute_min_effective_mu`` / ``courant_dt`` all see it
     consistently.  Faces whose encoded value would fall below the
     ``build_M_mu`` 1 % ``A_face_free`` floor are left untouched.
+
+    Returns a :class:`PairCouplingProvenance` naming the faces whose
+    accepted target was not *pinned* by the agreement that admitted it
+    — the ladder residual behind them exceeds ``certify_rtol``, the
+    tolerance the transparent-boundary gate certifies at (DD-228).
+    Agreement at ``rtol`` still admits a spread of up to ``rtol``, so
+    the band between the two tolerances is where the pairing says yes
+    and the port gate may say no; recording it is what lets the port
+    build name the cause (KB-022).
     """
+    empty = PairCouplingProvenance(
+        faces=np.empty(0, dtype=np.int64),
+        residual=np.empty(0, dtype=float),
+        n_coupled=0,
+        rtol=rtol,
+        certify_rtol=certify_rtol,
+    )
     em = mesh.edge_material
     fm = mesh.face_material
     if em is None or fm is None:
-        return
+        return empty
 
     grid = mesh.grid
     Nx, Ny, Nz = grid.Nx, grid.Ny, grid.Nz
@@ -997,6 +1087,10 @@ def couple_face_material_pairs(mesh: Mesh, rtol: float = 1e-6) -> None:
         ),
     ]
 
+    loose_faces: list[np.ndarray] = []
+    loose_resid: list[np.ndarray] = []
+    n_coupled = 0
+
     for f_off, f_shape, ladders in configs:
         (p_a, off_a, shape_a, dp_a, dav_a) = ladders[0]
         (p_b, off_b, shape_b, dp_b, dav_b) = ladders[1]
@@ -1015,7 +1109,19 @@ def couple_face_material_pairs(mesh: Mesh, rtol: float = 1e-6) -> None:
         use_b = v_b & (~v_a | (agree_ab & ~prefer_a))
         target = np.where(use_a, t_a, np.where(use_b, t_b, np.nan)).ravel()
 
+        # How well the accepted target is pinned (DD-228): the chosen
+        # ladder's own partner residual, and — where the other ladder
+        # also certified — the two candidates' mutual disagreement.
+        # Either one bounds how far the written mass may sit from the
+        # translation-invariant value the estimator assumes.
+        with np.errstate(divide="ignore", invalid="ignore"):
+            scale_ab = np.maximum(np.abs(t_a), np.abs(t_b))
+            cross = np.where(scale_ab > 0.0, np.abs(t_a - t_b) / scale_ab, 0.0)
+        prov = np.where(use_a, r_a, np.where(use_b, r_b, 0.0))
+        prov = np.maximum(prov, np.where(v_a & v_b & agree_ab, cross, 0.0)).ravel()
+
         flat = f_off + np.nonzero(~np.isnan(target))[0]
+        prov = prov[~np.isnan(target)]
         tgt = target[~np.isnan(target)]
 
         # The LC pair identity is M_ε·M_μ = ε0μ0·ε_pair·μ̄·d·d̃ (see
@@ -1029,7 +1135,7 @@ def couple_face_material_pairs(mesh: Mesh, rtol: float = 1e-6) -> None:
 
         # Skip no-ops (bulk pairs reproduce the current value exactly).
         changed = np.abs(tgt - m_mu[flat]) > 1e-12 * m_mu[flat]
-        flat, tgt = flat[changed], tgt[changed]
+        flat, tgt, prov = flat[changed], tgt[changed], prov[changed]
         if flat.size == 0:
             continue
 
@@ -1040,12 +1146,30 @@ def couple_face_material_pairs(mesh: Mesh, rtol: float = 1e-6) -> None:
         # near-coincident planes) can carry mu_avg = 0; never write a
         # non-finite equivalent area into the mesh data.
         ok = np.isfinite(a_ff) & (a_ff > 0.011 * A_face[flat])
-        flat, mu_f, a_ff = flat[ok], mu_f[ok], a_ff[ok]
+        flat, mu_f, a_ff, prov = flat[ok], mu_f[ok], a_ff[ok], prov[ok]
 
         fm.category[flat] = 2
         fm.mu_avg[flat] = mu_f
         fm.A_face_free[flat] = a_ff
         fm.L_dual_free[flat] = L_dual[flat]
+
+        n_coupled += int(flat.size)
+        loose = prov > certify_rtol
+        if np.any(loose):
+            loose_faces.append(flat[loose])
+            loose_resid.append(prov[loose])
+
+    return PairCouplingProvenance(
+        faces=(
+            np.concatenate(loose_faces).astype(np.int64)
+            if loose_faces
+            else np.empty(0, dtype=np.int64)
+        ),
+        residual=(np.concatenate(loose_resid) if loose_resid else np.empty(0, dtype=float)),
+        n_coupled=n_coupled,
+        rtol=rtol,
+        certify_rtol=certify_rtol,
+    )
 
 
 def assign_h_face_donors(mesh: Mesh, floor_ratio: float = 0.01) -> None:

@@ -1,6 +1,7 @@
 """Unit tests for discrete curl operator and material matrices."""
 
 import numpy as np
+import pytest
 import scipy.sparse as sp
 
 from magnelio._operators.curl import build_curl_matrix
@@ -270,3 +271,125 @@ class TestCoupleFaceMaterialPairs:
         monkeypatch.setattr(mmod, "build_M_eps", jittered)
         mmod.couple_face_material_pairs(mesh)
         assert not np.any(mesh.face_material.category == 2)
+
+    def test_certify_tolerance_matches_the_transparent_boundary_gate(self):
+        """The band the provenance record spans is defined by the consumer.
+
+        The pairing accepts at ``rtol``; the gate that consumes the
+        result certifies at a hundredth of that.  The record exists to
+        span exactly the difference, so the two constants must not
+        drift apart — they live in different layers (a material pass
+        must not import a port module) and are locked here instead.
+        """
+        from magnelio._operators.material_matrices import _PAIR_CERTIFY_RTOL
+        from magnelio.ports._modal.operator import _DTBC_PAIR_SPREAD_TOL
+
+        assert _PAIR_CERTIFY_RTOL == _DTBC_PAIR_SPREAD_TOL
+
+    def test_the_pairing_cannot_hand_the_port_a_target_it_refuses(self):
+        """The ordering that closes KB-022 structurally (DD-229).
+
+        The defect was an inversion: the pairing accepted at a
+        hundred times the tolerance the transparent-boundary gate
+        certified at, so a mesh could produce a face that cost a port
+        its exact termination.  With the gate set from its reflection
+        budget the ordering is the right way round, and this test is
+        what keeps it there — if the gate is ever tightened below the
+        pairing's own tolerance, the silent-downgrade mechanism is
+        back.
+        """
+        import inspect
+
+        from magnelio._operators.material_matrices import (
+            _PAIR_CERTIFY_RTOL,
+            couple_face_material_pairs,
+        )
+
+        pairing_rtol = inspect.signature(couple_face_material_pairs).parameters["rtol"].default
+        assert pairing_rtol < _PAIR_CERTIFY_RTOL
+
+    def test_clean_geometry_leaves_the_provenance_record_empty(self):
+        """A no-op pass writes nothing, so it certifies nothing (DD-228)."""
+        from magnelio._operators.material_matrices import couple_face_material_pairs
+
+        prov = couple_face_material_pairs(self._mesh())
+        assert prov.n_coupled == 0
+        assert prov.faces.size == 0
+        assert prov.worst == 0.0
+
+    def test_a_target_accepted_inside_the_band_is_recorded(self, monkeypatch):
+        """Both ladders jittered: the winner is loose, and it is written.
+
+        The single-jitter case one test up resolves to the exact
+        ladder, which reproduces the bulk value and is filtered out as
+        a no-op — nothing is written, so nothing is certified.  Here
+        both candidates of one Hx face carry a jitter inside the
+        pairing's agreement band: the better-conditioned one still
+        wins (DD-165), but it is itself only good to 3e-7.
+
+        ``certify_rtol`` is pinned to the historical gate (1e-8) to
+        exercise the mechanism: with the production tolerances of
+        DD-229 the recording band is empty by construction, which is
+        what the next test pins.
+        """
+        import magnelio._operators.material_matrices as mmod
+
+        mesh = self._mesh()
+        original = mmod.build_M_eps
+        Nx, Ny, Nz = mesh.Nx, mesh.Ny, mesh.Nz
+        n_Ex = Nx * (Ny + 1) * (Nz + 1)
+        n_Ey = (Nx + 1) * Ny * (Nz + 1)
+        i, j, k = Nx // 2, Ny // 2, Nz // 2
+        # The two ladders of the Hx face (i, j, k): along z through the
+        # Ey partners, along y through the Ez partners.
+        ey_flat = n_Ex + (i * Ny + j) * (Nz + 1) + k
+        ez_flat = n_Ex + n_Ey + (i * (Ny + 1) + j) * Nz + k
+        n_Hx = (Nx + 1) * Ny * Nz
+        face = (i * Ny + j) * Nz + k
+
+        def jittered(m):
+            values = np.array(original(m), copy=True)
+            values[ey_flat] *= 1.0 + 3.0e-7
+            values[ez_flat] *= 1.0 + 5.0e-7
+            return values
+
+        monkeypatch.setattr(mmod, "build_M_eps", jittered)
+        prov = mmod.couple_face_material_pairs(mesh, certify_rtol=1e-8)
+
+        assert face < n_Hx
+        assert mesh.face_material.category[face] == 2
+        assert face in set(prov.faces.tolist())
+        recorded = prov.residual[prov.faces == face][0]
+        assert prov.certify_rtol < recorded <= prov.rtol
+        assert recorded == pytest.approx(3.0e-7, rel=0.2)
+
+    def test_production_tolerances_leave_nothing_to_record(self, monkeypatch):
+        """The same jitter, the production gate: nothing is loose (DD-229).
+
+        This is the structural half of the KB-022 closure.  The
+        pairing accepts a target only when its ladder agreed to 1e-6,
+        and the port gate now certifies at 2e-6, so no accepted target
+        can reach the gate as a surprise — whatever the geometry does.
+        """
+        import magnelio._operators.material_matrices as mmod
+
+        mesh = self._mesh()
+        original = mmod.build_M_eps
+        Nx, Ny, Nz = mesh.Nx, mesh.Ny, mesh.Nz
+        n_Ex = Nx * (Ny + 1) * (Nz + 1)
+        n_Ey = (Nx + 1) * Ny * (Nz + 1)
+        i, j, k = Nx // 2, Ny // 2, Nz // 2
+        ey_flat = n_Ex + (i * Ny + j) * (Nz + 1) + k
+        ez_flat = n_Ex + n_Ey + (i * (Ny + 1) + j) * Nz + k
+
+        def jittered(m):
+            values = np.array(original(m), copy=True)
+            values[ey_flat] *= 1.0 + 3.0e-7
+            values[ez_flat] *= 1.0 + 5.0e-7
+            return values
+
+        monkeypatch.setattr(mmod, "build_M_eps", jittered)
+        prov = mmod.couple_face_material_pairs(mesh)
+        assert prov.n_coupled > 0, "the jitter must still produce an override"
+        assert prov.faces.size == 0
+        assert prov.worst == 0.0

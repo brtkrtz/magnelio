@@ -1,8 +1,7 @@
 # Magnelio — Project Status
 
 *Last updated: 2026-08-30.*  **Released v0.4.8** (2026-08-29; the
-mesh-build campaign DD-201…DD-223 and the 16 × 16-array ladder).
-Unreleased on `main`: **DD-224 Phases A–D complete** — the API
+mesh-build campaign DD-201…DD-223).  Unreleased on `main`: **DD-224 Phases A–D complete** — the API
 grammar for the years ahead (`Waveform*`, core `Excitation`, sources
 on the model), **`AnalysisTD` + `TDResult`** with
 `AnalysisScatteringTD` on the shared transient engine, project-store
@@ -10,12 +9,12 @@ schema 2.0, tutorial 20 *plane-wave scattering*,
 **`magnelio.fields.FieldState`** with `SourceFieldInitial` and a
 general `SourceFieldIncident` (how-to *Ring-down*), **Huygens field
 sources** (DD-226: `MonitorFieldSurface` records a closed box,
-`SourceFieldSurface` replays it at any position and quarter turn;
-how-to *Field sources*), and **`SourceCurrentPath`** (DD-227: an
-impressed current along any curve; how-to *Impressed currents*).
-Unit suite 2782 passed / 4 skipped; integration suite 426 passed /
-5 skipped (2026-08-30; the four single-precision GPU tests need
-`CUPY_ACCELERATORS=""` and nvrtc, absent in the sandbox).
+`SourceFieldSurface` replays it anywhere; how-to *Field sources*),
+**`SourceCurrentPath`** (DD-227), and **the pair-product gate as a
+reflection budget** (DD-228/DD-229, closes KB-022).
+Unit suite 2787 passed / 4 skipped; integration suite 435 passed /
+5 skipped (2026-08-30, with `CUPY_ACCELERATORS=""` — without it the
+four single-precision GPU tests fail on nvrtc in the sandbox).
 Previous release v0.4.7 (2026-08-26): DD-196…DD-199.  Channels:
 GitHub, PyPI, conda-forge, docs (`/stable/` = tag, `/dev/` = main).
 
@@ -28,9 +27,9 @@ the `validation/` certificates named in their DD entries.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-229** (2026-08-30) — the uniform-chain gate is a reflection budget, not a category.  DD-054 set it as a classifier (1e-8, dropped into the empty gap between roundoff at 1e-13 and an inhomogeneous line at 1e-1); nothing had measured what a spread costs, so nobody saw that conformal geometry lands *inside* that gap — a conformal cross-section inherits its solid's B-Rep tolerance where a staircase one agrees at roundoff, and DD-165's mirrored stub read 1.73e-8 against the gate.  Measured through the production chain on three fixtures and two defect shapes (`validation/dtbc_chain_spread_floor.py`): a smooth tilt is antisymmetric against a symmetric mode, its first-order overlap vanishes and the reflection is second order (1.0·δ²); a *localised* defect keeps first order on TEM (0.143·δ) but is absorbed on TE/TM, where `q` comes from a 2D eigenvalue and an eigenvalue is first-order accurate by construction.  The pessimum is therefore a localised defect on a TEM channel — exactly the KB-022 case.  Gate now `2e-6`, from the −100 dB acceptance line via the crude bound `|Γ| ≤ δ`: at most −114 dB by that bound, −129 dB by the measured law.  Not set looser (the budget alone would allow three more decades) because `port_model="auto"` reads the same certificate to route inhomogeneous lines to the band pipeline.  Side effect that closes KB-022 structurally: the pairing accepts at 1e-6 and the gate certifies at 2e-6, so for the first time the ordering is right and the mesh cannot hand a port a target the port refuses.  No pinned number moved.
+* **DD-228** (2026-08-30) — a withheld termination certificate says so, and says why (closes KB-022).  A modal channel earns the exact DTBC by passing two gates; stage 2 (feed-chain slabs, DD-067) has warned since it was built, stage 1 (the transversal pair-product spread) decided quietly, so a port could trade a 1e-14 termination for a −30 dB floor while its twin on the same model kept the exact one.  Stage 1 now warns like stage 2 — inside the marginal band 1e-8…1e-4 only, since further out the cross-section is genuinely inhomogeneous (a QTEM line reads 0.22) and the fallback is the model, not a defect — and `couple_face_material_pairs` hands over a `PairCouplingProvenance` — the faces whose DD-053 target rests on a ladder residual above the 1e-8 the gate certifies at — which the port factory restricts to its own transversal faces and the warning quotes as the mesh-side cause.  The choice is queryable too: `ModeReport.termination` / `chain_spread`, so `solve_ports()` answers "which of my ports is exact?" before a run is paid for.  Tightening the pairing instead was refuted by measurement: a rejected ladder falls back to Krietenstein, the wrong LC partner on a line, and on the coupler `rtol = 1e-8` drops 1 008 of 24 295 targets and moves both ports *away* from the gate (0.1055 → 0.1180, 0.1149 → 0.1175); on clean conformal geometry the band is empty and the change is a no-op.
 * **DD-227** (2026-08-30) — `SourceCurrentPath`: an impressed current along any `geo.Curve` (or a point list), the excitation carrying the current in amperes.  Ampère's law puts it straight on the right-hand side of the FIT E update — `e ← e − sign·β·I(t^{n+1/2})`, a voltage on any grid with no cell-size factor — so the source is a scatter-add on the edges the DD-076 rasteriser hands back, folded per distinct edge (fancy-index `+=` does not accumulate over repeats, and folding is what makes a doubled-back segment cancel).  Two properties come from the operators, not from corrections: the monotone staircase makes the dipole moment exactly the chord between the snapped endpoints, and `S·C̃ᵀ = 0` makes an open filament accumulate precisely `∓∫I dt` on its two end nodes (measured ratio 1.0000000000) — an open path *is* a consistent oscillating dipole.  A source that exposes a `curve` now contributes `"source"` grid planes at its wire vertices, so the filament is as long as declared.  Against the closed-form uniform filament: 0.9642 at ten nodes per wavelength to 0.9831 at eighteen, order ≈ 1.3, the residual tracking the far-field box's own closure.  Paths leaving the meshed domain are refused; edges held at zero are reported, not silently dropped.
-* **DD-226** (2026-08-29) — Huygens field sources: a radiator simulated once drives any later model.  `MonitorFieldSurface` records the tangential fields on a closed box of node planes, `SourceFieldSurface` replays them as an equivalent source, `fields.SurfaceRecording` (`save`/`load`) is the only thing the two runs share.  The replay is the incident TF/SF construction with its regions exchanged (every face correction negated), which is causal only for an *outgoing* field — a plane wave replayed this way appears inside the box, not outside.  Sampling had to move off the far-field monitor's cell-centre averaging onto native Yee positions (the cancellation inside the box is exact algebra; a smoothed sample leaks at the level of its own smoothing), and H is kept on both cell-centre layers so the replay can hit whatever dual plane *its* grid has (collapsing it onto the node plane cost 11 % and −15 dB).  Free rotation angles are refused, not rounded.  On its own grid the replay is exact (ratio 1.0000, residual −83.6 dB, inside −96.8 dB); across grids 0.977…1.012 with the inside −33…−41 dB.  `oversample` defaults to 8, not Nyquist's 4: linear time interpolation, measured to saturate there.
-* **DD-225** (2026-08-29) — the recorded energy (and the `energy_stop_db` criterion reading it) is the quantity the leapfrog conserves, pairing the two H half-steps that straddle each E sample; the old expression mixed samples half a step apart and rippled at 2f with amplitude sin(ω·dt/2) — 9.5 % measured on a 12-cells-per-wavelength ring-down, aliased by the check cadence into a zig-zag. Ripple 0.0946 → 0.0051, endpoint drift 1.9 % → 0.08 %; no pinned S-parameter moved.  Cost: an H-sized buffer, written once per check interval, filled in the same step (no new checkpoint key).
 Older decisions: `design-decisions.md`.
 
 ## Working practices earned the hard way
@@ -161,7 +160,12 @@ run).  The ghost source tracks the family direction per frequency
 (``set_excitation_band``: erfc-product spectral window, compactness
 gate), and ``compute_band_s_parameters`` decomposes ONE pulsed
 record per frequency with the DD-056 true-mode machinery.  Only
-analytical-path modes remain on modal Mur-1st (DD-047).
+analytical-path modes remain on modal Mur-1st (DD-047).  The
+pair-product gate is a reflection budget (DD-229): spread ≤ 2e-6, a
+chain contribution of at most −114 dB.  Both certificate stages are
+loud when they withhold the exact termination (DD-067, DD-228), and
+the choice is published per channel (``termination`` /
+``chain_floor_db`` off ``solve_ports()``).
 
 Symmetry planes (DD-154/DD-155, vocabulary DD-159): a symmetry plane
 is a boundary declaration — ``"SymmetryPEC"``/``"SymmetryPMC"`` clip
@@ -326,18 +330,14 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
 
 ## Open construction sites
 
-* **API blueprint (DD-224) — Phase D half done.**  Phases A–C are on
-  `main` (waveforms, `Excitation`, sources on the model, `AnalysisTD`
-  + `TDResult`, scattering on the shared engine, store schema 2.0,
-  tutorial 20, `fields.FieldState`, `SourceFieldInitial`, the general
-  `SourceFieldIncident`), and so is Phase D's Huygens coupling
-  (DD-226).  Open in Phase D: `SourceCurrentPath`.  Field-source
-  limits: the recording lives in memory until the run ends and is
-  written as its own file (no streaming, no store integration); a
-  conductor crossing a box face is warned about, not handled; a box
-  open at a PEC/PMC wall records fewer than six faces and suits only
-  a model continuing that wall; replay completes no symmetry planes.
-  Initial-field limits: every auxiliary state (absorber, ADE, SIBC,
+* **API blueprint (DD-224) — Phases A–D complete** (listed above).
+  Phase E ff. is a reserved-name roadmap, not scheduled work: each
+  entry earns its own DD.  Field-source limits: the recording lives
+  in memory until the run ends and is written as its own file (no
+  streaming, no store integration); a conductor crossing a box face
+  is warned about, not handled; a box open at a PEC/PMC wall records
+  fewer than six faces and suits only a model continuing that wall;
+  replay completes no symmetry planes.  Initial-field limits: every auxiliary state (absorber, ADE, SIBC,
   port) starts quiescent, not in the steady state a mode would have
   built around itself — stable, worth −0.31 % on a SIBC wall Q.  A
   general incident field is evaluated on the box faces every step and
