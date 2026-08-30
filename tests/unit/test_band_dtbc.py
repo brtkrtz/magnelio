@@ -273,6 +273,94 @@ class TestBoundaryStateMachine:
         b.advance(np.zeros(ext.p), np.ones(ext.p))
 
 
+class TestBoundaryCheckpoint:
+    """The band boundary's convolution reaches over the whole record, so
+    its checkpoint is its two histories plus the projected state — and a
+    restore has to be bit-exact, not merely close, because a resumed run
+    is contractually identical to an uninterrupted one (DD-070 D4)."""
+
+    @staticmethod
+    def _exterior():
+        return TestBoundaryStateMachine._small_exterior()
+
+    def test_restore_continues_bit_exactly(self):
+        ext = self._exterior()
+        rng = np.random.default_rng(11)
+        n_a, n_b = 25, 20
+        coups = 1e-3 * rng.standard_normal((n_a + n_b, ext.p))
+
+        straight = BandDTBCBoundary(ext, n_kernel_init=64)
+        for n in range(n_a + n_b):
+            xs = straight.advance(coups[n])
+
+        halted = BandDTBCBoundary(ext, n_kernel_init=64)
+        for n in range(n_a):
+            halted.advance(coups[n])
+        sd = halted.state_dict()
+
+        restored = BandDTBCBoundary(ext, n_kernel_init=64)
+        restored.load_state_dict(sd)
+        assert restored.step_count == n_a
+        for n in range(n_a, n_a + n_b):
+            xr = restored.advance(coups[n])
+
+        # Bit-exact: the kernels are rebuilt from the same blocks and the
+        # history is restored verbatim, so no seam of any size is allowed.
+        np.testing.assert_array_equal(xr, xs)
+
+    def test_restore_carries_the_source_history(self):
+        ext = self._exterior()
+        rng = np.random.default_rng(12)
+        n_a, n_b = 18, 14
+        coups = 1e-3 * rng.standard_normal((n_a + n_b, ext.p))
+        srcs = 1e-2 * rng.standard_normal((n_a + n_b, ext.p))
+
+        straight = BandDTBCBoundary(ext, n_kernel_init=64)
+        straight.require_in_kernel()
+        for n in range(n_a + n_b):
+            xs = straight.advance(coups[n], srcs[n])
+
+        halted = BandDTBCBoundary(ext, n_kernel_init=64)
+        halted.require_in_kernel()
+        for n in range(n_a):
+            halted.advance(coups[n], srcs[n])
+
+        restored = BandDTBCBoundary(ext, n_kernel_init=64)
+        restored.require_in_kernel()
+        restored.load_state_dict(halted.state_dict())
+        for n in range(n_a, n_a + n_b):
+            xr = restored.advance(coups[n], srcs[n])
+
+        np.testing.assert_array_equal(xr, xs)
+
+    def test_source_history_without_the_incoming_kernel_is_refused(self):
+        ext = self._exterior()
+        driven = BandDTBCBoundary(ext, n_kernel_init=16)
+        driven.require_in_kernel()
+        driven.advance(np.zeros(ext.p), np.ones(ext.p))
+        passive = BandDTBCBoundary(ext, n_kernel_init=16)
+        with pytest.raises(RuntimeError, match="incoming kernel"):
+            passive.load_state_dict(driven.state_dict())
+
+    def test_rank_mismatch_is_refused(self):
+        ext = self._exterior()
+        b = BandDTBCBoundary(ext, n_kernel_init=16)
+        b.advance(np.zeros(ext.p))
+        sd = b.state_dict()
+        sd["xt"] = np.zeros(ext.p + 1)
+        with pytest.raises(ValueError, match="rank"):
+            b.load_state_dict(sd)
+
+    def test_checkpoint_holds_only_the_filled_prefix(self):
+        ext = self._exterior()
+        b = BandDTBCBoundary(ext, n_kernel_init=256)
+        for _ in range(7):
+            b.advance(np.zeros(ext.p))
+        sd = b.state_dict()
+        assert sd["w_hist"].shape == (7, ext.p)
+        assert sd["s_hist"].shape == (7, ext.p)
+
+
 class TestFactoryAndOperator:
     @pytest.fixture(scope="class")
     def port(self):

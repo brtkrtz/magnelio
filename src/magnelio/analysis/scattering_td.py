@@ -1073,6 +1073,7 @@ class AnalysisScatteringTD(AnalysisTD):
                 dt=dt,
                 total_time_steps=total_time_steps,
                 bc_objects=bc_objects,
+                checkpoint_interval=checkpoint_interval,
             )
 
         if self.project is not None:
@@ -1621,6 +1622,7 @@ class AnalysisScatteringTD(AnalysisTD):
         dt: float,
         total_time_steps: int | None,
         bc_objects: dict,
+        checkpoint_interval: int | None = None,
     ) -> ScatteringTDResult:
         """Band-subspace DTBC run: build once, one pulsed run per
         excitation, per-frequency true-mode decomposition.
@@ -1677,6 +1679,7 @@ class AnalysisScatteringTD(AnalysisTD):
                 m_mu=m_mu,
                 dt=dt,
                 bc_objects=bc_objects,
+                checkpoint_interval=checkpoint_interval,
             )
 
         per_excitation = []
@@ -1786,6 +1789,7 @@ class AnalysisScatteringTD(AnalysisTD):
         m_mu: np.ndarray,
         dt: float,
         bc_objects: dict,
+        checkpoint_interval: int | None = None,
     ) -> object:
         """Stream one band-pipeline run per excitation into the project store.
 
@@ -1870,13 +1874,19 @@ class AnalysisScatteringTD(AnalysisTD):
                 sibc=self._sibc_spec(),
                 sink=sink,
             )
-            # Deliberately no resume checkpoints (DD-230).  The band
-            # boundary carries the projected exterior state xt and its
-            # two convolution histories, and it has no ``state_dict`` —
-            # the solver's checkpoint would silently omit them and a
-            # resume would restart the boundary from zero mid-record.
-            # A wrong answer is worse than no resume, and the band
-            # record has a fixed length anyway (nothing to shorten).
+            # Resume checkpoints (KB-037 follow-up to DD-230).  The band
+            # boundary now carries a ``state_dict`` holding the projected
+            # exterior state and both convolution histories, and the
+            # kernels it does *not* store are a deterministic function of
+            # the projected blocks — which is only true since the pencil
+            # eigensolve got a fixed ARPACK start vector.  Without that
+            # the rebuilt subspace differs from the recorded one and the
+            # restore is silently inconsistent, which is why DD-230
+            # withheld checkpoints here rather than writing partial ones.
+            ckpt_interval = (
+                checkpoint_interval if checkpoint_interval is not None else max(1, n_steps // 8)
+            )
+            sink.enable_checkpoints(solver.state_dict, ckpt_interval)
             self._drive_streamed_solver(solver, sink, run_name, path)
             _warn_on_truncated_band_record(
                 recorder.finalize(n_steps_actual=n_steps),
@@ -2085,18 +2095,21 @@ def _resume_scattering(
     run_name = proj._run_name_for_excited(excited)
     run_meta = proj.runs[run_name]
     if run_meta.get("port_model") == "band":
-        # The band boundary's projected exterior state and its two
-        # convolution histories are not in the checkpoint (the operator
-        # has no state_dict), so a resume would restart them from zero
-        # mid-record and quietly corrupt the decomposition.  The band
-        # record is fixed-length by contract anyway — re-run it (DD-230).
+        # The boundary state IS checkpointed now (its state_dict carries
+        # the projected exterior state and both convolution histories,
+        # and the kernels it omits are a deterministic function of the
+        # rebuilt blocks since KB-037).  What is still missing is the
+        # rebuild: this path reconstructs the analysis on the modal
+        # pipeline, so the restored band state would be handed to a
+        # modal operator.  Refuse until the resume path builds the band
+        # pipeline, rather than continue into the wrong operator.
         raise NotImplementedError(
             f"run {run_name!r} was recorded through the band pipeline, "
-            f"which cannot be resumed: the band port's exterior state "
-            f"and convolution histories are not checkpointed, so "
-            f"continuing would restart them from zero mid-record.  The "
-            f"band record has a fixed length by construction — re-run "
-            f"the analysis instead.",
+            f"which cannot be resumed yet: the boundary state is "
+            f"checkpointed, but this path rebuilds the run on the modal "
+            f"pipeline and would restore that state into the wrong "
+            f"operator.  The band record has a fixed length by "
+            f"construction — re-run the analysis instead.",
         )
     excited_chan = (run_meta["excited"][0], int(run_meta["excited"][1]))
 

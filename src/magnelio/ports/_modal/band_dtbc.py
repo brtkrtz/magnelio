@@ -774,6 +774,62 @@ class BandDTBCBoundary:
         self._w_hist[:] = 0.0
         self._s_hist[:] = 0.0
 
+    def state_dict(self) -> dict:
+        """Checkpoint the projected boundary state and both histories.
+
+        The convolution reaches back over the *whole* record, so unlike
+        a ring-buffer boundary this state grows with the run: the two
+        histories are ``n x p`` each.  That is small in absolute terms
+        (12288 steps at p = 12 is 2.4 MB together) and it is the entire
+        memory of the boundary — the kernels and projected blocks are
+        constant and rebuilt from the recipe.
+
+        Only the filled prefix is written; the rest of the capacity is
+        zero by construction and would just pad the checkpoint.
+        """
+        n = self._n
+        return {
+            "xt": self._xt.copy(),
+            "xt_prev": self._xt_prev.copy(),
+            "n": int(n),
+            "w_hist": self._w_hist[:n].copy(),
+            "s_hist": self._s_hist[:n].copy(),
+        }
+
+    def load_state_dict(self, sd: dict) -> None:
+        """Restore state written by :meth:`state_dict` (bit-exact resume).
+
+        The kernels are *not* in the checkpoint: they are a deterministic
+        function of the projected exterior blocks, which the resuming run
+        rebuilds from the same recipe.  That determinism is a property
+        the pencil eigensolve only acquired with a fixed ARPACK start
+        vector (KB-037) — without it the rebuilt subspace differs from
+        the recorded one and this restore would be silently inconsistent.
+        """
+        n = int(sd["n"])
+        p = int(np.asarray(sd["xt"]).size)
+        if p != self._p:
+            raise ValueError(
+                f"checkpoint holds a boundary state of rank {p}, but the "
+                f"rebuilt band port has rank {self._p} — the subspace it "
+                f"was recorded in is not the one being restored into",
+            )
+        self._ensure_capacity(n)
+        self._xt = np.asarray(sd["xt"], dtype=float).copy()
+        self._xt_prev = np.asarray(sd["xt_prev"], dtype=float).copy()
+        self._w_hist[:] = 0.0
+        self._s_hist[:] = 0.0
+        if n:
+            self._w_hist[:n] = np.asarray(sd["w_hist"], dtype=float)
+            self._s_hist[:n] = np.asarray(sd["s_hist"], dtype=float)
+            if np.any(self._s_hist[:n]) and self._kflip_in is None:
+                raise RuntimeError(
+                    "checkpoint carries a ghost source history but the "
+                    "incoming kernel was never built — set the excitation "
+                    "before loading the state",
+                )
+        self._n = n
+
 
 @dataclass
 class BandPortData:
@@ -1316,6 +1372,32 @@ class PortOperatorBandDTBC:
         self._boundary.reset_state()
         self._x1_prev = np.zeros(self._x1_idx.size)
         self.clear_excitation()
+
+    def state_dict(self) -> dict:
+        """Checkpoint the run state (bit-exact resume).
+
+        Exactly what :meth:`reset_state` clears, minus the excitation:
+        the projected boundary state machine and the interior trace the
+        boundary consumes one step later.  The waveform is re-bound by
+        the resuming caller through :meth:`set_excitation`, as on the
+        modal port, so only the retardation state is stored here.
+        """
+        return {
+            "x1_prev": self._x1_prev.copy(),
+            "boundary": self._boundary.state_dict(),
+        }
+
+    def load_state_dict(self, sd: dict) -> None:
+        """Restore state written by :meth:`state_dict`."""
+        x1 = np.asarray(sd["x1_prev"], dtype=float)
+        if x1.size != self._x1_idx.size:
+            raise ValueError(
+                f"checkpoint holds an interior trace of {x1.size} values "
+                f"for port {self.name!r}, which the rebuilt run traces "
+                f"with {self._x1_idx.size}",
+            )
+        self._x1_prev = x1.copy()
+        self._boundary.load_state_dict(sd["boundary"])
 
     # ------------------------------------------------------------------
     # Projections (recorder-facing fixed channels)

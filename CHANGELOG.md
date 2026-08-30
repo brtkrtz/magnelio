@@ -103,6 +103,15 @@ major version is 0, minor releases may change the public API.
 - Concept section *Sources, waveforms and excitations* in the methods
   guide.
 
+- A broadband band-pipeline run streamed into a project now writes
+  resume checkpoints.  The band boundary's memory reaches over the whole
+  record, so it is checkpointed in full — the projected exterior state
+  and both convolution histories — and restoring it continues the march
+  bit-exactly.  Resuming such a run from the API is still refused, for
+  the remaining reason that the resume path rebuilds a run on the modal
+  pipeline; the checkpoints are what a band run was missing to make that
+  possible.
+
 ### Changed
 
 - A run that terminates a port channel with the Mur fallback now

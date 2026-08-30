@@ -429,13 +429,33 @@ def test_band_decomposition_survives_the_round_trip_exactly():
         assert np.array_equal(live.dual_e_profiles[c][1], back.dual_e_profiles[c][1])
 
 
-def test_band_project_refuses_resume(band_project):
-    """A band run must refuse resume rather than restart its boundary.
+def test_band_run_checkpoints_its_boundary(band_project):
+    """The solver checkpoint carries the band boundary's whole memory.
 
-    The band boundary's projected exterior state and its two
-    convolution histories have no ``state_dict``, so the solver
-    checkpoint cannot carry them; continuing from one would zero them
-    mid-record and corrupt the decomposition silently (DD-230).
+    The convolution reaches over the entire record, so the boundary
+    state is the projected exterior coordinates plus both histories —
+    everything :meth:`reset_state` clears.  A checkpoint missing them
+    would restart the boundary from zero mid-record and corrupt the
+    decomposition silently, which is why DD-230 withheld checkpoints
+    here entirely until the state existed (KB-037).
+    """
+    for name in band_project.runs:
+        ckpt = band_project.checkpoint_state(name)
+        assert ckpt is not None, f"run {name} wrote no checkpoint"
+        ports = ckpt["ports"]
+        assert ports, "checkpoint carries no port state"
+        for pname, psd in ports.items():
+            assert set(psd) == {"boundary", "x1_prev"}, pname
+            assert set(psd["boundary"]) == {"xt", "xt_prev", "n", "w_hist", "s_hist"}
+
+
+def test_band_project_refuses_resume(band_project):
+    """A band run must refuse resume rather than continue wrongly.
+
+    The boundary state is checkpointed now, but the resume path still
+    reconstructs the run on the modal pipeline, so it would hand that
+    state to a modal operator.  Refusing is the honest answer until the
+    path builds the band pipeline.
     """
     from magnelio import resume
 
