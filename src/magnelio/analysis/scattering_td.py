@@ -1435,7 +1435,7 @@ class AnalysisScatteringTD(AnalysisTD):
 
         The base notice can only name the alternative; this class owns
         it and can therefore say what taking it would cost.  What it
-        costs is runtime and two capabilities.  The axis start is no
+        costs is runtime and one capability.  The axis start is no
         longer part of the trade: the excitation direction is
         tabulated down to DC wherever the fundamental is the static
         mode, so the pulse is sized by the measurement span rather
@@ -1452,7 +1452,7 @@ class AnalysisScatteringTD(AnalysisTD):
             "kernel-build phase before the run, then a record hundreds "
             "of times longer (a shielded microstrip measured 1.9 s "
             "against 45 min) -- and it gives up time-domain power waves "
-            "(a()/b()) and resume."
+            "(a()/b())."
         )
         if bool(dict(self.band_options or {}).get("dc_anchor", True)):
             return price

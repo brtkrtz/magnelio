@@ -1107,8 +1107,8 @@ class AnalysisTD(_AnalysisBase):
         body = (
             "  Those channels keep working: |S11| bottoms out around "
             "-30 dB, |S21| stays within 0.01 dB.  What the run keeps in "
-            "exchange is short runtime, time-domain power waves a()/b(), "
-            "and resumable checkpoints."
+            "exchange is short runtime and time-domain power waves "
+            "a()/b()."
         )
         return "\n".join([head, *lines, body, self._mur_fallback_alternative(dt)])
 

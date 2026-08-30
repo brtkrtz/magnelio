@@ -261,22 +261,23 @@ auto-sizing refuses an axis that would make the run disproportionate,
 naming the axis start that fits.
 
 The record has a fixed length, so `energy_stop_db`
-and signal-decay stops do not apply to it, and a run cannot be
-resumed or extended — the absorbing boundary carries convolution
-history that no checkpoint holds, so `resume()` refuses rather than
-continue from a zeroed boundary.  Finally, the recorded channels are
+and signal-decay stops do not apply to it.  The recorded channels are
 subspace projections whose incident/outgoing split is defined per
 frequency, so `result.a()` and `result.b()` are unavailable; the
 S-parameters and the raw V/I are.  Everything else is unchanged —
 including writing to a project store, from which the S-matrix is
-re-derived on read exactly as on the default path.
+re-derived on read exactly as on the default path, and continuing an
+interrupted run with `resume()`.  The absorbing boundary here
+remembers the *whole* record rather than a few past steps, so its
+memory is checkpointed in full; a continued run is bit-identical to an
+uninterrupted one of the same length.
 
 None of this has to be looked up.  Whenever a run terminates a
 channel with the Mur fallback, the analysis prints the balance sheet
 once: which channels fell back and what the cross-section measured,
-the floor they trade away against the runtime, power waves and
-resume they keep, and what `port_model="band"` would cost on this
-very model.
+the floor they trade away against the runtime and the power waves
+they keep, and what `port_model="band"` would cost on this very
+model.
 
 Either way the decision is published per channel, so it can be
 inspected before a run is paid for:
