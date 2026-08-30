@@ -48,20 +48,28 @@ from magnelio.constants import EPS0, MU0  # noqa: E402
 # step.
 _FREE_AREA_FLOOR = 0.01
 
-# Certification tolerance of a DD-053 ladder target (DD-228).  The
-# pairing itself accepts candidates at ``rtol`` (1e-6, loose on
-# purpose: rejecting a ladder does not fall back to a better value, it
-# falls back to Krietenstein, which is the wrong LC partner on a
-# line).  A target whose ladder agreed only inside the band
-# ``(certify_rtol, rtol]`` is still the best available estimate, but it
-# is not *pinned*: the transparent-boundary gate that consumes it
-# certifies at 1e-8, so a port fed by such a face can lose the exact
-# DTBC for a reason the pairing already saw.  Those faces are recorded
-# as ``PairCouplingProvenance`` so the port build can name the cause
-# instead of falling back silently (KB-022).  Mirrors
+# Certification tolerance of a DD-053 ladder target (DD-228/DD-229).
+# The pairing accepts candidates at ``rtol`` (1e-6, loose on purpose:
+# rejecting a ladder does not fall back to a better value, it falls
+# back to Krietenstein, which is the wrong LC partner on a line), and
+# the transparent-boundary gate downstream certifies at this value.
+#
+# KB-022 was the *inversion* of these two: the gate used to certify at
+# 1e-8, a hundred times tighter than the pairing accepted, so the
+# pairing could hand the port a target the port then refused — quietly.
+# Since DD-229 set the gate from its reflection budget instead of from
+# a category split, the ordering is the right way round: every target
+# the pairing accepts (residual <= 1e-6) clears the gate (2e-6) with a
+# factor of two to spare, and the mesh can no longer produce a face
+# that costs a port its exact termination.
+#
+# The ``PairCouplingProvenance`` record therefore reads empty on a
+# healthy model, and is kept as the standing check that the ordering
+# still holds — if a face ever lands above this value again, the port
+# warning has its cause ready.  Mirrors
 # ``ports._modal.operator._DTBC_PAIR_SPREAD_TOL``; the two are locked
 # together by ``test_operators.py``.
-_PAIR_CERTIFY_RTOL = 1e-8
+_PAIR_CERTIFY_RTOL = 2e-6
 
 
 # ``eq=False``: the payload is numpy arrays, and a generated __eq__

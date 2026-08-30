@@ -190,23 +190,54 @@ channel earns it when the meshed feed section really is the uniform
 discrete chain the derivation above assumes, which is tested in two
 stages before the run: the **pair-product gate** measures how far the
 co-located products $M_\varepsilon M_\mu$ spread across the feed
-cross-section (a weighted RMS, certified below $10^{-8}$), and the
-**slab gate** compares every mass entry on the port plane with its
-continuation into the first feed cells.  A channel that fails either
-one keeps working — it falls back to the modal Mur absorber — but its
-reflection floor rises from below $-100$ dB to the order of $-30$ dB.
+cross-section (a weighted RMS), and the **slab gate** compares every
+mass entry on the port plane with its continuation into the first feed
+cells.  A channel that fails either one keeps working — it falls back
+to the modal Mur absorber — but its reflection floor rises from below
+$-100$ dB to the order of $-30$ dB.
+
+The threshold of the first gate is a *reflection budget* (DD-229).
+The termination is exact for the weighted-mean chain, so a spread
+$\delta$ across the cross-section leaves a residual mismatch, and that
+mismatch was measured through the production solver on three fixtures
+and two shapes of defect.  The worst case rises linearly, at about a
+seventh of the spread; the gate uses the cruder bound
+$|\Gamma| \le \delta$ and accepts up to $\delta = 2\cdot 10^{-6}$, so a
+certified channel contributes at most $-114$ dB — well below the
+acceptance line the port floors are held to.  Every channel therefore
+publishes what its own cross-section costs it:
+
+$$
+\texttt{chain\_floor\_db} = 20\log_{10}\delta .
+$$
+
+The shape of the non-uniformity matters more than its size, which is
+why the bound is deliberately crude.  A smooth transversal tilt is
+antisymmetric against a symmetric mode, its first-order overlap
+vanishes, and the reflection falls to second order; a *localised*
+defect — one cell of the cross-section out of step, which is what
+geometric tolerance produces — keeps first order and reflects orders
+of magnitude more at the same measured spread.  A single scalar cannot
+tell the two apart, so the gate assumes the worse one.
 
 Failing a gate is two different events, and the reporting separates
-them.  A cross-section that was *meant* to be uniform and missed by a
-whisker — parts in a million, not the percents that materials and cell
-sizes differ by — is the surprising one, and it warns: the port, the
-channel, the measured deviation, and where the mesh can explain it,
-the conformal ladder behind the offending faces (DD-228).  A
-cross-section that is genuinely inhomogeneous is not a defect; a
-quasi-TEM line deviates at the material-contrast level and never
-qualified for the scalar chain in the first place, so the answer there
-is a different port model (CW true-mode or band, above), not a mesh
-fix, and Magnelio does not editorialise about it every run.
+them.  A cross-section that was *meant* to be uniform and missed the
+budget is the surprising one, and it warns: the port, the channel, the
+measured deviation, and where the mesh can explain it, the conformal
+ladder behind the offending faces (DD-228).  A cross-section that is
+genuinely inhomogeneous is not a defect; a quasi-TEM line deviates at
+the material-contrast level and never qualified for the scalar chain
+in the first place, so the answer there is a different port model, not
+a mesh fix, and Magnelio does not editorialise about it every run.
+
+That second case is worth stating plainly, because the default hides
+how much is on the table.  On an inhomogeneous line the default
+`port_model="modal"` terminates with the first-order absorber and
+floors around $-26$ to $-39$ dB.  The same line on `port_model="auto"`
+— which builds the certificates, sees the fallback and switches the
+run to the band pipeline — floors at $-171$ to $-211$ dB, and the CW
+true-mode port reaches $-206$ to $-251$ dB.  The default trades that
+for the cost of the band pipeline; if the port matters, change it.
 
 Either way the decision is published per channel, so it can be
 inspected before a run is paid for:
@@ -214,12 +245,13 @@ inspected before a run is paid for:
 ```python
 for name, report in analysis.solve_ports().items():
     for mode in report.modes:
-        print(name, mode.name, mode.termination, mode.chain_spread)
+        print(name, mode.name, mode.termination, mode.chain_floor_db)
 ```
 
 `termination` is `"dtbc"` or `"mur"`; `chain_spread` is the
-cross-section measurement behind it, or `None` where the test does not
-apply (a mode with a closed-form field evaluator is ineligible by
+cross-section measurement behind it and `chain_floor_db` the
+reflection bound it implies, or `None` where the test does not apply
+(a mode with a closed-form field evaluator is ineligible by
 construction).  `print(report)` shows the same on one line per mode.
 
 The usual cause of a withheld certificate is a feed that is not

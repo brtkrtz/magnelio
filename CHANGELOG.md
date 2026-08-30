@@ -105,6 +105,23 @@ major version is 0, minor releases may change the public API.
 
 ### Changed
 
+- Ports keep the exact transparent boundary condition on conformal
+  feeds that used to lose it.  A port earns the exact termination by
+  proving its feed cross-section is a uniform discrete chain, and the
+  threshold for that proof was set as a category test — far tighter
+  than the reflection it was guarding against.  It is now derived from
+  that reflection instead: measured through the solver on three
+  waveguide fixtures, the residual a non-uniform cross-section leaves
+  behind stays below −114 dB across the whole range the gate now
+  accepts, which is far below the level any port is held to.  The
+  practical effect is that a conformal cross-section carrying ordinary
+  CAD tolerance — a body built by mirroring or unioning is the usual
+  case — keeps a reflection floor below −114 dB instead of dropping to
+  the −30 dB of the first-order absorber.  Inhomogeneous lines are
+  unaffected: they miss the threshold by five orders of magnitude,
+  as they should, and belong on `port_model="auto"`.  Each channel now
+  publishes what its own cross-section costs it, in dB:
+  `analysis.solve_ports()[name].modes[i].chain_floor_db`.
 - A port channel that cannot be given the exact transparent boundary
   condition now says so.  The exact termination is earned, not chosen:
   the feed section behind a port has to be a uniform discrete chain,

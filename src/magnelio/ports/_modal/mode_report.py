@@ -73,11 +73,12 @@ class ModeReport:
         termination (lumped ports carry no modes at all).
     chain_spread : float or None
         Weighted RMS spread of the per-pair modal Courant number over
-        the feed cross-section — 0 on a perfectly uniform chain.  The
-        exact termination is granted below 1e-8 and withheld above it;
-        a value just above that threshold means a cross-section that
-        was meant to be uniform and was not, and warns, while a large
-        one is an inhomogeneous line that never qualified.  ``None``
+        the feed cross-section — 0 on a perfectly uniform chain, and
+        the quantity ``chain_floor_db`` turns into a reflection.  A
+        value just above the acceptance threshold means a
+        cross-section that was meant to be uniform and was not, and
+        warns; a large one is an inhomogeneous line that never
+        qualified for the scalar chain.  ``None``
         when the test does not apply: a mode with a
         closed-form field evaluator is ineligible by construction, and
         so is every channel of a port whose feed masses fail the slab
@@ -100,6 +101,28 @@ class ModeReport:
     epsilon_eff: float | None = None
     termination: str | None = None
     chain_spread: float | None = None
+
+    @property
+    def chain_floor_db(self) -> float | None:
+        """Reflection the feed cross-section's non-uniformity can cost [dB].
+
+        An upper bound, not an estimate.  The exact termination is
+        built for the weighted-mean chain, so a spread across the
+        cross-section leaves a residual mismatch; measured through the
+        production chain, the worst case rises linearly with the
+        spread at about a seventh of it, and this bound takes the
+        coefficient as one.  A channel terminated by the exact
+        boundary contributes at most this much reflection on top of
+        whatever else limits it — compare it against the floor the
+        port itself reaches.
+
+        ``None`` where no spread was measured (see ``chain_spread``),
+        and meaningless for a channel on the first-order absorber,
+        whose floor is set by the absorber instead.
+        """
+        if self.chain_spread is None or self.chain_spread <= 0.0:
+            return None
+        return 20.0 * math.log10(self.chain_spread)
 
     def z_modal(self, f: float) -> complex:
         """Power-wave reference impedance at frequency ``f`` [Hz]."""
@@ -622,7 +645,9 @@ class PortReport:
                 entry += f"  ε_eff = {m.epsilon_eff:.3f}"
             if m.termination is not None:
                 entry += f"  termination = {m.termination}"
-                if m.chain_spread is not None:
+                if m.termination == "dtbc" and m.chain_floor_db is not None:
+                    entry += f" (chain floor <= {m.chain_floor_db:.0f} dB)"
+                elif m.chain_spread is not None:
                     entry += f" (chain spread {m.chain_spread:.1e})"
             lines.append(entry)
         return "\n".join(lines)

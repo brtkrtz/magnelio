@@ -208,20 +208,41 @@ if TYPE_CHECKING:
     from magnelio._operators.material_matrices import PairCouplingProvenance
 
 # Weighted-RMS tolerance on the per-pair modal Courant number: the
-# chain is uniform (pair identity holds along the whole cross-section)
-# or the mode falls back to Mur.  Roundoff on the pair products sits at
-# ~1e-13; a genuinely inhomogeneous (QTEM) line deviates at the
-# material-contrast level, so the gate separates the two by orders of
-# magnitude.  A velocity spread of 1e-8 contributes reflection well
-# below the -100 dB acceptance line.
-_DTBC_PAIR_SPREAD_TOL = 1e-8
+# chain is uniform enough for the exact termination, or the mode falls
+# back to Mur.
+#
+# Derived from the reflection budget, not from a category split
+# (DD-229).  The termination is exact for the weighted-mean chain, so
+# what a spread costs is the residual mismatch, measured through the
+# production chain on three fixtures and two perturbation shapes
+# (``validation/dtbc_chain_spread_floor.py``):
+#
+#     TEM plate  ramp   |G| = 1.03 d^2.00     TM11 ramp   43.5 d^2.00
+#     TEM plate  spike  |G| = 0.143 d^0.99    TM11 spike  1.34 d^1.89
+#     TE10 ramp  |G| = 0.99 d^2.01            TE10 spike  0.21 d^1.94
+#
+# A smooth tilt is antisymmetric against a symmetric mode, so its
+# first-order overlap vanishes and the reflection is second order; a
+# localised defect keeps first order.  The worst case is therefore the
+# localised TEM one, and the gate is set against the deliberately
+# crude bound ``|Gamma| <= spread`` (a 17 dB margin on that measured
+# 0.143 coefficient, which is itself geometry-dependent).
+#
+# At this value the chain mismatch contributes at most -114 dB by that
+# bound and -129 dB by the measured law — 14 to 29 dB below the
+# -100 dB acceptance line, while the previous classifier threshold of
+# 1e-8 was protecting a -160 dB floor and rejecting ordinary conformal
+# B-Rep tolerance (measured up to 1e-6) onto a -30 dB absorber.
+_DTBC_PAIR_SPREAD_TOL = 2e-6
 
 # Upper edge of the band the gate *reports* on (DD-228).  Failing the
 # gate is two different events.  Just above it, the cross-section was
 # meant to be a uniform chain and numerical jitter cost it the exact
 # termination — the surprising case, worth a sentence: nothing a user
 # models deliberately deviates by parts in ten thousand, since
-# materials and cell sizes differ by percents.  Far above it, the
+# materials and cell sizes differ by percents.  In dB (DD-229) this
+# band is a chain floor of -114 to -80 dB: the region where the
+# acceptance line itself comes into view.  Far above it, the
 # cross-section is genuinely not a uniform chain — an inhomogeneous
 # QTEM line deviates at the material-contrast level (measured 0.22 and
 # 0.33 on the shielded-microstrip fixtures) and was never eligible for
