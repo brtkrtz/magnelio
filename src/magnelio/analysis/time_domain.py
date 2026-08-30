@@ -2136,6 +2136,7 @@ def _resume_transient(
     max_time_steps: int | str | None,
     checkpoint_interval: int | None,
     verbose: bool,
+    prepare=None,
 ):
     """Continue one project-backed march from its checkpoint (WP-S8).
 
@@ -2225,7 +2226,14 @@ def _resume_transient(
     # Rebuild the operators + excitations + a fresh recorder exactly as
     # the first run did (same mesh, specs, dt, f_calc) — the fresh
     # recorder restarts at local index 0, i.e. global step n_completed.
-    prepared = analysis._prepare_run(list(excitations), m_eps, m_mu, dt)
+    # ``prepare`` lets a pipeline with its own construction (the band
+    # scattering path) supply the operators while reusing everything
+    # below — sink reopening, checkpoint load, monitor restoration.
+    prepared = (
+        prepare(m_eps, m_mu)
+        if prepare is not None
+        else analysis._prepare_run(list(excitations), m_eps, m_mu, dt)
+    )
     ckpt_interval = (
         checkpoint_interval
         if checkpoint_interval is not None

@@ -1909,6 +1909,83 @@ class AnalysisScatteringTD(AnalysisTD):
             )
         return open_project(path)
 
+    def _prepare_band_run(
+        self,
+        excited_chan: tuple[str, int],
+        m_eps: np.ndarray,
+        m_mu: np.ndarray,
+        dt: float,
+        f_axis: np.ndarray,
+        total_time_steps: int | None,
+    ):
+        """Build one band-pipeline march, in the shape a resume expects.
+
+        The band counterpart of :meth:`_prepare_run`.  It performs the
+        same construction as :meth:`_run_band` — band setup, one
+        contour-QZ port per spec, the synthesised ghost excitation — and
+        returns it as the ``_PreparedRun`` the shared resume machinery
+        consumes, so continuing a band run reuses the sink reopening,
+        checkpoint loading and monitor restoration of every other run
+        rather than duplicating them.
+
+        The construction is expensive (kernel build) and deterministic:
+        the same recipe and the same ``dt`` rebuild the same projected
+        blocks bit-for-bit, which is what lets the checkpoint's boundary
+        state be restored into it (KB-037).
+        """
+        from magnelio.analysis.time_domain import _PreparedRun  # noqa: PLC0415
+
+        cfg = self._band_setup(f_axis, dt, total_time_steps)
+        operators = [
+            build_band_dtbc_port(
+                spec,
+                self.mesh,
+                m_eps,
+                m_mu,
+                dt=dt,
+                f_band=cfg["f_band"],
+                n_grid=cfg["n_grid"],
+                svd_tol=cfg["svd_tol"],
+                n_channels=spec.n_modes,
+                n_kernel_init=cfg["n_kernel_init"],
+                dc_anchor=cfg["dc_anchor"],
+            )
+            for spec in self.ports
+        ]
+        label_to_op = {op.name: op for op in operators}
+        if excited_chan[0] not in label_to_op:
+            raise ValueError(
+                f"run excites port {excited_chan[0]!r}, which the rebuilt "
+                f"model does not define (has {sorted(label_to_op)})",
+            )
+        for op in operators:
+            op.reset_state()
+        n_syn, ref_time = self._set_band_excitation(
+            label_to_op[excited_chan[0]],
+            excited_chan[1],
+            cfg,
+            dt,
+        )
+        n_steps = cfg["n_steps"] if cfg["n_steps_user"] else n_syn + cfg["ring_down"]
+        element_ops = [
+            build_lumped_element(e, self.mesh, m_eps, m_mu, dt=dt) for e in self.elements
+        ]
+        recorder = PortSignalRecorder(dt=dt, ports=operators)
+        return _PreparedRun(
+            excitations=(
+                Excitation(excited_chan[0], mode=excited_chan[1], waveform=self.waveform),
+            ),
+            operators=operators,
+            element_ops=element_ops,
+            sources=[],
+            recorder=recorder,
+            drives={excited_chan: _band_drive_fn(ref_time, dt)},
+            n_steps_estimate=n_steps,
+            port_modes={op.name: self._modes_for_operator(op) for op in operators},
+            port_normal_dx={op.name: op.plane.normal_dx for op in operators},
+            port_line_params={},
+        )
+
     def _set_band_excitation(
         self,
         op,
@@ -2094,27 +2171,27 @@ def _resume_scattering(
 
     run_name = proj._run_name_for_excited(excited)
     run_meta = proj.runs[run_name]
-    if run_meta.get("port_model") == "band":
-        # The boundary state IS checkpointed now (its state_dict carries
-        # the projected exterior state and both convolution histories,
-        # and the kernels it omits are a deterministic function of the
-        # rebuilt blocks since KB-037).  What is still missing is the
-        # rebuild: this path reconstructs the analysis on the modal
-        # pipeline, so the restored band state would be handed to a
-        # modal operator.  Refuse until the resume path builds the band
-        # pipeline, rather than continue into the wrong operator.
-        raise NotImplementedError(
-            f"run {run_name!r} was recorded through the band pipeline, "
-            f"which cannot be resumed yet: the boundary state is "
-            f"checkpointed, but this path rebuilds the run on the modal "
-            f"pipeline and would restore that state into the wrong "
-            f"operator.  The band record has a fixed length by "
-            f"construction — re-run the analysis instead.",
-        )
     excited_chan = (run_meta["excited"][0], int(run_meta["excited"][1]))
 
     analysis = AnalysisScatteringTD.from_project(proj, verbose=verbose)
     excitation = Excitation(excited_chan[0], mode=excited_chan[1], waveform=analysis.waveform)
+    prepare = None
+    if run_meta.get("port_model") == "band":
+        # The band pipeline builds its own operators (contour-QZ kernels
+        # over the recorded band) and arms a synthesised ghost source
+        # rather than binding a waveform, so it supplies the prepared run
+        # itself.  The rebuild is bit-for-bit the one the checkpoint was
+        # written in (KB-037), which is what makes restoring the boundary
+        # state into it legitimate.
+        # The axis is a property of the store, not of one run; the step
+        # count is the run's own plan, so _band_setup reproduces exactly
+        # the sizing the checkpointed march was built with.
+        f_axis_run = np.asarray(proj.f_axis, dtype=float)
+        planned = run_meta.get("total_time_steps")
+
+        def prepare(m_eps, m_mu, _chan=excited_chan, _ax=f_axis_run, _n=planned):
+            return analysis._prepare_band_run(_chan, m_eps, m_mu, float(run_meta["dt"]), _ax, _n)
+
     solver, prepared, run_monitors = _resume_transient(
         analysis,
         proj,
@@ -2126,6 +2203,7 @@ def _resume_scattering(
         max_time_steps=max_time_steps,
         checkpoint_interval=checkpoint_interval,
         verbose=verbose,
+        prepare=prepare,
     )
     # ``_actual_steps`` counts from step zero across the resume, so the
     # sampled waveform spans the whole run, not just the appended tail.

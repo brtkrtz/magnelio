@@ -449,15 +449,62 @@ def test_band_run_checkpoints_its_boundary(band_project):
             assert set(psd["boundary"]) == {"xt", "xt_prev", "n", "w_hist", "s_hist"}
 
 
-def test_band_project_refuses_resume(band_project):
-    """A band run must refuse resume rather than continue wrongly.
+_RESUME_BAND_OPTS = {
+    "f_band": (0.3e9, 8.3e9),
+    "n_grid": 9,
+    "n_syn": 3072,
+    "n_kernel_init": 4096,
+}
 
-    The boundary state is checkpointed now, but the resume path still
-    reconstructs the run on the modal pipeline, so it would hand that
-    state to a modal operator.  Refusing is the honest answer until the
-    path builds the band pipeline.
+
+def test_band_run_resumes_bit_exactly(tmp_path):
+    """A resumed band run is indistinguishable from an uninterrupted one.
+
+    The band boundary convolves over the whole record, so a resume that
+    lost any of its memory would show up immediately in the tail — and
+    silently, since the decomposition is derived on read.  The contract
+    is therefore bit-exactness, not closeness (DD-230 D4).
+
+    The excitation is safe to compare across the seam: ``n_syn`` is
+    sized from the band, the skirt and dt, never from the step count,
+    so the shorter first leg synthesises the same pulse as the
+    uninterrupted reference.
     """
-    from magnelio import resume
+    n1, n_total = 2432, 3200
 
-    with pytest.raises(NotImplementedError, match="band pipeline"):
-        resume(band_project, ("port1", 0))
+    def band_run(path, n_steps, **kw):
+        return _analysis(
+            _layered_mesh(),
+            port_model="auto",
+            project=str(path),
+            band_options=_RESUME_BAND_OPTS,
+        ).run(excited=["port1"], total_time_steps=n_steps, **kw)
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message=".*neither a BoundaryCondition.*")
+        # Both legs go through the store: the in-memory and streamed
+        # paths agree only to a tolerance (compared separately above),
+        # while the contract under test here is bit-exactness of the seam.
+        ref_path = tmp_path / "uninterrupted"
+        band_run(ref_path, n_total)
+        path = tmp_path / "resumed"
+        band_run(path, n1, checkpoint_interval=608)
+
+        from magnelio import resume
+        from magnelio.io.project import open_project
+
+        assert open_project(path).runs["port1_mode0"]["n_steps"] == n1
+        proj = resume(path, excited=("port1", 0), total_time_steps=n_total, verbose=False)
+
+    ref = open_project(ref_path)
+    assert proj.runs["port1_mode0"]["state"] == "done"
+    assert proj.runs["port1_mode0"]["n_steps"] == n_total
+
+    # The recorded waves first: the boundary convolves over the whole
+    # record, so memory lost at the seam shows up here before it reaches
+    # the decomposition.
+    for chan in (("port1", 0), ("port2", 0)):
+        for a, b in zip(ref.signals[("port1", 0)][chan], proj.signals[("port1", 0)][chan]):
+            assert np.array_equal(np.asarray(a.values), np.asarray(b.values)), chan
+    for out_p in ("port1", "port2"):
+        assert np.array_equal(ref.S(out_p, "port1"), proj.S(out_p, "port1")), out_p
