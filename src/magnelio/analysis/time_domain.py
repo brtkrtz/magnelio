@@ -54,6 +54,7 @@ from magnelio.ports._modal.factory import (
     build_modal_port,
 )
 from magnelio.ports._modal.mode_report import PortReport
+from magnelio.ports._modal.operator import _DTBC_PAIR_MARGINAL_TOL
 from magnelio.ports.declarative import (
     PortAnalytical,
     PortLumped,
@@ -1055,6 +1056,76 @@ class AnalysisTD(_AnalysisBase):
             return WaveformGaussian(f_max=self.f_max)
         return WaveformGaussianModulated(f_min=eff_f_min, f_max=self.f_max)
 
+    def _mur_fallback_notice(
+        self,
+        operators: Sequence[object],
+        dt: float,
+    ) -> str | None:
+        """Explain the modal Mur-1st fallback, or return ``None``.
+
+        A channel whose feed cross-section is not a uniform discrete
+        chain cannot carry the exact transparent boundary and is
+        terminated by modal Mur-1st instead.  That is a deliberate
+        trade, not a defect, so the notice reads as a balance sheet:
+        what the run gives up, what it keeps in exchange, and where
+        the other side of the trade lives.  Subclasses that own the
+        alternative append its price (see
+        ``AnalysisScatteringTD``).
+
+        The three ways a channel arrives here are physically distinct
+        and are named apart: a genuinely inhomogeneous cross-section
+        (the user's model — a microstrip is one), a cross-section that
+        was meant to be uniform and missed the gate by jitter (the
+        port has already warned with the mesh-side cause), and a mode
+        with no measured spread at all (analytical evaluator, or a
+        feed-chain veto that decided first).
+        """
+        lines: list[str] = []
+        for op in operators:
+            kinds = list(getattr(op, "termination_kinds", None) or [])
+            spreads = list(getattr(op, "chain_spreads", None) or [])
+            modes = list(getattr(op, "discrete_modes", None) or [])
+            for m, kind in enumerate(kinds):
+                if kind != "mur":
+                    continue
+                spread = spreads[m] if m < len(spreads) else None
+                name = modes[m].mode.name if m < len(modes) else f"mode {m}"
+                if spread is None:
+                    why = "no discrete chain parameters for this mode"
+                elif spread > _DTBC_PAIR_MARGINAL_TOL:
+                    why = f"inhomogeneous cross-section, chain spread {spread:.2e}"
+                else:
+                    why = (
+                        f"chain spread {spread:.2e} above the uniform-chain "
+                        f"gate (see the port's own warning)"
+                    )
+                lines.append(f"  {op.name} [{m}] {name} — {why}")
+        if not lines:
+            return None
+
+        head = f"[{type(self).__name__}] modal Mur-1st termination on {len(lines)} channel(s):"
+        body = (
+            "  Those channels keep working: |S11| bottoms out around "
+            "-30 dB, |S21| stays within 0.01 dB.  What the run keeps in "
+            "exchange is short runtime, time-domain power waves a()/b(), "
+            "resumable checkpoints, and a frequency axis with no lower "
+            "bound."
+        )
+        return "\n".join([head, *lines, body, self._mur_fallback_alternative(dt)])
+
+    def _mur_fallback_alternative(self, dt: float) -> str:
+        """Name the reflection-free alternative and where it lives.
+
+        ``AnalysisTD`` has no port-pipeline switch of its own — the
+        band-subspace DTBC is an ``AnalysisScatteringTD`` option — so
+        the base notice points at the class that owns it rather than
+        at a keyword this one would reject.
+        """
+        return (
+            "  A reflection-free termination for such lines exists as "
+            'AnalysisScatteringTD(port_model="band").'
+        )
+
     def _prepare_run(
         self,
         excitations: Sequence[Excitation],
@@ -1077,20 +1148,10 @@ class AnalysisTD(_AnalysisBase):
         ]
 
         if self.verbose and not self._mur_notice_printed:
-            mur_channels = [
-                (op.name, m)
-                for op in operators
-                for m, kind in enumerate(getattr(op, "termination_kinds", []))
-                if kind == "mur"
-            ]
-            if mur_channels:
-                print(
-                    f"[{type(self).__name__}] channels {mur_channels} "
-                    f"run the modal Mur-1st fallback (−30 dB-class "
-                    f"|S11| on inhomogeneous lines; DD-064 accepted "
-                    f"default).  port_model='band' provides the "
-                    f"reflection-free pipeline.",
-                )
+            # DD-231: the balance sheet, once per analysis.
+            notice = self._mur_fallback_notice(operators, dt)
+            if notice:
+                print(notice)
             self._mur_notice_printed = True
 
         label_to_op = {op.name: op for op in operators}

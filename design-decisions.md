@@ -17729,3 +17729,113 @@ The payload law was measured on one fixture family (a layered
 parallel plate) across three resolutions; the linear scaling is a
 property of the sparse period blocks, but the constant is
 geometry-dependent.
+
+---
+
+## DD-231 — the port model stays `"modal"`, and the run says what that buys
+
+**Status:** Decided 2026-08-30 (branch
+`feat/port-model-default-notice`).  Gates:
+`tests/integration/test_pair_gate_certificate.py::TestMurFallbackNotice`.
+Measurements: internal record `investigations/port-model-default/`.
+
+**Problem.**  DD-229 and DD-230 both closed with the same open
+question, and DD-230 closed one of the three blockers it named:
+should `AnalysisScatteringTD(port_model=...)` default to `"auto"`
+rather than `"modal"`?  DD-064 chose the cheap default in July 2026
+on a cost argument — seconds of runtime and time-domain power waves
+against a −30 dB floor — and a cost argument invites re-opening every
+time the expensive side gets cheaper.  This entry settles it on a
+different footing.
+
+**Measured.**  The remaining two blockers are not costs.  On the
+canonical production case — tutorial 09, a shielded microstrip, on
+library defaults — `port_model="auto"` resolves to the band pipeline
+in 0.16 s and then **refuses to run at all**:
+
+    default f_axis   74.63 MHz .. 15 GHz     (f_min = 0 → f_max/n_freq)
+    band pulse needs 1 212 141 steps         (auto budget 131 072)
+    axis would have to start at ≥ 690 MHz    (factor 9.2 above default)
+
+The band pipeline measures with a band-limited pulse whose duration
+is `O(1/f_axis[0])`; an axis reaching toward DC sizes it past any
+budget.  That is a property of the method, not of the sizing
+constants.  Sized from the first axis start that fits, the record is
+still 1.4·10⁵ steps (138 135 at `f_min` = 1 GHz, 72 599 at 2 GHz,
+39 831 at 3 GHz).
+
+End to end on that fixture, one excitation, the switch measures
+
+    modal              1.9 s   |S11| max  -32.9 dB   a/b available
+    band (f_min 3 GHz) 2688.9 s |S11| max -137.2 dB   a/b refused
+
+— a factor 1453 in runtime, and the band side is the *favoured* one:
+its axis starts at 3 GHz because the default cannot be sized, so it
+measures 80 % less of the band.  (The floor is -137 dB rather than
+DD-064's -171…-211 dB because this is a coarse tutorial grid, which
+is why the notice quotes "below -130 dB" — the figure both
+measurements carry — rather than the production one.)
+
+The other two differences cannot be decided in advance at all: band
+results have no `a()`/`b()` (DD-057 — the channels are fixed subspace
+projections with no calibrated scalar Z) and no resume (DD-230).
+Whether the user wants time-domain power waves or a resumable run is
+not knowable when the pipeline is picked.  **A default must not take
+a decision whose cost depends on what will be asked of the result
+afterwards.**
+
+**Decision.**
+
+1. `port_model` stays `"modal"`.  Not as a cost trade this time: on
+   unchanged defaults `"auto"` would end the commonest production run
+   in a `ValueError` before step 0.  The question is closed; a future
+   re-opening needs a band pipeline whose pulse is not tied to the
+   axis start, not a faster machine.
+
+2. The verbose notice becomes a balance sheet instead of a label.  It
+   names each fallback channel with the measurement behind it,
+   distinguishes the three ways a channel arrives there (a genuinely
+   inhomogeneous cross-section — the user's model; a cross-section
+   that missed the gate by jitter — the port has already warned with
+   the mesh-side cause; a mode with no measured spread — analytical
+   evaluator or a stage-2 veto), states the floor traded away *and*
+   what the run keeps for it (runtime, `a()`/`b()`, resume, no lower
+   band edge), then prices the alternative.
+
+3. **The advice is computed for the model at hand, not quoted from a
+   manual.**  The old notice recommended `port_model='band'`, which
+   on that same microstrip raises.  `_band_min_axis_start` inverts
+   the compactness sizing that `_band_setup` uses for its own
+   refusal, so the notice quotes the axis start the switch would need
+   (690 MHz here) or says the axis already clears it.  Both numbers
+   come from one function, so the notice cannot recommend a switch
+   the gate would reject — pinned by a test that asserts the refusal
+   and the acceptance on either side of the quoted number.
+
+4. The notice is split at the class that owns the option.  It fired
+   from `AnalysisTD._prepare_run` while naming `port_model`, a
+   keyword `AnalysisTD` does not have; the base class now points at
+   the class that does, and `AnalysisScatteringTD` overrides with the
+   priced version.
+
+5. `PortOperatorModal.chain_spreads` joins `termination_kinds` as a
+   public per-mode property — the notice and `PortReport` both needed
+   the measurement and both read a private list for it.
+
+6. `DD-064` left the user-visible text (house rule: no DD numbers in
+   output the user reads).
+
+**Regression.**  Unit 2787 / 4 skipped, integration 446 / 5 skipped
+(441 + 5 new); no pinned
+number moved — this entry changes no numerics, only what the run
+says about them.  `docs/methods/ports.md` gains the paragraph saying
+the balance sheet is printed rather than looked up.
+
+**Limits.**  The quoted axis start assumes the default band padding
+(`f_band` gap = 0.75·f1); an explicit `band_options["f_band"]` moves
+the requirement, and the notice does not model that.  The floors it
+quotes (−30 dB class, below −170 dB) are the measured microstrip
+population, not a bound for the port at hand — the per-channel bound
+is `chain_floor_db` on the report, and it exists only for certified
+channels.  The notice fires once per analysis, so a script that
+rebuilds ports between runs sees it once.

@@ -590,7 +590,7 @@ class PortReport:
             n = len(op.discrete_modes)
             kinds = list(getattr(op, "termination_kinds", None) or [])
             terminations = kinds + [None] * (n - len(kinds))
-            spreads = list(getattr(op, "_dtbc_pair_spread", None) or [])
+            spreads = list(getattr(op, "chain_spreads", None) or [])
             spreads = spreads + [None] * (n - len(spreads))
             modes = tuple(
                 ModeReport(

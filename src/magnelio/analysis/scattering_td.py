@@ -31,7 +31,8 @@ measured −26…−39 dB ``|S11|`` on a realistic shielded microstrip at
 power-wave access.  That trade (speed + TD signals over deep
 reflection floors) is the accepted production default for QTEM lines
 (developer decision, 2026-07-10); a verbose notice names the
-Mur-fallback channels.  For reflection-critical work,
+Mur-fallback channels, what the fallback costs, and what the band
+pipeline would cost in return on this very model.  For reflection-critical work,
 ``port_model="band"`` (or ``"auto"``) engages the broadband
 band-subspace DTBC pipeline: mode families tracked over the
 band, one reflection-free operator per port, one pulsed record per
@@ -698,8 +699,11 @@ class AnalysisScatteringTD(AnalysisTD):
         ``|S21|`` errors below 0.01 dB.  Fast (seconds), full
         time-domain power-wave access, no lower-band-edge
         restriction; the accepted trade for routine QTEM work.
-        A verbose notice
-        names the Mur-fallback channels.
+        A verbose notice names the
+        Mur-fallback channels with the measurement behind each one,
+        states the floor they trade away, and prices the band
+        alternative for this model — including the axis start it
+        would require, so the switch it suggests is one that runs.
 
         ``"band"`` — the broadband band-subspace DTBC pipeline:
         the mode family is
@@ -1421,6 +1425,61 @@ class AnalysisScatteringTD(AnalysisTD):
             )
         return "band"
 
+    def _mur_fallback_alternative(self, dt: float) -> str:
+        """Price the band pipeline for *this* model, not in the abstract.
+
+        The base notice can only name the alternative; this class owns
+        it and can therefore say what taking it would cost — including
+        the one thing that decides whether the offer is even
+        acceptable.  The band pipeline measures with a band-limited
+        pulse whose duration scales as ``1/f_axis[0]``, so an axis
+        reaching toward DC sizes it past the auto budget and
+        ``_band_setup`` refuses.  Quoting the required axis start here
+        keeps the notice from recommending a switch that would raise.
+        """
+        f1 = float(self.f_axis[0])
+        f_rec = self._band_min_axis_start(dt)
+        price = (
+            '  The other side of the trade is port_model="band": the '
+            "band-subspace DTBC terminates the whole analysis band "
+            "reflection-free, measured below -130 dB on shielded "
+            "microstrip.  It costs orders of magnitude in runtime -- a "
+            "kernel-build phase before the run, then a record hundreds "
+            "of times longer (a shielded microstrip measured 1.9 s "
+            "against 45 min) -- and it gives up time-domain power waves "
+            "(a()/b()) and resume."
+        )
+        if f1 < f_rec:
+            reach = (
+                f"  On this model it would also need a frequency axis "
+                f"starting at >= {f_rec / 1e6:.0f} MHz — yours starts at "
+                f"{f1 / 1e6:.1f} MHz, where the band pulse sizes past the "
+                f"auto budget.  Raise f_min to make the switch available."
+            )
+        else:
+            reach = (
+                f"  This axis (from {f1 / 1e6:.1f} MHz) already clears the "
+                f">= {f_rec / 1e6:.0f} MHz the band pulse needs here, so the "
+                f"switch is available as the model stands."
+            )
+        return "\n".join([price, reach])
+
+    @classmethod
+    def _band_min_axis_start(cls, dt: float, skirt: float = 1e-7) -> float:
+        """Lowest ``f_axis[0]`` the band pipeline auto-sizes within budget.
+
+        Inverts the compactness pre-sizing of :meth:`_band_setup` for
+        ``n_min = _BAND_AUTO_N_SYN_MAX``: under the default band
+        padding the roll-off gap below the axis is ``0.75·f1``, and
+        the pulse needs 13 Gaussian time constants across the window.
+        The result depends on nothing but ``dt`` and the skirt, so the
+        fallback notice can quote it before any port is built.
+        """
+        x_skirt = float(erfcinv(2.0 * skirt))
+        return (
+            13.0 * math.sqrt(2.0) * x_skirt / (2.0 * math.pi * 0.75 * cls._BAND_AUTO_N_SYN_MAX * dt)
+        )
+
     def _band_setup(
         self,
         f_axis: np.ndarray,
@@ -1477,15 +1536,7 @@ class AnalysisScatteringTD(AnalysisTD):
             n_min = int(math.ceil(13.0 * sigma_t / dt))
             n_syn = max(8192, 1 << (n_min - 1).bit_length())
             if n_syn > self._BAND_AUTO_N_SYN_MAX:
-                # Recommended axis start that fits the budget: invert
-                # the sizing chain (gap = 0.75·f1 under the default
-                # f_band) for n_min = budget.
-                f1_rec = (
-                    13.0
-                    * math.sqrt(2.0)
-                    * x_skirt
-                    / (2.0 * math.pi * 0.75 * self._BAND_AUTO_N_SYN_MAX * dt)
-                )
+                f1_rec = self._band_min_axis_start(dt, skirt)
                 raise ValueError(
                     f"band-pipeline auto-sizing: the frequency axis "
                     f"starts at {f1:.4g} Hz, leaving only "

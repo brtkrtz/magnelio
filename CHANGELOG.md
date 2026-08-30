@@ -105,6 +105,20 @@ major version is 0, minor releases may change the public API.
 
 ### Changed
 
+- A run that terminates a port channel with the Mur fallback now
+  explains the trade instead of labelling it.  It names each affected
+  channel with the cross-section measurement behind it, states the
+  reflection floor given up and what the run keeps in exchange —
+  runtime, time-domain power waves, resumable checkpoints, a frequency
+  axis with no lower bound — and prices the reflection-free
+  alternative for the model at hand.  That last part is the point: the
+  old text recommended `port_model="band"` unconditionally, and on a
+  typical microstrip with default settings that switch would have
+  failed, because the band pipeline needs a frequency axis clear of
+  DC.  The notice now quotes the axis start the switch would require,
+  or says the axis already clears it.  `port_model` keeps defaulting
+  to `"modal"`.
+
 - Ports keep the exact transparent boundary condition on conformal
   feeds that used to lose it.  A port earns the exact termination by
   proving its feed cross-section is a uniform discrete chain, and the

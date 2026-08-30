@@ -257,6 +257,14 @@ S-parameters and the raw V/I are.  Everything else is unchanged —
 including writing to a project store, from which the S-matrix is
 re-derived on read exactly as on the default path.
 
+None of this has to be looked up.  Whenever a run terminates a
+channel with the Mur fallback, the analysis prints the balance sheet
+once: which channels fell back and what the cross-section measured,
+the floor they trade away against the runtime, power waves, resume
+and DC reach they keep, and what `port_model="band"` would cost on
+this very model — including the axis start it would require, so the
+switch it suggests is one that would actually run.
+
 Either way the decision is published per channel, so it can be
 inspected before a run is paid for:
 
