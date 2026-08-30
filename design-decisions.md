@@ -17392,3 +17392,104 @@ source with a very large series impedance approximates a current
 source through the existing lumped element, but it is only a
 two-point straight chain, it puts a resistor in the model, and it
 approaches the ideal source only in a limit that hurts the CFL.
+
+## DD-228 — a withheld termination certificate says so, and says why
+
+**Status:** Decided 2026-08-30 (closes KB-022; branch
+`fix/pair-gate-provenance`).  Gates:
+`tests/integration/test_pair_gate_certificate.py` (port side),
+`tests/unit/test_operators.py::TestCoupleFaceMaterialPairs` (mesh
+side).  Measurements: internal record
+`investigations/pair-coupling-provenance/`.
+
+**Problem.**  A modal port channel gets the exact discrete
+transparent boundary condition only if the meshed feed section really
+is the uniform discrete chain DD-054/DD-055 derive it for.  Two gates
+test that: the transversal **pair-product** gate (stage 1,
+`_chain_params`, weighted-RMS spread of `r = dt/√(M_ε·M_μ)` over the
+cross-section, tolerance 1e-8) and the **feed-chain slab** gate
+(stage 2, DD-067).  Stage 2 has warned since it was built.  Stage 1
+was silent: a channel that failed it traded a 1e-14 termination for a
+−30 dB-class reflection floor with no trace in the run, while a
+geometrically identical port on the same model kept the exact one
+(KB-022, measured on the DD-165 stripline coupler: port2 spread
+1.73e-8 against the gate, port1 7.15e-15).
+
+The silence had a second half.  `couple_face_material_pairs` (DD-053)
+accepts a ladder when its two partner targets agree at `rtol = 1e-6`
+— a hundred times looser than the gate that consumes the result.
+Agreement at `rtol` still admits a spread of up to `rtol`, so a
+target could be certified by the pairing and rejected by the port,
+and nothing connected the two events.
+
+**Decision.**  Report, do not tighten.
+
+1. `couple_face_material_pairs` returns a `PairCouplingProvenance`:
+   the faces whose accepted target rests on a residual above
+   `_PAIR_CERTIFY_RTOL = 1e-8` — the chosen ladder's own partner
+   disagreement, or, where both ladders certified, their mutual one.
+   It is stored on `mesh._pair_coupling` (not serialised) and
+   restricted by the port factory to the transversal faces the gate
+   actually reads.
+2. Stage 1 warns like stage 2 — port, channel, measured spread
+   against the gate — and appends the mesh-side cause when the
+   provenance record has one at that plane.  It warns only inside
+   `(1e-8, _DTBC_PAIR_MARGINAL_TOL = 1e-4]`: failing the gate is two
+   different events, and only one of them is a surprise.  Just above
+   the gate, a cross-section that was meant to be uniform lost the
+   exact termination to jitter — nothing a user models deliberately
+   deviates by parts in ten thousand, since materials and cell sizes
+   differ by percents.  Far above it, the cross-section is genuinely
+   inhomogeneous: a QTEM line measures 0.22 and 0.33 on the
+   shielded-microstrip fixtures, was never eligible for the scalar
+   chain, and needs a different port model (DD-056, DD-057) rather
+   than a mesh fix.  Warning about *that* on every run would be a
+   model judgement, and it would have added two lines of noise to the
+   existing suite the first time the warning was wired up
+   unconditionally — which is how the distinction was found.
+3. The decision becomes queryable, not just audible — which is what
+   makes the silence above the band affordable:
+   `ModeReport.termination` (`"dtbc"` / `"mur"`) and
+   `chain_spread`, published by `PortReport.from_operator` and shown
+   in `summary()`.  `solve_ports()` therefore answers "which of my
+   ports is exact?" before a run is paid for.
+
+**Why not tighten the pairing.**  Rejecting a ladder does not fall
+back to a better estimate — it falls back to the Krietenstein value,
+which DD-053 established is the *wrong LC partner on a line*.  So
+tightening trades a slightly unpinned value of the right form for a
+value of the wrong form, and the gate downstream sees a larger
+deviation, not a smaller one.  Measured (coupler,
+`min_cells_per_feature = 8`, 40 × 49 × 207):
+
+    pairing rtol   coupled faces   loose   stage-1 spread port1 / port2
+    1e-6            24 295          1 022   0.1055 / 0.1149
+    1e-8            23 287              0   0.1180 / 0.1175
+
+Tightening rejects 1 008 targets and moves both ports *away* from the
+gate.  On clean conformal geometry the band is empty and the change is
+a no-op: the conformal round coax couples 1 392 faces with nothing
+loose under either setting and certifies at 1.3e-16 / 9.9e-16 either
+way.  So the loose band is not noise to be squeezed out — it is where
+jittered geometry lands, and the useful thing to do with it is to name
+it.
+
+**Measured.**  The coupler's band is populated exactly as KB-022
+described: 1 022 of 24 295 coupled faces above 1e-8, worst 9.96e-7,
+none above the pairing's own 1e-6, and 19 respectively 13 of them
+sitting on the two port planes themselves (worst 9.8e-7 / 8.5e-7).
+That model cannot demonstrate stage 1 end-to-end, because its coax
+feed also fails stage 2 (slab defect 1.4e-2, six orders above that
+gate) and stage 2 vetoes first — which is why the integration gate
+perturbs a transversal mass column *uniformly along the port normal*,
+the one shape of defect stage 2 is blind to.
+
+**Limits.**  The record is not serialised, so a reloaded mesh still
+reports a withheld certificate but without the mesh-side cause.  The
+provenance says which faces are unpinned, not which OCC edge made them
+so; the geometric trail from a loose face back to the solid that
+inflated its tolerance is not built.  And DD-165's conditioning rule
+stays what it was — an estimator, not a guarantee: two jittered
+ladders can still agree at `rtol` and land above the gate.  The
+difference is that this now arrives as a sentence naming the port
+instead of a reflection floor nobody looks for.

@@ -1856,6 +1856,18 @@ def build_modal_port(
             f"a feed that is "
             f"not translation-invariant along the port normal."
         )
+    # Certificate stage 1 provenance (DD-228): the meshing-time
+    # pair-coupling record, restricted to the transversal faces this
+    # port's gate actually reads.  ``None`` on meshes built before the
+    # record existed, on the ``from_grid`` path, and on reloaded
+    # meshes (the record is not serialised) — the gate still reports,
+    # only without its mesh-side cause.
+    pair_provenance = getattr(mesh, "_pair_coupling", None)
+    if pair_provenance is not None:
+        pair_provenance = pair_provenance.at(
+            np.concatenate([plane.h_u_indices, plane.h_v_indices]),
+        )
+
     op = PortOperatorModal(
         spec.name,
         plane,
@@ -1866,6 +1878,7 @@ def build_modal_port(
         omega_calc=omega_calc,
         port_report=_with_symmetry_faces(port_report, plane, mesh, name=spec.name),
         chain_slab_defect=chain_slab_defect,
+        pair_provenance=pair_provenance,
         dual_e_profiles=dual_e_profiles,
         flux_patch=conformal_flux_patch_scale(plane, mesh, m_eps),
         complement_absorber=_complement_absorber_arrays(

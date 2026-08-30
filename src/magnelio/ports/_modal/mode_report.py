@@ -62,6 +62,26 @@ class ModeReport:
         coupled line: even and odd travel at different speeds), the
         filling ``ε_r`` of a homogeneous TEM mode; ``None`` for
         hollow-pipe modes.  The phase velocity is ``c / √ε_eff``.
+    termination : {'dtbc', 'mur'} or None
+        How the channel closes the domain at the port plane.
+        ``'dtbc'`` is the exact discrete transparent boundary
+        condition, reflection-free to roundoff; ``'mur'`` is the
+        first-order absorber, a reflection floor of order −30 dB.  A
+        channel qualifies for the exact one when the feed cross-section
+        is a uniform discrete chain; ``chain_spread`` is that
+        measurement.  ``None`` where the port reports no per-channel
+        termination (lumped ports carry no modes at all).
+    chain_spread : float or None
+        Weighted RMS spread of the per-pair modal Courant number over
+        the feed cross-section — 0 on a perfectly uniform chain.  The
+        exact termination is granted below 1e-8 and withheld above it;
+        a value just above that threshold means a cross-section that
+        was meant to be uniform and was not, and warns, while a large
+        one is an inhomogeneous line that never qualified.  ``None``
+        when the test does not apply: a mode with a
+        closed-form field evaluator is ineligible by construction, and
+        so is every channel of a port whose feed masses fail the slab
+        consistency check upstream (both warn on their own).
     """
 
     port_name: str
@@ -78,6 +98,8 @@ class ModeReport:
     # profile's dual voltages back into A/m (see _field_profiles).
     _h_dual_lengths: tuple = field(default=(), repr=False)
     epsilon_eff: float | None = None
+    termination: str | None = None
+    chain_spread: float | None = None
 
     def z_modal(self, f: float) -> complex:
         """Power-wave reference impedance at frequency ``f`` [Hz]."""
@@ -538,6 +560,15 @@ class PortReport:
             scale = op.port_report.z_line_full_scale if op.port_report else 1.0
             mirrors = resolve_port_mirrors(op.plane, mesh) if mesh is not None else ()
             dual_lengths = getattr(op, "h_dual_lengths", ())
+            # Which termination each channel actually got, and the
+            # uniform-chain measurement behind the choice (DD-228).
+            # The operator decides this at construction; publishing it
+            # makes ``solve_ports()`` the place to see it before a run.
+            n = len(op.discrete_modes)
+            kinds = list(getattr(op, "termination_kinds", None) or [])
+            terminations = kinds + [None] * (n - len(kinds))
+            spreads = list(getattr(op, "_dtbc_pair_spread", None) or [])
+            spreads = spreads + [None] * (n - len(spreads))
             modes = tuple(
                 ModeReport(
                     port_name=op.name,
@@ -552,8 +583,10 @@ class PortReport:
                     _plane=op.plane,
                     _mirrors=mirrors,
                     _h_dual_lengths=dual_lengths,
+                    termination=terminations[m],
+                    chain_spread=spreads[m],
                 )
-                for dm in op.discrete_modes
+                for m, dm in enumerate(op.discrete_modes)
             )
             return cls(name=op.name, modes=modes, report=op.port_report)
         return cls(
@@ -587,6 +620,10 @@ class PortReport:
                 entry += f"  z_line = {m.z_line:.2f} Ω"
             if m.epsilon_eff is not None:
                 entry += f"  ε_eff = {m.epsilon_eff:.3f}"
+            if m.termination is not None:
+                entry += f"  termination = {m.termination}"
+                if m.chain_spread is not None:
+                    entry += f" (chain spread {m.chain_spread:.1e})"
             lines.append(entry)
         return "\n".join(lines)
 

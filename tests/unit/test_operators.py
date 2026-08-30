@@ -1,6 +1,7 @@
 """Unit tests for discrete curl operator and material matrices."""
 
 import numpy as np
+import pytest
 import scipy.sparse as sp
 
 from magnelio._operators.curl import build_curl_matrix
@@ -270,3 +271,69 @@ class TestCoupleFaceMaterialPairs:
         monkeypatch.setattr(mmod, "build_M_eps", jittered)
         mmod.couple_face_material_pairs(mesh)
         assert not np.any(mesh.face_material.category == 2)
+
+    def test_certify_tolerance_matches_the_transparent_boundary_gate(self):
+        """The band the provenance record spans is defined by the consumer.
+
+        The pairing accepts at ``rtol``; the gate that consumes the
+        result certifies at a hundredth of that.  The record exists to
+        span exactly the difference, so the two constants must not
+        drift apart — they live in different layers (a material pass
+        must not import a port module) and are locked here instead.
+        """
+        from magnelio._operators.material_matrices import _PAIR_CERTIFY_RTOL
+        from magnelio.ports._modal.operator import _DTBC_PAIR_SPREAD_TOL
+
+        assert _PAIR_CERTIFY_RTOL == _DTBC_PAIR_SPREAD_TOL
+
+    def test_clean_geometry_leaves_the_provenance_record_empty(self):
+        """A no-op pass writes nothing, so it certifies nothing (DD-228)."""
+        from magnelio._operators.material_matrices import couple_face_material_pairs
+
+        prov = couple_face_material_pairs(self._mesh())
+        assert prov.n_coupled == 0
+        assert prov.faces.size == 0
+        assert prov.worst == 0.0
+
+    def test_a_target_accepted_inside_the_band_is_recorded(self, monkeypatch):
+        """Both ladders jittered: the winner is loose, and it is written.
+
+        The single-jitter case one test up resolves to the exact
+        ladder, which reproduces the bulk value and is filtered out as
+        a no-op — nothing is written, so nothing is certified.  Here
+        both candidates of one Hx face carry a jitter inside the
+        pairing's agreement band: the better-conditioned one still
+        wins (DD-165), but it is itself only good to 3e-7, a hundred
+        times looser than the port gate downstream will accept.  That
+        gap is what the record has to make visible (KB-022).
+        """
+        import magnelio._operators.material_matrices as mmod
+
+        mesh = self._mesh()
+        original = mmod.build_M_eps
+        Nx, Ny, Nz = mesh.Nx, mesh.Ny, mesh.Nz
+        n_Ex = Nx * (Ny + 1) * (Nz + 1)
+        n_Ey = (Nx + 1) * Ny * (Nz + 1)
+        i, j, k = Nx // 2, Ny // 2, Nz // 2
+        # The two ladders of the Hx face (i, j, k): along z through the
+        # Ey partners, along y through the Ez partners.
+        ey_flat = n_Ex + (i * Ny + j) * (Nz + 1) + k
+        ez_flat = n_Ex + n_Ey + (i * (Ny + 1) + j) * Nz + k
+        n_Hx = (Nx + 1) * Ny * Nz
+        face = (i * Ny + j) * Nz + k
+
+        def jittered(m):
+            values = np.array(original(m), copy=True)
+            values[ey_flat] *= 1.0 + 3.0e-7
+            values[ez_flat] *= 1.0 + 5.0e-7
+            return values
+
+        monkeypatch.setattr(mmod, "build_M_eps", jittered)
+        prov = mmod.couple_face_material_pairs(mesh)
+
+        assert face < n_Hx
+        assert mesh.face_material.category[face] == 2
+        assert face in set(prov.faces.tolist())
+        recorded = prov.residual[prov.faces == face][0]
+        assert prov.certify_rtol < recorded <= prov.rtol
+        assert recorded == pytest.approx(3.0e-7, rel=0.2)

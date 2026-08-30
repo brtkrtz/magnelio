@@ -105,6 +105,25 @@ major version is 0, minor releases may change the public API.
 
 ### Changed
 
+- A port channel that cannot be given the exact transparent boundary
+  condition now says so.  The exact termination is earned, not chosen:
+  the feed section behind a port has to be a uniform discrete chain,
+  and where it is not, the channel falls back to a first-order
+  absorber whose reflection floor is around −30 dB instead of below
+  −100 dB.  One of the two tests behind that decision used to be
+  silent, so a port could quietly run on the weaker termination while
+  its twin on the same model kept the exact one.  It now warns, names
+  the channel and the measured deviation, and where the mesh explains
+  it — a feed whose conformal cross-section carries geometric
+  tolerance, typically from a mirrored or unioned solid — says that
+  too.  It stays quiet where the fallback is the model rather than a
+  surprise: a quasi-TEM line is inhomogeneous by construction and
+  never qualified for the exact termination, and that calls for a
+  different port model, not a warning on every run.  The choice is
+  also published per mode:
+  `analysis.solve_ports()[name].modes[i].termination` is `"dtbc"` or
+  `"mur"`, with the measurement in `chain_spread`, so it can be
+  checked before a run rather than after.
 - The energy trace a run records — and the `energy_stop_db` criterion
   reading it — is now the quantity the leapfrog conserves, pairing the
   two magnetic half-steps that straddle each electric sample.  The

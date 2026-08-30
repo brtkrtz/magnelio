@@ -183,6 +183,54 @@ modal-absorbing-port literature, specifically Luo and Chen
 {cite}`luochen2007` (DD-047; higher-order Mur/Higdon
 variants were evaluated and rejected, DD-069).
 
+### Which termination a channel gets, and how to see it
+
+The exact termination is not a setting — it is a certificate.  A
+channel earns it when the meshed feed section really is the uniform
+discrete chain the derivation above assumes, which is tested in two
+stages before the run: the **pair-product gate** measures how far the
+co-located products $M_\varepsilon M_\mu$ spread across the feed
+cross-section (a weighted RMS, certified below $10^{-8}$), and the
+**slab gate** compares every mass entry on the port plane with its
+continuation into the first feed cells.  A channel that fails either
+one keeps working — it falls back to the modal Mur absorber — but its
+reflection floor rises from below $-100$ dB to the order of $-30$ dB.
+
+Failing a gate is two different events, and the reporting separates
+them.  A cross-section that was *meant* to be uniform and missed by a
+whisker — parts in a million, not the percents that materials and cell
+sizes differ by — is the surprising one, and it warns: the port, the
+channel, the measured deviation, and where the mesh can explain it,
+the conformal ladder behind the offending faces (DD-228).  A
+cross-section that is genuinely inhomogeneous is not a defect; a
+quasi-TEM line deviates at the material-contrast level and never
+qualified for the scalar chain in the first place, so the answer there
+is a different port model (CW true-mode or band, above), not a mesh
+fix, and Magnelio does not editorialise about it every run.
+
+Either way the decision is published per channel, so it can be
+inspected before a run is paid for:
+
+```python
+for name, report in analysis.solve_ports().items():
+    for mode in report.modes:
+        print(name, mode.name, mode.termination, mode.chain_spread)
+```
+
+`termination` is `"dtbc"` or `"mur"`; `chain_spread` is the
+cross-section measurement behind it, or `None` where the test does not
+apply (a mode with a closed-form field evaluator is ineligible by
+construction).  `print(report)` shows the same on one line per mode.
+
+The usual cause of a withheld certificate is a feed that is not
+translation-invariant along the port normal — a taper, a bend or a
+dielectric step too close behind the port plane.  The remedy is to
+move the port back into the uniform part of the feed.  Where the feed
+*is* uniform by construction and the gate still trips, the deviation
+is geometric tolerance in the solid: a body built by mirroring or
+unioning carries a looser tolerance than the shape it was built from,
+and the conformal cross-section inherits it.
+
 ## Excitation and recording
 
 Port excitation prescribes the incident modal amplitude at the ghost

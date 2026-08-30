@@ -16,8 +16,8 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Three entries are open as of 2026-08-27: KB-022, KB-023 and
-KB-027.**  Everything else is struck through and resolved.
+**Two entries are open as of 2026-08-30: KB-023 and KB-027.**
+Everything else is struck through and resolved.
 
 ## KB-036: ~~Faces in a conductor's end wall blocked and the wall unbooked on grids below about 15 µm~~ — Resolved (DD-207, 2026-08-28)
 
@@ -378,7 +378,7 @@ which changes every CPML run's bit pattern and needs its own
 reflection-floor re-certification — deferred until a use case needs
 mirror-exact absorbers.
 
-## KB-022: Pair coupling accepts ladder candidates 100x looser than the transparent-boundary gate — Open (2026-08-17)
+## KB-022: ~~Pair coupling accepts ladder candidates 100x looser than the transparent-boundary gate~~ — Resolved (DD-228, 2026-08-30)
 
 Split out of KB-017, which DD-165 closed for the case that produced it.
 The pairing calls two ladder targets equal at a relative `rtol = 1e-6`,
@@ -402,13 +402,31 @@ not involved — `eps_avg` and `f_A` agree to 3.9e-15 across all 19 244
 conformal edges, since both integrals share one area budget.  The
 jitter enters through the pairing tolerance.
 
-Closing it means either tightening the pairing tolerance toward the
-gate — at the risk of rejecting ladders that are merely coarse rather
-than wrong — or making the target's provenance explicit, so that a
-disagreement inside the band is reported instead of silently resolved.
-Neither has been attempted: no model has been observed to fail this way
-since DD-165, so the entry stands as a documented limitation rather
-than a reproducible defect.
+Closed the second way (DD-228): the provenance is explicit and the
+silence is gone.  The pairing records which accepted targets rest on a
+residual above the gate's own 1e-8, the port build restricts that
+record to the faces its gate reads, and a withheld exact termination
+now warns — port, channel, measured spread, and the mesh-side cause
+where there is one.  The warning covers the marginal band only
+(1e-8 to 1e-4): further out the cross-section is genuinely
+inhomogeneous, which is the model the user built, not a defect.  The
+decision is also published per channel
+(`ModeReport.termination` / `chain_spread`), so `solve_ports()`
+answers the question before a run is paid for.
+
+The first way was refuted by measurement.  Tightening the pairing
+tolerance to the gate does not reject *wrong* ladders, it rejects
+merely unpinned ones — and what replaces them is the Krietenstein
+value, the wrong LC partner on a line.  On the coupler it drops 1 008
+of 24 295 coupled targets and moves both ports' pair spread away from
+the gate (0.1055 → 0.1180 and 0.1149 → 0.1175); on clean conformal
+geometry the band is empty and the change is a no-op.
+
+What is *not* closed is the underlying estimator: two jittered ladders
+can still agree at `rtol` and fail the gate.  DD-165's conditioning
+rule remains the best available choice, and the tolerance band remains
+where jittered geometry lands.  The defect that made this an entry —
+that it happened invisibly — is gone.
 
 ## KB-021: ~~Half a solid's cross-section goes missing with no warning~~ — Resolved (DD-168, 2026-08-15)
 

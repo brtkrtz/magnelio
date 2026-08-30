@@ -191,6 +191,8 @@ from __future__ import annotations
 import collections
 import importlib
 import math
+import warnings
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -202,6 +204,9 @@ from magnelio.ports._modal.mode import ModeType
 from magnelio.ports._modal.port_plane import PortPlane, magnetic_window_ends
 from magnelio.ports._modal.port_report import PortOperatorReport
 
+if TYPE_CHECKING:
+    from magnelio._operators.material_matrices import PairCouplingProvenance
+
 # Weighted-RMS tolerance on the per-pair modal Courant number: the
 # chain is uniform (pair identity holds along the whole cross-section)
 # or the mode falls back to Mur.  Roundoff on the pair products sits at
@@ -210,6 +215,21 @@ from magnelio.ports._modal.port_report import PortOperatorReport
 # magnitude.  A velocity spread of 1e-8 contributes reflection well
 # below the -100 dB acceptance line.
 _DTBC_PAIR_SPREAD_TOL = 1e-8
+
+# Upper edge of the band the gate *reports* on (DD-228).  Failing the
+# gate is two different events.  Just above it, the cross-section was
+# meant to be a uniform chain and numerical jitter cost it the exact
+# termination — the surprising case, worth a sentence: nothing a user
+# models deliberately deviates by parts in ten thousand, since
+# materials and cell sizes differ by percents.  Far above it, the
+# cross-section is genuinely not a uniform chain — an inhomogeneous
+# QTEM line deviates at the material-contrast level (measured 0.22 and
+# 0.33 on the shielded-microstrip fixtures) and was never eligible for
+# the scalar chain; that is the model the user built, and the answer
+# is a different port model (DD-056 CW, DD-057 band), not a mesh fix.
+# Warning about it on every run would be a model judgement.  The
+# decision stays readable either way on ``ModeReport.termination``.
+_DTBC_PAIR_MARGINAL_TOL = 1e-4
 
 # Pairs carrying less than this fraction of the peak modal weight are
 # excluded from the spread statistics (masked / PEC edges hold zero
@@ -475,6 +495,12 @@ class PortOperatorModal:
         cannot see normal-face M_mu deviations (DD-066 conformal-coax
         finding).  ``None`` skips the check (spec-level callers that
         build operators without the factory).
+    pair_provenance : PairCouplingProvenance or None, default None
+        Certificate stage 1 provenance (DD-228): the meshing-time
+        pair-coupling record restricted to this port plane's
+        transversal H faces, from ``mesh._pair_coupling``.  Names the
+        mesh-side cause when the pair-product gate below withholds the
+        exact DTBC; ``None`` only costs the warning its cause clause.
     flux_patch : tuple of np.ndarray or None, default None
         DD-095 conformality factors ``(χ_u, χ_v)`` for
         the physical-power patches of ``_calibrate_v_i``, from
@@ -498,6 +524,7 @@ class PortOperatorModal:
         dual_e_profiles: (list[tuple[np.ndarray, np.ndarray] | None] | None) = None,
         calibrate: bool = True,
         chain_slab_defect: float | None = None,
+        pair_provenance: "PairCouplingProvenance | None" = None,
         flux_patch: tuple[np.ndarray, np.ndarray] | None = None,
         complement_absorber: (tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray] | None) = None,
         magnetic_patch_ends: tuple[bool, bool, bool, bool] | None = None,
@@ -547,6 +574,7 @@ class PortOperatorModal:
             )
         self._dual_e_profiles = dual_e_profiles
         self._chain_slab_defect = chain_slab_defect
+        self._pair_provenance = pair_provenance
         # PMC bbox window ends (magnetic_window_ends): the Poynting
         # patches there extend to the magnetic wall half a cell beyond
         # the end node — must match the TEM capacitance booking.
@@ -664,6 +692,74 @@ class PortOperatorModal:
                 self._chain_z0(dm, r_mode) if use and q_mode > 0.0 and m not in overrides else None
             )
             self._dtbc.append(DTBCTermination(r_mode, q_mode) if use else None)
+        self._termination = termination
+        self._report_withheld_dtbc()
+
+    def _report_withheld_dtbc(self) -> None:
+        """Warn about channels the uniform-chain gate sent back to Mur.
+
+        Certificate stage 1 (DD-228, closing KB-022).  The gate is a
+        quality decision the user never asked for and cannot see in
+        the result: a channel that fails it keeps working, but trades
+        a 1e-14 termination for a -30 dB-class reflection floor, and
+        the port next to it on the same model may well keep the exact
+        one.  Stage 2 has warned since DD-067; stage 1 was quiet.
+
+        Only a *marginal* failure is reported — one inside
+        ``(_DTBC_PAIR_SPREAD_TOL, _DTBC_PAIR_MARGINAL_TOL]``, where a
+        cross-section that was meant to be uniform missed it by
+        jitter.  A cross-section that is genuinely inhomogeneous
+        deviates by orders of magnitude more and is the model the user
+        built, not a defect (see the constant).
+
+        Two more non-events arrive as ``spread is None``: a mode that
+        is ineligible for the exact DTBC by construction (analytical
+        field evaluator), and a stage-2 veto, which has already warned
+        with its own cause.  An explicit ``termination="mur"`` is the
+        user's own choice.
+        """
+        if self._termination != "auto":
+            return
+        rejected = [
+            (m, self._dtbc_pair_spread[m])
+            for m in range(self._n_modes)
+            if self._dtbc[m] is None
+            and self._dtbc_pair_spread[m] is not None
+            and _DTBC_PAIR_SPREAD_TOL < self._dtbc_pair_spread[m] <= _DTBC_PAIR_MARGINAL_TOL
+        ]
+        if not rejected:
+            return
+
+        names = ", ".join(f"{self.discrete_modes[m].mode.name} ({s:.2e})" for m, s in rejected)
+        many = len(rejected) > 1
+        cause = (
+            "Typical causes: a feed cross-section that is not "
+            "translation-invariant along the port normal, or a mesh "
+            "whose cell sizes vary across the feed."
+        )
+        prov = self._pair_provenance
+        if prov is not None and prov.faces.size:
+            cause = (
+                f"Mesh-side cause: {self._g_port_h.size} transversal faces "
+                f"feed this gate, {prov.faces.size} of them with a magnetic "
+                f"mass derived from a conformal ladder that agreed only to "
+                f"{prov.worst:.1e} — above the {prov.certify_rtol:.0e} the "
+                f"gate certifies at.  Geometric tolerance in the feed solid "
+                f"is the usual source, and a mirrored or unioned body "
+                f"inflates it."
+            )
+        warnings.warn(
+            f"Modal port {self.name!r}: the feed cross-section is not a "
+            f"uniform discrete chain for "
+            f"{'channels' if many else 'channel'} {names} — weighted-RMS "
+            f"pair-product spread against the "
+            f"{_DTBC_PAIR_SPREAD_TOL:.0e} gate — so the exact transparent "
+            f"boundary condition is withheld there and "
+            f"{'those channels fall' if many else 'that channel falls'} "
+            f"back to modal Mur-1st, a reflection floor of order -30 dB "
+            f"instead of -100 dB and below.  {cause}",
+            stacklevel=2,
+        )
 
     def _chain_params(
         self,
