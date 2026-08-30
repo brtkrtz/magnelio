@@ -226,6 +226,17 @@ major version is 0, minor releases may change the public API.
   functions `gaussian`, `modulated_gaussian` and `waveform_for_mode`
   from `magnelio.signals` (the waveform classes replace them).
 
+### Fixed
+
+- Two builds of the same band-pipeline port now give bit-identical
+  results.  The eigensolve behind the mode tracking started from a
+  random vector, so the subspace the band boundary rests on differed
+  from one build to the next — invisibly, because it is a basis and
+  every norm was unaffected, but by enough to rule out resuming such
+  a run.  The same fixed start vector is now shared by every sparse
+  eigensolve in the library.
+
+
 ## [0.4.8] - 2026-08-29
 
 ### Added

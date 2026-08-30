@@ -64,6 +64,7 @@ import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 
+from magnelio._arpack import arpack_v0
 from magnelio.constants import C0
 from magnelio.mesh.mesher import Mesh
 from magnelio.ports._modal.port_plane import PortPlane
@@ -458,7 +459,13 @@ def solve_zeta_modes(
             (2 * n, 2 * n), matvec=lambda v: lu.solve(B_lin @ v), dtype=complex
         )
         k_eff = min(k, 2 * n - 2)
-        mu, vecs = spla.eigs(op, k=k_eff, which="LM")
+        # Fixed start vector: ARPACK's random default makes the tracked
+        # families -- and with them the band Galerkin subspace built on
+        # their traces -- differ between two builds of the SAME port, by
+        # ~1e-5 relative.  That is invisible in every norm and fatal for
+        # a resume, whose reloaded boundary state has to match the
+        # subspace it was recorded in.
+        mu, vecs = spla.eigs(op, k=k_eff, which="LM", v0=arpack_v0(2 * n))
         zeta = complex(target) + 1.0 / mu
         for j in range(zeta.size):
             if any(abs(zeta[j] - z0) < 1e-9 for z0 in zs):

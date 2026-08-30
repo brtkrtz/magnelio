@@ -16,8 +16,37 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Two entries are open as of 2026-08-30: KB-023 and KB-027.**
+**Two entries are open as of 2026-08-31: KB-023 and KB-027.**
 Everything else is struck through and resolved.
+
+## KB-037: ~~Two builds of the same band port gave different Galerkin subspaces~~ — Resolved (2026-08-31)
+
+`zeta_pencil.find_propagating_modes` called `spla.eigs` without a start
+vector, so ARPACK began from a random one.  The band subspace is spanned
+by the *traces* of the tracked mode families, so the randomness
+propagated into it: two builds of the same port from the same mesh gave
+projected exterior blocks differing by 35-113 % entrywise, with the
+entrywise magnitudes agreeing to 1e-5 and every norm intact.  Most of
+the difference was a per-basis-vector sign flip (the SVD gauge), but
+~1e-5 of genuine numerical variation remained underneath it, so a sign
+convention alone would not have fixed it.
+
+This is the same defect as KB-010 (DD-142) in a third place: a fixed
+start vector had been applied to `numerical_2d.py`'s two `eigsh` calls
+and to `spectral_dt`, and the pencil eigensolve was missed.
+
+Nothing measured wrong because of it — the subspace is a basis, and the
+Galerkin projection is invariant under a change of basis to the accuracy
+above.  What it blocked was **resume**: a resumed run rebuilds its
+operators and reloads the boundary state from the checkpoint, and a
+rebuilt subspace that differs from the recorded one makes the two
+inconsistent while every norm still looks right.
+
+Fixed by the shared `magnelio._arpack.arpack_v0`, which the three
+callers now share.  Two builds of the same band port are now bit-
+identical, in one process and across processes (measured 0.0e+00).
+Measurement record: internal dossier `investigations/port-model-default/`
+(`probe_band_reproducibility.py`, MEASUREMENTS.md section 12).
 
 ## KB-036: ~~Faces in a conductor's end wall blocked and the wall unbooked on grids below about 15 µm~~ — Resolved (DD-207, 2026-08-28)
 
