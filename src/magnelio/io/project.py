@@ -428,7 +428,15 @@ def _source_to_dict(source) -> dict:
             # a Python callable cannot be stored at all — the tag and
             # the remaining fields keep the recipe readable.
             continue
-        if f.name == "corners" and v is not None:
+        if f.name == "path":
+            # A point path round-trips verbatim; a general Curve carries a
+            # builder callable the store cannot rebuild (like a callable
+            # incident field), so the recipe keeps the tag and the rest.
+            pts = getattr(source, "_points", None)
+            if pts is None:
+                continue
+            v = [[float(c) for c in point] for point in pts]
+        elif f.name == "corners" and v is not None:
             v = [[None if c is None else float(c) for c in point] for point in v]
         elif isinstance(v, tuple):
             v = [float(c) for c in v]
@@ -444,6 +452,7 @@ def _source_from_dict(d: dict, payload: dict | None = None):
     its own ``_from_store_payload``.
     """
     from magnelio.sources import (  # noqa: PLC0415
+        SourceCurrentPath,
         SourceFieldIncident,
         SourceFieldInitial,
         SourcePlaneWave,
@@ -453,6 +462,7 @@ def _source_from_dict(d: dict, payload: dict | None = None):
         "SourcePlaneWave": SourcePlaneWave,
         "SourceFieldInitial": SourceFieldInitial,
         "SourceFieldIncident": SourceFieldIncident,
+        "SourceCurrentPath": SourceCurrentPath,
     }
     d = dict(d)
     tag = d.pop("type")
@@ -462,6 +472,12 @@ def _source_from_dict(d: dict, payload: dict | None = None):
         if payload is None:
             raise ValueError(f"source {d.get('name')!r}: mesh.h5 holds no field arrays for it")
         return SourceFieldInitial._from_store_payload(d, payload)
+    if tag == "SourceCurrentPath" and "path" not in d:
+        raise ValueError(
+            f"source {d.get('name')!r} is a SourceCurrentPath on a general "
+            f"magnelio.geo.Curve, which the store cannot rebuild; declare it "
+            f"again on the reloaded mesh, or give the path as points",
+        )
     if tag == "SourceFieldIncident":
         raise ValueError(
             f"source {d.get('name')!r} is a SourceFieldIncident with a Python callable, "

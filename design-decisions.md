@@ -17068,8 +17068,8 @@ internal script directories, the S-parameter ladder bit-identical):
   (eigenmode ring-down from a project), `SourceFieldIncident`
   beyond the plane wave.~~ Shipped 2026-08-29 (see Status);
   `AnalysisEigenmode` moved onto `_AnalysisBase` with it.
-* **D** — `SourceFieldSurface` + `MonitorFieldSurface`,
-  `SourceCurrentPath`.
+* ~~**D** — `SourceFieldSurface` + `MonitorFieldSurface`,
+  `SourceCurrentPath`.~~ Shipped 2026-08-29/30 (DD-226, DD-227).
 * **E ff.** — `AnalysisWakefieldTD`/`SourceBeam`;
   `AnalysisScatteringFD`/`AnalysisFD` (FIT-FD on hexahedra first);
   statics; `MeshTetrahedral`/FEM; `MeshSurface`/BEM;
@@ -17264,3 +17264,131 @@ stencil and an interpolation the store has to agree on; the factor of
 two in memory was the cheaper trade.  Resampling the recording onto
 the target patches lazily each step instead of once at attach: half
 the memory, but a gather per patch per step in the time loop.
+
+---
+
+## DD-227 — impressed current on a path: `SourceCurrentPath`
+
+**Status:** Decided 2026-08-30 (DD-224 Phase D, second half; branch
+`feat/source-current-path`).  Certificate:
+`validation/current_path_hertzian_dipole.py`; gates in
+`tests/integration/test_source_current_path.py`.
+
+**Problem.**  A port describes a drive whose *current* is an unknown:
+the feed presents an impedance and the structure decides what flows.
+A large class of problems is the other way round — the current is the
+specification and the field is the answer.  A coil wound to a given
+turn count and current, an interference current measured on a harness,
+a lightning channel, a near-field injection probe, the equivalent
+current of a beam: all of these are known distributions, and forcing
+them through a port means solving for something already known and then
+scaling the result.
+
+**Decision.**  `SourceCurrentPath(name, path, samples_per_cell=4)` — a
+current filament.  `path` is any `geo.Curve` (polyline, arc, spline,
+helix, or a chain of them) or a sequence of points taken as a
+polyline; the excitation that names it carries the current in amperes
+(`amplitude_unit = "A"`) and its time function.  The current is
+*prescribed*: nothing the model does changes it.
+
+Discretisation.  Ampère's law in FIT form, `M_ε de/dt = C̃ᵀ ĥ − ĵ`,
+puts an impressed edge current straight on the right-hand side.  The
+edge state is a voltage and `β = dt/M_ε` is capacitance-like, so the
+contribution is `e ← e − sign·β·I(t^{n+1/2})` in volts, with no
+cell-size factor on any grid (the DD-085 grid-quantity reading, the
+same one the lumped operator uses for its Thévenin current).  The
+current is sampled half a step behind the E level being written — the
+level of the `C̃ᵀ ĥ` term it stands beside.  `attach` rasterises the
+curve with the DD-076 shared rasteriser, folds `−sign·β` into one
+coefficient per *distinct* edge and injects with a single scatter-add
+per step; `inject_H` is empty.
+
+Three things the discrete operators give for free, and they are why
+this is a two-hundred-line source rather than a machinery:
+
+* *The dipole moment is exact.*  The staircase walks monotonically
+  from the start node to the end node, so `Σ sign·dl·â` is exactly the
+  chord between them on any grid — only higher multipoles see the
+  steps.
+* *The end charge is exact.*  `S·C̃ᵀ = 0` makes the update carry
+  `d/dt(S d̂) = −S ĵ`, so an open filament accumulates precisely
+  `∓∫I dt` on its two end nodes and nothing elsewhere.  Measured:
+  ratio to `∫I dt` of 1.0000000000, interior nodes below 1e-12 of it,
+  whole-box neutrality at 1e-26.  An open current path *is* a
+  consistent oscillating dipole; there is no divergence to clean.
+* *A doubled-back segment cancels.*  Folding per distinct edge is
+  needed anyway (fancy-index `+=` does not accumulate over repeats)
+  and it makes a self-crossing path do the physical thing.
+
+Meshing.  A source that exposes a `curve` contributes its wire vertex
+coordinates as `"source"` grid planes, exactly as a thin wire does
+(DD-191 provenance kinds): the rasterised length is the distance
+between the *snapped* endpoints, so an unsnapped end would stretch or
+shorten the dipole moment that was asked for.
+
+Refusals and warnings.  A path whose bounding box leaves the meshed
+domain raises, naming the axis and pointing at the symmetry case (the
+mesh is the kept half; the wall supplies the image).  Edges the solver
+holds at zero — inside a perfect conductor, tangential to a PEC wall —
+take no current, and `attach` warns with the count rather than
+radiating quietly less than asked.  Currents *on* a conductor are a
+port's or a lumped element's business.
+
+Store.  A point path round-trips verbatim in the mesh recipe; a
+general `Curve` carries a builder callable the store cannot rebuild,
+so the recipe keeps the tag and `resume` says so — the same rule
+`SourceFieldIncident` and `WaveformFunction` already follow.
+
+Refactor carried along: the waveform binding (`set_excitation`,
+`clear_excitation`, `waveform`, `_drive`) moved from
+`SourceFieldIncident` into a concrete `_WaveformDriven` base in
+`sources/base.py`, methods only — the three state fields stay declared
+per dataclass so nothing leaks into a subclass's defaults.
+
+**Measured.**  A 2.5 mm filament at 10 GHz (kL = 0.524) in a 90 mm air
+cube with CPML, against the closed-form *uniform-filament* power
+(exact for any kL, not only the `kL → 0` Hertzian limit).  Library
+phasors are effective amplitudes (`U = |E|²/η₀`, no ½), so the
+reference is the RMS-current form:
+
+| nodes/λ | grid | P_rad / P_exact | power_balance | D_max |
+|---|---|---|---|---|
+| 10 | 80×80×84 | 0.9642 | 0.9892 | 1.560 |
+| 12 | 92×92×96 | 0.9719 | 0.9914 | 1.554 |
+| 14 | 104×104×106 | 0.9767 | 0.9922 | — |
+| 18 | 128³ | 0.9831 | 0.9945 | 1.523 |
+
+Order ≈ 1.3 in nodes per wavelength, approached from below with no
+offset left over: the residual tracks the near-to-far-field box's own
+closure, not the source.  Cross-polarisation stays near 2 %, the
+pattern is `sin θ`, and `arg(E_θ / j)` reads 180° — the library's
+far-zone amplitude is the conjugate of the `e^{+jωt}` textbook form
+(the DD-204 convention).  The *sign* of the injection is pinned by the
+charge-continuity identity above, not by that phase.
+
+Integration gates: charge continuity to 1e-9 on a PEC box, and a
+two-cell filament on a 60³ uniform grid reading `P_rad` within 6 % of
+the Hertzian value with `D_max` 1.499 and a `sin θ` pattern.  The
+how-to *Impressed currents* adds the ground-plane monopole (P_rad
+0.960 of the analytic value, D 3.14 against 3.0).
+
+**Limits.**  This is a source, not a wire: no sub-cell thin-wire
+model, no self-consistent current, no conductor.  The internal
+`mesh._thin_wire` machinery (used by the DD-173 antenna gates) stays
+internal and is a separate decision.  A path crossing a symmetry plane
+is refused rather than clipped — the lumped resolver's clipping is
+written for a straight two-point chain and does not transfer to an
+arbitrary OCC wire.  `SourceVoltage` (a prescribed voltage along the
+same kind of path) is not taken up here.
+
+**Alternatives.**  Spreading the current over the cells it passes
+through with a smoothing kernel — the usual PIC current deposition —
+buys a smoother near field at the price of the exact charge identity
+and the exact dipole moment; for a filament whose position is
+declared, not tracked, neither is worth trading.  Impressing the
+current as a *current density* over a tube of cells: the same, plus a
+radius the user has to invent.  Driving the filament from a Thévenin
+source with a very large series impedance approximates a current
+source through the existing lumped element, but it is only a
+two-point straight chain, it puts a resistor in the model, and it
+approaches the ideal source only in a limit that hurts the CFL.

@@ -726,6 +726,22 @@ class Mesh:
         # instead of snapping to the nearest node; open sides (``None``
         # / ``±inf``) have no plane to ask for.
         for source in getattr(geometry, "sources", ()) or ():
+            # A current path wants its vertices on grid nodes for the same
+            # reason a thin wire does: the filament's rasterised length is
+            # the distance between the *snapped* endpoints, so an unsnapped
+            # end shortens or stretches the dipole moment the user asked
+            # for (DD-227).
+            curve = getattr(source, "curve", None)
+            if curve is not None:
+                from magnelio.geo._occ_backend import (  # noqa: PLC0415
+                    wire_vertex_points as _wire_vertex_points,
+                )
+
+                c_pts = _wire_vertex_points(curve._occ_shape(geo_scale), scale=geo_scale)
+                for ax_i, axis in enumerate(("x", "y", "z")):
+                    for v in c_pts[:, ax_i]:
+                        critical_raw[axis].append((float(v), True))
+                        plane_sources[axis].append((float(v), _src("source", None, source.name)))
             corners = getattr(source, "corners", None)
             if corners is None:
                 continue

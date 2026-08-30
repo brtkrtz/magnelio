@@ -27,7 +27,6 @@ any grid.
 
 from __future__ import annotations
 
-import math
 from collections.abc import Callable
 from dataclasses import dataclass
 from dataclasses import field as dc_field
@@ -35,14 +34,14 @@ from dataclasses import field as dc_field
 import numpy as np
 
 from magnelio.signals.waveforms import Waveform
-from magnelio.sources.base import Source
+from magnelio.sources.base import _WaveformDriven
 
 _E_COMPONENTS = ("Ex", "Ey", "Ez")
 _H_COMPONENTS = ("Hx", "Hy", "Hz")
 
 
 @dataclass
-class SourceFieldIncident(Source):
+class SourceFieldIncident(_WaveformDriven):
     """An incident field on a total-field/scattered-field box.
 
     Declared on the model with :meth:`~magnelio.GeometryModel.add_source`
@@ -186,62 +185,6 @@ class SourceFieldIncident(Source):
         )
 
     # ── excitation binding ───────────────────────────────────────────────
-
-    def set_excitation(
-        self,
-        waveform: Waveform,
-        *,
-        amplitude: float = 1.0,
-        delay: float = 0.0,
-    ) -> None:
-        """Bind the waveform the source injects, with its weight.
-
-        Parameters
-        ----------
-        waveform : Waveform
-            Unit-peak time function of the incident field.
-        amplitude : float, default 1.0
-            Peak incident field [V/m].
-        delay : float, default 0.0
-            Time offset [s] of the waveform.
-        """
-        if not isinstance(waveform, Waveform):
-            raise TypeError(
-                f"{type(self).__name__}.set_excitation takes a magnelio.signals.Waveform; "
-                f"got {type(waveform).__name__}",
-            )
-        amplitude = float(amplitude)
-        delay = float(delay)
-        if not math.isfinite(amplitude):
-            raise ValueError(f"amplitude must be finite; got {amplitude!r}")
-        if not math.isfinite(delay) or delay < 0.0:
-            raise ValueError(f"delay must be a non-negative finite time [s]; got {delay!r}")
-        self._waveform = waveform
-        self._amplitude = amplitude
-        self._delay = delay
-
-    def clear_excitation(self) -> None:
-        self._waveform = None
-        self._amplitude = 1.0
-        self._delay = 0.0
-
-    @property
-    def waveform(self) -> Waveform | None:
-        """The bound waveform, or ``None`` before :meth:`set_excitation`."""
-        return self._waveform
-
-    def _require_waveform(self) -> Waveform:
-        if self._waveform is None:
-            raise ValueError(
-                f"source {self.name!r} has no waveform: bind one with "
-                f"set_excitation(waveform, amplitude=..., delay=...) before the run",
-            )
-        return self._waveform
-
-    def _drive(self, t):
-        """Incident amplitude ``A · w(t − delay)`` at time(s) *t* [s]."""
-        w = self._require_waveform()
-        return self._amplitude * w(t - self._delay)
 
     # ── TF/SF box ────────────────────────────────────────────────────────
 

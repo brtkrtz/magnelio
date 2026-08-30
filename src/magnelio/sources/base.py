@@ -13,6 +13,7 @@ and it injects into the fields every step.
 
 from __future__ import annotations
 
+import math
 from abc import ABC, abstractmethod
 
 from magnelio.signals.waveforms import Waveform
@@ -78,6 +79,80 @@ class Source(ABC):
     @abstractmethod
     def inject_H(self, fields, t_H: float) -> None:
         """Apply the source's H-side contribution after the H update."""
+
+
+class _WaveformDriven(Source):
+    """The waveform binding every time-driven source shares.
+
+    ``set_excitation`` stores the unit-peak :class:`Waveform`, the
+    amplitude (in the source's own :attr:`~Source.amplitude_unit`) and
+    the delay; :meth:`_drive` evaluates ``A · w(t − delay)``.  A source
+    whose drive is *not* a time function (an initial field) implements
+    the binding itself instead.
+
+    Methods only — the three state fields are declared by each concrete
+    dataclass, so nothing leaks into a subclass's dataclass defaults.
+    """
+
+    _waveform: Waveform | None
+    _amplitude: float
+    _delay: float
+
+    def set_excitation(
+        self,
+        waveform: Waveform,
+        *,
+        amplitude: float = 1.0,
+        delay: float = 0.0,
+    ) -> None:
+        """Bind the waveform the source injects, with its weight.
+
+        Parameters
+        ----------
+        waveform : Waveform
+            Unit-peak time function of the drive.
+        amplitude : float, default 1.0
+            Peak drive in the source's :attr:`~Source.amplitude_unit`.
+        delay : float, default 0.0
+            Time offset [s] of the waveform.
+        """
+        if not isinstance(waveform, Waveform):
+            raise TypeError(
+                f"{type(self).__name__}.set_excitation takes a magnelio.signals.Waveform; "
+                f"got {type(waveform).__name__}",
+            )
+        amplitude = float(amplitude)
+        delay = float(delay)
+        if not math.isfinite(amplitude):
+            raise ValueError(f"amplitude must be finite; got {amplitude!r}")
+        if not math.isfinite(delay) or delay < 0.0:
+            raise ValueError(f"delay must be a non-negative finite time [s]; got {delay!r}")
+        self._waveform = waveform
+        self._amplitude = amplitude
+        self._delay = delay
+
+    def clear_excitation(self) -> None:
+        self._waveform = None
+        self._amplitude = 1.0
+        self._delay = 0.0
+
+    @property
+    def waveform(self) -> Waveform | None:
+        """The bound waveform, or ``None`` before :meth:`set_excitation`."""
+        return self._waveform
+
+    def _require_waveform(self) -> Waveform:
+        if self._waveform is None:
+            raise ValueError(
+                f"source {self.name!r} has no waveform: bind one with "
+                f"set_excitation(waveform, amplitude=..., delay=...) before the run",
+            )
+        return self._waveform
+
+    def _drive(self, t):
+        """Drive ``A · w(t − delay)`` at time(s) *t* [s]."""
+        w = self._require_waveform()
+        return self._amplitude * w(t - self._delay)
 
 
 __all__ = ["Source"]
