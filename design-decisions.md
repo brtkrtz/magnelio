@@ -17839,3 +17839,122 @@ population, not a bound for the port at hand — the per-channel bound
 is `chain_floor_db` on the report, and it exists only for certified
 channels.  The notice fires once per analysis, so a script that
 rebuilds ports between runs sees it once.
+
+## DD-232 — the band excitation is anchored at DC, and the pulse stops scaling with the axis start
+
+**Status:** Decided 2026-08-30 (branch `feat/band-dc-anchor`).  Gates:
+`tests/unit/test_band_dtbc.py::TestFactoryAndOperator`,
+`tests/integration/test_pair_gate_certificate.py::TestMurFallbackNotice`.
+Measurements: internal record `investigations/port-model-default/`
+(`probe_dc_pencil.py`, `probe_below_band.py`, `probe_dc_postproc.py`,
+`probe_dc_anchor.py`, `probe_ab_dc.py`).
+
+**Problem.**  DD-231 closed the `port_model` default on a hard fact:
+on library defaults the band pipeline does not run at all, because
+its band-limited pulse is `O(1/f_axis[0])` long — 1 212 141 steps
+against a budget of 131 072 — and it named the way back explicitly, "a
+band pipeline whose pulse is not tied to the axis start".  The
+standing explanation for that coupling was structural: the Galerkin
+subspace is built from mode traces on a frequency grid with
+`f_lo > 0`, so the excitation was thought to be confined to that band
+by the boundary itself.
+
+**Measured.**  The explanation was wrong in three separate places,
+and the boundary was never the band-limited part.
+
+*The kernel does not degenerate at DC.*  The contour of
+`matrix_dtbc_kernel` runs on `|z| = exp(4/n_kernel)`, whose closest
+approach to 1 is `sig_hat = 2 - rho - 1/rho`.  At the production
+`n_kernel = 65536` that is `-3.7e-9` — essentially DC — so every band
+run that has ever succeeded already evaluates the solvent there.  The
+branch point at `zeta = 1` is real (`min|zeta-1|` tracks
+`sqrt|sig_hat|` over seven decades) but the square root is what saves
+the dichotomy: the branches stay 1.3e-5 off the unit circle even at
+`sig_hat = -9.1e-13`, with the solvent residual flat at 1e-14 and
+`cond X1` at 2.
+
+*The DC limit is already inside the subspace.*
+
+    ||(I - P_V) track_t||_W / ||track_t||_W = 1.24e-08
+
+The static Laplace trace lies in the band subspace to eight digits,
+because the fundamental family converges to it: the W-overlap
+`|<track_t|phi>|` is 0.999972 at the bottom of the tracked band and
+1.000000 (six digits) at 20 MHz.
+
+*The boundary is accurate far below its build band.*  A boundary
+built on 2.25-18 GHz, evaluated outside it:
+
+    20 MHz     -72.0 dB        1 GHz    -106.0 dB
+    74.63 MHz  -83.4 dB      2.25 GHz   -113.0 dB   (band edge)
+    300 MHz    -95.5 dB        18 GHz   -130.5 dB
+
+74.63 MHz is precisely the axis start DD-231 could not size.  |Gamma|
+degrades monotonically toward DC but never meets an edge — this is a
+floor that improves with frequency, not a bandpass.
+
+What *is* band-limited is bookkeeping about the excitation:
+`_synthesize_source` zeroes every rfft bin outside the tracking grid,
+because that is where the channel's subspace direction `U(f)` is
+tabulated; and `_band_setup` floors the subspace band at `0.25·f1`
+(only because it must stay positive) and then sizes the pulse from
+the narrower roll-off, `min(0.75·f1, 0.25·width)`.  Near DC the lower
+term wins.  But `U(f -> 0)` is not unknown: it is `track_t`, which the
+DC bootstrap computes one line above the tracking call and until now
+used only as an anchor for the zeta-pencil.
+
+**Decision.**
+
+1. `build_band_dtbc_port(dc_anchor=True)` continues the *fundamental
+   channel's excitation direction* below the tracked band down to
+   `f = 0` (`continue_family_to_dc`): the interior points are measured
+   by the same pencil solve as the tracking, the endpoint is the
+   static Laplace trace in closed form (`zeta = 1`, no longitudinal
+   part).  The subspace, the Galerkin projection, the recording
+   channels and both ghost kernels are untouched — this is a table
+   the excitation reads, nothing more.
+
+2. With the table reaching 0, `band_source_spectrum` drops the lower
+   roll-off (there is no band edge below to roll off against) and
+   `_band_setup` sizes the pulse from the upper roll-off alone.  On
+   the default axis that is 1 211 808 steps -> 18 178, `n_syn` 32768,
+   inside the budget: **the pipeline sizes on library defaults for
+   the first time.**  The extended direction grid is no longer
+   uniform — a short interval below the tracked band, then the
+   tracking step — so the cubic interpolation was checked against the
+   directly measured direction there: 1e-6 relative at worst, no
+   ringing.
+
+   End to end on the coarse two-port fixture of the integration
+   suite, where the kernels are affordable, the run DD-231 measured
+   as impossible now delivers
+
+       axis 33.83 MHz .. 6.8 GHz, port model 'band'
+       |S11|  -117.4 dB worst, -134.3 dB median above 0.5 GHz
+              -91.2 dB at the bottom axis point (33.83 MHz)
+       |S21|  within 0.07 dB of the modal run
+
+   The -91.2 dB at 33.83 MHz is the time-domain counterpart of the
+   a-priori -72 dB at 20 MHz above: the floor really does degrade
+   toward DC, and it stays two orders below what the modal fallback
+   offers anywhere.
+
+3. The anchor applies only where the fundamental *is* the static mode
+   (W-overlap with `track_t` >= 0.9 at the band edge).  A waveguide
+   fundamental has a cut-off, gets no anchor, and keeps the two-sided
+   sizing; `band_options={"dc_anchor": False}` restores the old
+   behaviour everywhere.
+
+4. The DD-231 notice loses its axis-start clause, which no longer
+   describes anything, and quotes it again only when the anchor is
+   switched off.
+
+**What this does not buy.**  The stages of the band-cost work are not
+substitutes.  On an axis that already sized (3 GHz) the anchor is
+worth 1.3x, because the upper roll-off dominates there; it makes the
+default axis *possible*, not cheap.  The runtime of a band run is
+governed by the subspace rank (kernel build `O(p^3)` per contour
+point) and by the exact convolution (`O(N^2)` over a run) — those are
+the levers, and they are untouched here.  DD-231's other two
+blockers, `a()`/`b()` and resume, are likewise untouched, so the
+`port_model` default stays `"modal"`.

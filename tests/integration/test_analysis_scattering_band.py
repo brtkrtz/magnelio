@@ -168,19 +168,8 @@ def test_default_port_model_is_modal():
     assert b1.values.size == result.n_actual_steps
 
 
-def test_near_dc_axis_raises_with_f_min_guidance():
-    """A default axis (f_min = 0 → first point at f_max/n_freq) must
-    raise loudly instead of hanging in an hours-long kernel build.
-
-    The pulsed band drive needs spectral roll-off room below the
-    first axis point; room ∝ f_axis[0] forces an O(1/f_axis[0])
-    pulse — at production dt hundreds of thousands of steps, which
-    the single-threaded contour-QZ kernel build inherits (the
-    developer-observed silent multi-minute hang on a 20×7×19
-    microstrip).  The auto-sizing gate turns this into an error
-    carrying the recommended axis start.
-    """
-    analysis = AnalysisScatteringTD(
+def _near_dc_analysis(**kwargs) -> AnalysisScatteringTD:
+    return AnalysisScatteringTD(
         mesh=_layered_mesh().with_boundary_conditions(
             {
                 "ymin": "PEC",
@@ -206,8 +195,46 @@ def test_near_dc_axis_raises_with_f_min_guidance():
         f_max=6.8e9,  # f_min left at 0 → axis starts at f_max/201
         port_model="auto",
         verbose=False,
+        **kwargs,
     )
-    with pytest.raises(ValueError, match="roll-off room"):
+
+
+def test_near_dc_axis_runs_on_the_default_axis():
+    """A default axis (f_min = 0 → first point at f_max/n_freq) runs.
+
+    It did not use to.  The pulsed drive needed spectral roll-off room
+    below the first axis point, room ∝ f_axis[0] forced an
+    O(1/f_axis[0]) pulse, and the auto-sizing gate refused rather than
+    hang in the single-threaded contour-QZ kernel build.  With the
+    excitation direction tabulated down to DC there is no lower band
+    edge to roll off against, so the pulse follows the measurement
+    span and the axis start stops mattering.
+
+    This is the certificate for that claim: the run that used to be
+    refused now produces a reflection-free-class S-matrix.
+    """
+    result = _near_dc_analysis().run(excited=["port1"])
+    assert result.port_model_used == "band"
+    f_axis = np.asarray(result.f_axis)
+    s11_db = 20 * np.log10(np.abs(result.S("port1", "port1")) + 1e-300)
+    s21_db = 20 * np.log10(np.abs(result.S("port2", "port1")) + 1e-300)
+    # Skip the lowest decade: the a-priori floor of the Galerkin
+    # boundary degrades monotonically toward DC (measured -72 dB at
+    # 20 MHz against -113 dB at the band edge on the microstrip
+    # fixture of the internal record), and the DFT of a finite record
+    # is coarsest there.
+    band = f_axis >= 0.5e9
+    assert s11_db[band].max() < -80.0, (
+        f"|S11| max {s11_db[band].max():.1f} dB at "
+        f"{f_axis[band][np.argmax(s11_db[band])] / 1e9:.2f} GHz"
+    )
+    assert np.max(np.abs(s21_db[band])) < 0.05
+
+
+def test_near_dc_axis_still_refuses_without_the_dc_anchor():
+    """The old constraint stays reachable, and still explains itself."""
+    analysis = _near_dc_analysis(band_options={"dc_anchor": False})
+    with pytest.raises(ValueError, match="auto-sizing"):
         analysis.run()
 
 

@@ -734,7 +734,10 @@ class AnalysisScatteringTD(AnalysisTD):
         ``n_kernel_init`` (initial ghost-kernel length; default the
         next power of two above the planned run),
         ``svd_tol`` (subspace-rank threshold, default 1e-8),
-        ``skirt`` (spectral amplitude at the band edges, 1e-7).
+        ``skirt`` (spectral amplitude at the band edges, 1e-7),
+        ``dc_anchor`` (extend the fundamental channel's excitation
+        direction down to DC so the pulse length follows the
+        measurement span rather than the axis start, default True).
     project : str or Path, optional
         When set, ``run()`` writes the model and each excitation's
         results into this project directory and returns a
@@ -817,6 +820,7 @@ class AnalysisScatteringTD(AnalysisTD):
             "n_kernel_init",
             "svd_tol",
             "skirt",
+            "dc_anchor",
         }
     )
 
@@ -1429,16 +1433,16 @@ class AnalysisScatteringTD(AnalysisTD):
         """Price the band pipeline for *this* model, not in the abstract.
 
         The base notice can only name the alternative; this class owns
-        it and can therefore say what taking it would cost — including
-        the one thing that decides whether the offer is even
-        acceptable.  The band pipeline measures with a band-limited
-        pulse whose duration scales as ``1/f_axis[0]``, so an axis
-        reaching toward DC sizes it past the auto budget and
-        ``_band_setup`` refuses.  Quoting the required axis start here
-        keeps the notice from recommending a switch that would raise.
+        it and can therefore say what taking it would cost.  What it
+        costs is runtime and two capabilities.  The axis start is no
+        longer part of the trade: the excitation direction is
+        tabulated down to DC wherever the fundamental is the static
+        mode, so the pulse is sized by the measurement span rather
+        than by ``1/f_axis[0]`` and the pipeline sizes on the default
+        axis.  A run that switched the anchor off keeps the old
+        constraint, and the notice then quotes the axis start again —
+        it must never recommend a switch that would raise.
         """
-        f1 = float(self.f_axis[0])
-        f_rec = self._band_min_axis_start(dt)
         price = (
             '  The other side of the trade is port_model="band": the '
             "band-subspace DTBC terminates the whole analysis band "
@@ -1449,18 +1453,24 @@ class AnalysisScatteringTD(AnalysisTD):
             "against 45 min) -- and it gives up time-domain power waves "
             "(a()/b()) and resume."
         )
+        if bool(dict(self.band_options or {}).get("dc_anchor", True)):
+            return price
+        f1 = float(self.f_axis[0])
+        f_rec = self._band_min_axis_start(dt)
         if f1 < f_rec:
             reach = (
-                f"  On this model it would also need a frequency axis "
-                f"starting at >= {f_rec / 1e6:.0f} MHz — yours starts at "
-                f"{f1 / 1e6:.1f} MHz, where the band pulse sizes past the "
-                f"auto budget.  Raise f_min to make the switch available."
+                f"  With band_options={{'dc_anchor': False}} it would also "
+                f"need a frequency axis starting at >= {f_rec / 1e6:.0f} MHz "
+                f"— yours starts at {f1 / 1e6:.1f} MHz, where the "
+                f"band-limited pulse sizes past the auto budget.  Raise "
+                f"f_min, or leave the DC anchor on."
             )
         else:
             reach = (
                 f"  This axis (from {f1 / 1e6:.1f} MHz) already clears the "
-                f">= {f_rec / 1e6:.0f} MHz the band pulse needs here, so the "
-                f"switch is available as the model stands."
+                f">= {f_rec / 1e6:.0f} MHz the band-limited pulse needs "
+                f"without the DC anchor, so the switch is available as the "
+                f"model stands."
             )
         return "\n".join([price, reach])
 
@@ -1521,6 +1531,7 @@ class AnalysisScatteringTD(AnalysisTD):
             f2 + 0.25 * width,
         )
         skirt = float(opts.get("skirt", 1e-7))
+        dc_anchor = bool(opts.get("dc_anchor", True))
         n_syn = opts.get("n_syn")
         if n_syn is None:
             # Compactness pre-sizing: the narrower roll-off dominates
@@ -1531,27 +1542,39 @@ class AnalysisScatteringTD(AnalysisTD):
             # peak) and round up to a power of two.  A failing gate
             # still auto-doubles at excitation time.
             x_skirt = float(erfcinv(2.0 * skirt))
-            sig_f = min(f1 - f_band[0], f_band[1] - f2) / (math.sqrt(2.0) * x_skirt)
+            # Which roll-offs the pulse has to accommodate.  With the
+            # DC anchor the excitation direction is tabulated down to
+            # f = 0, so there is no lower band edge to roll off
+            # against and the upper roll-off sizes the pulse alone —
+            # the duration stops scaling with 1/f_axis[0].  A port
+            # whose fundamental has a cut-off gets no anchor and needs
+            # the two-sided sizing; _set_band_excitation's retry loop
+            # grows the window for those.
+            gap = f_band[1] - f2
+            if not dc_anchor:
+                gap = min(f1 - f_band[0], gap)
+            sig_f = gap / (math.sqrt(2.0) * x_skirt)
             sigma_t = 1.0 / (2.0 * math.pi * sig_f)
             n_min = int(math.ceil(13.0 * sigma_t / dt))
             n_syn = max(8192, 1 << (n_min - 1).bit_length())
             if n_syn > self._BAND_AUTO_N_SYN_MAX:
-                f1_rec = self._band_min_axis_start(dt, skirt)
+                hint = (
+                    f"narrow the measurement span (the roll-off room is {gap:.4g} Hz)"
+                    if dc_anchor
+                    else (
+                        f"raise the axis start to >= "
+                        f"{self._band_min_axis_start(dt, skirt):.3g} Hz "
+                        f"(constructor f_min= or an explicit "
+                        f"run(f_axis=...))"
+                    )
+                )
                 raise ValueError(
-                    f"band-pipeline auto-sizing: the frequency axis "
-                    f"starts at {f1:.4g} Hz, leaving only "
-                    f"{f1 - f_band[0]:.4g} Hz of spectral roll-off "
-                    f"room below it — the band-limited pulse then "
-                    f"needs ~{13.0 * sigma_t:.3g} s ≈ {n_min} steps "
-                    f"at dt = {dt:.3g} s (auto budget "
+                    f"band-pipeline auto-sizing: the pulse needs "
+                    f"~{13.0 * sigma_t:.3g} s ≈ {n_min} steps at "
+                    f"dt = {dt:.3g} s (auto budget "
                     f"{self._BAND_AUTO_N_SYN_MAX}), and the ghost-kernel "
                     f"build scales with it (single-threaded contour-"
-                    f"QZ).  Measuring close to DC with a pulsed band "
-                    f"port is inherently long.  Options: raise the "
-                    f"axis start to >= {f1_rec:.3g} Hz (constructor "
-                    f"f_min= or an explicit run(f_axis=...); higher "
-                    f"starts shorten pulse and kernel build "
-                    f"proportionally), or accept the cost "
+                    f"QZ).  Options: {hint}, or accept the cost "
                     f"deliberately via band_options="
                     f"{{'n_syn': {n_syn}}} (plus total_time_steps).",
                 )
@@ -1580,6 +1603,7 @@ class AnalysisScatteringTD(AnalysisTD):
             f_span=(f1, f2),
             n_grid=int(opts.get("n_grid", 25)),
             svd_tol=float(opts.get("svd_tol", 1e-8)),
+            dc_anchor=dc_anchor,
             skirt=skirt,
             n_syn=n_syn,
             ring_down=ring_down,
@@ -1629,6 +1653,7 @@ class AnalysisScatteringTD(AnalysisTD):
                 svd_tol=cfg["svd_tol"],
                 n_channels=spec.n_modes,
                 n_kernel_init=cfg["n_kernel_init"],
+                dc_anchor=cfg["dc_anchor"],
             )
             for spec in self.ports
         ]

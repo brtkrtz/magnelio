@@ -376,6 +376,99 @@ def track_band_families(
     return [out[i_fund]] + [out[i] for i in rest]
 
 
+def continue_family_to_dc(
+    chain: PeriodChain,
+    dt: float,
+    fam: BandModeFamily,
+    track_t: np.ndarray,
+    eps_eff_hint: float,
+    dz: float,
+    n_extra: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Continue the fundamental family below its grid, down to DC.
+
+    The QTEM fundamental propagates at every ``f > 0`` and converges
+    to the static Laplace mode as ``f -> 0`` — measured on the shielded
+    microstrip, the W-overlap between ``track_t`` and the tracked
+    trace is 0.999972 at 2.25 GHz and 1.000000 (six digits) at 20 MHz.
+    The DC limit itself needs no eigensolve: it *is* ``track_t``,
+    with a vanishing longitudinal part and ``zeta = 1`` (no phase
+    advance per period).
+
+    This continuation exists for the *excitation direction* only.  It
+    deliberately leaves the family, the subspace and the recording
+    channels untouched: the Galerkin boundary built over the tracked
+    band is already accurate far below it (a boundary built on
+    2.25-18 GHz absorbs the fundamental at -83.4 dB at 74.6 MHz), so
+    the band limit of a band run is bookkeeping about where the
+    excitation direction is tabulated, not a property of the
+    boundary.
+
+    Parameters
+    ----------
+    chain : PeriodChain
+        Period blocks at the port (boundary pairing).
+    dt : float
+        Solver time step [s].
+    fam : BandModeFamily
+        The fundamental family (first entry of
+        :func:`track_band_families`).
+    track_t : np.ndarray
+        Tangential DC profile (free DOFs) — the Laplace solution.
+    eps_eff_hint : float
+        DC effective permittivity, for the phase-advance arc hint.
+    dz : float
+        Port-normal cell size [m].
+    n_extra : int
+        Number of continuation points, including the DC endpoint.
+
+    Returns
+    -------
+    freqs : np.ndarray
+        Ascending frequencies from 0 up to (excluding) ``fam.freqs[0]``.
+    traces : np.ndarray
+        Matching traces, W-normalised and gauge-fixed like the
+        family's own, column ``0`` being the static limit.
+    """
+    from magnelio.constants import C0
+
+    n_t = chain.n_t
+    w = chain.w_period
+    w_t = w[:n_t]
+    f_lo = float(fam.freqs[0])
+    n_extra = max(int(n_extra), 1)
+    f_below = np.linspace(0.0, f_lo, n_extra + 1)[:-1]
+
+    # DC endpoint in closed form: the Laplace trace, no longitudinal
+    # part, scaled to the family's W-normalisation.
+    dc = np.zeros(w.size, dtype=complex)
+    dc[:n_t] = np.asarray(track_t, dtype=float)
+    scale = math.sqrt(float(np.dot(w, np.abs(fam.traces[:, 0]) ** 2))) / math.sqrt(
+        float(np.dot(w_t, np.abs(track_t) ** 2)),
+    )
+    cols = [normalize_gauge(dc * scale, n_t)]
+
+    # The rest is measured, continued upward toward the tracked grid
+    # so each solve is seeded by the arc of the point below it.
+    prev = cols[0]
+    for f in f_below[1:]:
+        w_dt = 2.0 * math.pi * f * dt
+        theta0 = 2.0 * math.pi * f * math.sqrt(eps_eff_hint) / C0 * dz
+        zp, pp = find_propagating_modes(chain, w_dt, 1.3 * theta0, k=4)
+        if zp.size == 0:
+            raise ValueError(
+                f"the fundamental family does not continue to {f / 1e9:.4g} GHz "
+                f"below its tracked band — the DC excitation anchor needs it "
+                f"down to 0",
+            )
+        ov = np.abs(np.conj(prev) @ (w[:, None] * pp))
+        j = int(np.argmax(ov))
+        prev = normalize_gauge(pp[:, j], n_t)
+        cols.append(prev)
+
+    return f_below, np.stack(cols, axis=1)
+
+
 def band_subspace(
     families: list[BandModeFamily],
     w: np.ndarray,
@@ -817,20 +910,30 @@ def band_source_spectrum(
     """
     f_lo, f_hi = float(f_subspace[0]), float(f_subspace[1])
     f1, f2 = float(f_span[0]), float(f_span[1])
-    if not (f_lo < f1 < f2 < f_hi):
+    if not (f_lo <= f1 < f2 < f_hi):
+        raise ValueError(
+            f"f_span {f_span} must lie strictly inside the subspace band ({f_lo:.3e}, {f_hi:.3e})",
+        )
+    if f_lo > 0.0 and f1 <= f_lo:
         raise ValueError(
             f"f_span {f_span} must lie strictly inside the subspace band ({f_lo:.3e}, {f_hi:.3e})",
         )
     x_skirt = float(erfcinv(2.0 * skirt))
-    sig_lo = (f1 - f_lo) / (math.sqrt(2.0) * x_skirt)
     sig_hi = (f_hi - f2) / (math.sqrt(2.0) * x_skirt)
     f_bins = np.fft.rfftfreq(n_syn, dt)
-    env = (
-        0.25
-        * erfc((f1 - f_bins) / (math.sqrt(2.0) * sig_lo))
-        * erfc((f_bins - f2) / (math.sqrt(2.0) * sig_hi))
-    )
-    env[(f_bins < f_lo) | (f_bins > f_hi)] = 0.0
+    if f_lo > 0.0:
+        sig_lo = (f1 - f_lo) / (math.sqrt(2.0) * x_skirt)
+        env_lo = erfc((f1 - f_bins) / (math.sqrt(2.0) * sig_lo))
+    else:
+        # DC-anchored channel: there is no band edge below f1 to roll
+        # off against, so the spectrum stays flat down to the first
+        # bin.  This is what unchains the pulse length from f_span[0]
+        # — the duration is then set by the upper roll-off alone.
+        env_lo = np.full(f_bins.size, 2.0)
+    env = 0.25 * env_lo * erfc((f_bins - f2) / (math.sqrt(2.0) * sig_hi))
+    env[f_bins > f_hi] = 0.0
+    if f_lo > 0.0:
+        env[f_bins < f_lo] = 0.0
     t_c = 0.5 * n_syn * dt
     return env * np.exp(-2j * np.pi * f_bins * t_c)
 
@@ -981,8 +1084,12 @@ class PortOperatorBandDTBC:
         """Tracked subspace band ``(f_lo, f_hi)`` [Hz] of a channel.
 
         The frequency range over which the channel family's subspace
-        direction is tracked; ``set_excitation_band`` spans must lie
-        strictly inside it (roll-off room included).
+        direction is tabulated; ``set_excitation_band`` spans must lie
+        inside it, strictly so at the upper end where the roll-off
+        needs room.  A DC-anchored channel reports ``0.0`` as its
+        lower bound: the direction is known down to the static limit,
+        so a span may reach the first bin and no lower roll-off is
+        synthesised.
         """
         if not (0 <= mode_idx < self._n_modes):
             raise ValueError(
@@ -1079,8 +1186,10 @@ class PortOperatorBandDTBC:
             Channel index.
         f_span : (float, float)
             Flat measurement span [Hz]; the S-parameter axis should
-            stay inside it.  Must leave room for the roll-offs within
-            the port's subspace band.
+            stay inside it.  Must leave room for the upper roll-off
+            within the port's subspace band
+            (:meth:`channel_band`); the lower one exists only where
+            that band starts above zero.
         n_syn : int, default 8192
             Synthesis window length in steps.
         skirt : float, default 1e-7
@@ -1124,8 +1233,10 @@ class PortOperatorBandDTBC:
         Multiplies the scalar spectrum by the channel family's
         subspace direction per rfft bin (cubic interpolation over the
         tracking grid — the linear error ~df^2 rides at the port
-        plane as launch halo), band-limits to the tracked range with
-        a cosine safety taper, and enforces temporal compactness: a
+        plane as launch halo), band-limits to the tabulated range
+        with a cosine safety taper (a DC-anchored channel is
+        tabulated down to the first bin, so only the upper edge
+        tapers), and enforces temporal compactness: a
         source that is still active at the window end would step to
         zero and kick broadband grid modes the band boundary does not
         absorb (measured: near-Nyquist ringing at 1e-5 for thousands
@@ -1135,7 +1246,10 @@ class PortOperatorBandDTBC:
         freqs, U = self._src_directions[mode_idx]
         f_bins = np.fft.rfftfreq(n_syn, self._dt)
         f_lo, f_hi = float(freqs[0]), float(freqs[-1])
-        df = (f_hi - f_lo) / max(freqs.size - 1, 1)
+        # Largest gap of the tracking grid — with a DC anchor the grid
+        # is no longer exactly uniform, and the taper wants the coarse
+        # spacing, not the average.
+        df = float(np.max(np.diff(freqs))) if freqs.size > 1 else (f_hi - f_lo)
         S_hat = np.zeros((f_bins.size, self._exterior.p), dtype=complex)
         idx = np.flatnonzero((f_bins >= f_lo - df) & (f_bins <= f_hi + df))
         if idx.size:

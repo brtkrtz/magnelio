@@ -109,15 +109,30 @@ major version is 0, minor releases may change the public API.
   explains the trade instead of labelling it.  It names each affected
   channel with the cross-section measurement behind it, states the
   reflection floor given up and what the run keeps in exchange —
-  runtime, time-domain power waves, resumable checkpoints, a frequency
-  axis with no lower bound — and prices the reflection-free
-  alternative for the model at hand.  That last part is the point: the
-  old text recommended `port_model="band"` unconditionally, and on a
-  typical microstrip with default settings that switch would have
-  failed, because the band pipeline needs a frequency axis clear of
-  DC.  The notice now quotes the axis start the switch would require,
-  or says the axis already clears it.  `port_model` keeps defaulting
-  to `"modal"`.
+  runtime, time-domain power waves, resumable checkpoints — and prices
+  the reflection-free alternative for the model at hand.  That last
+  part is the point: the old text recommended `port_model="band"`
+  unconditionally, without saying what it costs on the model in front
+  of it.  `port_model` keeps defaulting to `"modal"`.
+
+- Broadband band-subspace ports (`port_model="band"` or `"auto"`) now
+  run on a frequency axis that reaches toward DC.  They used to
+  require an axis starting well clear of zero: the pulse driving them
+  was band-limited to the tracked mode band, so its duration grew as
+  1/f_start, and on library defaults the auto-sizing refused the run
+  outright rather than spend hours building kernels for it.  On a
+  quasi-TEM line the fundamental *is* the static field solution of the
+  cross-section, which the port already computes, so its excitation is
+  now continued down to zero frequency and the pulse follows the width
+  of the measurement span instead of the axis start.  A default axis
+  runs, and delivers the same reflection-free-class result: on a
+  two-port fixture |S11| stays below −117 dB above 0.5 GHz and −91 dB
+  at 34 MHz, with |S21| within 0.07 dB of the modal run.  Two limits
+  are worth knowing: the floor degrades toward DC, so a measurement
+  that lives at its lowest points should still not start lower than it
+  needs to; and a waveguide fundamental has a cut-off, no static
+  limit, and keeps the old requirement.  Expert override
+  `band_options={"dc_anchor": False}` restores the previous behaviour.
 
 - Ports keep the exact transparent boundary condition on conformal
   feeds that used to lose it.  A port earns the exact termination by

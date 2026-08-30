@@ -216,25 +216,35 @@ class TestMurFallbackNotice:
         assert "inhomogeneous cross-section" not in notice
 
     def test_the_band_advice_is_only_offered_when_it_would_run(self):
-        """The quoted axis start is the one ``_band_setup`` accepts.
+        """The notice may not name a constraint the pipeline no longer has.
 
-        Both numbers come from the same inversion of the compactness
-        sizing, so the notice cannot recommend an axis the band
-        pipeline would then refuse.
+        With the DC-anchored excitation the pulse is sized by the
+        measurement span, not by ``1/f_axis[0]``, so an axis reaching
+        toward DC sizes like any other and the notice must not ask for
+        a higher start.  Switching the anchor off restores the old
+        constraint, and then the notice has to quote it again — in
+        both directions the notice and ``_band_setup`` must agree.
         """
         mesh = _rect_coax_mesh()
         op = _build(mesh, _tilt_transversal_mu(mesh, build_M_mu(mesh), 1.5))
         dt = 1e-13
-        f_rec = self._analysis(mesh)._band_min_axis_start(dt)
 
         low = self._analysis(mesh, f_min=0.0)
-        assert low.f_axis[0] < f_rec
         notice = low._mur_fallback_notice([op], dt)
-        assert "would also need a frequency axis" in notice
+        assert "frequency axis starting at" not in notice
+        low._band_setup(low.f_axis, dt, None)
+
+        f_rec = low._band_min_axis_start(dt)
+        assert low.f_axis[0] < f_rec
+        plain = self._analysis(mesh, f_min=0.0)
+        plain.band_options = {"dc_anchor": False}
+        notice = plain._mur_fallback_notice([op], dt)
+        assert "frequency axis starting at" in notice
         with pytest.raises(ValueError, match="auto-sizing"):
-            low._band_setup(low.f_axis, dt, None)
+            plain._band_setup(plain.f_axis, dt, None)
 
         high = self._analysis(mesh, f_min=2.0 * f_rec)
+        high.band_options = {"dc_anchor": False}
         notice = high._mur_fallback_notice([op], dt)
         assert "already clears" in notice
         high._band_setup(high.f_axis, dt, None)

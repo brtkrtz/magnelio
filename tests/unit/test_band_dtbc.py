@@ -292,6 +292,23 @@ class TestFactoryAndOperator:
         )
         return op, dt
 
+    @pytest.fixture(scope="class")
+    def port_no_anchor(self):
+        mesh = _layered_mesh(nz=12)
+        dt = courant_dt(mesh.grid, "normal")
+        op = build_band_dtbc_port(
+            PortSpecMultiConductor(name="port1", plane=BoxFace.Z_MIN, epsilon_r=None),
+            mesh,
+            build_M_eps(mesh),
+            build_M_mu(mesh),
+            dt=dt,
+            f_band=(1.0e9, 7.8e9),
+            n_grid=5,
+            n_kernel_init=64,
+            dc_anchor=False,
+        )
+        return op, dt
+
     def test_band_data_contract(self, port):
         op, dt = port
         bd = op.band_data
@@ -309,18 +326,60 @@ class TestFactoryAndOperator:
         assert s.shape == (8192, op.subspace_rank)
         peak = np.abs(s).max()
         assert np.abs(s[-256:]).max() < 1e-6 * peak
-        # Spectrum is confined to the subspace band.
+        # Above the tracked band the direction table ends, so the
+        # spectrum must stop there.  Below the span it need not: the
+        # DC anchor tabulates the direction down to 0, and the flat
+        # low side is what keeps the pulse short.
         sp = np.abs(np.fft.rfft(s[:, 0]))
+        fr = np.fft.rfftfreq(8192, dt)
+        assert sp[fr > 8.0e9].max() < 1e-6 * sp.max()
+        assert sp[fr < 0.5e9].max() > 0.1 * sp.max()
+        op.clear_excitation()
+        assert op._src_series is None
+
+    def test_dc_anchor_reaches_zero_and_stays_accurate(self, port):
+        """The anchored table starts at 0 and interpolates cleanly.
+
+        The anchor makes the direction grid non-uniform (a short first
+        interval below the tracked band), which is where a cubic
+        spline could ring.  Checked against the closed-form DC limit:
+        the first column must be the static Laplace direction.
+        """
+        op, _ = port
+        freqs, U = op._src_directions[0]
+        assert op.channel_band(0)[0] == 0.0
+        assert freqs[0] == 0.0
+        assert np.all(np.diff(freqs) > 0.0)
+        # The spline through the table reproduces its own DC column.
+        from scipy.interpolate import CubicSpline
+
+        u0 = CubicSpline(freqs, U, axis=0)(0.0)
+        assert np.linalg.norm(u0 - U[0]) <= 1e-12 * np.linalg.norm(U[0])
+
+    def test_dc_anchor_can_be_switched_off(self, port_no_anchor):
+        """Without the anchor the table is the tracked band alone."""
+        op, dt = port_no_anchor
+        freqs, _ = op._src_directions[0]
+        assert freqs[0] > 0.0
+        assert op.channel_band(0)[0] == pytest.approx(freqs[0])
+        op.set_excitation_band(0, (2.0e9, 6.5e9), n_syn=8192)
+        sp = np.abs(np.fft.rfft(op._src_series[:, 0]))
         fr = np.fft.rfftfreq(8192, dt)
         out = (fr < 0.8e9) | (fr > 8.0e9)
         assert sp[out].max() < 1e-6 * sp.max()
-        op.clear_excitation()
-        assert op._src_series is None
 
     def test_span_must_fit_subspace_band(self, port):
         op, _ = port
         with pytest.raises(ValueError, match="subspace band"):
-            op.set_excitation_band(0, (0.5e9, 6.0e9))
+            op.set_excitation_band(0, (2.0e9, 9.0e9))
+
+    def test_span_below_the_tracked_band_needs_the_anchor(self, port, port_no_anchor):
+        """A span reaching under the tracked band is the anchor's point."""
+        op, _ = port
+        op.set_excitation_band(0, (0.5e9, 6.0e9), n_syn=8192)
+        op_plain, _ = port_no_anchor
+        with pytest.raises(ValueError, match="subspace band"):
+            op_plain.set_excitation_band(0, (0.5e9, 6.0e9))
 
     def test_wide_pulse_fails_compactness_gate(self, port):
         op, dt = port

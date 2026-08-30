@@ -241,12 +241,26 @@ for the cost of the band pipeline; if the port matters, change it.
 
 Changing it changes more than the floor, and the differences are
 worth knowing before the run rather than after.  The band pipeline
-tracks the mode family over a band, so it needs a band: the frequency
-axis must start strictly above zero, and starting it *close* to zero
-is expensive — the pulse duration grows as $1/f_\text{start}$, and
-the auto-sizing refuses an axis that would make the run
-disproportionate, naming the axis start that fits.  Set `f_min`
-accordingly.  The record then has a fixed length, so `energy_stop_db`
+tracks the mode family over a band, but the *measurement* axis is not
+confined to that band.  On a quasi-TEM line the fundamental is the
+static mode of the cross-section, so its excitation direction is
+continued below the tracked band and closed with the static field
+solution; the drive then needs no roll-off room at the bottom and the
+pulse duration follows the width of the measurement span instead of
+$1/f_\text{start}$.  A default axis — which starts at
+$f_\text{max}/n_\text{freq}$ — runs.
+
+Two limits remain.  The reflection floor of the boundary degrades
+toward DC: on a coarse two-port fixture the same run measures $-91$ dB
+at 34 MHz against $-117$ to $-140$ dB over the rest of the axis, so a
+measurement whose lowest points carry the answer should still not
+start lower than it needs to.  And a fundamental with a *cut-off* — a
+hollow waveguide mode — has no static limit to be continued to, so
+there the pulse duration still grows as $1/f_\text{start}$ and the
+auto-sizing refuses an axis that would make the run disproportionate,
+naming the axis start that fits.
+
+The record has a fixed length, so `energy_stop_db`
 and signal-decay stops do not apply to it, and a run cannot be
 resumed or extended — the absorbing boundary carries convolution
 history that no checkpoint holds, so `resume()` refuses rather than
@@ -260,10 +274,9 @@ re-derived on read exactly as on the default path.
 None of this has to be looked up.  Whenever a run terminates a
 channel with the Mur fallback, the analysis prints the balance sheet
 once: which channels fell back and what the cross-section measured,
-the floor they trade away against the runtime, power waves, resume
-and DC reach they keep, and what `port_model="band"` would cost on
-this very model — including the axis start it would require, so the
-switch it suggests is one that would actually run.
+the floor they trade away against the runtime, power waves and
+resume they keep, and what `port_model="band"` would cost on this
+very model.
 
 Either way the decision is published per channel, so it can be
 inspected before a run is paid for:
