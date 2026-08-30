@@ -122,7 +122,7 @@ from magnelio.analysis.time_domain import (
 )
 from magnelio.constants import C0
 from magnelio.ports._lumped import build_lumped_element
-from magnelio.ports._modal.band_dtbc import band_source_spectrum
+from magnelio.ports._modal.band_dtbc import BandDecomposition, band_source_spectrum
 from magnelio.ports._modal.factory import (
     PortSpecMultiConductor,
     build_band_dtbc_port,
@@ -145,6 +145,52 @@ ExcitedSpec = Union[str, tuple[str, int]]
 def _scattering_run_name(excited_chan: tuple[str, int]) -> str:
     """Canonical run-directory name for one excited (port, mode) pair."""
     return f"{excited_chan[0]}_mode{excited_chan[1]}"
+
+
+def _warn_on_truncated_band_record(signals: dict, excited_chan: tuple[str, int]) -> None:
+    """Warn when a band record ends before the ring-down does.
+
+    Record-quality contract of the band pipeline: the per-frequency
+    DFT decomposition assumes the response has decayed inside the
+    record (DD-057).  Shared by the in-memory and the streaming path
+    so a stored run is held to the same contract (DD-230).
+    """
+    v_exc = signals[excited_chan][0].values
+    peak = float(np.abs(v_exc).max())
+    tail = float(np.abs(v_exc[-256:]).max())
+    if peak > 0.0 and tail > 1e-4 * peak:
+        warnings.warn(
+            f"band-run record ends at {tail / peak:.1e} of "
+            f"peak on {excited_chan} (contract: < 1e-4); "
+            f"S-parameters may carry truncation ripple — "
+            f"increase total_time_steps",
+            UserWarning,
+            stacklevel=3,
+        )
+
+
+def _band_reference_values(ref_time: np.ndarray, n_syn: int, n_steps: int) -> np.ndarray:
+    """The band drive padded to the record length (zero past synthesis)."""
+    out = np.zeros(n_steps)
+    n = min(n_syn, n_steps, ref_time.size)
+    out[:n] = ref_time[:n]
+    return out
+
+
+def _band_drive_fn(ref_time: np.ndarray, dt: float):
+    """Sample the synthesised band pulse by time, for the streaming sink.
+
+    The band drive has no closed-form waveform — it is an ``irfft`` of
+    the flat-band spectrum — so the store's reference stream samples
+    the synthesised array, zero past its end (the ring-down).
+    """
+    n = int(ref_time.size)
+
+    def drive(t: float) -> float:
+        k = int(round(float(t) / dt))
+        return float(ref_time[k]) if 0 <= k < n else 0.0
+
+    return drive
 
 
 def incident_amplitude_ratio(reference_signal, f_axis, a_incident, port_modes, excited):
@@ -691,8 +737,10 @@ class AnalysisScatteringTD(AnalysisTD):
         read-only :class:`~magnelio.io.project.Project` reader instead of
         an in-memory :class:`ScatteringTDResult`.  Pointing at an
         existing project *adds* the new excitations as runs (fill-in)
-        without rewriting the model.  Modal pipeline only in this
-        version (band + project is a follow-up).
+        without rewriting the model.  Both port pipelines stream; a
+        band run additionally stores each port's chain and recording
+        profiles, so its S-matrix is re-derived on read like any
+        other.  ``result.a()/b()`` stay unavailable on a band run.
     geometry : GeometryModel, optional
         Source geometry to persist (exact BREP + tessellated STL) when
         ``project`` is set.  Optional — the mesh alone suffices for
@@ -1009,13 +1057,6 @@ class AnalysisScatteringTD(AnalysisTD):
         dt = spectral_dt(self.mesh, accuracy, m_eps=m_eps, m_mu=m_mu)
 
         if self._resolve_port_model(m_eps, m_mu, dt) == "band":
-            if self.project is not None:
-                # Streaming wired for the modal pipeline in WP-S2; band is a
-                # follow-up.
-                raise NotImplementedError(
-                    "the project store does not support the band pipeline "
-                    "yet; use port_model='modal' or omit project=",
-                )
             return self._run_band(
                 excited_list=excited_list,
                 f_axis=f_axis,
@@ -1549,6 +1590,19 @@ class AnalysisScatteringTD(AnalysisTD):
                 f"n_syn = {cfg['n_syn']}, run = {cfg['n_steps']} steps",
             )
 
+        if self.project is not None:
+            return self._run_band_streamed(
+                excited_list=excited_list,
+                operators=operators,
+                label_to_op=label_to_op,
+                cfg=cfg,
+                f_axis=f_axis,
+                m_eps=m_eps,
+                m_mu=m_mu,
+                dt=dt,
+                bc_objects=bc_objects,
+            )
+
         per_excitation = []
         for excited_chan in excited_list:
             for op in operators:
@@ -1584,20 +1638,7 @@ class AnalysisScatteringTD(AnalysisTD):
             solver.run()
             signals = recorder.finalize(n_steps_actual=n_steps)
 
-            # Record-quality contract: the DFT decomposition assumes
-            # complete ring-down inside the record (DD-057).
-            v_exc = signals[excited_chan][0].values
-            peak = float(np.abs(v_exc).max())
-            tail = float(np.abs(v_exc[-256:]).max())
-            if peak > 0.0 and tail > 1e-4 * peak:
-                warnings.warn(
-                    f"band-run record ends at {tail / peak:.1e} of "
-                    f"peak on {excited_chan} (contract: < 1e-4); "
-                    f"S-parameters may carry truncation ripple — "
-                    f"increase total_time_steps",
-                    UserWarning,
-                    stacklevel=3,
-                )
+            _warn_on_truncated_band_record(signals, excited_chan)
 
             s_dict = compute_band_s_parameters(
                 signals,
@@ -1656,6 +1697,131 @@ class AnalysisScatteringTD(AnalysisTD):
                 port_model_used="band",
             ),
         )
+
+    def _run_band_streamed(
+        self,
+        *,
+        excited_list: list[tuple[str, int]],
+        operators: list,
+        label_to_op: dict,
+        cfg: dict,
+        f_axis: np.ndarray,
+        m_eps: np.ndarray,
+        m_mu: np.ndarray,
+        dt: float,
+        bc_objects: dict,
+    ) -> object:
+        """Stream one band-pipeline run per excitation into the project store.
+
+        The band counterpart of :meth:`_run_streamed` (DD-230).  Each
+        port additionally writes its :class:`BandDecomposition` — the
+        chain, plane, tracked family and recording profiles the
+        per-frequency decomposition needs — so the S-matrix stays
+        *derived on read* here exactly as on the modal path, rather
+        than being frozen into the file.  The expensive construction
+        (contour-QZ ghost kernels, SVD subspace) is not written: it
+        drives the time stepping only.
+
+        The band record has a fixed length by contract (DD-057), so
+        there is no energy stop and no signal-decay stop to record —
+        the run's step count *is* its plan.
+        """
+        from magnelio.io.project import open_project  # noqa: PLC0415
+
+        store, path = self._open_store(dt)
+        store.register_planned_runs(
+            (_scattering_run_name(chan), {"excited": [chan[0], int(chan[1])]})
+            for chan in excited_list
+        )
+        port_band = {op.name: BandDecomposition.from_operator(op) for op in operators}
+        port_modes = {op.name: self._modes_for_operator(op) for op in operators}
+        port_normal_dx = {op.name: op.plane.normal_dx for op in operators}
+
+        for excited_chan in excited_list:
+            for op in operators:
+                op.reset_state()
+            n_syn, ref_time = self._set_band_excitation(
+                label_to_op[excited_chan[0]],
+                excited_chan[1],
+                cfg,
+                dt,
+            )
+            n_steps = cfg["n_steps"] if cfg["n_steps_user"] else n_syn + cfg["ring_down"]
+            element_ops = [
+                build_lumped_element(e, self.mesh, m_eps, m_mu, dt=dt) for e in self.elements
+            ]
+            recorder = PortSignalRecorder(dt=dt, ports=operators)
+            run_monitors = list(self.monitors)
+            run_name = _scattering_run_name(excited_chan)
+            sink = store.open_run(
+                run_name,
+                excitations=[
+                    {
+                        "source": excited_chan[0],
+                        "mode": int(excited_chan[1]),
+                        "waveform": None,  # the synthesised band pulse
+                        "amplitude": 1.0,
+                        "delay": 0.0,
+                        "phase": 0.0,
+                    }
+                ],
+                excited=excited_chan,
+                dt=dt,
+                f_axis=f_axis,
+                channels=recorder.channels,
+                port_modes=port_modes,
+                port_normal_dx=port_normal_dx,
+                port_line_params={},
+                port_band=port_band,
+                excitation_fns=[(excited_chan, _band_drive_fn(ref_time, dt))],
+                recorder=recorder,
+                port_model="band",
+                total_time_steps=n_steps,
+                monitors=run_monitors,
+                grid=self.mesh.grid,
+            )
+            solver = FITTimeDomainSolver(
+                mesh=self.mesh,
+                boundary_conditions=bc_objects,
+                ports=operators + element_ops,
+                recorder=recorder,
+                total_time_steps=n_steps,
+                dt=dt,
+                verbose=self.verbose,
+                monitors=run_monitors,
+                backend=self.backend,
+                precision=self.precision,
+                sibc=self._sibc_spec(),
+                sink=sink,
+            )
+            # Deliberately no resume checkpoints (DD-230).  The band
+            # boundary carries the projected exterior state xt and its
+            # two convolution histories, and it has no ``state_dict`` —
+            # the solver's checkpoint would silently omit them and a
+            # resume would restart the boundary from zero mid-record.
+            # A wrong answer is worse than no resume, and the band
+            # record has a fixed length anyway (nothing to shorten).
+            self._drive_streamed_solver(solver, sink, run_name, path)
+            _warn_on_truncated_band_record(
+                recorder.finalize(n_steps_actual=n_steps),
+                excited_chan,
+            )
+            _renormalize_freq_monitors(
+                run_monitors,
+                Signal1D(
+                    t=np.arange(n_steps) * dt,
+                    values=_band_reference_values(ref_time, n_syn, n_steps),
+                    dt=dt,
+                    label="excitation",
+                ),
+            )
+
+        if self.verbose:
+            print(
+                f"[AnalysisScatteringTD] streamed {len(excited_list)} "
+                f"band run(s) to project {path}",
+            )
+        return open_project(path)
 
     def _set_band_excitation(
         self,
@@ -1842,6 +2008,20 @@ def _resume_scattering(
 
     run_name = proj._run_name_for_excited(excited)
     run_meta = proj.runs[run_name]
+    if run_meta.get("port_model") == "band":
+        # The band boundary's projected exterior state and its two
+        # convolution histories are not in the checkpoint (the operator
+        # has no state_dict), so a resume would restart them from zero
+        # mid-record and quietly corrupt the decomposition.  The band
+        # record is fixed-length by contract anyway — re-run it (DD-230).
+        raise NotImplementedError(
+            f"run {run_name!r} was recorded through the band pipeline, "
+            f"which cannot be resumed: the band port's exterior state "
+            f"and convolution histories are not checkpointed, so "
+            f"continuing would restart them from zero mid-record.  The "
+            f"band record has a fixed length by construction — re-run "
+            f"the analysis instead.",
+        )
     excited_chan = (run_meta["excited"][0], int(run_meta["excited"][1]))
 
     analysis = AnalysisScatteringTD.from_project(proj, verbose=verbose)

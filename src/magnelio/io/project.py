@@ -769,6 +769,190 @@ def _mode_from_dict(d: dict):
     )
 
 
+def _write_sparse(group, name: str, matrix) -> None:
+    """Store one CSC block as ``data``/``indices``/``indptr`` + shape."""
+    import scipy.sparse as sp  # noqa: PLC0415
+
+    m = sp.csc_matrix(matrix)
+    g = group.create_group(name)
+    g.attrs["shape"] = np.asarray(m.shape, dtype="i8")
+    g.create_dataset("data", data=m.data)
+    g.create_dataset("indices", data=m.indices)
+    g.create_dataset("indptr", data=m.indptr)
+
+
+def _read_sparse(group):
+    """Rebuild the CSC block written by :func:`_write_sparse`."""
+    import scipy.sparse as sp  # noqa: PLC0415
+
+    return sp.csc_matrix(
+        (group["data"][:], group["indices"][:], group["indptr"][:]),
+        shape=tuple(int(v) for v in group.attrs["shape"]),
+    )
+
+
+def _write_band_decomposition(port_group, band) -> None:
+    """Store one port's band postprocessing input (DD-230).
+
+    Written as *datasets*, never attributes: the payload is linear in
+    the port cross-section (measured 0.26 KiB per free tangential DOF,
+    so 146 KiB at 536 DOFs) and passes HDF5's 64 KiB attribute ceiling
+    on any production feed.  The mesh-side operators ``M_eps``,
+    ``M_mu`` and the 3D curl are deliberately *not* here — they are
+    functions of the grid the project already stores, and a reader
+    rebuilds them rather than carrying one copy per port.
+    """
+    ch, pl = band.chain_inward, band.plane
+    g = port_group.create_group("band")
+    g.attrs["n_modes"] = int(band.n_modes)
+
+    cg = g.create_group("chain")
+    cg.attrs["n_t"] = int(ch.n_t)
+    cg.attrs["dt"] = float(ch.dt)
+    cg.attrs["pairing"] = str(ch.pairing)
+    cg.attrs["ez_step"] = int(ch.ez_step)
+    # et_step is a scalar stride on z-normal faces and a per-edge array
+    # on x-/y-normal ones (the two tangential families are different E
+    # components there); the flag keeps the distinction on read.
+    et_step = np.asarray(ch.et_step)
+    cg.attrs["et_step_scalar"] = bool(et_step.ndim == 0)
+    cg.create_dataset("et_step", data=np.atleast_1d(et_step))
+    for name in ("D_m1", "D_0", "D_p1"):
+        _write_sparse(cg, name, getattr(ch, name))
+    for name in ("w_period", "free_u", "free_v", "et_indices", "ez_indices"):
+        cg.create_dataset(name, data=np.asarray(getattr(ch, name)))
+
+    pg = g.create_group("plane")
+    pg.attrs["face"] = pl.face.value
+    pg.attrs["coordinate"] = float(pl.coordinate)
+    pg.attrs["normal_dx"] = float(pl.normal_dx)
+    for name in ("u_node_window", "v_node_window"):
+        pg.attrs[name] = np.asarray(getattr(pl, name), dtype="i8")
+    for name in ("u_bounds", "v_bounds"):
+        pg.attrs[name] = np.asarray(getattr(pl, name), dtype=float)
+    for name in (
+        "e_u_indices",
+        "h_v_indices",
+        "u_edge_uv",
+        "u_edge_lengths",
+        "e_v_indices",
+        "h_u_indices",
+        "v_edge_uv",
+        "v_edge_lengths",
+        "e_u_indices_interior",
+        "e_v_indices_interior",
+    ):
+        pg.create_dataset(name, data=np.asarray(getattr(pl, name)))
+
+    fg = g.create_group("family")
+    fg.create_dataset("freqs", data=np.asarray(band.family_freqs, dtype=float))
+    fg.create_dataset("zetas", data=np.asarray(band.family_zetas, dtype=complex))
+
+    mg = g.create_group("modes")
+    for c in range(int(band.n_modes)):
+        cgm = mg.create_group(f"ch{c}")
+        cgm.create_dataset("e_u", data=np.asarray(band.e_u_profiles[c]))
+        cgm.create_dataset("e_v", data=np.asarray(band.e_v_profiles[c]))
+        cgm.create_dataset("h_u", data=np.asarray(band.h_u_profiles[c]))
+        cgm.create_dataset("h_v", data=np.asarray(band.h_v_profiles[c]))
+        du, dv = band.dual_e_profiles[c]
+        cgm.create_dataset("dual_u", data=np.asarray(du))
+        cgm.create_dataset("dual_v", data=np.asarray(dv))
+
+
+def _read_band_decomposition(port_group, label: str):
+    """Rebuild the :class:`BandDecomposition` written for one port."""
+    from magnelio.mesh import BoxFace  # noqa: PLC0415
+    from magnelio.ports._modal.band_dtbc import BandDecomposition  # noqa: PLC0415
+    from magnelio.ports._modal.port_plane import PortPlane  # noqa: PLC0415
+    from magnelio.ports._modal.zeta_pencil import PeriodChain  # noqa: PLC0415
+
+    g = port_group["band"]
+    cg, pg, fg, mg = g["chain"], g["plane"], g["family"], g["modes"]
+
+    et_step = cg["et_step"][:]
+    chain = PeriodChain(
+        D_m1=_read_sparse(cg["D_m1"]),
+        D_0=_read_sparse(cg["D_0"]),
+        D_p1=_read_sparse(cg["D_p1"]),
+        w_period=cg["w_period"][:],
+        n_t=int(cg.attrs["n_t"]),
+        free_u=cg["free_u"][:],
+        free_v=cg["free_v"][:],
+        et_indices=cg["et_indices"][:],
+        ez_indices=cg["ez_indices"][:],
+        et_step=int(et_step[0]) if bool(cg.attrs["et_step_scalar"]) else et_step,
+        ez_step=int(cg.attrs["ez_step"]),
+        dt=float(cg.attrs["dt"]),
+        pairing=str(cg.attrs["pairing"]),
+    )
+    plane = PortPlane(
+        face=BoxFace(pg.attrs["face"]),
+        coordinate=float(pg.attrs["coordinate"]),
+        e_u_indices=pg["e_u_indices"][:],
+        h_v_indices=pg["h_v_indices"][:],
+        u_edge_uv=pg["u_edge_uv"][:],
+        u_edge_lengths=pg["u_edge_lengths"][:],
+        e_v_indices=pg["e_v_indices"][:],
+        h_u_indices=pg["h_u_indices"][:],
+        v_edge_uv=pg["v_edge_uv"][:],
+        v_edge_lengths=pg["v_edge_lengths"][:],
+        e_u_indices_interior=pg["e_u_indices_interior"][:],
+        e_v_indices_interior=pg["e_v_indices_interior"][:],
+        normal_dx=float(pg.attrs["normal_dx"]),
+        u_node_window=tuple(int(v) for v in pg.attrs["u_node_window"]),
+        v_node_window=tuple(int(v) for v in pg.attrs["v_node_window"]),
+        u_bounds=tuple(float(v) for v in pg.attrs["u_bounds"]),
+        v_bounds=tuple(float(v) for v in pg.attrs["v_bounds"]),
+    )
+    n_modes = int(g.attrs["n_modes"])
+    chans = [mg[f"ch{c}"] for c in range(n_modes)]
+    return BandDecomposition(
+        name=label,
+        n_modes=n_modes,
+        chain_inward=chain,
+        plane=plane,
+        family_freqs=fg["freqs"][:],
+        family_zetas=fg["zetas"][:],
+        e_u_profiles=[c["e_u"][:] for c in chans],
+        e_v_profiles=[c["e_v"][:] for c in chans],
+        h_u_profiles=[c["h_u"][:] for c in chans],
+        h_v_profiles=[c["h_v"][:] for c in chans],
+        dual_e_profiles=[(c["dual_u"][:], c["dual_v"][:]) for c in chans],
+    )
+
+
+def _band_s_dict(run: dict, f_axis, mesh_ops: tuple) -> dict:
+    """S-column of one stored band run, derived on read (DD-230).
+
+    The band counterpart of :func:`compute_s_parameters` in
+    :meth:`Project._s_params`: the stored per-port
+    ``BandDecomposition`` records replace the built operators, and the
+    mesh-side operators come from the project's own mesh.
+    """
+    from magnelio.post.modal_sparameters import (  # noqa: PLC0415
+        compute_band_s_parameters,
+    )
+
+    bands = run.get("port_band") or {}
+    if not bands:
+        raise ValueError(
+            "this run was recorded through the band pipeline but carries "
+            "no per-port band data; it predates the band project-store "
+            "schema and its S-matrix cannot be re-derived — re-run it",
+        )
+    m_eps, m_mu, c_3d = mesh_ops
+    return compute_band_s_parameters(
+        run["signals"],
+        list(bands.values()),
+        run["excited"],
+        f_axis,
+        m_eps=m_eps,
+        m_mu=m_mu,
+        c_3d=c_3d,
+    )
+
+
 # ═════════════════════════════════════════════════════════════════════
 # Time-domain run results  <->  runs/<name>/results.h5
 # ═════════════════════════════════════════════════════════════════════
@@ -830,6 +1014,7 @@ class _RunResultWriter:
         port_modes: dict,
         port_normal_dx: dict,
         port_line_params: dict,
+        port_band: dict | None = None,
         monitors=None,
         grid=None,
     ) -> None:
@@ -925,6 +1110,12 @@ class _RunResultWriter:
                 p.attrs["normal_dx"] = float(port_normal_dx[label])
             p.attrs["modes"] = json.dumps([_mode_to_dict(m) for m in modes])
             p.attrs["line_params"] = _line_params_json(port_line_params, label)
+            # Band runs decompose per frequency from the port's own
+            # chain and profiles, not from the modal line parameters
+            # (DD-230); written before the SWMR switch like everything
+            # else static.
+            if port_band and label in port_band:
+                _write_band_decomposition(p, port_band[label])
 
         # Field-monitor write-through (WP-S9): declare each MonitorFieldTime's
         # resizable streams up front (before SWMR), so a large monitor spills
@@ -1630,9 +1821,12 @@ def _read_run_results(run_dir: Path) -> dict:
         port_modes = {}
         port_normal_dx = {}
         port_line_params = {}
+        port_band = {}
         for label in f["ports"]:
             p = f["ports"][label]
             port_modes[label] = [_mode_from_dict(d) for d in json.loads(p.attrs["modes"])]
+            if "band" in p:
+                port_band[label] = _read_band_decomposition(p, label)
             if "normal_dx" in p.attrs:
                 port_normal_dx[label] = float(p.attrs["normal_dx"])
             for m_str, params in json.loads(p.attrs["line_params"]).items():
@@ -1655,6 +1849,7 @@ def _read_run_results(run_dir: Path) -> dict:
         port_modes=port_modes,
         port_normal_dx=port_normal_dx,
         port_line_params=port_line_params,
+        port_band=port_band,
         f_axis=f_axis,
     )
 
@@ -2759,6 +2954,7 @@ class ProjectStore:
         port_line_params: dict,
         excitation_fns,
         recorder,
+        port_band: dict | None = None,
         port_model: str = "modal",
         energy_stop_db: float | None = None,
         port_signal_stop_db: float | None = None,
@@ -2804,6 +3000,7 @@ class ProjectStore:
             port_modes=port_modes,
             port_normal_dx=port_normal_dx,
             port_line_params=port_line_params,
+            port_band=port_band,
             monitors=monitors,
             grid=grid,
         )
@@ -3484,6 +3681,25 @@ class Project(ScatteringResultMixin):
             return None
         return _read_state_dict_h5(ckpt)
 
+    def _band_mesh_operators(self) -> tuple:
+        """``(M_eps, M_mu, C)`` of the stored mesh, for a band read (DD-230).
+
+        These are the three quantities the phasor synthesis applies
+        that belong to the *grid* rather than to a port.  Rebuilding
+        them here is what keeps the per-port payload small — and it is
+        cheap: three operator assemblies, none of the band pipeline's
+        expensive construction (the contour-QZ ghost kernels drive the
+        time stepping and play no part in the decomposition).
+        """
+        from magnelio._operators.curl import build_curl_matrix  # noqa: PLC0415
+        from magnelio._operators.material_matrices import (  # noqa: PLC0415
+            build_M_eps,
+            build_M_mu,
+        )
+
+        mesh = self.mesh
+        return (build_M_eps(mesh), build_M_mu(mesh), build_curl_matrix(mesh.grid))
+
     def _s_params(self, f_axis=None):
         from magnelio.post.modal_sparameters import (  # noqa: PLC0415
             compute_s_parameters,
@@ -3511,18 +3727,28 @@ class Project(ScatteringResultMixin):
         if f_axis is None:
             f_axis = next(iter(runs.values()))["f_axis"]
         run_index = self.runs
+        band_ops = None
         cols = []
         for name, d in runs.items():
-            s_dict = compute_s_parameters(
-                recorder_signals=d["signals"],
-                port_modes=d["port_modes"],
-                excited=d["excited"],
-                reference_signal=d["reference"],
-                f_axis=f_axis,
-                taper_signals=bool(run_index.get(name, {}).get("taper_signals", False)),
-                port_normal_dx=d["port_normal_dx"],
-                port_line_params=d["port_line_params"],
-            )
+            if run_index.get(name, {}).get("port_model") == "band":
+                # The band pipeline decomposes per frequency against the
+                # port's own chain, so the mesh-side operators are needed
+                # (DD-230).  Built once for the whole project — they are
+                # functions of the grid, shared by every run and port.
+                if band_ops is None:
+                    band_ops = self._band_mesh_operators()
+                s_dict = _band_s_dict(d, f_axis, band_ops)
+            else:
+                s_dict = compute_s_parameters(
+                    recorder_signals=d["signals"],
+                    port_modes=d["port_modes"],
+                    excited=d["excited"],
+                    reference_signal=d["reference"],
+                    f_axis=f_axis,
+                    taper_signals=bool(run_index.get(name, {}).get("taper_signals", False)),
+                    port_normal_dx=d["port_normal_dx"],
+                    port_line_params=d["port_line_params"],
+                )
             cols.append(
                 SParameterResult.from_single_excitation(
                     s_dict,
@@ -3600,9 +3826,9 @@ class Project(ScatteringResultMixin):
             stop_reason=run_info.get("stop_reason"),
             final_port_signal_db=run_info.get("final_port_signal_db"),
             precision=recipe.get("precision"),
-            # The streamed pipeline is modal-only (band + project= is
-            # unsupported), so a stored run always used "modal".
-            port_model_used="modal" if recipe else None,
+            # Both pipelines stream since DD-230; the run index records
+            # which one wrote this run.
+            port_model_used=(run_info.get("port_model", "modal") if recipe else None),
         )
 
     @property
@@ -3662,6 +3888,23 @@ class Project(ScatteringResultMixin):
         from magnelio.post.modal_sparameters import (  # noqa: PLC0415
             destaggered_power_waves,
         )
+
+        # Same contract as ScatteringTDResult.a/b (DD-057): a band run's
+        # recorded channels are fixed subspace projections whose
+        # incident/outgoing split is defined per frequency, so a scalar
+        # (V ∓ Z·I)/2 has no calibrated Z here either.  A stored run must
+        # refuse it as loudly as an in-memory one (DD-230).
+        if any(info.get("port_model") == "band" for info in self.runs.values()):
+            raise ValueError(
+                "time-domain power waves are not available on band-"
+                "DTBC results: the band port's recorded V/I channels "
+                "are fixed subspace projections whose incident/"
+                "outgoing split is defined per frequency through the "
+                "true-mode phasors — a scalar (V ∓ Z·I)/2 split has no "
+                "calibrated Z and would show the incident wave in b.  "
+                "Inspect the raw V/I via the run's signals and take "
+                "S-parameters from project.S / project.s_params.",
+            )
         from magnelio.signals.signal_1d import Signal1D  # noqa: PLC0415
 
         d = self._load_run(self._run_name_for_excited(excited))

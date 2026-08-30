@@ -252,6 +252,17 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- `AnalysisScatteringTD(project=...)` now works with the broadband
+  band port model, which used to be refused outright — so the project
+  store and `port_model="auto"` (or `"band"`) can finally be used
+  together.  A stored band run keeps the same contract as any other:
+  the S-matrix is not written but re-derived when you read it, on the
+  frequency axis you ask for, including while the run is still going.
+  Two limits are stated rather than papered over — a band run cannot
+  be resumed (its absorbing boundary carries history the checkpoint
+  cannot hold, so `resume()` refuses it instead of continuing from a
+  zeroed boundary), and `a()`/`b()` are unavailable on a stored band
+  run for the same reason they are unavailable in memory.
 - The mesh build no longer evaluates the kernel Boolean of a
   `Difference` whose tools lie inside a box-shaped base — the air
   body of every housing.  Its bounding box, grid planes, singular

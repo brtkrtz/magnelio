@@ -17620,3 +17620,112 @@ covering more of the cross-section overlaps the mode more per unit RMS
 fit.  The gate remains a single scalar over a cross-section, so it
 still cannot distinguish a benign tilt from a malignant spike; it
 assumes the malignant one.
+
+---
+
+## DD-230 — the band pipeline streams into the project store
+
+**Status:** Decided 2026-08-30 (branch `feat/band-project-store`).
+Gates: `tests/integration/test_analysis_scattering_band.py`
+(store round-trip, derived-on-read floors, refused resume).
+Measurements: internal record
+`investigations/band-project-store/`.
+
+**Problem.**  `AnalysisScatteringTD(project=...)` raised
+`NotImplementedError` for every run that resolved to the band
+pipeline — including, since DD-063, every `port_model="auto"` run on
+an inhomogeneous line.  The two production defaults of the DD-224 era
+(a project store, and the port model that does not degrade to a
+−30 dB absorber) could not be used together.
+
+The cause was structural, not an oversight of effort.  The store does
+not persist an S-matrix: it writes the V/I record and *derives* S on
+read (which is what lets a reader re-evaluate on a different
+`f_axis`, and follow a live run).  Everything the derivation needs
+must therefore serialise.  For the modal path that is a flat set of
+scalars — `port_modes`, `port_normal_dx`, `port_line_params`.  The
+band path decomposes differently: `compute_band_s_parameters` solves
+the true discrete modes *per frequency* on the port's own chain and
+synthesises their phasors, so it needs `op.band_data`, and WP-S2
+never wrote it.  It never wrote it because DD-064 had made `"band"`
+an opt-in side path — and this hole was, in turn, one of the three
+reasons the default could not move to `"auto"`.  The hole was
+defending its own cause.
+
+**Measured (what actually has to be stored).**  The decomposition
+touches far less of `BandPortData` than the operator carries, and the
+split is principled: quantities belonging to *this port* (its chain,
+plane, tracked family, recording profiles) against quantities that
+are properties of the *mesh* and merely cached on the port (`M_eps`,
+`M_mu`, the 3D curl — `build_M_eps` / `build_M_mu` /
+`build_curl_matrix` of the stored grid).  Only the first kind is
+written; the second is rebuilt on read.  Decisively, **none of the
+expensive construction appears in either**: the contour-QZ ghost
+kernels and the SVD subspace drive the time stepping and have no part
+in the decomposition, so reading a stored band run costs three
+operator assemblies, not a port build.
+
+Port-side payload, measured on the layered CI fixture at three
+cross-section resolutions:
+
+    free tangential DOFs n_t     68      140      536
+    payload per port          17.7 KiB  37.3 KiB  145.9 KiB
+
+Linear in the cross-section at 0.26–0.27 KiB per DOF (the three
+sparse period blocks dominate).  A production feed therefore lands in
+the high hundreds of KiB — small against the record, but well past
+HDF5's 64 KiB attribute ceiling, which settles the schema question:
+**datasets, not attributes**, and written before the SWMR switch like
+every other static object.
+
+**Decision.**
+
+1. `BandDecomposition` (in `ports/_modal/band_dtbc.py`) is the
+   decomposition input detached from the operator, with
+   `from_operator`.  `compute_band_s_parameters` accepts either it or
+   a built operator, and takes `m_eps`/`m_mu`/`c_3d` as keywords —
+   the live path passes nothing and keeps reading the cached copies.
+2. The store writes it under `ports/<label>/band/` and rebuilds it on
+   read; `Project._s_params` branches on the run index's
+   `port_model`, so a band run's S-matrix stays **derived on read**
+   exactly as a modal one's.  `port_model_used` now reports what the
+   run actually used instead of a hard-wired `"modal"`.
+3. `a()`/`b()` refuse on a *stored* band run with the same reason
+   they refuse in memory (DD-057: the recorded channels are fixed
+   subspace projections with no calibrated scalar Z).  The reader had
+   no such guard, so it would have returned quietly wrong waves.
+4. **A band run is not resumable, and says so.**  Its boundary owns
+   the projected exterior state `xt` and two convolution histories,
+   and `PortOperatorBandDTBC` has no `state_dict` — the solver
+   checkpoint silently omits what it cannot see, so a resume would
+   restart the boundary from zero mid-record.  The band path
+   therefore enables no checkpoints and `resume()` raises on such a
+   run.  The record is fixed-length by contract (DD-057), so there is
+   nothing to finish: re-run it.
+
+**Regression.**  The serialisation round-trip is **bit-identical in
+every field** — the three period blocks, the chain indexing and its
+scalar-vs-array `et_step`, the plane, the tracked family, all four
+mode profiles and the dual projections.  That is the exact claim, and
+it is pinned on the written record rather than on a second solver
+run, because the 3D march is *not* bit-reproducible: two identical
+in-memory runs of the fixture differ by 1.6e-8 in V and 6.8e-7 in a
+−145 dB S-parameter (parallel reduction order).  Store-vs-RAM differs
+by the same 1e-7, i.e. by the solver's own noise and not more.  With
+the *same* signals, decomposing through stored records instead of
+built operators agrees to 4.8e-14.  Stored floors reproduce the
+in-memory class (|S11| ≤ −117 dB across the axis, |S21| within
+0.05 dB).  Unit 2787 / integration 435 + 6 new.
+
+**Not decided here.**  Whether `port_model` should default to
+`"auto"`.  This closes one of the three blockers named in the DD-229
+follow-up; the near-DC axis gate and the loss of time-domain power
+waves remain, and the default deserves its own entry.
+
+**Limits.**  A band run in a store cannot be resumed or extended
+(above), and the near-DC cost gate is unchanged — a default frequency
+axis still refuses the band pipeline before any of this is reached.
+The payload law was measured on one fixture family (a layered
+parallel plate) across three resolutions; the linear scaling is a
+property of the sparse period blocks, but the constant is
+geometry-dependent.

@@ -13,6 +13,7 @@ run must reach the same −100 dB class.
 
 from __future__ import annotations
 
+import tempfile
 import warnings
 
 import numpy as np
@@ -242,3 +243,174 @@ def test_port_model_band_requires_multiconductor_everywhere():
             port_model="band",
             verbose=False,
         ).run()
+
+
+# ----------------------------------------------------------------------
+# Band pipeline through the project store (DD-230)
+# ----------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def band_project(tmp_path_factory):
+    """The same two-excitation band run, streamed into a project."""
+    path = tmp_path_factory.mktemp("band_store") / "proj"
+    analysis = _analysis(
+        _layered_mesh(),
+        port_model="auto",
+        project=str(path),
+        band_options={
+            "f_band": (0.3e9, 8.3e9),
+            "n_grid": 9,
+            "n_syn": 3072,
+            "n_kernel_init": 4096,
+        },
+    )
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message=".*neither a BoundaryCondition.*")
+        analysis.run(excited=["port1", "port2"], total_time_steps=4064)
+    from magnelio.io.project import open_project
+
+    return open_project(path)
+
+
+def test_band_run_streams_to_project(band_project):
+    """A band run reaches the store at all — DD-063 refused it outright."""
+    assert set(band_project.runs) == {"port1_mode0", "port2_mode0"}
+    assert all(info["port_model"] == "band" for info in band_project.runs.values())
+    assert band_project.settings.port_model_used == "band"
+
+
+def test_band_project_s_parameters_are_derived_on_read(band_project):
+    """The stored run re-derives the reflection-free floor from disk.
+
+    The S-matrix is not written — the per-port chain, plane, tracked
+    family and recording profiles are, and the read rebuilds the mesh
+    operators.  Reaching the same −100 dB class as the in-memory run
+    is what proves the stored record is complete.
+    """
+    for port in ("port1", "port2"):
+        s_db = 20 * np.log10(np.abs(band_project.S(port, port)) + 1e-300)
+        assert s_db.max() < -100.0, f"|S{port}{port}| max {s_db.max():.1f} dB"
+    for out_p, in_p in (("port2", "port1"), ("port1", "port2")):
+        s21_db = 20 * np.log10(np.abs(band_project.S(out_p, in_p)))
+        assert np.max(np.abs(s21_db)) < 0.05
+
+
+def test_band_project_matches_the_in_memory_run(band_project, band_result):
+    """Store and RAM agree to solver run-to-run noise, not better.
+
+    The FIT march is not bit-reproducible (parallel reduction order),
+    so two identical runs differ by ~1e-8 in V and ~1e-6 in a −145 dB
+    S-parameter.  The store is held to that same tolerance; the exact
+    claim is made where it can be: the serialisation round-trip below.
+    """
+    for out_p in ("port1", "port2"):
+        for in_p in ("port1", "port2"):
+            delta = np.abs(band_project.S(out_p, in_p) - band_result.S(out_p, in_p))
+            assert np.nanmax(delta) < 1e-5
+
+
+def test_band_project_refuses_time_domain_power_waves(band_project):
+    """A stored band run refuses a/b as loudly as an in-memory one."""
+    with pytest.raises(ValueError, match="band-DTBC"):
+        band_project.b("port1")
+
+
+def test_band_decomposition_survives_the_round_trip_exactly():
+    """Every stored array comes back bit-identical (DD-230).
+
+    The run-to-run noise above lives in the 3D march; the serialisation
+    itself must add nothing, so this is pinned on the written record
+    rather than on a second solver run.
+    """
+    import h5py
+
+    from magnelio._operators.material_matrices import build_M_eps, build_M_mu
+    from magnelio.io.project import (
+        _read_band_decomposition,
+        _write_band_decomposition,
+    )
+    from magnelio.ports._modal.band_dtbc import BandDecomposition
+    from magnelio.ports._modal.factory import build_band_dtbc_port
+    from magnelio.solver.stability import spectral_dt
+
+    analysis = _analysis(_layered_mesh(), port_model="auto")
+    m_eps = build_M_eps(analysis.mesh)
+    m_mu = build_M_mu(analysis.mesh)
+    dt = spectral_dt(analysis.mesh, "normal", m_eps=m_eps, m_mu=m_mu)
+    spec = analysis.ports[0]
+    op = build_band_dtbc_port(
+        spec,
+        analysis.mesh,
+        m_eps,
+        m_mu,
+        dt=dt,
+        f_band=(0.3e9, 8.3e9),
+        n_grid=9,
+        svd_tol=1e-8,
+        n_channels=spec.n_modes,
+        n_kernel_init=4096,
+    )
+    live = BandDecomposition.from_operator(op)
+
+    path = tempfile.mkdtemp()
+    with h5py.File(f"{path}/band.h5", "w") as f:
+        _write_band_decomposition(f.create_group(spec.name), live)
+    with h5py.File(f"{path}/band.h5", "r") as f:
+        back = _read_band_decomposition(f[spec.name], spec.name)
+
+    chain_l, chain_b = live.chain_inward, back.chain_inward
+    for name in ("D_m1", "D_0", "D_p1"):
+        assert np.array_equal(getattr(chain_l, name).toarray(), getattr(chain_b, name).toarray()), (
+            name
+        )
+    for name in ("w_period", "free_u", "free_v", "et_indices", "ez_indices", "et_step"):
+        assert np.array_equal(getattr(chain_l, name), getattr(chain_b, name)), name
+    assert (chain_l.n_t, chain_l.ez_step, chain_l.dt, chain_l.pairing) == (
+        chain_b.n_t,
+        chain_b.ez_step,
+        chain_b.dt,
+        chain_b.pairing,
+    )
+    # A scalar et_step must not come back as a one-element array — the
+    # period() index arithmetic broadcasts differently if it does.
+    assert type(chain_b.et_step) is type(chain_l.et_step)
+
+    for name in (
+        "e_u_indices",
+        "h_v_indices",
+        "u_edge_uv",
+        "u_edge_lengths",
+        "e_v_indices",
+        "h_u_indices",
+        "v_edge_uv",
+        "v_edge_lengths",
+        "e_u_indices_interior",
+        "e_v_indices_interior",
+    ):
+        assert np.array_equal(getattr(live.plane, name), getattr(back.plane, name)), name
+    assert live.plane.face == back.plane.face
+    assert live.plane.normal_dx == back.plane.normal_dx
+    assert live.plane.u_bounds == back.plane.u_bounds
+
+    assert np.array_equal(live.family_freqs, back.family_freqs)
+    assert np.array_equal(live.family_zetas, back.family_zetas)
+    for c in range(live.n_modes):
+        for name in ("e_u_profiles", "e_v_profiles", "h_u_profiles", "h_v_profiles"):
+            assert np.array_equal(getattr(live, name)[c], getattr(back, name)[c]), name
+        assert np.array_equal(live.dual_e_profiles[c][0], back.dual_e_profiles[c][0])
+        assert np.array_equal(live.dual_e_profiles[c][1], back.dual_e_profiles[c][1])
+
+
+def test_band_project_refuses_resume(band_project):
+    """A band run must refuse resume rather than restart its boundary.
+
+    The band boundary's projected exterior state and its two
+    convolution histories have no ``state_dict``, so the solver
+    checkpoint cannot carry them; continuing from one would zero them
+    mid-record and corrupt the decomposition silently (DD-230).
+    """
+    from magnelio import resume
+
+    with pytest.raises(NotImplementedError, match="band pipeline"):
+        resume(band_project, ("port1", 0))

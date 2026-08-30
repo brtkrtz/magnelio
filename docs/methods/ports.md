@@ -239,6 +239,24 @@ run to the band pipeline — floors at $-171$ to $-211$ dB, and the CW
 true-mode port reaches $-206$ to $-251$ dB.  The default trades that
 for the cost of the band pipeline; if the port matters, change it.
 
+Changing it changes more than the floor, and the differences are
+worth knowing before the run rather than after.  The band pipeline
+tracks the mode family over a band, so it needs a band: the frequency
+axis must start strictly above zero, and starting it *close* to zero
+is expensive — the pulse duration grows as $1/f_\text{start}$, and
+the auto-sizing refuses an axis that would make the run
+disproportionate, naming the axis start that fits.  Set `f_min`
+accordingly.  The record then has a fixed length, so `energy_stop_db`
+and signal-decay stops do not apply to it, and a run cannot be
+resumed or extended — the absorbing boundary carries convolution
+history that no checkpoint holds, so `resume()` refuses rather than
+continue from a zeroed boundary.  Finally, the recorded channels are
+subspace projections whose incident/outgoing split is defined per
+frequency, so `result.a()` and `result.b()` are unavailable; the
+S-parameters and the raw V/I are.  Everything else is unchanged —
+including writing to a project store, from which the S-matrix is
+re-derived on read exactly as on the default path.
+
 Either way the decision is published per channel, so it can be
 inspected before a run is paid for:
 

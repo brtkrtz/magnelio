@@ -713,6 +713,64 @@ class BandPortData:
     solve_seconds: float = 0.0
 
 
+@dataclass
+class BandDecomposition:
+    """The band postprocessing input of one port, detached from its operator.
+
+    :func:`~magnelio.post.modal_sparameters.compute_band_s_parameters`
+    reads a live :class:`PortOperatorBandDTBC` for two different kinds
+    of thing: quantities that belong to *this port* — its chain, its
+    plane, its recording profiles, its tracked family — and quantities
+    that are properties of the *mesh* and merely happen to be cached on
+    the port (``M_eps``, ``M_mu``, the 3D curl).  Only the first kind
+    identifies a run; the second is rebuilt from the grid by the same
+    three builders that produced it.
+
+    Separating them is what makes a band run readable from a project
+    store: the port-side data serialises to a few hundred KiB of plain
+    arrays (measured 0.26 KiB per free tangential DOF, linear in the
+    cross-section), while the mesh-side operators never need to be
+    written at all.  Crucially, none of the expensive construction —
+    the contour-QZ ghost kernels, the SVD subspace — appears here: it
+    drives the time stepping and has no part in the decomposition.
+    """
+
+    name: str
+    n_modes: int
+    chain_inward: PeriodChain
+    plane: PortPlane = field(repr=False)
+    family_freqs: np.ndarray = field(repr=False, default=None)
+    family_zetas: np.ndarray = field(repr=False, default=None)
+    e_u_profiles: list = field(repr=False, default_factory=list)
+    e_v_profiles: list = field(repr=False, default_factory=list)
+    h_u_profiles: list = field(repr=False, default_factory=list)
+    h_v_profiles: list = field(repr=False, default_factory=list)
+    dual_e_profiles: list = field(repr=False, default_factory=list)
+
+    @classmethod
+    def from_operator(cls, op) -> "BandDecomposition":
+        """Extract the decomposition input from a built band port."""
+        bd = getattr(op, "band_data", None)
+        if bd is None:
+            raise ValueError(
+                f"port {op.name!r} carries no band_data — build it with build_band_dtbc_port",
+            )
+        fam0 = bd.families[0]
+        return cls(
+            name=op.name,
+            n_modes=int(op.n_modes),
+            chain_inward=bd.chain_inward,
+            plane=bd.plane,
+            family_freqs=np.asarray(fam0.freqs, dtype=float),
+            family_zetas=np.asarray(fam0.zetas, dtype=complex),
+            e_u_profiles=[np.asarray(dm.e_u_profile) for dm in op.discrete_modes],
+            e_v_profiles=[np.asarray(dm.e_v_profile) for dm in op.discrete_modes],
+            h_u_profiles=[np.asarray(dm.h_u_profile) for dm in op.discrete_modes],
+            h_v_profiles=[np.asarray(dm.h_v_profile) for dm in op.discrete_modes],
+            dual_e_profiles=[(np.asarray(du), np.asarray(dv)) for du, dv in bd.dual_e_profiles],
+        )
+
+
 # ----------------------------------------------------------------------
 # Port operator (Port protocol)
 # ----------------------------------------------------------------------
