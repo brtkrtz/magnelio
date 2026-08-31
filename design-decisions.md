@@ -18266,3 +18266,106 @@ a proof, and four of the five call sites are on the port build path
 where a lost mode moves the subspace, the kernel and every pinned
 floor.  Reducing the fan stays scoped to the postprocessing call site
 and gated on an argument about `k`, not on these points.
+
+## DD-236 — the production run re-ranks the band pipeline
+
+**Status:** Decided 2026-08-31 (branch `feat/band-kernel-fit`).  No
+shipped default changes; this entry records a measurement that
+redirects the work.  Gates: `validation/qtem_band_dtbc_port_floors.py`
+(`--case microstrip`, `--case layered`).  Measurements: internal record
+`investigations/port-model-default/` (`probe_production_e2e.py`,
+`probe_prod_contour_ab.py`, `probe_prod_floor_cause.py`,
+`probe_record_length.py`), MEASUREMENTS.md section 19.
+
+**Problem.**  Every cost share this campaign optimised against —
+kernel build 71 %, boundary convolution 13 %, FIT march 4 %,
+postprocessing 14 % — came from one fixture: 832 cells, port pencil
+2n = 206, p = 12, 12288 steps.  DD-234 and DD-235 both ranked their
+remaining leads from it, and DD-235 closed by naming the production
+run as the lead that unblocks the others.  It had never been run.
+
+**The ranking inverts.**  On the validation microstrip (2n = 5420,
+n_t = 1831, 106743 cells, 36864 steps, n_kernel = 65536), measured in
+one run whose buckets reconcile against their own wall clock:
+
+    item                     fixture      production (18-point axis)
+    kernel build (all 3)        71 %          14.0 %
+    boundary convolution        13 %          59.3 %
+    FIT march (field)            4 %           3.3 %
+    postprocessing              14 %           8.4 %
+
+and on a 201-point production axis — the axis length the argument was
+always about, now measured rather than projected — postprocessing is
+**51.4 %**, the convolution 31.4 %, the kernels 7.4 %.
+
+The cause is that the three items obey different laws and the campaign
+had only ever varied one of them.  The kernel build is
+O(n_kernel · p³) with n_kernel tied to the record, i.e. linear in N;
+the convolution is O(N²p²), because `BandDTBCBoundary.advance` folds
+the whole history every step; the field update is O(N · cells).  From
+the fixture to the microstrip N triples and **p falls from 12 to 9** —
+the production cross-section is 26x the pencil carrying a *smaller*
+subspace, because the rank tracks the mode-family structure and not
+the cross-section size.  Both effects push the same way, and DD-234's
+contour pool takes another 6x off the kernel on top.
+
+**Consequences for the leads.**
+
+1. The exact blocked FFT convolution (Hairer/Lubich/Schlichte,
+   O(N log²N), no fit and no passivity question) was parked third
+   because it addressed "13 %".  It is the largest item.
+2. Stage 2 — the recursion that was to replace the kernel build — was
+   aimed at 71 % that is 7-14 % here.  DD-233 killed it on accuracy;
+   this kills the motive independently.
+3. The postprocessing eigensolve's interior moves with size: at
+   2n = 5420 the split is `eigs` 80 % / `splu` 19 % against 86.5/7.1 at
+   2n = 206.  Both leads DD-235 declared dead (warm start, dense
+   eigensolve) were killed where the per-call driver overhead
+   dominates; that premise weakens as the cross-section grows.
+
+**DD-234's 7.8x projection is settled at 6.00x.**  Serial against
+parallel on the port's own projected blocks, n_kernel = 65536,
+262145 contour points, 8 workers: 47.59 s → 7.93 s, the contour loop
+alone 6.44x, and `np.array_equal(L_serial, L_parallel)` is True.
+Better than the measured 5.5x, short of the projection — which was
+also inconsistent with its own model (104/8 + 1.2 is 7.3x) and stated
+for a configuration nobody ran.  The serial tail (conjugate mirror plus
+the inverse FFT) is 8 % of the parallel kernel, so Amdahl allows ~9x;
+the rest is pool bring-up and the ~0.9 GB the workers return.
+
+**The arc fan cuts 3.12x at the postprocessing site, bit-identically.**
+784.6 → 251.8 ms per axis frequency, 180 → 36 ARPACK runs, and
+max |ΔS| = 0.000e+00 over 18 frequencies and both ports.  DD-235
+declined the cut on 62 points of dict-equality; this is 18 more points
+on the production cross-section at the production rank, and equality to
+the last bit.  **It stays declined** — the gate DD-235 set is an
+argument about `k`, not a point count, and four of the five call sites
+are on the port build path where a lost mode moves the subspace, the
+kernel and every pinned floor.  What changes is the prize: 3.12x of
+the largest item on a production axis.
+
+**A correction to the cost laws of the record.**  The kernel and
+convolution laws were measured with blocks of shape `(2p, 2p)`, but
+`matrix_dtbc_kernel` receives the *projected* `p × p` blocks
+(`_rebuild_kernels` passes `self._Dp1/_D0/_Dm1`, and the function's own
+docstring says so).  The QZ is O(p³), so the recorded "18.4 ms per
+kernel sample" and the "~1200 s per port at n_kernel = 65536" it
+extrapolated are inflated ~8x, the convolution table ~4x.  Measured:
+a full n_kernel = 65536 kernel at p = 9 is **7.9 s** pooled.
+
+**Method note.**  A probe that reaches the contour kernel must carry
+`if __name__ == "__main__":`.  The pool spawns, a spawned child
+re-executes module-level code as `__mp_main__`, and the first
+calibration here therefore ran nine concurrent port builds on 16 cores
+and produced a plausible-looking 2096 s.
+
+**Found on the way, and it outranks everything above: KB-038.**
+Running the certificate to obtain the cost split showed that it no
+longer reproduces its own recorded floors — `layered`
+−114.1…−129.9 dB against a recorded −159.6…−231.3 dB, microstrip
+−146.6…−168.1 dB against −171.1…−211.0 dB — and that the floor
+**degrades with the length of the run**, ~7.5 dB per doubling, failing
+the −100 dB acceptance criterion at 49152 steps.  Neither the kernel
+length nor the DC anchor accounts for it.  The floors quoted in the
+fixture header, in DD-064 and in the user documentation are not
+reproducible while this is open.

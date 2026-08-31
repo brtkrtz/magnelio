@@ -11,10 +11,10 @@ engine, project-store schema 2.0, tutorial 20,
 (DD-226: record a closed box, replay it anywhere; how-to *Field
 sources*), **`SourceCurrentPath`** (DD-227) and **the pair-product
 gate as a reflection budget** (DD-228/229, closes KB-022).  The band
-track **DD-230…DD-235** — runs in the project store, the port-model
-default settled, a DC-reaching axis, bit-exact resume (closes KB-037),
-the −70 dB pricing, the short-basis warning — is committed on
-`feat/band-kernel-fit` and not yet merged.  Unit 2799 / 4
+track **DD-230…DD-236** — project-store runs, the port-model default,
+a DC-reaching axis, bit-exact resume (closes KB-037), the −70 dB
+pricing, the short-basis warning and the production cost ranking
+(opens KB-038) — is on `feat/band-kernel-fit`, not merged.  Unit 2799 / 4
 skipped, integration 450 / 5 skipped (2026-08-31, with
 `CUPY_ACCELERATORS=""`; without it four GPU tests fail on nvrtc in the
 sandbox).  Channels: GitHub, PyPI, conda-forge, docs (`/stable/` = tag,
@@ -29,9 +29,10 @@ This file states what *is*.  Chronology: `git log --first-parent main`
 
 Newest first, one line each; the full record is the DD entry.
 
-* **DD-233** (2026-08-31) — band runs resume bit-exactly, and the K-term recursion they were meant to be earned from does not exist: a contour fit of the kernel cannot reach the pipeline's floor by *any* algorithm (Parseval weights the coefficients exponentially, the kernel decays algebraically — ERA −129.9 dB against the best fit's −57.6 dB), a realisation from the coefficients holds −17.5 dB over the record, and the AAK bound that made the recursion look cheap read its own window twice.  Resume never needed any of it: the history is 2.4 MB at 12288 steps, and what actually blocked it was reproducibility — `find_propagating_modes` called ARPACK without a start vector (KB-037, the KB-010/DD-142 defect in a third call site) and `band_options` did not survive the project store.
+* **DD-233** (2026-08-31) — band runs resume bit-exactly, and the K-term recursion they were to be earned from does not exist: a contour fit of the kernel cannot reach the pipeline's floor by *any* algorithm (Parseval weights the coefficients exponentially while the kernel decays algebraically — ERA −129.9 dB against the best fit's −57.6 dB), and the AAK bound that made the recursion look cheap read its own window twice.  Resume never needed it: the history is 2.4 MB at 12288 steps, and what blocked it was reproducibility — `find_propagating_modes` called ARPACK without a start vector (KB-037, the KB-010/DD-142 defect in a third call site) and `band_options` did not survive the project store.
 * **DD-234** (2026-08-31) — the band pipeline is priced against −70 dB, not against its own maximum.  Every earlier measurement had compared it to −142.6 dB, the floor an exact transparent boundary exists for; the goal is the −70…−80 dB class, and nobody had asked what *that* costs: `svd_tol=1e-2` gives −66.4 dB and `1e-3` gives −84.3 dB with |S21| inside 0.005 dB at every rank — the low-rank boundary absorbs correctly, it only reflects more.  **A quarter of the runtime was a margin**: `_band_setup` floored the kernel at 16384 taps, but the boundary is exact as soon as the kernel outlives the record, so short runs paid 4x on the item that dominates them; removing the floor leaves the measured floor unmoved to 0.1 dB and takes the −84 dB run from 40x to **13x** modal.  Going *below* the record is not the cheap version — a truncated kernel is **active**, measured floors of +3 to +33 dB.  **And the contour loop parallelises**: `4*n_kernel + 1` independent solves, ~65 % of a run, dead to threads (0.94x, the GIL is not released across `ordqz`) but 5.5x across processes, bit-identical, on the pattern the mesher already uses; the ~1.2 s pool spawn keeps it sequential below ~3 s of serial work and projects to 7.8x at production kernel length.  It also settles why the rank lever underperforms O(p³): at p = 4 an `ordqz` on an 8×8 pencil costs 65 µs of SciPy wrapper and ordering callback, not flops.
 * **DD-235** (2026-08-31) — the band decomposition now says when its mode basis is short, and shed two costs on the way without moving a bit.  Splitting the postprocessing cost turned up what the speed question had been hiding: each axis frequency solves ONE joint least squares over *all* recording channels, so its right-hand side carries the recorded response of every mode present at the port — and the two ways of being short of modes behave oppositely.  A **channel** without a mode is visible: it fails the overlap test, takes no assignment, its S stays NaN, and the channels that *were* matched are unharmed (1e-15 relative, roundoff).  A **mode** without a channel is not visible: nothing is skipped, nothing goes NaN, and the fit hands the missing mode's content to the modes that remain — measured on the two-family fixture with the port truncated to `n_modes = 1` above its second cut-on (8.4465 GHz), S11 wrong by 23–30 %, contamination −129 dB at unit amplitude ratio and rising exactly 20 dB per decade of that ratio, the coefficient being the port's biorthogonality defect (≈6e-7 there, so a poorer port sits correspondingly higher).  The least-squares residual is *not* the detector: it separates a complete basis from a short one by five orders of magnitude, but a single-channel port makes the system square and the residual identically machine zero — blind in exactly the configuration that produces the silent error.  So `compute_band_s_parameters` counts the modes it found against the modes it assigned and warns once per port, naming the frequencies; the warning does not repair the bias, it stops a model error from reading as a result.  Both cost removals are output-identical: the phasor synthesis no longer scales with the mesh (`build_port_curl_slice` cuts the port-adjacent curl rows once per port instead of applying the full 3D curl per call — 1.10 ms at 5884 edges and 11.86 ms at 93004 both become 0.35 ms, flat across a 15.8x mesh growth, 615 combinations bit-identical), and repeated shift-invert targets are solved once instead of up to five times where the arc formula clamps near DC (byte-identical zetas and profiles over 114 frequencies, up to 5x at an individual near-DC axis point).  **Correction to DD-234:** `_contour_worker_init`'s BLAS pin was inert — a spawned child loads its BLAS while unpickling the initializer — but it costs nothing at the ranks in use (sixteen-thread to one-thread ratio 0.999–1.000 at p = 8, 12, 15; the BLAS starts threading a `2p × 2p` pencil only between 2n = 80 and 96), so the 5.5x stands and the measured threshold is recorded where the dead lines stood.
+* **DD-236** (2026-08-31) — the production run re-ranks the band pipeline, and finds a floor defect on the way.  Every cost share the campaign optimised against came from one 832-cell fixture with port pencil 2n = 206; run end to end on the production microstrip (2n = 5420, 106743 cells, 36864 steps) the ranking **inverts**: the kernel build is **14 %**, not 71 %, and the boundary convolution **59 %**, not 13 % — on a 201-point axis the postprocessing is 51 %.  The three obey different laws (kernel linear in the record, convolution quadratic, field linear) and the production port carries a *smaller* subspace, p = 9 against 12, because the rank tracks the mode-family structure and not the cross-section.  So the exact blocked FFT convolution, parked third because it addressed "13 %", is the largest item, and stage 2 aimed at a 71 % that is 7–14 %.  DD-234's projected 7.8x contour speed-up measures **6.00x**, bit-identical serial against parallel at n_kernel = 65536; the arc-fan cut at the postprocessing call site measures 3.12x with max |ΔS| = 0.000e+00 and stays declined on DD-235's `k` gate.  The recorded cost laws were also measured on `(2p, 2p)` blocks where the build passes `p × p`, inflating them ~8x.  **And the certificate no longer reproduces its own floors** (KB-038).
 Older decisions: `design-decisions.md`.
 
 ## Working practices earned the hard way
@@ -271,8 +272,9 @@ the production chain, |S21| = 0.00 dB, record end/peak
 18 points), layered second family −166.7…−189.8 dB at
 1.05–1.28·f̂_c (the 1.01·f̂_c point stays on the DD-056 CW anchor,
 −176.3 dB — finite-record limitation), dielectric block
-−186.7…−202.8 dB, shielded microstrip −171.1…−211.0 dB — all
-59+ dB below the −100 dB line.  A-priori boundary ceilings on the
+−186.7…−202.8 dB, shielded microstrip −171.1…−211.0 dB.  **These no
+longer reproduce** (KB-038): −114.1…−129.9 dB and −146.6…−168.1 dB
+today, degrading ~7.5 dB per doubling of the run.  A-priori boundary ceilings on the
 family points −114…−125 dB (ρ-offset evaluation floor).
 
 **Documentation portal (DD-116):** Sphinx/MyST site under `docs/`
@@ -327,16 +329,15 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
 
 ## Open construction sites
 
-* **Band-pipeline runtime** — **12-13x modal at the -66/-84 dB class**
-  (DD-234), 35x at -116 dB; kernel build ~65 %.  Postprocessing is
-  61 ms per axis frequency and no longer scales with the mesh
-  (DD-235); the eigensolve is 86 % of it on a small cross-section and
-  has no route left beyond DD-234.  Leads: an exact blocked FFT
-  convolution, the fixed record, and a narrower shift-invert arc fan
-  at the postprocessing call site — measured redundant at 62 points on
-  three cross-sections, but that is not a proof and four of the five
-  call sites sit on the port build path, where a lost mode moves the
-  subspace, the kernel and every pinned floor.
+* **Band-pipeline runtime** — priced end to end at production size
+  (DD-236): boundary convolution 59 %, kernel build 14 %, and on a
+  201-point axis the postprocessing 51 %.  The fixture's 12-13x modal
+  (DD-234) has no production counterpart — a modal run is a different
+  step count.  Leads: the exact blocked FFT convolution (largest item,
+  O(N log²N)), then the arc-fan cut (3.12x, bit-identical, gated on `k`).
+* **Band port floor (KB-038)** — the pulsed certificates no longer
+  reproduce their floors and degrade with run length, failing -100 dB
+  at 49152 steps.  Undiagnosed.
 * **API blueprint (DD-224) — Phases A–D complete** (listed above).
   Phase E ff. is a reserved-name roadmap, not scheduled work: each
   entry earns its own DD.  Field-source limits: the recording lives
