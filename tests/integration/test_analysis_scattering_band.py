@@ -231,6 +231,41 @@ def test_near_dc_axis_runs_on_the_default_axis():
     assert np.max(np.abs(s21_db[band])) < 0.05
 
 
+def test_kernel_is_sized_to_the_record_not_to_a_margin():
+    """The ghost kernel outlives the record and stops there.
+
+    The boundary is exact as long as the kernel outlives the run — the
+    convolution never reaches a tap beyond it — so the next power of two
+    above the record is the entire requirement.  Every tap past it costs
+    contour QZ solves (4*n_kernel + 1 per kernel, three per excited run)
+    and buys nothing: measured on the certificate fixture, 16384 taps
+    against 4096 on a 4064-step record left the floor at -84.3 dB and
+    took three times as long.
+
+    Pinned because the margin is invisible — it costs runtime, never
+    accuracy, so nothing else in the suite would notice it growing back.
+    """
+    from magnelio._operators.material_matrices import build_M_eps, build_M_mu
+    from magnelio.solver.stability import spectral_dt
+
+    mesh = _layered_mesh().with_boundary_conditions(
+        {"ymin": "PEC", "ymax": "PEC", "xmin": "PMC", "xmax": "PMC", "zmin": "PMC", "zmax": "PMC"}
+    )
+    analysis = _analysis(mesh, port_model="band")
+    dt = spectral_dt(mesh, "normal", m_eps=build_M_eps(mesh), m_mu=build_M_mu(mesh))
+    for n_steps in (4064, 8192, 20000):
+        cfg = analysis._band_setup(analysis.f_axis, dt, n_steps)
+        n_kernel = cfg["n_kernel_init"]
+        assert n_kernel >= cfg["n_steps"], (
+            f"kernel {n_kernel} shorter than the {cfg['n_steps']}-step record "
+            f"— the convolution would run past it and the boundary go active"
+        )
+        assert n_kernel < 2 * max(1024, cfg["n_steps"]), (
+            f"kernel {n_kernel} for a {cfg['n_steps']}-step record is more than "
+            f"one doubling of margin; the build cost is linear in it"
+        )
+
+
 def test_near_dc_axis_still_refuses_without_the_dc_anchor():
     """The old constraint stays reachable, and still explains itself."""
     analysis = _near_dc_analysis(band_options={"dc_anchor": False})

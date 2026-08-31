@@ -236,6 +236,14 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- A broadband band-pipeline run no longer builds a ghost kernel four
+  times longer than the run it serves.  The kernel only has to outlive
+  the record — the convolution never reaches past it — but it was sized
+  to at least 16384 taps regardless, and every tap is paid for in the
+  contour solves that dominate the build.  Short runs get three times
+  faster with the reflection floor unchanged to within 0.1 dB; a
+  production-length run was already past the old minimum and is
+  unaffected.
 - Band-pipeline settings (`band_options`) are now stored with a project,
   so re-opening or continuing a run reproduces the run that was
   recorded.  Without them a rebuilt run silently re-derived its own
