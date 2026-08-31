@@ -32,8 +32,12 @@ from magnelio.ports._modal import (
 from magnelio.ports._modal.dtbc import lambda_symbol
 from magnelio.ports._modal.port_plane import PortPlane
 from magnelio.ports._modal.zeta_pencil import (
+    CWChannel,
     build_period_blocks,
+    build_port_curl_slice,
     chain_fit,
+    cw_wave_phasors,
+    find_propagating_modes,
     normalize_gauge,
     profile_reality,
     solve_zeta_modes,
@@ -403,3 +407,83 @@ class TestOperatorExtensions:
         V = op.project_V(e)
         assert V[0] == pytest.approx(2.0, rel=1e-12)
         assert abs(V[1]) < 1e-10
+
+
+class TestModeSearchInvariants:
+    """The two shortcuts the mode search takes, and what they may not move."""
+
+    def test_a_repeated_target_is_solved_once(self, layered):
+        """Duplicate shifts are free, and change nothing.
+
+        The arc formula clamps its targets at 1e-3, so near DC several
+        arc fractions land on the same shift.  Solving a repeat costs a
+        sparse factorisation and an eigensolve whose eigenvalues the
+        merge then discards, so the repeat is skipped -- which is only
+        allowed because it cannot move the result.
+        """
+        mesh, dt = layered
+        chain, _ = _chain_for(mesh, dt)
+        w_dt = 2.0 * math.pi * 4.2e9 * dt
+        target = np.exp(-1j * 1.0e-3)
+
+        z_one, p_one = solve_zeta_modes(chain, w_dt, [target], k=6)
+        z_rep, p_rep = solve_zeta_modes(chain, w_dt, [target] * 5, k=6)
+
+        assert z_rep.shape == z_one.shape
+        assert z_rep.tobytes() == z_one.tobytes()
+        assert p_rep.tobytes() == p_one.tobytes()
+
+    def test_curl_slice_reproduces_the_full_synthesis(self, layered):
+        """The port-adjacent restriction is exact, and knows its port.
+
+        The phasor synthesis reads the curl on the port's dual edges
+        only, of a field supported on two periods only, so it needs a
+        submatrix rather than the grid.  Restricting it may not move a
+        bit -- and a slice cut for another port must not be usable,
+        which shapes alone would not catch between the two ends of a
+        symmetric line.
+        """
+        mesh, dt = layered
+        m_eps = build_M_eps(mesh)
+        m_mu = build_M_mu(mesh)
+        c_3d = build_curl_matrix(mesh.grid)
+        chain, plane = _chain_for(mesh, dt, face=BoxFace.Z_MIN)
+        far_chain, far_plane = _chain_for(mesh, dt, face=BoxFace.Z_MAX)
+
+        w_dt = 2.0 * math.pi * 4.2e9 * dt
+        theta0 = 2.0 * math.pi * 4.2e9 * math.sqrt(1.7) / C0 * 1.0e-3
+        zp, pp = find_propagating_modes(chain, w_dt, 1.3 * theta0)
+        assert zp.size > 0
+        ch = CWChannel(
+            zeta=complex(zp[0]),
+            r=1.0,
+            q=0.0,
+            eps_eff_hat=0.0,
+            phi_trace=normalize_gauge(pp[:, 0], chain.n_t),
+        )
+        prof = np.ones(plane.e_u_indices.size)
+        prof_v = np.ones(plane.e_v_indices.size)
+        kw = {
+            "h_u_prof": np.ones(plane.h_u_indices.size),
+            "h_v_prof": np.ones(plane.h_v_indices.size),
+            "proj_u": prof,
+            "proj_v": prof_v,
+        }
+        args = (ch, chain, plane, m_eps, m_mu, c_3d, w_dt)
+
+        full = cw_wave_phasors(*args, **kw)
+        sliced = cw_wave_phasors(
+            *args, curl_slice=build_port_curl_slice(chain, plane, m_mu, c_3d), **kw
+        )
+        for got, want in (
+            (sliced.v_in, full.v_in),
+            (sliced.i_in, full.i_in),
+            (sliced.v_out, full.v_out),
+            (sliced.i_out, full.i_out),
+        ):
+            assert got == want
+
+        far = build_port_curl_slice(far_chain, far_plane, m_mu, c_3d)
+        assert far.n_t == chain.n_t and far.n_edges == c_3d.shape[1]
+        with pytest.raises(ValueError, match="different grid or port"):
+            cw_wave_phasors(*args, curl_slice=far, **kw)

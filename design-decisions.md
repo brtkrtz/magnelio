@@ -18134,3 +18134,135 @@ order of magnitude, not two and a half, and the largest remaining item
 dominate on a production axis of 201 points, where it has never been
 touched.
 
+
+## DD-235 — the band decomposition says when its mode basis is short
+
+**Status:** Decided 2026-08-31 (branch `feat/band-kernel-fit`).  Gates:
+`tests/integration/test_analysis_scattering_band.py`,
+`tests/integration/test_qtem_band_dtbc_sparams.py`,
+`tests/unit/test_zeta_pencil.py`.  Measurements: internal record
+`investigations/port-model-default/` (`probe_postproc_split.py`,
+`probe_multimode_contamination*.py`, `probe_multimode_targets.py`,
+`probe_incomplete_basis_warning.py`, `probe_cwp_slice_exactness.py`,
+`probe_band_s_bit_identity.py`, `probe_target_dedup.py`,
+`probe_dedup_identity.py`, `probe_blas_threads.py`).
+
+**Problem.**  DD-234 left postprocessing as the largest untouched item
+of a band run — 61 ms per axis frequency, rank-independent, five points
+on the certificate fixture but 201 on a production axis.  The lead on
+record was a warm start along the frequency axis.  Splitting the cost
+first turned up something the speed question had been hiding: where the
+decomposition's mode basis is short, it does not fail, it *biases*.
+
+**The accuracy finding.**  Each axis frequency solves one joint least
+squares over every recording channel, so its right-hand side carries the
+recorded response of every mode present at the port.  Two ways to be
+short of modes, and they behave oppositely:
+
+- A **channel** without a mode is visible.  It fails the 0.5 overlap
+  test, takes no assignment, and its S stays NaN.  The channels that
+  *were* matched are unharmed — measured at 1e-15 relative, roundoff,
+  because the dual-basis recording profiles are biorthogonal to the
+  true modes to ~6e-7.
+- A **mode** without a channel is not visible.  Nothing is skipped, so
+  nothing goes NaN, and the fit attributes the missing mode's content
+  to the modes that remain.  Measured on the `layered2` two-family
+  fixture with the port truncated to `n_modes = 1` above its second
+  cut-on (8.4465 GHz): S11 wrong by 23-30 %, contamination -129 dB at
+  unit amplitude ratio, rising exactly 20 dB per decade of that ratio.
+  The coefficient is the port's biorthogonality defect, a per-port
+  number nobody measures; at 1e-3 rather than 6e-7 this sits 64 dB
+  higher and reaches the working floor.
+
+**Why not the least-squares residual.**  It looks like the natural
+detector and separates a complete basis (4.4e-7 to 6.7e-6) from a short
+one (0.36 to 0.93) by five orders of magnitude.  It is still the wrong
+one: a single-channel port makes the system square, so the residual is
+identically machine zero — measured 0 to 9.1e-16 *while a propagating
+mode was being ignored*.  It is blind in exactly the configuration that
+produces the silent error.
+
+**Decision.**  The loop counts the modes it found against the modes it
+assigned and warns once per port, naming the frequencies.  That
+condition holds at every point of the silent case and costs nothing.
+The warning does not repair the bias — the port genuinely carries fewer
+channels than its cross-section carries modes — it makes the user's
+model error visible instead of letting it read as a result.
+
+**Two costs removed on the way, both output-identical.**
+
+1. *The phasor synthesis is now O(port), not O(mesh).*
+   `cw_wave_phasors` allocated a full 3D edge vector, applied the whole
+   curl and divided by `M_mu` over its whole length, to read a handful
+   of entries on the two port-adjacent planes.  That submatrix does not
+   depend on frequency, `zeta` or the mode, so `build_port_curl_slice`
+   cuts it once per port.  Per call 0.068 -> 0.023 ms at 2980 edges and
+   0.664 -> 0.023 ms at 46540; the per-axis-frequency bucket goes from
+   1.10 ms at 5884 edges and 11.86 ms at 93004 to 0.35 ms at both —
+   flat to 3 % across a 15.8x mesh growth, where it grew 10.8x before.
+   The predicted crossover where the phasors overtake the eigensolve
+   (~2.6e5 edges) is gone.  Bit-identical: 615 (frequency, mode,
+   channel) combinations over five meshes and a 201-point axis on the
+   multimode record, every IEEE-754 pattern equal.  The slice carries
+   an O(1) key of its port, because two ports of one cross-section on
+   one mesh would otherwise pass a shape check while carrying the
+   wrong rows.
+
+2. *Repeated shift-invert targets are solved once.*  The arc formula
+   clamps at 1e-3, so below `theta_hint = 3.3e-3` several arc fractions
+   collapse to the same target and each paid a full sparse LU plus an
+   ARPACK run whose result the dedup then discarded.  Skipping a
+   bit-identical repeat cannot change the merged result, and does not:
+   zetas and profiles equal byte for byte over 114 frequencies through
+   both entry points.  Worth 0.1-6 % of a full axis depending on mesh
+   scale, up to 5x at individual near-DC points.
+
+**Leads closed, so nobody re-opens them.**
+
+- *Warm start along the axis* — dead.  76.0 matvecs per frequency
+  seeded against 72.7 cold: shift-invert ARPACK converges the whole
+  `k = 8` cluster, so seeding one of eight removes no restart.  Even a
+  perfect start caps at 1.37x, because the Fortran driver's own 38-45 %
+  is untouchable by a start vector.
+- *A dense eigensolve of the pencil* — dead.  At `2n = 206`,
+  values-only 82.2 ms and `ordqz` 174.4 ms against 24.2 ms for the
+  entire five-target sparse fan, and O(N^3) after.
+- *A process pool over the frequency axis* — built, measured,
+  reverted.  The axis parallelises cleanly (87 % efficiency on eight
+  workers, S bit-identical over 988 values), but the pool cost 4.5 s to
+  bring up, not the 1.0 s its break-even assumed — the calibration's
+  children had imported NumPy but never `magnelio`, the same
+  measure-against-your-own-window error as DD-206 and DD-233 §10b.  In
+  the thread configuration the library ships it lost at every axis
+  length (19.5x on the default 201-point axis) to BLAS
+  oversubscription.  Pinning the BLAS to one thread beats it outright
+  (1.28x sequential against 1.07x pooled) but is *not* bit-neutral end
+  to end: it moves S by 5.76e-8, -144.8 dB, against a pipeline that is
+  otherwise exactly reproducible across processes (measured 0.0), which
+  is the property DD-233's resume stands on.  Left alone deliberately.
+
+**Correction to DD-234.**  `_contour_worker_init` set the BLAS thread
+variables inside each contour worker and the docstring said it pinned
+them.  It is inert: a spawned child imports the module — and its BLAS —
+to unpickle the initializer, and those variables are read at load time.
+Measured, every worker reported them set to `1` while OpenBLAS ran 16
+threads.  DD-234's 5.5x is unaffected and is *not* an understatement:
+at `p` 8, 12 and 15 the sixteen-thread to one-thread ratio is
+0.999-1.000 with CPU time equal to wall time, because the BLAS does not
+thread a `2p x 2p` pencil that small.  Threading starts between
+`2n = 80` and `2n = 96`, and there the missing pin costs 2.7-3.4x.  The
+dead lines are gone and the measured threshold is recorded where they
+stood; earning it back needs a pin the parent shares, since a parent at
+sixteen threads against workers at one would break the kernel's
+required bit-identity.
+
+**What did not move.**  The eigensolve is still 86 % of postprocessing
+on a small cross-section and has no route beyond what DD-234 left.  The
+five-target arc fan was measured redundant at every one of 62 points on
+three cross-sections — one target with `k = 8` found families one, two
+and three alike, including 3.5 MHz above a cut-on inside the 93 MHz
+window the family tracking does not cover — but that is 62 points, not
+a proof, and four of the five call sites are on the port build path
+where a lost mode moves the subspace, the kernel and every pinned
+floor.  Reducing the fan stays scoped to the postprocessing call site
+and gated on an argument about `k`, not on these points.

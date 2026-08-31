@@ -113,6 +113,16 @@ major version is 0, minor releases may change the public API.
 
 ### Changed
 
+- Postprocessing a broadband band-pipeline run no longer gets slower
+  with the mesh.  Reading a port's response out of the record used to
+  work on the whole 3D grid at every frequency point, so a finer mesh
+  paid for the port twice; only the cells at the port are touched now.
+  Measured across a 15.8x mesh growth the cost per frequency point
+  stays flat at 0.35 ms, where it used to rise from 1.10 ms to
+  11.86 ms.  Axis points near DC are up to 5x faster on top of that,
+  because the mode search there no longer repeats identical solves.
+  Both are bit-identical: no S-parameter moves.
+
 - A run that terminates a port channel with the Mur fallback now
   explains the trade instead of labelling it.  It names each affected
   channel with the cross-section measurement behind it, states the
@@ -236,6 +246,26 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- A broadband band-pipeline run now reports a port that carries more
+  propagating modes than it has recording channels.  The S-parameters
+  of such a run are read off one joint decomposition per frequency
+  point, written over all of a port's channels at once, so what it
+  decomposes is the response of *every* mode the cross-section carries
+  at that frequency.  The two ways of coming up short are not
+  symmetric.  A channel whose mode does not propagate there is left
+  unassigned, its S stays NaN, and the channels that were matched are
+  untouched.  A mode with no channel to land in is invisible: nothing
+  is skipped, nothing goes NaN, and its content is absorbed by the
+  channels that were matched, so the S-parameters come out biased and
+  look exactly like converged ones — on a fixture whose port was cut
+  to a single channel above its second cut-on, S11 was 23 to 30 %
+  wrong with nothing on screen to say so.  The run now warns once per
+  port, naming how many axis points are affected and the span they
+  cover.  The remedy is the port's `n_modes`: it has to cover every
+  mode that propagates anywhere on the measurement axis, or the axis
+  has to stay below the cross-section's next cut-on.  New section
+  *Band ports: one decomposition per frequency* in the methods guide.
+
 - The port-building phase of a broadband band-pipeline run now uses
   several CPU cores.  Its cost is dominated by a loop over independent
   contour points, which had always run on one core; it is now split
@@ -262,7 +292,6 @@ major version is 0, minor releases may change the public API.
   every norm was unaffected, but by enough to rule out resuming such
   a run.  The same fixed start vector is now shared by every sparse
   eigensolve in the library.
-
 
 ## [0.4.8] - 2026-08-29
 

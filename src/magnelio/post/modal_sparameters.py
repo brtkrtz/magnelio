@@ -92,6 +92,7 @@ Key numerical concerns
 from __future__ import annotations
 
 import math
+import warnings
 
 import numpy as np
 from scipy.signal.windows import tukey
@@ -639,6 +640,7 @@ def compute_band_s_parameters(
     from magnelio.ports._modal.band_dtbc import BandDecomposition
     from magnelio.ports._modal.zeta_pencil import (
         CWChannel,
+        build_port_curl_slice,
         cw_wave_phasors,
         find_propagating_modes,
         normalize_gauge,
@@ -707,7 +709,22 @@ def compute_band_s_parameters(
             Vh[c] = dft @ V_sig.values
             Ih[c] = (dft @ I_sig.values) * np.exp(0.5j * w_dt_axis)
 
+        # The phasor synthesis only ever reads the curl on the port's
+        # dual edges, driven by a field supported on the two
+        # port-adjacent periods.  That restriction is independent of
+        # frequency, zeta and mode, so build it once per port instead
+        # of once per (frequency, mode, channel).
+        curl_slice = build_port_curl_slice(chain, port.plane, m_mu, c_3d)
+
         theta_fam = np.abs(np.angle(port.family_zetas))
+        # DD-235.  Frequencies where a mode propagates but reaches no
+        # recording channel.  The system below is written over every
+        # channel, so its right-hand side carries the response of *all*
+        # modes present at the port; a mode left out of the basis has
+        # its content absorbed by the modes that remain.  A channel
+        # without a mode stays NaN and is visible; a mode without a
+        # channel is not, which is what this collects.
+        incomplete: list[float] = []
         for k, f in enumerate(f_axis):
             w_dt = 2.0 * math.pi * f * dt
             hint = 1.3 * float(np.interp(f, port.family_freqs, theta_fam))
@@ -725,6 +742,8 @@ def compute_band_s_parameters(
                     continue
                 taken[j] = True
                 assigned.append((c, j))
+            if zp.size > len(assigned):
+                incomplete.append(float(f))
             if not assigned:
                 continue
             # Exact phasors of every assigned mode through every
@@ -759,6 +778,7 @@ def compute_band_s_parameters(
                         h_v_prof=port.h_v_profiles[c_rec],
                         proj_u=du,
                         proj_v=dv,
+                        curl_slice=curl_slice,
                     )
                     v_in[c_rec, jj] = ph.v_in
                     i_in[c_rec, jj] = ph.i_in
@@ -770,6 +790,20 @@ def compute_band_s_parameters(
             for jj, (c_mode, _) in enumerate(assigned):
                 a_all[(port.name, c_mode)][k] = ab[jj]
                 b_all[(port.name, c_mode)][k] = ab[n_j + jj]
+
+        if incomplete:
+            f_lo, f_hi = min(incomplete), max(incomplete)
+            span = f"{f_lo:.4g} Hz" if f_lo == f_hi else f"{f_lo:.4g}-{f_hi:.4g} Hz"
+            warnings.warn(
+                f"Port {port.name!r} carries modes that propagate but match "
+                f"no recording channel at {len(incomplete)} of {n_f} "
+                f"frequencies ({span}); their response is absorbed into the "
+                "channels that were matched, so S is biased there rather "
+                "than flagged. Raise the port's n_modes to cover every "
+                "propagating mode of its cross-section, or keep the axis "
+                "below the next cut-on.",
+                stacklevel=2,
+            )
 
     a_exc = a_all[excited]
     finite = np.isfinite(a_exc.real)

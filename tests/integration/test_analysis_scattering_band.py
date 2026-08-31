@@ -378,6 +378,49 @@ def test_band_project_refuses_time_domain_power_waves(band_project):
         band_project.b("port1")
 
 
+def test_a_mode_without_a_channel_is_reported(band_project, monkeypatch):
+    """A propagating mode that no channel claims must not pass silently.
+
+    The decomposition writes one least-squares system per frequency
+    over every channel, so its right-hand side carries the response of
+    every mode at the port.  A channel left without a mode is visible:
+    it stays NaN.  A *mode* left without a channel is not -- nothing is
+    skipped and the fit hands its content to the modes that remain,
+    which reads as a result rather than as the model error it is.
+
+    What produces it physically is a port declaring fewer channels than
+    its cross-section carries modes above a cut-on, which is too large
+    a fixture to build here.  The search is made to return one
+    unclaimable extra mode instead, on the store path where S is
+    derived on read, so what this pins is that the count reaches the
+    user.
+    """
+    # The decomposition imports the search inside its own body, so the
+    # patch has to land on the module it imports from.
+    from magnelio.ports._modal import zeta_pencil
+
+    real_find = zeta_pencil.find_propagating_modes
+
+    def with_an_orphan(chain, w_dt, hint, *args, **kwargs):
+        zp, pp = real_find(chain, w_dt, hint, *args, **kwargs)
+        if zp.size == 0:
+            return zp, pp
+        # A profile no channel trace overlaps: a single unit entry
+        # leaves the greedy assignment nothing above its 0.5 gate, so
+        # this mode is found and then dropped.
+        orphan = np.zeros_like(pp[:, :1])
+        orphan[0] = 1.0
+        return np.concatenate([zp, zp[:1]]), np.concatenate([pp, orphan], axis=1)
+
+    monkeypatch.setattr(zeta_pencil, "find_propagating_modes", with_an_orphan)
+
+    # An explicit axis: S is cached when the axis is left to default,
+    # and a cache warmed by an earlier read would never reach the
+    # patched search.
+    with pytest.warns(UserWarning, match="match no recording channel"):
+        band_project.S("port1", "port1", f_axis=band_project.f_axis)
+
+
 def test_band_decomposition_survives_the_round_trip_exactly():
     """Every stored array comes back bit-identical (DD-230).
 

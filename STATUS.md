@@ -9,12 +9,13 @@ engine, project-store schema 2.0, tutorial 20,
 **`magnelio.fields.FieldState`** with `SourceFieldInitial` and
 `SourceFieldIncident` (how-to *Ring-down*), **Huygens field sources**
 (DD-226: record a closed box, replay it anywhere; how-to *Field
-sources*), **`SourceCurrentPath`** (DD-227), **the pair-product gate
-as a reflection budget** (DD-228/229, closes KB-022), **band runs in
-the project store** (DD-230), **the port-model default settled**
-(DD-231), **band ports on a DC-reaching axis** (DD-232) and
-**resumable band runs** (DD-233, closes KB-037).  Unit 2797 / 4
-skipped, integration 449 / 5 skipped (2026-08-31, with
+sources*), **`SourceCurrentPath`** (DD-227) and **the pair-product
+gate as a reflection budget** (DD-228/229, closes KB-022).  The band
+track **DD-230…DD-235** — runs in the project store, the port-model
+default settled, a DC-reaching axis, bit-exact resume (closes KB-037),
+the −70 dB pricing, the short-basis warning — is committed on
+`feat/band-kernel-fit` and not yet merged.  Unit 2799 / 4
+skipped, integration 450 / 5 skipped (2026-08-31, with
 `CUPY_ACCELERATORS=""`; without it four GPU tests fail on nvrtc in the
 sandbox).  Channels: GitHub, PyPI, conda-forge, docs (`/stable/` = tag,
 `/dev/` = main).
@@ -28,8 +29,9 @@ This file states what *is*.  Chronology: `git log --first-parent main`
 
 Newest first, one line each; the full record is the DD entry.
 
-* **DD-233** (2026-08-31) — a band run is resumable, and it never needed the recursion.  DD-231 kept `port_model="modal"` on three grounds, one being that a band run cannot be resumed; the plan was to earn resume from a K-term recursion replacing the full-history convolution.  Measured, that route does not exist.  A contour fit of the kernel cannot reach the pipeline's floor by *any* algorithm: least squares on |z| = ρ minimises `Σ|dL_m|² ρ^-2m` (Parseval), an exponentially down-weighted coefficient norm, while the kernel decays algebraically and carries real energy in its late taps (|L_m|/|L_1| = 61 at m = 4095) — same surrogate, same norm, ERA −129.9 dB against the best contour fit's −57.6 dB; pushing ρ → 1 removes the weighting and breaks the approximation instead (−11.9 dB).  A realisation from the *coefficients* fails differently: ERA's diagonal form is numerically meaningless (non-normal, condition 6e9, a "pole" with a 21-million-step time constant), and its state-space form from a 1024-tap window reaches −17.5 dB over 16384 taps with the error growing monotonically along the record.  The AAK bound that made the recursion look cheap was measured on taps 1..2048 of a 16384-tap kernel, and re-measuring it on a tall block Hankel does not converge in the block-column count either — **neither number is the bound**, both read their own window, which is the DD-206/§9a mistake twice more.  Meanwhile resume never needed any of it: the history is 2.4 MB at 12288 steps.  What actually blocked it was reproducibility, unknown until measured — two builds of the same band port differed by 35–113 % because `find_propagating_modes` called ARPACK without a start vector (KB-037, the KB-010/DD-142 defect in a third call site), and `band_options` did not survive the project store, so a rebuilt run auto-sized a different excitation (8192 against the recorded 3072).  With a shared fixed start vector, a `state_dict` on the band boundary and the settings in the recipe, a band run resumes **bit-exactly** — recorded waves equal sample for sample, S-parameters element for element.  `port_model` stays `"modal"`: the remaining grounds are `a()`/`b()` and the runtime ratio.
-* **DD-234** (2026-08-31) — the band pipeline is priced against -70 dB, not against its own maximum.  Every measurement so far had compared it to -142.6 dB, the floor an exact transparent boundary exists for; against that it costs 690x modal and no lever moves it.  The goal is the -70…-80 dB class, and nobody had asked what *that* costs: measured, `svd_tol=1e-2` gives -66.4 dB and `1e-3` gives -84.3 dB, with |S21| inside 0.005 dB at every rank — the low-rank boundary absorbs correctly, it only reflects more.  Two findings followed.  **A quarter of the runtime was a margin**: `_band_setup` floored the kernel at 16384 taps, but the boundary is exact as soon as the kernel outlives the record, so short runs paid 4x on the item that dominates them; removing it leaves the floor unmoved to 0.1 dB and takes the -84 dB run from 40x to **13x** modal.  Going *below* the record is not the cheap version — a truncated kernel is **active**, measured floors of +3 to +33 dB, which turns the module's passivity claim into a measurement.  **And the contour loop parallelises**: `4*n_kernel + 1` independent solves, ~65 % of a run, dead to threads (0.94x, the GIL is not released across `ordqz`) but 5.5x across processes, bit-identical, on the pattern the mesher already uses.  The pool costs a fixed ~1.2 s to spawn while the loop divides by the worker count, so it stays sequential below ~3 s of serial work and projects to 7.8x at production kernel length.  This also settles why the rank lever underperforms O(p^3): at p = 4 an `ordqz` on an 8x8 pencil costs 65 µs, which is the SciPy wrapper and its ordering callback, not flops.  `port_model` stays `"modal"`; what changed is that the gap is now one order of magnitude, not two and a half, and postprocessing (rank-independent, 61 ms per axis frequency) becomes the largest item on a production axis.
+* **DD-233** (2026-08-31) — band runs resume bit-exactly, and the K-term recursion they were meant to be earned from does not exist: a contour fit of the kernel cannot reach the pipeline's floor by *any* algorithm (Parseval weights the coefficients exponentially, the kernel decays algebraically — ERA −129.9 dB against the best fit's −57.6 dB), a realisation from the coefficients holds −17.5 dB over the record, and the AAK bound that made the recursion look cheap read its own window twice.  Resume never needed any of it: the history is 2.4 MB at 12288 steps, and what actually blocked it was reproducibility — `find_propagating_modes` called ARPACK without a start vector (KB-037, the KB-010/DD-142 defect in a third call site) and `band_options` did not survive the project store.
+* **DD-234** (2026-08-31) — the band pipeline is priced against −70 dB, not against its own maximum.  Every earlier measurement had compared it to −142.6 dB, the floor an exact transparent boundary exists for; the goal is the −70…−80 dB class, and nobody had asked what *that* costs: `svd_tol=1e-2` gives −66.4 dB and `1e-3` gives −84.3 dB with |S21| inside 0.005 dB at every rank — the low-rank boundary absorbs correctly, it only reflects more.  **A quarter of the runtime was a margin**: `_band_setup` floored the kernel at 16384 taps, but the boundary is exact as soon as the kernel outlives the record, so short runs paid 4x on the item that dominates them; removing the floor leaves the measured floor unmoved to 0.1 dB and takes the −84 dB run from 40x to **13x** modal.  Going *below* the record is not the cheap version — a truncated kernel is **active**, measured floors of +3 to +33 dB.  **And the contour loop parallelises**: `4*n_kernel + 1` independent solves, ~65 % of a run, dead to threads (0.94x, the GIL is not released across `ordqz`) but 5.5x across processes, bit-identical, on the pattern the mesher already uses; the ~1.2 s pool spawn keeps it sequential below ~3 s of serial work and projects to 7.8x at production kernel length.  It also settles why the rank lever underperforms O(p³): at p = 4 an `ordqz` on an 8×8 pencil costs 65 µs of SciPy wrapper and ordering callback, not flops.
+* **DD-235** (2026-08-31) — the band decomposition now says when its mode basis is short, and shed two costs on the way without moving a bit.  Splitting the postprocessing cost turned up what the speed question had been hiding: each axis frequency solves ONE joint least squares over *all* recording channels, so its right-hand side carries the recorded response of every mode present at the port — and the two ways of being short of modes behave oppositely.  A **channel** without a mode is visible: it fails the overlap test, takes no assignment, its S stays NaN, and the channels that *were* matched are unharmed (1e-15 relative, roundoff).  A **mode** without a channel is not visible: nothing is skipped, nothing goes NaN, and the fit hands the missing mode's content to the modes that remain — measured on the two-family fixture with the port truncated to `n_modes = 1` above its second cut-on (8.4465 GHz), S11 wrong by 23–30 %, contamination −129 dB at unit amplitude ratio and rising exactly 20 dB per decade of that ratio, the coefficient being the port's biorthogonality defect (≈6e-7 there, so a poorer port sits correspondingly higher).  The least-squares residual is *not* the detector: it separates a complete basis from a short one by five orders of magnitude, but a single-channel port makes the system square and the residual identically machine zero — blind in exactly the configuration that produces the silent error.  So `compute_band_s_parameters` counts the modes it found against the modes it assigned and warns once per port, naming the frequencies; the warning does not repair the bias, it stops a model error from reading as a result.  Both cost removals are output-identical: the phasor synthesis no longer scales with the mesh (`build_port_curl_slice` cuts the port-adjacent curl rows once per port instead of applying the full 3D curl per call — 1.10 ms at 5884 edges and 11.86 ms at 93004 both become 0.35 ms, flat across a 15.8x mesh growth, 615 combinations bit-identical), and repeated shift-invert targets are solved once instead of up to five times where the arc formula clamps near DC (byte-identical zetas and profiles over 114 frequencies, up to 5x at an individual near-DC axis point).  **Correction to DD-234:** `_contour_worker_init`'s BLAS pin was inert — a spawned child loads its BLAS while unpickling the initializer — but it costs nothing at the ranks in use (sixteen-thread to one-thread ratio 0.999–1.000 at p = 8, 12, 15; the BLAS starts threading a `2p × 2p` pencil only between 2n = 80 and 96), so the 5.5x stands and the measured threshold is recorded where the dead lines stood.
 Older decisions: `design-decisions.md`.
 
 ## Working practices earned the hard way
@@ -83,13 +85,12 @@ on by default (DD-114) because the energy criterion alone never fires
 on the TM-cut-off plateau of a shielded lossless structure.
 `validation/` holds the 30 scripts that legitimately use internals:
 the certificates that regenerate the measured floors quoted below, and
-the spikes whose conclusions became DD entries.  `benchmarks/` is
-runtime and memory profiling.  The `investigations/<topic>/` dossiers
-cited across the tree (each pairing a measurement record with its
-probes) are the maintainers' internal records, kept outside the public
-repository — the citations stay as provenance anchors.  A
-`validation/` script earns its keep by being named in a DD —
-unreferenced ones rot unnoticed.
+the spikes whose conclusions became DD entries; one earns its keep by
+being named in a DD, unreferenced ones rot unnoticed.  `benchmarks/`
+is runtime and memory profiling.  The `investigations/<topic>/`
+dossiers cited across the tree (each pairing a measurement record with
+its probes) are the maintainers' internal records, kept outside the
+public repository — the citations stay as provenance anchors.
 
 ## Current architecture state
 
@@ -161,7 +162,11 @@ source tracks the family direction per frequency
 decomposes ONE pulsed record per frequency (DD-056).  For a static
 fundamental — not a waveguide one — that direction table is continued
 to f = 0 and closed with the Laplace trace (DD-232): no lower
-roll-off, pulse sized by the span, default axis runs.  Only
+roll-off, pulse sized by the span, default axis runs.  That
+decomposition is one joint least squares over *all* channels: a mode
+no channel claims is absorbed into the matched ones, not flagged, so
+a port needs a channel per propagating mode; the loop warns when it
+is short (DD-235), and a run resumes bit-exactly (DD-233).  Only
 analytical-path modes stay on modal Mur-1st (DD-047).  The
 pair-product gate is a reflection budget (DD-229): spread ≤ 2e-6, a
 chain contribution of at most −114 dB.  Both certificate stages are
@@ -256,11 +261,8 @@ QTEM/hybrid CW port floors (DD-056,
 −244.6…−196.5 dB (1–7.8 GHz) and second hybrid mode −176.3/−194.6/
 −200.6 dB at 1.01/1.05/1.2·f̂_c (f̂_c = 8.4465 GHz, two-channel
 dual-basis port); dielectric-block line −250.2…−225.2 dB; shielded
-microstrip −250.8…−206.5 dB — 76–150 dB below the −100 dB line.
-Cost-watch resolved: mode solve 31–433 ms per port vs 3D runs of
-1.9–196 s per point (share ≤ ~3 % toy lines, 0.9 % production-sized
-microstrip); scaling N = 2 710/11 132/45 112 → 86 ms/0.49 s/3.6 s per
-point.
+microstrip −250.8…−206.5 dB — 76–150 dB below the −100 dB line.  The
+per-frequency mode solve costs ≤ 3 % of a run, 0.9 % production-sized.
 
 QTEM/hybrid pulsed broadband port floors (DD-057,
 ``qtem_band_dtbc_port_floors.py``, ONE pulsed run per case through
@@ -284,25 +286,18 @@ design-decisions.md), and Magnelio is described as a *library* for
 full-wave 3D EM simulation — never as a "suite", never identified
 with FIT.  A user-visible feature counts as finished only once the
 prose documents it: docstrings reach the reader who already knows the
-feature exists, not the one who would have to discover it.  Symmetry
-planes were the case that established the rule — four DDs of
-implementation with zero occurrences in `docs/` or `examples/`, now a
-section in the boundary-conditions chapter and the standing practice
-in tutorial 09.  A second convention came out of v0.2.1: **a tutorial
-derives plot scales from the data, never from an absolute constant.**
-The open-boundary tutorial pinned `vmax` to a number chosen when
-monitor data was still field·seconds, so the 0.2.0 unit change put
-every point above the ceiling and the panel rendered as one flat
-colour block.  Relative parameters (`threshold`, `density`) came
-through the same change untouched.  It surfaced only in CI, because
-sphinx-gallery re-executes a tutorial when *its script* changes, not
-when the library under it does — a local build without
-`build_docs.sh --clean` shows cached figures from an older library.  Pillars: Tutorials (generated from
-`examples/tutorials/*.py`, tutorials 01–19 shipped and given a
-reader-perspective polish pass — full gallery build ~8:40, clean, of
-which the board tutorial is 2.4 s;
-tutorial 13, the DR-filter capstone, is deliberately the most
-expensive page at ~5.5 min since the design path is the content),
+feature exists, not the one who would have to discover it (symmetry
+planes established that rule, four DDs implemented with zero
+occurrences in `docs/`).  Second convention: **a tutorial derives
+plot scales from the data,
+never from an absolute constant** — an absolute `vmax` does not
+survive a unit change, and only CI catches it, because sphinx-gallery
+re-executes a tutorial when *its script* changes, not when the library
+under it does (a local build needs `build_docs.sh --clean`).  Pillars:
+Tutorials (generated from `examples/tutorials/*.py`, tutorials 01–19
+shipped — full gallery build ~8:40, clean, of which tutorial 13, the
+DR-filter capstone, is deliberately the most expensive page at
+~5.5 min since the design path is the content),
 API reference (high-level page + one page per component namespace),
 Numerical methods (thirteen chapters, every method with citations,
 in-house derivations marked in prose), Bibliography.
@@ -333,9 +328,15 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
 ## Open construction sites
 
 * **Band-pipeline runtime** — **12-13x modal at the -66/-84 dB class**
-  (DD-234), 35x at -116 dB; kernel build ~65 %.  Leads: postprocessing
-  (61 ms per axis frequency, rank-independent, the largest item on a
-  201-point axis), an exact blocked FFT convolution, the fixed record.
+  (DD-234), 35x at -116 dB; kernel build ~65 %.  Postprocessing is
+  61 ms per axis frequency and no longer scales with the mesh
+  (DD-235); the eigensolve is 86 % of it on a small cross-section and
+  has no route left beyond DD-234.  Leads: an exact blocked FFT
+  convolution, the fixed record, and a narrower shift-invert arc fan
+  at the postprocessing call site — measured redundant at 62 points on
+  three cross-sections, but that is not a proof and four of the five
+  call sites sit on the port build path, where a lost mode moves the
+  subspace, the kernel and every pinned floor.
 * **API blueprint (DD-224) — Phases A–D complete** (listed above).
   Phase E ff. is a reserved-name roadmap, not scheduled work: each
   entry earns its own DD.  Field-source limits: the recording lives
@@ -366,20 +367,18 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   close; until then keep quasi-TEM feeds short or compare raw S.
 * **Mesh-build speed — campaign closed 2026-08-29** (DD-101/102,
   DD-141, DD-199, DD-202…DD-223): no Lange or array row runs a kernel
-  section or a kernel Boolean of a model node any more; A/B switches
-  `MAGNELIO_*=0` per DD-217…219 and DD-223.  Ladder
-  (`benchmarks/bench_mesh_build.py`, CPU, `auto` pool): 16 Lange
-  couplers (3.7 M cells) 9.6 s, 240 posts (385 k) 1.8 s, 4 × 4 patch
-  array with feed (222 k) 0.6 s, 8 × 8 (664 k) 1.8 s, 16 × 16 (1.8 M,
-  off-ladder) 6.4 s; every row matches its reference
-  (`pool/hash_refs/`, re-pinned at DD-223).  Deferred, in value order:
-  (1) the tools' union where it is not a model shape (Lange 16: 320
-  pieces, 0.46 s) — the effective PEC solid could take the pieces
-  unfused if the edge pass counted crossings by depth instead of
-  parity; (2) the post row's `pass_faces_mu` (0.87 s), `section_calls`
-  (0.39 s posts, 1.2 s 16 × 16) and `planes_material` (0.34 s);
-  (3) spheres and cones once a ladder row shows them.  Traps are
-  listed in DD-217…DD-223.
+  section or a kernel Boolean of a model node any more, and every
+  ladder row matches its reference (`pool/hash_refs/`, re-pinned at
+  DD-223; `benchmarks/bench_mesh_build.py`, CPU, `auto` pool: 16 Lange
+  couplers 9.6 s at 3.7 M cells, 240 posts 1.8 s, 8 × 8 patch array
+  1.8 s, 16 × 16 6.4 s at 1.8 M).  Deferred, in value order: (1) the
+  tools' union where it is not a model shape (Lange 16: 320 pieces,
+  0.46 s) — the effective PEC solid could take them unfused if the
+  edge pass counted crossings by depth instead of parity; (2) the post
+  row's `pass_faces_mu` (0.87 s), `section_calls` (0.39 s posts, 1.2 s
+  16 × 16) and `planes_material` (0.34 s); (3) spheres and cones once
+  a ladder row shows them.  A/B switches `MAGNELIO_*=0` and the traps:
+  DD-217…DD-223.
 
 Closed construction sites are tombstoned where they were decided (the
 DD entry and `known-bugs.md`) and are not repeated here.

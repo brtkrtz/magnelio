@@ -191,11 +191,27 @@ _CONTOUR_BLOCKS: dict = {}
 
 
 def _contour_worker_init(D_m1, D_0, D_p1):  # pragma: no cover - subprocess
-    """Pin BLAS to one thread per worker and keep the blocks resident."""
-    import os
+    """Keep the period blocks resident for the worker's lifetime.
 
-    for var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
-        os.environ[var] = "1"
+    This used to also set ``OMP_NUM_THREADS`` and its siblings, which
+    is inert: a spawned child imports this module — and with it NumPy
+    and its BLAS — in order to unpickle the initializer, and the BLAS
+    reads those variables when it loads, long before the initializer
+    body runs.  Measured, every worker reported the variables set to
+    ``1`` while OpenBLAS still ran 16 threads.
+
+    Nothing is lost at the ranks this pool serves: the solvent is a
+    ``2p x 2p`` pencil, and the BLAS does not thread one that small.
+    Measured at ``p`` 8, 12 and 15, sixteen threads against one gives
+    a ratio of 0.999-1.000 with CPU time equal to wall time, so the
+    loop burns a single core either way.  BLAS threading starts
+    between ``2p = 80`` and ``2p = 96``, and there it *hurts*: at
+    ``p = 48`` the eight workers put 128 threads on 16 cores and the
+    build runs 2.7-3.4x slower than with the threads genuinely
+    pinned.  Reaching that rank needs a pin the parent shares — a
+    parent at 16 threads against workers at one would break the
+    bit-identity the kernel is required to have.
+    """
     _CONTOUR_BLOCKS["abc"] = (D_m1, D_0, D_p1)
 
 

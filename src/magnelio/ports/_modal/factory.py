@@ -1969,6 +1969,7 @@ def build_cw_true_mode_port(
     from magnelio.ports._modal.zeta_pencil import (
         CWPortData,
         build_period_blocks,
+        build_port_curl_slice,
         cw_wave_phasors,
         find_propagating_modes,
         make_channel,
@@ -2179,6 +2180,7 @@ def build_cw_true_mode_port(
     )
 
     # Exact per-frequency phasors through the *stored* profiles.
+    curl_slice = build_port_curl_slice(chain, plane, m_mu, c_3d)
     channels = [
         cw_wave_phasors(
             ch,
@@ -2192,6 +2194,7 @@ def build_cw_true_mode_port(
             h_v_prof=discrete[c].h_v_profile,
             proj_u=dual_u[c],
             proj_v=dual_v[c],
+            curl_slice=curl_slice,
         )
         for c, ch in enumerate(channels)
     ]
