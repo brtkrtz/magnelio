@@ -11,11 +11,11 @@ engine, project-store schema 2.0, tutorial 20,
 (DD-226: record a closed box, replay it anywhere; how-to *Field
 sources*), **`SourceCurrentPath`** (DD-227) and **the pair-product
 gate as a reflection budget** (DD-228/229, closes KB-022).  The band
-track **DD-230…DD-236** — project-store runs, the port-model default,
-a DC-reaching axis, bit-exact resume (closes KB-037), the −70 dB
-pricing, the short-basis warning and the production cost ranking
-(opens KB-038) — is on `feat/band-kernel-fit`, not merged, and
-DD-237 prices the QTEM middle path a priori and stops it.  Unit 2799 / 4
+track **DD-230…DD-237** is merged: project-store runs, the port-model
+default, a DC-reaching axis, bit-exact resume (closes KB-037), the
+−70 dB pricing, the short-basis warning, the production cost ranking
+(opens KB-038), and the a-priori pricing that closes the QTEM middle
+path between Mur-1st and the band DTBC.  Unit 2799 / 4
 skipped, integration 450 / 5 skipped (2026-08-31, with
 `CUPY_ACCELERATORS=""`; without it four GPU tests fail on nvrtc in the
 sandbox).  Channels: GitHub, PyPI, conda-forge, docs (`/stable/` = tag,
