@@ -18052,3 +18052,85 @@ The convolution still costs ~13 % of the run; an *exact* fast method
 (blocked FFT convolution) remains available and is not attempted here,
 while the kernel build's 71 % is not reachable by any contour fit.
 
+## DD-234 — the band pipeline is priced against -70 dB, not against its own maximum
+
+**Status:** Decided 2026-08-31 (branch `feat/band-kernel-fit`).  Gates:
+`tests/integration/test_analysis_scattering_band.py::test_kernel_is_sized_to_the_record_not_to_a_margin`,
+`tests/unit/test_band_dtbc.py::TestContourParallelism`.  Measurements:
+internal record `investigations/port-model-default/` (MEASUREMENTS.md
+sections 13-14; `probe_floor_vs_cost.py`, `probe_cost_at_target.py`,
+`probe_kernel_floor_margin.py`, `probe_contour_parallel.py`).
+
+**Problem.**  Every measurement of the band pipeline had priced it
+against its own maximum accuracy — -142.6 dB, the floor that justifies
+an exact discrete transparent boundary.  Against that number the
+pipeline costs 690x the modal path and no lever moves it far, which is
+what DD-231 recorded and DD-233 confirmed for the rational-kernel
+route.
+
+But the target is -70...-80 dB, the class a commercial suite reaches on
+QTEM ports in acceptable time from a handful of frequency samples.
+Nobody had measured what *that* costs.
+
+**What it costs.**  Already available, and by a different factor:
+
+    svd_tol   p     floor        runtime   x modal
+     1e-2     3    -66.4 dB      12.0 s      34
+     1e-3     4    -84.3 dB      14.2 s      40
+     1e-8    10   -116.3 dB      44.8 s     126
+
+`|S21|` stays within 0.005 dB at every rank: the low-rank boundary
+absorbs correctly, it reflects more.  So the target accuracy was never
+the problem — the pricing question had simply never been asked at the
+target.
+
+**Two findings followed, and both are now implemented.**
+
+1. **A quarter of that runtime was a margin.**  `_band_setup` sized the
+   kernel as `max(16384, next_pow2(n_steps))`.  The boundary is exact
+   as long as the kernel outlives the record — the convolution never
+   reaches a tap beyond it — so the floor made short runs pay a 4x
+   margin on the item that dominates them (`4*n_kernel + 1` contour QZ
+   solves per kernel, three per excited run).  Removing it leaves the
+   floor unmoved to 0.1 dB and takes the -84 dB run from 40x to **13x**
+   modal.  Sizing is now `max(1024, next_pow2(n_steps))`.
+
+   Going *below* the record is not the cheap version of this: a
+   truncated kernel is not merely less accurate, it is **active**
+   (measured floors of +3 to +33 dB, |S21| deviations up to 33 dB).
+   The module's "no truncation, no passivity question" is load-bearing
+   and now has a measurement.
+
+2. **The contour loop parallelises across processes.**  It is
+   `4*n_kernel + 1` independent solvent evaluations and ~65 % of a
+   target-accuracy run.  Threads buy nothing (0.94x — the GIL is not
+   released across `ordqz`); processes give 5.5x at n_kernel = 16384,
+   on the pattern the mesher already uses.  The pool costs a fixed
+   ~1.2 s to spawn while the loop divides by the worker count
+   (20.3/8 + 1.2 = 3.7 s reproduces the measurement), so below ~3 s of
+   serial work the loop stays sequential.  At production scale
+   (p = 15, n_kernel = 32768, ~104 s per kernel) the constant is
+   irrelevant and the projection is 7.8x.
+
+   The kernel is bit-identical either way.  That is a requirement, not
+   a bonus: a resumed run rebuilds its kernel from the recipe and must
+   land on the one its boundary state was recorded in (DD-233).
+
+**Why the rank lever is weaker than O(p^3) predicts** — the open
+question from DD-233 and section 9b — is also settled: at the target
+rank the build is not arithmetic-bound.  One `ordqz` on the linearised
+pencil costs 65 microseconds at p = 4 (8x8), which is the SciPy wrapper
+and its `sort="iuc"` ordering callback, not the flops; rebuilding the
+pencil adds 31 %.  So p = 10 -> 4 buys 3.3x where p^3 predicts 15x.
+Two escapes were tested and closed: `eig` + select is *slower* at the
+ranks that matter (0.75-0.86x at p = 3-6), and threading is dead.
+
+**What this does not change.**  `port_model` stays `"modal"` — DD-231's
+remaining grounds (`a()`/`b()`, and a factor that is still 12-13 rather
+than ~1) are untouched.  What changes is the shape of the argument: the
+gap to a default-capable band port is now a runtime gap of about one
+order of magnitude, not two and a half, and the largest remaining item
+(postprocessing, 61 ms per axis frequency, rank-independent) grows to
+dominate on a production axis of 201 points, where it has never been
+touched.
+
