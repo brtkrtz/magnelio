@@ -18369,3 +18369,112 @@ the −100 dB acceptance criterion at 49152 steps.  Neither the kernel
 length nor the DC anchor accounts for it.  The floors quoted in the
 fixture header, in DD-064 and in the user documentation are not
 reproducible while this is open.
+
+## DD-237 — the middle path between Mur-1st and the band DTBC is priced a priori, and it stops at −46 dB
+
+**Status:** Decided 2026-08-31.  No shipped default changes; this entry
+records a measurement that redirects the work and re-opens DD-064's
+acceptance line.  Measurements: internal record
+`investigations/qtem-midpath/` (`probe_symbol_pricing.py`,
+`MEASUREMENTS.md` §1, `DERIVATION.md` §9).
+
+**Problem.**  Every quasi-TEM channel on a shielded microstrip falls to
+modal Mur-1st: the pair-product gate measures a weighted spread of 0.22
+to 0.33 against the 2e-6 reflection budget of DD-229, five orders out,
+because substrate and air edges differ by √ε_r.  That is the model, not
+the mesh — no scalar chain describes two wave velocities at once.  The
+band path (DD-057) is exact but pays a contractual step count and an
+O(N²p²) convolution (DD-236).  The question was whether an *approximate*
+scalar termination reaches the −50 dB class at Mur's cost.
+
+**The instrument.**  The a-priori reflection of any boundary symbol
+against the true discrete mode is arithmetic and needs no time step:
+`Γ(ω) = (λ̃ − ζ)/(1/ζ − λ̃)` with ζ from `find_propagating_modes` on the
+real cross-section.  Mur-1st fits the same formula, because the
+two-plane stencil implies `λ̃_Mur(z) = (1 + r z)/(z + r)` — so every
+candidate is priced on one axis in seconds, on a common yardstick the
+record did not have.  Guards: the frequency-local exact fit prices at
+the ρ-offset evaluation floor (−114.3 dB microstrip, 40 dB per decade
+of offset — this is the same effect as the band certificates' a-priori
+ceiling), candidates are fitted on half the in-band points and read on
+all of them, and a wider audit axis is priced but never fitted.
+
+**Measured** (worst in-band |Γ|, three validation cross-sections):
+
+    candidate                              microstrip  layered   block
+    Mur as shipped                            −38.9     −27.2    −47.7
+    Mur, discrete-exact at band centre        −42.9     −30.0    −52.7
+    Mur family, minimax                       −45.1     −33.3    −54.8
+    chain q = 0, minimax                      −45.5     −33.8    −57.3
+    chain (r, q) frozen at centre  [DD-064]   −22.5      −5.9    −50.5
+    chain (r, q) minimax, f_c ≤ 0.5 f_min     −48.0     −35.7    −63.3
+    order-2 all-pass, passive                 −46.5     −36.2    −96.6
+
+**Nothing reaches −50 dB on either dispersive line**, and every number
+is a lower bound: the scalar Γ prices a perfect frequency-independent
+mode profile, and profile drift can only add.  The mild block case,
+whose β sweeps 0.61 % across its band, clears from the centred Mur on.
+
+**The mechanism.**  Write the true phase advance as
+`θ(ω)/ω = c₁(1 + k₂ω²)`.  Measured `k₂ = +55.2` (microstrip), `+7.7`
+(layered), `+1.3` (block): the group delay has to **rise** with
+frequency, which is `ε_eff(f)` climbing toward `ε_r`.  The
+Klein-Gordon chain offers `k₂ = (1/r² − 1)/24`, the right sign but
+1.5–10 % of the requirement — it is the *grid* dispersion of the
+equivalent chain, and a microstrip's *material* dispersion is 60x
+larger.  One real Mur pole offers `k₂ = −[A/3 + A² + ⅔A³]/c₁` with
+`A = p/(1−p)`, **negative for every p that gives the right c₁** — it
+bends the wrong way, which is why extra real poles buy 0.2 dB.
+
+**Why the obvious repair is inadmissible, and the budget it exposes.**
+A complex conjugate pole above the band does give the missing shape:
+unconstrained it prices at −70.0 / −82.4 / −96.6 dB, +22 to +47 dB over
+anything else, at five multiplies and four stored scalars per channel
+per step.  But with |ζ| = 1 the point 1/ζ is the mirror of ζ in the real
+axis, so the bisector of [ζ, 1/ζ] *is* the real axis and
+
+    |Γ| ≤ 1  ⟺  Im λ̃(e^{iω}) ≤ 0
+
+at every propagating frequency, independent of |λ̃|.  A real all-pass of
+order n sweeps a total phase of exactly nπ over (0, π], so **Mur is
+unconditionally passive — that is DD-096's stability in one line — and
+every higher order must be active somewhere**.  The unconstrained
+optima place their pole inside the propagating range and amplify there:
++35.3 dB above the layered band, on a mode the port still carries (the
+tracked fundamental propagates to 37.5° / 48.3 GHz there, 19.9° /
+133.9 GHz on the microstrip).  Constrained to `θ̃(ω_edge) ≤ π`, every
+family — one-parameter Mur, the chain, order 2–4 all-pass, and a
+general order-2 rational with its zeros moved inside the disc — lands
+in a 3 dB band around −46 dB (microstrip) and between −33 and −40 dB
+(layered), and every optimum sits exactly on the constraint.  Moving
+the zeros inside is a real extension where the required shape is
+largest — 3.9 dB over the all-pass on the layered line — and inert on
+the microstrip, whose optimum walks back to an all-pass; neither closes
+the remaining 10 dB.  A direct family scan
+puts the loss at the constraint rather than at the search: at the
+required c₁ a passive order-2 all-pass reaches 8.5 % of the required k₂
+on the microstrip against 46.7 % unconstrained.
+
+**Consequences.**
+
+1. Stages 1 and 2 of the investigation (profile coupling, one honest
+   CW run) are not worth running for these candidates: the scalar bound
+   is already below target and profile drift only adds.
+2. Two gains are real, cheap and independent of all of the above.
+   Centring the Mur coefficient on the true discrete β at band centre
+   instead of the DC Laplace `ε_eff` is **+3.8 dB** (microstrip) and
+   **+2.7 dB** (layered); minimax over the band adds **+2.2 / +3.3 dB**.
+   Together −38.9 → −45.1 dB and −27.2 → −33.3 dB, for one pencil solve
+   per port and no new state, no new cost per step.  DD-064's −30 dB
+   acceptance line moves with it.
+3. The −50…−70 dB class is **a low-rank band port, not a new boundary
+   law**.  A rank-1 Galerkin exterior *is* a scalar chain, so the
+   −48.0 dB above is what `build_band_dtbc_port` delivers at p = 1, and
+   DD-234's rank sweep (`svd_tol` 1e-2 → −66.4 dB, 1e-3 → −84.3 dB)
+   continues the same curve.  The open question is therefore not
+   accuracy but the two costs of DD-236.
+4. The frozen-fit candidate reproduces DD-064's band-edge collapse from
+   arithmetic alone (−22.5 dB microstrip, −5.9 dB layered against the
+   −19.1 dB it measured), so that failure is the boundary and not only
+   the broken decomposition its post-mortem identified.  It also shows
+   what the cut-off costs *below* the band: −11.5 dB and −0.0 dB there.

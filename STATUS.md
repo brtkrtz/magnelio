@@ -14,7 +14,8 @@ gate as a reflection budget** (DD-228/229, closes KB-022).  The band
 track **DD-230…DD-236** — project-store runs, the port-model default,
 a DC-reaching axis, bit-exact resume (closes KB-037), the −70 dB
 pricing, the short-basis warning and the production cost ranking
-(opens KB-038) — is on `feat/band-kernel-fit`, not merged.  Unit 2799 / 4
+(opens KB-038) — is on `feat/band-kernel-fit`, not merged, and
+DD-237 prices the QTEM middle path a priori and stops it.  Unit 2799 / 4
 skipped, integration 450 / 5 skipped (2026-08-31, with
 `CUPY_ACCELERATORS=""`; without it four GPU tests fail on nvrtc in the
 sandbox).  Channels: GitHub, PyPI, conda-forge, docs (`/stable/` = tag,
@@ -33,6 +34,7 @@ Newest first, one line each; the full record is the DD entry.
 * **DD-234** (2026-08-31) — the band pipeline is priced against −70 dB, not against its own maximum.  Every earlier measurement had compared it to −142.6 dB, the floor an exact transparent boundary exists for; the goal is the −70…−80 dB class, and nobody had asked what *that* costs: `svd_tol=1e-2` gives −66.4 dB and `1e-3` gives −84.3 dB with |S21| inside 0.005 dB at every rank — the low-rank boundary absorbs correctly, it only reflects more.  **A quarter of the runtime was a margin**: `_band_setup` floored the kernel at 16384 taps, but the boundary is exact as soon as the kernel outlives the record, so short runs paid 4x on the item that dominates them; removing the floor leaves the measured floor unmoved to 0.1 dB and takes the −84 dB run from 40x to **13x** modal.  Going *below* the record is not the cheap version — a truncated kernel is **active**, measured floors of +3 to +33 dB.  **And the contour loop parallelises**: `4*n_kernel + 1` independent solves, ~65 % of a run, dead to threads (0.94x, the GIL is not released across `ordqz`) but 5.5x across processes, bit-identical, on the pattern the mesher already uses; the ~1.2 s pool spawn keeps it sequential below ~3 s of serial work and projects to 7.8x at production kernel length.  It also settles why the rank lever underperforms O(p³): at p = 4 an `ordqz` on an 8×8 pencil costs 65 µs of SciPy wrapper and ordering callback, not flops.
 * **DD-235** (2026-08-31) — the band decomposition now says when its mode basis is short, and shed two costs on the way without moving a bit.  Splitting the postprocessing cost turned up what the speed question had been hiding: each axis frequency solves ONE joint least squares over *all* recording channels, so its right-hand side carries the recorded response of every mode present at the port — and the two ways of being short of modes behave oppositely.  A **channel** without a mode is visible: it fails the overlap test, takes no assignment, its S stays NaN, and the channels that *were* matched are unharmed (1e-15 relative, roundoff).  A **mode** without a channel is not visible: nothing is skipped, nothing goes NaN, and the fit hands the missing mode's content to the modes that remain — measured on the two-family fixture with the port truncated to `n_modes = 1` above its second cut-on (8.4465 GHz), S11 wrong by 23–30 %, contamination −129 dB at unit amplitude ratio and rising exactly 20 dB per decade of that ratio, the coefficient being the port's biorthogonality defect (≈6e-7 there, so a poorer port sits correspondingly higher).  The least-squares residual is *not* the detector: it separates a complete basis from a short one by five orders of magnitude, but a single-channel port makes the system square and the residual identically machine zero — blind in exactly the configuration that produces the silent error.  So `compute_band_s_parameters` counts the modes it found against the modes it assigned and warns once per port, naming the frequencies; the warning does not repair the bias, it stops a model error from reading as a result.  Both cost removals are output-identical: the phasor synthesis no longer scales with the mesh (`build_port_curl_slice` cuts the port-adjacent curl rows once per port instead of applying the full 3D curl per call — 1.10 ms at 5884 edges and 11.86 ms at 93004 both become 0.35 ms, flat across a 15.8x mesh growth, 615 combinations bit-identical), and repeated shift-invert targets are solved once instead of up to five times where the arc formula clamps near DC (byte-identical zetas and profiles over 114 frequencies, up to 5x at an individual near-DC axis point).  **Correction to DD-234:** `_contour_worker_init`'s BLAS pin was inert — a spawned child loads its BLAS while unpickling the initializer — but it costs nothing at the ranks in use (sixteen-thread to one-thread ratio 0.999–1.000 at p = 8, 12, 15; the BLAS starts threading a `2p × 2p` pencil only between 2n = 80 and 96), so the 5.5x stands and the measured threshold is recorded where the dead lines stood.
 * **DD-236** (2026-08-31) — the production run re-ranks the band pipeline, and finds a floor defect on the way.  Every cost share the campaign optimised against came from one 832-cell fixture with port pencil 2n = 206; run end to end on the production microstrip (2n = 5420, 106743 cells, 36864 steps) the ranking **inverts**: the kernel build is **14 %**, not 71 %, and the boundary convolution **59 %**, not 13 % — on a 201-point axis the postprocessing is 51 %.  The three obey different laws (kernel linear in the record, convolution quadratic, field linear) and the production port carries a *smaller* subspace, p = 9 against 12, because the rank tracks the mode-family structure and not the cross-section.  So the exact blocked FFT convolution, parked third because it addressed "13 %", is the largest item, and stage 2 aimed at a 71 % that is 7–14 %.  DD-234's projected 7.8x contour speed-up measures **6.00x**, bit-identical serial against parallel at n_kernel = 65536; the arc-fan cut at the postprocessing call site measures 3.12x with max |ΔS| = 0.000e+00 and stays declined on DD-235's `k` gate.  The recorded cost laws were also measured on `(2p, 2p)` blocks where the build passes `p × p`, inflating them ~8x.  **And the certificate no longer reproduces its own floors** (KB-038).
+* **DD-237** (2026-08-31) — the middle path between Mur-1st and the band DTBC is priced without a time step, and it stops at **−46 dB**.  Every boundary symbol can be read against the true discrete mode by pure arithmetic, `Γ = (λ̃ − ζ)/(1/ζ − λ̃)`, and Mur-1st fits the same formula, so the shipped default and every candidate finally share a yardstick.  Measured on three validation cross-sections: shipped Mur −38.9 / −27.2 / −47.7 dB, the best of the whole candidate list −48.0 / −35.7 / −63.3 dB — **nothing reaches −50 dB on either dispersive line**, and all of it is a lower bound, since the scalar Γ prices a perfect frequency-flat mode profile.  The obstruction is a shape: the line needs a group delay that *rises* with frequency (`θ(ω)/ω = c₁(1 + k₂ω²)` with k₂ = +55.2 on the microstrip), the Klein-Gordon chain offers 1.6 % of it and a real Mur pole offers it with the **wrong sign**.  A complex pole above the band supplies it in full — −70.0 / −82.4 / −96.6 dB — but is inadmissible: with |ζ| = 1 passivity is exactly `Im λ̃ ≤ 0`, an order-n all-pass sweeps nπ over (0, π] (so Mur is unconditionally passive, DD-096 in one line, and every higher order is active somewhere), and the unconstrained optima amplify inside the propagating range, up to **+35.3 dB**.  Under the constraint every family collapses into a 3 dB band around −46 dB on the microstrip and −33…−40 dB on the layered line.  **Two gains survive and are free**: centring the Mur coefficient on the true discrete β at band centre is +3.8 dB and a band minimax +2.2 dB more (−38.9 → −45.1 dB), for one pencil solve per port.  And the −50…−70 dB class is a **low-rank band port**, not a new boundary law — a rank-1 exterior *is* a scalar chain, so −48.0 dB is what the band port gives at p = 1 and DD-234's rank sweep continues that curve.
 Older decisions: `design-decisions.md`.
 
 ## Working practices earned the hard way
@@ -52,14 +54,12 @@ Older decisions: `design-decisions.md`.
   excitation.  The energy line's `0.0 dB` means "current = running
   maximum", which a barely-started run reports just like a resonant one
   (DD-147).
-* **A cached OCC solid is shared mutable state.**  Kernel calls that
-  look read-only are not: OCCT Booleans default to editing their
-  arguments, and a Boolean *result* shares sub-shapes with its
+* **A cached OCC solid is shared mutable state.**  OCCT Booleans edit
+  their arguments, and a Boolean *result* shares sub-shapes with its
   operands, so damage propagates backwards into the user's bodies
   (DD-146).  When geometry misbehaves only after something else ran,
   measure `BRep_Tool::Tolerance` over edges and vertices —
-  `bounding_box()` stays exactly right while the solid becomes
-  unusable, because tolerance moves the fuzzy zone, not the geometry.
+  `bounding_box()` stays right while the solid becomes unusable.
 * **Stage hunks, never whole files.**  An uncommitted working-tree
   experiment (`energy_stop_db` 70 → 40) was once swept into a commit
   by a whole-file `git add` and broke 21 physics integration tests.
@@ -69,13 +69,10 @@ Older decisions: `design-decisions.md`.
   imports the main tree's code and the attribution is meaningless.
 * **Re-check the script directories after every API break.**  Nothing
   under `examples/`, `validation/`, `benchmarks/` or the internal
-  `investigations/` dossiers (internal records, kept outside the
-  public repository) has test coverage, so a rename breaks them
-  silently.  Ten scripts once failed at import for months (they used a
-  long-deleted recorder class) while every API break still dutifully
-  migrated them.  An AST walk that imports each `from magnelio…`
-  module and checks `hasattr` per name finds this in seconds
-  (`validation/tools/check_imports.py`).
+  `investigations/` dossiers has test coverage, so a rename breaks them
+  silently — ten scripts once failed at import for months.  An AST walk
+  that imports each `from magnelio…` module and checks `hasattr` per
+  name finds this in seconds (`validation/tools/check_imports.py`).
 
 ## Script directories
 
@@ -338,26 +335,34 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
 * **Band port floor (KB-038)** — the pulsed certificates no longer
   reproduce their floors and degrade with run length, failing -100 dB
   at 49152 steps.  Undiagnosed.
+* **QTEM port accuracy (DD-237)** — the a-priori pricing closes the
+  middle path and leaves two items.  (1) Centre the modal Mur
+  coefficient on the true discrete β instead of the DC Laplace
+  `ε_eff`, minimax over the band: +6.2 dB measured a priori
+  (−38.9 → −45.1 dB), one pencil solve per port, no new state;
+  needs a measured run, and the Mur a/b split caps at −40…−60 dB, so
+  measure it with the CW true-mode decomposition.  (2) Price a
+  low-rank band port (p = 2, 3) end to end — accuracy is known from
+  DD-234, the unknowns are the step count against modal and the
+  O(N²p²) convolution at small p.
 * **API blueprint (DD-224) — Phases A–D complete** (listed above).
   Phase E ff. is a reserved-name roadmap, not scheduled work: each
-  entry earns its own DD.  Field-source limits: the recording lives
-  in memory until the run ends and is written as its own file (no
-  streaming, no store integration); a conductor crossing a box face
-  is warned about, not handled; a box open at a PEC/PMC wall records
-  fewer than six faces and suits only a model continuing that wall;
-  replay completes no symmetry planes.  Initial-field limits: every auxiliary state (absorber, ADE, SIBC,
-  port) starts quiescent, not in the steady state a mode would have
-  built around itself — stable, worth −0.31 % on a SIBC wall Q.  A
-  general incident field is evaluated on the box faces every step and
-  must solve Maxwell itself, or it leaks at the level of the total
-  field.  Blueprint: `investigations/api-blueprint/`.
+  entry earns its own DD.  Field-source limits: the recording lives in
+  memory until the run ends and is written as its own file; a conductor
+  crossing a box face is warned about, not handled; a box open at a
+  PEC/PMC wall records fewer than six faces; replay completes no
+  symmetry planes.  Initial-field limits: every auxiliary state
+  (absorber, ADE, SIBC, port) starts quiescent, not in the steady state
+  a mode would have built around itself — stable, worth −0.31 % on a
+  SIBC wall Q.  A general incident field is evaluated on the box faces
+  every step and must solve Maxwell itself, or it leaks at the level of
+  the total field.  Blueprint: `investigations/api-blueprint/`.
 * **Symmetry planes — known limitations (DD-154/DD-155/DD-172).**
   Lumped ports/elements on a symmetry plane are corrected since
-  DD-172 (full-model declaration, internal half-device scaling, exact
-  restriction certified); ParaView's FlipAllInputArrays mirrors H
-  like a polar vector (magnitude right, mirrored-half arrow sign
-  inverted).  CPML min/max faces are not mirror images (KB-023) —
-  full-vs-half parity of resonant open structures floors at ~1e-2.
+  DD-172; ParaView's FlipAllInputArrays mirrors H like a polar vector
+  (magnitude right, mirrored-half arrow sign inverted).  CPML min/max
+  faces are not mirror images (KB-023) — full-vs-half parity of
+  resonant open structures floors at ~1e-2.
 * **Quasi-TEM de-embedding is quasi-static (KB-027).**  Channels on
   modal Mur carry no certified line parameters, so `result.deembed`
   removes `exp(jβd)` with the frequency-flat `ε_eff = C'/C'_0` of the
@@ -372,14 +377,10 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   ladder row matches its reference (`pool/hash_refs/`, re-pinned at
   DD-223; `benchmarks/bench_mesh_build.py`, CPU, `auto` pool: 16 Lange
   couplers 9.6 s at 3.7 M cells, 240 posts 1.8 s, 8 × 8 patch array
-  1.8 s, 16 × 16 6.4 s at 1.8 M).  Deferred, in value order: (1) the
-  tools' union where it is not a model shape (Lange 16: 320 pieces,
-  0.46 s) — the effective PEC solid could take them unfused if the
-  edge pass counted crossings by depth instead of parity; (2) the post
-  row's `pass_faces_mu` (0.87 s), `section_calls` (0.39 s posts, 1.2 s
-  16 × 16) and `planes_material` (0.34 s); (3) spheres and cones once
-  a ladder row shows them.  A/B switches `MAGNELIO_*=0` and the traps:
-  DD-217…DD-223.
+  1.8 s, 16 × 16 6.4 s at 1.8 M).  Deferred in value order — the
+  tools' union where it is not a model shape, the post row's
+  `pass_faces_mu`/`section_calls`/`planes_material`, then spheres and
+  cones — with the A/B switches `MAGNELIO_*=0` and the traps: DD-223.
 
 Closed construction sites are tombstoned where they were decided (the
 DD entry and `known-bugs.md`) and are not repeated here.
@@ -394,7 +395,6 @@ DD entry and `known-bugs.md`) and are not repeated here.
   feedback round trips — DD-092); **tensor (gyrotropic) μ** (the DD-089
   ADE is scalar per axis); **off-Yee field-monitor interpolation**
   (must preserve the DD-085 units).
-* **Far-field accepted-power wiring on the streamed path** — the
-  reader serves ``realized_gain``/``directivity``; ``gain`` raises until
-  it wires ``1 − Σ|S|²`` (DD-070 follow-up; the incident-amplitude
-  ratio of DD-198 *is* derived on read).
+* **Far-field accepted-power wiring on the streamed path** — the reader
+  serves ``realized_gain``/``directivity``; ``gain`` raises until it
+  wires ``1 − Σ|S|²`` (DD-070 follow-up; DD-198's ratio *is* derived).
