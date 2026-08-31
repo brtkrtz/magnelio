@@ -30,6 +30,7 @@ from magnelio.mesh.mesher import Mesh, MeshControl
 from magnelio.ports._modal import (
     BoxFace,
     PortSpecMultiConductor,
+    band_dtbc,
     build_band_dtbc_port,
 )
 from magnelio.ports._modal.band_dtbc import (
@@ -273,6 +274,126 @@ class TestBoundaryStateMachine:
         b.advance(np.zeros(ext.p), np.ones(ext.p))
 
 
+class TestContourParallelism:
+    """The contour loop may run in processes, and must not change a number.
+
+    The points are independent and each is solved by the same call, so
+    splitting them is a wall-clock change only — the kernel has to come
+    out bit-identical, or the boundary a resumed run rebuilds would
+    differ from the one its state was recorded in.
+    """
+
+    def test_threshold_keeps_small_loops_sequential(self):
+        # Below the measured break-even (~3 s of serial work) a spawned
+        # pool costs more than it saves.
+        assert band_dtbc._contour_workers(4097, 4) == 1
+        assert band_dtbc._contour_workers(16385, 4) == 1
+        # A production-scale loop is worth splitting.
+        assert band_dtbc._contour_workers(131073, 15) > 1
+
+    def test_parallel_kernel_is_bit_identical(self):
+        ext = TestBoundaryStateMachine._small_exterior()
+        n_kernel = 512
+        saved = band_dtbc._CONTOUR_PARALLEL_MIN_WORK
+        try:
+            band_dtbc._CONTOUR_PARALLEL_MIN_WORK = float("inf")
+            L_seq, cert_seq = matrix_dtbc_kernel(ext.Dt_p1, ext.Dt_0, ext.Dt_m1, n_kernel)
+            band_dtbc._CONTOUR_PARALLEL_MIN_WORK = 0.0
+            L_par, cert_par = matrix_dtbc_kernel(ext.Dt_p1, ext.Dt_0, ext.Dt_m1, n_kernel)
+        finally:
+            band_dtbc._CONTOUR_PARALLEL_MIN_WORK = saved
+        np.testing.assert_array_equal(L_seq, L_par)
+        assert cert_seq["residual"] == cert_par["residual"]
+
+
+class TestBoundaryCheckpoint:
+    """The band boundary's convolution reaches over the whole record, so
+    its checkpoint is its two histories plus the projected state — and a
+    restore has to be bit-exact, not merely close, because a resumed run
+    is contractually identical to an uninterrupted one (DD-070 D4)."""
+
+    @staticmethod
+    def _exterior():
+        return TestBoundaryStateMachine._small_exterior()
+
+    def test_restore_continues_bit_exactly(self):
+        ext = self._exterior()
+        rng = np.random.default_rng(11)
+        n_a, n_b = 25, 20
+        coups = 1e-3 * rng.standard_normal((n_a + n_b, ext.p))
+
+        straight = BandDTBCBoundary(ext, n_kernel_init=64)
+        for n in range(n_a + n_b):
+            xs = straight.advance(coups[n])
+
+        halted = BandDTBCBoundary(ext, n_kernel_init=64)
+        for n in range(n_a):
+            halted.advance(coups[n])
+        sd = halted.state_dict()
+
+        restored = BandDTBCBoundary(ext, n_kernel_init=64)
+        restored.load_state_dict(sd)
+        assert restored.step_count == n_a
+        for n in range(n_a, n_a + n_b):
+            xr = restored.advance(coups[n])
+
+        # Bit-exact: the kernels are rebuilt from the same blocks and the
+        # history is restored verbatim, so no seam of any size is allowed.
+        np.testing.assert_array_equal(xr, xs)
+
+    def test_restore_carries_the_source_history(self):
+        ext = self._exterior()
+        rng = np.random.default_rng(12)
+        n_a, n_b = 18, 14
+        coups = 1e-3 * rng.standard_normal((n_a + n_b, ext.p))
+        srcs = 1e-2 * rng.standard_normal((n_a + n_b, ext.p))
+
+        straight = BandDTBCBoundary(ext, n_kernel_init=64)
+        straight.require_in_kernel()
+        for n in range(n_a + n_b):
+            xs = straight.advance(coups[n], srcs[n])
+
+        halted = BandDTBCBoundary(ext, n_kernel_init=64)
+        halted.require_in_kernel()
+        for n in range(n_a):
+            halted.advance(coups[n], srcs[n])
+
+        restored = BandDTBCBoundary(ext, n_kernel_init=64)
+        restored.require_in_kernel()
+        restored.load_state_dict(halted.state_dict())
+        for n in range(n_a, n_a + n_b):
+            xr = restored.advance(coups[n], srcs[n])
+
+        np.testing.assert_array_equal(xr, xs)
+
+    def test_source_history_without_the_incoming_kernel_is_refused(self):
+        ext = self._exterior()
+        driven = BandDTBCBoundary(ext, n_kernel_init=16)
+        driven.require_in_kernel()
+        driven.advance(np.zeros(ext.p), np.ones(ext.p))
+        passive = BandDTBCBoundary(ext, n_kernel_init=16)
+        with pytest.raises(RuntimeError, match="incoming kernel"):
+            passive.load_state_dict(driven.state_dict())
+
+    def test_rank_mismatch_is_refused(self):
+        ext = self._exterior()
+        b = BandDTBCBoundary(ext, n_kernel_init=16)
+        b.advance(np.zeros(ext.p))
+        sd = b.state_dict()
+        sd["xt"] = np.zeros(ext.p + 1)
+        with pytest.raises(ValueError, match="rank"):
+            b.load_state_dict(sd)
+
+    def test_checkpoint_holds_only_the_filled_prefix(self):
+        ext = self._exterior()
+        b = BandDTBCBoundary(ext, n_kernel_init=256)
+        for _ in range(7):
+            b.advance(np.zeros(ext.p))
+        sd = b.state_dict()
+        assert sd["w_hist"].shape == (7, ext.p)
+        assert sd["s_hist"].shape == (7, ext.p)
+
+
 class TestFactoryAndOperator:
     @pytest.fixture(scope="class")
     def port(self):
@@ -289,6 +410,23 @@ class TestFactoryAndOperator:
             f_band=(1.0e9, 7.8e9),
             n_grid=5,
             n_kernel_init=64,
+        )
+        return op, dt
+
+    @pytest.fixture(scope="class")
+    def port_no_anchor(self):
+        mesh = _layered_mesh(nz=12)
+        dt = courant_dt(mesh.grid, "normal")
+        op = build_band_dtbc_port(
+            PortSpecMultiConductor(name="port1", plane=BoxFace.Z_MIN, epsilon_r=None),
+            mesh,
+            build_M_eps(mesh),
+            build_M_mu(mesh),
+            dt=dt,
+            f_band=(1.0e9, 7.8e9),
+            n_grid=5,
+            n_kernel_init=64,
+            dc_anchor=False,
         )
         return op, dt
 
@@ -309,18 +447,60 @@ class TestFactoryAndOperator:
         assert s.shape == (8192, op.subspace_rank)
         peak = np.abs(s).max()
         assert np.abs(s[-256:]).max() < 1e-6 * peak
-        # Spectrum is confined to the subspace band.
+        # Above the tracked band the direction table ends, so the
+        # spectrum must stop there.  Below the span it need not: the
+        # DC anchor tabulates the direction down to 0, and the flat
+        # low side is what keeps the pulse short.
         sp = np.abs(np.fft.rfft(s[:, 0]))
+        fr = np.fft.rfftfreq(8192, dt)
+        assert sp[fr > 8.0e9].max() < 1e-6 * sp.max()
+        assert sp[fr < 0.5e9].max() > 0.1 * sp.max()
+        op.clear_excitation()
+        assert op._src_series is None
+
+    def test_dc_anchor_reaches_zero_and_stays_accurate(self, port):
+        """The anchored table starts at 0 and interpolates cleanly.
+
+        The anchor makes the direction grid non-uniform (a short first
+        interval below the tracked band), which is where a cubic
+        spline could ring.  Checked against the closed-form DC limit:
+        the first column must be the static Laplace direction.
+        """
+        op, _ = port
+        freqs, U = op._src_directions[0]
+        assert op.channel_band(0)[0] == 0.0
+        assert freqs[0] == 0.0
+        assert np.all(np.diff(freqs) > 0.0)
+        # The spline through the table reproduces its own DC column.
+        from scipy.interpolate import CubicSpline
+
+        u0 = CubicSpline(freqs, U, axis=0)(0.0)
+        assert np.linalg.norm(u0 - U[0]) <= 1e-12 * np.linalg.norm(U[0])
+
+    def test_dc_anchor_can_be_switched_off(self, port_no_anchor):
+        """Without the anchor the table is the tracked band alone."""
+        op, dt = port_no_anchor
+        freqs, _ = op._src_directions[0]
+        assert freqs[0] > 0.0
+        assert op.channel_band(0)[0] == pytest.approx(freqs[0])
+        op.set_excitation_band(0, (2.0e9, 6.5e9), n_syn=8192)
+        sp = np.abs(np.fft.rfft(op._src_series[:, 0]))
         fr = np.fft.rfftfreq(8192, dt)
         out = (fr < 0.8e9) | (fr > 8.0e9)
         assert sp[out].max() < 1e-6 * sp.max()
-        op.clear_excitation()
-        assert op._src_series is None
 
     def test_span_must_fit_subspace_band(self, port):
         op, _ = port
         with pytest.raises(ValueError, match="subspace band"):
-            op.set_excitation_band(0, (0.5e9, 6.0e9))
+            op.set_excitation_band(0, (2.0e9, 9.0e9))
+
+    def test_span_below_the_tracked_band_needs_the_anchor(self, port, port_no_anchor):
+        """A span reaching under the tracked band is the anchor's point."""
+        op, _ = port
+        op.set_excitation_band(0, (0.5e9, 6.0e9), n_syn=8192)
+        op_plain, _ = port_no_anchor
+        with pytest.raises(ValueError, match="subspace band"):
+            op_plain.set_excitation_band(0, (0.5e9, 6.0e9))
 
     def test_wide_pulse_fails_compactness_gate(self, port):
         op, dt = port

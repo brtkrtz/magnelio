@@ -239,6 +239,46 @@ run to the band pipeline — floors at $-171$ to $-211$ dB, and the CW
 true-mode port reaches $-206$ to $-251$ dB.  The default trades that
 for the cost of the band pipeline; if the port matters, change it.
 
+Changing it changes more than the floor, and the differences are
+worth knowing before the run rather than after.  The band pipeline
+tracks the mode family over a band, but the *measurement* axis is not
+confined to that band.  On a quasi-TEM line the fundamental is the
+static mode of the cross-section, so its excitation direction is
+continued below the tracked band and closed with the static field
+solution; the drive then needs no roll-off room at the bottom and the
+pulse duration follows the width of the measurement span instead of
+$1/f_\text{start}$.  A default axis — which starts at
+$f_\text{max}/n_\text{freq}$ — runs.
+
+Two limits remain.  The reflection floor of the boundary degrades
+toward DC: on a coarse two-port fixture the same run measures $-91$ dB
+at 34 MHz against $-117$ to $-140$ dB over the rest of the axis, so a
+measurement whose lowest points carry the answer should still not
+start lower than it needs to.  And a fundamental with a *cut-off* — a
+hollow waveguide mode — has no static limit to be continued to, so
+there the pulse duration still grows as $1/f_\text{start}$ and the
+auto-sizing refuses an axis that would make the run disproportionate,
+naming the axis start that fits.
+
+The record has a fixed length, so `energy_stop_db`
+and signal-decay stops do not apply to it.  The recorded channels are
+subspace projections whose incident/outgoing split is defined per
+frequency, so `result.a()` and `result.b()` are unavailable; the
+S-parameters and the raw V/I are.  Everything else is unchanged —
+including writing to a project store, from which the S-matrix is
+re-derived on read exactly as on the default path, and continuing an
+interrupted run with `resume()`.  The absorbing boundary here
+remembers the *whole* record rather than a few past steps, so its
+memory is checkpointed in full; a continued run is bit-identical to an
+uninterrupted one of the same length.
+
+None of this has to be looked up.  Whenever a run terminates a
+channel with the Mur fallback, the analysis prints the balance sheet
+once: which channels fell back and what the cross-section measured,
+the floor they trade away against the runtime and the power waves
+they keep, and what `port_model="band"` would cost on this very
+model.
+
 Either way the decision is published per channel, so it can be
 inspected before a run is paid for:
 
@@ -290,6 +330,70 @@ leak; and CW measurements solve the exact 2×2 phasor system per port
 Excitation amplitudes are pinned to physical units at the source
 (C = 1 convention, DD-085), so recorded V/I and monitor fields are in
 SI units — an in-house calibration convention.
+
+### Band ports: one decomposition per frequency (DD-235)
+
+A band-subspace port does not record modal amplitudes whose
+incident/outgoing split is fixed once for the run.  Its recording
+channels are subspace projections, and the split is defined per
+frequency: at every point of the measurement axis the true discrete
+modes of the port cross-section are solved on the stored inward chain
+(the ζ-pencil above), their exact V/I responses through the port's
+*fixed* recording profiles are synthesised, and the recorded spectra
+are decomposed by one joint least-squares system written over all
+channels $c$ and all modes $j$ propagating at that frequency at once,
+
+$$
+V_c(f) = \sum_j a_j v^{\text{in}}_{cj} + b_j v^{\text{out}}_{cj},
+\qquad
+I_c(f) = \sum_j a_j i^{\text{in}}_{cj} + b_j i^{\text{out}}_{cj},
+$$
+
+with $S_{c} = b_c / a_\text{excited}$.  Solving the channels jointly
+rather than one at a time is what makes the extraction exact: the
+recording profiles are frozen when the port is built and are not the
+modes of any single frequency, so every channel sees a mixture of
+every mode present, and only the joint system unmixes them — provided
+the basis it is written in contains them all.
+
+Three things are worth keeping apart.  A **channel** is a recording
+slot of the port, one per requested mode (`n_modes`), with a profile
+fixed at build time.  A **propagating mode** is what the cross-section
+actually carries at the frequency being evaluated; their number grows
+along the axis, each new one starting at its **cut-on**.  Modes are
+matched to channels per frequency by a weighted overlap test, and
+nothing guarantees the two counts agree.
+
+They can disagree in either direction, and the two cases behave
+oppositely.  A channel without a mode is *visible*: it finds no
+overlap, takes no assignment, its S stays NaN at that frequency, and
+the channels that were matched are unaffected (measured at $10^{-15}$
+relative, roundoff).  This is the ordinary evanescent case — declaring
+more channels than the axis excites costs a NaN column and nothing
+else.  A mode without a channel is *not* visible: nothing is skipped,
+so nothing goes NaN, and the fit attributes the missing mode's
+recorded content to the modes that remain.  The result is a biased
+S-parameter that looks like a converged one.  Measured on a
+two-family fixture whose port was truncated to `n_modes = 1` above its
+second cut-on at 8.4465 GHz, $S_{11}$ came out 23 to 30 % wrong, with
+the contamination at $-129$ dB when the unaccounted mode carried the
+same amplitude as the fundamental and rising exactly 20 dB per decade
+of that amplitude ratio.  Read that level as the mechanism and its
+scaling law, not as a bound: its coefficient is the biorthogonality
+defect between one port's recording profiles and its true modes
+(about $6\cdot10^{-7}$ on that cross-section), and a port whose dual
+basis is less clean sits correspondingly higher.
+
+The rule for a band run follows: `n_modes` must cover every mode that
+propagates *anywhere* on the measurement axis — which is not the same
+as every mode of interest, and not the same as the tracked band —
+or the axis must stay below the next cut-on of the cross-section.
+Magnelio counts the modes it finds against the modes it assigns at
+each axis point and warns once per port, naming how many frequencies
+are affected and their span.  The warning does not repair the bias:
+the port genuinely carries fewer channels than its cross-section
+carries modes, and only a rebuilt port or a shorter axis fixes that.
+What it does is keep a model error from reading as a result.
 
 ### Reference-plane shift (de-embedding, DD-187)
 

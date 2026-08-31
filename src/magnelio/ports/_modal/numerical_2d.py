@@ -50,6 +50,7 @@ import numpy as np
 import scipy.sparse as sp
 from scipy.sparse.linalg import eigsh
 
+from magnelio._arpack import arpack_v0
 from magnelio.constants import C0, EPS0, MU0
 from magnelio.mesh.grid import GridLines
 from magnelio.ports._modal.mode import (
@@ -63,22 +64,7 @@ from magnelio.ports._modal.tem_laplace import (
     travelling_wave_h_profiles,
 )
 
-
-def _arpack_v0(n: int) -> np.ndarray:
-    """Deterministic ARPACK start vector for an ``n``-dimensional solve.
-
-    Left to itself ARPACK starts from a random vector, so the converged
-    eigenvectors carry a residual that differs run to run.  On a
-    degenerate pair that residual is what the cross-projection gates
-    measure: the TE/TM-vs-TEM crosstalk on the coax fixture wandered
-    over 3.1e-16 … 1.1e-13 across rebuilds of the *same* port (KB-010),
-    which is physically zero either way but occasionally crossed a
-    1e-12 assertion.  A fixed generic start makes every rebuild
-    reproduce the same numbers; the direction is arbitrary but must not
-    be structured (a vector of ones can sit orthogonal to a mode of
-    interest and starve it).
-    """
-    return np.random.default_rng(0).standard_normal(n)
+_arpack_v0 = arpack_v0
 
 
 @dataclass

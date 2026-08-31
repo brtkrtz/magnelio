@@ -1255,6 +1255,20 @@ class PortOperatorModal:
         """Per-mode termination branch: ``"dtbc"`` or ``"mur"``."""
         return ["dtbc" if term is not None else "mur" for term in self._dtbc]
 
+    @property
+    def chain_spreads(self) -> list[float | None]:
+        """Per-mode uniform-chain measurement behind the termination.
+
+        The weighted-RMS pair-product spread of the feed cross-section,
+        the quantity the gate compares against.  ``None`` where no
+        spread was measured: an analytical-path mode (ineligible by
+        construction) or a stage-2 veto that decided before stage 1
+        ran.  Publishing it lets a caller distinguish a cross-section
+        that missed the gate by jitter from one that is genuinely
+        inhomogeneous, which are different conversations.
+        """
+        return list(self._dtbc_pair_spread)
+
     # ------------------------------------------------------------------
     # Excitation lifecycle
     # ------------------------------------------------------------------

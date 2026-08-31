@@ -153,3 +153,109 @@ class TestPairGateCertificate:
         op._termination = "mur"
         op._report_withheld_dtbc()
         assert not [w for w in recwarn if "uniform discrete chain" in str(w.message)]
+
+
+class TestMurFallbackNotice:
+    """The fallback notice states the trade, and its advice runs.
+
+    The gate's warning (above) fires only inside the marginal band,
+    because a genuinely inhomogeneous cross-section is a model, not a
+    defect.  That leaves the commonest production case — a microstrip
+    — with no word at all about the termination it got, so the modal
+    pipeline explains itself instead: which channels fell back, what
+    that costs, what the run keeps in exchange, and what the
+    reflection-free alternative would cost *on this model*.  The last
+    part is the one that has to be computed rather than asserted: the
+    band pipeline needs a frequency axis clear of DC, and a notice
+    that recommends a switch which would raise is worse than none.
+    """
+
+    @staticmethod
+    def _spec():
+        return PortSpecMultiConductor(
+            name="p",
+            plane=BoxFace.Z_MIN,
+            epsilon_r=1.0,
+            n_modes=1,
+        )
+
+    def _analysis(self, mesh, **kwargs):
+        from magnelio import AnalysisScatteringTD
+
+        return AnalysisScatteringTD(
+            mesh=mesh,
+            ports=[self._spec()],
+            f_max=8.0e9,
+            verbose=True,
+            **kwargs,
+        )
+
+    def test_certified_port_says_nothing(self):
+        mesh = _rect_coax_mesh()
+        op = _build(mesh, build_M_mu(mesh))
+        notice = self._analysis(mesh)._mur_fallback_notice([op], 1e-13)
+        assert notice is None
+
+    def test_inhomogeneous_channel_is_named_as_a_model_not_a_defect(self):
+        mesh = _rect_coax_mesh()
+        op = _build(mesh, _tilt_transversal_mu(mesh, build_M_mu(mesh), 1.5))
+        assert op.termination_kinds == ["mur"]
+        notice = self._analysis(mesh)._mur_fallback_notice([op], 1e-13)
+        assert "inhomogeneous cross-section" in notice
+        assert "chain spread" in notice
+        # The balance sheet: what is given up, and what is kept.
+        assert "-30 dB" in notice
+        assert "a()/b()" in notice
+
+    def test_marginal_channel_points_back_at_the_port_warning(self):
+        mesh = _rect_coax_mesh()
+        with pytest.warns(UserWarning, match="uniform discrete chain"):
+            op = _build(mesh, _tilt_transversal_mu(mesh, build_M_mu(mesh), 1.0 + 1e-4))
+        notice = self._analysis(mesh)._mur_fallback_notice([op], 1e-13)
+        assert "uniform-chain gate" in notice
+        assert "inhomogeneous cross-section" not in notice
+
+    def test_the_band_advice_is_only_offered_when_it_would_run(self):
+        """The notice may not name a constraint the pipeline no longer has.
+
+        With the DC-anchored excitation the pulse is sized by the
+        measurement span, not by ``1/f_axis[0]``, so an axis reaching
+        toward DC sizes like any other and the notice must not ask for
+        a higher start.  Switching the anchor off restores the old
+        constraint, and then the notice has to quote it again — in
+        both directions the notice and ``_band_setup`` must agree.
+        """
+        mesh = _rect_coax_mesh()
+        op = _build(mesh, _tilt_transversal_mu(mesh, build_M_mu(mesh), 1.5))
+        dt = 1e-13
+
+        low = self._analysis(mesh, f_min=0.0)
+        notice = low._mur_fallback_notice([op], dt)
+        assert "frequency axis starting at" not in notice
+        low._band_setup(low.f_axis, dt, None)
+
+        f_rec = low._band_min_axis_start(dt)
+        assert low.f_axis[0] < f_rec
+        plain = self._analysis(mesh, f_min=0.0)
+        plain.band_options = {"dc_anchor": False}
+        notice = plain._mur_fallback_notice([op], dt)
+        assert "frequency axis starting at" in notice
+        with pytest.raises(ValueError, match="auto-sizing"):
+            plain._band_setup(plain.f_axis, dt, None)
+
+        high = self._analysis(mesh, f_min=2.0 * f_rec)
+        high.band_options = {"dc_anchor": False}
+        notice = high._mur_fallback_notice([op], dt)
+        assert "already clears" in notice
+        high._band_setup(high.f_axis, dt, None)
+
+    def test_base_class_points_at_the_class_that_owns_the_switch(self):
+        """``AnalysisTD`` has no ``port_model``, so it must not suggest one."""
+        from magnelio import AnalysisTD
+
+        mesh = _rect_coax_mesh()
+        op = _build(mesh, _tilt_transversal_mu(mesh, build_M_mu(mesh), 1.5))
+        analysis = AnalysisTD(mesh=mesh, ports=[self._spec()], f_max=8.0e9, verbose=True)
+        notice = analysis._mur_fallback_notice([op], 1e-13)
+        assert "AnalysisScatteringTD(port_model=" in notice
+        assert "frequency axis starting at" not in notice

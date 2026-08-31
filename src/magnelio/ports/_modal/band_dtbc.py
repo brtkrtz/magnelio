@@ -173,6 +173,113 @@ def solvent_residual(
     )
 
 
+# ----------------------------------------------------------------------
+# Contour loop: parallel over processes above a measured size threshold
+# ----------------------------------------------------------------------
+
+# Spawning a pool costs a fixed ~1.2 s (measured, 8 spawned
+# interpreters), while the loop itself divides cleanly by the worker
+# count.  Below roughly three seconds of serial work the constant wins,
+# so the loop stays sequential there.  Calibrated from the per-point
+# cost of one solvent evaluation: ~0.061 ms at p = 4, ~0.31 ms at p = 12
+# (internal record, section 13d), i.e. ~p^1.5 over the range that
+# matters.
+_CONTOUR_PARALLEL_MIN_WORK = 4.0e5
+_CONTOUR_MAX_WORKERS = 8
+
+_CONTOUR_BLOCKS: dict = {}
+
+
+def _contour_worker_init(D_m1, D_0, D_p1):  # pragma: no cover - subprocess
+    """Keep the period blocks resident for the worker's lifetime.
+
+    This used to also set ``OMP_NUM_THREADS`` and its siblings, which
+    is inert: a spawned child imports this module — and with it NumPy
+    and its BLAS — in order to unpickle the initializer, and the BLAS
+    reads those variables when it loads, long before the initializer
+    body runs.  Measured, every worker reported the variables set to
+    ``1`` while OpenBLAS still ran 16 threads.
+
+    Nothing is lost at the ranks this pool serves: the solvent is a
+    ``2p x 2p`` pencil, and the BLAS does not thread one that small.
+    Measured at ``p`` 8, 12 and 15, sixteen threads against one gives
+    a ratio of 0.999-1.000 with CPU time equal to wall time, so the
+    loop burns a single core either way.  BLAS threading starts
+    between ``2p = 80`` and ``2p = 96``, and there it *hurts*: at
+    ``p = 48`` the eight workers put 128 threads on 16 cores and the
+    build runs 2.7-3.4x slower than with the threads genuinely
+    pinned.  Reaching that rank needs a pin the parent shares — a
+    parent at 16 threads against workers at one would break the
+    bit-identity the kernel is required to have.
+    """
+    _CONTOUR_BLOCKS["abc"] = (D_m1, D_0, D_p1)
+
+
+def _contour_worker(task):  # pragma: no cover - subprocess
+    """Solvents over one contiguous run of contour points."""
+    j0, j1, n_fft, rho = task
+    D_m1, D_0, D_p1 = _CONTOUR_BLOCKS["abc"]
+    n = D_0.shape[0]
+    out = np.empty((j1 - j0, n, n), dtype=complex)
+    for i, j in enumerate(range(j0, j1)):
+        z = rho * np.exp(2j * math.pi * j / n_fft)
+        out[i] = stable_solvent(D_m1, D_0, D_p1, 2.0 - z - 1.0 / z)
+    return out
+
+
+def _contour_workers(n_points: int, p: int) -> int:
+    """Worker count for a contour loop, 1 when a pool would not pay."""
+    import multiprocessing
+    import os
+
+    if n_points * p**1.5 < _CONTOUR_PARALLEL_MIN_WORK:
+        return 1
+    # Already inside somebody else's worker (a parameter sweep, say):
+    # a nested pool multiplies the process count, not the throughput.
+    if multiprocessing.parent_process() is not None:
+        return 1
+    return max(1, min(_CONTOUR_MAX_WORKERS, (os.cpu_count() or 1) - 1))
+
+
+def _contour_spectrum(D_m1, D_0, D_p1, n_fft: int, rho: float, half: int) -> np.ndarray:
+    """The stable solvent at every contour point, in parallel when it pays.
+
+    Bit-identical to the sequential loop: the points are independent and
+    each is solved by the same call, so splitting them changes nothing
+    but the wall clock.
+    """
+    n = D_0.shape[0]
+    n_workers = _contour_workers(half, n)
+    if n_workers > 1:
+        try:
+            import multiprocessing  # noqa: PLC0415
+            from concurrent.futures import ProcessPoolExecutor  # noqa: PLC0415
+
+            edges = np.linspace(0, half, 4 * n_workers + 1).astype(int)
+            tasks = [
+                (int(edges[i]), int(edges[i + 1]), n_fft, rho)
+                for i in range(4 * n_workers)
+                if edges[i + 1] > edges[i]
+            ]
+            with ProcessPoolExecutor(
+                max_workers=n_workers,
+                mp_context=multiprocessing.get_context("spawn"),
+                initializer=_contour_worker_init,
+                initargs=(D_m1, D_0, D_p1),
+            ) as ex:
+                return np.concatenate(list(ex.map(_contour_worker, tasks)), axis=0)
+        except (OSError, RuntimeError, ImportError):
+            # No usable process pool (restricted sandbox, frozen app,
+            # exhausted file descriptors): the sequential loop is always
+            # available and gives the same numbers.
+            pass
+    spec = np.empty((half, n, n), dtype=complex)
+    for j in range(half):
+        z = rho * np.exp(2j * math.pi * j / n_fft)
+        spec[j] = stable_solvent(D_m1, D_0, D_p1, 2.0 - z - 1.0 / z)
+    return spec
+
+
 def matrix_dtbc_kernel(
     D_m1: np.ndarray,
     D_0: np.ndarray,
@@ -211,19 +318,15 @@ def matrix_dtbc_kernel(
     n_fft = 8 * n_kernel
     rho = math.exp(4.0 / n_kernel)
     half = n_fft // 2 + 1
-    spec = np.empty((half, n, n), dtype=complex)
+    spec = _contour_spectrum(D_m1, D_0, D_p1, n_fft, rho, half)
     res_max = 0.0
     probe_every = max(half // 16, 1)
-    for j in range(half):
+    for j in range(0, half, probe_every):
         z = rho * np.exp(2j * np.pi * j / n_fft)
-        sig_hat = 2.0 - z - 1.0 / z
-        lam = stable_solvent(D_m1, D_0, D_p1, sig_hat)
-        if j % probe_every == 0:
-            res_max = max(
-                res_max,
-                solvent_residual(D_m1, D_0, D_p1, sig_hat, lam),
-            )
-        spec[j] = lam
+        res_max = max(
+            res_max,
+            solvent_residual(D_m1, D_0, D_p1, 2.0 - z - 1.0 / z, spec[j]),
+        )
     full = np.empty((n_fft, n, n), dtype=complex)
     full[:half] = spec
     full[half:] = np.conj(spec[1:-1][::-1])
@@ -374,6 +477,99 @@ def track_band_families(
         key=lambda i: out[i].f_first,
     )
     return [out[i_fund]] + [out[i] for i in rest]
+
+
+def continue_family_to_dc(
+    chain: PeriodChain,
+    dt: float,
+    fam: BandModeFamily,
+    track_t: np.ndarray,
+    eps_eff_hint: float,
+    dz: float,
+    n_extra: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Continue the fundamental family below its grid, down to DC.
+
+    The QTEM fundamental propagates at every ``f > 0`` and converges
+    to the static Laplace mode as ``f -> 0`` — measured on the shielded
+    microstrip, the W-overlap between ``track_t`` and the tracked
+    trace is 0.999972 at 2.25 GHz and 1.000000 (six digits) at 20 MHz.
+    The DC limit itself needs no eigensolve: it *is* ``track_t``,
+    with a vanishing longitudinal part and ``zeta = 1`` (no phase
+    advance per period).
+
+    This continuation exists for the *excitation direction* only.  It
+    deliberately leaves the family, the subspace and the recording
+    channels untouched: the Galerkin boundary built over the tracked
+    band is already accurate far below it (a boundary built on
+    2.25-18 GHz absorbs the fundamental at -83.4 dB at 74.6 MHz), so
+    the band limit of a band run is bookkeeping about where the
+    excitation direction is tabulated, not a property of the
+    boundary.
+
+    Parameters
+    ----------
+    chain : PeriodChain
+        Period blocks at the port (boundary pairing).
+    dt : float
+        Solver time step [s].
+    fam : BandModeFamily
+        The fundamental family (first entry of
+        :func:`track_band_families`).
+    track_t : np.ndarray
+        Tangential DC profile (free DOFs) — the Laplace solution.
+    eps_eff_hint : float
+        DC effective permittivity, for the phase-advance arc hint.
+    dz : float
+        Port-normal cell size [m].
+    n_extra : int
+        Number of continuation points, including the DC endpoint.
+
+    Returns
+    -------
+    freqs : np.ndarray
+        Ascending frequencies from 0 up to (excluding) ``fam.freqs[0]``.
+    traces : np.ndarray
+        Matching traces, W-normalised and gauge-fixed like the
+        family's own, column ``0`` being the static limit.
+    """
+    from magnelio.constants import C0
+
+    n_t = chain.n_t
+    w = chain.w_period
+    w_t = w[:n_t]
+    f_lo = float(fam.freqs[0])
+    n_extra = max(int(n_extra), 1)
+    f_below = np.linspace(0.0, f_lo, n_extra + 1)[:-1]
+
+    # DC endpoint in closed form: the Laplace trace, no longitudinal
+    # part, scaled to the family's W-normalisation.
+    dc = np.zeros(w.size, dtype=complex)
+    dc[:n_t] = np.asarray(track_t, dtype=float)
+    scale = math.sqrt(float(np.dot(w, np.abs(fam.traces[:, 0]) ** 2))) / math.sqrt(
+        float(np.dot(w_t, np.abs(track_t) ** 2)),
+    )
+    cols = [normalize_gauge(dc * scale, n_t)]
+
+    # The rest is measured, continued upward toward the tracked grid
+    # so each solve is seeded by the arc of the point below it.
+    prev = cols[0]
+    for f in f_below[1:]:
+        w_dt = 2.0 * math.pi * f * dt
+        theta0 = 2.0 * math.pi * f * math.sqrt(eps_eff_hint) / C0 * dz
+        zp, pp = find_propagating_modes(chain, w_dt, 1.3 * theta0, k=4)
+        if zp.size == 0:
+            raise ValueError(
+                f"the fundamental family does not continue to {f / 1e9:.4g} GHz "
+                f"below its tracked band — the DC excitation anchor needs it "
+                f"down to 0",
+            )
+        ov = np.abs(np.conj(prev) @ (w[:, None] * pp))
+        j = int(np.argmax(ov))
+        prev = normalize_gauge(pp[:, j], n_t)
+        cols.append(prev)
+
+    return f_below, np.stack(cols, axis=1)
 
 
 def band_subspace(
@@ -681,6 +877,62 @@ class BandDTBCBoundary:
         self._w_hist[:] = 0.0
         self._s_hist[:] = 0.0
 
+    def state_dict(self) -> dict:
+        """Checkpoint the projected boundary state and both histories.
+
+        The convolution reaches back over the *whole* record, so unlike
+        a ring-buffer boundary this state grows with the run: the two
+        histories are ``n x p`` each.  That is small in absolute terms
+        (12288 steps at p = 12 is 2.4 MB together) and it is the entire
+        memory of the boundary — the kernels and projected blocks are
+        constant and rebuilt from the recipe.
+
+        Only the filled prefix is written; the rest of the capacity is
+        zero by construction and would just pad the checkpoint.
+        """
+        n = self._n
+        return {
+            "xt": self._xt.copy(),
+            "xt_prev": self._xt_prev.copy(),
+            "n": int(n),
+            "w_hist": self._w_hist[:n].copy(),
+            "s_hist": self._s_hist[:n].copy(),
+        }
+
+    def load_state_dict(self, sd: dict) -> None:
+        """Restore state written by :meth:`state_dict` (bit-exact resume).
+
+        The kernels are *not* in the checkpoint: they are a deterministic
+        function of the projected exterior blocks, which the resuming run
+        rebuilds from the same recipe.  That determinism is a property
+        the pencil eigensolve only acquired with a fixed ARPACK start
+        vector (KB-037) — without it the rebuilt subspace differs from
+        the recorded one and this restore would be silently inconsistent.
+        """
+        n = int(sd["n"])
+        p = int(np.asarray(sd["xt"]).size)
+        if p != self._p:
+            raise ValueError(
+                f"checkpoint holds a boundary state of rank {p}, but the "
+                f"rebuilt band port has rank {self._p} — the subspace it "
+                f"was recorded in is not the one being restored into",
+            )
+        self._ensure_capacity(n)
+        self._xt = np.asarray(sd["xt"], dtype=float).copy()
+        self._xt_prev = np.asarray(sd["xt_prev"], dtype=float).copy()
+        self._w_hist[:] = 0.0
+        self._s_hist[:] = 0.0
+        if n:
+            self._w_hist[:n] = np.asarray(sd["w_hist"], dtype=float)
+            self._s_hist[:n] = np.asarray(sd["s_hist"], dtype=float)
+            if np.any(self._s_hist[:n]) and self._kflip_in is None:
+                raise RuntimeError(
+                    "checkpoint carries a ghost source history but the "
+                    "incoming kernel was never built — set the excitation "
+                    "before loading the state",
+                )
+        self._n = n
+
 
 @dataclass
 class BandPortData:
@@ -711,6 +963,64 @@ class BandPortData:
     eps_eff_dc: float = 0.0
     z_line: float | None = None
     solve_seconds: float = 0.0
+
+
+@dataclass
+class BandDecomposition:
+    """The band postprocessing input of one port, detached from its operator.
+
+    :func:`~magnelio.post.modal_sparameters.compute_band_s_parameters`
+    reads a live :class:`PortOperatorBandDTBC` for two different kinds
+    of thing: quantities that belong to *this port* — its chain, its
+    plane, its recording profiles, its tracked family — and quantities
+    that are properties of the *mesh* and merely happen to be cached on
+    the port (``M_eps``, ``M_mu``, the 3D curl).  Only the first kind
+    identifies a run; the second is rebuilt from the grid by the same
+    three builders that produced it.
+
+    Separating them is what makes a band run readable from a project
+    store: the port-side data serialises to a few hundred KiB of plain
+    arrays (measured 0.26 KiB per free tangential DOF, linear in the
+    cross-section), while the mesh-side operators never need to be
+    written at all.  Crucially, none of the expensive construction —
+    the contour-QZ ghost kernels, the SVD subspace — appears here: it
+    drives the time stepping and has no part in the decomposition.
+    """
+
+    name: str
+    n_modes: int
+    chain_inward: PeriodChain
+    plane: PortPlane = field(repr=False)
+    family_freqs: np.ndarray = field(repr=False, default=None)
+    family_zetas: np.ndarray = field(repr=False, default=None)
+    e_u_profiles: list = field(repr=False, default_factory=list)
+    e_v_profiles: list = field(repr=False, default_factory=list)
+    h_u_profiles: list = field(repr=False, default_factory=list)
+    h_v_profiles: list = field(repr=False, default_factory=list)
+    dual_e_profiles: list = field(repr=False, default_factory=list)
+
+    @classmethod
+    def from_operator(cls, op) -> "BandDecomposition":
+        """Extract the decomposition input from a built band port."""
+        bd = getattr(op, "band_data", None)
+        if bd is None:
+            raise ValueError(
+                f"port {op.name!r} carries no band_data — build it with build_band_dtbc_port",
+            )
+        fam0 = bd.families[0]
+        return cls(
+            name=op.name,
+            n_modes=int(op.n_modes),
+            chain_inward=bd.chain_inward,
+            plane=bd.plane,
+            family_freqs=np.asarray(fam0.freqs, dtype=float),
+            family_zetas=np.asarray(fam0.zetas, dtype=complex),
+            e_u_profiles=[np.asarray(dm.e_u_profile) for dm in op.discrete_modes],
+            e_v_profiles=[np.asarray(dm.e_v_profile) for dm in op.discrete_modes],
+            h_u_profiles=[np.asarray(dm.h_u_profile) for dm in op.discrete_modes],
+            h_v_profiles=[np.asarray(dm.h_v_profile) for dm in op.discrete_modes],
+            dual_e_profiles=[(np.asarray(du), np.asarray(dv)) for du, dv in bd.dual_e_profiles],
+        )
 
 
 # ----------------------------------------------------------------------
@@ -759,20 +1069,30 @@ def band_source_spectrum(
     """
     f_lo, f_hi = float(f_subspace[0]), float(f_subspace[1])
     f1, f2 = float(f_span[0]), float(f_span[1])
-    if not (f_lo < f1 < f2 < f_hi):
+    if not (f_lo <= f1 < f2 < f_hi):
+        raise ValueError(
+            f"f_span {f_span} must lie strictly inside the subspace band ({f_lo:.3e}, {f_hi:.3e})",
+        )
+    if f_lo > 0.0 and f1 <= f_lo:
         raise ValueError(
             f"f_span {f_span} must lie strictly inside the subspace band ({f_lo:.3e}, {f_hi:.3e})",
         )
     x_skirt = float(erfcinv(2.0 * skirt))
-    sig_lo = (f1 - f_lo) / (math.sqrt(2.0) * x_skirt)
     sig_hi = (f_hi - f2) / (math.sqrt(2.0) * x_skirt)
     f_bins = np.fft.rfftfreq(n_syn, dt)
-    env = (
-        0.25
-        * erfc((f1 - f_bins) / (math.sqrt(2.0) * sig_lo))
-        * erfc((f_bins - f2) / (math.sqrt(2.0) * sig_hi))
-    )
-    env[(f_bins < f_lo) | (f_bins > f_hi)] = 0.0
+    if f_lo > 0.0:
+        sig_lo = (f1 - f_lo) / (math.sqrt(2.0) * x_skirt)
+        env_lo = erfc((f1 - f_bins) / (math.sqrt(2.0) * sig_lo))
+    else:
+        # DC-anchored channel: there is no band edge below f1 to roll
+        # off against, so the spectrum stays flat down to the first
+        # bin.  This is what unchains the pulse length from f_span[0]
+        # — the duration is then set by the upper roll-off alone.
+        env_lo = np.full(f_bins.size, 2.0)
+    env = 0.25 * env_lo * erfc((f_bins - f2) / (math.sqrt(2.0) * sig_hi))
+    env[f_bins > f_hi] = 0.0
+    if f_lo > 0.0:
+        env[f_bins < f_lo] = 0.0
     t_c = 0.5 * n_syn * dt
     return env * np.exp(-2j * np.pi * f_bins * t_c)
 
@@ -923,8 +1243,12 @@ class PortOperatorBandDTBC:
         """Tracked subspace band ``(f_lo, f_hi)`` [Hz] of a channel.
 
         The frequency range over which the channel family's subspace
-        direction is tracked; ``set_excitation_band`` spans must lie
-        strictly inside it (roll-off room included).
+        direction is tabulated; ``set_excitation_band`` spans must lie
+        inside it, strictly so at the upper end where the roll-off
+        needs room.  A DC-anchored channel reports ``0.0`` as its
+        lower bound: the direction is known down to the static limit,
+        so a span may reach the first bin and no lower roll-off is
+        synthesised.
         """
         if not (0 <= mode_idx < self._n_modes):
             raise ValueError(
@@ -1021,8 +1345,10 @@ class PortOperatorBandDTBC:
             Channel index.
         f_span : (float, float)
             Flat measurement span [Hz]; the S-parameter axis should
-            stay inside it.  Must leave room for the roll-offs within
-            the port's subspace band.
+            stay inside it.  Must leave room for the upper roll-off
+            within the port's subspace band
+            (:meth:`channel_band`); the lower one exists only where
+            that band starts above zero.
         n_syn : int, default 8192
             Synthesis window length in steps.
         skirt : float, default 1e-7
@@ -1066,8 +1392,10 @@ class PortOperatorBandDTBC:
         Multiplies the scalar spectrum by the channel family's
         subspace direction per rfft bin (cubic interpolation over the
         tracking grid — the linear error ~df^2 rides at the port
-        plane as launch halo), band-limits to the tracked range with
-        a cosine safety taper, and enforces temporal compactness: a
+        plane as launch halo), band-limits to the tabulated range
+        with a cosine safety taper (a DC-anchored channel is
+        tabulated down to the first bin, so only the upper edge
+        tapers), and enforces temporal compactness: a
         source that is still active at the window end would step to
         zero and kick broadband grid modes the band boundary does not
         absorb (measured: near-Nyquist ringing at 1e-5 for thousands
@@ -1077,7 +1405,10 @@ class PortOperatorBandDTBC:
         freqs, U = self._src_directions[mode_idx]
         f_bins = np.fft.rfftfreq(n_syn, self._dt)
         f_lo, f_hi = float(freqs[0]), float(freqs[-1])
-        df = (f_hi - f_lo) / max(freqs.size - 1, 1)
+        # Largest gap of the tracking grid — with a DC anchor the grid
+        # is no longer exactly uniform, and the taper wants the coarse
+        # spacing, not the average.
+        df = float(np.max(np.diff(freqs))) if freqs.size > 1 else (f_hi - f_lo)
         S_hat = np.zeros((f_bins.size, self._exterior.p), dtype=complex)
         idx = np.flatnonzero((f_bins >= f_lo - df) & (f_bins <= f_hi + df))
         if idx.size:
@@ -1144,6 +1475,32 @@ class PortOperatorBandDTBC:
         self._boundary.reset_state()
         self._x1_prev = np.zeros(self._x1_idx.size)
         self.clear_excitation()
+
+    def state_dict(self) -> dict:
+        """Checkpoint the run state (bit-exact resume).
+
+        Exactly what :meth:`reset_state` clears, minus the excitation:
+        the projected boundary state machine and the interior trace the
+        boundary consumes one step later.  The waveform is re-bound by
+        the resuming caller through :meth:`set_excitation`, as on the
+        modal port, so only the retardation state is stored here.
+        """
+        return {
+            "x1_prev": self._x1_prev.copy(),
+            "boundary": self._boundary.state_dict(),
+        }
+
+    def load_state_dict(self, sd: dict) -> None:
+        """Restore state written by :meth:`state_dict`."""
+        x1 = np.asarray(sd["x1_prev"], dtype=float)
+        if x1.size != self._x1_idx.size:
+            raise ValueError(
+                f"checkpoint holds an interior trace of {x1.size} values "
+                f"for port {self.name!r}, which the rebuilt run traces "
+                f"with {self._x1_idx.size}",
+            )
+        self._x1_prev = x1.copy()
+        self._boundary.load_state_dict(sd["boundary"])
 
     # ------------------------------------------------------------------
     # Projections (recorder-facing fixed channels)

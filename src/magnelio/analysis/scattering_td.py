@@ -31,7 +31,8 @@ measured −26…−39 dB ``|S11|`` on a realistic shielded microstrip at
 power-wave access.  That trade (speed + TD signals over deep
 reflection floors) is the accepted production default for QTEM lines
 (developer decision, 2026-07-10); a verbose notice names the
-Mur-fallback channels.  For reflection-critical work,
+Mur-fallback channels, what the fallback costs, and what the band
+pipeline would cost in return on this very model.  For reflection-critical work,
 ``port_model="band"`` (or ``"auto"``) engages the broadband
 band-subspace DTBC pipeline: mode families tracked over the
 band, one reflection-free operator per port, one pulsed record per
@@ -122,7 +123,7 @@ from magnelio.analysis.time_domain import (
 )
 from magnelio.constants import C0
 from magnelio.ports._lumped import build_lumped_element
-from magnelio.ports._modal.band_dtbc import band_source_spectrum
+from magnelio.ports._modal.band_dtbc import BandDecomposition, band_source_spectrum
 from magnelio.ports._modal.factory import (
     PortSpecMultiConductor,
     build_band_dtbc_port,
@@ -145,6 +146,52 @@ ExcitedSpec = Union[str, tuple[str, int]]
 def _scattering_run_name(excited_chan: tuple[str, int]) -> str:
     """Canonical run-directory name for one excited (port, mode) pair."""
     return f"{excited_chan[0]}_mode{excited_chan[1]}"
+
+
+def _warn_on_truncated_band_record(signals: dict, excited_chan: tuple[str, int]) -> None:
+    """Warn when a band record ends before the ring-down does.
+
+    Record-quality contract of the band pipeline: the per-frequency
+    DFT decomposition assumes the response has decayed inside the
+    record (DD-057).  Shared by the in-memory and the streaming path
+    so a stored run is held to the same contract (DD-230).
+    """
+    v_exc = signals[excited_chan][0].values
+    peak = float(np.abs(v_exc).max())
+    tail = float(np.abs(v_exc[-256:]).max())
+    if peak > 0.0 and tail > 1e-4 * peak:
+        warnings.warn(
+            f"band-run record ends at {tail / peak:.1e} of "
+            f"peak on {excited_chan} (contract: < 1e-4); "
+            f"S-parameters may carry truncation ripple — "
+            f"increase total_time_steps",
+            UserWarning,
+            stacklevel=3,
+        )
+
+
+def _band_reference_values(ref_time: np.ndarray, n_syn: int, n_steps: int) -> np.ndarray:
+    """The band drive padded to the record length (zero past synthesis)."""
+    out = np.zeros(n_steps)
+    n = min(n_syn, n_steps, ref_time.size)
+    out[:n] = ref_time[:n]
+    return out
+
+
+def _band_drive_fn(ref_time: np.ndarray, dt: float):
+    """Sample the synthesised band pulse by time, for the streaming sink.
+
+    The band drive has no closed-form waveform — it is an ``irfft`` of
+    the flat-band spectrum — so the store's reference stream samples
+    the synthesised array, zero past its end (the ring-down).
+    """
+    n = int(ref_time.size)
+
+    def drive(t: float) -> float:
+        k = int(round(float(t) / dt))
+        return float(ref_time[k]) if 0 <= k < n else 0.0
+
+    return drive
 
 
 def incident_amplitude_ratio(reference_signal, f_axis, a_incident, port_modes, excited):
@@ -652,8 +699,11 @@ class AnalysisScatteringTD(AnalysisTD):
         ``|S21|`` errors below 0.01 dB.  Fast (seconds), full
         time-domain power-wave access, no lower-band-edge
         restriction; the accepted trade for routine QTEM work.
-        A verbose notice
-        names the Mur-fallback channels.
+        A verbose notice names the
+        Mur-fallback channels with the measurement behind each one,
+        states the floor they trade away, and prices the band
+        alternative for this model — including the axis start it
+        would require, so the switch it suggests is one that runs.
 
         ``"band"`` — the broadband band-subspace DTBC pipeline:
         the mode family is
@@ -684,15 +734,20 @@ class AnalysisScatteringTD(AnalysisTD):
         ``n_kernel_init`` (initial ghost-kernel length; default the
         next power of two above the planned run),
         ``svd_tol`` (subspace-rank threshold, default 1e-8),
-        ``skirt`` (spectral amplitude at the band edges, 1e-7).
+        ``skirt`` (spectral amplitude at the band edges, 1e-7),
+        ``dc_anchor`` (extend the fundamental channel's excitation
+        direction down to DC so the pulse length follows the
+        measurement span rather than the axis start, default True).
     project : str or Path, optional
         When set, ``run()`` writes the model and each excitation's
         results into this project directory and returns a
         read-only :class:`~magnelio.io.project.Project` reader instead of
         an in-memory :class:`ScatteringTDResult`.  Pointing at an
         existing project *adds* the new excitations as runs (fill-in)
-        without rewriting the model.  Modal pipeline only in this
-        version (band + project is a follow-up).
+        without rewriting the model.  Both port pipelines stream; a
+        band run additionally stores each port's chain and recording
+        profiles, so its S-matrix is re-derived on read like any
+        other.  ``result.a()/b()`` stay unavailable on a band run.
     geometry : GeometryModel, optional
         Source geometry to persist (exact BREP + tessellated STL) when
         ``project`` is set.  Optional — the mesh alone suffices for
@@ -765,6 +820,7 @@ class AnalysisScatteringTD(AnalysisTD):
             "n_kernel_init",
             "svd_tol",
             "skirt",
+            "dc_anchor",
         }
     )
 
@@ -1009,13 +1065,6 @@ class AnalysisScatteringTD(AnalysisTD):
         dt = spectral_dt(self.mesh, accuracy, m_eps=m_eps, m_mu=m_mu)
 
         if self._resolve_port_model(m_eps, m_mu, dt) == "band":
-            if self.project is not None:
-                # Streaming wired for the modal pipeline in WP-S2; band is a
-                # follow-up.
-                raise NotImplementedError(
-                    "the project store does not support the band pipeline "
-                    "yet; use port_model='modal' or omit project=",
-                )
             return self._run_band(
                 excited_list=excited_list,
                 f_axis=f_axis,
@@ -1024,6 +1073,7 @@ class AnalysisScatteringTD(AnalysisTD):
                 dt=dt,
                 total_time_steps=total_time_steps,
                 bc_objects=bc_objects,
+                checkpoint_interval=checkpoint_interval,
             )
 
         if self.project is not None:
@@ -1380,6 +1430,67 @@ class AnalysisScatteringTD(AnalysisTD):
             )
         return "band"
 
+    def _mur_fallback_alternative(self, dt: float) -> str:
+        """Price the band pipeline for *this* model, not in the abstract.
+
+        The base notice can only name the alternative; this class owns
+        it and can therefore say what taking it would cost.  What it
+        costs is runtime and one capability.  The axis start is no
+        longer part of the trade: the excitation direction is
+        tabulated down to DC wherever the fundamental is the static
+        mode, so the pulse is sized by the measurement span rather
+        than by ``1/f_axis[0]`` and the pipeline sizes on the default
+        axis.  A run that switched the anchor off keeps the old
+        constraint, and the notice then quotes the axis start again —
+        it must never recommend a switch that would raise.
+        """
+        price = (
+            '  The other side of the trade is port_model="band": the '
+            "band-subspace DTBC terminates the whole analysis band "
+            "reflection-free, measured below -130 dB on shielded "
+            "microstrip.  It costs orders of magnitude in runtime -- a "
+            "kernel-build phase before the run, then a record hundreds "
+            "of times longer (a shielded microstrip measured 1.9 s "
+            "against 45 min) -- and it gives up time-domain power waves "
+            "(a()/b())."
+        )
+        if bool(dict(self.band_options or {}).get("dc_anchor", True)):
+            return price
+        f1 = float(self.f_axis[0])
+        f_rec = self._band_min_axis_start(dt)
+        if f1 < f_rec:
+            reach = (
+                f"  With band_options={{'dc_anchor': False}} it would also "
+                f"need a frequency axis starting at >= {f_rec / 1e6:.0f} MHz "
+                f"— yours starts at {f1 / 1e6:.1f} MHz, where the "
+                f"band-limited pulse sizes past the auto budget.  Raise "
+                f"f_min, or leave the DC anchor on."
+            )
+        else:
+            reach = (
+                f"  This axis (from {f1 / 1e6:.1f} MHz) already clears the "
+                f">= {f_rec / 1e6:.0f} MHz the band-limited pulse needs "
+                f"without the DC anchor, so the switch is available as the "
+                f"model stands."
+            )
+        return "\n".join([price, reach])
+
+    @classmethod
+    def _band_min_axis_start(cls, dt: float, skirt: float = 1e-7) -> float:
+        """Lowest ``f_axis[0]`` the band pipeline auto-sizes within budget.
+
+        Inverts the compactness pre-sizing of :meth:`_band_setup` for
+        ``n_min = _BAND_AUTO_N_SYN_MAX``: under the default band
+        padding the roll-off gap below the axis is ``0.75·f1``, and
+        the pulse needs 13 Gaussian time constants across the window.
+        The result depends on nothing but ``dt`` and the skirt, so the
+        fallback notice can quote it before any port is built.
+        """
+        x_skirt = float(erfcinv(2.0 * skirt))
+        return (
+            13.0 * math.sqrt(2.0) * x_skirt / (2.0 * math.pi * 0.75 * cls._BAND_AUTO_N_SYN_MAX * dt)
+        )
+
     def _band_setup(
         self,
         f_axis: np.ndarray,
@@ -1421,6 +1532,7 @@ class AnalysisScatteringTD(AnalysisTD):
             f2 + 0.25 * width,
         )
         skirt = float(opts.get("skirt", 1e-7))
+        dc_anchor = bool(opts.get("dc_anchor", True))
         n_syn = opts.get("n_syn")
         if n_syn is None:
             # Compactness pre-sizing: the narrower roll-off dominates
@@ -1431,35 +1543,39 @@ class AnalysisScatteringTD(AnalysisTD):
             # peak) and round up to a power of two.  A failing gate
             # still auto-doubles at excitation time.
             x_skirt = float(erfcinv(2.0 * skirt))
-            sig_f = min(f1 - f_band[0], f_band[1] - f2) / (math.sqrt(2.0) * x_skirt)
+            # Which roll-offs the pulse has to accommodate.  With the
+            # DC anchor the excitation direction is tabulated down to
+            # f = 0, so there is no lower band edge to roll off
+            # against and the upper roll-off sizes the pulse alone —
+            # the duration stops scaling with 1/f_axis[0].  A port
+            # whose fundamental has a cut-off gets no anchor and needs
+            # the two-sided sizing; _set_band_excitation's retry loop
+            # grows the window for those.
+            gap = f_band[1] - f2
+            if not dc_anchor:
+                gap = min(f1 - f_band[0], gap)
+            sig_f = gap / (math.sqrt(2.0) * x_skirt)
             sigma_t = 1.0 / (2.0 * math.pi * sig_f)
             n_min = int(math.ceil(13.0 * sigma_t / dt))
             n_syn = max(8192, 1 << (n_min - 1).bit_length())
             if n_syn > self._BAND_AUTO_N_SYN_MAX:
-                # Recommended axis start that fits the budget: invert
-                # the sizing chain (gap = 0.75·f1 under the default
-                # f_band) for n_min = budget.
-                f1_rec = (
-                    13.0
-                    * math.sqrt(2.0)
-                    * x_skirt
-                    / (2.0 * math.pi * 0.75 * self._BAND_AUTO_N_SYN_MAX * dt)
+                hint = (
+                    f"narrow the measurement span (the roll-off room is {gap:.4g} Hz)"
+                    if dc_anchor
+                    else (
+                        f"raise the axis start to >= "
+                        f"{self._band_min_axis_start(dt, skirt):.3g} Hz "
+                        f"(constructor f_min= or an explicit "
+                        f"run(f_axis=...))"
+                    )
                 )
                 raise ValueError(
-                    f"band-pipeline auto-sizing: the frequency axis "
-                    f"starts at {f1:.4g} Hz, leaving only "
-                    f"{f1 - f_band[0]:.4g} Hz of spectral roll-off "
-                    f"room below it — the band-limited pulse then "
-                    f"needs ~{13.0 * sigma_t:.3g} s ≈ {n_min} steps "
-                    f"at dt = {dt:.3g} s (auto budget "
+                    f"band-pipeline auto-sizing: the pulse needs "
+                    f"~{13.0 * sigma_t:.3g} s ≈ {n_min} steps at "
+                    f"dt = {dt:.3g} s (auto budget "
                     f"{self._BAND_AUTO_N_SYN_MAX}), and the ghost-kernel "
                     f"build scales with it (single-threaded contour-"
-                    f"QZ).  Measuring close to DC with a pulsed band "
-                    f"port is inherently long.  Options: raise the "
-                    f"axis start to >= {f1_rec:.3g} Hz (constructor "
-                    f"f_min= or an explicit run(f_axis=...); higher "
-                    f"starts shorten pulse and kernel build "
-                    f"proportionally), or accept the cost "
+                    f"QZ).  Options: {hint}, or accept the cost "
                     f"deliberately via band_options="
                     f"{{'n_syn': {n_syn}}} (plus total_time_steps).",
                 )
@@ -1482,12 +1598,22 @@ class AnalysisScatteringTD(AnalysisTD):
         n_steps = int(total_time_steps) if total_time_steps is not None else n_syn + ring_down
         n_kernel = opts.get("n_kernel_init")
         if n_kernel is None:
-            n_kernel = max(16384, 1 << (n_steps - 1).bit_length())
+            # The boundary is exact as long as the kernel outlives the
+            # record: the convolution never reaches a tap beyond it.  So
+            # the next power of two above n_steps is the whole
+            # requirement, and every tap past it is paid for in contour
+            # QZ solves (4*n_kernel + 1 per kernel, three per run) and
+            # buys nothing — measured: 16384 against 4096 on a
+            # 4064-step record leaves the floor at -84.3 dB and takes
+            # three times as long.  The floor of 1024 keeps a very short
+            # run from re-deriving the kernel the moment it is extended.
+            n_kernel = max(1024, 1 << (n_steps - 1).bit_length())
         return dict(
             f_band=(float(f_band[0]), float(f_band[1])),
             f_span=(f1, f2),
             n_grid=int(opts.get("n_grid", 25)),
             svd_tol=float(opts.get("svd_tol", 1e-8)),
+            dc_anchor=dc_anchor,
             skirt=skirt,
             n_syn=n_syn,
             ring_down=ring_down,
@@ -1505,6 +1631,7 @@ class AnalysisScatteringTD(AnalysisTD):
         dt: float,
         total_time_steps: int | None,
         bc_objects: dict,
+        checkpoint_interval: int | None = None,
     ) -> ScatteringTDResult:
         """Band-subspace DTBC run: build once, one pulsed run per
         excitation, per-frequency true-mode decomposition.
@@ -1537,6 +1664,7 @@ class AnalysisScatteringTD(AnalysisTD):
                 svd_tol=cfg["svd_tol"],
                 n_channels=spec.n_modes,
                 n_kernel_init=cfg["n_kernel_init"],
+                dc_anchor=cfg["dc_anchor"],
             )
             for spec in self.ports
         ]
@@ -1547,6 +1675,20 @@ class AnalysisScatteringTD(AnalysisTD):
                 f"[AnalysisScatteringTD] band ports built: "
                 f"subspace rank p = {op0.subspace_rank}, "
                 f"n_syn = {cfg['n_syn']}, run = {cfg['n_steps']} steps",
+            )
+
+        if self.project is not None:
+            return self._run_band_streamed(
+                excited_list=excited_list,
+                operators=operators,
+                label_to_op=label_to_op,
+                cfg=cfg,
+                f_axis=f_axis,
+                m_eps=m_eps,
+                m_mu=m_mu,
+                dt=dt,
+                bc_objects=bc_objects,
+                checkpoint_interval=checkpoint_interval,
             )
 
         per_excitation = []
@@ -1584,20 +1726,7 @@ class AnalysisScatteringTD(AnalysisTD):
             solver.run()
             signals = recorder.finalize(n_steps_actual=n_steps)
 
-            # Record-quality contract: the DFT decomposition assumes
-            # complete ring-down inside the record (DD-057).
-            v_exc = signals[excited_chan][0].values
-            peak = float(np.abs(v_exc).max())
-            tail = float(np.abs(v_exc[-256:]).max())
-            if peak > 0.0 and tail > 1e-4 * peak:
-                warnings.warn(
-                    f"band-run record ends at {tail / peak:.1e} of "
-                    f"peak on {excited_chan} (contract: < 1e-4); "
-                    f"S-parameters may carry truncation ripple — "
-                    f"increase total_time_steps",
-                    UserWarning,
-                    stacklevel=3,
-                )
+            _warn_on_truncated_band_record(signals, excited_chan)
 
             s_dict = compute_band_s_parameters(
                 signals,
@@ -1655,6 +1784,215 @@ class AnalysisScatteringTD(AnalysisTD):
                 n_actual_steps=n_actual,
                 port_model_used="band",
             ),
+        )
+
+    def _run_band_streamed(
+        self,
+        *,
+        excited_list: list[tuple[str, int]],
+        operators: list,
+        label_to_op: dict,
+        cfg: dict,
+        f_axis: np.ndarray,
+        m_eps: np.ndarray,
+        m_mu: np.ndarray,
+        dt: float,
+        bc_objects: dict,
+        checkpoint_interval: int | None = None,
+    ) -> object:
+        """Stream one band-pipeline run per excitation into the project store.
+
+        The band counterpart of :meth:`_run_streamed` (DD-230).  Each
+        port additionally writes its :class:`BandDecomposition` — the
+        chain, plane, tracked family and recording profiles the
+        per-frequency decomposition needs — so the S-matrix stays
+        *derived on read* here exactly as on the modal path, rather
+        than being frozen into the file.  The expensive construction
+        (contour-QZ ghost kernels, SVD subspace) is not written: it
+        drives the time stepping only.
+
+        The band record has a fixed length by contract (DD-057), so
+        there is no energy stop and no signal-decay stop to record —
+        the run's step count *is* its plan.
+        """
+        from magnelio.io.project import open_project  # noqa: PLC0415
+
+        store, path = self._open_store(dt)
+        store.register_planned_runs(
+            (_scattering_run_name(chan), {"excited": [chan[0], int(chan[1])]})
+            for chan in excited_list
+        )
+        port_band = {op.name: BandDecomposition.from_operator(op) for op in operators}
+        port_modes = {op.name: self._modes_for_operator(op) for op in operators}
+        port_normal_dx = {op.name: op.plane.normal_dx for op in operators}
+
+        for excited_chan in excited_list:
+            for op in operators:
+                op.reset_state()
+            n_syn, ref_time = self._set_band_excitation(
+                label_to_op[excited_chan[0]],
+                excited_chan[1],
+                cfg,
+                dt,
+            )
+            n_steps = cfg["n_steps"] if cfg["n_steps_user"] else n_syn + cfg["ring_down"]
+            element_ops = [
+                build_lumped_element(e, self.mesh, m_eps, m_mu, dt=dt) for e in self.elements
+            ]
+            recorder = PortSignalRecorder(dt=dt, ports=operators)
+            run_monitors = list(self.monitors)
+            run_name = _scattering_run_name(excited_chan)
+            sink = store.open_run(
+                run_name,
+                excitations=[
+                    {
+                        "source": excited_chan[0],
+                        "mode": int(excited_chan[1]),
+                        "waveform": None,  # the synthesised band pulse
+                        "amplitude": 1.0,
+                        "delay": 0.0,
+                        "phase": 0.0,
+                    }
+                ],
+                excited=excited_chan,
+                dt=dt,
+                f_axis=f_axis,
+                channels=recorder.channels,
+                port_modes=port_modes,
+                port_normal_dx=port_normal_dx,
+                port_line_params={},
+                port_band=port_band,
+                excitation_fns=[(excited_chan, _band_drive_fn(ref_time, dt))],
+                recorder=recorder,
+                port_model="band",
+                total_time_steps=n_steps,
+                monitors=run_monitors,
+                grid=self.mesh.grid,
+            )
+            solver = FITTimeDomainSolver(
+                mesh=self.mesh,
+                boundary_conditions=bc_objects,
+                ports=operators + element_ops,
+                recorder=recorder,
+                total_time_steps=n_steps,
+                dt=dt,
+                verbose=self.verbose,
+                monitors=run_monitors,
+                backend=self.backend,
+                precision=self.precision,
+                sibc=self._sibc_spec(),
+                sink=sink,
+            )
+            # Resume checkpoints (KB-037 follow-up to DD-230).  The band
+            # boundary now carries a ``state_dict`` holding the projected
+            # exterior state and both convolution histories, and the
+            # kernels it does *not* store are a deterministic function of
+            # the projected blocks — which is only true since the pencil
+            # eigensolve got a fixed ARPACK start vector.  Without that
+            # the rebuilt subspace differs from the recorded one and the
+            # restore is silently inconsistent, which is why DD-230
+            # withheld checkpoints here rather than writing partial ones.
+            ckpt_interval = (
+                checkpoint_interval if checkpoint_interval is not None else max(1, n_steps // 8)
+            )
+            sink.enable_checkpoints(solver.state_dict, ckpt_interval)
+            self._drive_streamed_solver(solver, sink, run_name, path)
+            _warn_on_truncated_band_record(
+                recorder.finalize(n_steps_actual=n_steps),
+                excited_chan,
+            )
+            _renormalize_freq_monitors(
+                run_monitors,
+                Signal1D(
+                    t=np.arange(n_steps) * dt,
+                    values=_band_reference_values(ref_time, n_syn, n_steps),
+                    dt=dt,
+                    label="excitation",
+                ),
+            )
+
+        if self.verbose:
+            print(
+                f"[AnalysisScatteringTD] streamed {len(excited_list)} "
+                f"band run(s) to project {path}",
+            )
+        return open_project(path)
+
+    def _prepare_band_run(
+        self,
+        excited_chan: tuple[str, int],
+        m_eps: np.ndarray,
+        m_mu: np.ndarray,
+        dt: float,
+        f_axis: np.ndarray,
+        total_time_steps: int | None,
+    ):
+        """Build one band-pipeline march, in the shape a resume expects.
+
+        The band counterpart of :meth:`_prepare_run`.  It performs the
+        same construction as :meth:`_run_band` — band setup, one
+        contour-QZ port per spec, the synthesised ghost excitation — and
+        returns it as the ``_PreparedRun`` the shared resume machinery
+        consumes, so continuing a band run reuses the sink reopening,
+        checkpoint loading and monitor restoration of every other run
+        rather than duplicating them.
+
+        The construction is expensive (kernel build) and deterministic:
+        the same recipe and the same ``dt`` rebuild the same projected
+        blocks bit-for-bit, which is what lets the checkpoint's boundary
+        state be restored into it (KB-037).
+        """
+        from magnelio.analysis.time_domain import _PreparedRun  # noqa: PLC0415
+
+        cfg = self._band_setup(f_axis, dt, total_time_steps)
+        operators = [
+            build_band_dtbc_port(
+                spec,
+                self.mesh,
+                m_eps,
+                m_mu,
+                dt=dt,
+                f_band=cfg["f_band"],
+                n_grid=cfg["n_grid"],
+                svd_tol=cfg["svd_tol"],
+                n_channels=spec.n_modes,
+                n_kernel_init=cfg["n_kernel_init"],
+                dc_anchor=cfg["dc_anchor"],
+            )
+            for spec in self.ports
+        ]
+        label_to_op = {op.name: op for op in operators}
+        if excited_chan[0] not in label_to_op:
+            raise ValueError(
+                f"run excites port {excited_chan[0]!r}, which the rebuilt "
+                f"model does not define (has {sorted(label_to_op)})",
+            )
+        for op in operators:
+            op.reset_state()
+        n_syn, ref_time = self._set_band_excitation(
+            label_to_op[excited_chan[0]],
+            excited_chan[1],
+            cfg,
+            dt,
+        )
+        n_steps = cfg["n_steps"] if cfg["n_steps_user"] else n_syn + cfg["ring_down"]
+        element_ops = [
+            build_lumped_element(e, self.mesh, m_eps, m_mu, dt=dt) for e in self.elements
+        ]
+        recorder = PortSignalRecorder(dt=dt, ports=operators)
+        return _PreparedRun(
+            excitations=(
+                Excitation(excited_chan[0], mode=excited_chan[1], waveform=self.waveform),
+            ),
+            operators=operators,
+            element_ops=element_ops,
+            sources=[],
+            recorder=recorder,
+            drives={excited_chan: _band_drive_fn(ref_time, dt)},
+            n_steps_estimate=n_steps,
+            port_modes={op.name: self._modes_for_operator(op) for op in operators},
+            port_normal_dx={op.name: op.plane.normal_dx for op in operators},
+            port_line_params={},
         )
 
     def _set_band_excitation(
@@ -1846,6 +2184,23 @@ def _resume_scattering(
 
     analysis = AnalysisScatteringTD.from_project(proj, verbose=verbose)
     excitation = Excitation(excited_chan[0], mode=excited_chan[1], waveform=analysis.waveform)
+    prepare = None
+    if run_meta.get("port_model") == "band":
+        # The band pipeline builds its own operators (contour-QZ kernels
+        # over the recorded band) and arms a synthesised ghost source
+        # rather than binding a waveform, so it supplies the prepared run
+        # itself.  The rebuild is bit-for-bit the one the checkpoint was
+        # written in (KB-037), which is what makes restoring the boundary
+        # state into it legitimate.
+        # The axis is a property of the store, not of one run; the step
+        # count is the run's own plan, so _band_setup reproduces exactly
+        # the sizing the checkpointed march was built with.
+        f_axis_run = np.asarray(proj.f_axis, dtype=float)
+        planned = run_meta.get("total_time_steps")
+
+        def prepare(m_eps, m_mu, _chan=excited_chan, _ax=f_axis_run, _n=planned):
+            return analysis._prepare_band_run(_chan, m_eps, m_mu, float(run_meta["dt"]), _ax, _n)
+
     solver, prepared, run_monitors = _resume_transient(
         analysis,
         proj,
@@ -1857,6 +2212,7 @@ def _resume_scattering(
         max_time_steps=max_time_steps,
         checkpoint_interval=checkpoint_interval,
         verbose=verbose,
+        prepare=prepare,
     )
     # ``_actual_steps`` counts from step zero across the resume, so the
     # sampled waveform spans the whole run, not just the appended tail.

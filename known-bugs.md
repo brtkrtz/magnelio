@@ -16,8 +16,88 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Two entries are open as of 2026-08-30: KB-023 and KB-027.**
+**Three entries are open as of 2026-08-31: KB-023, KB-027 and KB-038.**
 Everything else is struck through and resolved.
+
+## KB-038: The band-DTBC port floor degrades with the length of the run — Open (2026-08-31)
+
+`validation/qtem_band_dtbc_port_floors.py` records, for the `layered`
+fundamental, floors of −159.6…−231.3 dB from a 12288-step pulsed run
+with record end/peak 1e-11…1e-13.  The same script on the same mesh
+today gives **−114.1…−129.9 dB at end/peak 1.6e-06**, and the microstrip
+case −146.6…−168.1 dB at 7.4e-09 against a recorded −171.1…−211.0 dB.
+So the certificate no longer reproduces its own header on either
+geometry.
+
+**What is measured.**  Lengthening the record makes it *worse*, which
+rules out the finite-record limitation the header's own methodology
+note describes (`layered`, everything else fixed):
+
+    steps    n_kernel    record end/peak    |S11| worst    median
+    12288      16384         1.59e-06         −114.1       −126.6
+    24576      32768         3.96e-06         −106.4       −118.2
+    49152      65536         8.67e-06          −99.6       −111.5
+
+**At 49152 steps the case fails its own −100 dB acceptance criterion.**
+The degradation is ~7.5 dB per doubling of the run, i.e. the error at
+the end of the record grows roughly as N^1.25 while the excitation has
+long since passed.
+
+**The kernel length is not the cause.**  Holding `n_kernel = 65536`
+while varying only the record reproduces the same numbers to 0.1 dB
+(12288 steps: −114.2 dB against −114.1; 24576: −106.4 against −106.4),
+so this is not DD-234's kernel sizing and not the late-tap content of a
+longer kernel.  It is the length of the convolution itself.
+
+**The DC anchor is not the cause.**  Building the microstrip ports with
+`dc_anchor=False` gives −150.0 dB at end/peak 1.87e-08 against −146.6 dB
+at 7.4e-09 with the anchor — the same class, the anchor slightly
+better.
+
+**Not diagnosed.**  Two distinct things are in play and only the second
+is characterised above: a level shift against the recorded values at
+equal run length (≈45 dB on `layered`), and the growth with run length.
+The recorded numbers predate this repository's history (they are
+attributed to "session 90" in the header and the file entered the tree
+with the initial public commit), and the pipeline has changed under
+them repeatedly since — so a bisection needs the predecessor history.
+
+Consequences while it is open: the band floors quoted in the fixture
+header, in `design-decisions.md` (DD-064) and in the user
+documentation are not reproducible, and a long band run has a floor
+that depends on its own length.  Measurements: internal record
+`investigations/port-model-default/` (`probe_record_length.py`,
+`probe_prod_floor_cause.py`, `fixture_layered.log`,
+`fixture_microstrip.log`).
+
+## KB-037: ~~Two builds of the same band port gave different Galerkin subspaces~~ — Resolved (2026-08-31)
+
+`zeta_pencil.find_propagating_modes` called `spla.eigs` without a start
+vector, so ARPACK began from a random one.  The band subspace is spanned
+by the *traces* of the tracked mode families, so the randomness
+propagated into it: two builds of the same port from the same mesh gave
+projected exterior blocks differing by 35-113 % entrywise, with the
+entrywise magnitudes agreeing to 1e-5 and every norm intact.  Most of
+the difference was a per-basis-vector sign flip (the SVD gauge), but
+~1e-5 of genuine numerical variation remained underneath it, so a sign
+convention alone would not have fixed it.
+
+This is the same defect as KB-010 (DD-142) in a third place: a fixed
+start vector had been applied to `numerical_2d.py`'s two `eigsh` calls
+and to `spectral_dt`, and the pencil eigensolve was missed.
+
+Nothing measured wrong because of it — the subspace is a basis, and the
+Galerkin projection is invariant under a change of basis to the accuracy
+above.  What it blocked was **resume**: a resumed run rebuilds its
+operators and reloads the boundary state from the checkpoint, and a
+rebuilt subspace that differs from the recorded one makes the two
+inconsistent while every norm still looks right.
+
+Fixed by the shared `magnelio._arpack.arpack_v0`, which the three
+callers now share.  Two builds of the same band port are now bit-
+identical, in one process and across processes (measured 0.0e+00).
+Measurement record: internal dossier `investigations/port-model-default/`
+(`probe_band_reproducibility.py`, MEASUREMENTS.md section 12).
 
 ## KB-036: ~~Faces in a conductor's end wall blocked and the wall unbooked on grids below about 15 µm~~ — Resolved (DD-207, 2026-08-28)
 

@@ -17620,3 +17620,861 @@ covering more of the cross-section overlaps the mode more per unit RMS
 fit.  The gate remains a single scalar over a cross-section, so it
 still cannot distinguish a benign tilt from a malignant spike; it
 assumes the malignant one.
+
+---
+
+## DD-230 — the band pipeline streams into the project store
+
+**Status:** Decided 2026-08-30 (branch `feat/band-project-store`).
+Gates: `tests/integration/test_analysis_scattering_band.py`
+(store round-trip, derived-on-read floors, refused resume).
+Measurements: internal record
+`investigations/band-project-store/`.
+
+**Problem.**  `AnalysisScatteringTD(project=...)` raised
+`NotImplementedError` for every run that resolved to the band
+pipeline — including, since DD-063, every `port_model="auto"` run on
+an inhomogeneous line.  The two production defaults of the DD-224 era
+(a project store, and the port model that does not degrade to a
+−30 dB absorber) could not be used together.
+
+The cause was structural, not an oversight of effort.  The store does
+not persist an S-matrix: it writes the V/I record and *derives* S on
+read (which is what lets a reader re-evaluate on a different
+`f_axis`, and follow a live run).  Everything the derivation needs
+must therefore serialise.  For the modal path that is a flat set of
+scalars — `port_modes`, `port_normal_dx`, `port_line_params`.  The
+band path decomposes differently: `compute_band_s_parameters` solves
+the true discrete modes *per frequency* on the port's own chain and
+synthesises their phasors, so it needs `op.band_data`, and WP-S2
+never wrote it.  It never wrote it because DD-064 had made `"band"`
+an opt-in side path — and this hole was, in turn, one of the three
+reasons the default could not move to `"auto"`.  The hole was
+defending its own cause.
+
+**Measured (what actually has to be stored).**  The decomposition
+touches far less of `BandPortData` than the operator carries, and the
+split is principled: quantities belonging to *this port* (its chain,
+plane, tracked family, recording profiles) against quantities that
+are properties of the *mesh* and merely cached on the port (`M_eps`,
+`M_mu`, the 3D curl — `build_M_eps` / `build_M_mu` /
+`build_curl_matrix` of the stored grid).  Only the first kind is
+written; the second is rebuilt on read.  Decisively, **none of the
+expensive construction appears in either**: the contour-QZ ghost
+kernels and the SVD subspace drive the time stepping and have no part
+in the decomposition, so reading a stored band run costs three
+operator assemblies, not a port build.
+
+Port-side payload, measured on the layered CI fixture at three
+cross-section resolutions:
+
+    free tangential DOFs n_t     68      140      536
+    payload per port          17.7 KiB  37.3 KiB  145.9 KiB
+
+Linear in the cross-section at 0.26–0.27 KiB per DOF (the three
+sparse period blocks dominate).  A production feed therefore lands in
+the high hundreds of KiB — small against the record, but well past
+HDF5's 64 KiB attribute ceiling, which settles the schema question:
+**datasets, not attributes**, and written before the SWMR switch like
+every other static object.
+
+**Decision.**
+
+1. `BandDecomposition` (in `ports/_modal/band_dtbc.py`) is the
+   decomposition input detached from the operator, with
+   `from_operator`.  `compute_band_s_parameters` accepts either it or
+   a built operator, and takes `m_eps`/`m_mu`/`c_3d` as keywords —
+   the live path passes nothing and keeps reading the cached copies.
+2. The store writes it under `ports/<label>/band/` and rebuilds it on
+   read; `Project._s_params` branches on the run index's
+   `port_model`, so a band run's S-matrix stays **derived on read**
+   exactly as a modal one's.  `port_model_used` now reports what the
+   run actually used instead of a hard-wired `"modal"`.
+3. `a()`/`b()` refuse on a *stored* band run with the same reason
+   they refuse in memory (DD-057: the recorded channels are fixed
+   subspace projections with no calibrated scalar Z).  The reader had
+   no such guard, so it would have returned quietly wrong waves.
+4. **A band run is not resumable, and says so.**  Its boundary owns
+   the projected exterior state `xt` and two convolution histories,
+   and `PortOperatorBandDTBC` has no `state_dict` — the solver
+   checkpoint silently omits what it cannot see, so a resume would
+   restart the boundary from zero mid-record.  The band path
+   therefore enables no checkpoints and `resume()` raises on such a
+   run.  The record is fixed-length by contract (DD-057), so there is
+   nothing to finish: re-run it.
+
+**Regression.**  The serialisation round-trip is **bit-identical in
+every field** — the three period blocks, the chain indexing and its
+scalar-vs-array `et_step`, the plane, the tracked family, all four
+mode profiles and the dual projections.  That is the exact claim, and
+it is pinned on the written record rather than on a second solver
+run, because the 3D march is *not* bit-reproducible: two identical
+in-memory runs of the fixture differ by 1.6e-8 in V and 6.8e-7 in a
+−145 dB S-parameter (parallel reduction order).  Store-vs-RAM differs
+by the same 1e-7, i.e. by the solver's own noise and not more.  With
+the *same* signals, decomposing through stored records instead of
+built operators agrees to 4.8e-14.  Stored floors reproduce the
+in-memory class (|S11| ≤ −117 dB across the axis, |S21| within
+0.05 dB).  Unit 2787 / integration 435 + 6 new.
+
+**Not decided here.**  Whether `port_model` should default to
+`"auto"`.  This closes one of the three blockers named in the DD-229
+follow-up; the near-DC axis gate and the loss of time-domain power
+waves remain, and the default deserves its own entry.
+
+**Limits.**  A band run in a store cannot be resumed or extended
+(above), and the near-DC cost gate is unchanged — a default frequency
+axis still refuses the band pipeline before any of this is reached.
+The payload law was measured on one fixture family (a layered
+parallel plate) across three resolutions; the linear scaling is a
+property of the sparse period blocks, but the constant is
+geometry-dependent.
+
+---
+
+## DD-231 — the port model stays `"modal"`, and the run says what that buys
+
+**Status:** Decided 2026-08-30 (branch
+`feat/port-model-default-notice`).  Gates:
+`tests/integration/test_pair_gate_certificate.py::TestMurFallbackNotice`.
+Measurements: internal record `investigations/port-model-default/`.
+
+**Problem.**  DD-229 and DD-230 both closed with the same open
+question, and DD-230 closed one of the three blockers it named:
+should `AnalysisScatteringTD(port_model=...)` default to `"auto"`
+rather than `"modal"`?  DD-064 chose the cheap default in July 2026
+on a cost argument — seconds of runtime and time-domain power waves
+against a −30 dB floor — and a cost argument invites re-opening every
+time the expensive side gets cheaper.  This entry settles it on a
+different footing.
+
+**Measured.**  The remaining two blockers are not costs.  On the
+canonical production case — tutorial 09, a shielded microstrip, on
+library defaults — `port_model="auto"` resolves to the band pipeline
+in 0.16 s and then **refuses to run at all**:
+
+    default f_axis   74.63 MHz .. 15 GHz     (f_min = 0 → f_max/n_freq)
+    band pulse needs 1 212 141 steps         (auto budget 131 072)
+    axis would have to start at ≥ 690 MHz    (factor 9.2 above default)
+
+The band pipeline measures with a band-limited pulse whose duration
+is `O(1/f_axis[0])`; an axis reaching toward DC sizes it past any
+budget.  That is a property of the method, not of the sizing
+constants.  Sized from the first axis start that fits, the record is
+still 1.4·10⁵ steps (138 135 at `f_min` = 1 GHz, 72 599 at 2 GHz,
+39 831 at 3 GHz).
+
+End to end on that fixture, one excitation, the switch measures
+
+    modal              1.9 s   |S11| max  -32.9 dB   a/b available
+    band (f_min 3 GHz) 2688.9 s |S11| max -137.2 dB   a/b refused
+
+— a factor 1453 in runtime, and the band side is the *favoured* one:
+its axis starts at 3 GHz because the default cannot be sized, so it
+measures 80 % less of the band.  (The floor is -137 dB rather than
+DD-064's -171…-211 dB because this is a coarse tutorial grid, which
+is why the notice quotes "below -130 dB" — the figure both
+measurements carry — rather than the production one.)
+
+The other two differences cannot be decided in advance at all: band
+results have no `a()`/`b()` (DD-057 — the channels are fixed subspace
+projections with no calibrated scalar Z) and no resume (DD-230).
+Whether the user wants time-domain power waves or a resumable run is
+not knowable when the pipeline is picked.  **A default must not take
+a decision whose cost depends on what will be asked of the result
+afterwards.**
+
+**Decision.**
+
+1. `port_model` stays `"modal"`.  Not as a cost trade this time: on
+   unchanged defaults `"auto"` would end the commonest production run
+   in a `ValueError` before step 0.  The question is closed; a future
+   re-opening needs a band pipeline whose pulse is not tied to the
+   axis start, not a faster machine.
+
+2. The verbose notice becomes a balance sheet instead of a label.  It
+   names each fallback channel with the measurement behind it,
+   distinguishes the three ways a channel arrives there (a genuinely
+   inhomogeneous cross-section — the user's model; a cross-section
+   that missed the gate by jitter — the port has already warned with
+   the mesh-side cause; a mode with no measured spread — analytical
+   evaluator or a stage-2 veto), states the floor traded away *and*
+   what the run keeps for it (runtime, `a()`/`b()`, resume, no lower
+   band edge), then prices the alternative.
+
+3. **The advice is computed for the model at hand, not quoted from a
+   manual.**  The old notice recommended `port_model='band'`, which
+   on that same microstrip raises.  `_band_min_axis_start` inverts
+   the compactness sizing that `_band_setup` uses for its own
+   refusal, so the notice quotes the axis start the switch would need
+   (690 MHz here) or says the axis already clears it.  Both numbers
+   come from one function, so the notice cannot recommend a switch
+   the gate would reject — pinned by a test that asserts the refusal
+   and the acceptance on either side of the quoted number.
+
+4. The notice is split at the class that owns the option.  It fired
+   from `AnalysisTD._prepare_run` while naming `port_model`, a
+   keyword `AnalysisTD` does not have; the base class now points at
+   the class that does, and `AnalysisScatteringTD` overrides with the
+   priced version.
+
+5. `PortOperatorModal.chain_spreads` joins `termination_kinds` as a
+   public per-mode property — the notice and `PortReport` both needed
+   the measurement and both read a private list for it.
+
+6. `DD-064` left the user-visible text (house rule: no DD numbers in
+   output the user reads).
+
+**Regression.**  Unit 2787 / 4 skipped, integration 446 / 5 skipped
+(441 + 5 new); no pinned
+number moved — this entry changes no numerics, only what the run
+says about them.  `docs/methods/ports.md` gains the paragraph saying
+the balance sheet is printed rather than looked up.
+
+**Limits.**  The quoted axis start assumes the default band padding
+(`f_band` gap = 0.75·f1); an explicit `band_options["f_band"]` moves
+the requirement, and the notice does not model that.  The floors it
+quotes (−30 dB class, below −170 dB) are the measured microstrip
+population, not a bound for the port at hand — the per-channel bound
+is `chain_floor_db` on the report, and it exists only for certified
+channels.  The notice fires once per analysis, so a script that
+rebuilds ports between runs sees it once.
+
+## DD-232 — the band excitation is anchored at DC, and the pulse stops scaling with the axis start
+
+**Status:** Decided 2026-08-30 (branch `feat/band-dc-anchor`).  Gates:
+`tests/unit/test_band_dtbc.py::TestFactoryAndOperator`,
+`tests/integration/test_pair_gate_certificate.py::TestMurFallbackNotice`.
+Measurements: internal record `investigations/port-model-default/`
+(`probe_dc_pencil.py`, `probe_below_band.py`, `probe_dc_postproc.py`,
+`probe_dc_anchor.py`, `probe_ab_dc.py`).
+
+**Problem.**  DD-231 closed the `port_model` default on a hard fact:
+on library defaults the band pipeline does not run at all, because
+its band-limited pulse is `O(1/f_axis[0])` long — 1 212 141 steps
+against a budget of 131 072 — and it named the way back explicitly, "a
+band pipeline whose pulse is not tied to the axis start".  The
+standing explanation for that coupling was structural: the Galerkin
+subspace is built from mode traces on a frequency grid with
+`f_lo > 0`, so the excitation was thought to be confined to that band
+by the boundary itself.
+
+**Measured.**  The explanation was wrong in three separate places,
+and the boundary was never the band-limited part.
+
+*The kernel does not degenerate at DC.*  The contour of
+`matrix_dtbc_kernel` runs on `|z| = exp(4/n_kernel)`, whose closest
+approach to 1 is `sig_hat = 2 - rho - 1/rho`.  At the production
+`n_kernel = 65536` that is `-3.7e-9` — essentially DC — so every band
+run that has ever succeeded already evaluates the solvent there.  The
+branch point at `zeta = 1` is real (`min|zeta-1|` tracks
+`sqrt|sig_hat|` over seven decades) but the square root is what saves
+the dichotomy: the branches stay 1.3e-5 off the unit circle even at
+`sig_hat = -9.1e-13`, with the solvent residual flat at 1e-14 and
+`cond X1` at 2.
+
+*The DC limit is already inside the subspace.*
+
+    ||(I - P_V) track_t||_W / ||track_t||_W = 1.24e-08
+
+The static Laplace trace lies in the band subspace to eight digits,
+because the fundamental family converges to it: the W-overlap
+`|<track_t|phi>|` is 0.999972 at the bottom of the tracked band and
+1.000000 (six digits) at 20 MHz.
+
+*The boundary is accurate far below its build band.*  A boundary
+built on 2.25-18 GHz, evaluated outside it:
+
+    20 MHz     -72.0 dB        1 GHz    -106.0 dB
+    74.63 MHz  -83.4 dB      2.25 GHz   -113.0 dB   (band edge)
+    300 MHz    -95.5 dB        18 GHz   -130.5 dB
+
+74.63 MHz is precisely the axis start DD-231 could not size.  |Gamma|
+degrades monotonically toward DC but never meets an edge — this is a
+floor that improves with frequency, not a bandpass.
+
+What *is* band-limited is bookkeeping about the excitation:
+`_synthesize_source` zeroes every rfft bin outside the tracking grid,
+because that is where the channel's subspace direction `U(f)` is
+tabulated; and `_band_setup` floors the subspace band at `0.25·f1`
+(only because it must stay positive) and then sizes the pulse from
+the narrower roll-off, `min(0.75·f1, 0.25·width)`.  Near DC the lower
+term wins.  But `U(f -> 0)` is not unknown: it is `track_t`, which the
+DC bootstrap computes one line above the tracking call and until now
+used only as an anchor for the zeta-pencil.
+
+**Decision.**
+
+1. `build_band_dtbc_port(dc_anchor=True)` continues the *fundamental
+   channel's excitation direction* below the tracked band down to
+   `f = 0` (`continue_family_to_dc`): the interior points are measured
+   by the same pencil solve as the tracking, the endpoint is the
+   static Laplace trace in closed form (`zeta = 1`, no longitudinal
+   part).  The subspace, the Galerkin projection, the recording
+   channels and both ghost kernels are untouched — this is a table
+   the excitation reads, nothing more.
+
+2. With the table reaching 0, `band_source_spectrum` drops the lower
+   roll-off (there is no band edge below to roll off against) and
+   `_band_setup` sizes the pulse from the upper roll-off alone.  On
+   the default axis that is 1 211 808 steps -> 18 178, `n_syn` 32768,
+   inside the budget: **the pipeline sizes on library defaults for
+   the first time.**  The extended direction grid is no longer
+   uniform — a short interval below the tracked band, then the
+   tracking step — so the cubic interpolation was checked against the
+   directly measured direction there: 1e-6 relative at worst, no
+   ringing.
+
+   End to end on the coarse two-port fixture of the integration
+   suite, where the kernels are affordable, the run DD-231 measured
+   as impossible now delivers
+
+       axis 33.83 MHz .. 6.8 GHz, port model 'band'
+       |S11|  -117.4 dB worst, -134.3 dB median above 0.5 GHz
+              -91.2 dB at the bottom axis point (33.83 MHz)
+       |S21|  within 0.07 dB of the modal run
+
+   The -91.2 dB at 33.83 MHz is the time-domain counterpart of the
+   a-priori -72 dB at 20 MHz above: the floor really does degrade
+   toward DC, and it stays two orders below what the modal fallback
+   offers anywhere.
+
+3. The anchor applies only where the fundamental *is* the static mode
+   (W-overlap with `track_t` >= 0.9 at the band edge).  A waveguide
+   fundamental has a cut-off, gets no anchor, and keeps the two-sided
+   sizing; `band_options={"dc_anchor": False}` restores the old
+   behaviour everywhere.
+
+4. The DD-231 notice loses its axis-start clause, which no longer
+   describes anything, and quotes it again only when the anchor is
+   switched off.
+
+**What this does not buy.**  The stages of the band-cost work are not
+substitutes.  On an axis that already sized (3 GHz) the anchor is
+worth 1.3x, because the upper roll-off dominates there; it makes the
+default axis *possible*, not cheap.  The runtime of a band run is
+governed by the subspace rank (kernel build `O(p^3)` per contour
+point) and by the exact convolution (`O(N^2)` over a run) — those are
+the levers, and they are untouched here.  DD-231's other two
+blockers, `a()`/`b()` and resume, are likewise untouched, so the
+`port_model` default stays `"modal"`.
+
+## DD-233 — a band run is resumable, and it never needed the recursion
+
+**Status:** Decided 2026-08-31 (branch `feat/band-kernel-fit`).  Gates:
+`tests/unit/test_band_dtbc.py::TestBoundaryCheckpoint`,
+`tests/integration/test_analysis_scattering_band.py::test_band_run_resumes_bit_exactly`,
+`::test_band_run_checkpoints_its_boundary`.  Measurements: internal
+record `investigations/port-model-default/` (MEASUREMENTS.md sections
+11-12; `probe_kernel_vf.py`, `probe_kernel_zvs_era.py`,
+`probe_kernel_longwindow.py`, `probe_band_reproducibility.py`,
+`probe_band_resume_seam.py`).
+
+**Problem.**  DD-231 kept `port_model="modal"` on three structural
+grounds, one of which was that a band run cannot be resumed.  DD-230
+had stated the reason: the band boundary carries the projected exterior
+state and two convolution histories and has no `state_dict`, so the
+solver's checkpoint — which collects port state by
+`hasattr(op, "state_dict")` — would omit them silently and a resume
+would restart the boundary from zero mid-record.  The plan of record
+was to earn resume as a by-product of replacing the full-history
+convolution with a K-term recursion, which would shrink the boundary
+state to K numbers.
+
+**What the measurements found.**  Both halves of that plan are wrong,
+in opposite directions.
+
+*The recursion is not available.*  A contour fit of the kernel cannot
+reach the accuracy the pipeline exists for: least squares on |z| = rho
+minimises `sum_m |dL_m|^2 rho^-2m` by Parseval, an exponentially
+down-weighted coefficient norm, while the kernel decays *algebraically*
+and carries real energy in its late taps (|L_m|/|L_1| = 61 at
+m = 4095).  Measured on one surrogate with one error norm: ERA -129.9
+dB, the best contour fit -57.6 dB.  Nor does a realisation from the
+*coefficients* survive the record: from a 1024-tap window it reaches
+-17.5 dB over 16384 taps with the error growing monotonically along the
+record, and raising the order past the window's information content
+lands eigenvalues at |lambda| = 1.18 and errors of 1e13.  The AAK bound
+that made the recursion look cheap was measured on a 1024x1024 Hankel
+matrix — taps 1..2048 of a 16384-tap kernel — and re-measuring it on a
+tall block Hankel shows it does not converge in the block-column count
+either.  Neither number is the bound; both read their own window.
+
+*And resume never needed it.*  The history is `2 * n_steps * p`
+numbers — 2.4 MB at 12288 steps and p = 12.  Nothing about that size
+requires a recursion.
+
+**What actually blocked it** was reproducibility, and it was not known.
+Two builds of the same band port gave projected exterior blocks
+differing by 35-113 %, in one process as much as across two, because
+`find_propagating_modes` called ARPACK without a start vector and the
+subspace is spanned by the tracked families' traces.  Removing the SVD
+sign gauge left 9.1e-6 of genuine variation.  A resume rebuilds its
+operators from the recipe and reloads the boundary state from the
+checkpoint; a rebuilt subspace differing from the recorded one makes
+the two inconsistent while every norm still looks right.  That is
+KB-037, the same defect as KB-010 (DD-142) in a third call site.
+
+**Decision.**  Resume is implemented directly, on three pieces:
+
+1. **A fixed ARPACK start vector**, now shared by every sparse
+   eigensolve (`magnelio._arpack.arpack_v0`).  Two builds of the same
+   band port are bit-identical, in one process and across processes.
+2. **`state_dict` / `load_state_dict` on the band boundary and its port
+   operator** — exactly what `reset_state` clears: the projected state,
+   both histories (filled prefix only) and the interior trace.  The
+   kernels are *not* stored: they are a deterministic function of the
+   rebuilt blocks, which is only true because of (1).  A restore into a
+   subspace of different rank is refused, as is a source history
+   without an incoming kernel.
+3. **`band_options` in the run recipe.**  They size the ghost
+   excitation and the subspace, and were not persisted, so a run
+   rebuilt from a project silently auto-sized `n_syn` differently
+   (measured 8192 against the recorded 3072) — which alone made the
+   seam non-exact and would equally affect any other rebuild from a
+   store.
+
+The resume path itself is parameterised rather than duplicated: the
+band pipeline supplies its own `_PreparedRun` and reuses the shared
+sink reopening, checkpoint loading and monitor restoration.
+
+**Measured.**  A band run continued from a checkpoint reproduces an
+uninterrupted run **bit-exactly** — the recorded V/I waves are equal
+sample for sample over the whole record, and the S-parameters derived
+on read are equal element for element.  Before the recipe fix the waves
+were identical up to sample 2431 and parted exactly at the checkpoint
+step.
+
+**What this does not change.**  `port_model` stays `"modal"`
+(DD-231): resume was one of three grounds, and the other two —
+`a()`/`b()` time-domain power waves, and the runtime ratio — stand.
+The convolution still costs ~13 % of the run; an *exact* fast method
+(blocked FFT convolution) remains available and is not attempted here,
+while the kernel build's 71 % is not reachable by any contour fit.
+
+## DD-234 — the band pipeline is priced against -70 dB, not against its own maximum
+
+**Status:** Decided 2026-08-31 (branch `feat/band-kernel-fit`).  Gates:
+`tests/integration/test_analysis_scattering_band.py::test_kernel_is_sized_to_the_record_not_to_a_margin`,
+`tests/unit/test_band_dtbc.py::TestContourParallelism`.  Measurements:
+internal record `investigations/port-model-default/` (MEASUREMENTS.md
+sections 13-14; `probe_floor_vs_cost.py`, `probe_cost_at_target.py`,
+`probe_kernel_floor_margin.py`, `probe_contour_parallel.py`).
+
+**Problem.**  Every measurement of the band pipeline had priced it
+against its own maximum accuracy — -142.6 dB, the floor that justifies
+an exact discrete transparent boundary.  Against that number the
+pipeline costs 690x the modal path and no lever moves it far, which is
+what DD-231 recorded and DD-233 confirmed for the rational-kernel
+route.
+
+But the target is -70...-80 dB, the class a commercial suite reaches on
+QTEM ports in acceptable time from a handful of frequency samples.
+Nobody had measured what *that* costs.
+
+**What it costs.**  Already available, and by a different factor:
+
+    svd_tol   p     floor        runtime   x modal
+     1e-2     3    -66.4 dB      12.0 s      34
+     1e-3     4    -84.3 dB      14.2 s      40
+     1e-8    10   -116.3 dB      44.8 s     126
+
+`|S21|` stays within 0.005 dB at every rank: the low-rank boundary
+absorbs correctly, it reflects more.  So the target accuracy was never
+the problem — the pricing question had simply never been asked at the
+target.
+
+**Two findings followed, and both are now implemented.**
+
+1. **A quarter of that runtime was a margin.**  `_band_setup` sized the
+   kernel as `max(16384, next_pow2(n_steps))`.  The boundary is exact
+   as long as the kernel outlives the record — the convolution never
+   reaches a tap beyond it — so the floor made short runs pay a 4x
+   margin on the item that dominates them (`4*n_kernel + 1` contour QZ
+   solves per kernel, three per excited run).  Removing it leaves the
+   floor unmoved to 0.1 dB and takes the -84 dB run from 40x to **13x**
+   modal.  Sizing is now `max(1024, next_pow2(n_steps))`.
+
+   Going *below* the record is not the cheap version of this: a
+   truncated kernel is not merely less accurate, it is **active**
+   (measured floors of +3 to +33 dB, |S21| deviations up to 33 dB).
+   The module's "no truncation, no passivity question" is load-bearing
+   and now has a measurement.
+
+2. **The contour loop parallelises across processes.**  It is
+   `4*n_kernel + 1` independent solvent evaluations and ~65 % of a
+   target-accuracy run.  Threads buy nothing (0.94x — the GIL is not
+   released across `ordqz`); processes give 5.5x at n_kernel = 16384,
+   on the pattern the mesher already uses.  The pool costs a fixed
+   ~1.2 s to spawn while the loop divides by the worker count
+   (20.3/8 + 1.2 = 3.7 s reproduces the measurement), so below ~3 s of
+   serial work the loop stays sequential.  At production scale
+   (p = 15, n_kernel = 32768, ~104 s per kernel) the constant is
+   irrelevant and the projection is 7.8x.
+
+   The kernel is bit-identical either way.  That is a requirement, not
+   a bonus: a resumed run rebuilds its kernel from the recipe and must
+   land on the one its boundary state was recorded in (DD-233).
+
+**Why the rank lever is weaker than O(p^3) predicts** — the open
+question from DD-233 and section 9b — is also settled: at the target
+rank the build is not arithmetic-bound.  One `ordqz` on the linearised
+pencil costs 65 microseconds at p = 4 (8x8), which is the SciPy wrapper
+and its `sort="iuc"` ordering callback, not the flops; rebuilding the
+pencil adds 31 %.  So p = 10 -> 4 buys 3.3x where p^3 predicts 15x.
+Two escapes were tested and closed: `eig` + select is *slower* at the
+ranks that matter (0.75-0.86x at p = 3-6), and threading is dead.
+
+**What this does not change.**  `port_model` stays `"modal"` — DD-231's
+remaining grounds (`a()`/`b()`, and a factor that is still 12-13 rather
+than ~1) are untouched.  What changes is the shape of the argument: the
+gap to a default-capable band port is now a runtime gap of about one
+order of magnitude, not two and a half, and the largest remaining item
+(postprocessing, 61 ms per axis frequency, rank-independent) grows to
+dominate on a production axis of 201 points, where it has never been
+touched.
+
+
+## DD-235 — the band decomposition says when its mode basis is short
+
+**Status:** Decided 2026-08-31 (branch `feat/band-kernel-fit`).  Gates:
+`tests/integration/test_analysis_scattering_band.py`,
+`tests/integration/test_qtem_band_dtbc_sparams.py`,
+`tests/unit/test_zeta_pencil.py`.  Measurements: internal record
+`investigations/port-model-default/` (`probe_postproc_split.py`,
+`probe_multimode_contamination*.py`, `probe_multimode_targets.py`,
+`probe_incomplete_basis_warning.py`, `probe_cwp_slice_exactness.py`,
+`probe_band_s_bit_identity.py`, `probe_target_dedup.py`,
+`probe_dedup_identity.py`, `probe_blas_threads.py`).
+
+**Problem.**  DD-234 left postprocessing as the largest untouched item
+of a band run — 61 ms per axis frequency, rank-independent, five points
+on the certificate fixture but 201 on a production axis.  The lead on
+record was a warm start along the frequency axis.  Splitting the cost
+first turned up something the speed question had been hiding: where the
+decomposition's mode basis is short, it does not fail, it *biases*.
+
+**The accuracy finding.**  Each axis frequency solves one joint least
+squares over every recording channel, so its right-hand side carries the
+recorded response of every mode present at the port.  Two ways to be
+short of modes, and they behave oppositely:
+
+- A **channel** without a mode is visible.  It fails the 0.5 overlap
+  test, takes no assignment, and its S stays NaN.  The channels that
+  *were* matched are unharmed — measured at 1e-15 relative, roundoff,
+  because the dual-basis recording profiles are biorthogonal to the
+  true modes to ~6e-7.
+- A **mode** without a channel is not visible.  Nothing is skipped, so
+  nothing goes NaN, and the fit attributes the missing mode's content
+  to the modes that remain.  Measured on the `layered2` two-family
+  fixture with the port truncated to `n_modes = 1` above its second
+  cut-on (8.4465 GHz): S11 wrong by 23-30 %, contamination -129 dB at
+  unit amplitude ratio, rising exactly 20 dB per decade of that ratio.
+  The coefficient is the port's biorthogonality defect, a per-port
+  number nobody measures; at 1e-3 rather than 6e-7 this sits 64 dB
+  higher and reaches the working floor.
+
+**Why not the least-squares residual.**  It looks like the natural
+detector and separates a complete basis (4.4e-7 to 6.7e-6) from a short
+one (0.36 to 0.93) by five orders of magnitude.  It is still the wrong
+one: a single-channel port makes the system square, so the residual is
+identically machine zero — measured 0 to 9.1e-16 *while a propagating
+mode was being ignored*.  It is blind in exactly the configuration that
+produces the silent error.
+
+**Decision.**  The loop counts the modes it found against the modes it
+assigned and warns once per port, naming the frequencies.  That
+condition holds at every point of the silent case and costs nothing.
+The warning does not repair the bias — the port genuinely carries fewer
+channels than its cross-section carries modes — it makes the user's
+model error visible instead of letting it read as a result.
+
+**Two costs removed on the way, both output-identical.**
+
+1. *The phasor synthesis is now O(port), not O(mesh).*
+   `cw_wave_phasors` allocated a full 3D edge vector, applied the whole
+   curl and divided by `M_mu` over its whole length, to read a handful
+   of entries on the two port-adjacent planes.  That submatrix does not
+   depend on frequency, `zeta` or the mode, so `build_port_curl_slice`
+   cuts it once per port.  Per call 0.068 -> 0.023 ms at 2980 edges and
+   0.664 -> 0.023 ms at 46540; the per-axis-frequency bucket goes from
+   1.10 ms at 5884 edges and 11.86 ms at 93004 to 0.35 ms at both —
+   flat to 3 % across a 15.8x mesh growth, where it grew 10.8x before.
+   The predicted crossover where the phasors overtake the eigensolve
+   (~2.6e5 edges) is gone.  Bit-identical: 615 (frequency, mode,
+   channel) combinations over five meshes and a 201-point axis on the
+   multimode record, every IEEE-754 pattern equal.  The slice carries
+   an O(1) key of its port, because two ports of one cross-section on
+   one mesh would otherwise pass a shape check while carrying the
+   wrong rows.
+
+2. *Repeated shift-invert targets are solved once.*  The arc formula
+   clamps at 1e-3, so below `theta_hint = 3.3e-3` several arc fractions
+   collapse to the same target and each paid a full sparse LU plus an
+   ARPACK run whose result the dedup then discarded.  Skipping a
+   bit-identical repeat cannot change the merged result, and does not:
+   zetas and profiles equal byte for byte over 114 frequencies through
+   both entry points.  Worth 0.1-6 % of a full axis depending on mesh
+   scale, up to 5x at individual near-DC points.
+
+**Leads closed, so nobody re-opens them.**
+
+- *Warm start along the axis* — dead.  76.0 matvecs per frequency
+  seeded against 72.7 cold: shift-invert ARPACK converges the whole
+  `k = 8` cluster, so seeding one of eight removes no restart.  Even a
+  perfect start caps at 1.37x, because the Fortran driver's own 38-45 %
+  is untouchable by a start vector.
+- *A dense eigensolve of the pencil* — dead.  At `2n = 206`,
+  values-only 82.2 ms and `ordqz` 174.4 ms against 24.2 ms for the
+  entire five-target sparse fan, and O(N^3) after.
+- *A process pool over the frequency axis* — built, measured,
+  reverted.  The axis parallelises cleanly (87 % efficiency on eight
+  workers, S bit-identical over 988 values), but the pool cost 4.5 s to
+  bring up, not the 1.0 s its break-even assumed — the calibration's
+  children had imported NumPy but never `magnelio`, the same
+  measure-against-your-own-window error as DD-206 and DD-233 §10b.  In
+  the thread configuration the library ships it lost at every axis
+  length (19.5x on the default 201-point axis) to BLAS
+  oversubscription.  Pinning the BLAS to one thread beats it outright
+  (1.28x sequential against 1.07x pooled) but is *not* bit-neutral end
+  to end: it moves S by 5.76e-8, -144.8 dB, against a pipeline that is
+  otherwise exactly reproducible across processes (measured 0.0), which
+  is the property DD-233's resume stands on.  Left alone deliberately.
+
+**Correction to DD-234.**  `_contour_worker_init` set the BLAS thread
+variables inside each contour worker and the docstring said it pinned
+them.  It is inert: a spawned child imports the module — and its BLAS —
+to unpickle the initializer, and those variables are read at load time.
+Measured, every worker reported them set to `1` while OpenBLAS ran 16
+threads.  DD-234's 5.5x is unaffected and is *not* an understatement:
+at `p` 8, 12 and 15 the sixteen-thread to one-thread ratio is
+0.999-1.000 with CPU time equal to wall time, because the BLAS does not
+thread a `2p x 2p` pencil that small.  Threading starts between
+`2n = 80` and `2n = 96`, and there the missing pin costs 2.7-3.4x.  The
+dead lines are gone and the measured threshold is recorded where they
+stood; earning it back needs a pin the parent shares, since a parent at
+sixteen threads against workers at one would break the kernel's
+required bit-identity.
+
+**What did not move.**  The eigensolve is still 86 % of postprocessing
+on a small cross-section and has no route beyond what DD-234 left.  The
+five-target arc fan was measured redundant at every one of 62 points on
+three cross-sections — one target with `k = 8` found families one, two
+and three alike, including 3.5 MHz above a cut-on inside the 93 MHz
+window the family tracking does not cover — but that is 62 points, not
+a proof, and four of the five call sites are on the port build path
+where a lost mode moves the subspace, the kernel and every pinned
+floor.  Reducing the fan stays scoped to the postprocessing call site
+and gated on an argument about `k`, not on these points.
+
+## DD-236 — the production run re-ranks the band pipeline
+
+**Status:** Decided 2026-08-31 (branch `feat/band-kernel-fit`).  No
+shipped default changes; this entry records a measurement that
+redirects the work.  Gates: `validation/qtem_band_dtbc_port_floors.py`
+(`--case microstrip`, `--case layered`).  Measurements: internal record
+`investigations/port-model-default/` (`probe_production_e2e.py`,
+`probe_prod_contour_ab.py`, `probe_prod_floor_cause.py`,
+`probe_record_length.py`), MEASUREMENTS.md section 19.
+
+**Problem.**  Every cost share this campaign optimised against —
+kernel build 71 %, boundary convolution 13 %, FIT march 4 %,
+postprocessing 14 % — came from one fixture: 832 cells, port pencil
+2n = 206, p = 12, 12288 steps.  DD-234 and DD-235 both ranked their
+remaining leads from it, and DD-235 closed by naming the production
+run as the lead that unblocks the others.  It had never been run.
+
+**The ranking inverts.**  On the validation microstrip (2n = 5420,
+n_t = 1831, 106743 cells, 36864 steps, n_kernel = 65536), measured in
+one run whose buckets reconcile against their own wall clock:
+
+    item                     fixture      production (18-point axis)
+    kernel build (all 3)        71 %          14.0 %
+    boundary convolution        13 %          59.3 %
+    FIT march (field)            4 %           3.3 %
+    postprocessing              14 %           8.4 %
+
+and on a 201-point production axis — the axis length the argument was
+always about, now measured rather than projected — postprocessing is
+**51.4 %**, the convolution 31.4 %, the kernels 7.4 %.
+
+The cause is that the three items obey different laws and the campaign
+had only ever varied one of them.  The kernel build is
+O(n_kernel · p³) with n_kernel tied to the record, i.e. linear in N;
+the convolution is O(N²p²), because `BandDTBCBoundary.advance` folds
+the whole history every step; the field update is O(N · cells).  From
+the fixture to the microstrip N triples and **p falls from 12 to 9** —
+the production cross-section is 26x the pencil carrying a *smaller*
+subspace, because the rank tracks the mode-family structure and not
+the cross-section size.  Both effects push the same way, and DD-234's
+contour pool takes another 6x off the kernel on top.
+
+**Consequences for the leads.**
+
+1. The exact blocked FFT convolution (Hairer/Lubich/Schlichte,
+   O(N log²N), no fit and no passivity question) was parked third
+   because it addressed "13 %".  It is the largest item.
+2. Stage 2 — the recursion that was to replace the kernel build — was
+   aimed at 71 % that is 7-14 % here.  DD-233 killed it on accuracy;
+   this kills the motive independently.
+3. The postprocessing eigensolve's interior moves with size: at
+   2n = 5420 the split is `eigs` 80 % / `splu` 19 % against 86.5/7.1 at
+   2n = 206.  Both leads DD-235 declared dead (warm start, dense
+   eigensolve) were killed where the per-call driver overhead
+   dominates; that premise weakens as the cross-section grows.
+
+**DD-234's 7.8x projection is settled at 6.00x.**  Serial against
+parallel on the port's own projected blocks, n_kernel = 65536,
+262145 contour points, 8 workers: 47.59 s → 7.93 s, the contour loop
+alone 6.44x, and `np.array_equal(L_serial, L_parallel)` is True.
+Better than the measured 5.5x, short of the projection — which was
+also inconsistent with its own model (104/8 + 1.2 is 7.3x) and stated
+for a configuration nobody ran.  The serial tail (conjugate mirror plus
+the inverse FFT) is 8 % of the parallel kernel, so Amdahl allows ~9x;
+the rest is pool bring-up and the ~0.9 GB the workers return.
+
+**The arc fan cuts 3.12x at the postprocessing site, bit-identically.**
+784.6 → 251.8 ms per axis frequency, 180 → 36 ARPACK runs, and
+max |ΔS| = 0.000e+00 over 18 frequencies and both ports.  DD-235
+declined the cut on 62 points of dict-equality; this is 18 more points
+on the production cross-section at the production rank, and equality to
+the last bit.  **It stays declined** — the gate DD-235 set is an
+argument about `k`, not a point count, and four of the five call sites
+are on the port build path where a lost mode moves the subspace, the
+kernel and every pinned floor.  What changes is the prize: 3.12x of
+the largest item on a production axis.
+
+**A correction to the cost laws of the record.**  The kernel and
+convolution laws were measured with blocks of shape `(2p, 2p)`, but
+`matrix_dtbc_kernel` receives the *projected* `p × p` blocks
+(`_rebuild_kernels` passes `self._Dp1/_D0/_Dm1`, and the function's own
+docstring says so).  The QZ is O(p³), so the recorded "18.4 ms per
+kernel sample" and the "~1200 s per port at n_kernel = 65536" it
+extrapolated are inflated ~8x, the convolution table ~4x.  Measured:
+a full n_kernel = 65536 kernel at p = 9 is **7.9 s** pooled.
+
+**Method note.**  A probe that reaches the contour kernel must carry
+`if __name__ == "__main__":`.  The pool spawns, a spawned child
+re-executes module-level code as `__mp_main__`, and the first
+calibration here therefore ran nine concurrent port builds on 16 cores
+and produced a plausible-looking 2096 s.
+
+**Found on the way, and it outranks everything above: KB-038.**
+Running the certificate to obtain the cost split showed that it no
+longer reproduces its own recorded floors — `layered`
+−114.1…−129.9 dB against a recorded −159.6…−231.3 dB, microstrip
+−146.6…−168.1 dB against −171.1…−211.0 dB — and that the floor
+**degrades with the length of the run**, ~7.5 dB per doubling, failing
+the −100 dB acceptance criterion at 49152 steps.  Neither the kernel
+length nor the DC anchor accounts for it.  The floors quoted in the
+fixture header, in DD-064 and in the user documentation are not
+reproducible while this is open.
+
+## DD-237 — the middle path between Mur-1st and the band DTBC is priced a priori, and it stops at −46 dB
+
+**Status:** Decided 2026-08-31.  No shipped default changes; this entry
+records a measurement that redirects the work and re-opens DD-064's
+acceptance line.  Measurements: internal record
+`investigations/qtem-midpath/` (`probe_symbol_pricing.py`,
+`MEASUREMENTS.md` §1, `DERIVATION.md` §9).
+
+**Problem.**  Every quasi-TEM channel on a shielded microstrip falls to
+modal Mur-1st: the pair-product gate measures a weighted spread of 0.22
+to 0.33 against the 2e-6 reflection budget of DD-229, five orders out,
+because substrate and air edges differ by √ε_r.  That is the model, not
+the mesh — no scalar chain describes two wave velocities at once.  The
+band path (DD-057) is exact but pays a contractual step count and an
+O(N²p²) convolution (DD-236).  The question was whether an *approximate*
+scalar termination reaches the −50 dB class at Mur's cost.
+
+**The instrument.**  The a-priori reflection of any boundary symbol
+against the true discrete mode is arithmetic and needs no time step:
+`Γ(ω) = (λ̃ − ζ)/(1/ζ − λ̃)` with ζ from `find_propagating_modes` on the
+real cross-section.  Mur-1st fits the same formula, because the
+two-plane stencil implies `λ̃_Mur(z) = (1 + r z)/(z + r)` — so every
+candidate is priced on one axis in seconds, on a common yardstick the
+record did not have.  Guards: the frequency-local exact fit prices at
+the ρ-offset evaluation floor (−114.3 dB microstrip, 40 dB per decade
+of offset — this is the same effect as the band certificates' a-priori
+ceiling), candidates are fitted on half the in-band points and read on
+all of them, and a wider audit axis is priced but never fitted.
+
+**Measured** (worst in-band |Γ|, three validation cross-sections):
+
+    candidate                              microstrip  layered   block
+    Mur as shipped                            −38.9     −27.2    −47.7
+    Mur, discrete-exact at band centre        −42.9     −30.0    −52.7
+    Mur family, minimax                       −45.1     −33.3    −54.8
+    chain q = 0, minimax                      −45.5     −33.8    −57.3
+    chain (r, q) frozen at centre  [DD-064]   −22.5      −5.9    −50.5
+    chain (r, q) minimax, f_c ≤ 0.5 f_min     −48.0     −35.7    −63.3
+    order-2 all-pass, passive                 −46.5     −36.2    −96.6
+
+**Nothing reaches −50 dB on either dispersive line**, and every number
+is a lower bound: the scalar Γ prices a perfect frequency-independent
+mode profile, and profile drift can only add.  The mild block case,
+whose β sweeps 0.61 % across its band, clears from the centred Mur on.
+
+**The mechanism.**  Write the true phase advance as
+`θ(ω)/ω = c₁(1 + k₂ω²)`.  Measured `k₂ = +55.2` (microstrip), `+7.7`
+(layered), `+1.3` (block): the group delay has to **rise** with
+frequency, which is `ε_eff(f)` climbing toward `ε_r`.  The
+Klein-Gordon chain offers `k₂ = (1/r² − 1)/24`, the right sign but
+1.5–10 % of the requirement — it is the *grid* dispersion of the
+equivalent chain, and a microstrip's *material* dispersion is 60x
+larger.  One real Mur pole offers `k₂ = −[A/3 + A² + ⅔A³]/c₁` with
+`A = p/(1−p)`, **negative for every p that gives the right c₁** — it
+bends the wrong way, which is why extra real poles buy 0.2 dB.
+
+**Why the obvious repair is inadmissible, and the budget it exposes.**
+A complex conjugate pole above the band does give the missing shape:
+unconstrained it prices at −70.0 / −82.4 / −96.6 dB, +22 to +47 dB over
+anything else, at five multiplies and four stored scalars per channel
+per step.  But with |ζ| = 1 the point 1/ζ is the mirror of ζ in the real
+axis, so the bisector of [ζ, 1/ζ] *is* the real axis and
+
+    |Γ| ≤ 1  ⟺  Im λ̃(e^{iω}) ≤ 0
+
+at every propagating frequency, independent of |λ̃|.  A real all-pass of
+order n sweeps a total phase of exactly nπ over (0, π], so **Mur is
+unconditionally passive — that is DD-096's stability in one line — and
+every higher order must be active somewhere**.  The unconstrained
+optima place their pole inside the propagating range and amplify there:
++35.3 dB above the layered band, on a mode the port still carries (the
+tracked fundamental propagates to 37.5° / 48.3 GHz there, 19.9° /
+133.9 GHz on the microstrip).  Constrained to `θ̃(ω_edge) ≤ π`, every
+family — one-parameter Mur, the chain, order 2–4 all-pass, and a
+general order-2 rational with its zeros moved inside the disc — lands
+in a 3 dB band around −46 dB (microstrip) and between −33 and −40 dB
+(layered), and every optimum sits exactly on the constraint.  Moving
+the zeros inside is a real extension where the required shape is
+largest — 3.9 dB over the all-pass on the layered line — and inert on
+the microstrip, whose optimum walks back to an all-pass; neither closes
+the remaining 10 dB.  A direct family scan
+puts the loss at the constraint rather than at the search: at the
+required c₁ a passive order-2 all-pass reaches 8.5 % of the required k₂
+on the microstrip against 46.7 % unconstrained.
+
+**Consequences.**
+
+1. Stages 1 and 2 of the investigation (profile coupling, one honest
+   CW run) are not worth running for these candidates: the scalar bound
+   is already below target and profile drift only adds.
+2. Two gains are real, cheap and independent of all of the above.
+   Centring the Mur coefficient on the true discrete β at band centre
+   instead of the DC Laplace `ε_eff` is **+3.8 dB** (microstrip) and
+   **+2.7 dB** (layered); minimax over the band adds **+2.2 / +3.3 dB**.
+   Together −38.9 → −45.1 dB and −27.2 → −33.3 dB, for one pencil solve
+   per port and no new state, no new cost per step.  DD-064's −30 dB
+   acceptance line moves with it.
+3. The −50…−70 dB class is **a low-rank band port, not a new boundary
+   law**.  A rank-1 Galerkin exterior *is* a scalar chain, so the
+   −48.0 dB above is what `build_band_dtbc_port` delivers at p = 1, and
+   DD-234's rank sweep (`svd_tol` 1e-2 → −66.4 dB, 1e-3 → −84.3 dB)
+   continues the same curve.  The open question is therefore not
+   accuracy but the two costs of DD-236.
+4. The frozen-fit candidate reproduces DD-064's band-edge collapse from
+   arithmetic alone (−22.5 dB microstrip, −5.9 dB layered against the
+   −19.1 dB it measured), so that failure is the boundary and not only
+   the broken decomposition its post-mortem identified.  It also shows
+   what the cut-off costs *below* the band: −11.5 dB and −0.0 dB there.

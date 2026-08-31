@@ -1969,6 +1969,7 @@ def build_cw_true_mode_port(
     from magnelio.ports._modal.zeta_pencil import (
         CWPortData,
         build_period_blocks,
+        build_port_curl_slice,
         cw_wave_phasors,
         find_propagating_modes,
         make_channel,
@@ -2179,6 +2180,7 @@ def build_cw_true_mode_port(
     )
 
     # Exact per-frequency phasors through the *stored* profiles.
+    curl_slice = build_port_curl_slice(chain, plane, m_mu, c_3d)
     channels = [
         cw_wave_phasors(
             ch,
@@ -2192,6 +2194,7 @@ def build_cw_true_mode_port(
             h_v_prof=discrete[c].h_v_profile,
             proj_u=dual_u[c],
             proj_v=dual_v[c],
+            curl_slice=curl_slice,
         )
         for c, ch in enumerate(channels)
     ]
@@ -2217,6 +2220,7 @@ def build_band_dtbc_port(
     svd_tol: float = 1e-8,
     n_channels: Optional[int] = None,
     n_kernel_init: int = 4096,
+    dc_anchor: bool = True,
 ):
     """Build a broadband band-subspace DTBC port (WP-R4b).
 
@@ -2263,6 +2267,14 @@ def build_band_dtbc_port(
         family; an integer demands at least that many families.
     n_kernel_init : int, default 4096
         Initial ghost-kernel length (auto-extends past the run).
+    dc_anchor : bool, default True
+        Tabulate the fundamental channel's excitation direction down
+        to ``f = 0``, continuing it below ``f_band`` and closing it
+        with the static Laplace trace.  The excitation then needs no
+        lower roll-off, so the pulse duration follows the measurement
+        span instead of ``1/f_band[0]``.  Applies only where the
+        fundamental is the static mode; a waveguide fundamental has a
+        cut-off and keeps the tracked band.
 
     Raises
     ------
@@ -2278,6 +2290,7 @@ def build_band_dtbc_port(
         BandPortData,
         PortOperatorBandDTBC,
         band_subspace,
+        continue_family_to_dc,
         galerkin_exterior,
         track_band_families,
     )
@@ -2416,6 +2429,17 @@ def build_band_dtbc_port(
             f"n_channels={n_channels} requested"
         )
 
+    # Is the fundamental the static mode?  Only then does it reach
+    # DC, and only then may the excitation direction be anchored
+    # there — a waveguide fundamental has a cut-off and does not.
+    w_t_track = chain_b.w_period[: chain_b.n_t]
+    track_n = np.asarray(track_t, dtype=float) / math.sqrt(
+        float(np.dot(w_t_track, np.asarray(track_t, dtype=float) ** 2)),
+    )
+    phi0 = families[0].traces[: chain_b.n_t, 0]
+    phi0 = phi0 / math.sqrt(float(np.dot(w_t_track, np.abs(phi0) ** 2)))
+    fundamental_is_static = float(np.abs(np.conj(track_n) @ (w_t_track * phi0))) >= 0.9
+
     V, sv = band_subspace(
         families,
         chain_b.w_period,
@@ -2486,7 +2510,36 @@ def build_band_dtbc_port(
             ov = np.vdot(Uc[i - 1], Uc[i])
             if abs(ov) > 0.0:
                 Uc[i] *= np.conj(ov) / abs(ov)
-        src_directions.append((fam.freqs.copy(), Uc))
+        freqs_c = fam.freqs.copy()
+        # DC anchor (channel 0 only, and only where the fundamental
+        # really is the static mode): continue the direction below the
+        # tracked band down to f = 0.  The boundary is accurate there
+        # already — what ends at the band edge is the table the
+        # excitation reads, and its DC limit is the Laplace trace the
+        # bootstrap above computed.  With it the source spectrum needs
+        # no lower roll-off, so the pulse length stops scaling with
+        # 1/f_axis[0].
+        if c == 0 and dc_anchor and fundamental_is_static:
+            df_grid = float(freqs_c[1] - freqs_c[0]) if freqs_c.size > 1 else float(freqs_c[0])
+            n_extra = int(min(max(round(float(freqs_c[0]) / max(df_grid, 1e-300)), 1), 48))
+            f_below, tr_below = continue_family_to_dc(
+                chain_b,
+                dt,
+                fam,
+                track_t,
+                eps_eff_dc,
+                dz,
+                n_extra,
+            )
+            U_below = np.ascontiguousarray((exterior.VtW @ tr_below).T)
+            for i in range(U_below.shape[0] - 1, -1, -1):
+                nxt = Uc[0] if i == U_below.shape[0] - 1 else U_below[i + 1]
+                ov = np.vdot(U_below[i], nxt)
+                if abs(ov) > 0.0:
+                    U_below[i] *= ov / abs(ov)
+            freqs_c = np.concatenate([f_below, freqs_c])
+            Uc = np.vstack([U_below, Uc])
+        src_directions.append((freqs_c, Uc))
 
     # Dual-basis projectors (Gram inverse in the port-plane metric).
     gram = (prof_u * me_u[None, :]) @ prof_u.T + (prof_v * me_v[None, :]) @ prof_v.T

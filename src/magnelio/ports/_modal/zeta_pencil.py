@@ -39,7 +39,9 @@ developer decision 2026-07-09):
   :func:`cw_decompose` — the per-frequency a/b decomposition of the
   CW lock-in measurement (the R2/R3 de-stagger and discrete wave
   impedance are *contained* in these phasors; no closed-form scalar
-  impedance is needed).
+  impedance is needed).  The curl it applies is restricted to the
+  port-adjacent slab by :func:`build_port_curl_slice`, so the cost
+  follows the port cross-section, not the mesh.
 
 Gauge: on the unit circle the pencil is real with real ``sig_hat``,
 so propagating eigenpairs come in conjugate pairs ``(zeta, phi)`` /
@@ -64,6 +66,7 @@ import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 
+from magnelio._arpack import arpack_v0
 from magnelio.constants import C0
 from magnelio.mesh.mesher import Mesh
 from magnelio.ports._modal.port_plane import PortPlane
@@ -439,9 +442,10 @@ def solve_zeta_modes(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Eigenpairs of the on-circle pencil near the given targets.
 
-    One sparse LU factorisation + ARPACK run per target; results are
-    merged and deduplicated.  Returns ``(zetas, phis)`` with ``phis``
-    columns W-normalised over the full period trace.
+    One sparse LU factorisation + ARPACK run per *distinct* target
+    (repeated shifts are solved once); results are merged and
+    deduplicated.  Returns ``(zetas, phis)`` with ``phis`` columns
+    W-normalised over the full period trace.
     """
     D_m1, D_0, D_p1 = chain.D_m1, chain.D_0, chain.D_p1
     n = D_0.shape[0]
@@ -452,13 +456,31 @@ def solve_zeta_modes(
 
     zs: list[complex] = []
     vs: list[np.ndarray] = []
+    solved: list[complex] = []
     for target in zeta_targets:
+        # Skip a shift that is *bit-identical* to one already solved.
+        # find_propagating_modes clamps its arc targets at 1e-3, so at
+        # low frequency several arc fractions collapse onto exactly the
+        # same shift; the factorisation and the ARPACK run are then a
+        # deterministic repeat (fixed v0, see below) whose zetas the
+        # 1e-9 merge below discards wholesale.  Only exact equality is
+        # skipped -- a merely *nearby* shift seeds a different k-window
+        # and can surface a mode this one misses.
+        if any(complex(target) == s for s in solved):
+            continue
+        solved.append(complex(target))
         lu = spla.splu((A_lin - complex(target) * B_lin).astype(complex).tocsc())
         op = spla.LinearOperator(
             (2 * n, 2 * n), matvec=lambda v: lu.solve(B_lin @ v), dtype=complex
         )
         k_eff = min(k, 2 * n - 2)
-        mu, vecs = spla.eigs(op, k=k_eff, which="LM")
+        # Fixed start vector: ARPACK's random default makes the tracked
+        # families -- and with them the band Galerkin subspace built on
+        # their traces -- differ between two builds of the SAME port, by
+        # ~1e-5 relative.  That is invisible in every norm and fatal for
+        # a resume, whose reloaded boundary state has to match the
+        # subspace it was recorded in.
+        mu, vecs = spla.eigs(op, k=k_eff, which="LM", v0=arpack_v0(2 * n))
         zeta = complex(target) + 1.0 / mu
         for j in range(zeta.size):
             if any(abs(zeta[j] - z0) < 1e-9 for z0 in zs):
@@ -590,6 +612,151 @@ def profile_reality(phi: np.ndarray, n_t: int) -> float:
     return float(np.linalg.norm(p.imag) / np.linalg.norm(p))
 
 
+@dataclass(frozen=True)
+class PortCurlSlice:
+    """Port-adjacent restriction of the 3D curl for phasor synthesis.
+
+    Design: DD-235.
+
+    The synthetic Bloch field of :func:`cw_wave_phasors` lives on the
+    two port-adjacent periods only, and the projections read the curl
+    on the port's dual edges only.  Every other row and column of
+    ``c_3d`` multiplies a structural zero, so the synthesis needs the
+    ``(port dual edges) x (period 0 + period 1 e_t)`` submatrix and
+    nothing else.  That submatrix depends on the grid and the port,
+    not on frequency, ``zeta`` or the mode, so it is built once per
+    port and reused across the whole frequency axis.
+
+    Attributes
+    ----------
+    c_sub : scipy.sparse.csr_matrix
+        Rows ``[h_u_indices, h_v_indices]`` of ``c_3d``, columns
+        restricted to the support of the synthetic field and
+        renumbered into the support layout.  Entries are copied in
+        their stored order, so each row is summed in exactly the
+        order the full mat-vec sums it.
+    mh_rows : np.ndarray
+        ``M_mu`` on the same rows, in the same order.
+    n_h_u : int
+        Number of ``h_u`` rows (the first block of ``c_sub``).
+    n_period : int
+        Length of one full period trace (``n_t + n_z``).
+    n_t : int
+        Number of free tangential DOFs.
+    n_edges : int
+        Column count of the ``c_3d`` the slice was built from —
+        checked against the caller's matrix so a slice cannot be
+        reused across meshes.
+    port_key : tuple of int
+        Cheap identity of the port the slice was cut for: the edge
+        count, the trace size, and the extremes of the row and
+        support index sets.  Two ports of the same cross-section on
+        one mesh — the two ends of a symmetric line, say — differ in
+        their rows and their periods, so this separates them at O(1)
+        while the shapes alone would not.
+    """
+
+    c_sub: sp.csr_matrix
+    mh_rows: np.ndarray
+    n_h_u: int
+    n_period: int
+    n_t: int
+    n_edges: int
+    port_key: tuple[int, ...]
+
+
+def _curl_slice_key(
+    chain: PeriodChain,
+    plane: PortPlane,
+    c_3d: sp.spmatrix,
+) -> tuple[int, ...]:
+    """O(1) identity of the (grid, port) a curl slice belongs to."""
+    per0 = chain.period(0)
+    per1 = chain.period(1)
+    return (
+        int(c_3d.shape[1]),
+        int(chain.n_t),
+        int(plane.h_u_indices.size),
+        int(plane.h_v_indices.size),
+        int(plane.h_u_indices[0]),
+        int(plane.h_u_indices[-1]),
+        int(plane.h_v_indices[0]),
+        int(plane.h_v_indices[-1]),
+        int(per0[0]),
+        int(per0[-1]),
+        int(per1[0]),
+    )
+
+
+def build_port_curl_slice(
+    chain: PeriodChain,
+    plane: PortPlane,
+    m_mu: np.ndarray,
+    c_3d: sp.spmatrix,
+) -> PortCurlSlice:
+    """Build the reusable curl restriction of one port.
+
+    Parameters
+    ----------
+    chain : PeriodChain
+        Inward-paired period chain of the port (supplies the flat E
+        indices of periods 0 and 1).
+    plane : PortPlane
+        The port plane (supplies the dual-edge rows).
+    m_mu : np.ndarray
+        Diagonal ``M_mu`` of the run.
+    c_3d : scipy.sparse.spmatrix
+        The 3D curl matrix.
+
+    Returns
+    -------
+    PortCurlSlice
+        Frequency-independent operand of :func:`cw_wave_phasors`.
+    """
+    if chain.pairing != "inward":
+        raise ValueError(
+            "build_port_curl_slice requires an inward-paired chain (the "
+            "synthetic Bloch field is laid out on periods 0/1)"
+        )
+    n_t = chain.n_t
+    rows = np.concatenate([plane.h_u_indices, plane.h_v_indices])
+    per0 = chain.period(0)
+    support = np.concatenate([per0, chain.period(1)[:n_t]])
+    if support.size == 0:
+        raise ValueError("port chain has an empty period trace")
+    order = np.argsort(support, kind="stable")
+    support_sorted = support[order]
+    if np.any(np.diff(support_sorted) == 0):
+        raise ValueError(
+            "periods 0 and 1 of the port chain share a flat E index; "
+            "the synthetic Bloch field is not well defined"
+        )
+
+    # Row slicing copies each row's entries verbatim, so the stored
+    # order — and with it the mat-vec summation order — survives.
+    # Columns are matched by binary search against the support, so
+    # nothing here scales with the mesh.
+    c_rows = c_3d.tocsr()[rows]
+    hit = np.searchsorted(support_sorted, c_rows.indices)
+    np.clip(hit, 0, support_sorted.size - 1, out=hit)
+    keep = support_sorted[hit] == c_rows.indices
+    new_idx = order[hit]
+    indptr = np.concatenate(([0], np.cumsum(keep)))[c_rows.indptr]
+    c_sub = sp.csr_matrix(
+        (c_rows.data[keep], new_idx[keep], indptr),
+        shape=(rows.size, support.size),
+    )
+    return PortCurlSlice(
+        c_sub=c_sub,
+        mh_rows=np.asarray(m_mu, dtype=float)[rows],
+        n_h_u=int(plane.h_u_indices.size),
+        n_period=int(per0.size),
+        n_t=n_t,
+        n_edges=int(c_3d.shape[1]),
+        port_key=_curl_slice_key(chain, plane, c_3d),
+    )
+
+
 def cw_wave_phasors(
     channel: CWChannel,
     chain: PeriodChain,
@@ -602,6 +769,7 @@ def cw_wave_phasors(
     h_v_prof: np.ndarray,
     proj_u: np.ndarray,
     proj_v: np.ndarray,
+    curl_slice: PortCurlSlice | None = None,
 ) -> CWChannel:
     """Exact (V, I) phasors of the unit incident/reflected wave.
 
@@ -615,6 +783,12 @@ def cw_wave_phasors(
     the stored H profile and ``M_mu`` weights).  The reflected wave
     is the conjugate partner.
 
+    ``curl_slice`` is the port's frequency-independent curl
+    restriction (:func:`build_port_curl_slice`).  It is what makes
+    the synthesis cost a function of the port cross-section instead
+    of the mesh; pass one built once per port when sweeping a
+    frequency axis, or omit it and one is built on the spot.
+
     Returns a copy of ``channel`` with the four phasors filled.
     """
     if chain.pairing != "inward":
@@ -622,20 +796,27 @@ def cw_wave_phasors(
             "cw_wave_phasors requires an inward-paired chain (the "
             "synthetic Bloch field is laid out on periods 0/1)"
         )
+    if curl_slice is None:
+        curl_slice = build_port_curl_slice(chain, plane, m_mu, c_3d)
+    elif curl_slice.port_key != _curl_slice_key(chain, plane, c_3d):
+        raise ValueError(
+            "curl_slice was built for a different grid or port; build one "
+            "per port with build_port_curl_slice and do not share it"
+        )
     n_t = chain.n_t
     n_u = int(plane.e_u_indices.size)
     phi = channel.phi_trace
     zeta = channel.zeta
     z_half = np.exp(0.5j * w_dt)
 
-    e_syn = np.zeros(c_3d.shape[1], dtype=complex)
-    per0 = chain.period(0)
-    per1 = chain.period(1)
-    e_syn[per0[:n_t]] = phi[:n_t]
-    e_syn[per0[n_t:]] = phi[n_t:]
-    e_syn[per1[:n_t]] = zeta * phi[:n_t]
+    # Synthetic Bloch field on the support of periods 0 and 1 only:
+    # e_t(0), e_z(1/2), e_t(1) = zeta e_t(0).  The columns dropped by
+    # the slice multiply structural zeros of this vector.
+    e_syn = np.empty(curl_slice.n_period + n_t, dtype=complex)
+    e_syn[: curl_slice.n_period] = phi
+    e_syn[curl_slice.n_period :] = zeta * phi[:n_t]
 
-    h_syn = -(chain.dt * (c_3d @ e_syn) / np.asarray(m_mu, dtype=float)) / (z_half - 1.0 / z_half)
+    h_rows = -(chain.dt * (curl_slice.c_sub @ e_syn) / curl_slice.mh_rows) / (z_half - 1.0 / z_half)
 
     # Map the trace's free-DOF e_t back onto the full plane arrays.
     e_u_full = np.zeros(n_u, dtype=complex)
@@ -650,8 +831,8 @@ def cw_wave_phasors(
     mh_v = np.asarray(m_mu, dtype=float)[plane.h_v_indices]
 
     v_in = complex(np.dot(me_u * proj_u, e_u_full) + np.dot(me_v * proj_v, e_v_full))
-    h_u_wave = h_syn[plane.h_u_indices]
-    h_v_wave = h_syn[plane.h_v_indices]
+    h_u_wave = h_rows[: curl_slice.n_h_u]
+    h_v_wave = h_rows[curl_slice.n_h_u :]
     i_in = complex(np.dot(mh_u * h_u_prof, h_u_wave) + np.dot(mh_v * h_v_prof, h_v_wave))
 
     # Reflected wave = the conjugate eigenpair.  Its E projection is

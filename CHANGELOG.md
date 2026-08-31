@@ -103,7 +103,54 @@ major version is 0, minor releases may change the public API.
 - Concept section *Sources, waveforms and excitations* in the methods
   guide.
 
+- A broadband band-pipeline run can be resumed.  Interrupt one — Ctrl-C,
+  a wall-clock cap, a crash — and `magnelio.resume(project, excited=…)`
+  continues it, or runs a finished one longer, exactly as on the default
+  port model.  The band boundary remembers the whole record, so its
+  memory is checkpointed in full and the continuation is bit-exact: the
+  recorded waves and the S-parameters are identical to an uninterrupted
+  run of the same length, sample for sample.
+
 ### Changed
+
+- Postprocessing a broadband band-pipeline run no longer gets slower
+  with the mesh.  Reading a port's response out of the record used to
+  work on the whole 3D grid at every frequency point, so a finer mesh
+  paid for the port twice; only the cells at the port are touched now.
+  Measured across a 15.8x mesh growth the cost per frequency point
+  stays flat at 0.35 ms, where it used to rise from 1.10 ms to
+  11.86 ms.  Axis points near DC are up to 5x faster on top of that,
+  because the mode search there no longer repeats identical solves.
+  Both are bit-identical: no S-parameter moves.
+
+- A run that terminates a port channel with the Mur fallback now
+  explains the trade instead of labelling it.  It names each affected
+  channel with the cross-section measurement behind it, states the
+  reflection floor given up and what the run keeps in exchange —
+  runtime, time-domain power waves, resumable checkpoints — and prices
+  the reflection-free alternative for the model at hand.  That last
+  part is the point: the old text recommended `port_model="band"`
+  unconditionally, without saying what it costs on the model in front
+  of it.  `port_model` keeps defaulting to `"modal"`.
+
+- Broadband band-subspace ports (`port_model="band"` or `"auto"`) now
+  run on a frequency axis that reaches toward DC.  They used to
+  require an axis starting well clear of zero: the pulse driving them
+  was band-limited to the tracked mode band, so its duration grew as
+  1/f_start, and on library defaults the auto-sizing refused the run
+  outright rather than spend hours building kernels for it.  On a
+  quasi-TEM line the fundamental *is* the static field solution of the
+  cross-section, which the port already computes, so its excitation is
+  now continued down to zero frequency and the pulse follows the width
+  of the measurement span instead of the axis start.  A default axis
+  runs, and delivers the same reflection-free-class result: on a
+  two-port fixture |S11| stays below −117 dB above 0.5 GHz and −91 dB
+  at 34 MHz, with |S21| within 0.07 dB of the modal run.  Two limits
+  are worth knowing: the floor degrades toward DC, so a measurement
+  that lives at its lowest points should still not start lower than it
+  needs to; and a waveguide fundamental has a cut-off, no static
+  limit, and keeps the old requirement.  Expert override
+  `band_options={"dc_anchor": False}` restores the previous behaviour.
 
 - Ports keep the exact transparent boundary condition on conformal
   feeds that used to lose it.  A port earns the exact termination by
@@ -197,6 +244,55 @@ major version is 0, minor releases may change the public API.
   functions `gaussian`, `modulated_gaussian` and `waveform_for_mode`
   from `magnelio.signals` (the waveform classes replace them).
 
+### Fixed
+
+- A broadband band-pipeline run now reports a port that carries more
+  propagating modes than it has recording channels.  The S-parameters
+  of such a run are read off one joint decomposition per frequency
+  point, written over all of a port's channels at once, so what it
+  decomposes is the response of *every* mode the cross-section carries
+  at that frequency.  The two ways of coming up short are not
+  symmetric.  A channel whose mode does not propagate there is left
+  unassigned, its S stays NaN, and the channels that were matched are
+  untouched.  A mode with no channel to land in is invisible: nothing
+  is skipped, nothing goes NaN, and its content is absorbed by the
+  channels that were matched, so the S-parameters come out biased and
+  look exactly like converged ones — on a fixture whose port was cut
+  to a single channel above its second cut-on, S11 was 23 to 30 %
+  wrong with nothing on screen to say so.  The run now warns once per
+  port, naming how many axis points are affected and the span they
+  cover.  The remedy is the port's `n_modes`: it has to cover every
+  mode that propagates anywhere on the measurement axis, or the axis
+  has to stay below the cross-section's next cut-on.  New section
+  *Band ports: one decomposition per frequency* in the methods guide.
+
+- The port-building phase of a broadband band-pipeline run now uses
+  several CPU cores.  Its cost is dominated by a loop over independent
+  contour points, which had always run on one core; it is now split
+  across processes when the loop is large enough to pay for them
+  (measured 5.2x at production kernel length, and left alone below the
+  break-even, where spawning would cost more than it saves).  The
+  kernel it produces is bit-identical either way, so no result moves.
+- A broadband band-pipeline run no longer builds a ghost kernel four
+  times longer than the run it serves.  The kernel only has to outlive
+  the record — the convolution never reaches past it — but it was sized
+  to at least 16384 taps regardless, and every tap is paid for in the
+  contour solves that dominate the build.  Short runs get three times
+  faster with the reflection floor unchanged to within 0.1 dB; a
+  production-length run was already past the old minimum and is
+  unaffected.
+- Band-pipeline settings (`band_options`) are now stored with a project,
+  so re-opening or continuing a run reproduces the run that was
+  recorded.  Without them a rebuilt run silently re-derived its own
+  synthesis window and excited the model with a different pulse.
+- Two builds of the same band-pipeline port now give bit-identical
+  results.  The eigensolve behind the mode tracking started from a
+  random vector, so the subspace the band boundary rests on differed
+  from one build to the next — invisibly, because it is a basis and
+  every norm was unaffected, but by enough to rule out resuming such
+  a run.  The same fixed start vector is now shared by every sparse
+  eigensolve in the library.
+
 ## [0.4.8] - 2026-08-29
 
 ### Added
@@ -252,6 +348,17 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- `AnalysisScatteringTD(project=...)` now works with the broadband
+  band port model, which used to be refused outright — so the project
+  store and `port_model="auto"` (or `"band"`) can finally be used
+  together.  A stored band run keeps the same contract as any other:
+  the S-matrix is not written but re-derived when you read it, on the
+  frequency axis you ask for, including while the run is still going.
+  Two limits are stated rather than papered over — a band run cannot
+  be resumed (its absorbing boundary carries history the checkpoint
+  cannot hold, so `resume()` refuses it instead of continuing from a
+  zeroed boundary), and `a()`/`b()` are unavailable on a stored band
+  run for the same reason they are unavailable in memory.
 - The mesh build no longer evaluates the kernel Boolean of a
   `Difference` whose tools lie inside a box-shaped base — the air
   body of every housing.  Its bounding box, grid planes, singular

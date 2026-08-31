@@ -16,6 +16,7 @@ from __future__ import annotations
 import math
 from typing import TYPE_CHECKING
 
+from magnelio._arpack import arpack_v0
 from magnelio.mesh.grid import GridLines
 
 if TYPE_CHECKING:
@@ -418,11 +419,10 @@ def _measure_lambda_max(mesh, m_eps=None, m_mu=None):
 
     op = spla.LinearOperator((n_live, n_live), matvec=matvec, dtype=np.float64)
     try:
-        # Fixed generic start vector (the DD-142 lesson): ARPACK's
-        # default random start leaves a run-to-run residual in the
-        # converged value, and dt must be bit-identical across rebuilds
-        # of the same mesh — the project store resumes bit-exactly.
-        v0 = np.random.default_rng(0).standard_normal(n_live)
+        # Fixed generic start vector (the DD-142 lesson): dt must be
+        # bit-identical across rebuilds of the same mesh, because the
+        # project store resumes bit-exactly.
+        v0 = arpack_v0(n_live)
         lam = float(
             spla.eigsh(
                 op,
