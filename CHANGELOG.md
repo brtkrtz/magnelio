@@ -236,6 +236,13 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- The port-building phase of a broadband band-pipeline run now uses
+  several CPU cores.  Its cost is dominated by a loop over independent
+  contour points, which had always run on one core; it is now split
+  across processes when the loop is large enough to pay for them
+  (measured 5.2x at production kernel length, and left alone below the
+  break-even, where spawning would cost more than it saves).  The
+  kernel it produces is bit-identical either way, so no result moves.
 - A broadband band-pipeline run no longer builds a ghost kernel four
   times longer than the run it serves.  The kernel only has to outlive
   the record — the convolution never reaches past it — but it was sized

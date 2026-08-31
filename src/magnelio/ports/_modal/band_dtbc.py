@@ -173,6 +173,97 @@ def solvent_residual(
     )
 
 
+# ----------------------------------------------------------------------
+# Contour loop: parallel over processes above a measured size threshold
+# ----------------------------------------------------------------------
+
+# Spawning a pool costs a fixed ~1.2 s (measured, 8 spawned
+# interpreters), while the loop itself divides cleanly by the worker
+# count.  Below roughly three seconds of serial work the constant wins,
+# so the loop stays sequential there.  Calibrated from the per-point
+# cost of one solvent evaluation: ~0.061 ms at p = 4, ~0.31 ms at p = 12
+# (internal record, section 13d), i.e. ~p^1.5 over the range that
+# matters.
+_CONTOUR_PARALLEL_MIN_WORK = 4.0e5
+_CONTOUR_MAX_WORKERS = 8
+
+_CONTOUR_BLOCKS: dict = {}
+
+
+def _contour_worker_init(D_m1, D_0, D_p1):  # pragma: no cover - subprocess
+    """Pin BLAS to one thread per worker and keep the blocks resident."""
+    import os
+
+    for var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+        os.environ[var] = "1"
+    _CONTOUR_BLOCKS["abc"] = (D_m1, D_0, D_p1)
+
+
+def _contour_worker(task):  # pragma: no cover - subprocess
+    """Solvents over one contiguous run of contour points."""
+    j0, j1, n_fft, rho = task
+    D_m1, D_0, D_p1 = _CONTOUR_BLOCKS["abc"]
+    n = D_0.shape[0]
+    out = np.empty((j1 - j0, n, n), dtype=complex)
+    for i, j in enumerate(range(j0, j1)):
+        z = rho * np.exp(2j * math.pi * j / n_fft)
+        out[i] = stable_solvent(D_m1, D_0, D_p1, 2.0 - z - 1.0 / z)
+    return out
+
+
+def _contour_workers(n_points: int, p: int) -> int:
+    """Worker count for a contour loop, 1 when a pool would not pay."""
+    import multiprocessing
+    import os
+
+    if n_points * p**1.5 < _CONTOUR_PARALLEL_MIN_WORK:
+        return 1
+    # Already inside somebody else's worker (a parameter sweep, say):
+    # a nested pool multiplies the process count, not the throughput.
+    if multiprocessing.parent_process() is not None:
+        return 1
+    return max(1, min(_CONTOUR_MAX_WORKERS, (os.cpu_count() or 1) - 1))
+
+
+def _contour_spectrum(D_m1, D_0, D_p1, n_fft: int, rho: float, half: int) -> np.ndarray:
+    """The stable solvent at every contour point, in parallel when it pays.
+
+    Bit-identical to the sequential loop: the points are independent and
+    each is solved by the same call, so splitting them changes nothing
+    but the wall clock.
+    """
+    n = D_0.shape[0]
+    n_workers = _contour_workers(half, n)
+    if n_workers > 1:
+        try:
+            import multiprocessing  # noqa: PLC0415
+            from concurrent.futures import ProcessPoolExecutor  # noqa: PLC0415
+
+            edges = np.linspace(0, half, 4 * n_workers + 1).astype(int)
+            tasks = [
+                (int(edges[i]), int(edges[i + 1]), n_fft, rho)
+                for i in range(4 * n_workers)
+                if edges[i + 1] > edges[i]
+            ]
+            with ProcessPoolExecutor(
+                max_workers=n_workers,
+                mp_context=multiprocessing.get_context("spawn"),
+                initializer=_contour_worker_init,
+                initargs=(D_m1, D_0, D_p1),
+            ) as ex:
+                return np.concatenate(list(ex.map(_contour_worker, tasks)), axis=0)
+        except (OSError, RuntimeError, ImportError):
+            # No usable process pool (restricted sandbox, frozen app,
+            # exhausted file descriptors): the sequential loop is always
+            # available and gives the same numbers.
+            pass
+    spec = np.empty((half, n, n), dtype=complex)
+    for j in range(half):
+        z = rho * np.exp(2j * math.pi * j / n_fft)
+        spec[j] = stable_solvent(D_m1, D_0, D_p1, 2.0 - z - 1.0 / z)
+    return spec
+
+
 def matrix_dtbc_kernel(
     D_m1: np.ndarray,
     D_0: np.ndarray,
@@ -211,19 +302,15 @@ def matrix_dtbc_kernel(
     n_fft = 8 * n_kernel
     rho = math.exp(4.0 / n_kernel)
     half = n_fft // 2 + 1
-    spec = np.empty((half, n, n), dtype=complex)
+    spec = _contour_spectrum(D_m1, D_0, D_p1, n_fft, rho, half)
     res_max = 0.0
     probe_every = max(half // 16, 1)
-    for j in range(half):
+    for j in range(0, half, probe_every):
         z = rho * np.exp(2j * np.pi * j / n_fft)
-        sig_hat = 2.0 - z - 1.0 / z
-        lam = stable_solvent(D_m1, D_0, D_p1, sig_hat)
-        if j % probe_every == 0:
-            res_max = max(
-                res_max,
-                solvent_residual(D_m1, D_0, D_p1, sig_hat, lam),
-            )
-        spec[j] = lam
+        res_max = max(
+            res_max,
+            solvent_residual(D_m1, D_0, D_p1, 2.0 - z - 1.0 / z, spec[j]),
+        )
     full = np.empty((n_fft, n, n), dtype=complex)
     full[:half] = spec
     full[half:] = np.conj(spec[1:-1][::-1])

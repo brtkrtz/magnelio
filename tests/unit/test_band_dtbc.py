@@ -30,6 +30,7 @@ from magnelio.mesh.mesher import Mesh, MeshControl
 from magnelio.ports._modal import (
     BoxFace,
     PortSpecMultiConductor,
+    band_dtbc,
     build_band_dtbc_port,
 )
 from magnelio.ports._modal.band_dtbc import (
@@ -271,6 +272,38 @@ class TestBoundaryStateMachine:
             b.advance(np.zeros(ext.p), np.ones(ext.p))
         b.require_in_kernel()
         b.advance(np.zeros(ext.p), np.ones(ext.p))
+
+
+class TestContourParallelism:
+    """The contour loop may run in processes, and must not change a number.
+
+    The points are independent and each is solved by the same call, so
+    splitting them is a wall-clock change only — the kernel has to come
+    out bit-identical, or the boundary a resumed run rebuilds would
+    differ from the one its state was recorded in.
+    """
+
+    def test_threshold_keeps_small_loops_sequential(self):
+        # Below the measured break-even (~3 s of serial work) a spawned
+        # pool costs more than it saves.
+        assert band_dtbc._contour_workers(4097, 4) == 1
+        assert band_dtbc._contour_workers(16385, 4) == 1
+        # A production-scale loop is worth splitting.
+        assert band_dtbc._contour_workers(131073, 15) > 1
+
+    def test_parallel_kernel_is_bit_identical(self):
+        ext = TestBoundaryStateMachine._small_exterior()
+        n_kernel = 512
+        saved = band_dtbc._CONTOUR_PARALLEL_MIN_WORK
+        try:
+            band_dtbc._CONTOUR_PARALLEL_MIN_WORK = float("inf")
+            L_seq, cert_seq = matrix_dtbc_kernel(ext.Dt_p1, ext.Dt_0, ext.Dt_m1, n_kernel)
+            band_dtbc._CONTOUR_PARALLEL_MIN_WORK = 0.0
+            L_par, cert_par = matrix_dtbc_kernel(ext.Dt_p1, ext.Dt_0, ext.Dt_m1, n_kernel)
+        finally:
+            band_dtbc._CONTOUR_PARALLEL_MIN_WORK = saved
+        np.testing.assert_array_equal(L_seq, L_par)
+        assert cert_seq["residual"] == cert_par["residual"]
 
 
 class TestBoundaryCheckpoint:
