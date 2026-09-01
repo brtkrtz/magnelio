@@ -1,21 +1,22 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-08-31.*  **Released v0.4.8** (2026-08-29; the
+*Last updated: 2026-09-01.*  **Released v0.4.8** (2026-08-29; the
 mesh-build campaign DD-201…DD-223).  Unreleased on `main`: **DD-224
-Phases A–D complete** — the API grammar for the years ahead
-(`Waveform*`, core `Excitation`, sources on the model), **`AnalysisTD`
-+ `TDResult`** with `AnalysisScatteringTD` on the shared transient
-engine, project-store schema 2.0, tutorial 20,
-**`magnelio.fields.FieldState`** with `SourceFieldInitial` and
-`SourceFieldIncident` (how-to *Ring-down*), **Huygens field sources**
-(DD-226: record a closed box, replay it anywhere; how-to *Field
-sources*), **`SourceCurrentPath`** (DD-227) and **the pair-product
-gate as a reflection budget** (DD-228/229, closes KB-022).  The band
-track **DD-230…DD-237** is merged: project-store runs, the port-model
+Phases A–D complete** — the API grammar (`Waveform*`, core
+`Excitation`, sources on the model), **`AnalysisTD` + `TDResult`** with
+`AnalysisScatteringTD` on the shared transient engine, project-store
+schema 2.0, tutorial 20, **`magnelio.fields.FieldState`** with
+`SourceFieldInitial` and `SourceFieldIncident` (how-to *Ring-down*),
+**Huygens field sources** (DD-226, how-to *Field sources*),
+**`SourceCurrentPath`** (DD-227) and **the pair-product gate as a
+reflection budget** (DD-228/229, closes KB-022).  The band
+track **DD-230…DD-238** is merged: project-store runs, the port-model
 default, a DC-reaching axis, bit-exact resume (closes KB-037), the
 −70 dB pricing, the short-basis warning, the production cost ranking
-(opens KB-038), and the a-priori pricing that closes the QTEM middle
-path between Mur-1st and the band DTBC.  Unit 2799 / 4
+(opens KB-038), the a-priori pricing that closes the QTEM middle path
+between Mur-1st and the band DTBC, and the measurement that refutes
+its one surviving gain — the modal-Mur port floor is a two-term
+cancellation (DD-238).  Unit 2799 / 4
 skipped, integration 450 / 5 skipped (2026-08-31, with
 `CUPY_ACCELERATORS=""`; without it four GPU tests fail on nvrtc in the
 sandbox).  Channels: GitHub, PyPI, conda-forge, docs (`/stable/` = tag,
@@ -35,6 +36,7 @@ Newest first, one line each; the full record is the DD entry.
 * **DD-235** (2026-08-31) — the band decomposition now says when its mode basis is short, and shed two costs on the way without moving a bit.  Splitting the postprocessing cost turned up what the speed question had been hiding: each axis frequency solves ONE joint least squares over *all* recording channels, so its right-hand side carries the recorded response of every mode present at the port — and the two ways of being short of modes behave oppositely.  A **channel** without a mode is visible: it fails the overlap test, takes no assignment, its S stays NaN, and the channels that *were* matched are unharmed (1e-15 relative, roundoff).  A **mode** without a channel is not visible: nothing is skipped, nothing goes NaN, and the fit hands the missing mode's content to the modes that remain — measured on the two-family fixture with the port truncated to `n_modes = 1` above its second cut-on (8.4465 GHz), S11 wrong by 23–30 %, contamination −129 dB at unit amplitude ratio and rising exactly 20 dB per decade of that ratio, the coefficient being the port's biorthogonality defect (≈6e-7 there, so a poorer port sits correspondingly higher).  The least-squares residual is *not* the detector: it separates a complete basis from a short one by five orders of magnitude, but a single-channel port makes the system square and the residual identically machine zero — blind in exactly the configuration that produces the silent error.  So `compute_band_s_parameters` counts the modes it found against the modes it assigned and warns once per port, naming the frequencies; the warning does not repair the bias, it stops a model error from reading as a result.  Both cost removals are output-identical: the phasor synthesis no longer scales with the mesh (`build_port_curl_slice` cuts the port-adjacent curl rows once per port instead of applying the full 3D curl per call — 1.10 ms at 5884 edges and 11.86 ms at 93004 both become 0.35 ms, flat across a 15.8x mesh growth, 615 combinations bit-identical), and repeated shift-invert targets are solved once instead of up to five times where the arc formula clamps near DC (byte-identical zetas and profiles over 114 frequencies, up to 5x at an individual near-DC axis point).  **Correction to DD-234:** `_contour_worker_init`'s BLAS pin was inert — a spawned child loads its BLAS while unpickling the initializer — but it costs nothing at the ranks in use (sixteen-thread to one-thread ratio 0.999–1.000 at p = 8, 12, 15; the BLAS starts threading a `2p × 2p` pencil only between 2n = 80 and 96), so the 5.5x stands and the measured threshold is recorded where the dead lines stood.
 * **DD-236** (2026-08-31) — the production run re-ranks the band pipeline, and finds a floor defect on the way.  Every cost share the campaign optimised against came from one 832-cell fixture with port pencil 2n = 206; run end to end on the production microstrip (2n = 5420, 106743 cells, 36864 steps) the ranking **inverts**: the kernel build is **14 %**, not 71 %, and the boundary convolution **59 %**, not 13 % — on a 201-point axis the postprocessing is 51 %.  The three obey different laws (kernel linear in the record, convolution quadratic, field linear) and the production port carries a *smaller* subspace, p = 9 against 12, because the rank tracks the mode-family structure and not the cross-section.  So the exact blocked FFT convolution, parked third because it addressed "13 %", is the largest item, and stage 2 aimed at a 71 % that is 7–14 %.  DD-234's projected 7.8x contour speed-up measures **6.00x**, bit-identical serial against parallel at n_kernel = 65536; the arc-fan cut at the postprocessing call site measures 3.12x with max |ΔS| = 0.000e+00 and stays declined on DD-235's `k` gate.  The recorded cost laws were also measured on `(2p, 2p)` blocks where the build passes `p × p`, inflating them ~8x.  **And the certificate no longer reproduces its own floors** (KB-038).
 * **DD-237** (2026-08-31) — the middle path between Mur-1st and the band DTBC is priced without a time step, and it stops at **−46 dB**.  Every boundary symbol can be read against the true discrete mode by pure arithmetic, `Γ = (λ̃ − ζ)/(1/ζ − λ̃)`, and Mur-1st fits the same formula, so the shipped default and every candidate finally share a yardstick.  Measured on three validation cross-sections: shipped Mur −38.9 / −27.2 / −47.7 dB, the best of the whole candidate list −48.0 / −35.7 / −63.3 dB — **nothing reaches −50 dB on either dispersive line**, and all of it is a lower bound, since the scalar Γ prices a perfect frequency-flat mode profile.  The obstruction is a shape: the line needs a group delay that *rises* with frequency (`θ(ω)/ω = c₁(1 + k₂ω²)` with k₂ = +55.2 on the microstrip), the Klein-Gordon chain offers 1.6 % of it and a real Mur pole offers it with the **wrong sign**.  A complex pole above the band supplies it in full — −70.0 / −82.4 / −96.6 dB — but is inadmissible: with |ζ| = 1 passivity is exactly `Im λ̃ ≤ 0`, an order-n all-pass sweeps nπ over (0, π] (so Mur is unconditionally passive, DD-096 in one line, and every higher order is active somewhere), and the unconstrained optima amplify inside the propagating range, up to **+35.3 dB**.  Under the constraint every family collapses into a 3 dB band around −46 dB on the microstrip and −33…−40 dB on the layered line.  **Two gains survive and are free**: centring the Mur coefficient on the true discrete β at band centre is +3.8 dB and a band minimax +2.2 dB more (−38.9 → −45.1 dB), for one pencil solve per port.  And the −50…−70 dB class is a **low-rank band port**, not a new boundary law — a rank-1 exterior *is* a scalar chain, so −48.0 dB is what the band port gives at p = 1 and DD-234's rank sweep continues that curve.
+* **DD-238** (2026-09-01) — the modal-Mur port floor is a two-term cancellation, and the one gain DD-237 left as free is refuted by the measured run it demanded.  The instrument is `|a2/b2|` at the *passive* port under an exact-DTBC true-mode generator (own floor −145…−176 dB, 90+ dB of headroom, CW lock-in, never `compute_s_parameters` — its de-staggered split caps at −40…−60 dB, above the effect; line length irrelevant, 0.00 dB between Nz = 24 and Nz = 120).  The shipped floor is **better than the a priori said**: worst in band −52.3 dB microstrip, −36.5 dB layered, −55.6 dB block against DD-237's −38.9 / −27.2 / −47.7 — the scalar Γ is an *exact* instrument for what it prices (0.01 dB against measurement on a true discrete profile) but prices only one of the port's two error terms, so it is pessimistic by 7.5–14.9 dB and is **not a bound**.  The mechanism: `build_modal_port` takes the Mur coefficient *and* the mode profile from the same frequency-flat quasi-static Laplace mode, the two errors are comparable and measured 161–180° out of phase, and the floor is their residual — block at 6.2 GHz closes to three digits, boundary 4.103e−3, profile 2.443e−3, residual 1.660e−3 = the measured −55.60 dB.  The 2×2 with the exact-DTBC control shows correcting *either* term alone is worse and correcting **both** lands on the instrument floor (−154.4…−157.3 dB against the control's −156.1), so there is no third error term.  Moving `r` a fraction α toward `r_exact` is worse at α = 1 in 8/8 points (2.7–3.4 dB block, 7.6–11.9 layered, 14.3–15.7 microstrip) and the optimum is **interior** and fixture- and frequency-dependent — ≈ 0.50 block, ≈ 0.25 layered and drifting down with frequency, at most 0 on the production microstrip — because it sits where the two magnitudes are *equal*, which needs a discrete mode solve per port per frequency, i.e. the band path; the shipped `r` sits near a cancellation optimum by accident.  So the minimax objective was wrong in kind (the floor is `|Γ_bnd − Γ_prof|`, not `|Γ_bnd|`), the coefficient is not calibrated on its own, and — the forward coupling worth remembering — a better *mode profile* alone would raise the floor too unless `r` moves in the same step.  Nothing under `src/` moves; the user-visible S11 is a third quantity and the −30 dB-class figures in DD-064, the docs and the runtime notices are untouched.  Certificate: `validation/qtem_mur_floor_decomposition.py`.
 Older decisions: `design-decisions.md`.
 
 ## Working practices earned the hard way
@@ -335,16 +337,17 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
 * **Band port floor (KB-038)** — the pulsed certificates no longer
   reproduce their floors and degrade with run length, failing -100 dB
   at 49152 steps.  Undiagnosed.
-* **QTEM port accuracy (DD-237)** — the a-priori pricing closes the
-  middle path and leaves two items.  (1) Centre the modal Mur
-  coefficient on the true discrete β instead of the DC Laplace
-  `ε_eff`, minimax over the band: +6.2 dB measured a priori
-  (−38.9 → −45.1 dB), one pencil solve per port, no new state;
-  needs a measured run, and the Mur a/b split caps at −40…−60 dB, so
-  measure it with the CW true-mode decomposition.  (2) Price a
-  low-rank band port (p = 2, 3) end to end — accuracy is known from
-  DD-234, the unknowns are the step count against modal and the
-  O(N²p²) convolution at small p.
+* **QTEM port accuracy (DD-237/DD-238)** — measured, the shipped
+  modal-Mur floor beats the a-priori pricing: worst in band −52.3 dB
+  microstrip, −36.5 dB layered, −55.6 dB block.  It is the residual of
+  a near-perfect antiphase cancellation between the boundary and
+  mode-profile terms, both from the same quasi-static Laplace mode, so
+  the two must move together — calibrating `r` alone is worse at 8/8
+  points (2.7–15.7 dB), and a better profile alone would raise the
+  floor too.  Live item: price a low-rank band port (p = 2, 3) end to
+  end; accuracy is known from DD-234, the unknowns are the step count
+  against modal and the O(N²p²) convolution at small p; KB-038 keeps
+  any band-path floor conditional.
 * **API blueprint (DD-224) — Phases A–D complete** (listed above).
   Phase E ff. is a reserved-name roadmap, not scheduled work: each
   entry earns its own DD.  Field-source limits: the recording lives in
@@ -358,8 +361,8 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   every step and must solve Maxwell itself, or it leaks at the level of
   the total field.  Blueprint: `investigations/api-blueprint/`.
 * **Symmetry planes — known limitations (DD-154/DD-155/DD-172).**
-  Lumped ports/elements on a symmetry plane are corrected since
-  DD-172; ParaView's FlipAllInputArrays mirrors H like a polar vector
+  Lumped ports/elements on a symmetry plane are corrected since DD-172;
+  ParaView's FlipAllInputArrays mirrors H like a polar vector
   (magnitude right, mirrored-half arrow sign inverted).  CPML min/max
   faces are not mirror images (KB-023) — full-vs-half parity of
   resonant open structures floors at ~1e-2.
@@ -373,14 +376,11 @@ access; watcher idiom: poll ``status``, skip ``state == "pending"``.
   close; until then keep quasi-TEM feeds short or compare raw S.
 * **Mesh-build speed — campaign closed 2026-08-29** (DD-101/102,
   DD-141, DD-199, DD-202…DD-223): no Lange or array row runs a kernel
-  section or a kernel Boolean of a model node any more, and every
-  ladder row matches its reference (`pool/hash_refs/`, re-pinned at
-  DD-223; `benchmarks/bench_mesh_build.py`, CPU, `auto` pool: 16 Lange
-  couplers 9.6 s at 3.7 M cells, 240 posts 1.8 s, 8 × 8 patch array
-  1.8 s, 16 × 16 6.4 s at 1.8 M).  Deferred in value order — the
-  tools' union where it is not a model shape, the post row's
-  `pass_faces_mu`/`section_calls`/`planes_material`, then spheres and
-  cones — with the A/B switches `MAGNELIO_*=0` and the traps: DD-223.
+  section or Boolean of a model node any more, every ladder row matches
+  its reference (`pool/hash_refs/`, re-pinned at DD-223), and
+  `benchmarks/bench_mesh_build.py` reads 16 Lange couplers 9.6 s at
+  3.7 M cells, 240 posts 1.8 s, 16 × 16 patch array 6.4 s at 1.8 M.
+  Deferred work, A/B switches `MAGNELIO_*=0`, traps: DD-223.
 
 Closed construction sites are tombstoned where they were decided (the
 DD entry and `known-bugs.md`) and are not repeated here.

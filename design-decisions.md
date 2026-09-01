@@ -18478,3 +18478,167 @@ on the microstrip against 46.7 % unconstrained.
    −19.1 dB it measured), so that failure is the boundary and not only
    the broken decomposition its post-mortem identified.  It also shows
    what the cut-off costs *below* the band: −11.5 dB and −0.0 dB there.
+
+---
+
+## DD-238 — the modal-Mur port floor is a two-term cancellation, so the coefficient is not calibrated alone
+
+**Status:** Decided 2026-09-01.  No shipped default changes; this entry
+records a measurement that refutes an item DD-237 left open.
+Certificate: `validation/qtem_mur_floor_decomposition.py`.
+Measurements: internal record `investigations/qtem-midpath/`
+(`probe_mur_floor_a.py` … `probe_mur_floor_d.py`, `DERIVATION.md` §9.5).
+
+**Problem.**  DD-237 priced the QTEM port's boundary symbol a priori
+with `Γ = (λ̃ − ζ)/(1/ζ − λ̃)` and closed by naming two "free gains":
+fit the Mur coefficient to the *true discrete* phase advance,
+`r_exact = sin((ω − θ)/2)/sin((ω + θ)/2)` with `θ = |arg ζ|`, then
+minimax it over the band — a predicted +3.8 dB (centring) + 2.2 dB
+(minimax) on the production microstrip, for one pencil solve per port
+and no new state.  DD-237 demanded a measured run before shipping it,
+because the scalar symbol assumes a frequency-flat mode profile.  The
+run has been made.  **It refutes the item: fitting `r` alone is worse
+at every measured point.**
+
+**The instrument.**  `|a2/b2|`, the one-port reflectometer reading at
+the *passive* port under test, driven from the far end by an
+exact-DTBC true-mode generator (own floor −145…−176 dB, at least 90 dB
+of headroom).  CW erf-ramped sine, true-mode lock-in decomposition
+(`cw_wave_phasors` → `cw_lockin_phasors` → `cw_decompose`), never
+`compute_s_parameters`, whose de-staggered a/b split caps at
+−40…−60 dB — above the effect.  `courant_dt`, `f_calc = f` per point,
+one QTEM channel, `termination_kinds == ['mur']` asserted per point,
+lock-in residuals 5.4e-8…1.3e-6.  The port under test must be the
+passive one: driven against a matched far end there is no returning
+wave and `|b1/a1|` prices the *source* instead of the boundary.  Line
+length is irrelevant (microstrip 4.2 GHz identical at Nz = 24 and
+Nz = 120, 0.00 dB apart).
+
+**Measured — the shipped floor, worst at band top, monotone in f:**
+
+    fixture      1.0     2.1     3.2     4.2     5.2     6.2     7.8 GHz
+    microstrip  −87.54  −74.67          −62.69          −56.07  −52.26
+    layered     −78.58  −65.63          −52.93          −43.83  −36.48
+    block               −74.36  −67.05  −62.34  −58.64  −55.60
+
+DD-237's a-priori worst-in-band read −38.9 / −27.2 / −47.7 dB.  **The
+a-priori Γ is not a bound on the port floor**; it is pessimistic by
+7.5–14.9 dB.  It is, however, an *exact* instrument for what it does
+price: on a true discrete mode profile, measured equals a priori to
+0.01 dB (block −78.60/−78.60, −66.50/−66.50, −59.65/−59.64).  It
+prices exactly one of the port's two error terms.
+
+**The mechanism.**  `build_modal_port` derives **both** the Mur
+coefficient **and** the mode profile from the *same* frequency-flat
+quasi-static Laplace mode.  Both are therefore wrong, by comparable
+amounts, and measured 161–180° out of phase.  The shipped floor is the
+residual of their near-perfect destructive interference — not a
+boundary defect.  Block, 6.2 GHz, |Γ| linear:
+
+    boundary term alone   4.103e−3   (−47.74 dB)   a priori, shipped r
+    profile  term alone   2.443e−3   (−52.25 dB)   measured, r := r_exact
+    antiphase residual    1.660e−3   (−55.60 dB)   == measured shipped floor
+
+Three digits, and the certificate recomputes the reconciliation from
+its own run: relative phase 180.0° there, 174.7° / 174.1° on the
+microstrip and layered lines at 4.2 GHz, and 161.3° on the layered line
+at 7.8 GHz, where the two terms no longer subtract and the magnitude
+closure loosens accordingly (−42.36 dB against a measured −36.48 dB).
+
+**The 2×2, plus the control** (block, the cheapest fixture):
+
+    variant            2.1 GHz    4.2 GHz    6.2 GHz
+    mur                 −74.36     −62.34     −55.60   shipped
+    mur_rexact          −71.64     −59.37     −52.25   boundary corrected
+    mur_true            −78.60     −66.50     −59.65   profile corrected
+    mur_true_rexact    −156.79    −157.32    −154.39   both corrected
+    dtbc               −157.02    −159.73    −156.06   exact transparent
+
+Correcting *either* term alone destroys the cancellation and makes the
+port worse; correcting **both** lands on the instrument floor,
+indistinguishable from the exact-DTBC control.  **There is no third
+error term.**
+
+**The partial step**, `r` moved a fraction α of the way from the
+shipped value to `r_exact` (α = 1 is DERIVATION §9.5 item 1 evaluated
+at the run frequency itself, i.e. its best case):
+
+    fixture     f/GHz    α=0     0.25     0.50     0.75     1.00
+    block        2.1    −74.36  −82.13   −89.02   −76.56   −71.64
+    block        6.2    −55.60  −63.80   −67.76   −56.96   −52.25
+    layered      1.0    −78.58  −90.36   −75.27      —     −66.73
+    layered      4.2    −52.93  −56.80   −48.76      —     −41.04
+    layered      7.8    −36.48  −37.21   −34.50      —     −28.85
+    microstrip   4.2    −62.69  −55.87   −51.88      —     −47.01
+    microstrip   7.8    −52.26  −47.10   −43.05      —     −37.95
+
+α = 1 is worse at 8/8 points: 2.7–3.4 dB (block), 7.6–11.9 (layered),
+14.3–15.7 (microstrip).  The optimum is **interior** and fixture- and
+frequency-dependent — ≈ 0.50 on block, ≈ 0.25 on the layered line and
+drifting downward with frequency, and **at most 0 on the production
+microstrip**, where every step toward exact is monotonically worse
+(there the profile term already exceeds the boundary term, 4.463e−3
+against 3.838e−3, so shrinking the boundary term only widens the gap).
+The optimum sits where the two magnitudes are *equal*, and the profile
+term is unknown without a discrete mode solve per port per frequency —
+which is precisely the DTBC/band path.  **The shipped `r` sits near a
+cancellation optimum by accident.**
+
+**Decision.**  Do not calibrate the modal Mur reflection coefficient on
+its own — not centred on the discrete β, not minimaxed over the band.
+DD-237 §9.5 item 1 is closed as refuted, and `operator.py`'s continuum
+`r` stays as it is.  Two consequences follow:
+
+1. **The minimax objective was wrong in kind.**  It minimises `|Γ_bnd|`,
+   but the port floor is `|Γ_bnd − Γ_prof|`.  Minimising the boundary
+   term alone *maximises* the uncancelled residual, which is why the
+   +2.2 / +3.3 dB priced in DD-237 arrive as a loss.
+2. **A forward coupling worth recording:** because the shipped floor
+   depends on this cancellation, any future improvement to the port's
+   *mode profile* alone — a better transverse solve, a dispersive
+   ε_eff, a drift correction — would make the floor **worse** unless
+   `r` is corrected in the same step.  The two must move together, and
+   moving them together is a discrete mode solve per frequency, i.e.
+   the band path.
+
+**Reconciliation with DD-047.**  DD-047's non-path 1 ("phase-velocity
+calibration in the Mur formula: ~0.05 dB"; "Mur reflection is not the
+dominant factor in-band") was measured on a *homogeneous* hollow WR-90,
+where `r` was already nearly right — the same result in a regime where
+there was nothing to calibrate.  This measurement **generalises and
+strengthens it**: on an inhomogeneous QTEM line `r` is genuinely wrong,
+but the profile is wrong by a comparable amount with the opposite sign,
+so calibrating `r` alone is not merely worthless but harmful.  DD-047's
+own text is historical and its numbers are untouched; the strengthening
+is recorded **here** and in the certificate's module docstring, which is
+where a reader of `validation/` meets it.
+
+**What is not claimed.**  The user-visible S11 of a production run is a
+*different* quantity: it goes through the de-staggered a/b split
+(−40…−60 dB cap, internal record `investigations/qtem-midpath/`
+`DERIVATION.md` §4b) and a two-port run also carries the drive port's
+soft-source error (a two-Mur-port `|b1/a1|` measures 0.06–16.8 dB worse
+than the one-port figure here).  Tutorial 09's printed −32.9 dB is that
+third quantity.  Nothing here confirms or contradicts the "−30 dB class"
+statements in DD-064, the documentation and the runtime notices, and
+none of those numbers move.
+
+**DD-237 is not superseded.**  Its a-priori analysis is correct, its
+passivity result (|Γ| ≤ 1 ⟺ Im λ̃ ≤ 0, so Mur is unconditionally passive
+and every higher order is active somewhere) stands, and its conclusion
+that the −50…−70 dB class is **a low-rank band port, not a new boundary
+law**, is reinforced: fixing the profile *is* the band/DTBC path, and
+the 2×2 above shows it is the only route to the instrument floor.  The
+live next item is therefore item 2 of §9.5 in the same internal record —
+price the low-rank
+band port end to end at p = 2, 3 on the production microstrip against
+DD-236's two costs; KB-038 keeps any band-path floor conditional.
+
+**Regression.**  Nothing under `src/` changed and no shipped number
+moved — this entry is a measurement of the existing default, made with
+the production solver through the public build path plus one documented
+internals touch in the certificate (`op._dtbc = [None] * n_modes`, which
+is the state the operator's own `termination="mur"` constructor reaches).
+The certificate reproduces every pinned point in the tables above to
+0.00 dB (block sweep 25 points in 58 s; microstrip 4.2 GHz to 0.00 dB at
+22 s per variant).
