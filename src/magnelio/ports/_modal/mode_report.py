@@ -117,9 +117,20 @@ class ModeReport:
         port itself reaches.
 
         ``None`` where no spread was measured (see ``chain_spread``),
-        and meaningless for a channel on the first-order absorber,
-        whose floor is set by the absorber instead.
+        and ``None`` on a channel the first-order absorber terminates:
+        there the floor is set by the absorber, not by the
+        cross-section, and the spread only explains why the exact
+        boundary was withheld.  Read ``chain_spread`` in that case.
         """
+        # A large spread is what *disqualified* the channel from the
+        # exact chain, so 20*log10(spread) is not a reflection bound
+        # there -- on a quasi-TEM line it reads -13..-10 dB against a
+        # Mur floor tens of dB lower (DD-228, DD-237).  PortReport
+        # .summary() has always gated on the termination; the property
+        # now does the same, so the documented one-liner cannot print
+        # a number that means nothing.
+        if self.termination == "mur":
+            return None
         if self.chain_spread is None or self.chain_spread <= 0.0:
             return None
         return 20.0 * math.log10(self.chain_spread)
