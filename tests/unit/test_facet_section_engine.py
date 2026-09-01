@@ -264,3 +264,456 @@ class TestMeshGate:
         # boundary crosses; the mean is far below that.
         assert diffs.mean() <= 5e-3, diffs.mean()
         assert diffs.max() <= 5e-2, diffs.max()
+
+
+# ---------------------------------------------------------------------------
+# A free-form face must not move the trace of an analytic one
+# ---------------------------------------------------------------------------
+
+#: Cell size and the section deflection the mesher derives from it.
+CELL = 2.5e-4
+BLEND_DEFLECTION = CELL * 1e-2
+BORE_R = 3.5e-3
+BORE_LO = 0.0
+BORE_HI = 20e-3
+
+
+def _cap(y: float, side: float, x0: float = 0.0):
+    half = 0.5 * side
+    return geo.Face(
+        normal="y",
+        points=(
+            (x0 - half, -half),
+            (x0 + half, -half),
+            (x0 + half, half),
+            (x0 - half, half),
+        ),
+        position=y,
+    )
+
+
+def _cell_areas(polys, window) -> np.ndarray:
+    """Covered area of every cell of a ``CELL`` grid over *window*.
+
+    *window* is ``(u0, v0, u1, v1)`` in the section plane's own
+    coordinates — the quantity ``compute_face_material_areas`` books
+    per dual face, computed here directly from the section polygons.
+    """
+    from magnelio.geo._polygon_clip import clip_polygon_to_rect
+
+    u0, v0, u1, v1 = window
+    nu = int(round((u1 - u0) / CELL))
+    nv = int(round((v1 - v0) / CELL))
+    out = np.zeros((nu, nv))
+    for i in range(nu):
+        for j in range(nv):
+            rect = (u0 + i * CELL, v0 + j * CELL, u0 + (i + 1) * CELL, v0 + (j + 1) * CELL)
+            total = 0.0
+            for poly in polys:
+                clipped = clip_polygon_to_rect(poly, rect)
+                if clipped is not None and len(clipped) >= 3:
+                    total += abs(polygon_area(clipped))
+            out[i, j] = total
+    return out
+
+
+class TestFreeFormReachIsLocal:
+    """A body a cell holds none of must not change that cell's masses.
+
+    The facet path represents a whole shape by its triangulation as soon
+    as one of its faces is free-form, so a blend fused onto a cylinder
+    took the cylinder's own faces off their exact geometry too — and a
+    triangulated cylinder cuts differently depending on where the plane
+    falls between its node rows.  Cells nowhere near the blend then
+    moved by up to a per-cent, and a port sitting on them lost its exact
+    termination with nothing warning about it.
+    """
+
+    @pytest.fixture(scope="class")
+    def shapes(self):
+        """The cylinder alone, and the same cylinder sharing its solid
+        with a free-form blend that stops well below the window used."""
+        cylinder = geo.Cylinder(
+            radius=BORE_R,
+            origin=(0.0, 0.0, BORE_LO),
+            axis="y",
+            height=BORE_HI - BORE_LO,
+            material="pec",
+        )
+        blend = geo.Loft(_cap(-6e-3, 8e-3), _cap(0.5e-3, 4e-3), blend="ruled", material="pec")
+        return cylinder, cylinder + blend
+
+    @staticmethod
+    def _engines(shapes):
+        plain, fused = shapes
+        a = _engine(plain, BLEND_DEFLECTION)
+        b = _engine(fused, BLEND_DEFLECTION)
+        assert not a.facetted and b.facetted
+        return a, b
+
+    def test_the_blend_shares_the_solid_and_facets_it(self, shapes):
+        plain, fused = self._engines(shapes)
+        assert plain.enabled and fused.enabled
+
+    def test_cells_away_from_the_blend_are_unchanged(self, shapes):
+        """The acceptance criterion: identical masses where the body is
+        not.  Cuts along the cylinder axis, 8 mm and further above the
+        blend's last material."""
+        plain, fused = self._engines(shapes)
+        window = (8e-3, -4e-3, 18e-3, 4e-3)
+        worst = 0.0
+        for pos in (0.5e-3, 1.3e-3, 2.1e-3, 3.4e-3):
+            a = _cell_areas(plain.section(0, pos), window)
+            b = _cell_areas(fused.section(0, pos), window)
+            assert (a > 0.5 * CELL * CELL).any()
+            # Deviations are measured against the cell, the way a
+            # conformal fraction reads them.
+            worst = max(worst, float(np.abs(b - a).max()) / (CELL * CELL))
+        assert worst <= 1e-12, worst
+
+    def test_the_trace_repeats_along_the_axis(self, shapes):
+        """Translational invariance — what the exact port termination
+        consumes.  A cut across the axis is a circle at every height, so
+        the cells it books must not depend on the height."""
+        _, fused = self._engines(shapes)
+        window = (-4e-3, -4e-3, 4e-3, 4e-3)
+        ref = None
+        for pos in (10e-3, 10.13e-3, 10.25e-3, 10.37e-3):
+            cells = _cell_areas(fused.section(1, pos), window)
+            if ref is None:
+                ref = cells
+                assert (ref > 0.5 * CELL * CELL).any()
+                continue
+            assert float(np.abs(cells - ref).max()) / (CELL * CELL) <= 1e-12
+
+    def test_the_repeating_trace_is_the_right_circle(self, shapes):
+        """Invariance must not be bought with a wrong radius: the area
+        of the cross cut stays inside the chord budget of the section."""
+        _, fused = self._engines(shapes)
+        polys = fused.section(1, 10e-3)
+        area = sum(abs(polygon_area(p)) for p in polys)
+        assert abs(area / (np.pi * BORE_R**2) - 1.0) <= 1e-3, area
+
+
+# ---------------------------------------------------------------------------
+# The same, on a cylinder whose axis is oblique to the grid
+# ---------------------------------------------------------------------------
+
+#: Axis (0, 1, 1)/sqrt(2).  Two things the axis-aligned fixture above
+#: cannot see follow from it: every cut normal to y is a genuine ellipse
+#: rather than a circle, so translational invariance is no longer almost
+#: free; and one cell of plane travel in y moves the trace by exactly one
+#: cell in z (the plane advances by CELL*sqrt(2) along the axis, whose z
+#: component is 1/sqrt(2)), so the invariance can be read off a shifted
+#: window with no interpolation.
+TILT_AXIS = (0.0, 2.0**-0.5, 2.0**-0.5)
+TILT_HEIGHT = 60e-3
+#: Cut well above the blend's last material, and far from either cap.
+TILT_CUT = 10e-3
+TILT_WINDOW = (-4e-3, 4.5e-3, 4e-3, 15.5e-3)
+
+
+class TestObliqueFreeFormReachIsLocal:
+    """:class:`TestFreeFormReachIsLocal` on an oblique conic run.
+
+    With the axis on a grid direction every cross cut is the same
+    circle, so the trace repeats as soon as the compression fires at
+    all, and the fixture above misses that invariant by 1.3e-05 of a
+    cell without the fix.  Tilted, the cut is a genuine ellipse whose
+    node rows fall differently on every plane, and the same measurement
+    misses it by 3.3e-04 — the size a port termination on such a body
+    would see.
+
+    Both shapes carry the same free-form neighbour, so both are on the
+    facet path and the blend is the only difference between them: what
+    is compared is the reach of the blend, not the reach of the path.
+    """
+
+    @pytest.fixture(scope="class")
+    def engines(self):
+        cylinder = geo.Cylinder(
+            radius=BORE_R,
+            origin=(0.0, 0.0, 0.0),
+            axis=TILT_AXIS,
+            height=TILT_HEIGHT,
+            material="pec",
+        )
+        # Free-form, far enough away to share nothing but the path.
+        neighbour = geo.Loft(
+            _cap(-6e-3, 4e-3, 30e-3),
+            _cap(0.5e-3, 2e-3, 30e-3),
+            blend="ruled",
+            material="pec",
+        )
+        blend = geo.Loft(_cap(-6e-3, 8e-3), _cap(0.5e-3, 4e-3), blend="ruled", material="pec")
+        plain = _engine(cylinder + neighbour, BLEND_DEFLECTION)
+        fused = _engine(cylinder + neighbour + blend, BLEND_DEFLECTION)
+        assert plain.enabled and plain.facetted
+        assert fused.enabled and fused.facetted
+        return plain, fused
+
+    def test_cells_away_from_the_blend_are_unchanged(self, engines):
+        """Identical masses where the blend is not, on planes that fall
+        at four different places between the triangulation's node rows.
+        """
+        plain, fused = engines
+        worst = 0.0
+        for pos in (TILT_CUT, TILT_CUT + 0.09e-3, TILT_CUT + 0.17e-3, TILT_CUT + 0.23e-3):
+            a = _cell_areas(plain.section(1, pos), TILT_WINDOW)
+            b = _cell_areas(fused.section(1, pos), TILT_WINDOW)
+            assert (a > 0.5 * CELL * CELL).any()
+            worst = max(worst, float(np.abs(b - a).max()) / (CELL * CELL))
+        assert worst <= 1e-12, worst
+
+    def test_the_trace_repeats_along_the_cylinder_axis(self, engines):
+        """Translational invariance along the body's own axis: one cell
+        of plane travel in y is one cell of trace travel in z, so the
+        cells of a window that follows the trace must not move."""
+        _, fused = engines
+        u0, v0, u1, v1 = TILT_WINDOW
+        ref = None
+        for k in range(4):
+            window = (u0, v0 + k * CELL, u1, v1 + k * CELL)
+            cells = _cell_areas(fused.section(1, TILT_CUT + k * CELL), window)
+            if ref is None:
+                ref = cells
+                assert (ref > 0.5 * CELL * CELL).any()
+                continue
+            worst = float(np.abs(cells - ref).max()) / (CELL * CELL)
+            assert worst <= 1e-9, worst
+
+    def test_the_repeating_trace_is_the_right_ellipse(self, engines):
+        """Invariance must not be bought with a wrong conic: the cut
+        normal to y has the area of the ellipse the axis tilt implies."""
+        _, fused = engines
+        polys = fused.section(1, TILT_CUT)
+        area = sum(abs(polygon_area(p)) for p in polys)
+        exact = np.pi * BORE_R**2 / abs(TILT_AXIS[1])
+        assert abs(area / exact - 1.0) <= 1e-3, area
+
+
+# ---------------------------------------------------------------------------
+# A conic run whose exact arc cannot be built
+# ---------------------------------------------------------------------------
+
+#: A thin, long body whose axis sits a fraction of a degree off the grid
+#: — a bond wire, a via, a barrel out of an imported STEP file.  The
+#: trace of a plane nearly parallel to that axis is a conic so stretched
+#: that tessellating it at the in-plane sagitta budget runs into the
+#: segment cap of ``_cylinder_arc``, which then declines.
+#:
+#: Retuned 2026-09-01 from ``WIRE_TILT = 3e-3`` / ``WIRE_LENGTH = 100e-3``
+#: / blend at 80-95 mm.  Those constants reached the segment cap only
+#: through the sagitta term's wrong ``abs(c_n) ** 3``; with the exponent
+#: at its derived 1 the same body tessellates in 12001 segments and
+#: builds.  The decline now comes from the ``radians(5) * abs(c_n)``
+#: angular cap, which needs ``abs(c_n) < span / 100_000 / radians(5)``
+#: -- 3.6e-4 for the half turn this plane cuts -- and the run's reach
+#: ``WIRE_R / WIRE_TILT`` grows with it, so the blend moves out to match.
+WIRE_R = 0.2e-3
+WIRE_LENGTH = 900e-3
+WIRE_TILT = 3e-4  # sine of the angle between the axis and z, ~0.017 deg
+WIRE_DEFLECTION = 2e-6
+#: The blend sits above the conic run, which reaches WIRE_R / WIRE_TILT.
+WIRE_BLEND_LO = 750e-3
+WIRE_BLEND_HI = 850e-3
+
+
+def _wire_cylinder():
+    return geo.Cylinder(
+        radius=WIRE_R,
+        origin=(0.0, 0.0, 0.0),
+        axis=(0.0, WIRE_TILT, (1.0 - WIRE_TILT**2) ** 0.5),
+        height=WIRE_LENGTH,
+        material="pec",
+    )
+
+
+def _wire_run_area(polys):
+    """|area| of the section polygons below the blend — the conic run."""
+    return sum(abs(polygon_area(p)) for p in polys if float(p[:, 1].max()) <= WIRE_BLEND_LO)
+
+
+class TestConicRunSurvivesAnUnbuildableArc:
+    """A run the exact conic cannot replace keeps its own crossings.
+
+    Compression drops the crossings of a run and rewires its ends across
+    the arc that takes their place.  When no arc can be built the run
+    must be left as it is: rewiring first and only then asking for the
+    arc turns the whole conic into a straight chord, and a chord between
+    the two ends of a half turn of this body encloses nothing at all.
+    """
+
+    @pytest.fixture(scope="class")
+    def shape(self):
+        def square(z, side):
+            half = 0.5 * side
+            return geo.Face(
+                normal="z",
+                points=((-half, -half), (half, -half), (half, half), (-half, half)),
+                position=z,
+            )
+
+        blend = geo.Loft(
+            square(WIRE_BLEND_LO, 8e-4),
+            square(WIRE_BLEND_HI, 4e-4),
+            blend="ruled",
+            material="pec",
+        )
+        return _wire_cylinder() + blend
+
+    def test_the_fixture_drives_the_arc_into_declining(self, shape, monkeypatch):
+        """Guard on the guard: without a declined arc the test below
+        would pass on any code."""
+        engine = _engine(shape, WIRE_DEFLECTION)
+        assert engine.enabled and engine.facetted
+        declined = []
+        original = _PlanarSectionEngine._cylinder_arc
+
+        def spy(self, *args, **kwargs):
+            arc = original(self, *args, **kwargs)
+            declined.append(arc is None)
+            return arc
+
+        monkeypatch.setattr(_PlanarSectionEngine, "_cylinder_arc", spy)
+        engine.section(1, 0.0)
+        assert declined and any(declined), declined
+
+    def test_the_run_does_not_collapse_to_a_chord(self, shape):
+        """The area of the run stays that of the triangulated conic; a
+        chord across it would enclose a sliver of no area at all."""
+        engine = _engine(shape, WIRE_DEFLECTION)
+        area = _wire_run_area(engine.section(1, 0.0))
+        exact = _wire_run_area(
+            cross_section_polygons(
+                _wire_cylinder()._occ_shape(1.0),
+                "y",
+                0.0,
+                deflection=WIRE_DEFLECTION,
+                scale=1.0,
+            )
+        )
+        assert exact > 0.0
+        assert abs(area / exact - 1.0) <= 2e-2, (area, exact)
+
+
+# ---------------------------------------------------------------------------
+# A plane tangent to a cylinder
+# ---------------------------------------------------------------------------
+
+TANGENT_R = 2.3e-3
+TANGENT_BORE_R = 0.7e-3
+TANGENT_HEIGHT = 10e-3
+TANGENT_DEFLECTION = 2.5e-6
+#: Axis offsets along the plane normal.  The second one puts the
+#: tangency half an ulp off in ``pos - c`` (4.3e-19), which an exact
+#: comparison misses.
+TANGENT_OFFSETS = (0.0, 2.1e-3)
+
+
+def _cross_drilled(offset: float, bore_axis: str):
+    """A cross-drilled cylinder sharing its solid with a free-form
+    blend, its axis moved by *offset* along *bore_axis*."""
+
+    def along(value: float, third: float):
+        return (0.0, value, third) if bore_axis == "y" else (value, 0.0, third)
+
+    body = geo.Cylinder(
+        radius=TANGENT_R,
+        origin=along(offset, -0.5 * TANGENT_HEIGHT),
+        axis="z",
+        height=TANGENT_HEIGHT,
+        material="pec",
+    )
+    bore = geo.Cylinder(
+        radius=TANGENT_BORE_R,
+        origin=along(offset - 2.0 * TANGENT_R, 0.0),
+        axis=bore_axis,
+        height=4.0 * TANGENT_R,
+        material="pec",
+    )
+
+    def square(z, side):
+        half = 0.5 * side
+        return geo.Face(
+            normal="z",
+            points=((-half, -half), (half, -half), (half, half), (-half, half)),
+            position=z,
+        )
+
+    blend = geo.Loft(
+        square(0.3 * TANGENT_HEIGHT, 1.2 * TANGENT_R),
+        square(0.9 * TANGENT_HEIGHT, 0.6 * TANGENT_R),
+        blend="ruled",
+        material="pec",
+    )
+    return (body - bore) + blend
+
+
+class TestTangentPlaneBooksNothing:
+    """A plane touching the outer cylinder along one generatrix.
+
+    Its trace on the solid is that line and nothing else — no area at
+    all — but the triangulation renders the touch as a run of crossings
+    whose ends lie apart, and the conic compression then puts a whole
+    turn of the *bore* in its place: 1.539e-6 m^2 of material, the
+    bore's own disc, on a plane the solid only touches.  The kernel and
+    the exact planar engine both answer nothing there, so the facet path
+    delegates the plane the way the analytic screen does.
+    """
+
+    @pytest.mark.parametrize("bore_axis", ["x", "y"])
+    @pytest.mark.parametrize("offset", TANGENT_OFFSETS)
+    def test_the_engine_declines_the_tangent_plane(self, bore_axis, offset):
+        shape = _cross_drilled(offset, bore_axis)
+        engine = _engine(shape, TANGENT_DEFLECTION)
+        assert engine.enabled and engine.facetted
+        axis = "xyz".index(bore_axis)
+        pos = offset + TANGENT_R
+        assert not engine.can_fast(axis, pos)
+        assert engine.section(axis, pos) is None
+
+    @pytest.mark.parametrize("bore_axis", ["x", "y"])
+    @pytest.mark.parametrize("offset", TANGENT_OFFSETS)
+    def test_the_kernel_books_nothing_there(self, bore_axis, offset):
+        """What the delegated plane answers: no area at all."""
+        shape = _cross_drilled(offset, bore_axis)
+        polys = cross_section_polygons(
+            shape._occ_shape(1.0),
+            bore_axis,
+            offset + TANGENT_R,
+            deflection=TANGENT_DEFLECTION,
+            scale=1.0,
+        )
+        assert sum(_areas(polys)) == 0.0
+
+    def test_the_fixture_manufactures_the_circle_without_the_screen(self, monkeypatch):
+        """Guard on the guard: the plane really does reach the conic
+        compression, so the test above would fail without the screen."""
+        monkeypatch.setattr(
+            _PlanarSectionEngine,
+            "_cylinder_tangency",
+            lambda self, axis, pos: False,
+            raising=False,
+        )
+        engine = _engine(_cross_drilled(0.0, "y"), TANGENT_DEFLECTION)
+        area = sum(_areas(engine.section(1, TANGENT_R)))
+        assert abs(area / (np.pi * TANGENT_BORE_R**2) - 1.0) <= 1e-2, area
+
+    @pytest.mark.parametrize("pos", [-1.7e-3, 0.0, 1.1e-3])
+    def test_planes_across_the_body_are_untouched(self, pos):
+        """The screen takes the tangent plane and nothing else: a cut
+        through the body keeps its bore hole and its own area."""
+        shape = _cross_drilled(0.0, "y")
+        engine = _engine(shape, TANGENT_DEFLECTION)
+        polys = engine.section(1, pos)
+        assert polys is not None
+        ref = cross_section_polygons(
+            shape._occ_shape(1.0), "y", pos, deflection=TANGENT_DEFLECTION, scale=1.0
+        )
+        assert len(polys) == len(ref)
+        area, exact = sum(_areas(polys)), sum(_areas(ref))
+        assert exact > 0.0
+        # Both sides tessellate at the same deflection, so they agree to
+        # a fraction of the chord-error class (measured 2.9e-5).
+        assert abs(area / exact - 1.0) <= 1e-3, (area, exact)

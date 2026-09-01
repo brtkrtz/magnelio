@@ -66,6 +66,13 @@ methods/index
 
 ```{toctree}
 :maxdepth: 1
+:caption: Upgrading
+
+migration-0.5
+```
+
+```{toctree}
+:maxdepth: 1
 :caption: Bibliography
 
 bibliography

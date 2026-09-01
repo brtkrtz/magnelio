@@ -26,18 +26,39 @@ waveguide TE11/TM01):
    floor from finite-record leakage" lesson).  These numbers document
    the practical pulsed floor, not the port.
 
-Results (session 86), CW lock-in |S11|:
+Results, re-derived 2026-09-01 at HEAD 73f7c17.  The script runs at the
+*production default* time-loop precision, which is single since DD-094;
+the previous pins (recorded session 86) were taken when the default was
+double.  READ THE PRECISION WITH THE NUMBER — the run prints it.
 
-    WR-90 TE10     1.01 f_c: -150.4 dB   band: -153 .. -166 dB
-    WR-90 TM11     1.01 f_c: -137.3 dB   band: -154 .. -165 dB
-    round WG TE11  1.05-1.5 f_c: -124 .. -132 dB   (conformal)
-    round WG TM01  1.05/1.2 f_c: -124 / -129 dB    (conformal)
+CW lock-in |S11|, production default (single):
 
-All 24+ dB below the acceptance line (WR-90: 37-66 dB), including
-1.01 f_c_hat where the DD-047 Mur peak sat at -19 dB.  The pulsed
-overview lands at max -19 .. -38 dB near the band edge —
-truncation-limited exactly as predicted by the run-length scaling,
-median -40 .. -89 dB.
+    leg                          measured           previous pin
+    WR-90 TE10   1.01 f_c_hat    -124.5 dB          -150.4 dB
+    WR-90 TE10   1.02 .. 1.8     -128.5 .. -163.0   -153 .. -166 dB
+    WR-90 TM11   1.01 f_c_hat    -134.9 dB          -137.3 dB
+    WR-90 TM11   1.02 .. 1.45    -135.9 .. -174.4   -154 .. -165 dB
+    round WG TE11 1.05/1.2/1.5   -123.8/-130.3/     -124 .. -132 dB
+                                 -133.5
+    round WG TM01 1.05/1.2       -126.4/-131.8      -124 / -129 dB
+
+The drift is the precision default, not the absorber.  Re-measured in
+double at the same HEAD (``MAGNELIO_PRECISION=double``, everything else
+identical): WR-90 TE10 at 1.01 f_c_hat gives **-150.4 dB**, the pinned
+value to the printed digit, and at 1.2 f_c_hat -162.3 dB inside the
+pinned -153..-166 band.  The lock-in fit residual moves with it, 1.1e-07
+single against 2.4e-09 double, i.e. what the single-precision legs
+report is the float32 field floor lifted by the lock-in averaging.  The
+two conformal round-WG legs reproduce their pins within 1.5-2.8 dB in
+single, because they are limited by the conformal cross-section rather
+than by the field wordlength; the uniform WR-90 legs, which are not,
+move by 25.9 dB.  (Only the TE10 legs were re-measured in double; the
+TM11 and round-WG legs in double are not measured.)
+
+All legs still sit 23+ dB below the acceptance line.  The pulsed
+overview lands at max -20.2 .. -39.9 dB near the band edge (previous
+pin -19 .. -38 dB) — truncation-limited exactly as predicted by the
+run-length scaling — median -43.0 .. -89.9 dB (previous pin -40 .. -89).
 
 Run:  python validation/kg_dtbc_wg_port_floors.py
 """
@@ -51,6 +72,7 @@ import numpy as np
 from scipy.special import erf
 
 from magnelio import AnalysisScatteringTD, Material, Mesh, MeshControl
+from magnelio._backend.array_api import resolve_precision
 from magnelio._operators.material_matrices import build_M_eps, build_M_mu
 from magnelio.geo import Brick, Cylinder, Difference, GeometryModel
 from magnelio.mesh.grid import GridLines
@@ -283,8 +305,10 @@ def round_wg_analysis(mode_type, f_max):
 
 
 def main() -> None:
+    real_dtype, _ = resolve_precision()
     print(
-        "WP-R3 acceptance — CW lock-in port floors (criterion: |S11| < -100 dB from 1.01*f_c_hat):"
+        "WP-R3 acceptance — CW lock-in port floors (criterion: |S11| < -100 dB "
+        f"from 1.01*f_c_hat)  [time-loop precision {real_dtype.name}]:"
     )
     mesh, dt = wr90_mesh()
     cw_lockin_floor("WR-90 TE10", mesh, dt, ModeType.TE, 10.0e9, (1.01, 1.02, 1.05, 1.2, 1.5, 1.8))

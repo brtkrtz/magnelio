@@ -286,9 +286,11 @@ def _cylinder_face_pairs(
     n_arcs = k - 1
     if full:
         n_arcs += 1
+    # Ellipse sagitta r du^2 / (8 |c_n|) at u = +-pi/2 -- exponent 1, the
+    # compiled twin of the exact path in _occ_backend.
     du_max = min(
         math.radians(5.0) * abs(c_n),
-        math.sqrt(8.0 * deflection * abs(c_n) ** 3.0 / r),
+        math.sqrt(8.0 * deflection * abs(c_n) / r),
     )
     v_margin = max(tol, 1e-9 * (vmax - vmin))
     for arc in range(n_arcs):

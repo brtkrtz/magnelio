@@ -1,37 +1,86 @@
-"""WR-90 TE10 modal-port |S11| floor — DD-047 re-evaluation post-DD-048.
+"""WR-90 TE10 port |S11| floor — what a hollow modal port leaves today.
 
-DD-047 (session 54) measured peak |S11| ≈ −19 dB / best-case ≈ −28 dB
-on a straight, empty WR-90 with both ports modal and source-driven
-across [8.2, 12.4] GHz; with a 2× finer mesh, −33 dB centre / −19 dB
-edges.  That measurement was the trigger for DD-047's Phase-3
-co-simulation plan (Luo-Chen).
+WHAT THIS CERTIFIES NOW (re-aimed 2026-09-01; read this before the
+history below).  The script was written to re-measure a *Mur-1st*
+absorber floor.  It no longer measures one: both WR-90 ports come back
+``termination_kinds == ["dtbc"]`` on this tree, at both resolutions, on
+a feed chain whose pair-product spread is at float noise (measured
+2.9e-16 / 5.1e-16 on the baseline mesh, 2.4e-16 / 2.5e-16 refined —
+the run prints the live values).  A hollow rectangular waveguide has an
+exactly separable chain, so the DD-053 pair-product gate passes and the
+shipped factory hands out the exact DTBC.  There is no Mur coefficient
+in the loop to reflect off.
 
-Session 57 fixed five bugs in the modal-port pipeline (see
-``commit bbd7a07``); session 58 (DD-048) split the modal-port
-pipeline into a reference path (analytical) and an operator-consistent
-path (numerical 2D mode solver on the 3D-mesh transversal slice).
-This script re-measures the WR-90 / TE10 |S11| floor on the post-DD-048
-codebase to determine whether the DD-047 Phase-3 trigger condition
-still holds.
+So what the two printed rows certify today is the *measurement chain*,
+not the absorber:
 
-Session 68 (Level-A rework WP2.4): after WP1 identified the spatial
-half-cell stagger of the I sampling plane as a −22 dB measurement
-artefact for λ/20 meshes, each variant now evaluates
-``compute_s_parameters`` twice — with the historical co-located a/b
-decomposition and with the exact two-plane de-stagger
-(``port_normal_dx``) — to separate the measurement artefact from the
-genuine Mur-1st absorber floor.  Result: the de-stagger lifts the
-in-band *median* to ≈ −28 dB on both meshes, but the peak at the
-8.2 GHz band edge stays at −19 dB (β → 0 near cutoff, so the stagger
-term vanishes exactly where the Mur floor peaks).  The DD-047 trigger
-condition for TE/TM therefore still holds.
+* the co-located a/b row is the historical half-cell stagger artefact,
+  reproduced in its own right (it is a sampling error, and it survives
+  the change of absorber unchanged in class);
+* the de-staggered row is what is left once that artefact is removed —
+  a discretisation-limited floor, ~43 dB below the co-located row.
+
+For a measured Mur port floor use the DD-238 fixture
+``validation/qtem_mur_floor_decomposition.py``, which forces the Mur
+variants on the inhomogeneous cross-sections where the gate genuinely
+vetoes the DTBC.
+
+Results, re-derived 2026-09-01 at HEAD 73f7c17.  The "previous pin"
+column is the session-68 prose in the history note below; its
+de-stagger rows are stale by 46-56 dB, the level-shift half of the open
+KB-038, and its co-located rows still reproduce their class:
+
+    variant                        max        median     previous pin
+    baseline, co-located a/b       -25.15 dB  -27.60 dB  peak ~-19, best ~-28
+    baseline, de-staggered         -68.13 dB  -73.91 dB  median ~-28, peak -19
+    2x refined, co-located a/b     -31.34 dB  -33.77 dB  -33 centre / -19 edges
+    2x refined, de-staggered       -74.33 dB  -84.38 dB  median ~-28
+
+Derived from the same run: the de-stagger buys 43.0 dB on the peak and
+46.3 / 50.6 dB on the median; halving the cell buys 6.2 dB on every
+peak.  Sum |S|^2 stays within 1.0009-1.0030 of unity.
+
+The de-staggered row is *not* truncation-limited (measured on the
+baseline mesh, everything else fixed): 1658 steps -68.13 / -73.91 dB,
+2742 steps -68.60 / -73.94, 7074 steps -69.78 / -73.90 — 4.3x the
+record moves the peak 1.7 dB and the median not at all.  It is not
+wordlength-limited either: the whole run at
+``MAGNELIO_PRECISION=double`` reproduces all eight numbers above to the
+printed digit, which the sibling certificates do *not* (their floors
+sit at or below the float32 field floor near -114 dB and move 12-93 dB
+with the precision; these sit 30 dB above it).  It converges with the
+mesh instead, so what remains is the discretisation of the port
+decomposition, not the record window, not the absorber and not the
+arithmetic.
+
+The closing claim of the session-68 note — "the DD-047 trigger
+condition for TE/TM therefore still holds" — no longer follows from
+anything this fixture prints, because the condition was a statement
+about a Mur floor that is not in the loop.
+
+HISTORY (why the fixture exists).  DD-047 (session 54) measured peak
+|S11| ~ -19 dB / best-case ~ -28 dB on a straight, empty WR-90 with
+both ports modal and source-driven across [8.2, 12.4] GHz; with a 2x
+finer mesh, -33 dB centre / -19 dB edges.  That measurement triggered
+DD-047's Phase-3 co-simulation plan (Luo-Chen).  Session 57 fixed five
+bugs in the modal-port pipeline (``commit bbd7a07``); session 58
+(DD-048) split the pipeline into a reference path (analytical) and an
+operator-consistent path (numerical 2D mode solver on the 3D-mesh
+transversal slice).  Session 68 (Level-A rework WP2.4) identified the
+spatial half-cell stagger of the I sampling plane as a -22 dB
+measurement artefact for lambda/20 meshes and added the second
+evaluation of ``compute_s_parameters`` with the exact two-plane
+de-stagger (``port_normal_dx``), which is why every variant is
+evaluated twice.
 
 Setup mirrors the session-54 benchmark:
 - WR-90 dimensions (a = 22.86 mm, b = 10.16 mm), L_x = 30 mm, vacuum.
 - Both ports are ``PortSpecRectWG(n_modes=1)`` (TE10).
 - Source: ``WaveformGaussianModulated`` on [8.2, 12.4] GHz.
 - Lateral PEC walls via ``PECBoundary`` on the four lateral bbox faces.
-- Two mesh resolutions: baseline (24×11 transversal) and 2× refined.
+- Two mesh resolutions: baseline (24x11 transversal) and 2x refined.
+
+Run:  python validation/wr90_te10_dd047_reeval.py
 """
 
 from __future__ import annotations
@@ -40,6 +89,7 @@ import math
 
 import numpy as np
 
+from magnelio._backend.array_api import resolve_precision
 from magnelio._operators.material_matrices import build_M_eps, build_M_mu
 from magnelio.boundaries.pec import PECBoundary
 from magnelio.mesh.grid import GridLines
@@ -104,6 +154,10 @@ def run_variant(label: str, refine: int = 1) -> None:
     op_load = build_modal_port(spec_load, mesh, m_eps, m_mu, dt=dt, f_calc=F_CALC)
     print(f"  Path-(a) cutoff_ref = {op_src.port_report.cutoff_ref / 1e9:.4f} GHz")
     print(f"  Path-(b) cutoff_num = {op_src.port_report.cutoff_num / 1e9:.4f} GHz")
+    for tag, op in (("port1", op_src), ("port2", op_load)):
+        spread = op.chain_spreads[0]
+        shown = "n/a" if spread is None else f"{spread:.2e}"
+        print(f"  Termination {tag}: {op.termination_kinds[0]}  (chain pair spread {shown})")
 
     f_c_te10 = C0 / (2.0 * WR90_A)
     v_g_calc = C0 * math.sqrt(max(0.0, 1.0 - (f_c_te10 / F_CALC) ** 2))
@@ -112,7 +166,10 @@ def run_variant(label: str, refine: int = 1) -> None:
     t_traversal = L_X / v_g_calc
     t_total = 2.5 * t0_pulse + 5.0 * t_traversal
     n_steps = int(round(t_total / dt))
-    print(f"  Solver: dt={dt * 1e15:.2f} fs, n_steps={n_steps}")
+    real_dtype, _ = resolve_precision()
+    print(
+        f"  Solver: dt={dt * 1e15:.2f} fs, n_steps={n_steps}, time-loop precision {real_dtype.name}"
+    )
 
     recorder = PortSignalRecorder(dt=dt, ports=[op_src, op_load])
     bcs = {

@@ -1444,15 +1444,24 @@ class AnalysisScatteringTD(AnalysisTD):
         constraint, and the notice then quotes the axis start again —
         it must never recommend a switch that would raise.
         """
+        # The old wording priced this at "1.9 s against 45 min"
+        # (~1400x, DD-231, measured before the kernel was sized to the
+        # record).  Since DD-234 the same fixture runs at 13x modal at
+        # a -84 dB floor and 35x at the default svd_tol=1e-8, and the
+        # record is no longer the dominant item -- the O(N^2) history
+        # fold is (DD-236).  Keep this factor honest: it is the only
+        # place a user is told what the alternative costs.
         price = (
             '  The other side of the trade is port_model="band": the '
             "band-subspace DTBC terminates the whole analysis band "
-            "reflection-free, measured below -130 dB on shielded "
-            "microstrip.  It costs orders of magnitude in runtime -- a "
-            "kernel-build phase before the run, then a record hundreds "
-            "of times longer (a shielded microstrip measured 1.9 s "
-            "against 45 min) -- and it gives up time-domain power waves "
-            "(a()/b())."
+            "reflection-free, measured in the -130 dB class on shielded "
+            "microstrip -- how deep it lands depends on how long the run "
+            "is.  It costs runtime -- a kernel-build phase before the "
+            "run, then a boundary that folds the whole recorded history "
+            "at every step -- measured on a two-port fixture at about "
+            "13x the modal path for a -84 dB floor and about 35x at the "
+            "default subspace rank, and it gives up time-domain power "
+            "waves (a()/b())."
         )
         if bool(dict(self.band_options or {}).get("dc_anchor", True)):
             return price

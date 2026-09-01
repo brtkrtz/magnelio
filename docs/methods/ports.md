@@ -235,19 +235,29 @@ how much is on the table.  On an inhomogeneous line the default
 `port_model="modal"` terminates with the first-order absorber and
 floors around $-26$ to $-39$ dB.  The same line on `port_model="auto"`
 — which builds the certificates, sees the fallback and switches the
-run to the band pipeline — floors at $-171$ to $-211$ dB, and the CW
-true-mode port reaches $-206$ to $-251$ dB.  The default trades that
-for the cost of the band pipeline; if the port matters, change it.
+run to the band pipeline — floors at $-147$ to $-168$ dB on a shielded
+microstrip.  So the default gives up 60 to 110 dB of reflection floor
+for the cost of the band pipeline — the low end on a long run, the
+high end on a short one; if the port matters, change it.
 
-Changing it changes more than the floor, and the differences are
-worth knowing before the run rather than after.  The band pipeline
-tracks the mode family over a band, but the *measurement* axis is not
-confined to that band.  On a quasi-TEM line the fundamental is the
-static mode of the cross-section, so its excitation direction is
-continued below the tracked band and closed with the static field
-solution; the drive then needs no roll-off room at the bottom and the
-pulse duration follows the width of the measurement span instead of
-$1/f_\text{start}$.  A default axis — which starts at
+That spread is the second thing to know about the band floor: how deep
+it lands depends on how long the run is.  The exact boundary carries
+the whole recorded history rather than a few past steps, and its floor
+drifts upward as that history grows — measured at roughly five to
+seven decibels per doubling of the number of time steps.  The figures
+above are what a run of the length the port floors are certified at
+reaches; a much longer broadband sweep on the same model floors tens
+of decibels above them.
+
+Changing the port model changes more than the floor, and the
+differences are worth knowing before the run rather than after.  The
+band pipeline tracks the mode family over a band, but the
+*measurement* axis is not confined to that band.  On a quasi-TEM line
+the fundamental is the static mode of the cross-section, so its
+excitation direction is continued below the tracked band and closed
+with the static field solution; the drive then needs no roll-off room
+at the bottom and the pulse duration follows the measurement span
+instead of $1/f_\text{start}$.  A default axis — which starts at
 $f_\text{max}/n_\text{freq}$ — runs.
 
 Two limits remain.  The reflection floor of the boundary degrades
@@ -285,14 +295,21 @@ inspected before a run is paid for:
 ```python
 for name, report in analysis.solve_ports().items():
     for mode in report.modes:
-        print(name, mode.name, mode.termination, mode.chain_floor_db)
+        print(name, mode.name, mode.termination,
+              mode.chain_spread, mode.chain_floor_db)
 ```
 
-`termination` is `"dtbc"` or `"mur"`; `chain_spread` is the
-cross-section measurement behind it and `chain_floor_db` the
-reflection bound it implies, or `None` where the test does not apply
-(a mode with a closed-form field evaluator is ineligible by
-construction).  `print(report)` shows the same on one line per mode.
+`termination` is `"dtbc"` or `"mur"` and `chain_spread` is the
+cross-section measurement behind that decision.  `chain_floor_db` is
+the reflection bound the spread implies, and it is published only
+where it means something: it is `None` on a channel the first-order
+absorber terminates, because there the floor is the absorber's and not
+the cross-section's, and `None` again where the measurement does not
+apply at all (a mode with a closed-form field evaluator is ineligible
+by construction).  So on an inhomogeneous line, read `chain_spread` —
+the number that explains *why* the channel fell back — and take the
+floor from the absorber.  `print(report)` shows the same on one line
+per mode.
 
 The usual cause of a withheld certificate is a feed that is not
 translation-invariant along the port normal — a taper, a bend or a

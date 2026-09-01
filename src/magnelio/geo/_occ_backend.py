@@ -2014,6 +2014,12 @@ def cross_section_polygons(
 #: ``_PlanarSectionEngine._refine_segments``).
 _FACET_REFINE_FRACTION = 0.1
 
+#: Rounding guard of the facet path's cylinder-tangency test
+#: (``_PlanarSectionEngine._cylinder_tangency``), relative to the
+#: distance being compared: thousands of ulps of headroom, and still
+#: orders below any length a section resolves.
+_TANGENCY_ROUNDING = 1e-12
+
 
 def _facet_sections_enabled() -> bool:
     """``MAGNELIO_FACET_SECTIONS=0`` keeps free-form shapes on the kernel
@@ -2808,7 +2814,7 @@ class _PlanarSectionEngine:
         from OCC.Core.BRep import BRep_Tool  # noqa: PLC0415
         from OCC.Core.BRepAdaptor import BRepAdaptor_Surface  # noqa: PLC0415
         from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh  # noqa: PLC0415
-        from OCC.Core.GeomAbs import GeomAbs_Plane  # noqa: PLC0415
+        from OCC.Core.GeomAbs import GeomAbs_Cylinder, GeomAbs_Plane  # noqa: PLC0415
         from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_REVERSED  # noqa: PLC0415
         from OCC.Core.TopExp import TopExp_Explorer  # noqa: PLC0415
         from OCC.Core.TopLoc import TopLoc_Location  # noqa: PLC0415
@@ -2822,6 +2828,15 @@ class _PlanarSectionEngine:
         tri_face: list[np.ndarray] = []
         tri_uv: list[np.ndarray] = []
         surfaces: list = []
+        # Per surface slot: 0 = general surface (parametric Newton lift),
+        # 1 = cylinder (closed-form projection), with axis frame and
+        # radius for the latter.
+        s_kind: list[int] = []
+        s_axis: list[tuple] = []
+        s_xdir: list[tuple] = []
+        s_ydir: list[tuple] = []
+        s_centre: list[tuple] = []
+        s_radius: list[float] = []
         offset = 0
         exp = TopExp_Explorer(shape, TopAbs_FACE)
         while exp.More():
@@ -2843,22 +2858,50 @@ class _PlanarSectionEngine:
             for i in range(1, n_tri + 1):
                 a, b, c = tri.Triangle(i).Get()
                 con[i - 1] = (c, b, a) if reversed_face else (a, b, c)
-            # Planar faces are exact as facets; every other face keeps
-            # its surface and corner parameters for the lift.
-            lift = BRepAdaptor_Surface(face, False).GetType() != GeomAbs_Plane and tri.HasUVNodes()
-            if lift:
+            # Planar faces are exact as facets; a cylindrical face is
+            # projected onto its own quadric in closed form (KB-041);
+            # every other face keeps its surface and corner parameters
+            # for the parametric lift.
+            adaptor = BRepAdaptor_Surface(face, False)
+            stype = adaptor.GetType()
+            uv_nodes = None
+            slot = -1
+            if stype == GeomAbs_Cylinder:
+                cylinder = adaptor.Cylinder()
+                frame = cylinder.Position()
+                origin = frame.Location()
+                slot = len(s_kind)
+                s_kind.append(1)
+                s_centre.append((origin.X(), origin.Y(), origin.Z()))
+                for store, vec in (
+                    (s_axis, frame.Direction()),
+                    (s_xdir, frame.XDirection()),
+                    (s_ydir, frame.YDirection()),
+                ):
+                    store.append((vec.X(), vec.Y(), vec.Z()))
+                s_radius.append(cylinder.Radius())
+                surfaces.append(None)
+            elif stype != GeomAbs_Plane and tri.HasUVNodes():
                 uv_nodes = np.empty((n_nodes, 2), dtype=np.float64)
                 for i in range(1, n_nodes + 1):
                     q = tri.UVNode(i)
                     uv_nodes[i - 1] = (q.X(), q.Y())
-                tri_uv.append(uv_nodes[con - 1])
-                tri_face.append(np.full(n_tri, len(surfaces), dtype=np.int64))
+                slot = len(s_kind)
+                s_kind.append(0)
+                s_centre.append((0.0, 0.0, 0.0))
+                s_axis.append((0.0, 0.0, 1.0))
+                s_xdir.append((1.0, 0.0, 0.0))
+                s_ydir.append((0.0, 1.0, 0.0))
+                s_radius.append(0.0)
                 # The one-argument Surface() is the located copy: the
                 # face's location is already applied, unlike the nodes.
                 surfaces.append(BRep_Tool.Surface(face))
-            else:
-                tri_uv.append(np.zeros((n_tri, 3, 2), dtype=np.float64))
-                tri_face.append(np.full(n_tri, -1, dtype=np.int64))
+            tri_uv.append(
+                uv_nodes[con - 1]
+                if uv_nodes is not None
+                else np.zeros((n_tri, 3, 2), dtype=np.float64)
+            )
+            tri_face.append(np.full(n_tri, slot, dtype=np.int64))
             points.append(pts)
             tris.append(con - 1 + offset)
             offset += n_nodes
@@ -2919,6 +2962,22 @@ class _PlanarSectionEngine:
         self._t_face = t_face
         self._t_uv = t_uv
         self._surfaces = surfaces
+        self._s_kind = np.array(s_kind, dtype=np.int64)
+        self._s_axis = np.array(s_axis, dtype=np.float64).reshape(-1, 3)
+        self._s_xdir = np.array(s_xdir, dtype=np.float64).reshape(-1, 3)
+        self._s_ydir = np.array(s_ydir, dtype=np.float64).reshape(-1, 3)
+        self._s_centre = np.array(s_centre, dtype=np.float64).reshape(-1, 3)
+        self._s_radius = np.array(s_radius, dtype=np.float64)
+        # Extent of each surface slot over its own facets, for the
+        # tangency screen (_screen_facets): the analytic path reads the
+        # same window off the face bounding boxes.
+        n_slot = max(self._s_kind.size, 1)
+        self._s_lo = np.full((n_slot, 3), np.inf)
+        self._s_hi = np.full((n_slot, 3), -np.inf)
+        held = t_face >= 0
+        if held.any():
+            np.minimum.at(self._s_lo, t_face[held], self._f_lo[held])
+            np.maximum.at(self._s_hi, t_face[held], self._f_hi[held])
         # No on-plane band: a vertex on the plane is resolved by the
         # sign convention of _section_facets, not delegated.
         self._tol = 0.0
@@ -2943,6 +3002,74 @@ class _PlanarSectionEngine:
                 s_pt[k] = (p.X(), p.Y(), p.Z())
                 s_n[k] = (n.X(), n.Y(), n.Z())
         return s_pt, s_n
+
+    def _project_cylinder(
+        self, chord: np.ndarray, slot: np.ndarray, axis: int
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Exact in-plane projection of chord points onto their cylinder.
+
+        A triangulated cylinder is a prism: a section plane cuts it in a
+        chord polygon whose distance from the exact trace depends on
+        where the plane falls between the node rows, so the section of a
+        translationally invariant face is *not* invariant along the axis
+        — the defect a parametric one-step lift only softens.  Each
+        point is instead moved within the section plane along the
+        in-plane part of its radial direction onto the quadric itself,
+        solving |(P + t d - c)_perp| = r for the root of smallest |t|.
+        That trace is a function of the plane and the cylinder alone: a
+        plane parallel to the axis lands on the exact generatrix and a
+        family of parallel planes therefore books identical areas.
+        Points whose radial direction leaves the plane (a tangential
+        cut) or whose shift is far beyond the chord error keep their
+        chord position.  Returns the points and the mask of moved ones.
+        """
+        centre = self._s_centre[slot]
+        a = self._s_axis[slot]
+        r = self._s_radius[slot]
+        rel = chord - centre
+        rel_perp = rel - np.einsum("ij,ij->i", rel, a)[:, None] * a
+        d = rel_perp.copy()
+        d[:, axis] = 0.0
+        d_norm = np.linalg.norm(d, axis=1)
+        radius = np.linalg.norm(rel_perp, axis=1)
+        ok = (d_norm > 0.0) & (radius > 0.0) & (r > 0.0)
+        d = d / np.where(ok, d_norm, 1.0)[:, None]
+        d_perp = d - np.einsum("ij,ij->i", d, a)[:, None] * a
+        qa = np.einsum("ij,ij->i", d_perp, d_perp)
+        qb = np.einsum("ij,ij->i", rel_perp, d_perp)
+        qc = np.einsum("ij,ij->i", rel_perp, rel_perp) - r * r
+        disc = qb * qb - qa * qc
+        ok &= (qa > 0.0) & (disc >= 0.0)
+        root = np.sqrt(np.where(ok, disc, 0.0))
+        denom = np.where(ok, qa, 1.0)
+        t_plus = (-qb + root) / denom
+        t_minus = (-qb - root) / denom
+        t = np.where(np.abs(t_plus) <= np.abs(t_minus), t_plus, t_minus)
+        # The in-plane displacement that removes a chord error delta is
+        # delta / sin(cut angle); sin is the fraction of the radial
+        # direction that stays in the plane.
+        bound = 8.0 * self._deflection * radius / np.where(ok, d_norm, 1.0)
+        ok &= np.abs(t) <= bound
+        out = chord.copy()
+        out[ok] += t[ok, None] * d[ok]
+        return out, ok
+
+    def _lift_slots(
+        self, slot: np.ndarray, uv: np.ndarray, chord: np.ndarray, axis: int
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Move chord points onto the exact surfaces of their slots:
+        closed form for cylinders, one parametric Newton step for the
+        general (free-form) surfaces."""
+        out = chord.copy()
+        ok = np.zeros(chord.shape[0], dtype=np.bool_)
+        cyl = self._s_kind[slot] == 1
+        if cyl.any():
+            out[cyl], ok[cyl] = self._project_cylinder(chord[cyl], slot[cyl], axis)
+        gen = ~cyl
+        if gen.any():
+            s_pt, s_n = self._surface_points(slot[gen], uv[gen])
+            out[gen], ok[gen] = self._lift(chord[gen], s_pt, s_n, axis)
+        return out, ok
 
     def _lift(
         self, chord: np.ndarray, s_pt: np.ndarray, s_n: np.ndarray, axis: int
@@ -2985,16 +3112,32 @@ class _PlanarSectionEngine:
     def _lift_to_surfaces(self, e_idx: np.ndarray, pts: np.ndarray, axis: int, pos: float) -> None:
         """Move the chord crossing points onto the exact surfaces, in
         place; one adjacent triangle per crossed edge supplies face and
-        parameters (points on planar faces stay: they are exact)."""
-        f = self._e_f[e_idx, 0]
+        parameters (points on planar faces stay: they are exact).
+
+        A crossing on the shared edge of two faces lies on both, and the
+        two triangulations approximate it differently.  The analytic
+        side is authoritative: an edge with a cylindrical neighbour is
+        answered from the cylinder, so a trace running along that
+        cylinder starts and ends exactly on it and the whole run is
+        exact (KB-041) — the residual chord error is spent along the
+        free-form neighbour instead, where it is local.
+        """
+        pair = self._e_f[e_idx]
+        slots = self._t_face[pair]
+        if self._s_kind.size:
+            kinds = np.where(slots >= 0, self._s_kind[np.maximum(slots, 0)], -1)
+            f = np.where((kinds[:, 1] == 1) & (kinds[:, 0] != 1), pair[:, 1], pair[:, 0])
+        else:
+            f = pair[:, 0]
         face = self._t_face[f]
         lift = np.nonzero(face >= 0)[0]
         if lift.size == 0:
             return
         f = f[lift]
         c0 = np.argmax(self._t_e[f] == e_idx[lift][:, None], axis=1)
-        s_pt, s_n = self._surface_points(face[lift], self._crossing_uv(f, c0, axis, pos))
-        pts[lift], _ = self._lift(pts[lift], s_pt, s_n, axis)
+        pts[lift], _ = self._lift_slots(
+            face[lift], self._crossing_uv(f, c0, axis, pos), pts[lift], axis
+        )
 
     def _refine_segments(
         self,
@@ -3033,8 +3176,7 @@ class _PlanarSectionEngine:
         p_s = pts[start[sel]]
         p_e = pts[end[sel]]
         chord_mid = 0.5 * (p_s + p_e)
-        s_pt, s_n = self._surface_points(face, 0.5 * (uv_s + uv_e))
-        mid, ok = self._lift(chord_mid, s_pt, s_n, axis)
+        mid, ok = self._lift_slots(face, 0.5 * (uv_s + uv_e), chord_mid, axis)
         sagitta = np.linalg.norm(mid - chord_mid, axis=1)
         parts = np.ones(sel.size, dtype=np.int64)
         budget = _FACET_REFINE_FRACTION * self._deflection
@@ -3053,22 +3195,273 @@ class _PlanarSectionEngine:
             )
             uv_j = uv_s[ks] + js[:, None] * (uv_e[ks] - uv_s[ks])
             chord_j = p_s[ks] + js[:, None] * (p_e[ks] - p_s[ks])
-            s_pt, s_n = self._surface_points(face[ks], uv_j)
-            lifted, _ = self._lift(chord_j, s_pt, s_n, axis)
+            lifted, _ = self._lift_slots(face[ks], uv_j, chord_j, axis)
             bounds = np.concatenate([[0], np.cumsum(counts)])
             for i, k in enumerate(more):
                 interior[int(start[sel[k]])] = lifted[bounds[i] : bounds[i + 1]][:, (u_idx, v_idx)]
         return interior or None
 
+    def _cylinder_arc(
+        self,
+        slot: int,
+        axis: int,
+        pos: float,
+        p_a: np.ndarray,
+        p_b: np.ndarray,
+        p_mid: np.ndarray,
+        span_full: bool = False,
+    ) -> np.ndarray | None:
+        """Interior points of the exact conic of a cylindrical face.
+
+        The trace of a plane on a cylinder is a generatrix pair (the
+        plane parallel to the axis — a straight chord needs no interior
+        point) or the conic ``v(u) = (pos - c_n - r (a_n cos u + b_n sin
+        u)) / c_n``, tessellated in ``u`` at the in-plane refinement's
+        own sagitta budget.  *p_mid* is a point the trace
+        passes between *p_a* and *p_b* and picks the way round;
+        *span_full* asks for the whole turn (a contour that closes on
+        this face alone), anchored at the face's own parameter origin so
+        that parallel planes get identical polygons.  Returns the
+        interior points in 3D [scaled units], or ``None`` when the trace
+        is straight or the parameters are degenerate.
+        """
+        two_pi = 2.0 * np.pi
+        c = self._s_centre[slot]
+        a = self._s_axis[slot]
+        x = self._s_xdir[slot]
+        y = self._s_ydir[slot]
+        r = float(self._s_radius[slot])
+        a_n, b_n, c_n = float(x[axis]), float(y[axis]), float(a[axis])
+        if r <= 0.0 or abs(c_n) <= 1e-9:
+            return None
+        p = pos - float(c[axis])
+
+        def azimuth(point):
+            rel = point - c
+            return math.atan2(float(np.dot(rel, y)), float(np.dot(rel, x)))
+
+        u_a = azimuth(p_a)
+        if span_full:
+            span = two_pi
+            sign = 1.0 if np.mod(azimuth(p_mid) - azimuth(p_b), two_pi) < np.pi else -1.0
+        else:
+            forward = float(np.mod(azimuth(p_b) - u_a, two_pi))
+            if float(np.mod(azimuth(p_mid) - u_a, two_pi)) <= forward:
+                span, sign = forward, 1.0
+            else:
+                span, sign = two_pi - forward, -1.0
+        if span <= 1e-12:
+            return None
+        # The sagitta budget of the in-plane refinement, not the
+        # deflection: the conic replaces a refined chord run and must
+        # carry the same accuracy class, or the areas of the faces it
+        # cuts move against the rest of the model.
+        #
+        # The trace is an ellipse of semi-axes A = r and B = r/|c_n|, so
+        # the chord sagitta over du is |P' x P''|/(8|P'|) du^2 =
+        # A B du^2 / (8 sqrt(A^2 sin^2 u + B^2 cos^2 u)), worst at
+        # u = +-pi/2 where |P'| = A: r du^2 / (8 |c_n|), exponent 1.
+        # (Held `abs(c_n) ** 3` until 2026-09-01; exponent 3 is the
+        # sagitta at a single u misread as the maximum over u, and it
+        # over-refined by 1/c_n^2 until the arc was declined outright.)
+        du_max = min(
+            math.radians(5.0) * abs(c_n),
+            math.sqrt(8.0 * _FACET_REFINE_FRACTION * self._deflection * abs(c_n) / r),
+        )
+        if not du_max > 0.0:
+            return None
+        n_seg = max(1, int(math.ceil(span / du_max - 1e-9)))
+        if n_seg > 100_000 or n_seg < 2:
+            return None
+        uu = u_a + sign * span * np.arange(1, n_seg) / n_seg
+        vv = (p - r * (a_n * np.cos(uu) + b_n * np.sin(uu))) / c_n
+        inner = c + r * (np.cos(uu)[:, None] * x + np.sin(uu)[:, None] * y) + vv[:, None] * a
+        inner[:, axis] = pos
+        return inner
+
+    def _compress_cylinder_runs(
+        self,
+        e_idx: np.ndarray,
+        pts: np.ndarray,
+        uv: np.ndarray,
+        succ: np.ndarray,
+        interior: dict[int, np.ndarray] | None,
+        axis: int,
+        pos: float,
+    ) -> tuple[np.ndarray, np.ndarray, dict[int, np.ndarray] | None]:
+        """Put the trace on a cylindrical face back on its exact conic.
+
+        A crossing whose two triangles belong to the same cylindrical
+        face is an artefact of the triangulation: where it sits along
+        the trace depends on where the plane falls between the node
+        rows, so a family of parallel planes gets polygons that differ
+        cell by cell even though the face is invariant along them
+        (KB-041).  Those crossings are dropped and the run between the
+        two crossings that do carry topology — they lie on the face's
+        boundary edges — is laid down as the exact conic
+        (:meth:`_cylinder_arc`).  A contour that closes on one such face
+        keeps a single crossing, moved onto the face's own parameter
+        origin, so that it too is a function of the face and the plane
+        alone.  Returns ``(active, succ, interior)``; *active* marks the
+        crossings the polygon walk may still visit.
+        """
+        if not self._s_kind.size:
+            return np.ones(e_idx.size, dtype=np.bool_), succ, interior
+        pair = self._e_f[e_idx]
+        slots = self._t_face[pair]
+        safe = np.maximum(slots[:, 0], 0)
+        same = (slots[:, 0] == slots[:, 1]) & (slots[:, 0] >= 0)
+        # Only the conic trace is rebuilt.  A plane parallel to the axis
+        # traces two straight generatrices, and the crossings already
+        # sit on them exactly; near a tangency the triangulated trace
+        # also carries the wrap between the two, which a chord between
+        # the run's ends would cut off.
+        conic = np.abs(self._s_axis[safe, axis]) > 1e-9
+        drop = same & (self._s_kind[safe] == 1) & conic
+        if not drop.any():
+            return np.ones(e_idx.size, dtype=np.bool_), succ, interior
+        keep_all = (np.ones(e_idx.size, dtype=np.bool_), succ, interior)
+        active = ~drop
+        succ = succ.copy()
+        out = dict(interior) if interior else {}
+        u_idx, v_idx = self._UV[axis]
+        seen = np.zeros(e_idx.size, dtype=np.bool_)
+        for k in np.nonzero(active)[0]:
+            j = int(succ[k])
+            if not drop[j]:
+                continue
+            chain = []
+            while drop[j]:
+                if seen[j]:  # a malformed cycle — leave the runs alone
+                    return keep_all
+                seen[j] = True
+                chain.append(j)
+                j = int(succ[j])
+            slot = int(slots[chain[0], 0])
+            if (slots[chain, 0] != slot).any():
+                return keep_all
+            arc = self._cylinder_arc(slot, axis, pos, pts[k], pts[j], pts[chain[len(chain) // 2]])
+            if arc is None:
+                # Nothing to put in its place — the run keeps its
+                # crossings rather than collapsing to a straight chord
+                # across the arc it was meant to replace.  Rewiring
+                # first and only then discovering there is no arc costs
+                # the whole run: measured 89.8 % of a section's area on
+                # a high-aspect cylinder whose axis sits a fraction of a
+                # degree off a grid axis, where the segment count runs
+                # into the cap in _cylinder_arc.  Same bail-out as the
+                # closed-cycle branch below.
+                active[chain] = True
+                continue
+            succ[k] = j
+            out.pop(k, None)
+            out[k] = np.ascontiguousarray(arc[:, (u_idx, v_idx)])
+        closed: list[tuple[int, np.ndarray, np.ndarray]] = []
+        for anchor in np.nonzero(drop)[0]:
+            if seen[anchor]:
+                continue
+            cycle = [int(anchor)]
+            seen[anchor] = True
+            j = int(succ[anchor])
+            while j != anchor:
+                if not drop[j] or seen[j]:
+                    return keep_all
+                seen[j] = True
+                cycle.append(j)
+                j = int(succ[j])
+            slot = int(slots[anchor, 0])
+            if (slots[cycle, 0] != slot).any() or len(cycle) < 3:
+                return keep_all
+            start = self._cylinder_origin(slot, axis, pos)
+            arc = (
+                None
+                if start is None
+                else self._cylinder_arc(
+                    slot, axis, pos, start, pts[cycle[0]], pts[cycle[1]], span_full=True
+                )
+            )
+            if arc is None:
+                # Nothing to put in its place — the cycle keeps its
+                # crossings rather than disappearing from the section.
+                active[cycle] = True
+                continue
+            closed.append((int(anchor), start, arc))
+        for anchor, start, arc in closed:
+            active[anchor] = True
+            succ[anchor] = anchor
+            pts[anchor] = start
+            uv[anchor] = start[[u_idx, v_idx]]
+            out[anchor] = np.ascontiguousarray(arc[:, (u_idx, v_idx)])
+        return active, succ, (out or None)
+
+    def _cylinder_origin(self, slot: int, axis: int, pos: float) -> np.ndarray | None:
+        """Point of the face's conic at its own azimuth origin."""
+        c = self._s_centre[slot]
+        a = self._s_axis[slot]
+        x = self._s_xdir[slot]
+        r = float(self._s_radius[slot])
+        c_n = float(a[axis])
+        if abs(c_n) <= 1e-9:
+            return None
+        v = (pos - float(c[axis]) - r * float(x[axis])) / c_n
+        point = c + r * x + v * a
+        point[axis] = pos
+        return point
+
+    def _cylinder_tangency(self, axis: int, pos: float) -> bool:
+        """Whether the plane touches a cylindrical face of the facet
+        representation along one generatrix.
+
+        The same tangency the analytic screen delegates
+        (:meth:`_screen`), read off the facet path's own surface slots
+        instead of the face table: a cylinder whose axis lies in the
+        plane is tangent when the plane is the distance ``r |x_n, y_n|``
+        from its axis, within the engine's on-plane band.
+
+        That band is zero here, where the analytic path has the shape's
+        own kernel tolerance, so the comparison carries a rounding guard
+        of its own: the grid plane arrives on the generatrix bit for
+        bit, but ``pos - c_n`` need not — measured half an ulp off
+        (4.3e-19 on a 4.4 mm distance), which an exact comparison misses
+        and the phantom circle survives.  The guard stays nine orders
+        below the deflection the facets themselves carry, so it decides
+        no near-tangent plane.
+        """
+        if not self._s_kind.size:
+            return False
+        cyl = np.flatnonzero((self._s_kind == 1) & (np.abs(self._s_axis[:, axis]) <= 1e-9))
+        if not cyl.size:
+            return False
+        # Only a face the plane reaches counts.  The nodes of a
+        # triangulated cylinder sit on the surface and its facets
+        # inside, so the slot's extent stops short of the tangent
+        # generatrix by up to the chord sagitta — the window is widened
+        # by the deflection, which the exact test below does not see.
+        pad = self._deflection or 0.0
+        cyl = cyl[(self._s_lo[cyl, axis] - pad <= pos) & (self._s_hi[cyl, axis] + pad >= pos)]
+        if not cyl.size:
+            return False
+        rho = self._s_radius[cyl] * np.hypot(self._s_xdir[cyl, axis], self._s_ydir[cyl, axis])
+        p = np.abs(pos - self._s_centre[cyl, axis])
+        band = self._tol + _TANGENCY_ROUNDING * (p + rho)
+        return bool((np.abs(p - rho) <= band).any())
+
     def _screen_facets(self, axis: int, pos: float) -> bool:
         """Facet-path admission: no candidate facet lies in the plane (a
         coplanar facet is the DD-087 degenerate case and stays with the
-        kernel)."""
+        kernel) and no cylindrical face is tangent to the plane.
+
+        A tangent cylinder traces a single line, which the triangulation
+        renders as a run of crossings between two ends that are apart —
+        and the conic compression (:meth:`_compress_cylinder_runs`)
+        would put a whole circle of the neighbouring bore in its place
+        (KB-041 follow-up).  The analytic path delegates the same plane.
+        """
         cf = (self._f_lo[:, axis] <= pos) & (self._f_hi[:, axis] >= pos)
         par = cf & self._f_planar & (np.abs(self._f_n[:, axis]) >= 1.0 - 1e-9)
-        if not par.any():
-            return True
-        return not (np.abs(pos * self._f_n[par, axis] - self._f_d[par]) <= 0.0).any()
+        if par.any() and (np.abs(pos * self._f_n[par, axis] - self._f_d[par]) <= 0.0).any():
+            return False
+        return not self._cylinder_tangency(axis, pos)
 
     def _section_facets(self, axis: int, pos: float) -> list[np.ndarray] | None:
         """Section of the facet representation at *pos* [scaled units].
@@ -3125,16 +3518,26 @@ class _PlanarSectionEngine:
         if (np.bincount(succ, minlength=e_idx.size) != 1).any():
             return None
         interior = self._refine_segments(f_idx, slot_start, slot_end, start, end, pts, axis, pos)
-        return self._chains_to_polygons(uv, succ, interior)
+        active, succ, interior = self._compress_cylinder_runs(
+            e_idx, pts, uv, succ, interior, axis, pos
+        )
+        return self._chains_to_polygons(uv, succ, interior, active)
 
     def _chains_to_polygons(
-        self, uv: np.ndarray, succ: np.ndarray, interior: dict[int, np.ndarray] | None = None
+        self,
+        uv: np.ndarray,
+        succ: np.ndarray,
+        interior: dict[int, np.ndarray] | None = None,
+        active: np.ndarray | None = None,
     ) -> list[np.ndarray] | None:
         """Follow ``succ`` cycles into closed polygons [m]; ``None`` on an
         open chain.  *interior* supplies extra vertices between a point
-        and its successor (facet path)."""
+        and its successor (facet path); *active* excludes the crossings
+        a compression pass took out of the walk."""
         polygons: list[np.ndarray] = []
         visited = np.zeros(uv.shape[0], dtype=np.bool_)
+        if active is not None:
+            visited |= ~active
         for start in range(uv.shape[0]):
             if visited[start]:
                 continue
@@ -3579,9 +3982,12 @@ class _PlanarSectionEngine:
         arcs = [(i, i + 1, 0.0) for i in range(k - 1)]
         if full:
             arcs.append((k - 1, 0, two_pi))
+        # Ellipse sagitta r du^2 / (8 |c_n|) at u = +-pi/2 -- exponent 1,
+        # in step with the facet path above (both must book the same
+        # geometry for a shape sectioned by either).
         du_max = min(
             math.radians(5.0) * abs(c_n),
-            math.sqrt(8.0 * self._deflection * abs(c_n) ** 3 / r),
+            math.sqrt(8.0 * self._deflection * abs(c_n) / r),
         )
         v_margin = max(self._tol, 1e-9 * (vmax - vmin))
         for i, j, wrap in arcs:
