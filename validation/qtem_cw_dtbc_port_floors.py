@@ -31,19 +31,63 @@ per-frequency mode-solve cost (``op.cw_data.solve_seconds`` — period
 blocks + sparse shift-invert eigensolve + fit + phasors) against the
 3D CW run time, plus scaling on a refined microstrip cross-section.
 
-Results (session 88), CW lock-in |S11| (|S21| = 0.00 dB throughout):
+Results, re-derived 2026-09-01 at HEAD 73f7c17.  The script runs at the
+*production default* time-loop precision, which is single since DD-094;
+the previous pins (recorded session 88) were taken when the default was
+double.  READ THE PRECISION WITH THE NUMBER — the run prints it.
 
-    layered     1.0-7.8 GHz fundamental:   -244.6 .. -196.5 dB
-    layered     2nd mode (f_c_hat 8.4465 GHz),
-                1.01/1.05/1.2 f_c_hat:     -176.3 / -194.6 / -200.6 dB
-    block       2.1-6.2 GHz fundamental:   -250.2 .. -225.2 dB
-    microstrip  1.0-7.8 GHz fundamental:   -250.8 .. -206.5 dB
+CW lock-in |S11| at the production default (single); |S21| = 0.00 dB
+throughout, as pinned:
 
-All 76-150 dB below the -100 dB line.  Cost-watch: mode solve
-41 / 31 / 433 ms per port vs 3D runs of 2.7 / 1.9 / 196 s per point
-(share ~3 % on the toy lines whose 3D run lasts seconds, 0.9 % on
-the production-sized microstrip); cross-section scaling N = 2 710 /
-11 132 / 45 112 -> 86 ms / 0.49 s / 3.6 s (ARPACK-dominated).
+    leg                              measured           previous pin
+    layered 1.0-7.8 GHz fund.        -155.0 .. -146.8   -244.6 .. -196.5
+    layered 2nd mode (f_c_hat        -133.4 / -149.2 /  -176.3 / -194.6 /
+      8.4465 GHz) 1.01/1.05/1.2      -151.6             -200.6
+    block 2.1-6.2 GHz fund.          -173.3 .. -159.4   -250.2 .. -225.2
+    microstrip 1.0-7.8 GHz fund.     -164.1 .. -151.3   -250.8 .. -206.5
+
+Per point, single: layered -155.0 / -153.1 / -153.5 / -148.7 / -146.8
+at 1.0 / 2.1 / 4.2 / 6.2 / 7.8 GHz; block -160.6 / -173.3 / -159.4 at
+2.1 / 4.2 / 6.2; microstrip -164.1 / -151.3 / -151.8 / -151.3 / -155.0.
+
+The 43-90 dB drift is the precision default, not the port.  Spot
+re-measurement in double at the same HEAD (``MAGNELIO_PRECISION=double``,
+everything else identical) recovers the pinned class:
+
+    point                     single      double      previous pin
+    layered      1.0 GHz      -155.0      -248.5      -244.6 (band end)
+    layered      7.8 GHz      -146.8      -188.0      -196.5 (band end)
+    block        4.2 GHz      -173.3      -231.7      inside -250.2..-225.2
+    microstrip   1.0 GHz      -164.1      -227.5      inside -250.8..-206.5
+
+so 41-93 dB of the gap is the float32 field wordlength; the lock-in fit
+residual moves with it (1e-07 single against 6e-11 .. 2e-08 double).
+The one point that does not come back is layered at 7.8 GHz, 8.5 dB
+above its pinned band end in double as well — that residual is not
+explained here.  The remaining points and the layered second mode were
+not re-measured in double.
+
+Every leg still clears the -100 dB acceptance criterion by 33 dB or
+more, so this certificate passes; what changed is that its numbers must
+now be read together with the precision they were taken at.
+
+Cost-watch, measured on the same run but UNDER HEAVY CONTENTION (load
+average 50-60 on 16 cores from concurrent sibling jobs), therefore NOT
+re-pinned:  mode solve 2318.6 / 170.9 / 43611.0 ms per point against 3D
+runs of 5.5 / 4.3 / 97.5 s (layered / block / microstrip); the
+microstrip line reports a 118 % share, which is by itself proof that
+the two timers were not measuring an idle machine.  The previous pins
+were 41 / 31 / 433 ms of mode solve against 2.7 / 1.9 / 196 s of 3D run
+(share ~3 % on the toy lines, 0.9 % on the microstrip), and
+cross-section scaling N = 2 710 / 11 132 / 45 112 -> 86 ms / 0.49 s /
+3.6 s (ARPACK-dominated).  A clean single-process timing is what
+KB-040 asks for and it is still outstanding, but one lighter-load point
+already narrows it: ``--case block --fast`` at load average 24 (one
+sibling process at 828 % CPU) reports mode solve 102.0 ms against a
+2.9 s 3D run, share 3.57 % — a 3.3x factor on the mode solve and the
+pinned ~3 % share back, against 7x and 4.8 % in the full contended run.
+So a large part of what KB-040 records as a 7-78x regression is the
+contention it warns about.
 
 Run:  python validation/qtem_cw_dtbc_port_floors.py
       [--case layered|block|microstrip|all] [--fast] [--cost]
@@ -59,6 +103,7 @@ import warnings
 import numpy as np
 from scipy.special import erf
 
+from magnelio._backend.array_api import resolve_precision
 from magnelio._operators.curl import build_curl_matrix
 from magnelio._operators.material_matrices import build_M_eps, build_M_mu
 from magnelio.geo import Brick, Difference, GeometryModel
@@ -446,7 +491,11 @@ def main():
     args = ap.parse_args()
     cases = ["layered", "block", "microstrip"] if args.case == "all" else [args.case]
 
-    print("WP-R4a acceptance — CW true-mode port floors (|S11| < -100 dB, production solver):")
+    real_dtype, _ = resolve_precision()
+    print(
+        "WP-R4a acceptance — CW true-mode port floors (|S11| < -100 dB, production "
+        f"solver)  [time-loop precision {real_dtype.name}]:"
+    )
     for name in cases:
         if name == "layered":
             mesh, dt = layered_mesh()

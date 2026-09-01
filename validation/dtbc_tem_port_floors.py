@@ -20,20 +20,44 @@ Acceptance: |S11| < -100 dB across the evaluated band for the first
 three; the conformal coax is measured and its residual attributed
 (conformal-geometric vs. absorber-related).
 
-Results (session 85, first DTBC production measurement):
+Results, re-derived 2026-09-01 at HEAD 73f7c17.  The script runs at the
+*production default* time-loop precision, which is single since DD-094;
+the previous pins (recorded session 85, the first DTBC production
+measurement) were taken when the default was double.  READ THE
+PRECISION WITH THE NUMBER — the run prints it.
 
-    parallel plate uniform   max -138.7 dB   median -164.0 dB
-    parallel plate graded    max -136.1 dB   median -158.1 dB
-    rect coax                max -159.3 dB   median -159.4 dB
-    conformal round coax     max -131.0 dB   median -131.3 dB
-                             (z_line 48.12 Ohm, unchanged vs DD-053)
+    fixture                  single (default)  double        previous pin
+    parallel plate uniform   -111.9 / -133.9   -145.6/-167.3  -138.7 / -164.0
+    parallel plate graded    -119.6 / -146.4   -151.3/-163.7  -136.1 / -158.1
+    rect coax                -140.9 / -162.5   -164.7/-164.8  -159.3 / -159.4
+    conformal round coax     -135.6 / -153.8   -159.2/-159.3  -131.0 / -131.3
 
-All four sit 30+ dB below the acceptance line.  The conformal coax
-passes the DTBC pair-product gate (DD-053 makes M_eps*M_mu exact per
-co-located pair), and its former -44.1 dB floor drops by ~87 dB at
-unchanged impedance: the residual measured through session 83 was
-entirely absorber- and measurement-chain-limited, not
-conformal-geometric.
+(max / median in dB; z_line of the conformal round coax is 48.94 Ohm,
+previous pin 48.12 Ohm — the +1.7 % move is the DD-193 re-pin.  The
+double column is ``MAGNELIO_PRECISION=double``, everything else
+identical.)
+
+Against the previous pins the default column drifts +26.8 / +30.1 dB
+(uniform plate, max / median), +16.5 / +11.7 (graded), +18.4 / -3.1
+(rect coax) and -4.6 / -22.5 (conformal round coax, the one that got
+better) — a positive number being a worse floor.  That drift is the
+precision default and not the absorber: in double every fixture is at
+or below its session-85 pin (max improved by 6.9 dB uniform plate, 15.2
+graded, 5.4 rect coax, 28.2 conformal round coax — the last carrying
+the DD-193/DD-199 conformal-mesh work as well).  The single-precision
+numbers are the float32 field floor, ~ -114 dB for a directly evaluated
+reflection, which is what DD-094 measured and accepted when it made
+single the default.
+
+|S21| deviation from 0 dB is 0.0000-0.0063 dB and does not depend on
+the precision.  All four fixtures clear the -100 dB acceptance line in
+both columns, the uniform plate in single by the least at 11.9 dB.
+
+The conformal coax passes the DTBC pair-product gate (DD-053 makes
+M_eps*M_mu exact per co-located pair), and its former -44.1 dB floor
+drops by ~92 dB at the production default and ~115 dB in double: the
+residual measured through session 83 was entirely absorber- and
+measurement-chain-limited, not conformal-geometric.
 
 Both WP-R2 legs are required for these numbers:
 
@@ -53,6 +77,7 @@ from __future__ import annotations
 import numpy as np
 
 from magnelio import AnalysisScatteringTD, Material, Mesh, MeshControl
+from magnelio._backend.array_api import resolve_precision
 from magnelio.geo import Brick, Cylinder, Difference, GeometryModel
 from magnelio.mesh import BoxFace
 from magnelio.mesh.grid import GridLines
@@ -188,7 +213,11 @@ def measure(name: str, ana: AnalysisScatteringTD) -> None:
 
 
 def main() -> None:
-    print("WP-R2 TEM port floors (exact DTBC + discrete de-stagger), band 0.25-10 GHz:")
+    real_dtype, _ = resolve_precision()
+    print(
+        "WP-R2 TEM port floors (exact DTBC + discrete de-stagger), band 0.25-10 GHz"
+        f"  [time-loop precision {real_dtype.name}]:"
+    )
     measure("parallel plate uniform", parallel_plate(graded=False))
     measure("parallel plate graded", parallel_plate(graded=True))
     measure("rect coax", rect_coax())
