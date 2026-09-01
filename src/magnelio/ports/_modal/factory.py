@@ -1695,6 +1695,21 @@ def build_modal_port(
         max_line_modes = len(conductor_groups) - 1
         if spec.epsilon_r is None:
             # QTEM dispatch via dual-Laplace.
+            # DD-238: the profiles returned here and the Mur
+            # reflection coefficient built from them in
+            # ``ModalPortOperator`` come from this one frequency-flat
+            # quasi-static Laplace mode.  Both are therefore wrong by
+            # comparable amounts, measured 161-180 degrees out of
+            # phase, and the shipped port floor IS the residual of
+            # their near-cancellation (block fixture at 6.2 GHz:
+            # profile 2.443e-3, boundary 4.103e-3, residual 1.660e-3 =
+            # the measured -55.60 dB).  Consequence: a better
+            # transverse solve here alone — dispersive eps_eff, a
+            # drift correction, a discrete profile — RAISES (worsens)
+            # the floor unless the Mur coefficient is corrected in the
+            # same step, and vice versa.  Correcting both together is
+            # a discrete mode solve per frequency, i.e. the band path.
+            # Certificate: validation/qtem_mur_floor_decomposition.py.
             m_eps_vac = build_M_eps_vacuum(mesh)
             m_eps_vac = flatten_port_plane_mass(m_eps_vac, mesh, spec.plane)
             _, M_2d_vacuum, _ = build_2d_curl_curl(

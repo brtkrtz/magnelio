@@ -626,6 +626,24 @@ class PortOperatorModal:
         # Per-mode phase velocity, Mur reflection coefficient, and TF/SF
         # propagation delay τ_m = dx_n / v_p,m (used by the soft source
         # for incident-field look-up at the interior plane).
+        #
+        # DD-238: on a QTEM port this ``r`` and the mode profile it is
+        # evaluated on both come from the same frequency-flat
+        # quasi-static Laplace mode, so both carry an error of
+        # comparable size — and the two errors were measured 161-180
+        # degrees out of phase.  The shipped port floor IS their
+        # near-cancellation residual (block fixture at 6.2 GHz:
+        # boundary 4.103e-3, profile 2.443e-3, residual 1.660e-3 =
+        # the measured -55.60 dB).  Consequence: moving ``r`` alone
+        # toward the exact discrete value RAISES the floor (worse at
+        # 8/8 measured points: 2.7-3.4 dB block, 7.6-11.9 layered,
+        # 14.3-15.7 microstrip), and equally, improving the mode
+        # profile alone raises it unless ``r`` moves in the same step.
+        # The two must be corrected together, which is a discrete mode
+        # solve per frequency (the DTBC/band path).  The shipped ``r``
+        # sits near a cancellation optimum by accident; do not
+        # "calibrate" it on its own.  Certificate:
+        # validation/qtem_mur_floor_decomposition.py.
         self._v_p = np.empty(self._n_modes, dtype=float)
         self._mur_r = np.empty(self._n_modes, dtype=float)
         self._tau_m = np.empty(self._n_modes, dtype=float)
