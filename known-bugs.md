@@ -16,8 +16,113 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Three entries are open as of 2026-08-31: KB-023, KB-027 and KB-038.**
-Everything else is struck through and resolved.
+**Five entries are open as of 2026-09-01: KB-023, KB-027, KB-038,
+KB-039 and KB-040.**  Everything else is struck through and resolved.
+
+## KB-040: The 2D port mode solve is 7–78× slower than its pinned cost — Open, undiagnosed (2026-09-01)
+
+`validation/qtem_cw_dtbc_port_floors.py` carries a cost watch that pins
+the per-point mode-solve time next to the 3D run it feeds.  A full run
+on 2026-09-01 at `4097abe` reports:
+
+    case         mode solve   measured    3D run   measured   mode-solve share
+    microstrip      433 ms    33740 ms     196 s     82.7 s     0.9 % → 89.3 %
+    layered          41 ms     1328 ms     2.7 s      4.5 s     ~3 %  → 61.3 %
+    block            31 ms      223 ms     1.9 s      3.5 s     ~3 %  → 10.2 %
+
+— 78× / 32× / 7× on the mode solve, and the cost split has inverted:
+what was a 1 % preamble to the 3D march is now most of the run.  The 3D
+march itself did **not** get slower; on the microstrip it got *faster*
+(196 → 82.7 s), which is what makes this worth an entry rather than a
+note about the machine.
+
+**Undiagnosed, and the measurement is contended.**  The session that
+produced these numbers ran a concurrent probe at 400–780 % CPU (load
+average 25–30 on 16 cores), so roughly a factor of two of every
+wall-clock figure above is contention.  It cannot account for 78×, and
+it cannot account for a 3D run that got faster on the same machine in
+the same run.  The floors the script prints are deterministic and
+unaffected — they carry their own drift, recorded in KB-038.
+
+The pinned values date from when the script's header was written and
+the port pipeline has moved repeatedly since, so nothing here isolates
+a cause.  What would settle it: one clean, unloaded, single-process
+timing of the same script at a known commit — if the factor reproduces
+there, a bisection on the mode-solve time alone, which is cheap because
+the mode solve needs no time-domain run.  Measurements: internal record
+`investigations/qtem-midpath/baseline/`
+(`qtem_cw_dtbc_port_floors.stdout`, `DRIFT.md` section 7).
+
+## KB-039: `pair_ladder_choice_certificate.py` crashes before it prints a single row — Open (2026-09-01)
+
+Reproduced 2026-09-01 at `4097abe`, run from `magnelio/`:
+
+```
+MAGNELIO_BACKEND=numpy CUPY_ACCELERATORS="" \
+  python validation/pair_ladder_choice_certificate.py
+```
+
+exits 1 after about 12 s:
+
+```
+coupler mesh 30 x 32 x 103
+port     termination    pair spread   worst edge   z_line [Ω]
+Traceback (most recent call last):
+  File ".../validation/pair_ladder_choice_certificate.py", line 223, in <module>
+    main()
+  File ".../validation/pair_ladder_choice_certificate.py", line 196, in main
+    rows = measure(mesh)
+  File ".../validation/pair_ladder_choice_certificate.py", line 181, in measure
+    "spread": float(op._dtbc_pair_spread[0]),
+TypeError: float() argument must be a string or a real number, not 'NoneType'
+```
+
+The header row is printed and no data row is, so the certificate
+produces **no table at all** and never reaches its own
+`assert r["kinds"] == ["dtbc"]`.
+
+**What is measured.**  Freshly built operators for both coupler ports,
+same fixture, warnings captured instead of suppressed:
+
+    port    termination_kinds   chain_spreads   slab defect   z_line
+    port1   ['mur']             [None]           8.4165e-02   96.1625 Ω
+    port2   ['mur']             [None]           8.4165e-02   96.1550 Ω
+
+against the docstring's pinned 7.1e-15 (port1) and 6.3e-14 (port2),
+both on the exact DTBC.
+
+**Which gate vetoes — stage 2, not the stage 1 the certificate is
+about.**  `_port_chain_slab_defect` (`ports/_modal/factory.py:1198`)
+reads 8.42e-2 against `_DTBC_SLAB_DEFECT_TOL = 1e-8`
+(`ports/_modal/operator.py:270`); the factory warns for each port
+(`factory.py:1847`, the DD-067 stage-2 warning, verbatim "the feed-chain
+mass slabs deviate by 8.42e-02 … all channels fall back to modal
+Mur-1st"), and `PortOperatorModal._chain_params` then returns
+`(None, None, None)` at `operator.py:821–822` — *before* the pair
+spread is computed a few lines below.  A `None` spread after a stage-2
+veto is by design, and `_report_withheld_dtbc` documents it as a
+non-event; the certificate's unguarded `float()` is what turns it into
+a crash.
+
+Two things are wrong and only the first belongs to the script: the
+`float()` cast assumes stage 1 decided, and the **fixture no longer
+exercises what it was built for** — the mirrored stub and its original
+fail stage 2 identically, so the controlled pair the DD-165 comparison
+rests on is gone.  Whether the fixture drifted or the slab-defect
+measurement did is not diagnosed.  The two stubs do still match each
+other (z_line to 7.8e-5 relative), though the certificate's own gate on
+that agreement is 1e-9, so it would have to be re-pinned too.  The
+docstring's "about two minutes, most of it meshing" is stale as well:
+the mesh builds in ~12 s.
+
+**No test covers it.**  Nothing under `tests/` references the script,
+and both suites are green on the same tree (2799 unit, 450 integration
+passed), so the breakage is unguarded — the same gap KB-038 records for
+the certificates that still pass while their pinned numbers no longer
+reproduce.  Baseline capture: internal record
+`investigations/qtem-midpath/baseline/`
+(`pair_ladder_choice_certificate.stdout` / `.stderr`, `DRIFT.md`
+section 9).
 
 ## KB-038: The band-DTBC port floor degrades with the length of the run — Open (2026-08-31)
 
@@ -62,13 +167,41 @@ attributed to "session 90" in the header and the file entered the tree
 with the initial public commit), and the pipeline has changed under
 them repeatedly since — so a bisection needs the predecessor history.
 
+**The level shift is not confined to the band ports** (added
+2026-09-01).  Measured at `4097abe` against each script's own pinned
+docstring numbers, same interpreter, no flags:
+
+    validation/qtem_cw_dtbc_port_floors.py
+        43–90 dB worse on every leg — microstrip pinned −250.8…−206.5,
+        measured −164.1…−151.3; layered +49.7…+89.6; block +65.8…+76.9
+    validation/kg_dtbc_wg_port_floors.py
+        WR-90 TE10 at 1.01 f_c pinned −150.4, measured −124.5 (+25.9);
+        the conformal round-WG legs still reproduce within 1.5–2.8 dB
+    validation/dtbc_tem_port_floors.py
+        up to +30.1 dB — parallel plate uniform pinned −138.7/−164.0,
+        measured −111.9/−133.9; the conformal round coax is *better*
+    validation/wr90_te10_dd047_reeval.py
+        its de-stagger rows are stale by 46–56 dB, and its ports
+        terminate on the exact DTBC today (pair spread 2.9e-16), so it
+        no longer measures a Mur floor at all despite its docstring
+
+All four still pass their own acceptance lines — the floors sit far
+above the −100 dB gates — which is why the shift went unseen.  These
+are pulsed and CW *non-band* paths, so whatever moved is not specific
+to the band pipeline, and the ≈45 dB recorded above for `layered` is
+the middle of a range, not the size of the effect.
+
 Consequences while it is open: the band floors quoted in the fixture
 header, in `design-decisions.md` (DD-064) and in the user
-documentation are not reproducible, and a long band run has a floor
-that depends on its own length.  Measurements: internal record
-`investigations/port-model-default/` (`probe_record_length.py`,
+documentation are not reproducible, a long band run has a floor that
+depends on its own length, and the pinned numbers in the four
+certificates above are not a baseline anything can be bisected
+against until one of them is re-derived.  Measurements: internal
+record `investigations/port-model-default/` (`probe_record_length.py`,
 `probe_prod_floor_cause.py`, `fixture_layered.log`,
-`fixture_microstrip.log`).
+`fixture_microstrip.log`); the wider certificate capture is internal
+record `investigations/qtem-midpath/baseline/` (per-script stdout and
+`DRIFT.md`).
 
 ## KB-037: ~~Two builds of the same band port gave different Galerkin subspaces~~ — Resolved (2026-08-31)
 
