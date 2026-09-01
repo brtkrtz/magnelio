@@ -18642,3 +18642,443 @@ is the state the operator's own `termination="mur"` constructor reaches).
 The certificate reproduces every pinned point in the tables above to
 0.00 dB (block sweep 25 points in 58 s; microstrip 4.2 GHz to 0.00 dB at
 22 s per variant).
+
+---
+
+## DD-239 — the QTEM default is fixed at the −30 dB class, and the user-visible number is not the port's to move
+
+**Status:** Decided 2026-09-01 (branch `chore/qtem-campaign-closeout`).
+Closes the campaign DD-231…DD-238.  No shipped default changes and no
+line under `src/` changes for the port model.  Certificate:
+`validation/qtem_modal_mur_sparam_floor.py`.  The measurements with no
+script of their own — the wordlength counter-measurements, the
+first-parent bisection and the contention timings — are in the internal
+record `investigations/qtem-closeout/MEASUREMENTS.md`.
+
+**Problem.**  DD-238 measured the shipped modal-Mur port floor at
+−52.3 dB on the production microstrip and closed by naming, but not
+pricing, the two other terms that stand between that figure and the
+one a user reads: the de-staggered a/b split of
+`compute_s_parameters` and the drive port's soft-source error.
+Tutorial 09 prints |S11| = −32.9 dB on the same line.  Twenty decibels
+therefore separated the quantity eight entries of boundary work had
+been optimising from the quantity the library reports, and nobody had
+decomposed the gap before deciding where the next effort goes.
+
+**The instrument.**  The tutorial 09 fixture verbatim (14 × 23 × 52 =
+16744 cells, 25 cells per wavelength, `f_max` 15 GHz), run through the
+public path, reproduces the printed curve: |S11| worst −32.88 dB at
+15 GHz against the printed −32.9 dB, |S21| worst −0.000 dB.  Each of
+the three error terms is then priced on its own by replacing the
+corresponding piece with its exact counterpart and reading the change
+in the reported number, and the three are recombined as phasors and
+checked against the run.  The control in which *both* ports terminate
+on an exact CW true-mode DTBC reads −171.99 / −169.90 / −183.38 dB at
+5 / 10 / 15 GHz — at least 118 dB below every reported value, so the
+instrument does not enter the budget.
+
+**Measured — the attribution, shipped mesh (dB):**
+
+    term                     5 GHz    10 GHz    15 GHz
+    reported |S11|          −38.12    −46.62    −33.72
+    a/b split               −35.86    −31.80    −28.98
+    drive-port source       −44.83    −31.79    −30.17
+    far-port floor          −62.28    −50.23    −43.73
+    residual                −98.20    −74.25    −63.49
+
+The three-term phasor sum closes on the run: −38.11 / −46.91 /
+−33.80 dB against the reported −38.12 / −46.62 / −33.72 dB.
+
+**Measured — the counterfactuals.**  Entries are the improvement in
+the reported |S11| when a term is removed outright; a negative entry
+means removing it makes the reported number *worse*.
+
+    removed                  5 GHz    10 GHz    15 GHz   15 GHz, 2.3x mesh
+    far-port floor           −0.45     +0.72     +1.93     +1.81
+    split and source        +24.03     +3.68    +10.34    +11.99
+
+**An exactly transparent port buys at most 1.93 dB.**  The whole
+boundary campaign — every candidate priced in DD-237, every
+cancellation term measured in DD-238, and the low-rank band port that
+DD-238 named as the live item — is aimed at a term that does not
+dominate the number the user reads, at any frequency in the band, on
+either mesh.
+
+**The two terms that do dominate are the same defect twice.**  The
+split and the source are of equal weight at band centre (−31.80 and
+−31.79 dB) and both descend from the frequency-flat quasi-static
+Laplace mode that `build_modal_port` derives everything from — the
+same origin DD-238 found for the two terms inside the port floor, one
+level up.  That is also why they partly cancel: at 10 GHz they stand
+at −1.7° and −172.6°, **170.9° apart**, and that near-antiphase *is*
+the −46.6 dB mid-band dip in tutorial 09's own printed S11 curve.  The
+tutorial's best-looking frequency is its most accidental one.
+
+**The recorded cap formula is refuted.**  The campaign recorded the
+de-stagger gap as ~(β·dz/2)³(1 − r²)/6.  Evaluated as the reflection
+it leaks, that formula prices −108.87 / −90.28 / −79.15 dB at
+5 / 10 / 15 GHz — 73.0 / 58.5 / 50.2 dB *below* the measured split.
+Over a cell-size ladder Nz = 25 / 38 / 52 / 73 / 104 the formula moves
+**37.68 dB** while the measured split moves **0.34 dB**.  The grid part
+is 2.3–4.2 % of the de-stagger exponent error; the formula describes a
+term that is not there.
+
+**What the split actually is: 99.5 % wave impedance, and
+mesh-independent.**  `compute_s_parameters` values a QTEM channel with
+the frequency-flat quasi-static `z_modal` = 103.03 Ω while the true
+discrete wave carries 106.40 / 108.45 / 110.55 Ω at 5 / 10 / 15 GHz
+(−3.17 / −4.99 / −6.80 %).  A mismatch of that size reflects
+|b/a| = |ΔZ/Z|/2, which is −29 dB at 15 GHz — the measured split to
+within its residual — and the Z error holds at −6.79…−6.80 % across
+the whole Nz ladder, so refining the mesh cannot touch it.  A 2 × 2
+control that substitutes the Z error alone, the θ error alone, or
+both, lands the both-corrected case at −316 to −323 dB: the split has
+exactly those two parameters and no third.
+
+**Decision — the default does not move.**  `port_model` stays
+`"modal"` and the QTEM acceptance line stays the −30 dB class of
+DD-064.  Three reasons, in order of weight.
+
+1. The port floor is not the user-visible number.  At most 1.93 dB of
+   the reported |S11| is available from a perfect port, and the
+   remaining terms are not a boundary problem.
+2. The shipped floors DD-238 measured — −52.3 dB microstrip, −36.5 dB
+   layered, −55.6 dB block — already meet the −50 dB class DD-237 set
+   itself on two of the three validation cross-sections, at Mur's cost
+   and with no state per channel.
+3. The engineering scale is coarser than any of this.  The library's
+   own de-embedding how-to fixes ΔS = 0.02, a return-loss uncertainty
+   of −34 dB; against that a −52 dB port floor is one eighth of the
+   dominant error.  Buying decibels below the scale on which the
+   result is read is not an accuracy improvement.
+
+**The closed search space**, listed so that it is not re-opened
+without new evidence: the K-term recursion (DD-233 on accuracy,
+DD-236 on motive); the whole middle-path boundary-law family — Mur
+families, the Klein-Gordon chain, order-2…4 all-pass, general order-2
+rational with zeros moved inside the disc (DD-237, and the passivity
+argument that bounds all of them); calibrating the Mur coefficient
+alone, centred or minimaxed (DD-238, worse at 8/8 measured points);
+warm start, dense eigensolve, the per-frequency process pool and BLAS
+pinning (DD-235); threads on the contour loop and kernels shortened
+below the record (DD-234); and now **the port floor itself as a route
+to the user-visible number** (this entry).
+
+**The named successor, as a candidate and not a plan.**  The split is
+arithmetically repairable: the ζ pencil already computes Z(ω) and
+γ(ω) once per port per frequency, and feeding those to the power-wave
+split in place of the frequency-flat quasi-static value would remove
+the dominant term rather than the smallest one.  The measured headroom
+is **+10.34 dB at the band top and +24.03 dB at 5 GHz** — an order of
+magnitude more than the boundary work was ever able to offer.  It
+needs the whole `rfft` axis rather than one bin, and its cost was not
+measured; that is the first thing to price.  It is the same root cause
+as KB-027, where the quasi-static de-embedding reference moves the raw
+S-parameters, so a repair here is expected to close both.
+
+**KB-038 is diagnosed, not fixed, and the campaign closes with it in
+that state.**  Both halves are the single-precision production default
+of DD-094: the pinned floors were taken when the time-loop precision
+default was double, and re-running the same fixtures at the same HEAD
+under double recovers the pinned class exactly, while the ~7.5 dB per
+doubling degradation with run length is present in single and **flat
+in double** on the same code path.  CI could never see it because the
+suite is pinned to double.  This turns an undiagnosed absorber
+regression into a wordlength design question — whether the band-DTBC
+path needs its convolution state in double — and that question is left
+open deliberately: it is a decision about a default, not a bug hunt,
+and it does not belong in a close-out entry.
+
+**The certificate.**  `validation/qtem_modal_mur_sparam_floor.py`
+carries all of the above and is the anchor for it: it reproduces the
+tutorial's printed curve through the public path, prices the three
+terms, runs the counterfactuals on the shipped and on a 2.3x finer
+mesh, walks the Nz ladder against the cap formula, runs the 2 × 2
+substitution control and the exact-DTBC instrument floor, and asserts
+nine acceptance gates, every one of them pinned to a number in the
+tables above.
+
+**The bug ledger at close.**  A campaign does not close on a broken
+certificate, so the four open items were settled or characterised
+rather than carried.  KB-040 — the port mode solve reported 7–78×
+slower than its pin — was a **contention artefact** and is resolved:
+thread-pinned CPU time for the whole port build is 1.05× / 1.42× /
+2.56× its pin, and the pinned window excludes the `build_curl_matrix`
+call that a profile puts at 65 % of it.  The lesson is worth more than
+the entry: the same call measured 28.6 ms at load 0.15 and 1801 ms at
+load 68, so a cost watch on this path must record CPU time or run
+alone.  KB-039 is **bisected** to the merge that brought the facet
+section engine (DD-199): the slab-defect measurement is byte-identical
+to the initial public tree, while the mesh built from the unchanged
+fixture flips from 2.774e-10 and the exact DTBC at `955bc97` to
+8.4165e-02 and Mur at `acd8417`.  Its certificate now prints its table
+and *then* fails its assert, which is the honest state and is left
+that way.  The defect underneath it is new and gets its own entry,
+KB-041: a free-form body perturbs the conformal masses of cells that
+contain none of it — every deviating entry lies within 3.5 mm of the
+coax axes and above y = 31.3 mm, where the triggering loft ends at
+y = 29 mm and has no material.  That one is a mesher question and is
+deliberately not folded into this campaign.
+
+**What was not measured**, stated as open rather than assumed.  The
+drive-port term was not separated into the injected quasi-static
+profile and the drive port's own Mur re-absorption.  The same
+dominance was not measured on a homogeneous pair-certified TEM line,
+where the split should vanish and the ranking may therefore differ.
+`destagger=False` was not measured.  And the cost of feeding the split
+a dispersive Z(ω), γ(ω) on a broadband run — the one number the
+successor turns on — was not measured.
+
+---
+
+## DD-240 — a free-form face takes only itself off the exact section path
+
+**Status:** Implemented 2026-09-01 (branch `chore/qtem-campaign-closeout`).
+Repairs DD-199 for cylinders; closes KB-041 and opens KB-042 and KB-043.
+Gates: `tests/unit/test_facet_section_engine.py` —
+`TestFreeFormReachIsLocal`, `TestObliqueFreeFormReachIsLocal`,
+`TestConicRunSurvivesAnUnbuildableArc`, `TestTangentPlaneBooksNothing`.
+Certificate: `validation/pair_ladder_choice_certificate.py`, which
+certifies again.  The measurements with no script of their own are in
+the internal record `investigations/qtem-closeout/MEASUREMENTS.md`; every
+number below is reproducible from those four test classes and that
+certificate.
+
+**Problem.**  DD-239 closed the QTEM campaign with KB-041 written down
+but not explained: in the coupler fixture a free-form body perturbed the
+conformal masses of cells that contain none of it, every deviating entry
+sitting within 3.5 mm of the coax axes and above y = 31.3 mm while the
+triggering loft ends at y = 29 mm and has no material there.  The two
+controls recorded with it read as paradoxes — the loft *as its own body*
+left the masses bit-identical, and a model of coax stubs only was clean.
+It was handed on as a mesher question.  It is one, and it is not a reach
+defect at all.
+
+**The root cause — the DD-199 gate is per shape, not per face.**
+`_PlanarSectionEngine._build` (`src/magnelio/geo/_occ_backend.py`) walks
+every face of a shape once and ORs a single shape-wide `free_form` flag;
+if the flag is set it calls `_build_facets(shape)` and *returns* before
+the exact tables — edge lines, circle crossings, cylinder frames — are
+ever assembled.  One B-spline face therefore takes the analytic cylinders
+of the same shape off the exact path with it.  Two further hops carry
+that across bodies: `_section_engine` builds one engine per shape, and
+`_CsgSectionEngine` builds the tools engine on the *fused* tools.  In the
+coupler fixture `vac -= electrodes` is a Difference whose operand routing
+is declined, so the kernel-fused solid is digested and its boundary
+carries the loft's B-spline imprint.  The **air** body — which owns the
+port cross-section and has no free-form face of its own — was measured
+`facetted=True`.  That is the whole mechanism behind KB-041's action at a
+distance, and it also dissolves both controls: the loft as its own body
+still reaches the air body through the Difference, and the coax-stubs
+model has no free-form face anywhere.
+
+**The damage is lost invariance, not lost accuracy.**  A triangulated
+cylinder is a prism, and where a section plane falls between its node
+rows decides the chord.  On the coupler bore, `M_mu` Hx at ix = 2,
+iz = 81, over four y-layers:
+
+    y-layer      kernel path        facet path
+    1          1.550977e-09       8.911369e-10
+    2          1.550977e-09       8.920923e-10
+    3          1.550977e-09       8.920996e-10
+    4          1.550977e-09       8.920997e-10
+
+42.5 % low *and* non-uniform along y.  `_port_chain_slab_defect` measures
+exactly that y-to-y drift, read 8.4165e-02 against its 1e-8 gate, and
+demoted both coupler ports from the exact DTBC to Mur.  **The exact port
+termination consumes uniformity, not accuracy** — which is why distance
+from the loft was irrelevant to the symptom, and why a 42 % mass error
+that is *constant* along the guide would have gone unnoticed by that
+gate.  The cleanest proof is the A/B switch DD-199 already ships: with
+the geometry byte-identical, `MAGNELIO_FACET_SECTIONS=0` makes the
+certificate pass — both ports `dtbc`, pair spreads 5.0475e-15 and
+1.3073e-13, slab defect 2.2192e-10.
+
+**The repair — and it is cylinders only.**  Analytic faces of a facetted
+shape are now answered from their own geometry, with every change
+confined to `_build_facets` / `_section_facets`, so a shape with no
+free-form face is bit-identical to before.  `_build_facets` records
+cylindrical faces as their own surface kind (axis frame, centre, radius)
+and `_lift_slots` dispatches per face; `_project_cylinder` replaces the
+one Newton step onto a tangent plane by the exact in-plane projection
+solving |(P + t d − c)_⊥| = r, so a plane parallel to the axis lands on
+the exact generatrix and a family of parallel planes books identical
+areas — and it is *cheaper* than the old path, with no `Geom_Surface.D1`
+calls; `_lift_to_surfaces` prefers the cylindrical neighbour when a
+crossing lies on a shared edge; and `_compress_cylinder_runs` /
+`_cylinder_arc` drop the interior crossings of a genuine conic run and
+lay it down as the exact conic at the in-plane refinement sagitta budget.
+**Read the phrase "analytic faces" narrowly: cone, sphere and torus faces
+are untouched and keep the DD-199 parametric lift, so the reach defect is
+fully present for them (KB-042).**
+
+The compression deliberately does *not* touch the generatrix case: near a
+tangency the triangulated trace carries the wrap between two
+generatrices, and a chord across the run ends would cut it off — measured,
+doing so makes the fixture *worse*, 8.4e-02 → 1.4e-02 rather than to the
+noise.  Two cheaper mitigations were measured dead and should not be
+revisited.  (a) A per-plane fallback answering a plane exactly when no
+free-form face reaches it is **neutral** here (8.4165e-02 unchanged),
+because the deviating masses are `M_mu` Hx and Hz from x- and z-planes
+and those all cross the loft's x-extent.  (b) Not lifting analytic faces
+at all, leaving the raw triangulation invariant, gets only
+8.4165e-02 → 1.4957e-02: a raw prism is invariant along its axis only
+while the face is untrimmed, and the coupler bore is trimmed by the
+Boolean.
+
+**Two defects in the repair itself, found by the adversarial passes.**
+Both are fixed; both are recorded because the compression now carries two
+bail-outs and a reader must know why neither may be simplified away.
+
+1. *Silent corruption.*  The open-run branch of `_compress_cylinder_runs`
+   dropped a run and rewired its successor **unconditionally**, before
+   knowing whether `_cylinder_arc` could build the replacement; on a
+   `None` return the whole conic run collapsed to a straight chord.  The
+   closed-cycle branch twenty lines below already did it correctly.
+   Measured losses on high-aspect cylinders: 89.8 %, and 32.7 % / 100 %
+   of a section area — reproduced independently by two agents on their
+   own fixtures, the absolute numbers differing because the free-form
+   companion body was not specified while the *signature* reproduced
+   exactly.  Repaired by mirroring the closed-cycle bail-out: build the
+   arc first, restore the run on `None`.  The current tree lands on the
+   pre-repair value (the uncompressed run) rather than on a chord —
+   fixture A corrupted 4.497798e-27, current 2.0925916e-05, pre
+   2.0926611e-05; fixture B corrupted 5.285968e-07, current 7.865650e-07,
+   pre 7.865278e-07.
+2. *Phantom material.*  On a plane **exactly tangent** to a cylinder the
+   compression manufactured a full circle out of a degenerate trace:
+   1.5386530746873848e-06 m² = π r_bore² booked where the kernel and the
+   pre-repair tree both book 0.0.  Over a radius sweep 1.5–3.0 mm at
+   deflection 2.5e-6, 4 of 16 cases fired before the fix and 0 of 16
+   after.  This is reachable in principle — the mesher does place a grid
+   plane bit-exactly on the tangent generatrix (measured |δ| = 0.000e+00).
+   Repaired by giving `_screen_facets` the cylinder-tangency test the
+   analytic `_screen` already has, so a tangent plane is delegated rather
+   than sectioned; a relative rounding guard `_TANGENCY_ROUNDING = 1e-12`
+   was needed because one case missed at a residual of 4.337e-19, half an
+   ulp on 4.4 mm.  End to end that plane was never sectioned in three
+   mesh builds, so `A_face_free` / `A_face_pec` were already SHA-256
+   identical: the defect was engine-level with no demonstrated production
+   path, and is closed regardless.
+
+**The `du_max` exponent — a pre-existing defect, fixed at all three
+sites.**  The arc refinement step used `abs(c_n) ** 3` where the
+derivation gives exponent 1.  The section is an ellipse of semi-axes
+A = r and B = r/|c_n|; the sagitta over du is
+A·B/(8 √(A² sin²u + B² cos²u)) du², maximal at u = ±π/2 where |P′| = A,
+giving r du²/(8|c_n|).  Re-derived independently and checked numerically
+twice — max-over-u divided by prediction 0.999988 / 0.999999 / 1.000000 /
+1.000000 / 1.000000 at c_n = 3e-3, 1e-2, 5e-2, 0.3, 0.9, and the ratio to
+the exponent-3 prediction is exactly c_n².  **The trap that hid it is
+worth recording:** at a *single fixed* u the sagitta is r du²/(8|cos u|)
+with no c_n dependence at all (measured essentially flat in c_n), so a
+spot check at one u argues for exponent 0, and only the maximum over u
+gives 1.  Fixed with the derivation in a code comment at
+`src/magnelio/geo/_occ_backend.py:3268` (facet path) and `:3989` (exact
+path) and `src/magnelio/geo/_section_kernels.py:293` (compiled kernel).
+
+It was the sole cause of the declined-arc regime: 8/8 declines → 0/8 on
+the wire fixture.  Against a requested 2e-6 deflection the achieved max
+chord sagitta was 3.0523e-04 = 152.6× budget — the declined plane was
+violating the deflection contract by two orders of magnitude — and is now
+5.7116e-10 = 0.0003× budget; section area against the closed form
+−7.5048e-03 relative → −1.1423e-08.  On the exact path a 0.4 mm wire at
+0.057° costs 11996 points / 160.4 ms instead of 74204 points / 9517.2 ms
+at deflection 1e-5.  Facet and exact paths now agree to 0…4e-16 relative
+where they differed by up to 1.5e-04.
+
+**The honest caveat, recorded rather than buried.**  At *section* level,
+on two moderate fixtures (|c_n| = sin 2° and 3e-2), exponent 1 books a
+**larger** area error than exponent 3: −7.08e-07 → −1.54e-06 and
+−7.20e-07 → −1.14e-06.  Both lie on the same n⁻² convergence curve (error
+ratio 2.18 = (3048/2064)²), i.e. exponent 3 was over-spending points
+rather than exponent 1 losing accuracy, and the delivered polygons honour
+the requested deflection with 300–1000× margin.  It does not propagate:
+both mesh-level quantities that moved at all moved *toward* truth.
+
+**Blast radius**, measured by isolated A/B with only the three exponents
+and the tangency screen swapped.  Unit suite 2820 passed / 4 skipped,
+integration 452 passed / 5 skipped, zero failures and zero errors.  Ten
+geometry-heavy pinned artefacts outside the suites all pass, nine of them
+bit-identical between the arms: `mesher_stress_sentinel` (30/30, five
+tangent-cylinder fixtures among them, all cell counts identical),
+`edge_plane_chamfer_certificate` (all 18 f₀ values and cell counts digit
+for digit — the DD-199 re-pin at 2.66 GHz still holds),
+`scale_invariance_certificate` (worst |S| 7.018e-07 against its 1e-06
+bound), `section_nudge_reach_certificate`,
+`section_open_chain_guard_certificate`, `fiber_micron_regression`,
+`plot_03_coax_smatrix` (max ‖S11|_sim − |S11|_theory‖ 5.1e-04,
+reciprocity 1.65e-07), `plot_05_eigenmode_sphere` (all 8
+eigenfrequencies) and `pair_ladder_choice_certificate`.  The one drift is
+`validation/section_chain_completeness_certificate.py` check 3, whose
+printed "PEC area booked on Hx" moves 118976.309244676 → 118976.310104150
+mm², +7.22e-9 relative; adjudicated **better** by convergence — driving
+`SECTION_DEFLECTION_FRACTION` to 1e-4 gives 118976.334268 (after) against
+118976.334233 (before), the two arms agreeing to 3e-10, and against that
+reference the new value is 3.4 % closer.  It is a printed diagnostic and
+not a gate (the gate `> 117843.7094` has four orders of headroom) and no
+DD cites it.  Cost is neutral where the angular cap was already binding,
+4.0× faster on a 0.2 mm cylinder tilted 0.057° (0.029 s against 0.116 s)
+— the regime the exponent fix targets — and the coupler mesh build is
+neutral at 0.97× and 1.00×.
+
+**Decision.**  Keep the DD-199 facet path, but stop letting it swallow
+the exact geometry a shape already carries: the free-form gate stays per
+shape for *triangulating* the shape, while cylindrical faces are lifted,
+projected and compressed from their own analytic surface.  KB-041 is
+resolved.  `validation/pair_ladder_choice_certificate.py` certifies again
+— both ports `dtbc`, pair spreads 5.2164e-15 and 1.3072e-13, slab defect
+1.4795e-10, z_line 96.1625 Ω — which removes the cause KB-039 was
+bisected to; KB-039 itself stays open for the fixture question, its
+fixture deliberately left as built.
+
+**What remains open.**
+
+- **KB-042 — the scope hole.**  The compression is cylinder-only.  Cone,
+  sphere and torus faces of a facetted shape still take the one-step
+  parametric Newton lift, so the KB-041 reach defect is fully present for
+  them.  Worst deviation per cell against the kernel section of the body
+  alone, with a free-form neighbour fused 40 mm away that the section
+  planes do not even cross: cylinder 2.168404e-13, cone 8.651413e-03,
+  sphere 9.316294e-03, torus 7.295058e-03 — seven to nine times the
+  deviation that motivated this repair.  Kernel-independent cross-check
+  on the sphere against the exact area π(R² − p²): facet
+  −4.594e-05…−5.430e-05 relative, kernel −9.322e-04…−1.028e-03.  **After
+  any fillet or chamfer a torus face is unavoidable**, so this is not an
+  exotic case.  The exact engine admits only planes and cylinders itself,
+  so closing it means extending both paths.
+- **KB-043 — near-tangency, pre-existing and not one-sided.**  Measured
+  ladder at r = 2.30 mm, deflection 2.5e-6, at distance d from the
+  generatrix (facet / kernel / true): d = 1e-6 → 1.1668e-06 / 1.1668e-06
+  / 1.3563e-06, the two paths agreeing with each other and sitting 14 %
+  below truth; d = 1e-7 → 2.7619e-07 / 0.0 / 4.2895e-07; d = 1e-9 →
+  1.8544e-08 / 0.0 / 4.2895e-08.  Within ~1e-7 m of a generatrix the
+  *kernel* collapses to zero while the facet path books 44–64 % of truth:
+  there the facet path is the more accurate of the two and neither is
+  trustworthy.  Widening the tangency band to the deflection would hand
+  those planes to the kernel and make them worse — the second reason
+  `_TANGENCY_ROUNDING` is a rounding guard and not a tolerance.
+- **The angular cap.**  `radians(5)·|c_n|` is now the binding constraint
+  in every fixture tested; the corrected sagitta term never bites.  Its
+  origin is undocumented and underived, so the facet/exact bit-identity
+  measured above is a *consequence of that cap dominating both paths*,
+  not a structural guarantee, and the corrected exponent is largely
+  latent.  The facet path additionally carries
+  `_FACET_REFINE_FRACTION = 0.1`, a √0.1 = 3.16× finer sagitta budget
+  than the exact path — an undecided divergence waiting for a regime in
+  which the sagitta term binds on both.
+- **A guard-on-a-guard, unreproduced.**
+  `TestConicRunSurvivesAnUnbuildableArc::
+  test_the_fixture_drives_the_arc_into_declining` was seen failing 4/4 in
+  one window and then passed 13/13, including two whole-file runs and the
+  full suite — nine clean observations.  The likeliest explanation is the
+  documented window in which whole variants of `_occ_backend.py` were
+  being copied over the working tree.  Its fixture had to be retuned when
+  the exponent was fixed (`WIRE_TILT` 3e-3 → 3e-4, `WIRE_LENGTH`
+  100e-3 → 900e-3, blend 80/95 → 750/850 mm, the old values kept visible
+  and dated) because the old constants reached the segment cap *only*
+  through the wrong exponent; it now declines legitimately through the
+  angular cap.  Unreproduced, not fixed.
+- Whether this defect also contributed to the level shift of the four
+  port-floor certificates is **not measured**.  KB-038 records single
+  precision as the leading explanation and nothing here displaces it.

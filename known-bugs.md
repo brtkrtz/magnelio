@@ -17,186 +17,284 @@ that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
 **Five entries are open as of 2026-09-01: KB-023, KB-027, KB-038,
-KB-039 and KB-040.**  Everything else is struck through and resolved.
+KB-042 and KB-043.**  Everything else is struck through and resolved.
 
-## KB-040: The 2D port mode solve is 7–78× slower than its pinned cost — Open, undiagnosed (2026-09-01)
+## KB-043: Neither section path is trustworthy within about 1e-7 m of a cylinder generatrix — Open (2026-09-01)
 
-`validation/qtem_cw_dtbc_port_floors.py` carries a cost watch that pins
-the per-point mode-solve time next to the 3D run it feeds.  A full run
-on 2026-09-01 at `4097abe` reports:
+Pre-existing, surfaced while certifying the DD-240 tangency screen, and
+**not one-sided**: close in to a generatrix the exact kernel is the
+worse of the two paths.  Measured on a cylinder of r = 2.30 mm at a
+section deflection of 2.5e-6, sectioned at a distance `d` from the
+generatrix, against the closed-form area of the sliver:
 
-    case         mode solve   measured    3D run   measured   mode-solve share
-    microstrip      433 ms    33740 ms     196 s     82.7 s     0.9 % → 89.3 %
-    layered          41 ms     1328 ms     2.7 s      4.5 s     ~3 %  → 61.3 %
-    block            31 ms      223 ms     1.9 s      3.5 s     ~3 %  → 10.2 %
+    d       facet        kernel       true
+    1e-6    1.1668e-06   1.1668e-06   1.3563e-06
+    1e-7    2.7619e-07   0.0          4.2895e-07
+    1e-9    1.8544e-08   0.0          4.2895e-08
 
-— 78× / 32× / 7× on the mode solve, and the cost split has inverted:
-what was a 1 % preamble to the 3D march is now most of the run.  The 3D
-march itself did **not** get slower; on the microstrip it got *faster*
-(196 → 82.7 s), which is what makes this worth an entry rather than a
-note about the machine.
+At `d` = 1e-6 the two paths agree with each other and sit 14 % below
+truth; from 1e-7 inward the kernel collapses to zero while the facet
+path still books 44–64 % of it — there the *facetted* answer is the more
+accurate one.  A model whose grid lands that close to a bore loses
+cross-section silently, and swapping the path does not save it.
 
-**Undiagnosed, and the measurement is contended.**  The session that
-produced these numbers ran a concurrent probe at 400–780 % CPU (load
-average 25–30 on 16 cores), so roughly a factor of two of every
-wall-clock figure above is contention.  It cannot account for 78×, and
-it cannot account for a 3D run that got faster on the same machine in
-the same run.  The floors the script prints are deterministic and
-unaffected — they carry their own drift, recorded in KB-038.
+**This is the second reason DD-240's tangency band is a rounding guard
+rather than a physical band.**  The exactly tangent plane itself is
+closed: `_screen_facets` now carries the cylinder-tangency test the
+analytic screen already had, so a tangent plane is delegated instead of
+sectioned — before that, the facet compression manufactured a full
+circle out of a degenerate trace and booked
+1.5386530746873848e-06 m² = π r_bore² where both the kernel and the
+pre-repair tree book 0.0 (a radius sweep 1.5–3.0 mm at deflection 2.5e-6
+fired 4 of 16 cases before, 0 of 16 after), and the mesher does place a
+grid plane bit-exactly on a tangent generatrix (measured |δ| =
+0.000e+00).  The band that delegates it is a *relative*
+`_TANGENCY_ROUNDING = 1e-12`, needed because one case missed at a
+residual of 4.337e-19, half an ulp on 4.4 mm.  Widening it to the
+deflection would hand the whole ladder above to the kernel, i.e. to the
+less accurate of the two answers, so the band was deliberately left at
+the rounding guard.
 
-The pinned values date from when the script's header was written and
-the port pipeline has moved repeatedly since, so nothing here isolates
-a cause.  What would settle it: one clean, unloaded, single-process
-timing of the same script at a known commit — if the factor reproduces
-there, a bisection on the mode-solve time alone, which is cheap because
-the mode solve needs no time-domain run.  Measurements: internal record
-`investigations/qtem-midpath/baseline/`
-(`qtem_cw_dtbc_port_floors.stdout`, `DRIFT.md` section 7).
+Closing it means a section operator that stays accurate through
+tangency on *both* paths; nothing measured here says how.
 
-## KB-039: `pair_ladder_choice_certificate.py` crashes before it prints a single row — Open (2026-09-01)
+## KB-042: Cone, sphere and torus faces of a facetted shape keep the KB-041 reach defect — Open (2026-09-01)
 
-Reproduced 2026-09-01 at `4097abe`, run from `magnelio/`:
+DD-240 answers the analytic faces of a facetted shape from their own
+geometry, but the compression is **cylinder-only**.  A cone, sphere or
+torus face still takes the one-step parametric Newton lift onto the
+triangulation, so for those surfaces the KB-041 mechanism is fully
+present: one free-form face anywhere on the shape moves the masses of
+cells the free-form body does not reach.
 
-```
-MAGNELIO_BACKEND=numpy CUPY_ACCELERATORS="" \
-  python validation/pair_ladder_choice_certificate.py
-```
+Measured worst per-cell deviation against the kernel section of the body
+alone, with a free-form neighbour fused 40 mm away that the section
+planes do not even cross:
 
-exits 1 after about 12 s:
+    cylinder   2.168404e-13
+    cone       8.651413e-03
+    sphere     9.316294e-03
+    torus      7.295058e-03
 
-```
-coupler mesh 30 x 32 x 103
-port     termination    pair spread   worst edge   z_line [Ω]
-Traceback (most recent call last):
-  File ".../validation/pair_ladder_choice_certificate.py", line 223, in <module>
-    main()
-  File ".../validation/pair_ladder_choice_certificate.py", line 196, in main
-    rows = measure(mesh)
-  File ".../validation/pair_ladder_choice_certificate.py", line 181, in measure
-    "spread": float(op._dtbc_pair_spread[0]),
-TypeError: float() argument must be a string or a real number, not 'NoneType'
-```
+— seven to nine times the deviation that motivated the KB-041 repair,
+with the repaired cylinder at the noise floor beside them.
 
-The header row is printed and no data row is, so the certificate
-produces **no table at all** and never reaches its own
-`assert r["kinds"] == ["dtbc"]`.
+**Accuracy is not the property at issue, exactly as in KB-041.**  A
+kernel-independent cross-check on the sphere, whose section area is
+π(R² − p²) in closed form, puts the facetted answer at
+−4.594e-05…−5.430e-05 relative and the kernel at −9.322e-04…−1.028e-03:
+the lifted answer is the *closer* of the two.  What it is not is
+translation-invariant, and invariance is what the exact port termination
+consumes.
 
-**What is measured.**  Freshly built operators for both coupler ports,
-same fixture, warnings captured instead of suppressed:
+The exposure is not exotic: **after any fillet or chamfer a torus face
+is unavoidable**, so any rounded body sharing a shape with a free-form
+one is in scope.  Closing it means extending *both* paths, not just the
+facet one — the exact engine admits only planes and cylinders itself.
 
-    port    termination_kinds   chain_spreads   slab defect   z_line
-    port1   ['mur']             [None]           8.4165e-02   96.1625 Ω
-    port2   ['mur']             [None]           8.4165e-02   96.1550 Ω
+## KB-041: ~~A free-form body perturbs the conformal masses of cells that contain none of it~~ — Resolved (DD-240, 2026-09-01)
 
-against the docstring's pinned 7.1e-15 (port1) and 6.3e-14 (port2),
-both on the exact DTBC.
+**The DD-199 free-form gate was per shape, not per face.**  One B-spline
+face anywhere on a shape set a single shape-wide flag, and the section
+engine then answered *every* face of that shape — the analytic cylinders
+included — from the lifted triangulation, returning before the exact
+tables were ever assembled.  It reached unrelated bodies because the CSG
+engine builds its tools engine on the *fused* tools: in the coupler
+fixture `vac -= electrodes` is a Difference whose operand routing is
+declined, so the kernel-fused solid is digested and its boundary carries
+the loft's B-spline imprint — the air body, which owns the port
+cross-section and has no free-form face of its own, was measured
+facetted.
 
-**Which gate vetoes — stage 2, not the stage 1 the certificate is
-about.**  `_port_chain_slab_defect` (`ports/_modal/factory.py:1198`)
-reads 8.42e-2 against `_DTBC_SLAB_DEFECT_TOL = 1e-8`
-(`ports/_modal/operator.py:270`); the factory warns for each port
-(`factory.py:1847`, the DD-067 stage-2 warning, verbatim "the feed-chain
-mass slabs deviate by 8.42e-02 … all channels fall back to modal
-Mur-1st"), and `PortOperatorModal._chain_params` then returns
-`(None, None, None)` at `operator.py:821–822` — *before* the pair
-spread is computed a few lines below.  A `None` spread after a stage-2
-veto is by design, and `_report_withheld_dtbc` documents it as a
-non-event; the certificate's unguarded `float()` is what turns it into
-a crash.
+**The damage was lost invariance, not lost accuracy.**  A triangulated
+cylinder is a prism, so where a section plane falls between its node
+rows decides the chord: on the coupler bore, `M_mu` Hx at
+`(ix=2, iz=81)` reads 1.550977e-09 in all four y-layers on the exact
+path and 8.911369e-10 / 8.920923e-10 / 8.920996e-10 / 8.920997e-10 on
+the facetted one — 42.5 % low *and* drifting along y.
+`_port_chain_slab_defect` measures precisely that y-to-y drift, read
+8.4165e-02 against its 1e-8 gate and demoted both ports to Mur.  The
+exact DTBC consumes **uniformity**, which is why distance from the loft
+was irrelevant.  Cleanest proof: `MAGNELIO_FACET_SECTIONS=0` with the
+geometry byte-identical made the certificate pass — both ports on the
+exact DTBC, pair spreads 5.0475e-15 / 1.3073e-13, slab defect
+2.2192e-10.
 
-Two things are wrong and only the first belongs to the script: the
-`float()` cast assumes stage 1 decided, and the **fixture no longer
-exercises what it was built for** — the mirrored stub and its original
-fail stage 2 identically, so the controlled pair the DD-165 comparison
-rests on is gone.  Whether the fixture drifted or the slab-defect
-measurement did is not diagnosed.  The two stubs do still match each
-other (z_line to 7.8e-5 relative), though the certificate's own gate on
-that agreement is 1e-9, so it would have to be re-pinned too.  The
-docstring's "about two minutes, most of it meshing" is stale as well:
-the mesh builds in ~12 s.
+**Two readings recorded above were wrong.**  The control that added the
+loft as its own body instead of fusing it was read as ruling the Boolean
+out; it is bit-identical only *because* the loft still reaches the air
+body through the Difference, and the coax-stubs-only control is clean
+because that model carries no free-form face at all.  And the question
+left open — which of the two answers is wrong — has an answer: the
+facetted answer was not the less accurate one, it was the one that is
+not translation-invariant, and invariance is the property the gate
+consumes.
 
-**No test covers it.**  Nothing under `tests/` references the script,
-and both suites are green on the same tree (2799 unit, 450 integration
-passed), so the breakage is unguarded — the same gap KB-038 records for
-the certificates that still pass while their pinned numbers no longer
-reproduce.  Baseline capture: internal record
-`investigations/qtem-midpath/baseline/`
+Still not measured: whether the defect also contributed to the level
+shift of the four port-floor certificates.  KB-038 records single
+precision as the leading explanation and nothing in the repair displaces
+it.
+
+Fix and full record: DD-240 — analytic faces of a facetted shape are
+answered from their own geometry, and a shape with no free-form face is
+bit-identical.  What the repair does not reach has its own entries:
+KB-042 for cone, sphere and torus faces, KB-043 for the near-tangency
+band.
+
+## KB-040: ~~The 2D port mode solve is 7–78× slower than its pinned cost~~ — Resolved (DD-239, 2026-09-01)
+
+The factor was contention, not code.  Re-measured 2026-09-01 with
+thread-pinned CPU time — the only contention-robust instrument
+available, a genuinely idle box being unobtainable while the session's
+own parallel agents held the load average at 58–88 on 16 cores — for
+the whole `build_cw_true_mode_port` call:
+
+    case          pinned    CPU measured    factor
+    layered        41 ms       43.2 ms      1.05×
+    block          31 ms       44.1 ms      1.42×
+    microstrip    433 ms     1109.4 ms      2.56×
+
+The CPU minima reproduce to within 2 % across repetitions, and the
+measured column is a *strict superset* of the pinned window: a cProfile
+run puts `build_curl_matrix` — built over the whole mesh, and called
+before the `t_solve0` timer opens — at 65 % of the microstrip call, so
+the pinned quantity itself is about 0.4 s against a 433 ms pin.  What
+is left is a mode solve within a factor of two or three of its pin, on
+a loaded machine, measured generously.
+
+The wall-clock instrument is what failed.  The same `layered` call
+measured 28.6 ms at load 0.15 and 1801 ms at load 68 — a 63× spread at
+constant CPU work, which is more than the whole factor this entry was
+opened for.  **Any future cost watch on this path must record CPU time
+or run alone**; a wall-clock pin on a shared box measures the box.
+
+One pin is stale in the other direction, which the original entry read
+as evidence that the machine was not the cause: the microstrip 3D run,
+pinned at 196 s/point, measured 81.0 s/point even on the loaded box, so
+that pin overstates by at least 2.4×.
+
+No user-facing cost problem was ever behind this.  The shipped default
+port build, `build_modal_port`, costs 12.8 / 9.7 / 691 ms of CPU on the
+same three cross-sections, against 3D runs of seconds to minutes;
+`build_cw_true_mode_port` is a certificate instrument, not public API.
+
+## KB-039: ~~The pair-ladder fixture's ports fall back to Mur since DD-199~~ — Resolved (DD-240, 2026-09-01)
+
+Both readings this entry recorded held: the first bad commit is DD-199,
+and the trigger inside the fixture is the tangent-blend loft.  The cause
+was the `src/`-side defect split off as KB-041 — a per-shape free-form
+gate that sent the air body's analytic bore through the triangulation
+and cost the port cross-section its uniformity.  With that repaired
+(DD-240), `validation/pair_ladder_choice_certificate.py` certifies again
+**on the fixture exactly as built**: both ports terminate on the exact
+DTBC, pair spreads 5.2164e-15 / 1.3072e-13, feed-chain slab defect
+1.4795e-10 against `_DTBC_SLAB_DEFECT_TOL = 1e-8`, z_line 96.1625 Ω.
+
+That settles the fixture question the entry was held open for.  The loft
+was deliberately never amputated, since a fixture without the
+electrode's galvanic feed would certify a model the DD-165 comparison
+was never about — and no amputation is needed: the model that failed is
+the model that now passes.  The script repairs recorded here stand
+(stage 1 recomputed from the operators' own port masses, the stage-2
+veto and its gate printed, the runtime corrected to the measured
+~18–20 s, the `GATE` re-pointed to the shipped 2e-6).
+
+*Not* closed, and not specific to this fixture: nothing under `tests/`
+references the script, which is why the breakage went unnoticed from
+DD-199 until the bisection.  That is the standing condition of every
+certificate in `validation/` — anchored by the DD that names it, not by
+the test suite — and no test was added here.  Baseline capture:
+internal record `investigations/qtem-midpath/baseline/`
 (`pair_ladder_choice_certificate.stdout` / `.stderr`, `DRIFT.md`
 section 9).
 
-## KB-038: The band-DTBC port floor degrades with the length of the run — Open (2026-08-31)
+## KB-038: The band-DTBC port floor degrades with the length of the run — Open, diagnosed (2026-08-31)
 
-`validation/qtem_band_dtbc_port_floors.py` records, for the `layered`
-fundamental, floors of −159.6…−231.3 dB from a 12288-step pulsed run
-with record end/peak 1e-11…1e-13.  The same script on the same mesh
-today gives **−114.1…−129.9 dB at end/peak 1.6e-06**, and the microstrip
-case −146.6…−168.1 dB at 7.4e-09 against a recorded −171.1…−211.0 dB.
-So the certificate no longer reproduces its own header on either
-geometry.
+Both halves of this entry — the level shift against the pinned floors
+and the growth of the floor with the length of the run — are the
+**single-precision production default**.  DD-094 made `float32` the
+production time-loop precision; every pinned floor in this entry and in
+the certificates it is measured against predates it and was taken in
+double.  The defect is real and it is on the shipped default; what it
+is not is an absorber regression.
 
-**What is measured.**  Lengthening the record makes it *worse*, which
-rules out the finite-record limitation the header's own methodology
-note describes (`layered`, everything else fixed):
+**What was measured.**  `validation/qtem_band_dtbc_port_floors.py`
+records, for the `layered` fundamental, floors of −159.6…−231.3 dB from
+a 12288-step pulsed run with record end/peak 1e-11…1e-13.  The same
+script on the same mesh gives **−114.1…−129.9 dB at end/peak 1.6e-06**,
+and the microstrip case −146.6…−168.1 dB against a recorded
+−171.1…−211.0 dB.  Lengthening the record makes it *worse*, which rules
+out the finite-record limitation the header's own methodology note
+describes (`layered`, everything else fixed):
 
     steps    n_kernel    record end/peak    |S11| worst    median
     12288      16384         1.59e-06         −114.1       −126.6
     24576      32768         3.96e-06         −106.4       −118.2
     49152      65536         8.67e-06          −99.6       −111.5
 
-**At 49152 steps the case fails its own −100 dB acceptance criterion.**
-The degradation is ~7.5 dB per doubling of the run, i.e. the error at
-the end of the record grows roughly as N^1.25 while the excitation has
-long since passed.
+At 49152 steps the case fails its own −100 dB acceptance criterion, and
+the degradation is ~7.5 dB per doubling of the run.  Neither the kernel
+length nor the DC anchor is the cause: holding `n_kernel = 65536` while
+varying only the record reproduces the same numbers to 0.1 dB (12288
+steps −114.2 dB against −114.1; 24576 −106.4 against −106.4), so this
+is not DD-234's kernel sizing, and building the microstrip ports with
+`dc_anchor=False` gives −150.0 dB at end/peak 1.87e-08 against
+−146.6 dB at 7.4e-09 with the anchor — the same class, the anchor
+slightly better.
 
-**The kernel length is not the cause.**  Holding `n_kernel = 65536`
-while varying only the record reproduces the same numbers to 0.1 dB
-(12288 steps: −114.2 dB against −114.1; 24576: −106.4 against −106.4),
-so this is not DD-234's kernel sizing and not the late-tap content of a
-longer kernel.  It is the length of the convolution itself.
+**The level shift: re-running the same fixtures at the same HEAD with
+`MAGNELIO_PRECISION=double` recovers the pinned class exactly.**
 
-**The DC anchor is not the cause.**  Building the microstrip ports with
-`dc_anchor=False` gives −150.0 dB at end/peak 1.87e-08 against −146.6 dB
-at 7.4e-09 with the anchor — the same class, the anchor slightly
-better.
+    fixture                                  pin      single    double
+    kg WR-90 TE10 at 1.01 f_c              −150.4    −124.5    −150.4
+    dtbc_tem parallel plate, max           −138.7    −111.9    −145.6
+    dtbc_tem parallel plate, median        −164.0    −133.9    −167.3
+    dtbc_tem rect coax, max                −159.3    −140.9    −164.7
+    dtbc_tem rect coax, median             −159.4    −162.5    −164.8
+    qtem layered fundamental, 1.0 GHz      −244.6    −155.0    −248.5
+    qtem block, 4.2 GHz                    −250.2    −173.3    −231.7
+    qtem microstrip, 1.0 GHz               −250.8    −164.1    −227.5
 
-**Not diagnosed.**  Two distinct things are in play and only the second
-is characterised above: a level shift against the recorded values at
-equal run length (≈45 dB on `layered`), and the growth with run length.
-The recorded numbers predate this repository's history (they are
-attributed to "session 90" in the header and the file entered the tree
-with the initial public commit), and the pipeline has changed under
-them repeatedly since — so a bisection needs the predecessor history.
+— the WR-90 leg reproduces the pin to the printed digit, with a fit
+residual of 2.4e-09 in double against 1.1e-07 in single.  The two
+conformal round-WG legs did *not* drift (pinned −124…−132, measured
+−123.8…−133.5): they are cross-section-limited, not wordlength-limited,
+which is the control that keeps the reading honest.
 
-**The level shift is not confined to the band ports** (added
-2026-09-01).  Measured at `4097abe` against each script's own pinned
-docstring numbers, same interpreter, no flags:
+**The length law, same code path, single against double.**  In single —
+the production default — the floor loses 4.75 dB (worst) / 6.35 dB
+(median) per doubling from 4064 to 8128 steps and 5.71 / 6.45 dB from
+8128 to 16256, the same order as the ~7.5 dB per doubling recorded
+above at full size.  In double the floor is **flat**: worst −149.12 →
+−149.13 dB, median −185.09 → −185.81 dB, i.e. it improves.
 
-    validation/qtem_cw_dtbc_port_floors.py
-        43–90 dB worse on every leg — microstrip pinned −250.8…−206.5,
-        measured −164.1…−151.3; layered +49.7…+89.6; block +65.8…+76.9
-    validation/kg_dtbc_wg_port_floors.py
-        WR-90 TE10 at 1.01 f_c pinned −150.4, measured −124.5 (+25.9);
-        the conformal round-WG legs still reproduce within 1.5–2.8 dB
-    validation/dtbc_tem_port_floors.py
-        up to +30.1 dB — parallel plate uniform pinned −138.7/−164.0,
-        measured −111.9/−133.9; the conformal round coax is *better*
-    validation/wr90_te10_dd047_reeval.py
-        its de-stagger rows are stale by 46–56 dB, and its ports
-        terminate on the exact DTBC today (pair spread 2.9e-16), so it
-        no longer measures a Mur floor at all despite its docstring
+**Why CI could never see it.**  `tests/conftest.py` pins the whole
+suite to `MAGNELIO_PRECISION=double`, and the band test ran 4064 steps
+against a −120 dB gate.  The defect exists only at the production
+default, which no test exercised.  It does now:
+`tests/integration/test_qtem_band_dtbc_sparams.py::TestBandDTBCLengthLaw`
+runs in explicit single and asserts on the **degradation rate** rather
+than an absolute floor — median below 8.0 dB per doubling (measured
+6.35) and worst below 7.0 (measured 4.75), both one-sided, so a fix
+cannot fail the test.
 
-All four still pass their own acceptance lines — the floors sit far
-above the −100 dB gates — which is why the shift went unseen.  These
-are pulsed and CW *non-band* paths, so whatever moved is not specific
-to the band pipeline, and the ≈45 dB recorded above for `layered` is
-the middle of a range, not the size of the effect.
+**What stays open** is one question: whether the `float32` accumulation
+sits in the DTBC convolution or in the field march.  The cheap probe
+that would separate them is to run the pair with the solver in single
+but the port operators' convolution state forced to double.  Until that
+is answered the wordlength requirement of the band-DTBC path is not
+known, and that is a design decision — whether the convolution state
+must be carried in double regardless of the solver's precision — not a
+bug hunt.
 
-Consequences while it is open: the band floors quoted in the fixture
-header, in `design-decisions.md` (DD-064) and in the user
-documentation are not reproducible, a long band run has a floor that
-depends on its own length, and the pinned numbers in the four
-certificates above are not a baseline anything can be bisected
-against until one of them is re-derived.  Measurements: internal
+Consequences while it is open: a long band run at the default precision
+has a floor that depends on its own length, at roughly five to seven
+decibels per doubling of the time steps, and a floor read from any of
+these certificates means nothing without the wordlength it was taken
+at.  The four certificates were re-pinned at HEAD `73f7c17` with the
+previous value kept visible, they now print the resolved time-loop
+precision next to their numbers, and the band figure in the user
+documentation was re-measured on this tree.  Measurements: internal
 record `investigations/port-model-default/` (`probe_record_length.py`,
 `probe_prod_floor_cause.py`, `fixture_layered.log`,
 `fixture_microstrip.log`); the wider certificate capture is internal

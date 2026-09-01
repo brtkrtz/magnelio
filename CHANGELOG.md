@@ -113,6 +113,23 @@ major version is 0, minor releases may change the public API.
 
 ### Changed
 
+- Sections of a tilted cylinder are refined to the tolerance actually
+  asked for.  The refinement step of a circular arc carried the wrong
+  power of the tilt, and it erred in both directions at once: it spent
+  points ever more lavishly as the axis approached a grid plane — up to
+  4x slower meshing on a nearly axis-aligned round body, 0.029 s
+  against 0.116 s on a 0.2 mm cylinder tilted 0.057° — while in the one
+  regime where that step was the binding constraint it *violated* the
+  deflection that was asked for, overshooting it by a factor of 152.6.
+  The corrected step lands at 0.0003 of the requested budget, and the
+  section area of a tilted wire now matches the closed form to 1.1·10⁻⁸
+  relative instead of 7.5·10⁻³; a 0.4 mm wire at 0.057° is sectioned
+  from 11996 points instead of 74204, in 160 ms instead of 9.5 s.
+  Booked areas can move by parts in 10⁹ as a result — one validation
+  section moved by 7.2·10⁻⁹ relative — and refining far past both
+  settings shows the new value to be the closer one to the converged
+  answer.
+
 - Postprocessing a broadband band-pipeline run no longer gets slower
   with the mesh.  Reading a port's response out of the record used to
   work on the whole 3D grid at every frequency point, so a finer mesh
@@ -128,10 +145,28 @@ major version is 0, minor releases may change the public API.
   channel with the cross-section measurement behind it, states the
   reflection floor given up and what the run keeps in exchange —
   runtime, time-domain power waves, resumable checkpoints — and prices
-  the reflection-free alternative for the model at hand.  That last
-  part is the point: the old text recommended `port_model="band"`
-  unconditionally, without saying what it costs on the model in front
-  of it.  `port_model` keeps defaulting to `"modal"`.
+  the reflection-free alternative for the model at hand, at the cost
+  it was measured to carry: about 13x the runtime of the default run
+  for a floor around −84 dB, and about 35x at the subspace rank the
+  band pipeline picks by default.  That last part is the
+  point: the old text recommended `port_model="band"` unconditionally,
+  without saying what it costs on the model in front of it.
+  `port_model` keeps defaulting to `"modal"`.
+
+- The methods guide now puts measured numbers on the choice of port
+  model.  A quasi-TEM line — a microstrip, a coplanar or a layered
+  feed — cannot earn the exact transparent boundary and runs on the
+  first-order absorber on the default `port_model="modal"`; the same
+  line on `port_model="auto"` goes to the band pipeline, whose floor
+  measures −147 to −168 dB on a shielded microstrip.  The default
+  therefore gives up 60 to 110 dB of reflection floor, and that is the
+  trade the guide now states, in place of a floor better than any run
+  has produced.  It also names what comes with the exact boundary: it
+  carries the whole recorded history, so its floor is not a constant
+  of the model but drifts upward with the length of the run, by
+  roughly five to seven decibels per doubling of the time steps — a
+  long run is held to a weaker floor than a short one on the same
+  mesh.
 
 - Broadband band-subspace ports (`port_model="band"` or `"auto"`) now
   run on a frequency axis that reaches toward DC.  They used to
@@ -168,7 +203,13 @@ major version is 0, minor releases may change the public API.
   unaffected: they miss the threshold by five orders of magnitude,
   as they should, and belong on `port_model="auto"`.  Each channel now
   publishes what its own cross-section costs it, in dB:
-  `analysis.solve_ports()[name].modes[i].chain_floor_db`.
+  `analysis.solve_ports()[name].modes[i].chain_floor_db`.  The number
+  is a property of the exact termination, so it is `None` on a channel
+  that fell back to the first-order absorber — read there it looked
+  like a reflection floor around −13 to −10 dB, which is neither the
+  floor of that channel nor a bound on anything.  What the fallback
+  channel does publish is its cross-section measurement,
+  `chain_spread`.
 - A port channel that cannot be given the exact transparent boundary
   condition now says so.  The exact termination is earned, not chosen:
   the feed section behind a port has to be a uniform discrete chain,
@@ -217,6 +258,12 @@ major version is 0, minor releases may change the public API.
 - The default total-field box of a plane wave now sits two cells
   inside the *physical* domain, past the absorber cells the mesher
   appends.
+- A plane wave driven by a plain Gaussian now uses the same pulse as
+  every other drive.  The old source carried its own Gaussian, one
+  factor of √2 wider in time than the shared one at the same `f_max`;
+  a run migrated name-for-name therefore illuminates a band √2 wider
+  than it did.  To keep the old pulse instead, build it explicitly
+  with `WaveformFunction` — the upgrade guide gives the closed form.
 - `AnalysisScatteringTD(excitation=ExcitationSpec(...))` is now
   `AnalysisScatteringTD(waveform=...)` taking any `Waveform`; the
   per-mode default is unchanged (Gaussian for TEM and lumped ports,
@@ -232,8 +279,7 @@ major version is 0, minor releases may change the public API.
   `MonitorFluxTime(normal="z", position=5e-3)`, and
   `MonitorWallLoss(reference_plane=("z", 1e-3))` is now
   `MonitorWallLoss(normal="z", position=1e-3)` — the one plane
-  vocabulary of the library.  Project recipes written with the old
-  spellings are still read.
+  vocabulary of the library.
 - The `PortSpec*` classes lost their `excitation` field; a soft-source
   drive at the component level is bound on the built operator with
   `set_excitation(mode, waveform)`, as before.
@@ -242,9 +288,50 @@ major version is 0, minor releases may change the public API.
 
 - `magnelio.ports.ExcitationSpec`, and the module-level waveform
   functions `gaussian`, `modulated_gaussian` and `waveform_for_mode`
-  from `magnelio.signals` (the waveform classes replace them).
+  from `magnelio.signals` (the waveform classes replace them).  Note
+  that these three are gone from `magnelio.signals` only: code that
+  imported them from `magnelio.signals.waveforms` keeps working and
+  will not announce itself, so search for that spelling too.
 
 ### Fixed
+
+- A model containing a free-form body — a loft, a blend, a swept or
+  imported surface — no longer disturbs the material booked in cells
+  that contain none of it.  A single free-form face put the *whole*
+  solid it belongs to on the approximate sectioning path, so the
+  analytic cylinders and planes of that same body were sectioned
+  against their own triangulation instead of their geometry; through a
+  Boolean the effect reached bodies carrying no free-form face at all,
+  the surrounding air among them.  A triangulated cylinder is a prism,
+  so what a cross-section booked then depended on where the grid plane
+  happened to fall between two facet rows: on a coupler model the bore
+  permeability came out 42.5 % low and, worse, *drifted* from one grid
+  layer to the next along an axis on which it must be constant.  A
+  waveguide port reads exactly that drift to decide whether its feed
+  section is a uniform chain, so both ports of that model silently gave
+  up the exact transparent boundary and fell back to the first-order
+  absorber around −30 dB — with the geometry unchanged, at distances
+  the free-form body does not reach, and nothing on screen to say so.
+  Analytic faces of such a body are now answered from their own
+  geometry: a plane parallel to a cylinder axis lands on the exact
+  generatrix, so a family of parallel planes books identical areas, and
+  the model's ports terminate exactly again.  A model with no free-form
+  face is unaffected, bit for bit.  **The repair covers planar and
+  cylindrical faces only.**  Cone, sphere and torus faces of a solid
+  that *also* carries a free-form face keep the old behaviour, with
+  deviations seven to nine times larger than the one measured on the
+  cylinder — so a filleted or chamfered body (a fillet is a torus) in
+  the same solid as a loft still exposes it.
+- A section plane lying exactly tangent to a cylinder no longer books
+  material where the plane only touches the solid.  The grid does place
+  a plane bit-exactly on such a generatrix — a round body resting on
+  one of its own grid lines is the ordinary case — and the degenerate
+  trace produced there could be closed into a full circle, booking a
+  whole bore cross-section where the answer is nothing.  Such a plane
+  is now recognised as tangent and sectioned analytically: over bore
+  radii from 1.5 to 3 mm, 4 of 16 cases booked the phantom area before
+  and none after.  No mesh built through the library was measured to
+  reach the defect; it is closed regardless.
 
 - A broadband band-pipeline run now reports a port that carries more
   propagating modes than it has recording channels.  The S-parameters
@@ -270,7 +357,7 @@ major version is 0, minor releases may change the public API.
   several CPU cores.  Its cost is dominated by a loop over independent
   contour points, which had always run on one core; it is now split
   across processes when the loop is large enough to pay for them
-  (measured 5.2x at production kernel length, and left alone below the
+  (measured 6.00x on a production run, and left alone below the
   break-even, where spawning would cost more than it saves).  The
   kernel it produces is bit-identical either way, so no result moves.
 - A broadband band-pipeline run no longer builds a ghost kernel four
@@ -281,6 +368,15 @@ major version is 0, minor releases may change the public API.
   faster with the reflection floor unchanged to within 0.1 dB; a
   production-length run was already past the old minimum and is
   unaffected.
+- `AnalysisScatteringTD(project=...)` now works with the broadband
+  band port model, which used to be refused outright — so the project
+  store and `port_model="auto"` (or `"band"`) can finally be used
+  together.  A stored band run keeps the same contract as any other:
+  the S-matrix is not written but re-derived when you read it, on the
+  frequency axis you ask for, including while the run is still going.
+  One limit is stated rather than papered over: `a()`/`b()` are
+  unavailable on a stored band run for the same reason they are
+  unavailable in memory.
 - Band-pipeline settings (`band_options`) are now stored with a project,
   so re-opening or continuing a run reproduces the run that was
   recorded.  Without them a rebuilt run silently re-derived its own
@@ -348,17 +444,6 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
-- `AnalysisScatteringTD(project=...)` now works with the broadband
-  band port model, which used to be refused outright — so the project
-  store and `port_model="auto"` (or `"band"`) can finally be used
-  together.  A stored band run keeps the same contract as any other:
-  the S-matrix is not written but re-derived when you read it, on the
-  frequency axis you ask for, including while the run is still going.
-  Two limits are stated rather than papered over — a band run cannot
-  be resumed (its absorbing boundary carries history the checkpoint
-  cannot hold, so `resume()` refuses it instead of continuing from a
-  zeroed boundary), and `a()`/`b()` are unavailable on a stored band
-  run for the same reason they are unavailable in memory.
 - The mesh build no longer evaluates the kernel Boolean of a
   `Difference` whose tools lie inside a box-shaped base — the air
   body of every housing.  Its bounding box, grid planes, singular
