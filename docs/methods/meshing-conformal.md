@@ -30,21 +30,21 @@ depends on its neighbours.  A solid that carries even a single
 free-form face is sectioned on its triangulation as a whole, and that
 reaches further than it looks: a Boolean fuses the operands, so a
 free-form body subtracted from an enclosure puts the enclosure on the
-same path, including faces nowhere near it.  Planar and cylindrical
-faces are exempt — they are answered from their own geometry whatever
-else the solid carries, so a family of parallel planes cutting a bore
-books identical areas and a waveguide port on such a cross-section
-keeps its exact transparent boundary.  Cones, spheres and tori are
-not: in a solid that also carries a free-form face they are sectioned
-from the triangulation, and because a triangulated curved face is a
-prism, the area a plane books there depends on where it falls between
-the facet rows rather than on the surface alone.  The deviation is
-small in absolute terms but it does not repeat from one grid plane to
-the next, which matters wherever a result reads the *uniformity* of a
-cross-section rather than its accuracy — a port termination is the
-case to watch.  A fillet or a chamfer produces a torus face, so a
-rounded model fused with a lofted or imported body is the ordinary way
-to meet this.  Section contours are wound by nesting
+same path, including faces nowhere near it.  Analytic faces are exempt
+from the triangulation's chords whatever else the solid carries: planar
+faces are exact as facets; cylinders are projected onto their own
+quadric in closed form and their conic traces laid down as exact
+conics, so a family of parallel planes cutting a bore books identical
+areas and a waveguide port on such a cross-section keeps its exact
+transparent boundary; spheres, cones and tori are projected onto their
+implicit surface, so every section vertex lies on the surface to
+rounding, the poles of a sphere included.  What the path switch still
+changes is the tessellation class: the in-house paths refine section
+chords to a tenth of the deflection while the kernel's Boolean section
+tessellates at the deflection, so a curved face that moves onto the
+facet path books slightly more of its true area than before — of the
+order of the deflection per unit boundary length, and toward the
+converged value.  Section contours are wound by nesting
 parity (holes against their outer boundary) before the area kernels
 sum them, whatever path produced them.  The kernel's section runs over
 the faces whose extent reaches the plane rather than over the whole

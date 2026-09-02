@@ -7,6 +7,20 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Fixed
+
+- Sphere, cone and torus faces of a body that shares its solid with a
+  free-form face are sectioned by a projection onto their own surface
+  instead of a one-step lift from the triangulation's face parameters.
+  The lift had no parameters to work with at a sphere's pole and left
+  the section point on the chord there, a full section deflection off
+  the surface; every section vertex now lies on the surface to
+  rounding, and a section of such a face costs about 30 % less.
+  Cylinders were already answered this way, and a body without a
+  free-form face is unchanged.
+
 ## [0.5.0] - 2026-09-02
 
 Ten changes in this release break 0.4.x scripts and saved projects; the

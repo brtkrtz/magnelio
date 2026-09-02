@@ -16,8 +16,42 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Five entries are open as of 2026-09-01: KB-023, KB-027, KB-038,
-KB-042 and KB-043.**  Everything else is struck through and resolved.
+**Five entries are open as of 2026-09-02: KB-023, KB-027, KB-038,
+KB-043 and KB-044.**  Everything else is struck through and resolved.
+
+## KB-044: The in-house section paths book a tenth of the deflection, the kernel path the whole of it — Open (2026-09-02)
+
+Found while decomposing KB-042.  The facet path refines every section
+chord to a sagitta of a tenth of the deflection (DD-199); the exact
+engine tessellates its cylinder arcs at the kernel's rule, the full
+deflection (DD-217 pins it to the kernel to rounding), and so does every
+plane delegated to the kernel Boolean.  A body that changes path —
+because a free-form face joins its solid, or leaves it — therefore
+moves the masses of every cell on a curved face by the kernel's sagitta
+deficit, (2/3)·δ per unit boundary length, about 7e-3 of a cell at the
+production deflection of a hundredth of a cell.  Worst per-cell
+deviation, planes across the axis, converged reference at δ/1000:
+
+    body        kernel vs facet   kernel vs converged   facet vs converged
+    cylinder       6.339e-03           7.023e-03             7.805e-04
+    cone           8.831e-03           9.280e-03             5.463e-04
+    sphere         7.485e-03           7.775e-03             6.336e-04
+    torus          8.742e-03           8.983e-03             6.043e-04
+
+The move is toward truth and both classes honour the deflection
+contract; what is lost is that the same body books the same masses on
+either path.  Closing it is a product decision on the section sagitta
+budget, and it has to be taken for all three paths at once: the exact
+engine alone at δ/10 is bit-identical to the facet path (2.1e-16 of a
+cell) but fails the two DD-217 gates that pin it to the kernel
+(`test_post_row_matches_the_kernel_to_rounding`,
+`test_partial_cylinder_face_with_a_seam`, +1.0e-3 relative) — it would
+open the same discontinuity between engine-answered and kernel-delegated
+planes of one shape.  The kernel path at δ/10 costs √10 more points per
+delegated section, measured +11…12 % mesh-build CPU on a fillet-heavy
+kernel-path model (5.44–5.87 s → 6.07–6.61 s, self + children), and
+re-pins every artefact with a curved face.  Internal record:
+`investigations/kb042-analytic-facets/MEASUREMENTS.md`.
 
 ## KB-043: Neither section path is trustworthy within about 1e-7 m of a cylinder generatrix — Open (2026-09-01)
 
@@ -58,39 +92,24 @@ the rounding guard.
 Closing it means a section operator that stays accurate through
 tangency on *both* paths; nothing measured here says how.
 
-## KB-042: Cone, sphere and torus faces of a facetted shape keep the KB-041 reach defect — Open (2026-09-01)
+## KB-042: ~~Cone, sphere and torus faces of a facetted shape keep the KB-041 reach defect~~ — Resolved (DD-242, 2026-09-02)
 
-DD-240 answers the analytic faces of a facetted shape from their own
-geometry, but the compression is **cylinder-only**.  A cone, sphere or
-torus face still takes the one-step parametric Newton lift onto the
-triangulation, so for those surfaces the KB-041 mechanism is fully
-present: one free-form face anywhere on the shape moves the masses of
-cells the free-form body does not reach.
-
-Measured worst per-cell deviation against the kernel section of the body
-alone, with a free-form neighbour fused 40 mm away that the section
-planes do not even cross:
-
-    cylinder   2.168404e-13
-    cone       8.651413e-03
-    sphere     9.316294e-03
-    torus      7.295058e-03
-
-— seven to nine times the deviation that motivated the KB-041 repair,
-with the repaired cylinder at the noise floor beside them.
-
-**Accuracy is not the property at issue, exactly as in KB-041.**  A
-kernel-independent cross-check on the sphere, whose section area is
-π(R² − p²) in closed form, puts the facetted answer at
-−4.594e-05…−5.430e-05 relative and the kernel at −9.322e-04…−1.028e-03:
-the lifted answer is the *closer* of the two.  What it is not is
-translation-invariant, and invariance is what the exact port termination
-consumes.
-
-The exposure is not exotic: **after any fillet or chamfer a torus face
-is unavoidable**, so any rounded body sharing a shape with a free-form
-one is in scope.  Closing it means extending *both* paths, not just the
-facet one — the exact engine admits only planes and cylinders itself.
+The premise did not survive measurement.  With the free-form neighbour
+moved from 40 mm to 45 mm the facet answer on a sphere, cone or torus
+changes by exactly 0.0 on every plane — there is no reach, and none of
+the three faces has a translation invariance for a triangulated prism
+to lose.  The 7…9e-3 per cell recorded here is the kernel's own
+tessellation of the body *alone* at the deflection (kernel against a
+converged reference 6.5e-3…1.0e-2 of a cell, facet path 5…8e-4), and
+the cylinder measured beside it at 2e-13 only because its planes ran
+along the axis; across the axis it reads the same 6.3e-3.  What was
+real is one unprojected point: the parametric lift needs face
+parameters, which are degenerate at a sphere's pole, and the crossing
+there stayed on the chord a full deflection off the surface (2.4e-6 m;
+2.24e-3 of a cell against 5…8e-4 elsewhere).  DD-242 replaces the lift
+on these faces by a projection onto the implicit surface: residual
+2e-18 m, the pole cell 6.3e-4, a section 30 % cheaper.  The
+tessellation-class difference between the paths is KB-044.
 
 ## KB-041: ~~A free-form body perturbs the conformal masses of cells that contain none of it~~ — Resolved (DD-240, 2026-09-01)
 
