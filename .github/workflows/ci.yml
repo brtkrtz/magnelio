@@ -19,6 +19,11 @@ jobs:
       - run: pip install ruff==0.15.14
       - run: ruff check --output-format=github .
       - run: ruff format --check .
+      # Content gate: vendor names, unmarked private-workspace paths,
+      # home paths, addresses (validation/tools/check_public_hygiene.py;
+      # the workspace pre-push hook runs the same audit over every
+      # commit of a push).  Standard library only.
+      - run: python validation/tools/check_public_hygiene.py
 
   test:
     runs-on: ubuntu-latest
