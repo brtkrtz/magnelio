@@ -1066,11 +1066,12 @@ class AnalysisTD(_AnalysisBase):
         A channel whose feed cross-section is not a uniform discrete
         chain cannot carry the exact transparent boundary and is
         terminated by modal Mur-1st instead.  That is a deliberate
-        trade, not a defect, so the notice reads as a balance sheet:
-        what the run gives up, what it keeps in exchange, and where
-        the other side of the trade lives.  Subclasses that own the
-        alternative append its price (see
-        ``AnalysisScatteringTD``).
+        trade, not a defect, so the notice reads as a balance sheet —
+        one line of trade, one line of alternative, the channels listed
+        above them.  It prints on every quasi-TEM run at the default
+        ``verbose``, so it stays short; the detail is the *Ports*
+        chapter of the methods guide.  Subclasses that own the
+        alternative price it (see ``AnalysisScatteringTD``).
 
         The three ways a channel arrives here are physically distinct
         and are named apart: a genuinely inhomogeneous cross-section
@@ -1105,10 +1106,8 @@ class AnalysisTD(_AnalysisBase):
 
         head = f"[{type(self).__name__}] modal Mur-1st termination on {len(lines)} channel(s):"
         body = (
-            "  Those channels keep working: |S11| bottoms out around "
-            "-30 dB, |S21| stays within 0.01 dB.  What the run keeps in "
-            "exchange is short runtime and time-domain power waves "
-            "a()/b()."
+            "  |S11| floor of order -30 dB on those channels, |S21| within "
+            "0.01 dB; the run keeps its runtime and the power waves a()/b()."
         )
         return "\n".join([head, *lines, body, self._mur_fallback_alternative(dt)])
 
@@ -1120,10 +1119,7 @@ class AnalysisTD(_AnalysisBase):
         the base notice points at the class that owns it rather than
         at a keyword this one would reject.
         """
-        return (
-            "  A reflection-free termination for such lines exists as "
-            'AnalysisScatteringTD(port_model="band").'
-        )
+        return '  Reflection-free alternative: AnalysisScatteringTD(port_model="band").'
 
     def _prepare_run(
         self,

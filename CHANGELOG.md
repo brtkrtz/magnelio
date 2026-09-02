@@ -141,17 +141,22 @@ major version is 0, minor releases may change the public API.
   Both are bit-identical: no S-parameter moves.
 
 - A run that terminates a port channel with the Mur fallback now
-  explains the trade instead of labelling it.  It names each affected
-  channel with the cross-section measurement behind it, states the
-  reflection floor given up and what the run keeps in exchange —
-  runtime, time-domain power waves, resumable checkpoints — and prices
-  the reflection-free alternative for the model at hand, at the cost
-  it was measured to carry: about 13x the runtime of the default run
-  for a floor around −84 dB, and about 35x at the subspace rank the
-  band pipeline picks by default.  That last part is the
-  point: the old text recommended `port_model="band"` unconditionally,
-  without saying what it costs on the model in front of it.
-  `port_model` keeps defaulting to `"modal"`.
+  explains the trade in a few lines instead of labelling it: each
+  affected channel with the cross-section measurement behind it, the
+  reflection floor given up — the −30 dB class — against what the run
+  keeps, runtime and time-domain power waves, and what the
+  reflection-free alternative costs at the price it was measured to
+  carry: about 13x the runtime of the default run for a floor around
+  −84 dB, about 35x at the subspace rank the band pipeline picks by
+  default.  The old text recommended `port_model="band"`
+  unconditionally, without saying what it costs.  `port_model` keeps
+  defaulting to `"modal"`.
+- The port report labels the line impedance of a quasi-TEM
+  cross-section `(quasi-static)` instead of `(numerical)`.  It is the
+  frequency-flat value of the Laplace mode; the impedance the discrete
+  wave carries at the top of the band sits a few percent above it —
+  3 to 7 % at 15 GHz on the tutorial microstrip.  A homogeneous line
+  keeps the `(numerical)` label.
 
 - The methods guide now puts measured numbers on the choice of port
   model.  A quasi-TEM line — a microstrip, a coplanar or a layered

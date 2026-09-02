@@ -49,6 +49,11 @@ class PortOperatorReport:
     # publication layer (PortReport) applies z_line_full_scale so the
     # user sees full-model quantities.
     symmetry_faces: tuple = ()
+    # The line impedance of an inhomogeneous (quasi-TEM) cross-section
+    # is the frequency-flat quasi-static value of the Laplace mode, and
+    # the summary labels it so: the impedance the discrete wave carries
+    # at the top of the band sits a few percent above it (DD-239).
+    quasi_static: bool = False
 
     @property
     def z_line_full_scale(self) -> float:

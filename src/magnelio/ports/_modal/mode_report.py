@@ -636,7 +636,8 @@ class PortReport:
             cuts = ", ".join(f"{face} ({kind})" for face, kind in self.report.symmetry_faces)
             lines.append(f"  cut by symmetry plane(s) {cuts} — impedances are full-model values")
         if self.z_line_num is not None:
-            z = f"  z_line = {self.z_line_num:.2f} Ω (numerical)"
+            quasi = self.report is not None and self.report.quasi_static
+            z = f"  z_line = {self.z_line_num:.2f} Ω ({'quasi-static' if quasi else 'numerical'})"
             if self.z_line_ref is not None:
                 delta = self.report.z_line_delta_relative
                 z += f", {self.z_line_ref:.2f} Ω (reference, Δ {100.0 * delta:+.2f} %)"
