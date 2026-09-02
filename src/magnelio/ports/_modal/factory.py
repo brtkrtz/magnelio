@@ -1525,6 +1525,7 @@ def build_modal_port(
         port_report = PortOperatorReport(
             z_line_num=modes[0].z_line,
             z_line_ref=z_line_ref,
+            quasi_static=spec.epsilon_r is None,
         )
     elif isinstance(spec, PortSpecRectWG):
         u_c, v_c = _global_pair_to_uv(
@@ -1820,6 +1821,7 @@ def build_modal_port(
         port_report = PortOperatorReport(
             z_line_num=modes[0].z_line,
             cutoff_num=(first_cutoff / (2.0 * math.pi) if first_cutoff is not None else None),
+            quasi_static=spec.epsilon_r is None,
         )
 
     modes = _fix_degenerate_polarisation_gauge(modes)
@@ -2184,7 +2186,7 @@ def build_cw_true_mode_port(
         dt=dt,
         omega_calc=2.0 * math.pi * f_cw,
         port_report=_with_symmetry_faces(
-            PortOperatorReport(z_line_num=lap.z_line),
+            PortOperatorReport(z_line_num=lap.z_line, quasi_static=spec.epsilon_r is None),
             plane,
             mesh,
             name=spec.name,
@@ -2577,7 +2579,7 @@ def build_band_dtbc_port(
         src_directions=src_directions,
         dual_e_profiles=dual_e_profiles,
         port_report=_with_symmetry_faces(
-            PortOperatorReport(z_line_num=lap.z_line),
+            PortOperatorReport(z_line_num=lap.z_line, quasi_static=spec.epsilon_r is None),
             plane,
             mesh,
             name=spec.name,

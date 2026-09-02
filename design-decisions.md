@@ -17841,6 +17841,19 @@ is `chain_floor_db` on the report, and it exists only for certified
 channels.  The notice fires once per analysis, so a script that
 rebuilds ports between runs sees it once.
 
+**Amendment 2026-09-02.**  The balance sheet is cut to one line of
+trade and one line of alternative under the channel list.  The
+ten-line form printed on every quasi-TEM run at the default
+`verbose=True` — on exactly the lines where performance, not the
+floor, is the user's priority — and said each thing twice; the tests
+pin the vocabulary (`-30 dB`, `a()/b()`, `chain spread`, the axis-start
+clause), not the prose.  In the same step the port report labels a
+quasi-TEM line impedance `(quasi-static)` (`PortOperatorReport.
+quasi_static`, set where the multi-conductor spec has `epsilon_r is
+None`), because DD-239 measured the discrete wave impedance 3–7 %
+above it at 15 GHz and the label is the one place a user meets the
+number.
+
 ## DD-232 — the band excitation is anchored at DC, and the pulse stops scaling with the axis start
 
 **Status:** Decided 2026-08-30 (branch `feat/band-dc-anchor`).  Gates:
