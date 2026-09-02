@@ -213,7 +213,7 @@ the 2D cross-section problem numerically, before any time stepping:
     Port 'port1' — 1 mode(s)
       cut by symmetry plane(s) xmin (PMC) — impedances are full-model values
       z_line = 51.52 Ω (numerical)
-      [0] QTEM_lap00   TEM f_c = 0.0000 GHz  z_line = 51.52 Ω  ε_eff = 2.985
+      [0] QTEM_lap00   TEM f_c = 0.0000 GHz  z_line = 51.52 Ω  ε_eff = 2.985  termination = mur (chain spread 3.2e-01)
     eps_eff (quasi-static): 2.985
 
 
@@ -404,7 +404,7 @@ resistor.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 4.382 seconds)
+   **Total running time of the script:** (0 minutes 3.401 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_09_microstrip_line.py:

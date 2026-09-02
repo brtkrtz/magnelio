@@ -234,7 +234,7 @@ stainless steel (σ = 1.45·10⁶ S/m — about 6× the surface resistance
 of copper, a realistic worst case and comfortably measurable).  Flat
 walls also mean the closed form is trustworthy across the band.
 
-.. GENERATED FROM PYTHON SOURCE LINES 161-191
+.. GENERATED FROM PYTHON SOURCE LINES 161-192
 
 .. code-block:: Python
 
@@ -254,7 +254,8 @@ walls also mean the closed form is trustworthy across the band.
     def run_waveguide(**wall_kwargs):
         monitor = monitors.MonitorWallLoss(
             freqs=np.linspace(f_lo, f_hi, 9),
-            reference_plane=("z", 5e-3),
+            normal="z",
+            position=5e-3,
             sigma=sigma_steel,
             bc_faces=("xmin", "xmax", "ymin", "ymax"),
         )
@@ -275,7 +276,7 @@ walls also mean the closed form is trustworthy across the band.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 192-197
+.. GENERATED FROM PYTHON SOURCE LINES 193-198
 
 First the default.  The monitor needs to know which conductor it is
 metering — the walls here are the domain boundary, so ``bc_faces``
@@ -283,7 +284,7 @@ lists them and ``sigma`` supplies their conductivity (a lossy-metal
 *solid* would carry its own).  The reference plane turns the booked
 wall power into a fraction of the power flowing down the guide.
 
-.. GENERATED FROM PYTHON SOURCE LINES 197-206
+.. GENERATED FROM PYTHON SOURCE LINES 198-207
 
 .. code-block:: Python
 
@@ -309,7 +310,7 @@ wall power into a fraction of the power flowing down the guide.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 207-213
+.. GENERATED FROM PYTHON SOURCE LINES 208-214
 
 ``|S21| = 1`` to a few 10⁻⁴: the run itself was lossless, yet the
 monitor already knows the walls would eat about 2 % of the power —
@@ -318,7 +319,7 @@ fraction is a *power* ratio, α is a field amplitude rate.)
 
 Now the same guide with the surface impedance in the update.
 
-.. GENERATED FROM PYTHON SOURCE LINES 213-252
+.. GENERATED FROM PYTHON SOURCE LINES 214-253
 
 .. code-block:: Python
 
@@ -379,7 +380,7 @@ Now the same guide with the surface impedance in the update.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 253-276
+.. GENERATED FROM PYTHON SOURCE LINES 254-277
 
 Three independent estimates of the same physics — the surface
 impedance marching in the update, the perturbative bookkeeping on a
@@ -405,7 +406,7 @@ perturbative wall loss of one mode and returns
 ``Q = ω·W / P_loss``.  The reference: the classic closed form for
 the TE₁₀₁ mode of a rectangular copper cavity.
 
-.. GENERATED FROM PYTHON SOURCE LINES 276-302
+.. GENERATED FROM PYTHON SOURCE LINES 277-303
 
 .. code-block:: Python
 
@@ -449,7 +450,7 @@ the TE₁₀₁ mode of a rectangular copper cavity.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 303-309
+.. GENERATED FROM PYTHON SOURCE LINES 304-310
 
 Within one percent of the closed form.  The result also knows *where*
 the power goes — ``per_tag`` splits the wall loss by face, and the
@@ -458,7 +459,7 @@ tangential magnetic field of TE₁₀₁ and take half the loss between
 them; the four side walls, each touched by only one H component,
 share the rest.
 
-.. GENERATED FROM PYTHON SOURCE LINES 309-321
+.. GENERATED FROM PYTHON SOURCE LINES 310-322
 
 .. code-block:: Python
 
@@ -486,7 +487,7 @@ share the rest.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 322-343
+.. GENERATED FROM PYTHON SOURCE LINES 323-344
 
 Where to go from here
 ---------------------
@@ -513,7 +514,7 @@ and optimization with ordinary Python loops.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 30.522 seconds)
+   **Total running time of the script:** (0 minutes 22.881 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_11_losses.py:

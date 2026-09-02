@@ -177,6 +177,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -337,6 +344,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -450,6 +464,7 @@
 <li class="toctree-l1"><a class="reference internal" href="plot_17_pcb_import.html">Importing a circuit board</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_18_periodic_tesla_cell.html">Periodic structures: the dispersion diagram of a TESLA cell</a></li>
 <li class="toctree-l1"><a class="reference internal" href="19_cassegrain_reflector.html">Offset Cassegrain reflector: parametric surfaces and a horn feed</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_20_plane_wave_scattering.html">Plane-wave scattering: the radar cross section of a sphere</a></li>
 </ul>
 </div>
 </nav></div>
@@ -626,7 +641,7 @@ anything but an empty box of air.</p>
 monitors ride the run: a frequency monitor accumulates the complex
 field pattern at 2.45 GHz on the vertical cut through the wire — the
 picture that will show the antenna radiating — and a
-<a class="reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFarField" title="magnelio.monitors.MonitorFarField"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonitorFarField</span></code></a> records the surfaces a
+<a class="reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency" title="magnelio.monitors.MonitorFarFieldFrequency"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency</span></code></a> records the surfaces a
 far-field computation needs.  The latter takes no geometry at all:
 it places a closed recording box inside the free-space region by
 itself, and the ground plane is handled for it (more below).</p>
@@ -646,7 +661,7 @@ itself, and the ground plane is handled for it (more below).</p>
     <span class="n">fields</span><span class="o">=</span><span class="p">[</span><span class="s2">"E"</span><span class="p">],</span>
     <span class="n">name</span><span class="o">=</span><span class="s2">"nearfield"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="n">farfield</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarField</span><span class="p">(</span><span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"farfield"</span><span class="p">)</span>
+<span class="n">farfield</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarFieldFrequency</span><span class="p">(</span><span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"farfield"</span><span class="p">)</span>
 
 <span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span>
     <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span>
@@ -820,12 +835,12 @@ rule between radiator and absorber, a sub-cell
 <a class="reference internal" href="../api/geo.html#magnelio.geo.ThinWire" title="magnelio.geo.ThinWire"><code class="xref py py-class docutils literal notranslate"><span class="pre">ThinWire</span></code></a> conductor, a discrete
 <a class="reference internal" href="../api/ports.html#magnelio.ports.PortLumped" title="magnelio.ports.PortLumped"><code class="xref py py-class docutils literal notranslate"><span class="pre">PortLumped</span></code></a> feed, reading an antenna’s S11
 and input impedance, and the far field with its gain figures from a
-<a class="reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFarField" title="magnelio.monitors.MonitorFarField"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonitorFarField</span></code></a>.  A later tutorial
+<a class="reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency" title="magnelio.monitors.MonitorFarFieldFrequency"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency</span></code></a>.  A later tutorial
 returns to antennas with a dipole computed as a half model on a
 symmetry plane, 3D pattern included.  The next tutorials leave the
 wire world and move to printed circuits: microstrip lines and the
 components built from them.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 18.174 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 14.783 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-08-open-boundary-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/b718b63296483895102268247dded24c/plot_08_open_boundary.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_08_open_boundary.ipynb</span></code></a></p>

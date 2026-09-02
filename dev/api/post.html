@@ -175,6 +175,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -335,6 +342,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -438,6 +452,7 @@
 <li class="toctree-l1"><a class="reference internal" href="boundaries.html"><code class="docutils literal notranslate"><span class="pre">magnelio.boundaries</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="ports.html"><code class="docutils literal notranslate"><span class="pre">magnelio.ports</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="sources.html"><code class="docutils literal notranslate"><span class="pre">magnelio.sources</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html"><code class="docutils literal notranslate"><span class="pre">magnelio.fields</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="monitors.html"><code class="docutils literal notranslate"><span class="pre">magnelio.monitors</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="circuit.html"><code class="docutils literal notranslate"><span class="pre">magnelio.circuit</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="signals.html"><code class="docutils literal notranslate"><span class="pre">magnelio.signals</span></code></a></li>
@@ -1078,7 +1093,7 @@ extension filled in.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="magnelio.post.compute_band_s_parameters">
-<span class="sig-prename descclassname"><span class="pre">magnelio.post.</span></span><span class="sig-name descname"><span class="pre">compute_band_s_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recorder_signals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ports</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excited</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_axis</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">a_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-12</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.post.compute_band_s_parameters" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">magnelio.post.</span></span><span class="sig-name descname"><span class="pre">compute_band_s_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recorder_signals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ports</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excited</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_axis</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_3d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-12</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.post.compute_band_s_parameters" title="Link to this definition">#</a></dt>
 <dd><p>S-parameters of a pulsed broadband run through band DTBC ports.</p>
 <p>The per-frequency true-mode decomposition applied to a
 single pulsed record: per <code class="docutils literal notranslate"><span class="pre">f_axis</span></code> point the true
@@ -1105,11 +1120,29 @@ once for the whole axis.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>recorder_signals</strong> (<em>dict</em>) – Output of <code class="xref py py-meth docutils literal notranslate"><span class="pre">PortSignalRecorder.finalize()</span></code>, keyed by
 <code class="docutils literal notranslate"><span class="pre">(port_label,</span> <span class="pre">mode_idx)</span></code>.</p></li>
-<li><p><strong>ports</strong> (<em>list</em>) – The <code class="docutils literal notranslate"><span class="pre">PortOperatorBandDTBC</span></code> instances of the run (each must
-carry <code class="docutils literal notranslate"><span class="pre">band_data</span></code>).</p></li>
+<li><p><strong>ports</strong> (<em>list</em>) – The run’s band ports, either as built
+<code class="docutils literal notranslate"><span class="pre">PortOperatorBandDTBC</span></code> instances (each carrying
+<code class="docutils literal notranslate"><span class="pre">band_data</span></code>) or as
+<code class="xref py py-class docutils literal notranslate"><span class="pre">BandDecomposition</span></code>
+records — the detached form a project store reads back.</p></li>
 <li><p><strong>excited</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>)</em>) – <code class="docutils literal notranslate"><span class="pre">(port_label,</span> <span class="pre">channel)</span></code> of the pulsed source.</p></li>
 <li><p><strong>f_axis</strong> (<em>np.ndarray</em>) – Evaluation frequencies [Hz]; must lie inside every port’s
 subspace band (content outside the band is not certified).</p></li>
+<li><p><strong>m_eps</strong> (<em>optional</em>) – The mesh-side operators the phasor synthesis applies: the two
+material matrices and the 3D curl.  They are properties of the
+grid, not of a port, so a reader rebuilds them from the stored
+mesh instead of loading a per-port copy.  Omit them to take
+the cached ones off the first operator (the live path).</p></li>
+<li><p><strong>m_mu</strong> (<em>optional</em>) – The mesh-side operators the phasor synthesis applies: the two
+material matrices and the 3D curl.  They are properties of the
+grid, not of a port, so a reader rebuilds them from the stored
+mesh instead of loading a per-port copy.  Omit them to take
+the cached ones off the first operator (the live path).</p></li>
+<li><p><strong>c_3d</strong> (<em>optional</em>) – The mesh-side operators the phasor synthesis applies: the two
+material matrices and the 3D curl.  They are properties of the
+grid, not of a port, so a reader rebuilds them from the stored
+mesh instead of loading a per-port copy.  Omit them to take
+the cached ones off the first operator (the live path).</p></li>
 <li><p><strong>a_threshold</strong> (<em>float</em><em>, </em><em>default 1e-12</em>) – Relative <code class="docutils literal notranslate"><span class="pre">|a_excited|</span></code> floor below which S is NaN.</p></li>
 </ul>
 </dd>

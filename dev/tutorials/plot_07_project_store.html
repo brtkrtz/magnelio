@@ -175,6 +175,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -335,6 +342,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -448,6 +462,7 @@
 <li class="toctree-l1"><a class="reference internal" href="plot_17_pcb_import.html">Importing a circuit board</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_18_periodic_tesla_cell.html">Periodic structures: the dispersion diagram of a TESLA cell</a></li>
 <li class="toctree-l1"><a class="reference internal" href="19_cassegrain_reflector.html">Offset Cassegrain reflector: parametric surfaces and a horn feed</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_20_plane_wave_scattering.html">Plane-wave scattering: the radar cross section of a sphere</a></li>
 </ul>
 </div>
 </nav></div>
@@ -630,21 +645,21 @@ everything went (sizes in kB):</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>geometry.brep                                                    9.9
 geometry.json                                                    0.8
 geometry.vtm                                                     0.3
-mesh.h5                                                      11878.3
+mesh.h5                                                      11880.4
 project.json                                                     3.2
 geometry/geometry_0.vtp                                          3.5
-runs/port3_mode0/checkpoint.h5                                1493.6
+runs/port3_mode0/checkpoint.h5                                1523.7
 runs/port3_mode0/fields_freq.h5                               3553.3
 runs/port3_mode0/paraview_open.py                               18.9
-runs/port3_mode0/results.h5                                    633.1
+runs/port3_mode0/results.h5                                    699.4
 runs/port3_mode0/paraview/volume_pattern.pvd                     0.2
-runs/port3_mode0/paraview/volume_pattern/f_0000.vtr           1316.8
-runs/port4_mode0/checkpoint.h5                                1493.6
+runs/port3_mode0/paraview/volume_pattern/f_0000.vtr           1317.3
+runs/port4_mode0/checkpoint.h5                                1523.7
 runs/port4_mode0/fields_freq.h5                               3553.3
 runs/port4_mode0/paraview_open.py                               18.9
-runs/port4_mode0/results.h5                                    633.1
+runs/port4_mode0/results.h5                                    699.4
 runs/port4_mode0/paraview/volume_pattern.pvd                     0.2
-runs/port4_mode0/paraview/volume_pattern/f_0000.vtr           1314.8
+runs/port4_mode0/paraview/volume_pattern/f_0000.vtr           1312.6
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">project.json</span></code> carries the run registry and the reconstruction
@@ -704,8 +719,8 @@ the progress live, without touching the job that is computing.</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"peak </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a><span class="p">[</span><span class="s1">'energy'</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.3e</span><span class="si">}</span><span class="s2"> J -&gt; final </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a><span class="p">[</span><span class="s1">'energy'</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.3e</span><span class="si">}</span><span class="s2"> J"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_07_project_store_002.png" srcset="../_images/sphx_glr_plot_07_project_store_002.png" alt="Energy in the grid during the H-arm run" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>energy samples stored: 61
-peak 7.836e-11 J -&gt; final 2.513e-15 J
+<img src="../_images/sphx_glr_plot_07_project_store_002.png" srcset="../_images/sphx_glr_plot_07_project_store_002.png" alt="Energy in the grid during the H-arm run" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>energy samples stored: 65
+peak 7.508e-11 J -&gt; final 2.213e-15 J
 </pre></div>
 </div>
 <p>The monitor data of <em>every</em> run is preserved — where the previous
@@ -750,8 +765,8 @@ Here we ask the third one, extending the H-arm run by 2000 steps:</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"max |dS13| from 2000 extra steps: </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s13_after</span></a><span class="w"> </span><span class="o">-</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s13_before</span></a><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.1e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>steps: 6001 -&gt; 8001
-max |dS13| from 2000 extra steps: 4.7e-04
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>steps: 6401 -&gt; 8401
+max |dS13| from 2000 extra steps: 3.7e-04
 </pre></div>
 </div>
 <p>The change is far below any engineering tolerance — the original
@@ -801,7 +816,7 @@ marches and watch the energy and S-parameters converge live.</p>
 <p>The tee is now exhausted as a teaching device for closed structures.
 The next tutorial opens the domain: absorbing boundaries, and with
 them the first antenna.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 35.159 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 27.229 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-07-project-store-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/8ffbd898ad191daf250f8485ee8f3138/plot_07_project_store.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_07_project_store.ipynb</span></code></a></p>

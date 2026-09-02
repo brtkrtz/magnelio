@@ -177,6 +177,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -332,6 +339,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
   </a>
 </li>
 
@@ -508,25 +522,285 @@
                   
   <section class="tex2jax_ignore mathjax_ignore" id="sources-monitors-and-post-processing">
 <h1>Sources, monitors and post-processing<a class="headerlink" href="#sources-monitors-and-post-processing" title="Link to this heading">#</a></h1>
-<section id="plane-wave-source-tf-sf">
-<h2>Plane-wave source (TF/SF)<a class="headerlink" href="#plane-wave-source-tf-sf" title="Link to this heading">#</a></h2>
-<p>Plane-wave illumination uses the <strong>total-field/scattered-field
+<section id="sources-waveforms-and-excitations">
+<h2>Sources, waveforms and excitations<a class="headerlink" href="#sources-waveforms-and-excitations" title="Link to this heading">#</a></h2>
+<p>A time-domain drive is described by three objects with three
+distinct jobs:</p>
+<ul class="simple">
+<li><p>A <strong>source</strong> is a model object — declared on the
+<code class="docutils literal notranslate"><span class="pre">GeometryModel</span></code> before meshing with <code class="docutils literal notranslate"><span class="pre">add_source</span></code>, exactly like a
+port with <code class="docutils literal notranslate"><span class="pre">add_port</span></code> — that says <em>where</em> and <em>how</em> energy enters
+the domain: a plane wave or any other incident field on a
+total-field/scattered-field box (<code class="docutils literal notranslate"><span class="pre">sources.SourcePlaneWave</span></code>,
+<code class="docutils literal notranslate"><span class="pre">sources.SourceFieldIncident</span></code>), a field present at <code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">=</span> <span class="pre">0</span></code>
+(<code class="docutils literal notranslate"><span class="pre">sources.SourceFieldInitial</span></code>), a recorded Huygens surface
+(<code class="docutils literal notranslate"><span class="pre">sources.SourceFieldSurface</span></code>), an impressed current along a curve
+(<code class="docutils literal notranslate"><span class="pre">sources.SourceCurrentPath</span></code>), and in later releases charged
+beams.  Ports are sources <em>and</em> loads and keep
+their own namespace, <code class="docutils literal notranslate"><span class="pre">magnelio.ports</span></code>.  Sources travel with the
+mesh (<code class="docutils literal notranslate"><span class="pre">mesh.sources</span></code>, next to <code class="docutils literal notranslate"><span class="pre">mesh.ports</span></code> and <code class="docutils literal notranslate"><span class="pre">mesh.elements</span></code>;
+<code class="docutils literal notranslate"><span class="pre">Mesh.with_sources</span></code> attaches them to a grid built without a model)
+and share one name namespace with ports and elements.</p></li>
+<li><p>A <strong>waveform</strong> (<code class="docutils literal notranslate"><span class="pre">magnelio.signals</span></code>) is a pure, unit-peak function
+of time that knows its own bandwidth: <code class="docutils literal notranslate"><span class="pre">WaveformGaussian(f_max)</span></code> for
+DC-inclusive drives, <code class="docutils literal notranslate"><span class="pre">WaveformGaussianModulated(f_min,</span> <span class="pre">f_max)</span></code> for a
+band-limited pulse on a carrier, <code class="docutils literal notranslate"><span class="pre">WaveformSine</span></code> and <code class="docutils literal notranslate"><span class="pre">WaveformStep</span></code>
+for continuous-wave and step drives (infinite duration, so the run
+needs an explicit length), <code class="docutils literal notranslate"><span class="pre">WaveformTable</span></code> for measured or imported
+samples and <code class="docutils literal notranslate"><span class="pre">WaveformFunction</span></code> for an arbitrary callable.  Every
+waveform reports <code class="docutils literal notranslate"><span class="pre">f_min</span></code>, <code class="docutils literal notranslate"><span class="pre">f_max</span></code>, <code class="docutils literal notranslate"><span class="pre">f_center</span></code> (the carrier, or
+<code class="docutils literal notranslate"><span class="pre">None</span></code> for baseband forms) and <code class="docutils literal notranslate"><span class="pre">t_end</span></code>, can be sampled into a
+<code class="docutils literal notranslate"><span class="pre">Signal1D</span></code>, and gives its spectrum in closed form where one exists.
+Amplitude, delay and phase are <em>not</em> part of a waveform — one
+waveform object can drive several ports and sources.</p></li>
+<li><p>An <strong>excitation</strong> (<code class="docutils literal notranslate"><span class="pre">magnelio.Excitation</span></code>) binds a port channel or a
+source, <em>by name</em>, to a waveform and a weight: <code class="docutils literal notranslate"><span class="pre">amplitude</span></code> in the
+source’s natural unit (<code class="docutils literal notranslate"><span class="pre">sqrt(W)</span></code> — the incident power wave — for
+ports, <code class="docutils literal notranslate"><span class="pre">V/m</span></code> for a plane wave; every source publishes it as
+<code class="docutils literal notranslate"><span class="pre">amplitude_unit</span></code>), a <code class="docutils literal notranslate"><span class="pre">delay</span></code>, and on carrier waveforms a <code class="docutils literal notranslate"><span class="pre">phase</span></code>,
+which is applied as a delay of <code class="docutils literal notranslate"><span class="pre">phase</span> <span class="pre">/</span> <span class="pre">(360</span> <span class="pre">·</span> <span class="pre">f_center)</span></code>.  Two
+modes of one port at 90° make a circularly polarised feed; a phase
+on a baseband pulse is rejected because such a pulse has none.</p></li>
+</ul>
+<p>The scattering analysis excites <em>channels</em> — one <code class="docutils literal notranslate"><span class="pre">(port,</span> <span class="pre">mode)</span></code> per
+independent run, listed in <code class="docutils literal notranslate"><span class="pre">run(excited=...)</span></code> — and derives the
+waveform per excited mode from the analysis band: a Gaussian
+pulse over <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">f_max]</span></code> for TEM and lumped ports, a modulated
+Gaussian over <code class="docutils literal notranslate"><span class="pre">[max(f_cutoff,</span> <span class="pre">f_min),</span> <span class="pre">f_max]</span></code> above a mode’s
+cut-off, so that no pulse energy sits below cut-off where it would
+be totally reflected.  <code class="docutils literal notranslate"><span class="pre">AnalysisScatteringTD(waveform=...)</span></code> overrides
+that choice with any waveform; a waveform reaching above the
+analysis band warns.  Simultaneous excitations of several ports and
+sources in one run (<code class="docutils literal notranslate"><span class="pre">excitations=[Excitation(...),</span> <span class="pre">...]</span></code>) are the
+business of the general time-domain analysis, not of the scattering
+analysis, which rejects the argument.</p>
+<p>At the component level a bound waveform is what a port operator or
+a source injects: <code class="docutils literal notranslate"><span class="pre">operator.set_excitation(mode,</span> <span class="pre">waveform)</span></code> and
+<code class="docutils literal notranslate"><span class="pre">source.set_excitation(waveform,</span> <span class="pre">amplitude=...,</span> <span class="pre">delay=...)</span></code> — the
+solver-facing form of the same triad.</p>
+</section>
+<section id="the-general-time-domain-analysis">
+<h2>The general time-domain analysis<a class="headerlink" href="#the-general-time-domain-analysis" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">AnalysisTD</span></code> is the problem class behind every time-domain run: one
+leapfrog march under a list of excitations applied <em>simultaneously</em>,
+returning a <code class="docutils literal notranslate"><span class="pre">TDResult</span></code> — the recorded modal voltage and current of
+every port channel (<code class="docutils literal notranslate"><span class="pre">result.signal(port,</span> <span class="pre">mode)</span></code>), the sampled drive of
+every excitation (<code class="docutils literal notranslate"><span class="pre">result.excitation_signal(name)</span></code>), the power waves
+<code class="docutils literal notranslate"><span class="pre">a(t)</span></code> / <code class="docutils literal notranslate"><span class="pre">b(t)</span></code> where a port defines them, the stored-energy trace and
+the monitors.  No S-parameters: a scattering matrix needs one channel
+per run, and that is what <code class="docutils literal notranslate"><span class="pre">AnalysisScatteringTD</span></code> — a subclass — does
+with <code class="docutils literal notranslate"><span class="pre">run(excited=[...])</span></code>, on the very same engine.</p>
+<p>Three rules follow from the waveforms:</p>
+<ul class="simple">
+<li><p>The run length is estimated from the drives: the time the last
+excitation has died out, <code class="docutils literal notranslate"><span class="pre">max(delay</span> <span class="pre">+</span> <span class="pre">waveform.t_end)</span></code>, plus a
+generous number of diagonal transits of the domain.  The estimate
+sets the energy-check cadence and the checkpoint stride; the run
+itself ends on the energy or port-signal criterion.</p></li>
+<li><p>A continuous-wave waveform (<code class="docutils literal notranslate"><span class="pre">WaveformSine</span></code>, a <code class="docutils literal notranslate"><span class="pre">WaveformStep</span></code>
+without <code class="docutils literal notranslate"><span class="pre">fall_time</span></code>) never decays, so such a run needs an explicit
+length — <code class="docutils literal notranslate"><span class="pre">run(t_end=…)</span></code> in seconds or <code class="docutils literal notranslate"><span class="pre">total_time_steps=</span></code> — and
+the decay criteria are switched off.</p></li>
+<li><p>Frequency-domain monitors keep their raw transient bins.  With
+several drives there is no single reference spectrum to divide out,
+so <code class="docutils literal notranslate"><span class="pre">result.renormalize(name)</span></code> names the excitation the monitors
+should refer to; the scattering analysis does this for you with the
+excited channel’s waveform.</p></li>
+</ul>
+<p>Several modes of one port may be driven in the same run (two <code class="docutils literal notranslate"><span class="pre">TE11</span></code>
+modes at 90° make a circularly polarised feed), and a run may combine
+ports and sources — an antenna under plane-wave illumination is one
+<code class="docutils literal notranslate"><span class="pre">excitations=[...]</span></code> list.  With <code class="docutils literal notranslate"><span class="pre">project=</span></code> the run streams into a
+project store under a name (<code class="docutils literal notranslate"><span class="pre">run(name=…)</span></code>, default <code class="docutils literal notranslate"><span class="pre">run_&lt;n&gt;</span></code>), resumes
+with <code class="docutils literal notranslate"><span class="pre">resume(project,</span> <span class="pre">name)</span></code>, and <code class="docutils literal notranslate"><span class="pre">project.result(name)</span></code> rebuilds its
+<code class="docutils literal notranslate"><span class="pre">TDResult</span></code>.</p>
+</section>
+<section id="incident-fields-on-a-total-field-scattered-field-box">
+<h2>Incident fields on a total-field/scattered-field box<a class="headerlink" href="#incident-fields-on-a-total-field-scattered-field-box" title="Link to this heading">#</a></h2>
+<p>Illumination from outside uses the <strong>total-field/scattered-field
 (TF/SF)</strong> technique: the domain is split by a virtual box; consistency
 corrections on the six box faces inject the incident wave into the
 total-field region while the exterior carries only scattered field
-(<code class="docutils literal notranslate"><span class="pre">sources/plane_wave.py</span></code>, DD-013).  The TF/SF formulation is due to
+(DD-013).  The TF/SF formulation is due to
 Merewether, Fisher and Smith <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id56" title="David E. Merewether, Ronald Fisher, and F. W. Smith. On implementing a numeric Huygens' source scheme in a finite difference program to illuminate scattering bodies. IEEE Transactions on Nuclear Science, 27(6):1829–1833, 1980. doi:10.1109/TNS.1980.4331114.">53</a>]</span> and
 Umashankar and Taflove <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id57" title="Korada Umashankar and Allen Taflove. A novel method to analyze electromagnetic scattering of complex objects. IEEE Transactions on Electromagnetic Compatibility, 24(4):397–405, 1982. doi:10.1109/TEMC.1982.304054.">54</a>]</span>;
 textbook treatment in <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.
 The incident samples are converted to FIT grid quantities per
 edge/face, so amplitudes are physical (V/m) on any grid — an
-in-house calibration (DD-085).</p>
+in-house calibration (DD-085).  <code class="docutils literal notranslate"><span class="pre">SourcePlaneWave(name,</span> <span class="pre">direction,</span> <span class="pre">polarization,</span> <span class="pre">corners)</span></code> declares the wave and its box; the excitation
+that names it supplies the waveform and the peak field.  Propagation
+is along a grid axis.</p>
+<p>Any other incident field is <code class="docutils literal notranslate"><span class="pre">SourceFieldIncident(name,</span> <span class="pre">field,</span> <span class="pre">corners)</span></code>, whose <code class="docutils literal notranslate"><span class="pre">field(x,</span> <span class="pre">y,</span> <span class="pre">z,</span> <span class="pre">t,</span> <span class="pre">drive)</span></code> returns <code class="docutils literal notranslate"><span class="pre">((Ex,</span> <span class="pre">Ey,</span> <span class="pre">Ez),</span> <span class="pre">(Hx,</span> <span class="pre">Hy,</span> <span class="pre">Hz))</span></code> at the sample positions of one box face — a
+superposition of waves, a tabulated measured field, a beam.  <code class="docutils literal notranslate"><span class="pre">drive</span></code>
+is the excitation’s time function, so a retarded field reads
+<code class="docutils literal notranslate"><span class="pre">drive(t</span> <span class="pre">-</span> <span class="pre">k·r/c0)</span></code>.  The plane wave is the special case in which the
+retardation collapses to one delay per face, which is why it has its
+own class and evaluates the waveform on a handful of values per step
+instead of on the face.</p>
+<p>The incident field must solve the free-space Maxwell equations by
+itself; the box corrections assume it does.  An E/H pair that does not
+(a transversally tapered “beam” whose longitudinal components are
+dropped, say) radiates the inconsistency into the scattered-field
+region, where it is indistinguishable from a scattered wave.</p>
+</section>
+<section id="initial-fields">
+<h2>Initial fields<a class="headerlink" href="#initial-fields" title="Link to this heading">#</a></h2>
+<p>A transient run can also start <em>from</em> a field instead of being driven
+into one.  <code class="docutils literal notranslate"><span class="pre">SourceFieldInitial(name,</span> <span class="pre">field)</span></code> carries a
+<code class="docutils literal notranslate"><span class="pre">magnelio.fields.FieldState</span></code> that becomes the state at <code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">=</span> <span class="pre">0</span></code>;
+<code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.from_project(project,</span> <span class="pre">name=…,</span> <span class="pre">mode=…)</span></code> takes it
+from the eigenmodes of a stored project, <code class="docutils literal notranslate"><span class="pre">from_function</span></code> and
+<code class="docutils literal notranslate"><span class="pre">from_arrays</span></code> from a formula or from data.  Its excitation has no
+waveform — the amplitude alone scales the field (<code class="docutils literal notranslate"><span class="pre">amplitude_unit</span></code> is
+<code class="docutils literal notranslate"><span class="pre">&quot;1&quot;</span></code>) — and the run then rings down freely, which is how a Q is
+measured (how-to <em>Ring-down</em>).</p>
+<p>The electric field is written on the primal edges and the magnetic
+field half a leapfrog step ahead, following the discrete Faraday law,
+so a mode of the discrete operator starts as exactly that mode and
+oscillates without a transient.  Several initial fields in one run
+superpose.</p>
+<p>Nothing about the model restricts an initial field.  Where the run
+carries state besides the fields — an absorber’s convolutions, the
+pole currents of a dispersive material, the branch currents of a
+surface-impedance wall, a port’s boundary history — that state starts
+at zero, which is the quiescent condition: the absorber is empty, the
+material unpolarised, the wall carries no current, the exterior of a
+port was quiet.  That is a well-defined initial-value problem, and a
+stable one, but it is not the <em>steady</em> state a mode would have built
+up around itself.</p>
+<p>In practice the difference is small, because those states relax on
+their own time scale.  A copper-walled cavity rung down with
+<code class="docutils literal notranslate"><span class="pre">wall_model=&quot;sibc&quot;</span></code> — whose branch currents start at zero — returns a
+wall Q within a third of a percent of the perturbative
+surface-resistance evaluation on the same mode, two independent routes
+to the same loss.</p>
+<p>Ports are what make the ring-down of a coupled resonator possible: a
+waveguide port’s transparent boundary assumes only a quiet <em>exterior</em>
+before <code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">=</span> <span class="pre">0</span></code>, and the field reaching it during the run is the whole
+point of an external-Q measurement.  A discrete port is a resistor
+without memory and has no start condition at all.  An initial field
+sitting <em>on</em> a port plane is allowed too; what it costs is worth
+knowing, since it leaves as a prompt burst (about four times the
+steady port signal at 20 % of the field peak) and biases a fitted
+external Q by roughly 0.4 % at −14 dB and 2 % at −6 dB, with nothing
+measurable below −26 dB.</p>
+<p>Whether the field you load is the mode you meant, and whether the
+decay you see is the one you wanted to measure, are modelling
+questions — not something the library decides for you.</p>
+</section>
+<section id="field-sources-reusing-what-a-model-radiates">
+<h2>Field sources: reusing what a model radiates<a class="headerlink" href="#field-sources-reusing-what-a-model-radiates" title="Link to this heading">#</a></h2>
+<p>A radiator that has been simulated once does not have to be simulated
+again.  The equivalence principle says that the tangential <strong>E</strong> and
+<strong>H</strong> on a closed surface stand for everything inside it: replayed on
+that surface in a second model, they radiate the same field outwards
+and nothing inwards.  Magnelio spells this as a pair —
+<code class="docutils literal notranslate"><span class="pre">MonitorFieldSurface</span></code> records, <code class="docutils literal notranslate"><span class="pre">SourceFieldSurface</span></code> replays — with a
+<code class="docutils literal notranslate"><span class="pre">magnelio.fields.SurfaceRecording</span></code> between them:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run 1 — the antenna, on its own, in a small domain</span>
+<span class="n">box</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFieldSurface</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"antenna"</span><span class="p">,</span> <span class="n">corners</span><span class="o">=</span><span class="p">((</span><span class="o">-</span><span class="mf">8e-3</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">,</span> <span class="p">(</span><span class="mf">8e-3</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">))</span>
+<span class="o">...</span>
+<span class="n">box</span><span class="o">.</span><span class="n">recording</span><span class="p">()</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">"antenna.h5"</span><span class="p">)</span>
+
+<span class="c1"># Run 2 — the platform, driven by the antenna without meshing it</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add_source</span><span class="p">(</span>
+    <span class="n">sources</span><span class="o">.</span><span class="n">SourceFieldSurface</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span>
+        <span class="s2">"antenna.h5"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"antenna"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">),</span> <span class="n">rotation</span><span class="o">=</span><span class="p">(</span><span class="s2">"z"</span><span class="p">,</span> <span class="mi">90</span><span class="p">)</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The recording file is the whole interface: the two models share no
+grid, no geometry and no project.  The replaying box may sit anywhere
+and be turned by a multiple of 90°; free angles are refused rather
+than rounded, because the box is spanned by grid-node planes and a
+tilted recording would cross the target grid obliquely, with no
+samples where the corrections are applied.  The excitation that drives
+the source carries no waveform — the recording <em>is</em> the time function
+— only a scale factor and a delay.</p>
+<p>What the surface must enclose is every source of the field it stands
+for.  A conductor cutting through a face carries current across it and
+the recording is then short of exactly that part; the monitor says so.
+A ground plane is the licit exception: it closes a domain face, so the
+box is left open there, and the recording is valid in a second model
+that continues that plane.</p>
+<p>Two things decide the accuracy.  The first is the sampling rate.  The
+replay interpolates the recording linearly in time, and that error
+falls with the square of the sample spacing rather than obeying the
+sampling theorem, so the default records eight samples per period at
+<code class="docutils literal notranslate"><span class="pre">f_max</span></code> — twice Nyquist is measurably not enough.  What matters is the
+bandwidth the field actually carries, which is not always the model’s
+<code class="docutils literal notranslate"><span class="pre">f_max</span></code>: a field started from a sharply localised initial state
+carries energy far above it, and then the rate has to follow the field
+rather than the setting.</p>
+<p>The second is the grid.  Replayed on the grid it was recorded on, and
+in the same place, the interpolation reads its own samples and the
+replay is exact — measured at the single-precision floor, with the
+inside of the box quiet to −97 dB.  Across grids it is the spatial
+interpolation that limits: a scattered field recorded at twelve nodes
+per wavelength and replayed on a different grid reproduces the outside
+field to about a percent, with the inside quiet to roughly −40 dB.</p>
+</section>
+<section id="impressed-currents-on-a-path">
+<h2>Impressed currents on a path<a class="headerlink" href="#impressed-currents-on-a-path" title="Link to this heading">#</a></h2>
+<p>Where the current distribution is known, the current itself is the
+source.  <code class="docutils literal notranslate"><span class="pre">SourceCurrentPath</span></code> prescribes <code class="docutils literal notranslate"><span class="pre">I(t)</span></code> along a curve through
+the model, and the fields it radiates follow: a short filament is a
+Hertzian dipole, a closed one a magnetic dipole standing in for a
+coil, and a long one an injection probe on a harness or a lightning
+channel.  The excitation carries the current, in amperes:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">add_source</span><span class="p">(</span>
+    <span class="n">sources</span><span class="o">.</span><span class="n">SourceCurrentPath</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"dip"</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1e-3</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">)])</span>
+<span class="p">)</span>
+<span class="n">analysis</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">excitations</span><span class="o">=</span><span class="p">[</span><span class="n">mio</span><span class="o">.</span><span class="n">Excitation</span><span class="p">(</span><span class="s2">"dip"</span><span class="p">,</span> <span class="n">waveform</span><span class="o">=</span><span class="n">wf</span><span class="p">,</span> <span class="n">amplitude</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">)])</span>
+</pre></div>
+</div>
+<p>The path is either a sequence of points or any <code class="docutils literal notranslate"><span class="pre">geo.Curve</span></code> — a
+polyline, an arc, a spline, a helix, or a chain of them — and is
+rasterised onto the grid edges by the same rasteriser that lumped
+elements and voltage probes use, so a filament and a voltage probe can
+never disagree about which edges a curve occupies.  The vertices of
+the path become grid planes, so a filament ends where it was declared
+to end rather than at the nearest node.</p>
+<p>The current is prescribed, not solved for.  That is the whole
+difference between this source and a wire: nothing the model does
+changes <code class="docutils literal notranslate"><span class="pre">I(t)</span></code>, so a current path is the right description of a driven
+coil or a known interference current, and the wrong one for an antenna
+whose current distribution is the answer — feed that with a port.</p>
+<p>Two properties follow from the discrete operators rather than from any
+correction applied on top of them, and they are worth knowing because
+they bound what the source can and cannot do.</p>
+<p><em>The dipole moment is exact.</em>  An oblique path is walked as a
+staircase, but the staircase runs monotonically from the start node to
+the end node, so the signed sum of its steps is exactly the chord
+between them.  The first moment of the current is therefore what was
+asked for on any grid; only the higher multipoles see the steps.</p>
+<p><em>The charge at the ends is exact.</em>  The discrete divergence of a
+discrete curl vanishes identically, so an open filament accumulates
+precisely the time integral of its current on its two end nodes and no
+charge anywhere else — to the last bit of double precision.  An open
+current path <em>is</em> a consistent oscillating dipole, with the right
+near-zone electrostatic part; there is nothing to clean up.</p>
+<p>Edges the solver holds at zero — inside a perfect conductor, or
+tangential to a PEC wall — cannot take an impressed current.  A path
+crossing such a region radiates less than it was asked to, and says so
+rather than doing it quietly.  Under a symmetry declaration the mesh
+is the kept half: give the path in that half and let the symmetry wall
+supply its image.</p>
+<p>Measured against the closed-form short dipole — a 2.5 mm filament at
+10 GHz in an air cube — the radiated power approaches the analytic
+value from below as the grid is refined, 0.964 at ten nodes per
+wavelength to 0.983 at eighteen, with the residual tracking the
+near-to-far-field box’s own closure and not the source.  The pattern
+is <code class="docutils literal notranslate"><span class="pre">sin</span> <span class="pre">θ</span></code> and the peak directivity 1.5 throughout.</p>
 </section>
 <section id="field-flux-and-frequency-monitors">
 <h2>Field, flux and frequency monitors<a class="headerlink" href="#field-flux-and-frequency-monitors" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p><strong>MonitorFieldTime</strong> — time snapshots of E/H in a region, streamed
 to the on-disk store.</p></li>
+<li><p><strong>MonitorFieldSurface</strong> — the tangential fields on a closed box over
+time, for reuse as a field source (above).</p></li>
 <li><p><strong>MonitorFieldFrequency</strong> — running (accumulated) discrete Fourier
 transform of the fields at selected frequencies during the march;
 the running-DFT-during-timestepping technique is standard practice
@@ -628,7 +902,12 @@ research method; the formats are community standards.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#plane-wave-source-tf-sf">Plane-wave source (TF/SF)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sources-waveforms-and-excitations">Sources, waveforms and excitations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-general-time-domain-analysis">The general time-domain analysis</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#incident-fields-on-a-total-field-scattered-field-box">Incident fields on a total-field/scattered-field box</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#initial-fields">Initial fields</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#field-sources-reusing-what-a-model-radiates">Field sources: reusing what a model radiates</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#impressed-currents-on-a-path">Impressed currents on a path</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#field-flux-and-frequency-monitors">Field, flux and frequency monitors</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#signal-processing">Signal processing</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#project-store-checkpointing-resume">Project store, checkpointing, resume</a></li>

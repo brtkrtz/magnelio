@@ -175,6 +175,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -335,6 +342,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -438,6 +452,7 @@
 <li class="toctree-l1"><a class="reference internal" href="boundaries.html"><code class="docutils literal notranslate"><span class="pre">magnelio.boundaries</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="ports.html"><code class="docutils literal notranslate"><span class="pre">magnelio.ports</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="sources.html"><code class="docutils literal notranslate"><span class="pre">magnelio.sources</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html"><code class="docutils literal notranslate"><span class="pre">magnelio.fields</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="monitors.html"><code class="docutils literal notranslate"><span class="pre">magnelio.monitors</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="circuit.html"><code class="docutils literal notranslate"><span class="pre">magnelio.circuit</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="signals.html"><code class="docutils literal notranslate"><span class="pre">magnelio.signals</span></code></a></li>
@@ -938,7 +953,8 @@ the bounding box; <code class="docutils literal notranslate"><span class="pre">N
 extent of a shape), <code class="docutils literal notranslate"><span class="pre">&quot;edge&quot;</span></code> (a B-rep edge lying flat in the
 plane — a chamfer or fillet onset, a loft section), <code class="docutils literal notranslate"><span class="pre">&quot;sheet&quot;</span></code>
 (the grid plane of a thin metallisation), <code class="docutils literal notranslate"><span class="pre">&quot;wire&quot;</span></code> (a
-thin-wire vertex), <code class="docutils literal notranslate"><span class="pre">&quot;symmetry&quot;</span></code> (a symmetry face with a
+thin-wire vertex), <code class="docutils literal notranslate"><span class="pre">&quot;source&quot;</span></code> (a corner of a source’s
+total-field box), <code class="docutils literal notranslate"><span class="pre">&quot;symmetry&quot;</span></code> (a symmetry face with a
 position) or <code class="docutils literal notranslate"><span class="pre">&quot;forced&quot;</span></code> (<code class="docutils literal notranslate"><span class="pre">MeshControl.forced_planes</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -951,7 +967,7 @@ position) or <code class="docutils literal notranslate"><span class="pre">&quot;
 <dt class="sig sig-object py" id="magnelio.mesh.PlaneSource.shape">
 <span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#magnelio.mesh.PlaneSource.shape" title="Link to this definition">#</a></dt>
 <dd><p>Index of the contributing shape in the model’s shape list;
-<code class="docutils literal notranslate"><span class="pre">None</span></code> for forced and symmetry planes.</p>
+<code class="docutils literal notranslate"><span class="pre">None</span></code> for forced, source and symmetry planes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>int or None</p>
@@ -962,8 +978,8 @@ position) or <code class="docutils literal notranslate"><span class="pre">&quot;
 <dl class="py attribute">
 <dt class="sig sig-object py" id="magnelio.mesh.PlaneSource.label">
 <span class="sig-name descname"><span class="pre">label</span></span><a class="headerlink" href="#magnelio.mesh.PlaneSource.label" title="Link to this definition">#</a></dt>
-<dd><p>Human-readable shape label (<code class="docutils literal notranslate"><span class="pre">&quot;#1</span> <span class="pre">Cylinder(pec)&quot;</span></code>), or the face
-name of a symmetry plane (<code class="docutils literal notranslate"><span class="pre">&quot;xmin&quot;</span></code>).</p>
+<dd><p>Human-readable shape label (<code class="docutils literal notranslate"><span class="pre">&quot;#1</span> <span class="pre">Cylinder(pec)&quot;</span></code>), the face
+name of a symmetry plane (<code class="docutils literal notranslate"><span class="pre">&quot;xmin&quot;</span></code>) or the name of a source.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>

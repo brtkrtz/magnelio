@@ -175,6 +175,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -335,6 +342,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -438,6 +452,7 @@
 <li class="toctree-l1"><a class="reference internal" href="boundaries.html"><code class="docutils literal notranslate"><span class="pre">magnelio.boundaries</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="ports.html"><code class="docutils literal notranslate"><span class="pre">magnelio.ports</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="sources.html"><code class="docutils literal notranslate"><span class="pre">magnelio.sources</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html"><code class="docutils literal notranslate"><span class="pre">magnelio.fields</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="monitors.html"><code class="docutils literal notranslate"><span class="pre">magnelio.monitors</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="circuit.html"><code class="docutils literal notranslate"><span class="pre">magnelio.circuit</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="signals.html"><code class="docutils literal notranslate"><span class="pre">magnelio.signals</span></code></a></li>
@@ -514,14 +529,18 @@
 <a class="reference internal" href="#magnelio.analysis.ScatteringResult" title="magnelio.analysis.ScatteringResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScatteringResult</span></code></a> — a script works unchanged
 against either. Four of its accessors (<code class="docutils literal notranslate"><span class="pre">phase</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_s</span></code>,
 <code class="docutils literal notranslate"><span class="pre">to_touchstone</span></code>, <code class="docutils literal notranslate"><span class="pre">to_skrf</span></code>) are shared verbatim between the two and are
-listed on each class below through inheritance.</p>
+listed on each class below through inheritance.  <code class="docutils literal notranslate"><span class="pre">TDResult</span></code> is what
+the general time-domain analysis returns — the recorded signals of one
+march — and what <code class="docutils literal notranslate"><span class="pre">Project.result(name)</span></code> rebuilds for any stored run.</p>
 <p id="module-magnelio.analysis">Analysis workflows — the high-level problem-class API.</p>
 <p>Each <code class="docutils literal notranslate"><span class="pre">Analysis*</span></code> class solves a specific physical question in one
 <code class="docutils literal notranslate"><span class="pre">run()</span></code> call:</p>
 <ul class="simple">
 <li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">AnalysisEigenmode</span></code> — resonant eigenmodes of a closed cavity.</p></li>
-<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">AnalysisScatteringTD</span></code> — S-parameters of a multi-port network
-via FIT time-domain simulation.</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">AnalysisTD</span></code> — one time-domain march under any set of
+simultaneous excitations; returns a <a class="reference internal" href="#magnelio.analysis.TDResult" title="magnelio.analysis.TDResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">TDResult</span></code></a>.</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">AnalysisScatteringTD</span></code> — S-parameters of a multi-port network,
+one channel per time-domain run.</p></li>
 </ul>
 <dl class="simple">
 <dt><code class="xref py py-func docutils literal notranslate"><span class="pre">resume()</span></code> continues a time-domain run persisted in a project store</dt><dd><p>from its last checkpoint — see the function docstring.</p>
@@ -529,7 +548,7 @@ via FIT time-domain simulation.</p></li>
 </dl>
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.analysis.RunSettings">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.analysis.</span></span><span class="sig-name descname"><span class="pre">RunSettings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_actual_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accuracy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_signal_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">taper_signals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_reason</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">final_port_signal_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_model_used</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.RunSettings" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.analysis.</span></span><span class="sig-name descname"><span class="pre">RunSettings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_actual_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accuracy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_signal_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">taper_signals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_reason</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">final_port_signal_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_model_used</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excitations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.RunSettings" title="Link to this definition">#</a></dt>
 <dd><p>Settings a finished run was produced with, readable off the result.</p>
 <p>All fields are optional: the in-RAM result fills what the analysis
 knew at run time; the store-backed reader fills what the project
@@ -551,6 +570,8 @@ recorded (older stores may lack individual entries).</p>
 <li><p><strong>precision</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>backend</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>port_model_used</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>t_end</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>excitations</strong> (<em>tuple</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -1123,6 +1144,276 @@ entry must have been excited.</p></li>
 
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.analysis.TDResult">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.analysis.</span></span><span class="sig-name descname"><span class="pre">TDResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">excitations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excitation_signals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_trace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">monitors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_modes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_normal_dx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_line_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.TDResult" title="Link to this definition">#</a></dt>
+<dd><p>Result of one <code class="xref py py-meth docutils literal notranslate"><span class="pre">AnalysisTD.run()</span></code> call — one leapfrog march.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>excitations</strong> (<em>tuple</em>)</p></li>
+<li><p><strong>dt</strong> (<em>float</em>)</p></li>
+<li><p><strong>n_steps</strong> (<em>int</em>)</p></li>
+<li><p><strong>signals</strong> (<em>dict</em>)</p></li>
+<li><p><strong>excitation_signals</strong> (<em>dict</em>)</p></li>
+<li><p><strong>energy_trace</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>monitors</strong> (<em>dict</em>)</p></li>
+<li><p><strong>port_modes</strong> (<em>dict</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>port_normal_dx</strong> (<em>dict</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>port_line_params</strong> (<em>dict</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>settings</strong> (<a class="reference internal" href="#magnelio.analysis.RunSettings" title="magnelio.analysis.result_interface.RunSettings"><em>RunSettings</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>name</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.TDResult.excitations">
+<span class="sig-name descname"><span class="pre">excitations</span></span><a class="headerlink" href="#magnelio.analysis.TDResult.excitations" title="Link to this definition">#</a></dt>
+<dd><p>The excitations that drove the run, with the waveform each one
+resolved to (the per-mode default where none was given).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple of <a class="reference internal" href="core.html#magnelio.Excitation" title="magnelio.Excitation">Excitation</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.TDResult.dt">
+<span class="sig-name descname"><span class="pre">dt</span></span><a class="headerlink" href="#magnelio.analysis.TDResult.dt" title="Link to this definition">#</a></dt>
+<dd><p>Solver time step [s].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.TDResult.n_steps">
+<span class="sig-name descname"><span class="pre">n_steps</span></span><a class="headerlink" href="#magnelio.analysis.TDResult.n_steps" title="Link to this definition">#</a></dt>
+<dd><p>Number of leapfrog steps executed; every time series below has
+this many samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.TDResult.signals">
+<span class="sig-name descname"><span class="pre">signals</span></span><a class="headerlink" href="#magnelio.analysis.TDResult.signals" title="Link to this definition">#</a></dt>
+<dd><p>Recorded modal voltage and current <code class="docutils literal notranslate"><span class="pre">(V,</span> <span class="pre">I)</span></code> of every port
+channel, on the time axis <code class="docutils literal notranslate"><span class="pre">t</span></code>.  <code class="docutils literal notranslate"><span class="pre">V</span></code> is the <em>total</em> modal
+voltage; use <a class="reference internal" href="#magnelio.analysis.TDResult.a" title="magnelio.analysis.TDResult.a"><code class="xref py py-meth docutils literal notranslate"><span class="pre">a()</span></code></a> / <a class="reference internal" href="#magnelio.analysis.TDResult.b" title="magnelio.analysis.TDResult.b"><code class="xref py py-meth docutils literal notranslate"><span class="pre">b()</span></code></a> for the incident/outgoing
+split.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[(str, int), (<a class="reference internal" href="signals.html#magnelio.signals.Signal1D" title="magnelio.signals.Signal1D">Signal1D</a>, <a class="reference internal" href="signals.html#magnelio.signals.Signal1D" title="magnelio.signals.Signal1D">Signal1D</a>)]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.TDResult.excitation_signals">
+<span class="sig-name descname"><span class="pre">excitation_signals</span></span><a class="headerlink" href="#magnelio.analysis.TDResult.excitation_signals" title="Link to this definition">#</a></dt>
+<dd><p>The drive of every excitation sampled on the same axis —
+amplitude and delay included — keyed like <code class="docutils literal notranslate"><span class="pre">excitations</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[(str, int), <a class="reference internal" href="signals.html#magnelio.signals.Signal1D" title="magnelio.signals.Signal1D">Signal1D</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.TDResult.energy_trace">
+<span class="sig-name descname"><span class="pre">energy_trace</span></span><a class="headerlink" href="#magnelio.analysis.TDResult.energy_trace" title="Link to this definition">#</a></dt>
+<dd><p>Stored electromagnetic energy at the solver’s check cadence, a
+structured array with <code class="docutils literal notranslate"><span class="pre">step</span></code>, <code class="docutils literal notranslate"><span class="pre">time</span></code> and <code class="docutils literal notranslate"><span class="pre">energy</span></code> fields.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.TDResult.monitors">
+<span class="sig-name descname"><span class="pre">monitors</span></span><a class="headerlink" href="#magnelio.analysis.TDResult.monitors" title="Link to this definition">#</a></dt>
+<dd><p>The run’s monitors by name, holding their recorded data.
+Frequency-domain monitors keep the <em>raw</em> transient bins: with
+several waveforms in one run there is no single reference
+spectrum to divide out, so <a class="reference internal" href="#magnelio.analysis.TDResult.renormalize" title="magnelio.analysis.TDResult.renormalize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">renormalize()</span></code></a> is your call.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[str, Monitor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">port_modes,</span> <span class="pre">port_normal_dx,</span> <span class="pre">port_line_params</span></span></dt>
+<dd><p>The port records behind <a class="reference internal" href="#magnelio.analysis.TDResult.a" title="magnelio.analysis.TDResult.a"><code class="xref py py-meth docutils literal notranslate"><span class="pre">a()</span></code></a> / <a class="reference internal" href="#magnelio.analysis.TDResult.b" title="magnelio.analysis.TDResult.b"><code class="xref py py-meth docutils literal notranslate"><span class="pre">b()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.TDResult.settings">
+<span class="sig-name descname"><span class="pre">settings</span></span><a class="headerlink" href="#magnelio.analysis.TDResult.settings" title="Link to this definition">#</a></dt>
+<dd><p>The settings this run was produced with, including why the
+marching stopped.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#magnelio.analysis.RunSettings" title="magnelio.analysis.RunSettings">RunSettings</a> or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.analysis.TDResult.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#magnelio.analysis.TDResult.name" title="Link to this definition">#</a></dt>
+<dd><p>The run’s name in a project store; <code class="docutils literal notranslate"><span class="pre">None</span></code> for an in-RAM run.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.analysis.TDResult.a">
+<span class="sig-name descname"><span class="pre">a</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destagger</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.TDResult.a" title="Link to this definition">#</a></dt>
+<dd><p>Incident power wave <code class="docutils literal notranslate"><span class="pre">a(t)</span></code> [√W] of one port channel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>port</strong> (<em>str</em>) – The channel.</p></li>
+<li><p><strong>mode</strong> (<em>int</em>) – The channel.</p></li>
+<li><p><strong>f_ref</strong> (<em>float</em><em>, </em><em>optional</em>) – Frequency [Hz] at which the modal reference impedance is
+evaluated; default the centre of the excitations’ band.</p></li>
+<li><p><strong>destagger</strong> (<em>bool</em><em>, </em><em>default True</em>) – Use the port’s certified discrete line parameters for the
+V/I half-cell alignment (the S-parameter convention).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.analysis.TDResult.b">
+<span class="sig-name descname"><span class="pre">b</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destagger</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.TDResult.b" title="Link to this definition">#</a></dt>
+<dd><p>Outgoing power wave <code class="docutils literal notranslate"><span class="pre">b(t)</span></code> [√W] of one port channel (see <a class="reference internal" href="#magnelio.analysis.TDResult.a" title="magnelio.analysis.TDResult.a"><code class="xref py py-meth docutils literal notranslate"><span class="pre">a()</span></code></a>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>port</strong> (<em>str</em>)</p></li>
+<li><p><strong>mode</strong> (<em>int</em>)</p></li>
+<li><p><strong>f_ref</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>destagger</strong> (<em>bool</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.analysis.TDResult.excitation_signal">
+<span class="sig-name descname"><span class="pre">excitation_signal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.TDResult.excitation_signal" title="Link to this definition">#</a></dt>
+<dd><p>The sampled drive of the excitation naming <code class="docutils literal notranslate"><span class="pre">name</span></code> (and <code class="docutils literal notranslate"><span class="pre">mode</span></code> on a port).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+<li><p><strong>mode</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="signals.html#magnelio.signals.Signal1D" title="magnelio.signals.signal_1d.Signal1D"><em>Signal1D</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.analysis.TDResult.plot_signals">
+<span class="sig-name descname"><span class="pre">plot_signals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'V'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.TDResult.plot_signals" title="Link to this definition">#</a></dt>
+<dd><p>Plot every recorded port signal of one kind over time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.1)"><em>matplotlib.axes.Axes</em></a><em>, </em><em>optional</em>) – Target axes; a new figure when omitted.</p></li>
+<li><p><strong>kind</strong> (<em>{&quot;V&quot;</em><em>, </em><em>&quot;I&quot;}</em><em>, </em><em>default &quot;V&quot;</em>) – Modal voltage or current.</p></li>
+<li><p><strong>**kwargs</strong> – Forwarded to <code class="docutils literal notranslate"><span class="pre">ax.plot</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The matplotlib <code class="docutils literal notranslate"><span class="pre">(figure,</span> <span class="pre">axes)</span></code> pair.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.analysis.TDResult.renormalize">
+<span class="sig-name descname"><span class="pre">renormalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.TDResult.renormalize" title="Link to this definition">#</a></dt>
+<dd><p>Divide the frequency-domain monitors by one excitation’s spectrum.</p>
+<p>Turns the raw transient bins of every <code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency</span></code>
+and <code class="docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency</span></code> into the response per unit of
+the named excitation — fields per 1 √W incident on a port, per
+1 V/m of an incident plane wave.  Meaningful when that
+excitation is the only one, or the only one with energy at the
+monitor frequencies.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+<li><p><strong>mode</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.analysis.TDResult.signal">
+<span class="sig-name descname"><span class="pre">signal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'V'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.analysis.TDResult.signal" title="Link to this definition">#</a></dt>
+<dd><p>A recorded port signal: modal voltage (<code class="docutils literal notranslate"><span class="pre">&quot;V&quot;</span></code>) or current (<code class="docutils literal notranslate"><span class="pre">&quot;I&quot;</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>port</strong> (<em>str</em>)</p></li>
+<li><p><strong>mode</strong> (<em>int</em>)</p></li>
+<li><p><strong>kind</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="signals.html#magnelio.signals.Signal1D" title="magnelio.signals.signal_1d.Signal1D"><em>Signal1D</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.analysis.TDResult.stop_reason">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">stop_reason</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#magnelio.analysis.TDResult.stop_reason" title="Link to this definition">#</a></dt>
+<dd><p>Why the marching ended (<code class="docutils literal notranslate"><span class="pre">&quot;energy&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;port_signal&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;steps&quot;</span></code>, …).</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.analysis.TDResult.t">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">t</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span><a class="headerlink" href="#magnelio.analysis.TDResult.t" title="Link to this definition">#</a></dt>
+<dd><p>Time axis of every recorded series [s].</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
@@ -1208,6 +1499,26 @@ entry must have been excited.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringTDResult.channels"><code class="docutils literal notranslate"><span class="pre">ScatteringTDResult.channels</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringTDResult.excitations"><code class="docutils literal notranslate"><span class="pre">ScatteringTDResult.excitations</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.ScatteringTDResult.f_axis"><code class="docutils literal notranslate"><span class="pre">ScatteringTDResult.f_axis</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult"><code class="docutils literal notranslate"><span class="pre">TDResult</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.excitations"><code class="docutils literal notranslate"><span class="pre">TDResult.excitations</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.dt"><code class="docutils literal notranslate"><span class="pre">TDResult.dt</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.n_steps"><code class="docutils literal notranslate"><span class="pre">TDResult.n_steps</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.signals"><code class="docutils literal notranslate"><span class="pre">TDResult.signals</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.excitation_signals"><code class="docutils literal notranslate"><span class="pre">TDResult.excitation_signals</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.energy_trace"><code class="docutils literal notranslate"><span class="pre">TDResult.energy_trace</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.monitors"><code class="docutils literal notranslate"><span class="pre">TDResult.monitors</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.settings"><code class="docutils literal notranslate"><span class="pre">TDResult.settings</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.name"><code class="docutils literal notranslate"><span class="pre">TDResult.name</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.a"><code class="docutils literal notranslate"><span class="pre">TDResult.a()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.b"><code class="docutils literal notranslate"><span class="pre">TDResult.b()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.excitation_signal"><code class="docutils literal notranslate"><span class="pre">TDResult.excitation_signal()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.plot_signals"><code class="docutils literal notranslate"><span class="pre">TDResult.plot_signals()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.renormalize"><code class="docutils literal notranslate"><span class="pre">TDResult.renormalize()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.signal"><code class="docutils literal notranslate"><span class="pre">TDResult.signal()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.stop_reason"><code class="docutils literal notranslate"><span class="pre">TDResult.stop_reason</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.analysis.TDResult.t"><code class="docutils literal notranslate"><span class="pre">TDResult.t</span></code></a></li>
 </ul>
 </li>
 </ul>

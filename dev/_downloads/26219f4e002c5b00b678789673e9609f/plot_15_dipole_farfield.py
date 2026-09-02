@@ -109,7 +109,7 @@ mesh = mio.Mesh.from_geometry(
 )
 print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells, z from {mesh.grid.z[0] * 1e3:.0f} mm")
 
-farfield = monitors.MonitorFarField(freqs=[f0], name="farfield")
+farfield = monitors.MonitorFarFieldFrequency(freqs=[f0], name="farfield")
 
 analysis = mio.AnalysisScatteringTD(
     mesh=mesh,

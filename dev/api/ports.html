@@ -175,6 +175,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -335,6 +342,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -438,6 +452,7 @@
 <li class="toctree-l1"><a class="reference internal" href="boundaries.html"><code class="docutils literal notranslate"><span class="pre">magnelio.boundaries</span></code></a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">magnelio.ports</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="sources.html"><code class="docutils literal notranslate"><span class="pre">magnelio.sources</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html"><code class="docutils literal notranslate"><span class="pre">magnelio.fields</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="monitors.html"><code class="docutils literal notranslate"><span class="pre">magnelio.monitors</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="circuit.html"><code class="docutils literal notranslate"><span class="pre">magnelio.circuit</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="signals.html"><code class="docutils literal notranslate"><span class="pre">magnelio.signals</span></code></a></li>
@@ -528,25 +543,6 @@ conductor — i.e. all nodes with <code class="docutils literal notranslate"><sp
 <p>Useful for rectangular coax (the bbox itself acts as the outer
 conductor) and any other “outer = bbox boundary” topology.</p>
 <dl class="field-list simple">
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="magnelio.ports.ExcitationSpec">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">ExcitationSpec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">waveform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'modulated_gaussian'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.ExcitationSpec" title="Link to this definition">#</a></dt>
-<dd><p>Soft-source description for a modal port.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>f_min</strong> (<em>float</em>) – Lower / upper passband edges [Hz].  <code class="docutils literal notranslate"><span class="pre">f_max</span></code> doubles as the
-Gaussian-pulse bandwidth when <code class="docutils literal notranslate"><span class="pre">waveform</span> <span class="pre">==</span> <span class="pre">&quot;gaussian&quot;</span></code>.</p></li>
-<li><p><strong>f_max</strong> (<em>float</em>) – Lower / upper passband edges [Hz].  <code class="docutils literal notranslate"><span class="pre">f_max</span></code> doubles as the
-Gaussian-pulse bandwidth when <code class="docutils literal notranslate"><span class="pre">waveform</span> <span class="pre">==</span> <span class="pre">&quot;gaussian&quot;</span></code>.</p></li>
-<li><p><strong>mode_index</strong> (<em>int</em><em>, </em><em>default 0</em>) – Index of the mode to drive (in the spec’s <code class="docutils literal notranslate"><span class="pre">n_modes</span></code> list).</p></li>
-<li><p><strong>waveform</strong> (<em>{&quot;modulated_gaussian&quot;</em><em>, </em><em>&quot;gaussian&quot;}</em><em>, </em><em>default &quot;modulated_gaussian&quot;</em>) – <code class="docutils literal notranslate"><span class="pre">modulated_gaussian</span></code> for band-limited TE/TM excitation;
-<code class="docutils literal notranslate"><span class="pre">gaussian</span></code> for DC-inclusive TEM excitation.</p></li>
-</ul>
-</dd>
 </dl>
 </dd></dl>
 
@@ -778,7 +774,7 @@ estimate — it is intentionally conservative.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.ports.ModeReport">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">ModeReport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_line</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_discrete</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_plane</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_mirrors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_h_dual_lengths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon_eff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.ModeReport" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">ModeReport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_line</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_discrete</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_plane</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_mirrors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_h_dual_lengths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon_eff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">termination</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chain_spread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.ModeReport" title="Link to this definition">#</a></dt>
 <dd><p>One solved port mode, inspectable without a TD run.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -793,6 +789,8 @@ estimate — it is intentionally conservative.</p>
 <li><p><strong>_mirrors</strong> (<em>tuple</em>)</p></li>
 <li><p><strong>_h_dual_lengths</strong> (<em>tuple</em>)</p></li>
 <li><p><strong>epsilon_eff</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>termination</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>chain_spread</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -863,6 +861,45 @@ of a quasi-TEM mode (<code class="docutils literal notranslate"><span class="pre
 coupled line: even and odd travel at different speeds), the
 filling <code class="docutils literal notranslate"><span class="pre">ε_r</span></code> of a homogeneous TEM mode; <code class="docutils literal notranslate"><span class="pre">None</span></code> for
 hollow-pipe modes.  The phase velocity is <code class="docutils literal notranslate"><span class="pre">c</span> <span class="pre">/</span> <span class="pre">√ε_eff</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.ModeReport.termination">
+<span class="sig-name descname"><span class="pre">termination</span></span><a class="headerlink" href="#magnelio.ports.ModeReport.termination" title="Link to this definition">#</a></dt>
+<dd><p>How the channel closes the domain at the port plane.
+<code class="docutils literal notranslate"><span class="pre">'dtbc'</span></code> is the exact discrete transparent boundary
+condition, reflection-free to roundoff; <code class="docutils literal notranslate"><span class="pre">'mur'</span></code> is the
+first-order absorber, a reflection floor of order −30 dB.  A
+channel qualifies for the exact one when the feed cross-section
+is a uniform discrete chain; <code class="docutils literal notranslate"><span class="pre">chain_spread</span></code> is that
+measurement.  <code class="docutils literal notranslate"><span class="pre">None</span></code> where the port reports no per-channel
+termination (lumped ports carry no modes at all).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>{‘dtbc’, ‘mur’} or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.ModeReport.chain_spread">
+<span class="sig-name descname"><span class="pre">chain_spread</span></span><a class="headerlink" href="#magnelio.ports.ModeReport.chain_spread" title="Link to this definition">#</a></dt>
+<dd><p>Weighted RMS spread of the per-pair modal Courant number over
+the feed cross-section — 0 on a perfectly uniform chain, and
+the quantity <code class="docutils literal notranslate"><span class="pre">chain_floor_db</span></code> turns into a reflection.  A
+value just above the acceptance threshold means a
+cross-section that was meant to be uniform and was not, and
+warns; a large one is an inhomogeneous line that never
+qualified for the scalar chain.  <code class="docutils literal notranslate"><span class="pre">None</span></code>
+when the test does not apply: a mode with a
+closed-form field evaluator is ineligible by construction, and
+so is every channel of a port whose feed masses fail the slab
+consistency check upstream (both warn on their own).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float or None</p>
@@ -954,6 +991,26 @@ plane (conductors filled, air regions as dashed outlines).</p></li>
 <dd class="field-even"><p>complex</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.ports.ModeReport.chain_floor_db">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">chain_floor_db</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#magnelio.ports.ModeReport.chain_floor_db" title="Link to this definition">#</a></dt>
+<dd><p>Reflection the feed cross-section’s non-uniformity can cost [dB].</p>
+<p>An upper bound, not an estimate.  The exact termination is
+built for the weighted-mean chain, so a spread across the
+cross-section leaves a residual mismatch; measured through the
+production chain, the worst case rises linearly with the
+spread at about a seventh of it, and this bound takes the
+coefficient as one.  A channel terminated by the exact
+boundary contributes at most this much reflection on top of
+whatever else limits it — compare it against the floor the
+port itself reaches.</p>
+<p><code class="docutils literal notranslate"><span class="pre">None</span></code> where no spread was measured (see <code class="docutils literal notranslate"><span class="pre">chain_spread</span></code>),
+and <code class="docutils literal notranslate"><span class="pre">None</span></code> on a channel the first-order absorber terminates:
+there the floor is set by the absorber, not by the
+cross-section, and the spread only explains why the exact
+boundary was withheld.  Read <code class="docutils literal notranslate"><span class="pre">chain_spread</span></code> in that case.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1150,7 +1207,7 @@ the solved window.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.ports.PortSpecCoax">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">PortSpecCoax</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plane</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inner_radius</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outer_radius</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0.0,</span> <span class="pre">0.0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_modes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excitation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortSpecCoax" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">PortSpecCoax</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plane</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inner_radius</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outer_radius</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0.0,</span> <span class="pre">0.0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_modes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortSpecCoax" title="Link to this definition">#</a></dt>
 <dd><p>Coaxial-line modal port (TEM, Phase 1).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1163,8 +1220,6 @@ the solved window.</p>
 <li><p><strong>center</strong> (<em>tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>]</em><em>, </em><em>default</em><em> (</em><em>0.0</em><em>, </em><em>0.0</em><em>)</em>) – Coax-axis location in the <em>global</em> tangential frame (lower-axis
 first).  See module docstring for the convention.</p></li>
 <li><p><strong>n_modes</strong> (<em>int</em><em>, </em><em>default 1</em>) – Phase 1 supports only <code class="docutils literal notranslate"><span class="pre">n_modes</span> <span class="pre">=</span> <span class="pre">1</span></code> (TEM).</p></li>
-<li><p><strong>excitation</strong> (<a class="reference internal" href="#magnelio.ports.ExcitationSpec" title="magnelio.ports.ExcitationSpec"><em>ExcitationSpec</em></a><em> or </em><em>None</em>) – If given, the port is a soft source.  Otherwise it is an
-absorber-only modal Mur-1st port.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1205,7 +1260,7 @@ excitations.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.ports.PortSpecMultiConductor">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">PortSpecMultiConductor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plane</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conductors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_modes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excitation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortSpecMultiConductor" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">PortSpecMultiConductor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plane</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conductors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_modes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortSpecMultiConductor" title="Link to this definition">#</a></dt>
 <dd><p>Multi-conductor numerical port spec (Phase 2b/c factory cleanup).</p>
 <p>Drives the TEM Laplace path
 (<code class="xref py py-func docutils literal notranslate"><span class="pre">solve_tem_laplace()</span></code>, when <code class="docutils literal notranslate"><span class="pre">epsilon_r</span></code> is set) or the QTEM
@@ -1258,7 +1313,6 @@ hybrid modes (inhomogeneous filling) — see the class
 docstring.  The QTEM extension requires the requested modes
 to propagate at <code class="docutils literal notranslate"><span class="pre">f_calc</span></code> and raises with guidance
 otherwise.</p></li>
-<li><p><strong>excitation</strong> (<a class="reference internal" href="#magnelio.ports.ExcitationSpec" title="magnelio.ports.ExcitationSpec"><em>ExcitationSpec</em></a><em> or </em><em>None</em><em>, </em><em>default None</em>) – Soft-source spec; <code class="docutils literal notranslate"><span class="pre">None</span></code> for an absorber-only port.</p></li>
 <li><p><strong>window</strong> (<em>tuple</em><em> of </em><em>two corner points</em><em>, </em><em>optional</em>) – Sub-rectangle of the face as two opposite corners in <em>global</em>
 tangential-axis ordering (<code class="xref py py-meth docutils literal notranslate"><span class="pre">PortPlane.from_mesh()</span></code>
 convention).  <code class="docutils literal notranslate"><span class="pre">None</span></code> (default) covers the whole face.  A PEC
@@ -1278,7 +1332,7 @@ nominally covers it.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.ports.PortSpecNumerical">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">PortSpecNumerical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plane</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_modes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excitation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortSpecNumerical" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">PortSpecNumerical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plane</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_modes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortSpecNumerical" title="Link to this definition">#</a></dt>
 <dd><p>Numerical-mode-solver port for hollow homogeneously-filled cross-sections.</p>
 <p>Drives the numerical 2D curl-curl / node-Laplace eigenvalue solver
 (<code class="xref py py-class docutils literal notranslate"><span class="pre">Numerical2DModeSolver</span></code>) for hollow waveguides whose
@@ -1310,7 +1364,6 @@ keeps the <code class="docutils literal notranslate"><span class="pre">n_modes</
 one operator injects/records/terminates every mode on the
 face (unified multi-mode port, WP-R3).  Pass <code class="docutils literal notranslate"><span class="pre">ModeType.TE</span></code>
 or <code class="docutils literal notranslate"><span class="pre">ModeType.TM</span></code> to restrict to one family.</p></li>
-<li><p><strong>excitation</strong> (<a class="reference internal" href="#magnelio.ports.ExcitationSpec" title="magnelio.ports.ExcitationSpec"><em>ExcitationSpec</em></a><em> or </em><em>None</em>) – Soft-source spec; <code class="docutils literal notranslate"><span class="pre">None</span></code> for an absorber-only port.</p></li>
 <li><p><strong>window</strong> (<em>tuple</em><em> of </em><em>two corner points</em><em>, </em><em>optional</em>) – Sub-rectangle of the face as two opposite corners in <em>global</em>
 tangential-axis ordering (<code class="xref py py-meth docutils literal notranslate"><span class="pre">PortPlane.from_mesh()</span></code>
 convention).  <code class="docutils literal notranslate"><span class="pre">None</span></code> (default) covers the whole face.  The window-boundary BCs follow the
@@ -1324,7 +1377,7 @@ that wall’s BC, an interior edge inherits the port face’s BC
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.ports.PortSpecRectWG">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">PortSpecRectWG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plane</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width_a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height_b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0.0,</span> <span class="pre">0.0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_modes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excitation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortSpecRectWG" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">PortSpecRectWG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plane</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width_a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height_b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0.0,</span> <span class="pre">0.0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_modes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortSpecRectWG" title="Link to this definition">#</a></dt>
 <dd><p>Rectangular-waveguide modal port (TE / TM, Phase 1).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1340,7 +1393,6 @@ global axis [m].</p></li>
 tangential frame (lower-axis first).</p></li>
 <li><p><strong>n_modes</strong> (<em>int</em><em>, </em><em>default 1</em>) – Number of modes returned by the analytical solver, ordered by
 ascending cutoff frequency.</p></li>
-<li><p><strong>excitation</strong> (<a class="reference internal" href="#magnelio.ports.ExcitationSpec" title="magnelio.ports.ExcitationSpec"><em>ExcitationSpec</em></a><em> or </em><em>None</em>) – Soft-source spec; <code class="docutils literal notranslate"><span class="pre">None</span></code> for an absorber-only port.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1484,7 +1536,6 @@ conductor.  Mirrors the validation in
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.BboxLateralConductor"><code class="docutils literal notranslate"><span class="pre">BboxLateralConductor</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ExcitationSpec"><code class="docutils literal notranslate"><span class="pre">ExcitationSpec</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.Mode"><code class="docutils literal notranslate"><span class="pre">Mode</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.Mode.gamma"><code class="docutils literal notranslate"><span class="pre">Mode.gamma()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.Mode.z_modal"><code class="docutils literal notranslate"><span class="pre">Mode.z_modal()</span></code></a></li>
@@ -1509,10 +1560,13 @@ conductor.  Mirrors the validation in
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeReport.f_cutoff"><code class="docutils literal notranslate"><span class="pre">ModeReport.f_cutoff</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeReport.z_line"><code class="docutils literal notranslate"><span class="pre">ModeReport.z_line</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeReport.epsilon_eff"><code class="docutils literal notranslate"><span class="pre">ModeReport.epsilon_eff</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeReport.termination"><code class="docutils literal notranslate"><span class="pre">ModeReport.termination</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeReport.chain_spread"><code class="docutils literal notranslate"><span class="pre">ModeReport.chain_spread</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeReport.gamma"><code class="docutils literal notranslate"><span class="pre">ModeReport.gamma()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeReport.plot"><code class="docutils literal notranslate"><span class="pre">ModeReport.plot()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeReport.z_modal"><code class="docutils literal notranslate"><span class="pre">ModeReport.z_modal()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeReport.z_wave"><code class="docutils literal notranslate"><span class="pre">ModeReport.z_wave()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeReport.chain_floor_db"><code class="docutils literal notranslate"><span class="pre">ModeReport.chain_floor_db</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeType"><code class="docutils literal notranslate"><span class="pre">ModeType</span></code></a></li>

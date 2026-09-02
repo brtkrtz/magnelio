@@ -175,6 +175,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -335,6 +342,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -438,6 +452,7 @@
 <li class="toctree-l1"><a class="reference internal" href="boundaries.html"><code class="docutils literal notranslate"><span class="pre">magnelio.boundaries</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="ports.html"><code class="docutils literal notranslate"><span class="pre">magnelio.ports</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="sources.html"><code class="docutils literal notranslate"><span class="pre">magnelio.sources</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html"><code class="docutils literal notranslate"><span class="pre">magnelio.fields</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="monitors.html"><code class="docutils literal notranslate"><span class="pre">magnelio.monitors</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="circuit.html"><code class="docutils literal notranslate"><span class="pre">magnelio.circuit</span></code></a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">magnelio.signals</span></code></a></li>
@@ -509,7 +524,11 @@
                   
   <section class="tex2jax_ignore mathjax_ignore" id="module-magnelio.signals">
 <span id="magnelio-signals"></span><h1><code class="docutils literal notranslate"><span class="pre">magnelio.signals</span></code><a class="headerlink" href="#module-magnelio.signals" title="Link to this heading">#</a></h1>
-<p>Signal components — time series and excitation waveforms.</p>
+<p>Signals — excitation waveforms and sampled time series.</p>
+<p>A <a class="reference internal" href="#magnelio.signals.Waveform" title="magnelio.signals.Waveform"><code class="xref py py-class docutils literal notranslate"><span class="pre">Waveform</span></code></a> is the time function an <a class="reference internal" href="core.html#magnelio.Excitation" title="magnelio.Excitation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Excitation</span></code></a>
+binds to a port or source (unit peak, known bandwidth and duration);
+<a class="reference internal" href="#magnelio.signals.Signal1D" title="magnelio.signals.Signal1D"><code class="xref py py-class docutils literal notranslate"><span class="pre">Signal1D</span></code></a> is a <em>sampled</em> series on the result side, with its
+spectrum.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.signals.Signal1D">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.signals.</span></span><span class="sig-name descname"><span class="pre">Signal1D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.Signal1D" title="Link to this definition">#</a></dt>
@@ -574,73 +593,272 @@ eliminates that floor down to floating-point precision.</p></li>
 
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="magnelio.signals.gaussian">
-<span class="sig-prename descclassname"><span class="pre">magnelio.signals.</span></span><span class="sig-name descname"><span class="pre">gaussian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.gaussian" title="Link to this definition">#</a></dt>
-<dd><p>Plain Gaussian pulse, peak = 1 at t0 = 4/f_max.</p>
-<p>Suitable for TEM modes (DC-inclusive).</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.signals.Waveform">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.signals.</span></span><span class="sig-name descname"><span class="pre">Waveform</span></span><a class="headerlink" href="#magnelio.signals.Waveform" title="Link to this definition">#</a></dt>
+<dd><p>Excitation waveform: a unit-peak time function with a bandwidth.</p>
+<p>Every waveform is callable — <code class="docutils literal notranslate"><span class="pre">w(t)</span></code> for a float or an array of
+times [s] — and describes its own spectral occupancy and duration:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">f_max</span></code></dt><dd><p>Upper band edge [Hz]; sizes the time step and the run-length
+estimate.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">f_min</span></code></dt><dd><p>Lower band edge [Hz]; <code class="docutils literal notranslate"><span class="pre">0</span></code> for baseband forms.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">f_center</span></code></dt><dd><p>Carrier frequency [Hz], or <code class="docutils literal notranslate"><span class="pre">None</span></code> for baseband forms.  An
+<a class="reference internal" href="core.html#magnelio.Excitation" title="magnelio.Excitation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Excitation</span></code></a> may carry a <code class="docutils literal notranslate"><span class="pre">phase</span></code> only on a
+waveform with a carrier.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">t_end</span></code></dt><dd><p>Time [s] after which the waveform is (effectively) zero;
+<code class="docutils literal notranslate"><span class="pre">inf</span></code> for continuous-wave forms, which need an explicit run
+duration.</p>
+</dd>
+</dl>
+<p>The amplitude, delay and phase of a drive live on the
+<a class="reference internal" href="core.html#magnelio.Excitation" title="magnelio.Excitation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Excitation</span></code></a>, not here, so a single waveform can
+drive several ports and sources.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#magnelio.signals.WaveformGaussian" title="magnelio.signals.WaveformGaussian"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WaveformGaussian</span></code></a>, <a class="reference internal" href="#magnelio.signals.WaveformGaussianModulated" title="magnelio.signals.WaveformGaussianModulated"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WaveformGaussianModulated</span></code></a>, <a class="reference internal" href="#magnelio.signals.WaveformSine" title="magnelio.signals.WaveformSine"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WaveformSine</span></code></a>, <a class="reference internal" href="#magnelio.signals.WaveformStep" title="magnelio.signals.WaveformStep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WaveformStep</span></code></a>, <a class="reference internal" href="#magnelio.signals.WaveformTable" title="magnelio.signals.WaveformTable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WaveformTable</span></code></a>, <a class="reference internal" href="#magnelio.signals.WaveformFunction" title="magnelio.signals.WaveformFunction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WaveformFunction</span></code></a></p>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.signals.Waveform.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.Waveform.plot" title="Link to this definition">#</a></dt>
+<dd><p>Plot the waveform against time.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>t</strong> (<em>float</em><em> or </em><em>np.ndarray</em>) – Time [s].</p></li>
-<li><p><strong>f_max</strong> (<em>float</em>) – Bandwidth [Hz].</p></li>
+<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.1)"><em>matplotlib.axes.Axes</em></a><em>, </em><em>optional</em>) – Axes to draw on; a new figure otherwise.</p></li>
+<li><p><strong>n</strong> (<em>int</em><em>, </em><em>default 2000</em>) – Number of samples.</p></li>
+<li><p><strong>t_max</strong> (<em>float</em><em>, </em><em>optional</em>) – End of the time axis [s].  Default: <code class="docutils literal notranslate"><span class="pre">t_end</span></code> for finite
+forms, ten carrier periods (or ten rise times) for
+continuous-wave forms.</p></li>
+<li><p><strong>**kwargs</strong> – Forwarded to <code class="docutils literal notranslate"><span class="pre">ax.plot</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>float | <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a></p>
+<dd class="field-even"><p><a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.1)">matplotlib.axes.Axes</a></p>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="magnelio.signals.modulated_gaussian">
-<span class="sig-prename descclassname"><span class="pre">magnelio.signals.</span></span><span class="sig-name descname"><span class="pre">modulated_gaussian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_min</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.modulated_gaussian" title="Link to this definition">#</a></dt>
-<dd><p>Gaussian envelope modulated at the band centre (f_min + f_max) / 2.</p>
-<p>The envelope sigma scales with the passband bandwidth <code class="docutils literal notranslate"><span class="pre">f_max</span> <span class="pre">-</span>
-<span class="pre">f_min</span></code> rather than <code class="docutils literal notranslate"><span class="pre">f_max</span></code> alone, so the spectrum is tightly
-confined to [f_min, f_max] and almost nothing leaks below f_min.
-This is what one wants when the lower edge is constrained — by a
-waveguide cut-off frequency or by an explicit user-specified band.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.signals.Waveform.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.Waveform.sample" title="Link to this definition">#</a></dt>
+<dd><p>Sample the waveform on <code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">=</span> <span class="pre">arange(n)</span> <span class="pre">·</span> <span class="pre">dt</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>t</strong> (<em>float</em><em> or </em><em>np.ndarray</em>) – Time [s].</p></li>
-<li><p><strong>f_max</strong> (<em>float</em>) – Upper passband edge [Hz].</p></li>
-<li><p><strong>f_min</strong> (<em>float</em>) – Lower passband edge [Hz].  Either an explicit user value or
-the mode’s cut-off frequency.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>float | <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="magnelio.signals.waveform_for_mode">
-<span class="sig-prename descclassname"><span class="pre">magnelio.signals.</span></span><span class="sig-name descname"><span class="pre">waveform_for_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.waveform_for_mode" title="Link to this definition">#</a></dt>
-<dd><p>Factory: select Gaussian or modulated Gaussian based on band edges.</p>
-<p>Picks a modulated Gaussian whenever a positive lower edge exists —
-either implicitly via the mode cut-off (<code class="docutils literal notranslate"><span class="pre">omega_c</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>, e.g. TE/TM
-waveguide modes) or explicitly via <code class="docutils literal notranslate"><span class="pre">f_min</span> <span class="pre">&gt;</span> <span class="pre">0</span></code> (caller-specified
-bandpass even for TEM modes).  The carrier sits at the midpoint
-of <code class="docutils literal notranslate"><span class="pre">[max(f_cutoff,</span> <span class="pre">f_min),</span> <span class="pre">f_max]</span></code>.  Falls back to a plain
-DC-inclusive Gaussian when both edges are zero.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>f_max</strong> (<em>float</em>) – Upper bandwidth [Hz].</p></li>
-<li><p><strong>omega_c</strong> (<em>float</em><em>, </em><em>default 0.0</em>) – Angular cut-off frequency [rad/s] of the mode (TE/TM &gt; 0,
-TEM = 0).</p></li>
-<li><p><strong>f_min</strong> (<em>float</em><em>, </em><em>default 0.0</em>) – Caller-specified lower band edge [Hz].  Set this when you want a
-bandpass excitation on a TEM mode (e.g. WR-90 measurement band).</p></li>
+<li><p><strong>dt</strong> (<em>float</em>) – Time step [s].</p></li>
+<li><p><strong>n</strong> (<em>int</em>) – Number of samples.</p></li>
+<li><p><strong>label</strong> (<em>str</em><em>, </em><em>optional</em>) – Label of the returned signal.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Waveform function <code class="docutils literal notranslate"><span class="pre">v(t)</span> <span class="pre">-&gt;</span> <span class="pre">float</span></code>.</p>
+<dd class="field-even"><p>The sampled waveform.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Callable[[float], float]</p>
+<dd class="field-odd"><p><a class="reference internal" href="#magnelio.signals.Signal1D" title="magnelio.signals.Signal1D">Signal1D</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.signals.Waveform.spectrum">
+<span class="sig-name descname"><span class="pre">spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.Waveform.spectrum" title="Link to this definition">#</a></dt>
+<dd><p>Continuous-time spectrum <code class="docutils literal notranslate"><span class="pre">∫</span> <span class="pre">w(t)</span> <span class="pre">e^{-2πj</span> <span class="pre">f</span> <span class="pre">t}</span> <span class="pre">dt</span></code> at frequencies <em>f</em> [Hz].</p>
+<p>The same sign convention as <a class="reference internal" href="#magnelio.signals.Signal1D.at_frequencies" title="magnelio.signals.Signal1D.at_frequencies"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Signal1D.at_frequencies()</span></code></a>.
+Closed-form where the waveform has one; otherwise the waveform
+is sampled to <code class="docutils literal notranslate"><span class="pre">t_end</span></code> at twenty points per <code class="docutils literal notranslate"><span class="pre">1/f_max</span></code> and
+integrated numerically.  Continuous-wave forms (<code class="docutils literal notranslate"><span class="pre">t_end</span> <span class="pre">=</span>
+<span class="pre">inf</span></code>) have no finite-energy spectrum and raise.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>f</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.signals.WaveformFunction">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.signals.</span></span><span class="sig-name descname"><span class="pre">WaveformFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_center</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.WaveformFunction" title="Link to this definition">#</a></dt>
+<dd><p>Waveform from a user function <code class="docutils literal notranslate"><span class="pre">fn(t)</span></code>.</p>
+<p>The band edges cannot be read off a Python function, so <code class="docutils literal notranslate"><span class="pre">f_max</span></code>
+is required — it sizes the run-length estimate and the warning
+against exceeding the mesh’s design frequency.  A function
+waveform cannot be stored in a project recipe, so a run driven by
+it cannot be resumed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fn</strong> (<em>callable</em>) – <code class="docutils literal notranslate"><span class="pre">fn(t)</span> <span class="pre">-&gt;</span> <span class="pre">value</span></code> for a float <code class="docutils literal notranslate"><span class="pre">t</span></code> [s]; may accept arrays.</p></li>
+<li><p><strong>f_max</strong> (<em>float</em>) – Upper band edge [Hz].</p></li>
+<li><p><strong>f_min</strong> (<em>float</em><em>, </em><em>default 0.0</em>) – Lower band edge [Hz].</p></li>
+<li><p><strong>f_center</strong> (<em>float</em><em>, </em><em>optional</em>) – Carrier frequency [Hz], if the function is a modulated form.</p></li>
+<li><p><strong>t_end</strong> (<em>float</em><em>, </em><em>default inf</em>) – Time [s] after which <code class="docutils literal notranslate"><span class="pre">fn</span></code> is effectively zero; <code class="docutils literal notranslate"><span class="pre">inf</span></code> marks
+a continuous-wave form.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.signals.WaveformGaussian">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.signals.</span></span><span class="sig-name descname"><span class="pre">WaveformGaussian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.WaveformGaussian" title="Link to this definition">#</a></dt>
+<dd><p>Baseband Gaussian pulse (DC-inclusive), unit peak at <code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">=</span> <span class="pre">4</span> <span class="pre">/</span> <span class="pre">f_max</span></code>.</p>
+<p>The pulse for TEM and lumped ports and for any source that may
+carry DC.  Its spectrum is a Gaussian of width <code class="docutils literal notranslate"><span class="pre">f_max</span></code> (the
+<code class="docutils literal notranslate"><span class="pre">e^{-4}</span></code> point), so <code class="docutils literal notranslate"><span class="pre">f_max</span></code> is the useful upper band edge.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>f_max</strong> (<em>float</em>) – Upper band edge [Hz].</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">signals</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">WaveformGaussian</span><span class="p">(</span><span class="n">f_max</span><span class="o">=</span><span class="mf">10e9</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w</span><span class="p">(</span><span class="mf">4.0</span> <span class="o">/</span> <span class="mf">10e9</span><span class="p">)</span>
+<span class="go">1.0</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.signals.WaveformGaussian.spectrum">
+<span class="sig-name descname"><span class="pre">spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.WaveformGaussian.spectrum" title="Link to this definition">#</a></dt>
+<dd><p>Continuous-time spectrum <code class="docutils literal notranslate"><span class="pre">∫</span> <span class="pre">w(t)</span> <span class="pre">e^{-2πj</span> <span class="pre">f</span> <span class="pre">t}</span> <span class="pre">dt</span></code> at frequencies <em>f</em> [Hz].</p>
+<p>The same sign convention as <a class="reference internal" href="#magnelio.signals.Signal1D.at_frequencies" title="magnelio.signals.Signal1D.at_frequencies"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Signal1D.at_frequencies()</span></code></a>.
+Closed-form where the waveform has one; otherwise the waveform
+is sampled to <code class="docutils literal notranslate"><span class="pre">t_end</span></code> at twenty points per <code class="docutils literal notranslate"><span class="pre">1/f_max</span></code> and
+integrated numerically.  Continuous-wave forms (<code class="docutils literal notranslate"><span class="pre">t_end</span> <span class="pre">=</span>
+<span class="pre">inf</span></code>) have no finite-energy spectrum and raise.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.signals.WaveformGaussian.t_end">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">t_end</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#magnelio.signals.WaveformGaussian.t_end" title="Link to this definition">#</a></dt>
+<dd><p>Twice the peak time — the pulse is below 1e-17 of its peak there.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.signals.WaveformGaussianModulated">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.signals.</span></span><span class="sig-name descname"><span class="pre">WaveformGaussianModulated</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.WaveformGaussianModulated" title="Link to this definition">#</a></dt>
+<dd><p>Gaussian envelope on a carrier at the band centre, unit peak.</p>
+<p>The band-limited pulse for TE/TM modes and any drive whose lower
+band edge matters: the envelope’s sigma follows the passband
+<code class="docutils literal notranslate"><span class="pre">f_max</span> <span class="pre">−</span> <span class="pre">f_min</span></code>, so almost no energy leaks below <code class="docutils literal notranslate"><span class="pre">f_min</span></code>.  The
+carrier sits at <code class="docutils literal notranslate"><span class="pre">(f_min</span> <span class="pre">+</span> <span class="pre">f_max)</span> <span class="pre">/</span> <span class="pre">2</span></code>, which makes this the
+waveform an <a class="reference internal" href="core.html#magnelio.Excitation" title="magnelio.Excitation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Excitation</span></code></a> may phase-shift.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>f_min</strong> (<em>float</em>) – Lower band edge [Hz].</p></li>
+<li><p><strong>f_max</strong> (<em>float</em>) – Upper band edge [Hz]; must exceed <code class="docutils literal notranslate"><span class="pre">f_min</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">signals</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">WaveformGaussianModulated</span><span class="p">(</span><span class="n">f_min</span><span class="o">=</span><span class="mf">8.2e9</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="mf">12.4e9</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w</span><span class="o">.</span><span class="n">f_center</span>
+<span class="go">10300000000.0</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.signals.WaveformGaussianModulated.spectrum">
+<span class="sig-name descname"><span class="pre">spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.WaveformGaussianModulated.spectrum" title="Link to this definition">#</a></dt>
+<dd><p>Continuous-time spectrum <code class="docutils literal notranslate"><span class="pre">∫</span> <span class="pre">w(t)</span> <span class="pre">e^{-2πj</span> <span class="pre">f</span> <span class="pre">t}</span> <span class="pre">dt</span></code> at frequencies <em>f</em> [Hz].</p>
+<p>The same sign convention as <a class="reference internal" href="#magnelio.signals.Signal1D.at_frequencies" title="magnelio.signals.Signal1D.at_frequencies"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Signal1D.at_frequencies()</span></code></a>.
+Closed-form where the waveform has one; otherwise the waveform
+is sampled to <code class="docutils literal notranslate"><span class="pre">t_end</span></code> at twenty points per <code class="docutils literal notranslate"><span class="pre">1/f_max</span></code> and
+integrated numerically.  Continuous-wave forms (<code class="docutils literal notranslate"><span class="pre">t_end</span> <span class="pre">=</span>
+<span class="pre">inf</span></code>) have no finite-energy spectrum and raise.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.signals.WaveformGaussianModulated.f_center">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">f_center</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#magnelio.signals.WaveformGaussianModulated.f_center" title="Link to this definition">#</a></dt>
+<dd><p>the centre of <code class="docutils literal notranslate"><span class="pre">[f_min,</span> <span class="pre">f_max]</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Carrier frequency [<a class="reference internal" href="fields.html#magnelio.fields.FieldState.Hz" title="magnelio.fields.FieldState.Hz">Hz</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.signals.WaveformGaussianModulated.t_end">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">t_end</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#magnelio.signals.WaveformGaussianModulated.t_end" title="Link to this definition">#</a></dt>
+<dd><p>Twice the peak time — the envelope is below 1e-17 of its peak there.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.signals.WaveformSine">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.signals.</span></span><span class="sig-name descname"><span class="pre">WaveformSine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rise_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.WaveformSine" title="Link to this definition">#</a></dt>
+<dd><p>Continuous-wave sinusoid <code class="docutils literal notranslate"><span class="pre">sin(2π</span> <span class="pre">f</span> <span class="pre">t</span> <span class="pre">+</span> <span class="pre">phase)</span></code>, unit amplitude.</p>
+<p>A single-frequency drive; zero for <code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">&lt;</span> <span class="pre">0</span></code>.  Its duration is
+infinite (<code class="docutils literal notranslate"><span class="pre">t_end</span> <span class="pre">=</span> <span class="pre">inf</span></code>), so a run driven by it needs an explicit
+duration and cannot stop on energy decay.  With <code class="docutils literal notranslate"><span class="pre">rise_time</span></code> the
+amplitude ramps in with a raised-cosine envelope, which keeps the
+switch-on from exciting the whole band.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>f</strong> (<em>float</em>) – Frequency [Hz].</p></li>
+<li><p><strong>phase</strong> (<em>float</em><em>, </em><em>default 0.0</em>) – Phase [degrees].</p></li>
+<li><p><strong>rise_time</strong> (<em>float</em><em>, </em><em>optional</em>) – Length of the raised-cosine switch-on [s].  <code class="docutils literal notranslate"><span class="pre">None</span></code> (default)
+switches on hard at <code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">=</span> <span class="pre">0</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.signals.WaveformStep">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.signals.</span></span><span class="sig-name descname"><span class="pre">WaveformStep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rise_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fall_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.WaveformStep" title="Link to this definition">#</a></dt>
+<dd><p>Raised-cosine step (or pulse), unit plateau.</p>
+<p>Rises from 0 to 1 over <code class="docutils literal notranslate"><span class="pre">rise_time</span></code>; with <code class="docutils literal notranslate"><span class="pre">hold</span></code> it stays at 1
+for that long and falls back over <code class="docutils literal notranslate"><span class="pre">fall_time</span></code> — a smooth
+rectangular pulse for time-domain reflectometry.  Without <code class="docutils literal notranslate"><span class="pre">hold</span></code>
+the plateau lasts forever (<code class="docutils literal notranslate"><span class="pre">t_end</span> <span class="pre">=</span> <span class="pre">inf</span></code>), so the run needs an
+explicit duration.  Zero for <code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">&lt;</span> <span class="pre">0</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rise_time</strong> (<em>float</em>) – Length of the raised-cosine rise [s].  <code class="docutils literal notranslate"><span class="pre">f_max</span></code> is
+<code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">/</span> <span class="pre">rise_time</span></code>, the bandwidth the edge occupies.</p></li>
+<li><p><strong>hold</strong> (<em>float</em><em>, </em><em>optional</em>) – Plateau duration [s].  <code class="docutils literal notranslate"><span class="pre">None</span></code> (default) never falls.</p></li>
+<li><p><strong>fall_time</strong> (<em>float</em><em>, </em><em>optional</em>) – Length of the fall [s]; defaults to <code class="docutils literal notranslate"><span class="pre">rise_time</span></code> when <code class="docutils literal notranslate"><span class="pre">hold</span></code>
+is given, ignored otherwise.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.signals.WaveformTable">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.signals.</span></span><span class="sig-name descname"><span class="pre">WaveformTable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_center</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.signals.WaveformTable" title="Link to this definition">#</a></dt>
+<dd><p>Tabulated waveform, linearly interpolated between its samples.</p>
+<p>Zero outside <code class="docutils literal notranslate"><span class="pre">[t[0],</span> <span class="pre">t[-1]]</span></code>.  The band edges default to what
+the table’s own spectrum shows: <code class="docutils literal notranslate"><span class="pre">f_max</span></code> is the highest frequency
+at which the magnitude is still within 40 dB of its peak; give it
+explicitly when the table is short or noisy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t</strong> (<em>array_like</em>) – Sample times [s], strictly increasing, starting at or after 0.</p></li>
+<li><p><strong>values</strong> (<em>array_like</em>) – Sample values, same length as <code class="docutils literal notranslate"><span class="pre">t</span></code>.</p></li>
+<li><p><strong>f_max</strong> (<em>float</em><em>, </em><em>optional</em>) – Upper band edge [Hz]; estimated from the samples by default.</p></li>
+<li><p><strong>f_min</strong> (<em>float</em><em>, </em><em>default 0.0</em>) – Lower band edge [Hz].</p></li>
+<li><p><strong>f_center</strong> (<em>float</em><em>, </em><em>optional</em>) – Carrier frequency [Hz] when the table holds a modulated pulse.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -700,9 +918,27 @@ bandpass excitation on a TEM mode (e.g. WR-90 measurement band).</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.Signal1D.spectrum"><code class="docutils literal notranslate"><span class="pre">Signal1D.spectrum</span></code></a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.gaussian"><code class="docutils literal notranslate"><span class="pre">gaussian()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.modulated_gaussian"><code class="docutils literal notranslate"><span class="pre">modulated_gaussian()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.waveform_for_mode"><code class="docutils literal notranslate"><span class="pre">waveform_for_mode()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.Waveform"><code class="docutils literal notranslate"><span class="pre">Waveform</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.Waveform.plot"><code class="docutils literal notranslate"><span class="pre">Waveform.plot()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.Waveform.sample"><code class="docutils literal notranslate"><span class="pre">Waveform.sample()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.Waveform.spectrum"><code class="docutils literal notranslate"><span class="pre">Waveform.spectrum()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformFunction"><code class="docutils literal notranslate"><span class="pre">WaveformFunction</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformGaussian"><code class="docutils literal notranslate"><span class="pre">WaveformGaussian</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformGaussian.spectrum"><code class="docutils literal notranslate"><span class="pre">WaveformGaussian.spectrum()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformGaussian.t_end"><code class="docutils literal notranslate"><span class="pre">WaveformGaussian.t_end</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformGaussianModulated"><code class="docutils literal notranslate"><span class="pre">WaveformGaussianModulated</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformGaussianModulated.spectrum"><code class="docutils literal notranslate"><span class="pre">WaveformGaussianModulated.spectrum()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformGaussianModulated.f_center"><code class="docutils literal notranslate"><span class="pre">WaveformGaussianModulated.f_center</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformGaussianModulated.t_end"><code class="docutils literal notranslate"><span class="pre">WaveformGaussianModulated.t_end</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformSine"><code class="docutils literal notranslate"><span class="pre">WaveformSine</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformStep"><code class="docutils literal notranslate"><span class="pre">WaveformStep</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.signals.WaveformTable"><code class="docutils literal notranslate"><span class="pre">WaveformTable</span></code></a></li>
 </ul>
   </nav></div>
 

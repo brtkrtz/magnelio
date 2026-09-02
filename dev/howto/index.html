@@ -60,8 +60,8 @@
     <link rel="canonical" href="https://brtkrtz.github.io/magnelio/dev/howto/index.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Coupled-line directional coupler: dimensioning the pair with the port solver" href="plot_coupled_line_coupler.html" />
-    <link rel="prev" title="Offset Cassegrain reflector: parametric surfaces and a horn feed" href="../tutorials/19_cassegrain_reflector.html" />
+    <link rel="next" title="Ring-down: the loaded frequency and Q budget of a coupled resonator" href="plot_cavity_ringdown_q.html" />
+    <link rel="prev" title="Plane-wave scattering: the radar cross section of a sphere" href="../tutorials/plot_20_plane_wave_scattering.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -170,6 +170,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
   </a>
 </li>
 
@@ -335,6 +342,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -429,7 +443,10 @@
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="plot_cavity_ringdown_q.html">Ring-down: the loaded frequency and Q budget of a coupled resonator</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_coupled_line_coupler.html">Coupled-line directional coupler: dimensioning the pair with the port solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_current_path_source.html">Impressed currents: driving a model with a known current</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_field_source_reuse.html">Field sources: simulate a radiator once, reuse it anywhere</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lange_coupler.html">Lange coupler: a 3-dB interdigitated coupler dimensioned with the port solver</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_investigations.html">Lumped ports: investigations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_coax.html">Lumped port tuning: coaxial line</a></li>
@@ -503,9 +520,18 @@ rather than read in order: download it as a <code class="docutils literal notran
 <code class="docutils literal notranslate"><span class="pre">.ipynb</span></code> notebook and edit the parameters at the top for your own
 device.  For a guided introduction to the workflow itself, start with
 the tutorials instead.</p>
-<div id='sg-tag-list' class='sphx-glr-tag-list'></div><div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="Two microstrip lines running side by side for a quarter wavelength form a directional coupler: a fraction of the power entering one line leaves the near end of the other, and — ideally — nothing leaves its far end.  The classic single-section design has two knobs, the gap between the lines and their width, and one number to hit: the coupling at the centre frequency.  This guide sets a −10 dB coupler at 5 GHz on a 0.813 mm substrate and reads the result off a four-port S-parameter run."><img alt="" src="../_images/sphx_glr_plot_coupled_line_coupler_thumb.png" />
+<div id='sg-tag-list' class='sphx-glr-tag-list'></div><div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="A resonator that is coupled to the outside world does not resonate where the closed one does, and it does not store energy as long.  Both shifts matter as soon as something has to be tuned to the resonator — a particle beam driving the output cavity of a klystron has to be modelled at the loaded frequency, not at the frequency an eigenmode solve of the sealed cavity returns."><img alt="" src="../_images/sphx_glr_plot_cavity_ringdown_q_thumb.png" />
+<p><a class="reference internal" href="plot_cavity_ringdown_q.html"><span class="doc">Ring-down: the loaded frequency and Q budget of a coupled resonator</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Ring-down: the loaded frequency and Q budget of a coupled resonator</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="Two microstrip lines running side by side for a quarter wavelength form a directional coupler: a fraction of the power entering one line leaves the near end of the other, and — ideally — nothing leaves its far end.  The classic single-section design has two knobs, the gap between the lines and their width, and one number to hit: the coupling at the centre frequency.  This guide sets a −10 dB coupler at 5 GHz on a 0.813 mm substrate and reads the result off a four-port S-parameter run."><img alt="" src="../_images/sphx_glr_plot_coupled_line_coupler_thumb.png" />
 <p><a class="reference internal" href="plot_coupled_line_coupler.html"><span class="doc">Coupled-line directional coupler: dimensioning the pair with the port solver</span></a></p>
   <div class="sphx-glr-thumbnail-title">Coupled-line directional coupler: dimensioning the pair with the port solver</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="Not every drive is a port.  Sometimes the current is the thing you know — a coil wound to a specification, an interference current measured on a harness, a lightning channel, a probe injecting a known signal — and what you want out of the simulation is the field it produces.  SourceCurrentPath says exactly that: a current I(t) prescribed along a curve through the model."><img alt="" src="../_images/sphx_glr_plot_current_path_source_thumb.png" />
+<p><a class="reference internal" href="plot_current_path_source.html"><span class="doc">Impressed currents: driving a model with a known current</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Impressed currents: driving a model with a known current</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="A radiator rarely sits alone.  The antenna goes on a mast, the connector into a housing, the scatterer into a scene — and each time the whole thing is meshed together, the fine structure of the radiator sets the cell size for a domain that is mostly empty air."><img alt="" src="../_images/sphx_glr_plot_field_source_reuse_thumb.png" />
+<p><a class="reference internal" href="plot_field_source_reuse.html"><span class="doc">Field sources: simulate a radiator once, reuse it anywhere</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Field sources: simulate a radiator once, reuse it anywhere</div>
 </div><div class="sphx-glr-thumbcontainer" tooltip="A single pair of coupled microstrip lines cannot reach 3 dB coupling on a substrate anyone can fabricate — the gap would have to be a few micrometres.  Lange&#x27;s answer (1969) is to split each line into two narrow fingers and interleave them, so every finger couples to two neighbours; bond wires join the fingers of one line at both ends.  The result is a quarter-wave 3-dB quadrature coupler with fabricable gaps, the workhorse of balanced amplifiers and image-reject mixers.  This guide designs one at 10 GHz on 254 µm alumina and reads coupling, phase and match off a four-port run."><img alt="" src="../_images/sphx_glr_plot_lange_coupler_thumb.png" />
 <p><a class="reference internal" href="plot_lange_coupler.html"><span class="doc">Lange coupler: a 3-dB interdigitated coupler dimensioned with the port solver</span></a></p>
   <div class="sphx-glr-thumbnail-title">Lange coupler: a 3-dB interdigitated coupler dimensioned with the port solver</div>
@@ -546,20 +572,20 @@ the tutorials instead.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../tutorials/19_cassegrain_reflector.html"
+       href="../tutorials/plot_20_plane_wave_scattering.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Offset Cassegrain reflector: parametric surfaces and a horn feed</p>
+        <p class="prev-next-title">Plane-wave scattering: the radar cross section of a sphere</p>
       </div>
     </a>
     <a class="right-next"
-       href="plot_coupled_line_coupler.html"
+       href="plot_cavity_ringdown_q.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Coupled-line directional coupler: dimensioning the pair with the port solver</p>
+        <p class="prev-next-title">Ring-down: the loaded frequency and Q budget of a coupled resonator</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

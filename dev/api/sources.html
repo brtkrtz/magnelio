@@ -60,7 +60,7 @@
     <link rel="canonical" href="https://brtkrtz.github.io/magnelio/dev/api/sources.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="magnelio.monitors" href="monitors.html" />
+    <link rel="next" title="magnelio.fields" href="fields.html" />
     <link rel="prev" title="magnelio.ports" href="ports.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -170,6 +170,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
   </a>
 </li>
 
@@ -335,6 +342,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -438,6 +452,7 @@
 <li class="toctree-l1"><a class="reference internal" href="boundaries.html"><code class="docutils literal notranslate"><span class="pre">magnelio.boundaries</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="ports.html"><code class="docutils literal notranslate"><span class="pre">magnelio.ports</span></code></a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">magnelio.sources</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html"><code class="docutils literal notranslate"><span class="pre">magnelio.fields</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="monitors.html"><code class="docutils literal notranslate"><span class="pre">magnelio.monitors</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="circuit.html"><code class="docutils literal notranslate"><span class="pre">magnelio.circuit</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="signals.html"><code class="docutils literal notranslate"><span class="pre">magnelio.signals</span></code></a></li>
@@ -509,16 +524,138 @@
                   
   <section class="tex2jax_ignore mathjax_ignore" id="module-magnelio.sources">
 <span id="magnelio-sources"></span><h1><code class="docutils literal notranslate"><span class="pre">magnelio.sources</span></code><a class="headerlink" href="#module-magnelio.sources" title="Link to this heading">#</a></h1>
-<p>Source components — volumetric excitations beyond the port sources.</p>
+<p>Sources — model objects that inject fields, declared before meshing.</p>
+<p>A source is declared on the <a class="reference internal" href="core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeometryModel</span></code></a> with
+<code class="docutils literal notranslate"><span class="pre">add_source</span></code> and driven at run time by an <a class="reference internal" href="core.html#magnelio.Excitation" title="magnelio.Excitation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Excitation</span></code></a>
+that names it (the waveform and amplitude live there).  Ports are
+sources <em>and</em> loads and stay in <a class="reference internal" href="ports.html#module-magnelio.ports" title="magnelio.ports"><code class="xref py py-mod docutils literal notranslate"><span class="pre">magnelio.ports</span></code></a>.</p>
 <dl class="py class">
-<dt class="sig sig-object py" id="magnelio.sources.PlaneWaveSource">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.sources.</span></span><span class="sig-name descname"><span class="pre">PlaneWaveSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0.0,</span> <span class="pre">0.0,</span> <span class="pre">1.0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polarization</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(1.0,</span> <span class="pre">0.0,</span> <span class="pre">0.0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corners</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amplitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">waveform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gaussian'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_center</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.PlaneWaveSource" title="Link to this definition">#</a></dt>
-<dd><p>Plane-wave excitation via TF/SF formulation.</p>
+<dt class="sig sig-object py" id="magnelio.sources.SourceCurrentPath">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.sources.</span></span><span class="sig-name descname"><span class="pre">SourceCurrentPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples_per_cell</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceCurrentPath" title="Link to this definition">#</a></dt>
+<dd><p>An impressed current along a path through the model.</p>
+<p>Declared on the model with <a class="reference internal" href="core.html#magnelio.GeometryModel.add_source" title="magnelio.GeometryModel.add_source"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_source()</span></code></a>
+and driven by an <a class="reference internal" href="core.html#magnelio.Excitation" title="magnelio.Excitation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Excitation</span></code></a> naming it: the
+excitation’s <code class="docutils literal notranslate"><span class="pre">amplitude</span></code> is the peak current in amperes
+(<code class="xref py py-attr docutils literal notranslate"><span class="pre">amplitude_unit</span></code>) and its <code class="docutils literal notranslate"><span class="pre">waveform</span></code> the time function.
+The current is prescribed, not solved for — the path is a source,
+not a wire.  A closed path is a current loop (a magnetic dipole);
+an open one accumulates the charge its ends demand and radiates as
+an electric dipole.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>direction</strong> (<em>tuple</em><em> of </em><em>float</em>) – Propagation direction unit vector <code class="docutils literal notranslate"><span class="pre">(kx,</span> <span class="pre">ky,</span> <span class="pre">kz)</span></code>.</p></li>
-<li><p><strong>polarization</strong> (<em>tuple</em><em> of </em><em>float</em>) – E-field polarization unit vector (⊥ <em>direction</em>).</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Source name — the handle an <a class="reference internal" href="core.html#magnelio.Excitation" title="magnelio.Excitation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Excitation</span></code></a> uses.</p></li>
+<li><p><strong>path</strong> (<a class="reference internal" href="geo.html#magnelio.geo.Curve" title="magnelio.geo.Curve"><em>Curve</em></a><em> or </em><em>sequence</em><em> of </em><em>points</em>) – The filament.  Either a <a class="reference internal" href="geo.html#magnelio.geo.Curve" title="magnelio.geo.Curve"><code class="xref py py-class docutils literal notranslate"><span class="pre">Curve</span></code></a> (a
+polyline, arc, spline, helix, or any chain of them) or a
+sequence of at least two <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y,</span> <span class="pre">z)</span></code> points [m], which is
+taken as the vertices of a polyline.  The current flows from
+the first point towards the last.  The path must lie inside
+the meshed domain; under a symmetry declaration that is the
+meshed half, and the images on the other side are supplied by
+the symmetry wall.</p></li>
+<li><p><strong>samples_per_cell</strong> (<em>int</em><em>, </em><em>default 4</em>) – Curve samples per smallest cell while rasterising.  Higher
+values only refine which edges a strongly curved path picks up;
+the dipole moment does not depend on it.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>A path may cross itself or double back; every edge is impressed
+once with the net signed current it carries, so a segment traversed
+in both directions cancels, as it physically does.  Edges the
+solver holds at zero — inside a perfect conductor, or tangential to
+a PEC wall — cannot take a current, and the source reports how many
+of its edges were swallowed that way rather than silently radiating
+less than asked.</p>
+<p class="rubric">Examples</p>
+<p>A short vertical filament at the origin — a Hertzian dipole of
+1 mA peak:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">src</span> <span class="o">=</span> <span class="n">SourceCurrentPath</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"dip"</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1e-3</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">add_source</span><span class="p">(</span><span class="n">src</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">exc</span> <span class="o">=</span> <span class="n">magnelio</span><span class="o">.</span><span class="n">Excitation</span><span class="p">(</span><span class="s2">"dip"</span><span class="p">,</span> <span class="n">waveform</span><span class="o">=</span><span class="n">wf</span><span class="p">,</span> <span class="n">amplitude</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>A one-turn loop of radius 5 mm in the xy-plane — a magnetic dipole:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">Curve</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">loop</span> <span class="o">=</span> <span class="n">Curve</span><span class="o">.</span><span class="n">arc</span><span class="p">((</span><span class="mf">5e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mf">5e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">5e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">joined</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">Curve</span><span class="o">.</span><span class="n">arc</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">5e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mf">5e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">src</span> <span class="o">=</span> <span class="n">SourceCurrentPath</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"loop"</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">loop</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.sources.SourceCurrentPath.attach">
+<span class="sig-name descname"><span class="pre">attach</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">solver</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceCurrentPath.attach" title="Link to this definition">#</a></dt>
+<dd><p>Rasterise the path and fold <code class="docutils literal notranslate"><span class="pre">−sign·β</span></code> into one coefficient per edge.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.sources.SourceCurrentPath.inject_E">
+<span class="sig-name descname"><span class="pre">inject_E</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_E</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceCurrentPath.inject_E" title="Link to this definition">#</a></dt>
+<dd><p>Add <code class="docutils literal notranslate"><span class="pre">−sign·β·I</span></code> on every path edge after the E update.</p>
+<p>The current is taken at <code class="docutils literal notranslate"><span class="pre">t_E</span> <span class="pre">−</span> <span class="pre">dt/2</span></code>, the level of the
+<code class="docutils literal notranslate"><span class="pre">C̃ᵀ</span> <span class="pre">ĥ</span></code> term it stands beside.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>t_E</strong> (<em>float</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.sources.SourceCurrentPath.inject_H">
+<span class="sig-name descname"><span class="pre">inject_H</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_H</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceCurrentPath.inject_H" title="Link to this definition">#</a></dt>
+<dd><p>Nothing — an electric current enters the E update only.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>t_H</strong> (<em>float</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.sources.SourceCurrentPath.curve">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">curve</span></span><a class="headerlink" href="#magnelio.sources.SourceCurrentPath.curve" title="Link to this definition">#</a></dt>
+<dd><p>The path as a <a class="reference internal" href="geo.html#magnelio.geo.Curve" title="magnelio.geo.Curve"><code class="xref py py-class docutils literal notranslate"><span class="pre">Curve</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldIncident">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.sources.</span></span><span class="sig-name descname"><span class="pre">SourceFieldIncident</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corners</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldIncident" title="Link to this definition">#</a></dt>
+<dd><p>An incident field on a total-field/scattered-field box.</p>
+<p>Declared on the model with <a class="reference internal" href="core.html#magnelio.GeometryModel.add_source" title="magnelio.GeometryModel.add_source"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_source()</span></code></a>
+and driven by an <a class="reference internal" href="core.html#magnelio.Excitation" title="magnelio.Excitation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Excitation</span></code></a> naming it.  The
+incident field is any function of position and time — a Gaussian
+beam, a focused wave, a tabulated field — evaluated on the six box
+faces every step; the plane wave has its own fast path in
+<a class="reference internal" href="#magnelio.sources.SourcePlaneWave" title="magnelio.sources.SourcePlaneWave"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourcePlaneWave</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Source name — the handle an <a class="reference internal" href="core.html#magnelio.Excitation" title="magnelio.Excitation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Excitation</span></code></a> uses.</p></li>
+<li><p><strong>field</strong> (<em>callable</em>) – <code class="docutils literal notranslate"><span class="pre">field(x,</span> <span class="pre">y,</span> <span class="pre">z,</span> <span class="pre">t,</span> <span class="pre">drive)</span> <span class="pre">-&gt;</span> <span class="pre">((Ex,</span> <span class="pre">Ey,</span> <span class="pre">Ez),</span> <span class="pre">(Hx,</span> <span class="pre">Hy,</span> <span class="pre">Hz))</span></code>,
+the incident field at the positions <em>x</em>, <em>y</em>, <em>z</em> (arrays of
+one shape, the samples of one box face) and time <em>t</em> [s]:
+E in V/m, H in A/m, each component broadcastable to the
+position shape.  <code class="docutils literal notranslate"><span class="pre">drive(τ)</span></code> is the excitation’s time
+function <code class="docutils literal notranslate"><span class="pre">amplitude</span> <span class="pre">·</span> <span class="pre">waveform(τ</span> <span class="pre">−</span> <span class="pre">delay)</span></code>, vectorised over
+<em>τ</em>, so a retarded field is <code class="docutils literal notranslate"><span class="pre">drive(t</span> <span class="pre">−</span> <span class="pre">k̂·r</span> <span class="pre">/</span> <span class="pre">c₀)</span></code>.  The
+field must itself solve the free-space Maxwell equations
+(a superposition of plane waves); an inconsistent E/H pair
+leaks into the scattered-field region.</p></li>
 <li><p><strong>corners</strong> (<em>tuple</em><em> of </em><em>tuple</em><em>, </em><em>optional</em>) – Two opposite corners <code class="docutils literal notranslate"><span class="pre">((x0,</span> <span class="pre">y0,</span> <span class="pre">z0),</span> <span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">z1))</span></code> of the
 total-field region [m] — the same form as
 <a class="reference internal" href="geo.html#magnelio.geo.Brick.from_corners" title="magnelio.geo.Brick.from_corners"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_corners()</span></code></a>.  Corner order does
@@ -527,16 +664,26 @@ to fall back to the default extent on that side (two bulk
 cells inside the domain boundary — the scattered-field shell
 the TF/SF split needs).  Snapped to the nearest grid nodes.
 <code class="docutils literal notranslate"><span class="pre">None</span></code> (default) uses the default extent on all six sides.</p></li>
-<li><p><strong>amplitude</strong> (<em>float</em>) – Peak E-field amplitude [V/m].</p></li>
-<li><p><strong>waveform</strong> (<em>{&quot;gaussian&quot;</em><em>, </em><em>&quot;sine&quot;}</em>) – Excitation waveform.</p></li>
-<li><p><strong>f_center</strong> (<em>float</em><em>, </em><em>optional</em>) – Center frequency for the sine waveform [Hz].</p></li>
-<li><p><strong>f_max</strong> (<em>float</em><em>, </em><em>optional</em>) – Bandwidth parameter for the Gaussian waveform [Hz].</p></li>
 </ul>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>The amplitude of the incident field is the excitation’s
+<code class="docutils literal notranslate"><span class="pre">amplitude</span></code> in <code class="docutils literal notranslate"><span class="pre">V/m</span></code> (<code class="xref py py-attr docutils literal notranslate"><span class="pre">amplitude_unit</span></code>); the waveform is
+the excitation’s <code class="docutils literal notranslate"><span class="pre">waveform</span></code>.  Neither is part of the source.</p>
+<p class="rubric">Examples</p>
+<p>A plane wave along +z spelled out as a general field (the
+dedicated class is the faster way to say this):</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ETA0</span> <span class="o">=</span> <span class="n">magnelio</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">ETA0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">pw</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">drive</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">f</span> <span class="o">=</span> <span class="n">drive</span><span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">z</span> <span class="o">/</span> <span class="n">C0</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">f</span> <span class="o">/</span> <span class="n">ETA0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">src</span> <span class="o">=</span> <span class="n">SourceFieldIncident</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"inc"</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="n">pw</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.sources.PlaneWaveSource.from_ranges">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_ranges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">x1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.PlaneWaveSource.from_ranges" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldIncident.from_ranges">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_ranges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">x1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldIncident.from_ranges" title="Link to this definition">#</a></dt>
 <dd><p>Build the same source from one coordinate range per axis.</p>
 <p>The range spelling of <code class="docutils literal notranslate"><span class="pre">corners=</span></code>, as in
 <a class="reference internal" href="geo.html#magnelio.geo.Brick.from_ranges" title="magnelio.geo.Brick.from_ranges"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_ranges()</span></code></a>: each axis takes up to
@@ -547,16 +694,17 @@ extent, or a single bound to reach the domain boundary on the
 other side.  All remaining keyword arguments are forwarded to
 the constructor.</p>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">src</span> <span class="o">=</span> <span class="n">PlaneWaveSource</span><span class="o">.</span><span class="n">from_ranges</span><span class="p">(</span><span class="n">x1</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">x2</span><span class="o">=</span><span class="mf">9e-3</span><span class="p">,</span> <span class="n">y1</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">y2</span><span class="o">=</span><span class="mf">9e-3</span><span class="p">,</span> <span class="n">z1</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">z2</span><span class="o">=</span><span class="mf">19e-3</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">src</span> <span class="o">=</span> <span class="n">SourcePlaneWave</span><span class="o">.</span><span class="n">from_ranges</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"pw"</span><span class="p">,</span> <span class="n">x1</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">x2</span><span class="o">=</span><span class="mf">9e-3</span><span class="p">,</span> <span class="n">z1</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">z2</span><span class="o">=</span><span class="mf">19e-3</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.sources.PlaneWaveSource.attach">
-<span class="sig-name descname"><span class="pre">attach</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">solver</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.PlaneWaveSource.attach" title="Link to this definition">#</a></dt>
-<dd><p>Cache solver coefficients and snap TF/SF box to grid nodes.</p>
-<p>Called once from <code class="docutils literal notranslate"><span class="pre">FITTimeDomainSolver.setup()</span></code>.</p>
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldIncident.attach">
+<span class="sig-name descname"><span class="pre">attach</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">solver</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldIncident.attach" title="Link to this definition">#</a></dt>
+<dd><p>Cache solver coefficients, snap the box and fold the face table.</p>
+<p>Called once from <code class="docutils literal notranslate"><span class="pre">FITTimeDomainSolver.setup()</span></code>.  Requires a
+bound waveform (<code class="xref py py-meth docutils literal notranslate"><span class="pre">set_excitation()</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
@@ -565,16 +713,369 @@ the constructor.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.sources.PlaneWaveSource.excitation">
-<span class="sig-name descname"><span class="pre">excitation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.PlaneWaveSource.excitation" title="Link to this definition">#</a></dt>
-<dd><p>Waveform value at time <em>t</em> [s].</p>
-<p>Accepts a scalar or an array of times and follows the input: the
-TF/SF injection evaluates a whole box face in one call.</p>
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldIncident.inject_E">
+<span class="sig-name descname"><span class="pre">inject_E</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_E</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldIncident.inject_E" title="Link to this definition">#</a></dt>
+<dd><p>Apply TF/SF E-field corrections after the E update.</p>
+<p>Uses H_inc at t = t_E - dt/2 (half a step behind E).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>t_E</strong> (<em>float</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.sources.PlaneWaveSource.incident_E">
-<span class="sig-name descname"><span class="pre">incident_E</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.PlaneWaveSource.incident_E" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldIncident.inject_H">
+<span class="sig-name descname"><span class="pre">inject_H</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_H</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldIncident.inject_H" title="Link to this definition">#</a></dt>
+<dd><p>Apply TF/SF H-field corrections after the H update.</p>
+<p>Uses E_inc at t = t_H - dt/2 (the E time level just computed).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>t_H</strong> (<em>float</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldInitial">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.sources.</span></span><span class="sig-name descname"><span class="pre">SourceFieldInitial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldInitial" title="Link to this definition">#</a></dt>
+<dd><p>The field at t = 0 of a time-domain run.</p>
+<p>Declared on the model with <a class="reference internal" href="core.html#magnelio.GeometryModel.add_source" title="magnelio.GeometryModel.add_source"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_source()</span></code></a>
+(or passed as <code class="docutils literal notranslate"><span class="pre">sources=</span></code> to the analysis) and named by an
+<a class="reference internal" href="core.html#magnelio.Excitation" title="magnelio.Excitation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Excitation</span></code></a> whose <code class="docutils literal notranslate"><span class="pre">amplitude</span></code> scales the field
+(unit <code class="docutils literal notranslate"><span class="pre">&quot;1&quot;</span></code>); it has no waveform, delay or phase.  Build one with
+<a class="reference internal" href="#magnelio.sources.SourceFieldInitial.from_project" title="magnelio.sources.SourceFieldInitial.from_project"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_project()</span></code></a>, <a class="reference internal" href="#magnelio.sources.SourceFieldInitial.from_function" title="magnelio.sources.SourceFieldInitial.from_function"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_function()</span></code></a> or <a class="reference internal" href="#magnelio.sources.SourceFieldInitial.from_arrays" title="magnelio.sources.SourceFieldInitial.from_arrays"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_arrays()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Source name — the handle an <a class="reference internal" href="core.html#magnelio.Excitation" title="magnelio.Excitation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Excitation</span></code></a> uses.</p></li>
+<li><p><strong>field</strong> (<a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><em>FieldState</em></a>) – E [V/m] and H [A/m] at t = 0 on the Yee positions.  A field on
+a grid other than the run’s is resampled onto the run’s grid
+by trilinear interpolation per component (which does not
+preserve the discrete divergence exactly — prefer the run’s
+own grid).</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ring</span> <span class="o">=</span> <span class="n">sources</span><span class="o">.</span><span class="n">SourceFieldInitial</span><span class="o">.</span><span class="n">from_project</span><span class="p">(</span><span class="s2">"cavity_modes"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"mode0"</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mesh</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="n">f_max</span><span class="p">)</span><span class="o">.</span><span class="n">with_sources</span><span class="p">([</span><span class="n">ring</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">excitations</span><span class="o">=</span><span class="p">[</span><span class="s2">"mode0"</span><span class="p">],</span> <span class="n">t_end</span><span class="o">=</span><span class="mf">50e-9</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldInitial.from_arrays">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_arrays</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ez</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Hx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Hy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Hz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldInitial.from_arrays" title="Link to this definition">#</a></dt>
+<dd><p>E and H from component arrays on the Yee positions of <em>grid</em>.</p>
+<p>A component left <code class="docutils literal notranslate"><span class="pre">None</span></code> is zero.  Shapes follow the table in
+<a class="reference internal" href="fields.html#module-magnelio.fields" title="magnelio.fields"><code class="xref py py-mod docutils literal notranslate"><span class="pre">magnelio.fields</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grid</strong> (<a class="reference internal" href="mesh.html#magnelio.mesh.GridLines" title="magnelio.mesh.grid.GridLines"><em>GridLines</em></a>)</p></li>
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.sources.SourceFieldInitial" title="magnelio.sources.field_initial.SourceFieldInitial"><em>SourceFieldInitial</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldInitial.from_function">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldInitial.from_function" title="Link to this definition">#</a></dt>
+<dd><p>E and H as vector functions of position, sampled on <em>grid</em>.</p>
+<p>See <a class="reference internal" href="fields.html#magnelio.fields.FieldState.from_function" title="magnelio.fields.FieldState.from_function"><code class="xref py py-meth docutils literal notranslate"><span class="pre">magnelio.fields.FieldState.from_function()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grid</strong> (<a class="reference internal" href="mesh.html#magnelio.mesh.GridLines" title="magnelio.mesh.grid.GridLines"><em>GridLines</em></a>)</p></li>
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.sources.SourceFieldInitial" title="magnelio.sources.field_initial.SourceFieldInitial"><em>SourceFieldInitial</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldInitial.from_project">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_project</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase_deg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldInitial.from_project" title="Link to this definition">#</a></dt>
+<dd><p>The eigenmode <em>mode</em> of a project’s stored eigenmode result.</p>
+<p>The mode oscillates as <code class="docutils literal notranslate"><span class="pre">E(t)</span> <span class="pre">=</span> <span class="pre">E_m</span> <span class="pre">cos(ωt)</span></code>,
+<code class="docutils literal notranslate"><span class="pre">H(t)</span> <span class="pre">=</span> <span class="pre">−H_m</span> <span class="pre">sin(ωt)</span></code> with the stored patterns <code class="docutils literal notranslate"><span class="pre">E_m</span></code>, <code class="docutils literal notranslate"><span class="pre">H_m</span></code>;
+the start is taken at the phase <em>phase_deg</em> of that cycle, so
+the default <code class="docutils literal notranslate"><span class="pre">0</span></code> starts at the instant of maximum electric
+field with H = 0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>project</strong> (<em>str</em><em>, </em><a class="reference internal" href="geo.html#magnelio.geo.Path" title="magnelio.geo.Path"><em>Path</em></a><em> or </em><a class="reference internal" href="io.html#magnelio.io.Project" title="magnelio.io.Project"><em>Project</em></a>) – A project directory written by <code class="docutils literal notranslate"><span class="pre">AnalysisEigenmode(project=…)</span></code>,
+or the opened <a class="reference internal" href="io.html#magnelio.io.Project" title="magnelio.io.project.Project"><code class="xref py py-class docutils literal notranslate"><span class="pre">Project</span></code></a>.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Source name.</p></li>
+<li><p><strong>mode</strong> (<em>int</em>) – Mode index (ascending in frequency).</p></li>
+<li><p><strong>phase_deg</strong> (<em>float</em>) – Phase <code class="docutils literal notranslate"><span class="pre">ωt</span></code> [degrees] of the cycle at which the run starts.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.sources.SourceFieldInitial" title="magnelio.sources.field_initial.SourceFieldInitial"><em>SourceFieldInitial</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldInitial.attach">
+<span class="sig-name descname"><span class="pre">attach</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">solver</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldInitial.attach" title="Link to this definition">#</a></dt>
+<dd><p>Write the scaled field into the solver’s state.</p>
+<p><code class="docutils literal notranslate"><span class="pre">e(0)</span></code> is the field on the primal edges (PEC edges zeroed).
+The march holds H half a step <em>ahead</em> of E when it enters its
+first E update, so the start is <code class="docutils literal notranslate"><span class="pre">h(+dt/2)</span></code>, half a discrete
+Faraday step from <code class="docutils literal notranslate"><span class="pre">h(0)</span></code>: <code class="docutils literal notranslate"><span class="pre">h(dt/2)</span> <span class="pre">=</span> <span class="pre">h(0)</span> <span class="pre">−</span> <span class="pre">½·β_H·(C</span> <span class="pre">e(0))</span></code>.
+For an eigenmode of the discrete operator started at its E
+maximum (<code class="docutils literal notranslate"><span class="pre">h(0)</span> <span class="pre">=</span> <span class="pre">0</span></code>) this is the exact leapfrog state of that
+mode, so the run is a pure oscillation of it.</p>
+<p>The contribution is <em>added</em> to the solver’s state, which the
+solver allocated as zeros: two initial fields excited in the
+same run superpose, as the linear start they are.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldInitial.clear_excitation">
+<span class="sig-name descname"><span class="pre">clear_excitation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldInitial.clear_excitation" title="Link to this definition">#</a></dt>
+<dd><p>Drop the bound waveform — the source injects nothing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldInitial.inject_E">
+<span class="sig-name descname"><span class="pre">inject_E</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_E</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldInitial.inject_E" title="Link to this definition">#</a></dt>
+<dd><p>Nothing to inject — the field was written at t = 0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>t_E</strong> (<em>float</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldInitial.inject_H">
+<span class="sig-name descname"><span class="pre">inject_H</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_H</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldInitial.inject_H" title="Link to this definition">#</a></dt>
+<dd><p>Nothing to inject — the field was written at t = 0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>t_H</strong> (<em>float</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldInitial.set_excitation">
+<span class="sig-name descname"><span class="pre">set_excitation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">waveform</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">amplitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldInitial.set_excitation" title="Link to this definition">#</a></dt>
+<dd><p>Bind the amplitude the field is scaled by; there is no waveform.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>waveform</strong> (<a class="reference internal" href="signals.html#magnelio.signals.Waveform" title="magnelio.signals.waveforms.Waveform"><em>Waveform</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>amplitude</strong> (<em>float</em>)</p></li>
+<li><p><strong>delay</strong> (<em>float</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldInitial.amplitude">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">amplitude</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#magnelio.sources.SourceFieldInitial.amplitude" title="Link to this definition">#</a></dt>
+<dd><p>The bound scale factor (1 before <a class="reference internal" href="#magnelio.sources.SourceFieldInitial.set_excitation" title="magnelio.sources.SourceFieldInitial.set_excitation"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_excitation()</span></code></a>).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldSurface">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.sources.</span></span><span class="sig-name descname"><span class="pre">SourceFieldSurface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corners</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recording</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldSurface" title="Link to this definition">#</a></dt>
+<dd><p>Replay a recorded Huygens surface as an equivalent source.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>recording</strong> (<a class="reference internal" href="fields.html#magnelio.fields.SurfaceRecording" title="magnelio.fields.SurfaceRecording"><em>SurfaceRecording</em></a>) – The surface a <a class="reference internal" href="monitors.html#magnelio.monitors.MonitorFieldSurface" title="magnelio.monitors.MonitorFieldSurface"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonitorFieldSurface</span></code></a>
+recorded, from <code class="xref py py-meth docutils literal notranslate"><span class="pre">MonitorFieldSurface.recording()</span></code> or
+<a class="reference internal" href="#magnelio.sources.SourceFieldSurface.from_file" title="magnelio.sources.SourceFieldSurface.from_file"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_file()</span></code></a>.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Source name; an <a class="reference internal" href="core.html#magnelio.Excitation" title="magnelio.Excitation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Excitation</span></code></a> names it to set
+the scale factor and the delay.</p></li>
+<li><p><strong>position</strong> (<em>tuple</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – Where the centre of the recorded box goes in this model [m].
+Defaults to the position it had in the recording.</p></li>
+<li><p><strong>rotation</strong> (<em>tuple</em><em>, </em><em>optional</em>) – <code class="docutils literal notranslate"><span class="pre">(axis,</span> <span class="pre">degrees)</span></code> turn applied to the recording, e.g.
+<code class="docutils literal notranslate"><span class="pre">(&quot;z&quot;,</span> <span class="pre">90)</span></code>.  Multiples of 90° only.</p></li>
+<li><p><strong>corners</strong> (<em>tuple</em><em>[</em><em>tuple</em><em>, </em><em>tuple</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>field</strong> (<em>Callable</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The excitation that drives this source carries no waveform — the
+time function is the recording.  Its <code class="docutils literal notranslate"><span class="pre">amplitude</span></code> scales the
+replayed field (dimensionless, 1 = as recorded) and its <code class="docutils literal notranslate"><span class="pre">delay</span></code>
+shifts it in time.</p>
+<p>The replayed field is only as complete as the recording: a
+recording whose box was left open at a PEC/PMC wall is valid only
+in a model that continues that wall, and one that was stopped
+before the fields had decayed ends where its samples end (the
+replay holds the last sample, it does not extrapolate).</p>
+<p>Memory: the recording is resampled onto this model’s patches once,
+at attach time — about as much again as the recording itself.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">src</span> <span class="o">=</span> <span class="n">sources</span><span class="o">.</span><span class="n">SourceFieldSurface</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">recording</span><span class="o">=</span><span class="n">rec</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"antenna"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldSurface.from_file">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldSurface.from_file" title="Link to this definition">#</a></dt>
+<dd><p>Build the source from a recording file.</p>
+<p><em>path</em> is what <code class="xref py py-meth docutils literal notranslate"><span class="pre">SurfaceRecording.save()</span></code> wrote in the
+recording run; the two models share nothing else.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">src</span> <span class="o">=</span> <span class="n">sources</span><span class="o">.</span><span class="n">SourceFieldSurface</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">"antenna.h5"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"antenna"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldSurface.attach">
+<span class="sig-name descname"><span class="pre">attach</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">solver</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldSurface.attach" title="Link to this definition">#</a></dt>
+<dd><p>Snap the box, build the face corrections and resample the recording.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldSurface.inject_E">
+<span class="sig-name descname"><span class="pre">inject_E</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_E</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldSurface.inject_E" title="Link to this definition">#</a></dt>
+<dd><p>Apply the E-side corrections after the E update.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>t_E</strong> (<em>float</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldSurface.inject_H">
+<span class="sig-name descname"><span class="pre">inject_H</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_H</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldSurface.inject_H" title="Link to this definition">#</a></dt>
+<dd><p>Apply the H-side corrections after the H update.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>t_H</strong> (<em>float</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldSurface.set_excitation">
+<span class="sig-name descname"><span class="pre">set_excitation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">waveform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">amplitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldSurface.set_excitation" title="Link to this definition">#</a></dt>
+<dd><p>Bind the scale factor and delay this source replays with.</p>
+<p>Takes no waveform: the time function is the recording itself.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>amplitude</strong> (<em>float</em>)</p></li>
+<li><p><strong>delay</strong> (<em>float</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.sources.SourcePlaneWave">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.sources.</span></span><span class="sig-name descname"><span class="pre">SourcePlaneWave</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corners</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0.0,</span> <span class="pre">0.0,</span> <span class="pre">1.0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polarization</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(1.0,</span> <span class="pre">0.0,</span> <span class="pre">0.0)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourcePlaneWave" title="Link to this definition">#</a></dt>
+<dd><p>Plane-wave illumination on a total-field/scattered-field box.</p>
+<p>Declared on the model with <a class="reference internal" href="core.html#magnelio.GeometryModel.add_source" title="magnelio.GeometryModel.add_source"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_source()</span></code></a>
+and driven by an <a class="reference internal" href="core.html#magnelio.Excitation" title="magnelio.Excitation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Excitation</span></code></a> naming it; the
+excitation’s <code class="docutils literal notranslate"><span class="pre">amplitude</span></code> is the peak incident field in V/m and
+its <code class="docutils literal notranslate"><span class="pre">waveform</span></code> the time function.  Propagation must be along a
+grid axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Source name — the handle an <a class="reference internal" href="core.html#magnelio.Excitation" title="magnelio.Excitation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Excitation</span></code></a> uses.</p></li>
+<li><p><strong>direction</strong> (<em>tuple</em><em> of </em><em>float</em>) – Propagation direction <code class="docutils literal notranslate"><span class="pre">(kx,</span> <span class="pre">ky,</span> <span class="pre">kz)</span></code>; normalised, must be
+axis-aligned.</p></li>
+<li><p><strong>polarization</strong> (<em>tuple</em><em> of </em><em>float</em>) – E-field polarization vector; its component along <em>direction</em>
+is projected out and the rest normalised.</p></li>
+<li><p><strong>corners</strong> (<em>tuple</em><em> of </em><em>tuple</em><em>, </em><em>optional</em>) – Two opposite corners of the total-field region [m]; see
+<a class="reference internal" href="#magnelio.sources.SourceFieldIncident" title="magnelio.sources.SourceFieldIncident"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourceFieldIncident</span></code></a>.  <code class="docutils literal notranslate"><span class="pre">None</span></code> (default) leaves a
+two-cell scattered-field shell inside every domain face.</p></li>
+<li><p><strong>field</strong> (<em>Callable</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">sources</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pw</span> <span class="o">=</span> <span class="n">sources</span><span class="o">.</span><span class="n">SourcePlaneWave</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"pw"</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">polarization</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.sources.SourcePlaneWave.attach">
+<span class="sig-name descname"><span class="pre">attach</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">solver</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourcePlaneWave.attach" title="Link to this definition">#</a></dt>
+<dd><p>Cache solver coefficients and snap TF/SF box to grid nodes.</p>
+<p>Called once from <code class="docutils literal notranslate"><span class="pre">FITTimeDomainSolver.setup()</span></code>.  Requires a
+bound waveform (<code class="xref py py-meth docutils literal notranslate"><span class="pre">set_excitation()</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.sources.SourcePlaneWave.incident_E">
+<span class="sig-name descname"><span class="pre">incident_E</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourcePlaneWave.incident_E" title="Link to this definition">#</a></dt>
 <dd><p>Incident E-field vector [V/m] at position <em>r</em> and time <em>t</em>.</p>
 <p>E_inc(r, t) = E0 · ê · f(t − k̂·r / c₀)</p>
 <dl class="field-list simple">
@@ -591,8 +1092,8 @@ TF/SF injection evaluates a whole box face in one call.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.sources.PlaneWaveSource.incident_H">
-<span class="sig-name descname"><span class="pre">incident_H</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.PlaneWaveSource.incident_H" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="magnelio.sources.SourcePlaneWave.incident_H">
+<span class="sig-name descname"><span class="pre">incident_H</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourcePlaneWave.incident_H" title="Link to this definition">#</a></dt>
 <dd><p>Incident H-field vector [A/m] at position <em>r</em> and time <em>t</em>.</p>
 <p>H_inc = (1/η₀) · (k̂ × ê) · f(t − k̂·r / c₀) = (E0/η₀) · ĥ · f(…)</p>
 <dl class="field-list simple">
@@ -604,36 +1105,6 @@ TF/SF injection evaluates a whole box face in one call.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="magnelio.sources.PlaneWaveSource.inject_E">
-<span class="sig-name descname"><span class="pre">inject_E</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_E</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.PlaneWaveSource.inject_E" title="Link to this definition">#</a></dt>
-<dd><p>Apply TF/SF E-field corrections after the E update.</p>
-<p>Uses H_inc at t = t_E - dt/2 (half a step behind E).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>t_E</strong> (<em>float</em>)</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="magnelio.sources.PlaneWaveSource.inject_H">
-<span class="sig-name descname"><span class="pre">inject_H</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_H</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.PlaneWaveSource.inject_H" title="Link to this definition">#</a></dt>
-<dd><p>Apply TF/SF H-field corrections after the H update.</p>
-<p>Uses E_inc at t = t_H - dt/2 (the E time level just computed).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>t_H</strong> (<em>float</em>)</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -662,11 +1133,11 @@ TF/SF injection evaluates a whole box face in one call.</p>
       </div>
     </a>
     <a class="right-next"
-       href="monitors.html"
+       href="fields.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title"><code class="docutils literal notranslate"><span class="pre">magnelio.monitors</span></code></p>
+        <p class="prev-next-title"><code class="docutils literal notranslate"><span class="pre">magnelio.fields</span></code></p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -689,14 +1160,44 @@ TF/SF injection evaluates a whole box face in one call.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.PlaneWaveSource"><code class="docutils literal notranslate"><span class="pre">PlaneWaveSource</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.PlaneWaveSource.from_ranges"><code class="docutils literal notranslate"><span class="pre">PlaneWaveSource.from_ranges()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.PlaneWaveSource.attach"><code class="docutils literal notranslate"><span class="pre">PlaneWaveSource.attach()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.PlaneWaveSource.excitation"><code class="docutils literal notranslate"><span class="pre">PlaneWaveSource.excitation()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.PlaneWaveSource.incident_E"><code class="docutils literal notranslate"><span class="pre">PlaneWaveSource.incident_E()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.PlaneWaveSource.incident_H"><code class="docutils literal notranslate"><span class="pre">PlaneWaveSource.incident_H()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.PlaneWaveSource.inject_E"><code class="docutils literal notranslate"><span class="pre">PlaneWaveSource.inject_E()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.PlaneWaveSource.inject_H"><code class="docutils literal notranslate"><span class="pre">PlaneWaveSource.inject_H()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceCurrentPath"><code class="docutils literal notranslate"><span class="pre">SourceCurrentPath</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceCurrentPath.attach"><code class="docutils literal notranslate"><span class="pre">SourceCurrentPath.attach()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceCurrentPath.inject_E"><code class="docutils literal notranslate"><span class="pre">SourceCurrentPath.inject_E()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceCurrentPath.inject_H"><code class="docutils literal notranslate"><span class="pre">SourceCurrentPath.inject_H()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceCurrentPath.curve"><code class="docutils literal notranslate"><span class="pre">SourceCurrentPath.curve</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldIncident"><code class="docutils literal notranslate"><span class="pre">SourceFieldIncident</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldIncident.from_ranges"><code class="docutils literal notranslate"><span class="pre">SourceFieldIncident.from_ranges()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldIncident.attach"><code class="docutils literal notranslate"><span class="pre">SourceFieldIncident.attach()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldIncident.inject_E"><code class="docutils literal notranslate"><span class="pre">SourceFieldIncident.inject_E()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldIncident.inject_H"><code class="docutils literal notranslate"><span class="pre">SourceFieldIncident.inject_H()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldInitial"><code class="docutils literal notranslate"><span class="pre">SourceFieldInitial</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldInitial.from_arrays"><code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.from_arrays()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldInitial.from_function"><code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.from_function()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldInitial.from_project"><code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.from_project()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldInitial.attach"><code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.attach()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldInitial.clear_excitation"><code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.clear_excitation()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldInitial.inject_E"><code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.inject_E()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldInitial.inject_H"><code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.inject_H()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldInitial.set_excitation"><code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.set_excitation()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldInitial.amplitude"><code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.amplitude</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldSurface"><code class="docutils literal notranslate"><span class="pre">SourceFieldSurface</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldSurface.from_file"><code class="docutils literal notranslate"><span class="pre">SourceFieldSurface.from_file()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldSurface.attach"><code class="docutils literal notranslate"><span class="pre">SourceFieldSurface.attach()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldSurface.inject_E"><code class="docutils literal notranslate"><span class="pre">SourceFieldSurface.inject_E()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldSurface.inject_H"><code class="docutils literal notranslate"><span class="pre">SourceFieldSurface.inject_H()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldSurface.set_excitation"><code class="docutils literal notranslate"><span class="pre">SourceFieldSurface.set_excitation()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourcePlaneWave"><code class="docutils literal notranslate"><span class="pre">SourcePlaneWave</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourcePlaneWave.attach"><code class="docutils literal notranslate"><span class="pre">SourcePlaneWave.attach()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourcePlaneWave.incident_E"><code class="docutils literal notranslate"><span class="pre">SourcePlaneWave.incident_E()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourcePlaneWave.incident_H"><code class="docutils literal notranslate"><span class="pre">SourcePlaneWave.incident_H()</span></code></a></li>
 </ul>
 </li>
 </ul>

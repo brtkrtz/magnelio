@@ -175,6 +175,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -335,6 +342,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -438,6 +452,7 @@
 <li class="toctree-l1"><a class="reference internal" href="boundaries.html"><code class="docutils literal notranslate"><span class="pre">magnelio.boundaries</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="ports.html"><code class="docutils literal notranslate"><span class="pre">magnelio.ports</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="sources.html"><code class="docutils literal notranslate"><span class="pre">magnelio.sources</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html"><code class="docutils literal notranslate"><span class="pre">magnelio.fields</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="monitors.html"><code class="docutils literal notranslate"><span class="pre">magnelio.monitors</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="circuit.html"><code class="docutils literal notranslate"><span class="pre">magnelio.circuit</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="signals.html"><code class="docutils literal notranslate"><span class="pre">magnelio.signals</span></code></a></li>
@@ -845,6 +860,24 @@ kept.  Returns <code class="docutils literal notranslate"><span class="pre">self
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="magnelio.io.Project.result">
+<span class="sig-name descname"><span class="pre">result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.result" title="Link to this definition">#</a></dt>
+<dd><p>One run as a <a class="reference internal" href="analysis.html#magnelio.analysis.TDResult" title="magnelio.analysis.TDResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">TDResult</span></code></a>.</p>
+<p>Rebuilds the in-RAM result object of the run from the store:
+the recorded port signals, the sampled excitations, the energy
+trace and lazy readers for the run’s monitors.  <code class="docutils literal notranslate"><span class="pre">name</span></code> is
+the run name (<code class="docutils literal notranslate"><span class="pre">run_1</span></code>, or the <code class="docutils literal notranslate"><span class="pre">name=</span></code> given to
+<a class="reference internal" href="core.html#magnelio.AnalysisTD.run" title="magnelio.AnalysisTD.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run()</span></code></a>); a scattering channel run may
+be named by its excited pair.  May be omitted when the project
+holds one run.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>str</em><em> | </em><em>tuple</em><em>[</em><em>str</em><em>, </em><em>int</em><em>] </em><em>| </em><em>None</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="magnelio.io.Project.to_skrf">
 <span class="sig-name descname"><span class="pre">to_skrf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'magnelio'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.to_skrf" title="Link to this definition">#</a></dt>
 <dd><p>Return the S-matrix as a <code class="docutils literal notranslate"><span class="pre">skrf.Network</span></code>.</p>
@@ -1074,17 +1107,21 @@ and generate the per-run ParaView session at run close.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.io.ProjectStore.open_scattering_run">
-<span class="sig-name descname"><span class="pre">open_scattering_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_name</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">excited</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_modes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_normal_dx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_line_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">waveform_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recorder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'modal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_signal_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_time_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">taper_signals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">monitors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.ProjectStore.open_scattering_run" title="Link to this definition">#</a></dt>
-<dd><p>Open a live streaming sink for one scattering excitation.</p>
+<dt class="sig sig-object py" id="magnelio.io.ProjectStore.open_run">
+<span class="sig-name descname"><span class="pre">open_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_name</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">excitations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excited</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_modes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_normal_dx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_line_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excitation_fns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recorder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'modal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_signal_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_time_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">taper_signals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">monitors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.ProjectStore.open_run" title="Link to this definition">#</a></dt>
+<dd><p>Open a live streaming sink for one time-domain run.</p>
 <p>Declares the run’s resizable <code class="docutils literal notranslate"><span class="pre">results.h5</span></code> streams (HDF5-SWMR),
 registers the run in <code class="docutils literal notranslate"><span class="pre">project.json</span></code> as <code class="docutils literal notranslate"><span class="pre">running</span></code> (replacing a
 <code class="docutils literal notranslate"><span class="pre">pending</span></code> pre-registration, see <a class="reference internal" href="#magnelio.io.ProjectStore.register_planned_runs" title="magnelio.io.ProjectStore.register_planned_runs"><code class="xref py py-meth docutils literal notranslate"><span class="pre">register_planned_runs()</span></code></a>),
 and returns
-a solver-attachable <code class="xref py py-class docutils literal notranslate"><span class="pre">_ScatteringRunSink</span></code>.  The solver
+a solver-attachable <code class="xref py py-class docutils literal notranslate"><span class="pre">_RunSink</span></code>.  The solver
 appends the V/I and energy tails during <code class="docutils literal notranslate"><span class="pre">run()</span></code>; call
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">_ScatteringRunSink.close()</span></code> when the run finishes to flip its
-state to <code class="docutils literal notranslate"><span class="pre">done</span></code>.  <code class="docutils literal notranslate"><span class="pre">run_name</span></code> is sanitised for the filesystem.</p>
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">_RunSink.close()</span></code> when the run finishes to flip its
+state to <code class="docutils literal notranslate"><span class="pre">done</span></code>.  <code class="docutils literal notranslate"><span class="pre">run_name</span></code> is sanitised for the filesystem.
+<code class="docutils literal notranslate"><span class="pre">excitations</span></code> are the run’s Excitation dicts (DD-224),
+<code class="docutils literal notranslate"><span class="pre">excited</span></code> the S-matrix column of a scattering channel run
+(<code class="docutils literal notranslate"><span class="pre">None</span></code> on a general time-domain run), <code class="docutils literal notranslate"><span class="pre">excitation_fns</span></code> the
+<code class="docutils literal notranslate"><span class="pre">[(key,</span> <span class="pre">drive),</span> <span class="pre">...]</span></code> sampled alongside the signals.</p>
 <p><code class="docutils literal notranslate"><span class="pre">energy_stop_db</span></code> / <code class="docutils literal notranslate"><span class="pre">total_time_steps</span></code> are recorded in the run
 index so <code class="docutils literal notranslate"><span class="pre">resume()</span></code> can default to the run’s original
 stop criterion — e.g. finish an aborted run to the target it was
@@ -1096,11 +1133,13 @@ proceeds.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>run_name</strong> (<em>str</em>)</p></li>
-<li><p><strong>excited</strong> (<em>tuple</em><em>[</em><em>str</em><em>, </em><em>int</em><em>]</em>)</p></li>
+<li><p><strong>excitations</strong> (<em>list</em>)</p></li>
+<li><p><strong>excited</strong> (<em>tuple</em><em>[</em><em>str</em><em>, </em><em>int</em><em>] </em><em>| </em><em>None</em>)</p></li>
 <li><p><strong>dt</strong> (<em>float</em>)</p></li>
 <li><p><strong>port_modes</strong> (<em>dict</em>)</p></li>
 <li><p><strong>port_normal_dx</strong> (<em>dict</em>)</p></li>
 <li><p><strong>port_line_params</strong> (<em>dict</em>)</p></li>
+<li><p><strong>port_band</strong> (<em>dict</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>port_model</strong> (<em>str</em>)</p></li>
 <li><p><strong>energy_stop_db</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>port_signal_stop_db</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
@@ -1109,7 +1148,7 @@ proceeds.</p>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>_ScatteringRunSink</em></p>
+<dd class="field-even"><p><em>_RunSink</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1118,8 +1157,10 @@ proceeds.</p>
 <dt class="sig sig-object py" id="magnelio.io.ProjectStore.register_planned_runs">
 <span class="sig-name descname"><span class="pre">register_planned_runs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">planned</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.ProjectStore.register_planned_runs" title="Link to this definition">#</a></dt>
 <dd><p>Pre-register planned runs as <code class="docutils literal notranslate"><span class="pre">pending</span></code> in the run index.</p>
-<p><code class="docutils literal notranslate"><span class="pre">planned</span></code> is an iterable of <code class="docutils literal notranslate"><span class="pre">(run_name,</span> <span class="pre">excited)</span></code> pairs, one
-per excitation the caller is about to stream.  Registering them
+<p><code class="docutils literal notranslate"><span class="pre">planned</span></code> is an iterable of <code class="docutils literal notranslate"><span class="pre">(run_name,</span> <span class="pre">entry)</span></code> pairs, one
+per run the caller is about to stream, <code class="docutils literal notranslate"><span class="pre">entry</span></code> the index
+payload (<code class="docutils literal notranslate"><span class="pre">{&quot;excited&quot;:</span> <span class="pre">[port,</span> <span class="pre">mode]}</span></code> for a scattering
+channel).  Registering them
 up front closes the status gap between sequential runs: without
 it, finishing run <em>k</em> while run <em>k+1</em> is not yet in the index
 made <code class="xref py py-meth docutils literal notranslate"><span class="pre">_finalize_run()</span></code> report <code class="docutils literal notranslate"><span class="pre">status</span> <span class="pre">=</span> <span class="pre">&quot;done&quot;</span></code> for a
@@ -1129,7 +1170,7 @@ stays <code class="docutils literal notranslate"><span class="pre">&quot;running
 <p>Existing entries are left untouched (fill-in: a second analysis
 adding excitations must not clobber <code class="docutils literal notranslate"><span class="pre">done</span></code>/<code class="docutils literal notranslate"><span class="pre">aborted</span></code> runs).
 <code class="docutils literal notranslate"><span class="pre">pending</span></code> entries carry no run directory on disk; they are
-replaced wholesale when <a class="reference internal" href="#magnelio.io.ProjectStore.open_scattering_run" title="magnelio.io.ProjectStore.open_scattering_run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">open_scattering_run()</span></code></a> starts the
+replaced wholesale when <a class="reference internal" href="#magnelio.io.ProjectStore.open_run" title="magnelio.io.ProjectStore.open_run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">open_run()</span></code></a> starts the
 run.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -1139,8 +1180,8 @@ run.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.io.ProjectStore.reopen_scattering_run">
-<span class="sig-name descname"><span class="pre">reopen_scattering_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_name</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">recorder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">waveform_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_keep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_offset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">monitors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">monitor_keep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_keep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.ProjectStore.reopen_scattering_run" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="magnelio.io.ProjectStore.reopen_run">
+<span class="sig-name descname"><span class="pre">reopen_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_name</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">recorder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excitation_fns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_keep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_offset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">monitors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">monitor_keep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_keep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.ProjectStore.reopen_run" title="Link to this definition">#</a></dt>
 <dd><p>Reopen a run’s streams to append a resumed tail.</p>
 <p>Truncates <code class="docutils literal notranslate"><span class="pre">results.h5</span></code> back to <code class="docutils literal notranslate"><span class="pre">n_keep</span></code> (the checkpoint’s
 committed step count), marks the run <code class="docutils literal notranslate"><span class="pre">running</span></code> again, and returns
@@ -1162,7 +1203,7 @@ run appends onward consistently.</p>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>_ScatteringRunSink</em></p>
+<dd class="field-even"><p><em>_RunSink</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1497,6 +1538,7 @@ recovered verbatim by <a class="reference internal" href="#magnelio.io.read_brep
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.phase"><code class="docutils literal notranslate"><span class="pre">Project.phase()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.plot_s"><code class="docutils literal notranslate"><span class="pre">Project.plot_s()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.refresh"><code class="docutils literal notranslate"><span class="pre">Project.refresh()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.result"><code class="docutils literal notranslate"><span class="pre">Project.result()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.to_skrf"><code class="docutils literal notranslate"><span class="pre">Project.to_skrf()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.to_touchstone"><code class="docutils literal notranslate"><span class="pre">Project.to_touchstone()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.channels"><code class="docutils literal notranslate"><span class="pre">Project.channels</span></code></a></li>
@@ -1520,9 +1562,9 @@ recovered verbatim by <a class="reference internal" href="#magnelio.io.read_brep
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.ProjectStore"><code class="docutils literal notranslate"><span class="pre">ProjectStore</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.ProjectStore.create"><code class="docutils literal notranslate"><span class="pre">ProjectStore.create()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.ProjectStore.open_scattering_run"><code class="docutils literal notranslate"><span class="pre">ProjectStore.open_scattering_run()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.ProjectStore.open_run"><code class="docutils literal notranslate"><span class="pre">ProjectStore.open_run()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.ProjectStore.register_planned_runs"><code class="docutils literal notranslate"><span class="pre">ProjectStore.register_planned_runs()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.ProjectStore.reopen_scattering_run"><code class="docutils literal notranslate"><span class="pre">ProjectStore.reopen_scattering_run()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.ProjectStore.reopen_run"><code class="docutils literal notranslate"><span class="pre">ProjectStore.reopen_run()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.ProjectStore.write_eigenmodes"><code class="docutils literal notranslate"><span class="pre">ProjectStore.write_eigenmodes()</span></code></a></li>
 </ul>
 </li>

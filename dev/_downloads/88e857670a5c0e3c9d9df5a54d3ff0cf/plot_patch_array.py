@@ -352,7 +352,7 @@ f_axis = np.linspace(f_min, f_max, 401)
 
 def simulate(model):
     mesh = mio.Mesh.from_geometry(model, mesh_control, f_max=f_max)
-    farfield = monitors.MonitorFarField(freqs=[f0], name="farfield")
+    farfield = monitors.MonitorFarFieldFrequency(freqs=[f0], name="farfield")
     analysis = mio.AnalysisScatteringTD(mesh=mesh, f_min=f_min, monitors=(farfield,), verbose=False)
     result = analysis.run(f_axis=f_axis, excited=["feed"])
     s11 = result.S("feed", "feed")

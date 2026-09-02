@@ -175,6 +175,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -335,6 +342,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -438,6 +452,7 @@
 <li class="toctree-l1"><a class="reference internal" href="boundaries.html"><code class="docutils literal notranslate"><span class="pre">magnelio.boundaries</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="ports.html"><code class="docutils literal notranslate"><span class="pre">magnelio.ports</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="sources.html"><code class="docutils literal notranslate"><span class="pre">magnelio.sources</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html"><code class="docutils literal notranslate"><span class="pre">magnelio.fields</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="monitors.html"><code class="docutils literal notranslate"><span class="pre">magnelio.monitors</span></code></a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">magnelio.circuit</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="signals.html"><code class="docutils literal notranslate"><span class="pre">magnelio.signals</span></code></a></li>
@@ -751,7 +766,7 @@ it validates the rasteriser before any physics is built on it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>field</strong> (<em>FieldState</em>) – The E field to integrate (<code class="docutils literal notranslate"><span class="pre">field.Ex/Ey/Ez</span></code>).</p></li>
+<li><p><strong>field</strong> (<a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><em>FieldState</em></a>) – The E field to integrate (<code class="docutils literal notranslate"><span class="pre">field.Ex/Ey/Ez</span></code>).</p></li>
 <li><p><strong>curve</strong> (<a class="reference internal" href="geo.html#magnelio.geo.Curve" title="magnelio.geo.Curve"><em>Curve</em></a>) – The path of integration.</p></li>
 <li><p><strong>grid</strong> (<a class="reference internal" href="mesh.html#magnelio.mesh.GridLines" title="magnelio.mesh.GridLines"><em>GridLines</em></a>) – The simulation grid the field lives on.</p></li>
 <li><p><strong>samples_per_cell</strong> (<em>int</em><em>, </em><em>default 4</em>) – Forwarded to <a class="reference internal" href="#magnelio.circuit.rasterize_curve" title="magnelio.circuit.rasterize_curve"><code class="xref py py-func docutils literal notranslate"><span class="pre">rasterize_curve()</span></code></a>.</p></li>

@@ -433,7 +433,7 @@ verbs that turn it into a solid ask for the material explicitly.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.453 seconds)
+   **Total running time of the script:** (0 minutes 0.456 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_14_profile_geometry.py:

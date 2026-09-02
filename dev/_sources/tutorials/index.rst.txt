@@ -343,6 +343,23 @@ as a ``.py`` script or a ``.ipynb`` notebook.
     </div>
 
 
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Every driven simulation so far started at a port: a waveguide mode or a discrete feed launched the wave, and the S-matrix was the answer. This tutorial turns the picture around.  Nothing is fed — a plane wave arrives from infinity, hits a metal sphere, and the question is what the sphere throws back.  That is a scattering problem in the radar sense, and its figure of merit is the radar cross section (RCS): the area a perfect isotropic scatterer would need to return the same power towards the radar.">
+
+.. only:: html
+
+  .. image:: /tutorials/images/thumb/sphx_glr_plot_20_plane_wave_scattering_thumb.png
+    :alt:
+
+  :doc:`/tutorials/plot_20_plane_wave_scattering`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Plane-wave scattering: the radar cross section of a sphere</div>
+    </div>
+
+
 .. thumbnail-parent-div-close
 
 .. raw:: html
@@ -372,6 +389,7 @@ as a ``.py`` script or a ``.ipynb`` notebook.
    /tutorials/plot_17_pcb_import
    /tutorials/plot_18_periodic_tesla_cell
    /tutorials/19_cassegrain_reflector
+   /tutorials/plot_20_plane_wave_scattering
 
 
 

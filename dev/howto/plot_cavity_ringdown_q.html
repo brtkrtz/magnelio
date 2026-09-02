@@ -1,0 +1,969 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Ring-down: the loaded frequency and Q budget of a coupled resonator &#8212; Magnelio Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+
+    <script src="../_static/documentation_options.js?v=57adb930"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'howto/plot_cavity_ringdown_q';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/dev/howto/plot_cavity_ringdown_q.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Coupled-line directional coupler: dimensioning the pair with the port solver" href="plot_coupled_line_coupler.html" />
+    <link rel="prev" title="How-to guides" href="index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Magnelio Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../methods/index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio/discussions" title="Discussions" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-regular fa-comments fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discussions</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../methods/index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio/discussions" title="Discussions" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-regular fa-comments fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discussions</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Ring-down: the loaded frequency and Q budget of a coupled resonator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_coupled_line_coupler.html">Coupled-line directional coupler: dimensioning the pair with the port solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_current_path_source.html">Impressed currents: driving a model with a known current</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_field_source_reuse.html">Field sources: simulate a radiator once, reuse it anywhere</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lange_coupler.html">Lange coupler: a 3-dB interdigitated coupler dimensioned with the port solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_investigations.html">Lumped ports: investigations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_coax.html">Lumped port tuning: coaxial line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_cpw.html">Lumped port tuning: coplanar waveguide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_microstrip.html">Lumped port tuning: microstrip</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_mesh_convergence.html">Mesh convergence: a ladder around your simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_patch_array.html">Patch array: a 2 × 2 corporate-fed microstrip array from element to pattern</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_stripline_pickup_kicker.html">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">How-to guides</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Ring-down: the loaded frequency and Q budget of a coupled resonator</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-howto-plot-cavity-ringdown-q-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code.</p>
+</div>
+<section class="sphx-glr-example-title" id="ring-down-the-loaded-frequency-and-q-budget-of-a-coupled-resonator">
+<span id="sphx-glr-howto-plot-cavity-ringdown-q-py"></span><h1>Ring-down: the loaded frequency and Q budget of a coupled resonator<a class="headerlink" href="#ring-down-the-loaded-frequency-and-q-budget-of-a-coupled-resonator" title="Link to this heading">#</a></h1>
+<p>A resonator that is coupled to the outside world does not resonate
+where the closed one does, and it does not store energy as long.  Both
+shifts matter as soon as something has to be tuned <em>to</em> the resonator
+— a particle beam driving the output cavity of a klystron has to be
+modelled at the loaded frequency, not at the frequency an eigenmode
+solve of the sealed cavity returns.</p>
+<p>A <strong>ring-down</strong> measures both in a single transient run: start the
+march inside the resonator’s mode with the feed line empty, then watch
+what happens.  The stored energy decays as</p>
+<div class="math notranslate nohighlight">
+\[W(t) = W_0 \, e^{-\omega_0 t / Q_L},\]</div>
+<p>so the slope of <span class="math notranslate nohighlight">\(\ln W\)</span> is the loaded <span class="math notranslate nohighlight">\(Q_L\)</span>, while the
+signal arriving at the port carries the loaded frequency.</p>
+<p>Splitting <span class="math notranslate nohighlight">\(Q_L\)</span> into its channels takes one run per channel,
+because each loss mechanism can be switched off in the model:</p>
+<div class="math notranslate nohighlight">
+\[\frac{1}{Q_L} = \frac{1}{Q_\text{fill}}
+               + \frac{1}{Q_\text{wall}}
+               + \frac{1}{Q_\text{ext}}.\]</div>
+<p>Two blocks copy into any script: one that turns a resonator mode into
+the initial field of a march, one that reads <span class="math notranslate nohighlight">\(Q\)</span> and the loaded
+frequency off the result.  The page checks itself twice — against the
+closed form <span class="math notranslate nohighlight">\(Q_\text{fill} = \omega_0\varepsilon/\sigma\)</span> of a
+homogeneously filled cavity, and against the sum rule above.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span><span class="p">,</span> <span class="n">ports</span><span class="p">,</span> <span class="n">post</span><span class="p">,</span> <span class="n">sources</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">EPS0</span>
+</pre></div>
+</div>
+<section id="the-resonator-and-its-feed">
+<h2>The resonator and its feed<a class="headerlink" href="#the-resonator-and-its-feed" title="Link to this heading">#</a></h2>
+<p>A WR-90 box resonating in TE101 near 8.2 GHz, closed at one end and
+coupled at the other through a slot in a metal iris to a length of
+the same waveguide, terminated by a port.  The slot width is the
+coupling knob.  Cavity, slot and feed carry the same lossy filling —
+homogeneously, so that its loss tangent gives a filling Q that does
+not depend on how the mode redistributes when the coupling is turned
+up.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">A</span><span class="p">,</span> <span class="n">B</span> <span class="o">=</span> <span class="mf">22.86e-3</span><span class="p">,</span> <span class="mf">10.16e-3</span>  <span class="c1"># WR-90 cross-section [m]</span>
+<span class="n">D_CAV</span> <span class="o">=</span> <span class="mf">30e-3</span>  <span class="c1"># cavity length [m]</span>
+<span class="n">T_IRIS</span> <span class="o">=</span> <span class="mf">2e-3</span>  <span class="c1"># iris thickness [m]</span>
+<span class="n">L_WG</span> <span class="o">=</span> <span class="mf">30e-3</span>  <span class="c1"># feed waveguide to the port [m]</span>
+<span class="n">W_IRIS</span> <span class="o">=</span> <span class="mf">8e-3</span>  <span class="c1"># coupling slot width [m]</span>
+<span class="n">F_DESIGN</span> <span class="o">=</span> <span class="mf">8.15e9</span>  <span class="c1"># where TE101 is expected [Hz]</span>
+<span class="n">F_MAX</span> <span class="o">=</span> <span class="mf">12e9</span>
+
+<span class="n">TAN_DELTA</span> <span class="o">=</span> <span class="mf">5e-4</span>  <span class="c1"># loss tangent of the filling, at F_DESIGN</span>
+<span class="n">SIGMA</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">*</span> <span class="n">F_DESIGN</span> <span class="o">*</span> <span class="n">EPS0</span> <span class="o">*</span> <span class="n">TAN_DELTA</span>  <span class="c1"># the conductivity that realises it</span>
+<span class="n">SIGMA_CU</span> <span class="o">=</span> <span class="mf">5.8e7</span>  <span class="c1"># copper walls [S/m]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">resonator</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">coupled</span><span class="p">,</span> <span class="n">lossy</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The model; ``coupled=False`` seals the cavity (no iris, no port)."""</span>
+    <span class="n">fill</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Material</span><span class="o">.</span><span class="n">from_isotropic</span><span class="p">(</span><span class="s2">"fill"</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">SIGMA</span> <span class="k">if</span> <span class="n">lossy</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span><span class="n">background</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="o">.</span><span class="n">from_corners</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">D_CAV</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="n">fill</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">coupled</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">model</span>
+    <span class="n">z0</span><span class="p">,</span> <span class="n">z1</span> <span class="o">=</span> <span class="n">D_CAV</span><span class="p">,</span> <span class="n">D_CAV</span> <span class="o">+</span> <span class="n">T_IRIS</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+        <span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="o">.</span><span class="n">from_corners</span><span class="p">(</span>
+            <span class="p">((</span><span class="n">A</span> <span class="o">-</span> <span class="n">W_IRIS</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">z0</span><span class="p">),</span> <span class="p">((</span><span class="n">A</span> <span class="o">+</span> <span class="n">W_IRIS</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">z1</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="n">fill</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">Brick</span><span class="o">.</span><span class="n">from_corners</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">z1</span><span class="p">),</span> <span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">z1</span> <span class="o">+</span> <span class="n">L_WG</span><span class="p">),</span> <span class="n">material</span><span class="o">=</span><span class="n">fill</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add_port</span><span class="p">(</span><span class="n">ports</span><span class="o">.</span><span class="n">PortWaveguide</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"out"</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s2">"zmax"</span><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">model</span>
+</pre></div>
+</div>
+</section>
+<section id="block-1-before-the-resonator-s-mode-as-the-initial-field">
+<h2>Block 1 — before: the resonator’s mode as the initial field<a class="headerlink" href="#block-1-before-the-resonator-s-mode-as-the-initial-field" title="Link to this heading">#</a></h2>
+<p>A ring-down starts with the resonator charged and the feed line
+empty.  That is the mode of the <em>uncoupled</em> resonator, placed on the
+grid of the coupled model and zero outside the cavity — not the
+eigenmode of the coupled model, whose solver sees a metal wall where
+the port is and therefore returns a mode of cavity <em>and</em> feed line
+together.  An initial field that already reaches the port plane is
+refused: the port’s transparent boundary is exact only for an
+exterior that was quiet before <code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">=</span> <span class="pre">0</span></code>.</p>
+<p>For a rectangular box the mode is the closed form below.  For a
+resonator without one, solve the sealed model with
+<code class="docutils literal notranslate"><span class="pre">AnalysisEigenmode</span></code>, take <code class="docutils literal notranslate"><span class="pre">result.field(0)</span></code> and evaluate it with
+<code class="docutils literal notranslate"><span class="pre">field.at(points)</span></code> inside the cavity, zero outside.</p>
+<p><code class="docutils literal notranslate"><span class="pre">H</span> <span class="pre">=</span> <span class="pre">0</span></code> picks the instant of maximum electric field, which is the
+natural start: the march places the magnetic half-step itself.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">te101_field</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""E of the TE101 mode of the sealed cavity, zero beyond it [V/m]."""</span>
+    <span class="n">inside</span> <span class="o">=</span> <span class="p">(</span><span class="n">z</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">z</span> <span class="o">&lt;=</span> <span class="n">D_CAV</span><span class="p">)</span>
+    <span class="n">e_y</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.where.html#numpy.where" title="numpy.where" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">where</span></a><span class="p">(</span>
+        <span class="n">inside</span><span class="p">,</span>
+        <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">sin</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.clip.html#numpy.clip" title="numpy.clip" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">clip</span></a><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">A</span><span class="p">)</span> <span class="o">/</span> <span class="n">A</span><span class="p">)</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">sin</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.clip.html#numpy.clip" title="numpy.clip" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">clip</span></a><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">D_CAV</span><span class="p">)</span> <span class="o">/</span> <span class="n">D_CAV</span><span class="p">),</span>
+        <span class="mf">0.0</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.zeros_like.html#numpy.zeros_like" title="numpy.zeros_like" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span></a><span class="p">(</span><span class="n">e_y</span><span class="p">),</span> <span class="n">e_y</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.zeros_like.html#numpy.zeros_like" title="numpy.zeros_like" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span></a><span class="p">(</span><span class="n">e_y</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">ring_down</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t_end</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"mode0"</span><span class="p">,</span> <span class="n">wall_sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""March from the resonator's mode and return the result.</span>
+
+<span class="sd">    ``wall_sigma`` turns the metal from perfect conductor into a</span>
+<span class="sd">    surface-impedance wall of that conductivity, which is how the</span>
+<span class="sd">    wall channel enters the decay.  Its branch currents start at</span>
+<span class="sd">    zero — the wall carried none before ``t = 0``.</span>
+<span class="sd">    """</span>
+    <span class="n">mesh</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">mio</span><span class="o">.</span><span class="n">MeshControl</span><span class="p">(</span><span class="n">min_nodes_per_wavelength</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span> <span class="n">f_max</span><span class="o">=</span><span class="n">F_MAX</span><span class="p">)</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">sources</span><span class="o">.</span><span class="n">SourceFieldInitial</span><span class="o">.</span><span class="n">from_function</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">grid</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">E</span><span class="o">=</span><span class="n">te101_field</span><span class="p">)</span>
+    <span class="n">walls</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"wall_model"</span><span class="p">:</span> <span class="s2">"sibc"</span><span class="p">,</span> <span class="s2">"wall_sigma"</span><span class="p">:</span> <span class="n">wall_sigma</span><span class="p">}</span> <span class="k">if</span> <span class="n">wall_sigma</span> <span class="k">else</span> <span class="p">{}</span>
+    <span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">with_sources</span><span class="p">([</span><span class="n">source</span><span class="p">]),</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">walls</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">analysis</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">excitations</span><span class="o">=</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">t_end</span><span class="o">=</span><span class="n">t_end</span><span class="p">,</span> <span class="n">energy_stop_db</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span> <span class="n">mesh</span>
+</pre></div>
+</div>
+</section>
+<section id="block-2-after-q-from-the-decay-frequency-from-the-port">
+<h2>Block 2 — after: Q from the decay, frequency from the port<a class="headerlink" href="#block-2-after-q-from-the-decay-frequency-from-the-port" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">result.energy_trace</span></code> is the decay curve, recorded at the solver’s
+own check cadence.  Fit a straight line to its logarithm and convert
+the slope: <span class="math notranslate nohighlight">\(Q = -\omega_0/\text{slope}\)</span>.</p>
+<p>Fit the <em>energy</em>, not the envelope of a field probe: a probe swings
+through zero twice per period, and a fit to <span class="math notranslate nohighlight">\(|E(t)|\)</span> reads the
+zeros along with the peaks.  The energy trace is the quantity the
+leapfrog conserves, so it decays smoothly.</p>
+<p>The loaded frequency is the peak of the spectrum of what leaves
+through the port — a ring-down radiates only what the resonator
+holds, so that spectrum is the loaded resonance itself.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">q_from_ringdown</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">f0</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">floor_db</span><span class="o">=</span><span class="mf">40.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Q from the decay of the stored energy over ``floor_db`` of it."""</span>
+    <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">result</span><span class="o">.</span><span class="n">energy_trace</span></a>
+    <span class="n">t</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a><span class="p">[</span><span class="s2">"time"</span><span class="p">],</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a><span class="p">[</span><span class="s2">"energy"</span><span class="p">]</span>
+    <span class="n">keep</span> <span class="o">=</span> <span class="n">w</span> <span class="o">&gt;</span> <span class="n">w</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="mi">10</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">floor_db</span> <span class="o">/</span> <span class="mi">10</span><span class="p">)</span>
+    <span class="n">slope</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.polyfit.html#numpy.polyfit" title="numpy.polyfit" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">polyfit</span></a><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">keep</span><span class="p">],</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">log</span></a><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="n">keep</span><span class="p">]),</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">*</span> <span class="n">f0</span> <span class="o">/</span> <span class="n">slope</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">loaded_frequency</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">port</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Peak of the port spectrum [Hz], parabolically interpolated."""</span>
+    <span class="n">signal</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.asarray.html#numpy.asarray" title="numpy.asarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">asarray</span></a><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">port</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">spectrum</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.fft.rfft.html#numpy.fft.rfft" title="numpy.fft.rfft" class="sphx-glr-backref-module-numpy-fft sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">rfft</span></a><span class="p">(</span><span class="n">signal</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.hanning.html#numpy.hanning" title="numpy.hanning" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">hanning</span></a><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">size</span><span class="p">)))</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">result</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">spectrum</span><span class="o">.</span><span class="n">argmax</span><span class="p">())</span>
+    <span class="n">y0</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">log</span></a><span class="p">(</span><span class="n">spectrum</span><span class="p">[</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span> <span class="p">:</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">2</span><span class="p">])</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">y0</span> <span class="o">-</span> <span class="n">y2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">y0</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">y1</span> <span class="o">+</span> <span class="n">y2</span><span class="p">))</span> <span class="o">*</span> <span class="n">df</span>
+</pre></div>
+</div>
+</section>
+<section id="one-run-per-loss-channel">
+<h2>One run per loss channel<a class="headerlink" href="#one-run-per-loss-channel" title="Link to this heading">#</a></h2>
+<p>Sealed and lossless first: that run measures nothing physical, it
+measures the <em>floor</em> — how long the discretisation itself holds
+energy.  Everything below has to sit far above it.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">q_fill_exact</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Q of a homogeneously filled cavity at *f* — exact, whatever its shape.</span>
+
+<span class="sd">    A conductivity is a *frequency-dependent* loss tangent,</span>
+<span class="sd">    ``tan(delta) = sigma / (omega·eps)``, so the filling Q rises with</span>
+<span class="sd">    frequency: ``Q_fill = omega·eps / sigma``.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">*</span> <span class="n">f</span> <span class="o">*</span> <span class="n">EPS0</span> <span class="o">/</span> <span class="n">SIGMA</span>
+
+
+<span class="n">runs</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">runs</span><span class="p">[</span><span class="s2">"sealed, lossless"</span><span class="p">],</span> <span class="n">_</span> <span class="o">=</span> <span class="n">ring_down</span><span class="p">(</span><span class="n">resonator</span><span class="p">(</span><span class="n">coupled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">lossy</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="mf">20e-9</span><span class="p">)</span>
+<span class="n">runs</span><span class="p">[</span><span class="s2">"sealed, lossy fill"</span><span class="p">],</span> <span class="n">mesh_sealed</span> <span class="o">=</span> <span class="n">ring_down</span><span class="p">(</span><span class="n">resonator</span><span class="p">(</span><span class="n">coupled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">lossy</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="mf">40e-9</span><span class="p">)</span>
+<span class="n">runs</span><span class="p">[</span><span class="s2">"sealed, copper walls"</span><span class="p">],</span> <span class="n">_</span> <span class="o">=</span> <span class="n">ring_down</span><span class="p">(</span>
+    <span class="n">resonator</span><span class="p">(</span><span class="n">coupled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">lossy</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="mf">150e-9</span><span class="p">,</span> <span class="n">wall_sigma</span><span class="o">=</span><span class="n">SIGMA_CU</span>
+<span class="p">)</span>
+<span class="n">runs</span><span class="p">[</span><span class="s2">"coupled, lossless"</span><span class="p">],</span> <span class="n">_</span> <span class="o">=</span> <span class="n">ring_down</span><span class="p">(</span><span class="n">resonator</span><span class="p">(</span><span class="n">coupled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">lossy</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="mf">60e-9</span><span class="p">)</span>
+<span class="n">runs</span><span class="p">[</span><span class="s2">"coupled, lossy fill"</span><span class="p">],</span> <span class="n">_</span> <span class="o">=</span> <span class="n">ring_down</span><span class="p">(</span><span class="n">resonator</span><span class="p">(</span><span class="n">coupled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">lossy</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="mf">60e-9</span><span class="p">)</span>
+
+<a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">f_loaded</span></a> <span class="o">=</span> <span class="n">loaded_frequency</span><span class="p">(</span><span class="n">runs</span><span class="p">[</span><span class="s2">"coupled, lossless"</span><span class="p">],</span> <span class="s2">"out"</span><span class="p">)</span>
+<span class="n">f_sealed</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
+    <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisEigenmode</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh_sealed</span><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span><span class="o">.</span><span class="n">frequencies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="p">)</span>
+
+<a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_floor</span></a> <span class="o">=</span> <span class="n">q_from_ringdown</span><span class="p">(</span><span class="n">runs</span><span class="p">[</span><span class="s2">"sealed, lossless"</span><span class="p">],</span> <span class="n">f_sealed</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_fill</span></a> <span class="o">=</span> <span class="n">q_from_ringdown</span><span class="p">(</span><span class="n">runs</span><span class="p">[</span><span class="s2">"sealed, lossy fill"</span><span class="p">],</span> <span class="n">f_sealed</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_wall</span></a> <span class="o">=</span> <span class="n">q_from_ringdown</span><span class="p">(</span><span class="n">runs</span><span class="p">[</span><span class="s2">"sealed, copper walls"</span><span class="p">],</span> <span class="n">f_sealed</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_ext</span></a> <span class="o">=</span> <span class="n">q_from_ringdown</span><span class="p">(</span><span class="n">runs</span><span class="p">[</span><span class="s2">"coupled, lossless"</span><span class="p">],</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">f_loaded</span></a><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_loaded</span></a> <span class="o">=</span> <span class="n">q_from_ringdown</span><span class="p">(</span><span class="n">runs</span><span class="p">[</span><span class="s2">"coupled, lossy fill"</span><span class="p">],</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">f_loaded</span></a><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"sealed  f0 = </span><span class="si">{</span><span class="n">f_sealed</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> GHz"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"loaded  f0 = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">f_loaded</span></a><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> GHz   (</span><span class="si">{</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">f_loaded</span></a><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">f_sealed</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2"> %)"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"numerical floor      Q = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_floor</span></a><span class="si">:</span><span class="s2">12.3g</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">"Q_fill               Q = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_fill</span></a><span class="si">:</span><span class="s2">12.1f</span><span class="si">}</span><span class="s2">   exact </span><span class="si">{</span><span class="n">q_fill_exact</span><span class="p">(</span><span class="n">f_sealed</span><span class="p">)</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span>
+    <span class="sa">f</span><span class="s2">"   (</span><span class="si">{</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_fill</span></a><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">q_fill_exact</span><span class="p">(</span><span class="n">f_sealed</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="si">:</span><span class="s2">+.3f</span><span class="si">}</span><span class="s2"> %)"</span>
+<span class="p">)</span>
+<span class="n">q_wall_pert</span> <span class="o">=</span> <span class="n">post</span><span class="o">.</span><span class="n">wall_loss_Q</span><span class="p">(</span>
+    <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisEigenmode</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh_sealed</span><span class="p">,</span> <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(),</span>
+    <span class="mi">0</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="o">=</span><span class="n">SIGMA_CU</span><span class="p">,</span>
+<span class="p">)</span><span class="o">.</span><span class="n">Q</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">"Q_wall               Q = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_wall</span></a><span class="si">:</span><span class="s2">12.1f</span><span class="si">}</span><span class="s2">   perturbative </span><span class="si">{</span><span class="n">q_wall_pert</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span>
+    <span class="sa">f</span><span class="s2">"   (</span><span class="si">{</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_wall</span></a><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">q_wall_pert</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="si">:</span><span class="s2">+.3f</span><span class="si">}</span><span class="s2"> %)"</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Q_ext                Q = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_ext</span></a><span class="si">:</span><span class="s2">12.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Q_L measured         Q = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_loaded</span></a><span class="si">:</span><span class="s2">12.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># The sum rule is evaluated where the loaded run resonates.</span>
+<a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_predicted</span></a> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">q_fill_exact</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">f_loaded</span></a><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_ext</span></a><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">"Q_L from the sum rule  = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_predicted</span></a><span class="si">:</span><span class="s2">12.1f</span><span class="si">}</span><span class="s2">   (</span><span class="si">{</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_loaded</span></a><span class="w"> </span><span class="o">/</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_predicted</span></a><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2"> %)"</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>sealed  f0 = 8.2151 GHz
+loaded  f0 = 8.1135 GHz   (-1.24 %)
+numerical floor      Q =     5.39e+08
+Q_fill               Q =       2015.8   exact 2016.0   (-0.007 %)
+Q_wall               Q =       7745.2   perturbative 7768.9   (-0.305 %)
+Q_ext                Q =       1798.0
+Q_L measured         Q =        944.7
+Q_L from the sum rule  =        944.8   (-0.01 %)
+</pre></div>
+</div>
+<p>Three numbers carry the page.  <code class="docutils literal notranslate"><span class="pre">Q_fill</span></code> reproduces
+<span class="math notranslate nohighlight">\(\omega_0\varepsilon/\sigma\)</span> — the exact Q of a homogeneously
+filled cavity, whatever its shape — to a few hundredths of a percent;
+<code class="docutils literal notranslate"><span class="pre">Q_wall</span></code> agrees with the perturbative surface-resistance
+evaluation on the same mode, two entirely different routes to the
+same loss; and the measured <code class="docutils literal notranslate"><span class="pre">Q_L</span></code> matches the sum rule built from
+the channels measured separately.  When those hold on a case you can
+check, the same procedure is trustworthy on a resonator that has no
+closed form.</p>
+<p>Note where each Q is evaluated.  A conductivity is a loss tangent
+that falls with frequency, so the filling Q of the <em>loaded</em>
+resonance is not the one measured on the sealed cavity 1.2 % higher
+up; putting the sealed value into the sum rule is worth half a
+percent here, and more on a strongly coupled resonator.</p>
+<p>The full budget of the coupled, filled, copper-walled resonator is
+what a design actually has to meet:</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_total</span></a> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">q_fill_exact</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">f_loaded</span></a><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_wall</span></a> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_ext</span></a><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">"full budget: 1/Q = 1/</span><span class="si">{</span><span class="n">q_fill_exact</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">f_loaded</span></a><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> + 1/</span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_wall</span></a><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> + 1/</span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_ext</span></a><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
+    <span class="sa">f</span><span class="s2">"  -&gt;  Q_L = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">q_total</span></a><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>full budget: 1/Q = 1/1991 + 1/7745 + 1/1798  -&gt;  Q_L = 842.1
+</pre></div>
+</div>
+</section>
+<section id="the-decays-one-channel-at-a-time">
+<h2>The decays, one channel at a time<a class="headerlink" href="#the-decays-one-channel-at-a-time" title="Link to this heading">#</a></h2>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">7.2</span><span class="p">,</span> <span class="mf">4.4</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">runs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">result</span><span class="o">.</span><span class="n">energy_trace</span></a>
+    <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">t_ns</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a><span class="p">[</span><span class="s2">"time"</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1e9</span>
+    <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">w_db</span></a> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a><span class="p">[</span><span class="s2">"energy"</span><span class="p">]</span> <span class="o">/</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a><span class="p">[</span><span class="s2">"energy"</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+    <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html#matplotlib.axes.Axes.plot" title="matplotlib.axes.Axes.plot" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">t_ns</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">w_db</span></a><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.3</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_xlabel.html#matplotlib.axes.Axes.set_xlabel" title="matplotlib.axes.Axes.set_xlabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span></a><span class="p">(</span><span class="s2">"time (ns)"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_ylabel.html#matplotlib.axes.Axes.set_ylabel" title="matplotlib.axes.Axes.set_ylabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span></a><span class="p">(</span><span class="s2">"stored energy (dB rel. start)"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">"Ring-down of the WR-90 cavity, one loss channel at a time"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_ylim.html#matplotlib.axes.Axes.set_ylim" title="matplotlib.axes.Axes.set_ylim" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span></a><span class="p">(</span><span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.grid.html#matplotlib.axes.Axes.grid" title="matplotlib.axes.Axes.grid" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">grid</span></a><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">"upper right"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_cavity_ringdown_q_001.png" srcset="../_images/sphx_glr_plot_cavity_ringdown_q_001.png" alt="Ring-down of the WR-90 cavity, one loss channel at a time" class = "sphx-glr-single-img"/></section>
+<section id="what-the-number-sees">
+<h2>What the number sees<a class="headerlink" href="#what-the-number-sees" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>The coupling moves the frequency.</strong>  The iris pulls the
+resonance below the sealed value by a few tenths of a percent
+here, and much further as the slot opens.  That shifted frequency
+is what anything driving the resonator has to match; the sealed
+eigenfrequency is the wrong target.</p></li>
+<li><p><strong>Start in the resonator, not in the whole volume.</strong>  The mode of
+the coupled model — cavity plus feed line behind a metal wall — is
+a different mode, and it reaches the port plane, where the
+transparent boundary assumes quiescence.  The library refuses that
+start rather than returning a plausible wrong Q.</p></li>
+<li><p><strong>Why not read Q off S11.</strong>  The same structure in the frequency
+domain has to be marched until the resonator has rung down anyway,
+or its resonance comes out too shallow.  On this case a
+scattering run of 450 000 steps still gave a group-delay Q about
+10 % below the ring-down value of a 39 000-step run, with
+<span class="math notranslate nohighlight">\(|S_{11}|\)</span> at 0.94 instead of 1.  The ring-down reads the
+decay directly, which is why it is the method of choice for a
+high-Q structure.</p></li>
+<li><p><strong>Wall losses need a wall model.</strong>  Perfect conductor gives a
+ring-down nothing to decay into; <code class="docutils literal notranslate"><span class="pre">wall_model=&quot;sibc&quot;</span></code> puts a
+surface impedance on the metal, and its branch currents simply
+start at zero — the wall carried no current before <code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">=</span> <span class="pre">0</span></code>.  The
+agreement with the perturbative evaluation above says that start
+costs nothing.</p></li>
+<li><p><strong>Watch the floor.</strong>  The sealed lossless run sets the largest Q
+the discretisation can express.  Keep the Q you report at least an
+order of magnitude below it.</p></li>
+<li><p><strong>Homogeneous filling keeps the budget clean.</strong>  With the loss
+confined to part of the volume, opening the coupling redistributes
+the mode, the effective filling Q changes with it, and the sum
+rule stops holding — measured 128 against 190 predicted on a
+strongly over-coupled variant.  Fill uniformly, or measure each
+channel at the coupling you actually use.</p></li>
+</ul>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.show.html#matplotlib.pyplot.show" title="matplotlib.pyplot.show" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">show</span></a><span class="p">()</span>
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 35.018 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-cavity-ringdown-q-py">
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/640c110f9caa4c52f9f43924a24be549/plot_cavity_ringdown_q.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_cavity_ringdown_q.ipynb</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/a284c9dd513b06da5a9141e400bcb437/plot_cavity_ringdown_q.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_cavity_ringdown_q.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-zip docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/c705c0ed5ffbdb9402e92a85c2c2dca7/plot_cavity_ringdown_q.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">zipped:</span> <span class="pre">plot_cavity_ringdown_q.zip</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">How-to guides</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="plot_coupled_line_coupler.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Coupled-line directional coupler: dimensioning the pair with the port solver</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-resonator-and-its-feed">The resonator and its feed</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#block-1-before-the-resonator-s-mode-as-the-initial-field">Block 1 — before: the resonator’s mode as the initial field</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#block-2-after-q-from-the-decay-frequency-from-the-port">Block 2 — after: Q from the decay, frequency from the port</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#one-run-per-loss-channel">One run per loss channel</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-decays-one-channel-at-a-time">The decays, one channel at a time</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-the-number-sees">What the number sees</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/howto/plot_cavity_ringdown_q.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Bernd Breitkreutz.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
