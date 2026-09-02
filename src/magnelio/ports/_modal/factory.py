@@ -2604,3 +2604,74 @@ def build_band_dtbc_port(
         solve_seconds=time.perf_counter() - t_solve0,
     )
     return op
+
+
+def build_port_dispersion_record(
+    op: PortOperatorModal,
+    mesh: Mesh,
+    m_eps: np.ndarray,
+    m_mu: np.ndarray,
+    f_max: float,
+    *,
+    c_3d=None,
+):
+    """The dispersion record of a built modal port (DD-244).
+
+    Pairs the operator's recording profiles with the period chain of
+    its feed section and the port's curl restriction, so the true
+    discrete modes of the cross-section can be solved per frequency
+    afterwards (:mod:`~magnelio.ports._modal.dispersion`): the
+    report's dispersion sweep, and the exact de-embedding of a
+    quasi-TEM feed.  The masses are flattened builder-locally exactly
+    as :func:`build_modal_port` flattens them, so the chain is the one
+    the operator's own projections live on.
+
+    Parameters
+    ----------
+    op : PortOperatorModal
+    mesh, m_eps, m_mu
+        The run's mesh and material matrices (unflattened).
+    f_max : float
+        Upper band edge [Hz]; sizes the family hint of the record.
+    c_3d : scipy.sparse matrix, optional
+        The 3D curl of ``mesh.grid``; built here when omitted.
+
+    Returns
+    -------
+    BandDecomposition
+
+    Raises
+    ------
+    ValueError
+        If the port-adjacent section is not a certified uniform chain
+        (fewer than four equidistant cells behind the port plane, a
+        feed that is not translation invariant).
+    """
+    from magnelio.ports._modal.band_dtbc import BandDecomposition
+    from magnelio.ports._modal.zeta_pencil import (
+        build_period_blocks,
+        build_port_curl_slice,
+    )
+
+    face = op.plane.face
+    m_eps_f = flatten_port_plane_mass(m_eps, mesh, face)
+    m_mu_f = flatten_port_plane_mu(m_mu, mesh, face)
+    mesh_f = dataclasses.replace(
+        mesh,
+        pec_mask_edges=flatten_port_plane_pec_mask(mesh.pec_mask_edges, mesh, face),
+    )
+    if c_3d is None:
+        c_3d = build_curl_matrix(mesh_f.grid)
+    chain = build_period_blocks(op.plane, mesh_f, m_eps_f, m_mu_f, c_3d, op._dt)
+    curl_slice = build_port_curl_slice(chain, op.plane, m_mu_f, c_3d)
+    g_2d, _, _ = build_2d_gradient(op.plane, mesh_f.grid, build_gradient_matrix(mesh_f.grid))
+    try:
+        groups = extract_conductor_groups_from_mesh(op.plane, mesh_f)
+        signal_nodes = [np.asarray(g, dtype=np.int64) for g in groups[1:]]
+    except ValueError:
+        # A hollow pipe (no signal conductor): the impedance the sweep
+        # reports is then the channel's own reference.
+        signal_nodes = None
+    return BandDecomposition.from_modal_operator(
+        op, chain, curl_slice, f_max, g_2d=g_2d, signal_nodes=signal_nodes
+    )

@@ -16,7 +16,7 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Four entries are open as of 2026-09-02: KB-023, KB-027, KB-038 and
+**Three entries are open as of 2026-09-02: KB-023, KB-038 and
 KB-043.**  Everything else is struck through and resolved.
 
 ## KB-044: ~~The in-house section paths book a tenth of the deflection, the kernel path the whole of it~~ — Resolved (DD-243, 2026-09-02)
@@ -535,7 +535,19 @@ regression, one re-pin:
   analytic 49.97 Ω, port floor −131 → −135.6 dB — **merely different,
   and better**; re-pinned.
 
-## KB-027: De-embedding a quasi-TEM feed leaves the line's physical dispersion behind — Open (2026-08-25)
+## KB-027: ~~De-embedding a quasi-TEM feed leaves the line's physical dispersion behind~~ — Resolved (DD-244, 2026-09-02)
+
+**Resolution (DD-244).**  A modal run records a dispersion record for
+every quasi-TEM port — its feed chain, curl restriction and recording
+profiles — and `result.deembed` solves the true discrete modes of the
+cross-section on the result's axis from it, so the removed propagation
+is the grid's own, dispersion included.  Measured on the 20 mm tutorial
+microstrip at 25 nodes/λ: residual S21 phase +0.3° / +1.5° / +1.8° at
+5 / 10 / 15 GHz against −1.5° / −10.6° / −29.5° with the quasi-static
+fallback; the remainder is the drive port's launch residue (DD-239).
+The same modes back `report.dispersion(f)`.
+
+*Original record:*
 
 `result.deembed` removes the *discrete* chain propagation only on
 channels the run certified with line parameters `(r, q)` — the DTBC

@@ -283,13 +283,19 @@ class TestContourParallelism:
     differ from the one its state was recorded in.
     """
 
-    def test_threshold_keeps_small_loops_sequential(self):
+    def test_threshold_keeps_small_loops_sequential(self, monkeypatch):
         # Below the measured break-even (~3 s of serial work) a spawned
         # pool costs more than it saves.
         assert band_dtbc._contour_workers(4097, 4) == 1
         assert band_dtbc._contour_workers(16385, 4) == 1
-        # A production-scale loop is worth splitting.
+        # A production-scale loop is worth splitting — on a machine with
+        # cores to spare (a two-core CI runner keeps it sequential).
+        import os
+
+        monkeypatch.setattr(os, "cpu_count", lambda: 8)
         assert band_dtbc._contour_workers(131073, 15) > 1
+        monkeypatch.setattr(os, "cpu_count", lambda: 2)
+        assert band_dtbc._contour_workers(131073, 15) == 1
 
     def test_parallel_kernel_is_bit_identical(self):
         ext = TestBoundaryStateMachine._small_exterior()

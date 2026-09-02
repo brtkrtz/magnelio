@@ -297,6 +297,12 @@ class ScatteringTDResult(ScatteringResultMixin):
     reference_signals: dict | None = None
     # Settings the run was produced with (result contract).
     settings: "RunSettings | None" = None
+    # DD-244: per-port dispersion records (band ports, and the quasi-TEM
+    # ports of a modal run) and the half-window → full-model factor of
+    # each port's line impedance; back the exact de-embedding, the
+    # reference impedances and the f_axis= recompute.
+    port_dispersion: dict | None = None
+    port_reference_scale: dict | None = None
 
     @property
     def f_axis(self) -> np.ndarray:
@@ -324,6 +330,7 @@ class ScatteringTDResult(ScatteringResultMixin):
             self.port_line_params,
             self.port_normal_dx,
             self.port_modes,
+            self.port_dispersion,
         )
 
     def _s_params_on(self, f_axis) -> SParameterResult:
@@ -332,33 +339,48 @@ class ScatteringTDResult(ScatteringResultMixin):
         Runs the same per-excitation pipeline as the original run,
         using the per-excitation reference waveforms where recorded
         (``reference_signals``) and the single ``reference_signal``
-        otherwise.
+        otherwise; a band result decomposes per frequency against its
+        stored port records.
         """
         from magnelio.post.modal_sparameters import (  # noqa: PLC0415
+            compute_band_s_parameters,
             compute_s_parameters,
         )
 
         f_axis = np.asarray(f_axis, dtype=float)
         cols = []
         for excited, sigs in self.signals.items():
-            ref = (self.reference_signals or {}).get(
-                excited,
-                self.reference_signal,
-            )
-            s_dict = compute_s_parameters(
-                recorder_signals=sigs,
-                port_modes=self.port_modes,
-                excited=excited,
-                reference_signal=ref,
-                f_axis=f_axis,
-                port_normal_dx=self.port_normal_dx,
-                port_line_params=self.port_line_params,
-            )
+            if self.port_model_used == "band":
+                s_dict, z_ref = compute_band_s_parameters(
+                    sigs,
+                    list((self.port_dispersion or {}).values()),
+                    excited,
+                    f_axis,
+                    return_reference=True,
+                    port_reference_scale=self.port_reference_scale,
+                )
+            else:
+                ref = (self.reference_signals or {}).get(
+                    excited,
+                    self.reference_signal,
+                )
+                s_dict, z_ref = compute_s_parameters(
+                    recorder_signals=sigs,
+                    port_modes=self.port_modes,
+                    excited=excited,
+                    reference_signal=ref,
+                    f_axis=f_axis,
+                    port_normal_dx=self.port_normal_dx,
+                    port_line_params=self.port_line_params,
+                    return_reference=True,
+                    port_reference_scale=self.port_reference_scale,
+                )
             cols.append(
                 SParameterResult.from_single_excitation(
                     s_dict,
                     excited,
                     f_axis,
+                    reference_impedances=z_ref,
                 )
             )
         return cols[0] if len(cols) == 1 else SParameterResult.merge(cols)
@@ -615,6 +637,8 @@ class _ChannelRun:
     energy_trace: object
     stop_reason: str | None
     final_port_signal_db: float | None
+    port_dispersion: dict | None = None
+    port_reference_scale: dict | None = None
 
 
 @dataclass
@@ -1142,6 +1166,8 @@ class AnalysisScatteringTD(AnalysisTD):
             port_line_params=first.port_line_params,
             port_model_used="modal",
             reference_signals={chan: r.reference_signal for chan, r in zip(excited_list, runs)},
+            port_dispersion=first.port_dispersion,
+            port_reference_scale=first.port_reference_scale,
             settings=self._run_settings(
                 dt=dt,
                 n_actual_steps=representative.n_actual,
@@ -1221,7 +1247,7 @@ class AnalysisScatteringTD(AnalysisTD):
         reference_signal = _sampled_signal(prepared.reference_fn, n_actual, dt)
         _renormalize_freq_monitors(self.monitors, reference_signal)
 
-        s_dict, a_incident = compute_s_parameters(
+        s_dict, a_incident, z_ref = compute_s_parameters(
             recorder_signals=signals,
             port_modes=prepared.port_modes,
             excited=excited_chan,
@@ -1231,11 +1257,14 @@ class AnalysisScatteringTD(AnalysisTD):
             port_normal_dx=prepared.port_normal_dx,
             port_line_params=prepared.port_line_params,
             return_incident=True,
+            return_reference=True,
+            port_reference_scale=prepared.port_reference_scale,
         )
         s_params = SParameterResult.from_single_excitation(
             s_dict,
             excited_chan,
             f_axis,
+            reference_impedances=z_ref,
         )
         self._wire_incident_amplitude(
             reference_signal, f_axis, a_incident, prepared.port_modes, excited_chan
@@ -1252,6 +1281,8 @@ class AnalysisScatteringTD(AnalysisTD):
             energy_trace=getattr(solver, "_energy_trace", None),
             stop_reason=solver._stop_reason,
             final_port_signal_db=solver._final_signal_db,
+            port_dispersion=prepared.port_dispersion,
+            port_reference_scale=prepared.port_reference_scale,
         )
 
     def _store_setup(self, dt: float) -> dict:
@@ -1329,6 +1360,8 @@ class AnalysisScatteringTD(AnalysisTD):
                 excitation_fns=prepared.drive_items,
                 recorder=prepared.recorder,
                 port_model="modal",
+                port_band=prepared.port_dispersion,
+                port_reference_scale=prepared.port_reference_scale,
                 energy_stop_db=energy_stop_db,
                 port_signal_stop_db=port_signal_stop_db,
                 total_time_steps=total_time_steps,
@@ -1696,6 +1729,8 @@ class AnalysisScatteringTD(AnalysisTD):
             )
 
         per_excitation = []
+        band_records = [BandDecomposition.from_operator(op) for op in operators]
+        reference_scale = self._reference_scales(operators)
         for excited_chan in excited_list:
             for op in operators:
                 op.reset_state()
@@ -1732,16 +1767,19 @@ class AnalysisScatteringTD(AnalysisTD):
 
             _warn_on_truncated_band_record(signals, excited_chan)
 
-            s_dict = compute_band_s_parameters(
+            s_dict, z_ref = compute_band_s_parameters(
                 signals,
-                operators,
+                band_records,
                 excited_chan,
                 f_axis,
+                return_reference=True,
+                port_reference_scale=reference_scale,
             )
             s_params = SParameterResult.from_single_excitation(
                 s_dict,
                 excited_chan,
                 f_axis,
+                reference_impedances=z_ref,
             )
 
             t_axis = np.arange(n_steps) * dt
@@ -1788,6 +1826,8 @@ class AnalysisScatteringTD(AnalysisTD):
                 n_actual_steps=n_actual,
                 port_model_used="band",
             ),
+            port_dispersion={rec.name: rec for rec in band_records},
+            port_reference_scale=reference_scale,
         )
 
     def _run_band_streamed(
@@ -1829,6 +1869,7 @@ class AnalysisScatteringTD(AnalysisTD):
         port_band = {op.name: BandDecomposition.from_operator(op) for op in operators}
         port_modes = {op.name: self._modes_for_operator(op) for op in operators}
         port_normal_dx = {op.name: op.plane.normal_dx for op in operators}
+        reference_scale = self._reference_scales(operators)
 
         for excited_chan in excited_list:
             for op in operators:
@@ -1866,6 +1907,7 @@ class AnalysisScatteringTD(AnalysisTD):
                 port_normal_dx=port_normal_dx,
                 port_line_params={},
                 port_band=port_band,
+                port_reference_scale=reference_scale,
                 excitation_fns=[(excited_chan, _band_drive_fn(ref_time, dt))],
                 recorder=recorder,
                 port_model="band",

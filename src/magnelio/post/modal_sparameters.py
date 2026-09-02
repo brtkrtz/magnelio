@@ -116,6 +116,35 @@ _DENOM_GUARD = 0.05
 _Z_RATIO_GUARD = 1.0e3
 
 
+def channel_reference_impedance(
+    mode,
+    omega: np.ndarray,
+    dt: float,
+    line_params: tuple | None = None,
+) -> np.ndarray:
+    """Reference impedance ``Z(ω)`` of one recorded channel (complex).
+
+    The impedance the power-wave split values the channel's V/I
+    against: the exact discrete wave impedance of the leapfrog chain on
+    a certified Klein-Gordon channel (``line_params`` carrying ``z0``
+    — concern 1d of the module docstring: the continuum value misses
+    the discrete wave's V/I by O((ω·dt)², (β·dz)²), a −40…−60 dB
+    measured floor), and ``mode.z_modal(ω)`` otherwise — the
+    frequency-flat quasi-static line impedance of a quasi-TEM channel,
+    the wave impedance of a hollow-pipe mode, the Thévenin impedance
+    of a lumped port.
+    """
+    omega = np.asarray(omega, dtype=float)
+    if line_params is not None and len(line_params) > 2 and line_params[2] is not None:
+        return dtbc_wave_impedance(
+            omega * dt,
+            line_params[1],
+            line_params[2],
+            mode.mode_type.value,
+        )
+    return np.array([mode.z_modal(float(w)) for w in omega], dtype=complex)
+
+
 def spectral_power_waves(
     V_f: np.ndarray,
     I_f: np.ndarray,
@@ -175,22 +204,7 @@ def spectral_power_waves(
         Complex ``a(ω)``, ``b(ω)``.
     """
     omega = np.asarray(omega, dtype=float)
-    if line_params is not None and len(line_params) > 2 and line_params[2] is not None:
-        # Concern 1d: certified Klein-Gordon channel — the discrete
-        # travelling wave's V/I is *not* the continuum z_wave (gap
-        # O((w dt)^2, (beta dz)^2), a -40..-60 dB measured floor);
-        # use the exact discrete wave impedance.
-        Z = dtbc_wave_impedance(
-            omega * dt,
-            line_params[1],
-            line_params[2],
-            mode.mode_type.value,
-        )
-    else:
-        Z = np.array(
-            [mode.z_modal(float(w)) for w in omega],
-            dtype=complex,
-        )
+    Z = channel_reference_impedance(mode, omega, dt, line_params)
     with np.errstate(divide="ignore", invalid="ignore"):
         if guarded:
             # Cut-off guard: |Z| collapsing to 0 or diverging turns
@@ -345,6 +359,8 @@ def compute_s_parameters(
     port_normal_dx: dict[str, float] | None = None,
     port_line_params: dict[tuple[str, int], tuple[float, float]] | None = None,
     return_incident: bool = False,
+    return_reference: bool = False,
+    port_reference_scale: dict[str, float] | None = None,
 ) -> dict[tuple[str, int], np.ndarray]:
     """Compute power-wave S-parameters from recorded V/I time-series.
 
@@ -434,6 +450,20 @@ def compute_s_parameters(
         λ/20 meshes.  Missing channels fall back to the continuum
         forms.
 
+    return_reference : bool, default False
+        Also return the per-channel real reference impedance
+        ``Z(f_axis)`` the power waves are defined against
+        (:func:`channel_reference_impedance`, real part), scaled per
+        ``port_reference_scale``.  Appended after the incident
+        amplitude when both flags are set: ``(S, a)``, ``(S, z)`` or
+        ``(S, a, z)``.
+    port_reference_scale : dict[str, float], optional
+        Half-window → full-model factor per port for *line* impedances
+        (a port cut by a symmetry plane solves half the cross-section;
+        the published reference is the full-model value).  Applied to
+        channels whose mode carries a ``z_line``; wave impedances are
+        intensive and untouched.
+
     Returns
     -------
     dict[(str, int), np.ndarray]
@@ -504,6 +534,7 @@ def compute_s_parameters(
 
     a_channels: dict[tuple[str, int], np.ndarray] = {}
     b_channels: dict[tuple[str, int], np.ndarray] = {}
+    z_channels: dict[tuple[str, int], np.ndarray] = {}
 
     for key, (V_sig, I_sig) in recorder_signals.items():
         label, mode_idx = key
@@ -549,13 +580,26 @@ def compute_s_parameters(
             normal_dx=normal_dx,
             line_params=line_params,
         )
+        if return_reference:
+            z = channel_reference_impedance(mode, omega, dt, line_params).real
+            if getattr(mode, "z_line", None) is not None and port_reference_scale:
+                z = z * float(port_reference_scale.get(label, 1.0))
+            z_channels[key] = z
+
+    def _pack(S_out, a_out):
+        out = [S_out]
+        if return_incident:
+            out.append(a_out)
+        if return_reference:
+            out.append(z_channels)
+        return out[0] if len(out) == 1 else tuple(out)
 
     a_excited = a_channels[excited]
     a_peak = float(np.max(np.abs(a_excited)))
     if a_peak == 0.0:
         # Fully zero excitation: S is undefined everywhere.
         S_nan = {key: np.full_like(f_axis, np.nan, dtype=complex) for key in recorder_signals}
-        return (S_nan, a_excited) if return_incident else S_nan
+        return _pack(S_nan, a_excited)
 
     valid = np.abs(a_excited) >= (a_threshold * a_peak)
     safe_a = np.where(valid, a_excited, 1.0 + 0j)
@@ -565,7 +609,7 @@ def compute_s_parameters(
         S_k = b / safe_a
         S_k = np.where(valid, S_k, np.nan + 1j * np.nan)
         S[key] = S_k
-    return (S, a_excited) if return_incident else S
+    return _pack(S, a_excited)
 
 
 def compute_band_s_parameters(
@@ -578,6 +622,9 @@ def compute_band_s_parameters(
     m_mu: np.ndarray | None = None,
     c_3d=None,
     a_threshold: float = 1e-12,
+    return_reference: bool = False,
+    port_reference_scale: dict[str, float] | None = None,
+    search: str = "track",
 ) -> dict[tuple[str, int], np.ndarray]:
     """S-parameters of a pulsed broadband run through band DTBC ports.
 
@@ -586,22 +633,22 @@ def compute_band_s_parameters(
     discrete modes of each port cross-section are solved on the
     stored inward chain, their exact V/I responses through the
     port's *fixed* recording profiles are synthesised
-    (:func:`~magnelio.ports._modal.zeta_pencil.cw_wave_phasors` — the
-    de-stagger and the discrete wave impedance are contained in the
-    phasors), and the recorded spectra are decomposed by the joint
-    linear system
+    (:mod:`~magnelio.ports._modal.dispersion` — the de-stagger and
+    the discrete wave impedance are contained in the phasors), and
+    the recorded spectra are decomposed by the joint linear system
 
         V_c(f) = sum_j a_j v_in[c, j] + b_j v_out[c, j]
         I_c(f) = sum_j a_j i_in[c, j] + b_j i_out[c, j]
 
     over all recording channels ``c`` and all modes ``j`` propagating
-    at ``f``.  ``S[(port, c)] = b_(port, c) / a_excited``.
+    at ``f``, every mode's phasors scaled to unit power so ``a`` and
+    ``b`` are power waves (DD-244).  ``S[(port, c)] = b_(port, c) /
+    a_excited``.
 
-    Cost note: each frequency point runs one sparse mode solve per
-    port (measured 30 ms – 3.6 s depending on
-    cross-section size) plus one curl application per (channel,
-    mode) pair — independent of the 3D run, which is needed only
-    once for the whole axis.
+    Cost note: with ``search="track"`` (default) each frequency point
+    runs one sparse factorisation per tracked mode and port; the full
+    five-shift arc search runs at the first and last axis point and
+    wherever a channel is unassigned.
 
     Parameters
     ----------
@@ -620,13 +667,21 @@ def compute_band_s_parameters(
         Evaluation frequencies [Hz]; must lie inside every port's
         subspace band (content outside the band is not certified).
     m_eps, m_mu, c_3d : optional
-        The mesh-side operators the phasor synthesis applies: the two
-        material matrices and the 3D curl.  They are properties of the
-        grid, not of a port, so a reader rebuilds them from the stored
-        mesh instead of loading a per-port copy.  Omit them to take
-        the cached ones off the first operator (the live path).
+        The mesh-side operators, needed only for records that predate
+        the stored plane masses and curl slice (DD-244); a current
+        record is self-contained.
     a_threshold : float, default 1e-12
         Relative ``|a_excited|`` floor below which S is NaN.
+    return_reference : bool, default False
+        Also return the per-channel reference impedance ``Z(f)`` the
+        power waves are defined against (real, NaN where the channel
+        has no mode), as ``(S, z_ref)``.
+    port_reference_scale : dict[str, float], optional
+        Half-window → full-model factor per port applied to the
+        returned references (a port cut by a symmetry plane).
+    search : {"track", "full"}
+        Mode continuation strategy of
+        :func:`~magnelio.ports._modal.dispersion.solve_port_dispersion`.
 
     Returns
     -------
@@ -636,30 +691,22 @@ def compute_band_s_parameters(
         frequency carry NaN there.
     """
     # Design: WP-R4a (per-frequency true-mode decomposition; cost-watch
-    # numbers measured there).
+    # numbers measured there), DD-244 (continuation, power waves).
     from magnelio.ports._modal.band_dtbc import BandDecomposition
-    from magnelio.ports._modal.zeta_pencil import (
-        CWChannel,
-        build_port_curl_slice,
-        cw_wave_phasors,
-        find_propagating_modes,
-        normalize_gauge,
+    from magnelio.ports._modal.dispersion import (
+        decompose_power_waves,
+        solve_port_dispersion,
     )
 
     # Accept built operators (live runs) or detached records (a project
-    # store read).  The mesh-side operators default to the ones cached
-    # on the first built port; a detached caller passes them in.
+    # store read).  Legacy records without stored masses fall back to
+    # the mesh-side operators cached on the first built port.
     if m_eps is None or m_mu is None or c_3d is None:
         bd0 = getattr(ports[0], "band_data", None) if ports else None
-        if bd0 is None:
-            raise ValueError(
-                "compute_band_s_parameters needs m_eps/m_mu/c_3d when the "
-                "ports are BandDecomposition records (they carry no cached "
-                "mesh operators); rebuild them from the run's mesh",
-            )
-        m_eps = bd0.m_eps if m_eps is None else m_eps
-        m_mu = bd0.m_mu if m_mu is None else m_mu
-        c_3d = bd0.c_3d if c_3d is None else c_3d
+        if bd0 is not None:
+            m_eps = bd0.m_eps if m_eps is None else m_eps
+            m_mu = bd0.m_mu if m_mu is None else m_mu
+            c_3d = bd0.c_3d if c_3d is None else c_3d
     ports = [
         p if isinstance(p, BandDecomposition) else BandDecomposition.from_operator(p) for p in ports
     ]
@@ -672,24 +719,17 @@ def compute_band_s_parameters(
 
     a_all: dict[tuple[str, int], np.ndarray] = {}
     b_all: dict[tuple[str, int], np.ndarray] = {}
+    z_all: dict[tuple[str, int], np.ndarray] = {}
     for port in ports:
-        chain = port.chain_inward
-        n_t = chain.n_t
-        w_t = chain.w_period[:n_t]
         n_ch = port.n_modes
-        for c in range(n_ch):
-            a_all[(port.name, c)] = np.full(n_f, np.nan, complex)
-            b_all[(port.name, c)] = np.full(n_f, np.nan, complex)
-
-        # Channel e_t traces (free DOFs, W_t-normalised) for the
-        # per-frequency mode-to-channel assignment.
-        ch_traces = []
-        for e_u, e_v in zip(port.e_u_profiles, port.e_v_profiles):
-            tr = np.concatenate([e_u[chain.free_u], e_v[chain.free_v]])
-            ch_traces.append(
-                tr / math.sqrt(float(np.dot(w_t, tr**2))),
-            )
-
+        disp = solve_port_dispersion(
+            port,
+            f_axis,
+            m_eps=m_eps,
+            m_mu=m_mu,
+            c_3d=c_3d,
+            search=search,
+        )
         # Spectra of the recorded projections at the axis points
         # (direct DFT; the common source-spectrum factor cancels in
         # b/a).  I is rotated by e^{+j w dt/2} — the recorder's Yee
@@ -708,100 +748,32 @@ def compute_band_s_parameters(
             V_sig, I_sig = recorder_signals[(port.name, c)]
             Vh[c] = dft @ V_sig.values
             Ih[c] = (dft @ I_sig.values) * np.exp(0.5j * w_dt_axis)
+        a, b = decompose_power_waves(disp, Vh, Ih)
+        z_scale = float(port_reference_scale.get(port.name, 1.0)) if port_reference_scale else 1.0
+        for c in range(n_ch):
+            a_all[(port.name, c)] = a[c]
+            b_all[(port.name, c)] = b[c]
+            z_all[(port.name, c)] = disp.z_line[c] * z_scale
 
-        # The phasor synthesis only ever reads the curl on the port's
-        # dual edges, driven by a field supported on the two
-        # port-adjacent periods.  That restriction is independent of
-        # frequency, zeta and mode, so build it once per port instead
-        # of once per (frequency, mode, channel).
-        curl_slice = build_port_curl_slice(chain, port.plane, m_mu, c_3d)
-
-        theta_fam = np.abs(np.angle(port.family_zetas))
         # DD-235.  Frequencies where a mode propagates but reaches no
-        # recording channel.  The system below is written over every
+        # recording channel.  The system above is written over every
         # channel, so its right-hand side carries the response of *all*
         # modes present at the port; a mode left out of the basis has
         # its content absorbed by the modes that remain.  A channel
         # without a mode stays NaN and is visible; a mode without a
-        # channel is not, which is what this collects.
-        incomplete: list[float] = []
-        for k, f in enumerate(f_axis):
-            w_dt = 2.0 * math.pi * f * dt
-            hint = 1.3 * float(np.interp(f, port.family_freqs, theta_fam))
-            zp, pp = find_propagating_modes(chain, w_dt, hint)
-            if zp.size == 0:
-                continue
-            # Greedy channel assignment by W_t overlap.
-            taken = np.zeros(zp.size, dtype=bool)
-            assigned: list[tuple[int, int]] = []
-            for c in range(n_ch):
-                ov = np.abs(ch_traces[c] @ (w_t[:, None] * pp[:n_t, :]))
-                ov[taken] = -1.0
-                j = int(np.argmax(ov))
-                if ov[j] < 0.5:
-                    continue
-                taken[j] = True
-                assigned.append((c, j))
-            if zp.size > len(assigned):
-                incomplete.append(float(f))
-            if not assigned:
-                continue
-            # Exact phasors of every assigned mode through every
-            # recording channel's stored profiles.
-            n_j = len(assigned)
-            v_in = np.empty((n_ch, n_j), complex)
-            i_in = np.empty((n_ch, n_j), complex)
-            v_out = np.empty((n_ch, n_j), complex)
-            i_out = np.empty((n_ch, n_j), complex)
-            for jj, (c_mode, j) in enumerate(assigned):
-                phi = normalize_gauge(pp[:, j], n_t)
-                # r/q/eps_eff are irrelevant for phasor synthesis —
-                # cw_wave_phasors touches zeta and phi_trace only.
-                ch = CWChannel(
-                    zeta=complex(zp[j]),
-                    r=1.0,
-                    q=0.0,
-                    eps_eff_hat=0.0,
-                    phi_trace=phi,
-                )
-                for c_rec in range(n_ch):
-                    du, dv = port.dual_e_profiles[c_rec]
-                    ph = cw_wave_phasors(
-                        ch,
-                        chain,
-                        port.plane,
-                        m_eps,
-                        m_mu,
-                        c_3d,
-                        w_dt,
-                        h_u_prof=port.h_u_profiles[c_rec],
-                        h_v_prof=port.h_v_profiles[c_rec],
-                        proj_u=du,
-                        proj_v=dv,
-                        curl_slice=curl_slice,
-                    )
-                    v_in[c_rec, jj] = ph.v_in
-                    i_in[c_rec, jj] = ph.i_in
-                    v_out[c_rec, jj] = ph.v_out
-                    i_out[c_rec, jj] = ph.i_out
-            lhs = np.block([[v_in, v_out], [i_in, i_out]])
-            rhs = np.concatenate([Vh[:, k], Ih[:, k]])
-            ab, *_ = np.linalg.lstsq(lhs, rhs, rcond=None)
-            for jj, (c_mode, _) in enumerate(assigned):
-                a_all[(port.name, c_mode)][k] = ab[jj]
-                b_all[(port.name, c_mode)][k] = ab[n_j + jj]
-
-        if incomplete:
-            f_lo, f_hi = min(incomplete), max(incomplete)
+        # channel is not, which is what this collects (at the axis
+        # points the full arc search visited).
+        if disp.incomplete.size:
+            f_lo, f_hi = float(disp.incomplete.min()), float(disp.incomplete.max())
             span = f"{f_lo:.4g} Hz" if f_lo == f_hi else f"{f_lo:.4g}-{f_hi:.4g} Hz"
             warnings.warn(
                 f"Port {port.name!r} carries modes that propagate but match "
-                f"no recording channel at {len(incomplete)} of {n_f} "
-                f"frequencies ({span}); their response is absorbed into the "
-                "channels that were matched, so S is biased there rather "
-                "than flagged. Raise the port's n_modes to cover every "
-                "propagating mode of its cross-section, or keep the axis "
-                "below the next cut-on.",
+                f"no recording channel at {disp.incomplete.size} of "
+                f"{disp.n_full_searches} searched frequencies ({span}); their "
+                "response is absorbed into the channels that were matched, so "
+                "S is biased there rather than flagged. Raise the port's "
+                "n_modes to cover every propagating mode of its cross-section, "
+                "or keep the axis below the next cut-on.",
                 stacklevel=2,
             )
 
@@ -813,4 +785,4 @@ def compute_band_s_parameters(
     S: dict[tuple[str, int], np.ndarray] = {}
     for key, b in b_all.items():
         S[key] = np.where(valid, b / safe_a, np.nan + 1j * np.nan)
-    return S
+    return (S, z_all) if return_reference else S

@@ -15,25 +15,16 @@ Field semantics
 
 ``z_line_ref`` / ``cutoff_ref``
     Properties of the mesh-independent reference mode (path a in
-    DD-048).  Source: closed-form analytical solver where one is
-    available, or :func:`solve_modes_refined` when the spec activated
-    ``reference_refinement``.  ``None`` if no reference path was
-    requested.
-
-``refinement_log``
-    Per-level :class:`ModeRefinementReport` from
-    :func:`solve_modes_refined`, populated only when the spec used
-    that path.  ``None`` for analytical-reference specs and for
-    numerical specs with ``reference_refinement = 0``.
+    DD-048): the closed-form analytical solution where one exists
+    (coax, rectangular waveguide), ``None`` otherwise.  A numerical
+    cross-section converges its parameters on the port plane with
+    :func:`~magnelio.ports.refine_port_modes` instead.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
-
-if TYPE_CHECKING:
-    from magnelio.ports._modal.refinement import ModeRefinementReport
+from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -42,7 +33,6 @@ class PortOperatorReport:
     z_line_ref: Optional[float] = None
     cutoff_num: Optional[float] = None
     cutoff_ref: Optional[float] = None
-    refinement_log: "Optional[ModeRefinementReport]" = None
     # Symmetry planes cutting the port window (DD-154), as
     # ((face, wall_kind), ...) pairs, e.g. (("ymin", "PMC"),).  The
     # numeric fields above stay the raw half-window solver values; the

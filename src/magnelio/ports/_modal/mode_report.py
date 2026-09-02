@@ -528,6 +528,114 @@ def _edge_grid(
 
 
 @dataclass(frozen=True)
+class PortDispersionReport:
+    """Frequency dependence of a port's modes on the grid.
+
+    Returned by :meth:`PortReport.dispersion`.  Every array is indexed
+    ``[mode, frequency]`` in the port's mode order; a mode that does
+    not propagate at a frequency (below its cut-on) is NaN there.  The
+    values are those of the *true discrete modes* of the feed
+    cross-section — the modes the grid actually carries, solved per
+    frequency — not the frequency-flat mode the port's report lists.
+
+    Attributes
+    ----------
+    port_name : str
+    f_axis : np.ndarray
+        Frequencies [Hz].
+    z_line : np.ndarray
+        Reference impedance [Ω] the mode carries at each frequency,
+        full-model value on a port cut by a symmetry plane: the line
+        impedance of a TEM or quasi-TEM mode, the modal impedance of a
+        hollow-pipe mode in the port's V/I convention.
+    epsilon_eff : np.ndarray
+        Effective permittivity ``(β c / ω)²`` with the grid's own
+        dispersion divided out — comparable with the closed-form
+        ``ε_eff(f)`` of the microstrip literature.
+    gamma : np.ndarray
+        Propagation constant ``α + jβ`` [1/m], complex.
+    """
+
+    port_name: str
+    f_axis: np.ndarray
+    z_line: np.ndarray
+    epsilon_eff: np.ndarray
+    gamma: np.ndarray
+
+    @property
+    def beta(self) -> np.ndarray:
+        """Phase constant [rad/m]."""
+        return self.gamma.imag
+
+    @property
+    def alpha(self) -> np.ndarray:
+        """Attenuation constant [Np/m] — zero to roundoff on a lossless feed."""
+        return self.gamma.real
+
+    @property
+    def n_modes(self) -> int:
+        return int(self.z_line.shape[0])
+
+    def summary(self) -> str:
+        """Multi-line summary at the first, middle and last frequency."""
+        f = np.asarray(self.f_axis, dtype=float)
+        picks = sorted({0, f.size // 2, f.size - 1})
+        lines = [f"Port {self.port_name!r} — dispersion of {self.n_modes} mode(s)"]
+        for m in range(self.n_modes):
+            lines.append(f"  [{m}]")
+            for k in picks:
+                if not np.isfinite(self.z_line[m, k]):
+                    lines.append(f"      {f[k] / 1e9:8.4f} GHz  (below cut-on)")
+                    continue
+                lines.append(
+                    f"      {f[k] / 1e9:8.4f} GHz  z_line = {self.z_line[m, k]:8.3f} Ω  "
+                    f"ε_eff = {self.epsilon_eff[m, k]:.4f}  "
+                    f"β = {self.beta[m, k]:.2f} rad/m"
+                )
+        return "\n".join(lines)
+
+    def __str__(self) -> str:
+        return self.summary()
+
+    def plot(self, ax=None, *, mode: int | None = None):
+        """Line impedance and effective permittivity against frequency.
+
+        Parameters
+        ----------
+        ax : matplotlib Axes, optional
+            Axes for the impedance; ``ε_eff`` goes on a twin axis.
+        mode : int, optional
+            One mode; default all.
+
+        Returns
+        -------
+        tuple
+            The matplotlib figure and the impedance axes.
+        """
+        import matplotlib.pyplot as plt  # noqa: PLC0415
+
+        if ax is None:
+            fig, ax = plt.subplots()
+        else:
+            fig = ax.figure
+        ax2 = ax.twinx()
+        f_ghz = np.asarray(self.f_axis, dtype=float) / 1e9
+        modes = range(self.n_modes) if mode is None else [int(mode)]
+        for m in modes:
+            ax.plot(f_ghz, self.z_line[m], label=f"mode {m}: Z")
+            ax2.plot(f_ghz, self.epsilon_eff[m], "--", label=f"mode {m}: ε_eff")
+        ax.set_xlabel("frequency [GHz]")
+        ax.set_ylabel("line impedance [Ω]")
+        ax2.set_ylabel("effective permittivity")
+        ax.grid(True)
+        h1, l1 = ax.get_legend_handles_labels()
+        h2, l2 = ax2.get_legend_handles_labels()
+        ax.legend(h1 + h2, l1 + l2, loc="best")
+        ax.set_title(f"port {self.port_name!r}: dispersion on the grid")
+        return fig, ax
+
+
+@dataclass(frozen=True)
 class PortReport:
     """Per-port mode-solution report (no TD run required).
 
@@ -549,6 +657,67 @@ class PortReport:
     name: str
     modes: tuple[ModeReport, ...]
     report: PortOperatorReport | None = None
+    # Builds the port's dispersion record on demand (DD-244); set by
+    # ``solve_ports`` for modal ports, ``None`` for lumped ones.
+    _dispersion_factory: object = field(default=None, repr=False, compare=False)
+    _dispersion_cache: dict = field(default_factory=dict, repr=False, compare=False)
+
+    def dispersion(self, f_axis) -> PortDispersionReport:
+        """Impedance, ``ε_eff`` and ``γ`` of the port's modes per frequency.
+
+        Solves the true discrete modes of the feed cross-section at
+        every point of ``f_axis`` — the modes the grid carries there,
+        as opposed to the single frequency-flat mode the port operates
+        with — and returns what each carries: its impedance, its
+        effective permittivity and its propagation constant.  On a
+        quasi-TEM line these move with frequency (the impedance of the
+        tutorial microstrip rises by 7 % over its band); on a
+        homogeneous line they are flat, and the impedance is the exact
+        discrete value the port's power waves already use.
+
+        The mode order is the port's.  A mode below its cut-on at a
+        frequency is NaN there.
+
+        Parameters
+        ----------
+        f_axis : array_like
+            Frequencies [Hz].
+
+        Returns
+        -------
+        PortDispersionReport
+
+        Raises
+        ------
+        ValueError
+            On a lumped port, or when the feed behind the port plane is
+            not a uniform chain (fewer than four equidistant cells, a
+            taper or step too close to the port).
+        """
+        if self._dispersion_factory is None:
+            raise ValueError(
+                f"port {self.name!r} carries no dispersion: lumped ports have no "
+                "feed cross-section, and a report built without a mesh cannot "
+                "solve one — use analysis.solve_ports()."
+            )
+        from magnelio.ports._modal.dispersion import solve_port_dispersion  # noqa: PLC0415
+
+        if "record" not in self._dispersion_cache:
+            self._dispersion_cache["record"] = self._dispersion_factory()
+        record = self._dispersion_cache["record"]
+        disp = solve_port_dispersion(record, np.asarray(f_axis, dtype=float))
+        scale = self.report.z_line_full_scale if self.report is not None else 1.0
+        z = disp.z_line.copy()
+        for m, mode in enumerate(self.modes[: z.shape[0]]):
+            if mode.z_line is not None:
+                z[m] *= scale
+        return PortDispersionReport(
+            port_name=self.name,
+            f_axis=disp.f_axis,
+            z_line=z,
+            epsilon_eff=disp.epsilon_eff,
+            gamma=disp.gamma,
+        )
 
     @property
     def z_line_num(self) -> float | None:
@@ -573,7 +742,7 @@ class PortReport:
         return self.report.cutoff_ref if self.report else None
 
     @classmethod
-    def from_operator(cls, op, mesh=None) -> "PortReport":
+    def from_operator(cls, op, mesh=None, *, dispersion_factory=None) -> "PortReport":
         """Build a report from a built port operator.
 
         Modal operators contribute one :class:`ModeReport` per
@@ -584,7 +753,9 @@ class PortReport:
         Passing the *mesh* lets the mode plots resolve the symmetry
         planes cutting the port window, so they show the full
         cross-section instead of the solved half; without it they show
-        the solved window.
+        the solved window.  ``dispersion_factory`` — a callable
+        returning the port's dispersion record — enables
+        :meth:`dispersion`.
         """
         if hasattr(op, "discrete_modes"):
             # Publish full-model line impedances (DD-154): the Mode
@@ -622,7 +793,12 @@ class PortReport:
                 )
                 for m, dm in enumerate(op.discrete_modes)
             )
-            return cls(name=op.name, modes=modes, report=op.port_report)
+            return cls(
+                name=op.name,
+                modes=modes,
+                report=op.port_report,
+                _dispersion_factory=dispersion_factory,
+            )
         return cls(
             name=op.name,
             modes=(),

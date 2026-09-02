@@ -9,7 +9,62 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+### Added
+
+- Every scattering result knows the reference impedance each channel
+  is measured against (`result.reference_impedance(port)`), and can
+  be re-referenced to a common one: `result.renormalize(50)` returns
+  the network a 50 Ω instrument would read, with the exact power-wave
+  transformation, port by port or per frequency.
+- Port reports solve the frequency dependence of their modes:
+  `report.dispersion(f_axis)` returns the impedance, the effective
+  permittivity and the propagation constant of the modes the grid
+  actually carries at every frequency — the dispersion of a
+  microstrip, the wave impedance of a waveguide mode — in a few
+  seconds for a 200-point sweep.
+- A convergence ladder for the port cross-section: `refine_port_modes`
+  converges a port's line impedance, effective permittivity or cut-off
+  on a thin slab behind the port face, starting from the user's own
+  port-plane grid and splitting every cell in four per level, with an
+  observed order and a Richardson estimate.  Backed by a new
+  `MeshControl(subdivide=...)`, a nested refinement of a finished grid.
+- Touchstone and scikit-rf exports take `z_ref=` to renormalise on the
+  way out; the scikit-rf network carries each port's reference per
+  frequency in `z0`.
+
 ### Changed
+
+- De-embedding a quasi-TEM feed (microstrip, CPW) now removes the
+  line's real dispersion: the shift uses the true discrete modes of
+  the feed cross-section solved per frequency instead of the
+  frequency-flat quasi-static propagation constant.  On the tutorial
+  microstrip the residual S21 phase after de-embedding the whole
+  20 mm line drops from −30° to under 2° at 15 GHz.
+- A Touchstone file states the reference impedance the data actually
+  refer to in its option line (the coax's 49.3 Ω as it came out, no
+  longer a nominal `R 50`) when every exported channel shares one
+  constant reference, and lists each port's reference in the header.
+  Channels with differing or frequency-dependent references are
+  written with a nominal `R 50` and a warning naming the remedy
+  (`z_ref=50`, or the scikit-rf export).
+- Band-pipeline S-parameters are power waves between ports of
+  different cross-sections: each port's modes are normalised to unit
+  power before the decomposition, so `S21` across an impedance step
+  is a power ratio (previously the two ports' eigenvector norms
+  entered the ratio; symmetric fixtures were unaffected).  The
+  per-frequency decomposition also continues each mode from its
+  previous eigenvalue instead of searching the whole arc at every
+  point, about seven times faster at identical results.
+- Tutorial 09 gained three sections: the port's own dispersion curve
+  against the one the S21 phase traced, the reference impedance and
+  what renormalising to 50 Ω shows, and the convergence ladder of the
+  port plane — which finds the tutorial's 25-node grid reading the
+  microstrip about 10 % low.
+
+### Removed
+
+- The undocumented `solve_modes_refined` helper (a whole-mesh
+  refinement loop) is replaced by `refine_port_modes`.
 
 - Every section path tessellates curved faces to the same chord budget,
   a tenth of the section deflection.  Cylinders, cones, spheres and

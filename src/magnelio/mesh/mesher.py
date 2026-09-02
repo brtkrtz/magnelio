@@ -80,6 +80,15 @@ class MeshControl:
     forced_planes : dict[str, list[float]], default empty
         Per-axis positions ``{"x": [...], "y": [...], "z": [...]}`` that
         the grid must include verbatim (e.g. probe points).
+    subdivide : dict[str, int], default empty
+        Per-axis factor ``{"x": 2, ...}`` splitting every cell of the
+        *finished* grid into that many equal cells — a nested
+        h-refinement of the grid the rules produced, for convergence
+        ladders (:func:`~magnelio.ports.refine_port_modes`).  Every
+        plane the rules placed stays where it is; only the cells
+        between them shrink.  A CPML face on a subdivided axis keeps
+        its declared cell count, so its absorber depth shrinks by the
+        factor — use it on axes without absorbers.
     conformal : bool, default True
         Enable conformal/Dey-Mittra material treatment for cells
         partially filled with PEC.
@@ -146,6 +155,7 @@ class MeshControl:
     max_cell_size: float | None = None
     min_cell_size: float | None = None
     forced_planes: dict[str, list[float]] = field(default_factory=dict)
+    subdivide: dict[str, int] = field(default_factory=dict)
     conformal: bool = True
     dey_mittra_eta: float = 0.4
     min_feature_gap: float | None = None
@@ -154,6 +164,11 @@ class MeshControl:
     singularity_refinement: float = 1.0
 
     def __post_init__(self) -> None:
+        for axis, n in dict(self.subdivide).items():
+            if axis not in ("x", "y", "z") or int(n) < 1 or int(n) != n:
+                raise ValueError(
+                    f"subdivide must map 'x'/'y'/'z' to positive integers; got {self.subdivide!r}"
+                )
         if self.growth_factor <= 1.0:
             raise ValueError(f"growth_factor must be > 1.0, got {self.growth_factor}")
         if not self.singularity_refinement >= 1.0:
@@ -1201,6 +1216,24 @@ class Mesh:
                         )
                     nodes[-1] = moved
                     _plane_moved.setdefault(axis, {})["max"] = moved
+
+        # DD-244: nested subdivision of the finished axes.  Every cell
+        # splits into n equal cells; every plane the rules placed keeps
+        # its position, so the provenance records only rescale their
+        # node indices (and the PML cell counts on that axis).
+        for axis in ("x", "y", "z"):
+            n_sub = int(control.subdivide.get(axis, 1))
+            if n_sub <= 1:
+                continue
+            nodes = np.asarray(grid_lines[axis], dtype=float)
+            fine = [float(nodes[0])]
+            for a, b in zip(nodes[:-1], nodes[1:]):
+                fine.extend(float(a + (b - a) * k / n_sub) for k in range(1, n_sub + 1))
+            grid_lines[axis] = fine
+            _plane_nodes[axis] = [i * n_sub for i in _plane_nodes[axis]]
+            for face in (f"{axis}min", f"{axis}max"):
+                if face in _pml_cells:
+                    _pml_cells[face] = int(_pml_cells[face]) * n_sub
 
         grid = GridLines(
             x=np.array(grid_lines["x"]),

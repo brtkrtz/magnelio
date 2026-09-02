@@ -19359,3 +19359,138 @@ budget and what it buys; the DD-242 comment on the exact-path arc
 `_refine_segments`), `tests/integration/test_unified_multimode_port.py`
 (`_square_coax_mesh`), `docs/methods/meshing-conformal.md`,
 `known-bugs.md`, `CHANGELOG.md`, `STATUS.md`.
+
+## DD-244 — the reference impedance is a published quantity, the port's dispersion is solved on demand, and the port plane converges on its own
+
+**Date:** 2026-09-02
+**Status:** Implemented (branch `feat/qtem-dispersive-reference`).
+Closes KB-027.  Certificates: `tests/integration/test_qtem_dispersive_reference.py`,
+`tests/unit/test_dispersion.py`, `tests/unit/test_modal_refinement.py`,
+`tests/unit/test_sparameter_renormalize.py`; probe scripts in the
+internal record `investigations/qtem-dispersive-reference/`.
+
+**Problem.**  Three questions a user of a commercial suite asks of a
+waveguide port had no answer here: *what is the impedance of the mode
+as a function of frequency* (the port printed one frequency-flat
+number, labelled quasi-static on inhomogeneous lines), *what are the
+S-parameters referenced to and how do I re-reference them to 50 Ω*
+(the Touchstone export wrote a nominal `R 50` over data referenced to
+whatever the port carried, and no renormalisation existed), and *how
+far is the port's numerical impedance from the converged one* (the
+only ladder was the undocumented `solve_modes_refined`, which rebuilt
+the whole 3D mesh 8× finer per rung).  Behind all three stood the
+same fact: the port operates with one frequency-flat mode, while the
+grid carries a dispersive one, and DD-239 had named feeding the
+ζ-pencil's Z(ω), γ(ω) into the power-wave split as the successor.
+
+**Measured first — the successor as named does not deliver.**  On the
+tutorial-09 microstrip the exact per-frequency decomposition of the
+production record (true discrete modes, exact phasors, joint fit)
+reads |S11| = −44.0 / −30.8 / −28.4 dB at 5 / 10 / 15 GHz against the
+shipped −38.1 / −46.3 / −32.9 dB: worse over most of the band.  The
+figures are DD-239's *drive-port source term* (−44.8 / −31.8 / −30.2
+dB) to within 1–2 dB: the exact split removes the split error alone,
+and with it the accidental near-cancellation that produced the
+−46.6 dB mid-band dip, leaving the launch residue of the frozen
+profile bare.  So the split is only a gain together with a
+dispersive *source*, which is the band pipeline (or the middle path
+DD-237 closed), and the default S-parameters stay on the quasi-static
+split.  What the exact machinery is good for is everything else on
+this list.
+
+**Decision — four things ship.**
+
+1. *Per-frequency dispersion of any port* (`ports/_modal/dispersion.py`).
+   The ζ-pencil modes are continued along a frequency axis from each
+   mode's previous eigenvalue (one shift-invert factorisation per
+   tracked mode; the full five-shift arc search only at the first and
+   last point and wherever a channel is unassigned): 4.0 s against
+   29.6 s for 201 points on the tutorial port, ζ identical to 4e-13.
+   Per mode it returns the eigenvalue, the exact incident/outgoing
+   phasors through the port's recording profiles, the channel's own
+   reference `Z = V_in √ζ / I_in` (real to roundoff on a lossless
+   chain — the number DD-239 quoted as "what the discrete wave
+   carries", 106.40 / 108.45 / 110.55 Ω half-model), the unit-wave
+   power `P = ½ Re(V_in conj(I_in/√ζ))`, and — new — the
+   **power–current impedance of the true mode from its own fields**,
+   `Z_PI = 2P/|I|²` with the discrete Poynting flux `½ Re Σ(ê_u ĥ_v* −
+   ê_v ĥ_u*)` and the Ampère loop `∮ĥ` as the transposed 2D gradient
+   of the rotated dual voltages over the signal conductor's nodes.
+   The two impedances are not the same thing on an inhomogeneous
+   line: the channel reference is what the quasi-static *recording
+   profile* sees (its H is the E profile rotated by one global
+   constant, not the true H), and it sits 2.4 % above Z_PI even at
+   0.2 GHz; Z_PI meets the quasi-static Laplace value in the static
+   limit to 3e-3 and equals it to 1e-8 on a homogeneous line, so
+   Z_PI is what the report publishes.  On the tutorial microstrip it
+   runs 51.52 → 51.28 → 51.78 → 53.42 Ω (0.2 / 5 / 10 / 15 GHz,
+   full model) while ε_eff walks 2.985 → 3.280, the curve the S21
+   phase of the 3D run traces.  `PortReport.dispersion(f_axis)`
+   publishes it; a modal port's record is built lazily by
+   `build_port_dispersion_record` (builder-local flatten, period
+   chain, curl slice, 2D gradient, conductor nodes).  The band
+   decomposition now runs on the same module, with every mode's
+   phasors scaled to unit power — the previous fit divided
+   amplitudes normalised in the W-norm of *each port's own*
+   eigenvector, which is a power ratio only between identical
+   cross-sections; symmetric fixtures never saw it.
+2. *Reference impedances on every result* (`SParameterResult.
+   reference_impedances`, `result.reference_impedance(port)`): the
+   value the split actually used per channel — the discrete wave
+   impedance on certified chains, `z_modal(ω)` otherwise (quasi-static
+   line impedance, TE/TM wave impedance, lumped Z0), scaled to the
+   full model on symmetry-cut ports, Z_PI(f) on band results — and
+   `renormalize(z_ref)`, the exact real-reference power-wave
+   re-referencing `S' = C(S + ρ)(I + ρS)⁻¹C⁻¹` on the complete matrix.
+   Round trip to 4e-15; a matched one-port re-referenced from 50 to
+   100 Ω reads −1/3; a quarter-wave line reads the textbook
+   `(Z² − Z'²)/(Z² + Z'²)`.  Touchstone states the common constant
+   reference in its option line (49.3 Ω, not a nominal 50), takes
+   `z_ref=` to renormalise first, and warns with the per-port
+   references in the header when Touchstone 1.x cannot express them;
+   `to_skrf` carries `z0` per port and frequency.  An incomplete
+   result renormalises its excited sub-network (the unexcited
+   channels stay matched to their own impedance, as the exports
+   leave them).  The tutorial line re-referenced to 50 Ω reads
+   −30.5 dB (one port excited) or −27.4 dB (both) against −32.9 dB
+   raw — the 51.5-vs-50 mismatch, and the reason item 4 exists.
+3. *KB-027 closed.*  A modal run keeps the dispersion record of its
+   quasi-TEM ports (result field `port_dispersion`, stored in the
+   project under the band record's schema, extended by the plane
+   masses, the curl slice, the 2D gradient and the conductor nodes so
+   a record needs no mesh-side operator), and `deembed` shifts such
+   channels by `ζ(f)^(−d/dz)`.  Residual S21 phase over the whole
+   20 mm line: +0.34 / +1.52 / +1.76° at 5 / 10 / 15 GHz against
+   −1.53 / −10.56 / −29.52° with the quasi-static γ; the rest is the
+   DD-239 launch residue (a −30 dB pollution of a₁ caps the phase at
+   about 1.8°).
+4. *Port-plane refinement* (`refine_port_modes`, `MeshControl.subdivide`).
+   `forced_planes` cannot reproduce a grid — an anchor triggers the
+   feature refinement around it (35 × 74 cells where the user's mesh
+   has 14 × 23) — so the ladder is a **port slab** (the model behind
+   the port face, cut `slab_cells` in with the mesher's own symmetry
+   clip, which reproduces the user's port-plane grid and its report
+   to 1e-12 with no forced plane at all) plus a new nested
+   subdivision of the *finished* grid on the tangential axes (every
+   plane stays, node indices in the provenance scale, PML cell
+   counts scale).  Tutorial 09: 51.52 → 54.38 → 55.82 → 56.53 →
+   56.88 Ω over five rungs (322 to 82 432 plane cells), observed
+   order 1.03 (the strip edges), Richardson 57.2 Ω; the same ladder
+   from a `singularity_refinement=3` start extrapolates to 55.7 Ω,
+   so the converged cross-section is "about 57 Ω, 10 % above the
+   coarse grid" and not a four-digit number.  15 s for four rungs.
+
+**What did not change.**  `port_model="modal"` and its quasi-static
+split (DD-239's decision stands, now with the measured reason); the
+band pipeline's boundary; every pinned floor.  Blast radius: unit
+2830 + the new files green, band integration green with the
+continuation and the power scaling (symmetric fixtures bit-close),
+lint clean.
+
+**Follow-ups, not started.**  A dispersive *source* for modal QTEM
+ports (a low-rank family of profiles × waveforms at the plane
+overwrite) is the one route left to the user-visible |S11| below the
+launch residue without the band boundary; the modal current of a
+K > 1 signal-conductor port (the sweep falls back to the channel
+reference there); `TDResult` (general time-domain runs) does not carry
+references or records.
