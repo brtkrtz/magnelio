@@ -8,7 +8,7 @@ grammar, `AnalysisTD` + `TDResult`, project-store schema 2.0,
 `magnelio.fields.FieldState`, field and current-path sources,
 tutorial 20), **the pair-product gate as a reflection budget**
 (DD-228/229, closes KB-022) and **the section-engine reach repair**
-(DD-240, closes KB-041, opens KB-042/KB-043).  The band/QTEM track
+(DD-240/DD-242, close KB-041/KB-042, open KB-043/KB-044).  The band/QTEM track
 **DD-230…DD-239 is closed, with every shipped default unchanged**:
 project-store runs, `port_model="modal"`, a DC-reaching axis,
 bit-exact resume (closes KB-037), the −70 dB pricing, the short-basis
@@ -18,7 +18,7 @@ behind the modal-Mur port floor (DD-238), and the pricing of the number
 a user actually reads (DD-239: an exactly transparent port is worth at
 most 1.93 dB of tutorial 09's |S11|).  Open: KB-023,
 KB-027, KB-038 (diagnosed — the single-precision production default),
-KB-042 and KB-043.  Unit 2820 / 4 skipped and integration 452 / 5 skipped
+KB-043 and KB-044.  Unit 2830 and integration 452: 3279 passed / 9 skipped
 (2026-09-02, with `CUPY_ACCELERATORS=""` — without it four GPU tests
 fail on nvrtc in the sandbox).  Channels: GitHub, PyPI, conda-forge and
 the two docs channels below.
@@ -323,21 +323,21 @@ flickers to ``"done"`` between sequential runs; the reader skips
   term separated into injected profile against the drive port's own
   re-absorption, nor the decomposition repeated on a homogeneous
   pair-certified TEM line, where the split should vanish.
-* **Facet section engine (DD-240; KB-042, KB-043)** — the reach defect
+* **Facet section engine (DD-240/242; KB-043, KB-044)** — the reach defect
   is closed for **planar and cylindrical faces**: analytic faces of a
   facetted shape are sectioned from their own geometry, and the
   pair-ladder coupler's ports terminate DTBC again (spreads 5.2164e-15
   / 1.3072e-13, slab defect 1.4795e-10, z_line 96.1625 Ω) with its
   loft in place — the model that failed is the model that passes, so
-  the fixture question resolved itself and KB-039 is closed.  **KB-042** is the scope hole: cone, sphere
-  and torus faces of a facetted shape still take the one-step
-  parametric Newton lift, worst per-cell deviation against the kernel
-  8.65e-03 / 9.32e-03 / 7.30e-03 against the repaired cylinder's
-  2.17e-13 — seven to nine times what motivated the fix — measured with
-  the free-form neighbour fused 40 mm from planes that never cross it,
-  and every fillet or chamfer puts a torus in the model.  Closing it
-  means extending the exact engine too, which admits only planes and
-  cylinders.  **KB-043** is pre-existing and two-sided: within ~1e-7 m
+  the fixture question resolved itself and KB-039 is closed.  **KB-042** did not survive
+  measurement (DD-242): the facet answer on a sphere, cone or torus is
+  exactly independent of the free-form neighbour, the 7…9e-3 per cell
+  was the kernel's own δ-tessellation (the cylinder reads 6.3e-3 across
+  its axis too), and the one real defect — a sphere's pole crossing left
+  a full deflection off the surface by the parametric lift — is closed by
+  the projection onto the implicit surface (residual 2e-18 m, −30 % per
+  section).  **KB-044** remains: in-house paths at δ/10, kernel at δ.
+  **KB-043** is pre-existing and two-sided: within ~1e-7 m
   of a generatrix the kernel section collapses to 0.0 while the facet
   path books 44–64 % of truth (r = 2.30 mm, d = 1e-7: 2.7619e-07 facet /
   0.0 kernel / 4.2895e-07 true), so neither is trustworthy there and

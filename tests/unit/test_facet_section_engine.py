@@ -493,6 +493,165 @@ class TestObliqueFreeFormReachIsLocal:
 
 
 # ---------------------------------------------------------------------------
+# Sphere, cone and torus faces of a facetted shape
+# ---------------------------------------------------------------------------
+
+#: The three surfaces the exact engine does not speak, each with its
+#: axis on y, and the planes of the cylinder fixtures above: cuts along
+#: y at four x positions, cuts across y at four heights around 10 mm.
+QUADRIC_PLANES = {
+    0: ((0.5e-3, 1.3e-3, 2.1e-3, 3.4e-3), (4e-3, -4e-3, 16e-3, 4e-3)),
+    1: ((10e-3, 10.13e-3, 10.25e-3, 10.37e-3), (-4e-3, -4e-3, 4e-3, 4e-3)),
+}
+TORUS_R = 1.2e-3
+
+
+def _quadric_body(name):
+    if name == "sphere":
+        return geo.Sphere(center=(0.0, 10e-3, 0.0), radius=BORE_R, material="pec")
+    if name == "cone":
+        return geo.Cone(
+            origin=(0.0, 0.0, 0.0),
+            bottom_radius=4.5e-3,
+            top_radius=3e-3,
+            height=20e-3,
+            axis="y",
+            material="pec",
+        )
+    return geo.Torus(
+        center=(0.0, 10e-3, 0.0),
+        major_radius=BORE_R,
+        minor_radius=TORUS_R,
+        axis="y",
+        material="pec",
+    )
+
+
+def _quadric_residual(name, body, p):
+    """Implicit equation of *body*'s curved surface at the 3D points *p*
+    (zero on the surface), in meters."""
+    if name == "sphere":
+        return np.linalg.norm(p - np.array(body.center), axis=1) - body.radius
+    rel = p - np.array(body.origin if name == "cone" else body.center)
+    h = rel[:, 1]
+    rho = np.hypot(rel[:, 0], rel[:, 2])
+    if name == "cone":
+        slope = (body.top_radius - body.bottom_radius) / body.height
+        return rho - (body.bottom_radius + h * slope)
+    return np.hypot(rho - body.major_radius, h) - body.minor_radius
+
+
+def _converged_reference(body, axis, pos):
+    """Kernel section tessellated three decades below the deflection
+    (built at scale 1e3 to get under the kernel path's 1e-7 clamp)."""
+    return cross_section_polygons(
+        body._occ_shape(1e3), "xyz"[axis], pos, deflection=BLEND_DEFLECTION * 1e-3, scale=1e3
+    )
+
+
+class TestQuadricFacesOfAFacettedShape:
+    """Sphere, cone and torus faces are answered from their own surface.
+
+    The DD-240 repair was cylinders only; these three kept the one-step
+    parametric lift of DD-199.  What was open under KB-042 turned out to
+    be two smaller things: the lift needs the face parameters, which do
+    not describe a point at a sphere's pole (the crossing there stayed
+    on the chord, a full deflection off the surface), and the difference
+    to the kernel path is the kernel's own tessellation at the
+    deflection, not a reach of the free-form neighbour.  The projection
+    onto the implicit surface fixes the first and the tests here pin
+    both: a far body does not reach, every vertex lies on the surface
+    to rounding, the pole included, and the areas are the closed forms.
+    """
+
+    @pytest.fixture(scope="class", params=["sphere", "cone", "torus"])
+    def case(self, request):
+        name = request.param
+        body = _quadric_body(name)
+        far = geo.Loft(_cap(-6e-3, 4e-3, 40e-3), _cap(0.5e-3, 2e-3, 40e-3), blend="ruled")
+        farther = geo.Loft(_cap(-6e-3, 4e-3, 45e-3), _cap(0.5e-3, 2e-3, 45e-3), blend="ruled")
+        a = _engine(body + far, BLEND_DEFLECTION)
+        b = _engine(body + farther, BLEND_DEFLECTION)
+        assert a.enabled and a.facetted and b.enabled and b.facetted
+        assert not _engine(body, BLEND_DEFLECTION).facetted
+        return name, body, a, b
+
+    def test_a_far_body_does_not_reach(self, case):
+        """The KB-042 claim, measured: the cells of the quadric are the
+        same whichever far free-form body shares its solid."""
+        _, _, a, b = case
+        worst = 0.0
+        for axis, (positions, window) in QUADRIC_PLANES.items():
+            for pos in positions:
+                cells_a = _cell_areas(a.section(axis, pos), window)
+                cells_b = _cell_areas(b.section(axis, pos), window)
+                assert (cells_a > 0.5 * CELL * CELL).any()
+                worst = max(worst, float(np.abs(cells_a - cells_b).max()) / (CELL * CELL))
+        assert worst <= 1e-12, worst
+
+    def test_every_vertex_lies_on_the_surface(self, case):
+        """The projection's contract: no second-order residual, no
+        unprojected pole.  Before it, the sphere's worst vertex sat a
+        full deflection off (2.4e-6 m) and the torus' 1.5e-9 m."""
+        name, body, a, _ = case
+        worst = 0.0
+        for axis, (positions, _) in QUADRIC_PLANES.items():
+            u_idx, v_idx = a._UV[axis]
+            for pos in positions:
+                for poly in a.section(axis, pos):
+                    p = np.empty((len(poly), 3))
+                    p[:, axis] = pos
+                    p[:, u_idx] = poly[:, 0]
+                    p[:, v_idx] = poly[:, 1]
+                    if name == "cone":  # the planar caps are not on the cone
+                        on_cap = (np.abs(p[:, 1]) <= 1e-9) | (np.abs(p[:, 1] - 20e-3) <= 1e-9)
+                        p = p[~on_cap]
+                    worst = max(worst, float(np.abs(_quadric_residual(name, body, p)).max()))
+        assert worst <= 1e-12 * BORE_R, worst
+
+    def test_the_areas_are_the_closed_forms(self, case):
+        """Chord-accurate at the refinement budget, a tenth of the
+        deflection: sphere circles, cone circles, torus annuli.  A
+        circle of radius rho tessellated at sagitta s books (4/3) s/rho
+        less than its area; the gate is twice that at the smallest
+        radius of curvature of the trace."""
+        name, body, a, _ = case
+        for axis, (positions, _) in QUADRIC_PLANES.items():
+            for pos in positions:
+                # Signed: the hole of an annulus counter-rotates.
+                area = abs(sum(polygon_area(p) for p in a.section(axis, pos)))
+                if name == "sphere":
+                    off = pos if axis == 0 else pos - 10e-3
+                    rho = (BORE_R**2 - off**2) ** 0.5
+                    exact = np.pi * rho**2
+                elif name == "cone" and axis == 1:
+                    rho = 4.5e-3 - 1.5e-3 * pos / 20e-3
+                    exact = np.pi * rho**2
+                elif name == "torus" and axis == 1:
+                    half = (TORUS_R**2 - (pos - 10e-3) ** 2) ** 0.5
+                    rho = BORE_R - half
+                    exact = 4 * np.pi * BORE_R * half
+                else:
+                    continue
+                gate = 2 * (4 / 3) * (BLEND_DEFLECTION / 10) / rho
+                assert abs(area / exact - 1.0) <= gate, (name, axis, pos, area / exact - 1.0)
+
+    def test_the_sphere_pole_is_projected_like_any_other_point(self):
+        """The plane through both poles, cell by cell against a converged
+        kernel reference: 2.24e-3 of a cell with the parametric lift
+        (the pole cell), 6.3e-4 with the projection — the level of the
+        planes that miss the poles."""
+        body = _quadric_body("sphere")
+        far = geo.Loft(_cap(-6e-3, 4e-3, 40e-3), _cap(0.5e-3, 2e-3, 40e-3), blend="ruled")
+        eng = _engine(body + far, BLEND_DEFLECTION)
+        window = QUADRIC_PLANES[1][1]
+        cells = _cell_areas(eng.section(1, 10e-3), window)
+        truth = _cell_areas(_converged_reference(body, 1, 10e-3), window)
+        assert (truth > 0.5 * CELL * CELL).any()
+        assert float(np.abs(cells - truth).max()) / (CELL * CELL) <= 1e-3
+
+
+# ---------------------------------------------------------------------------
 # A conic run whose exact arc cannot be built
 # ---------------------------------------------------------------------------
 

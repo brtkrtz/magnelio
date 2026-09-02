@@ -19153,3 +19153,92 @@ lint gate.
 `.pre-commit-config.yaml`, `.github/workflows/ci.yml`, the workspace
 `git-hooks/pre-push` (outside the repository), `design-decisions.md`
 (DD-187 status line reworded), `STATUS.md`.
+
+## DD-242 — sphere, cone and torus faces of a facetted shape are projected onto their implicit surface
+
+**Date:** 2026-09-02.  Closes KB-042, opens KB-044.  Gates:
+`tests/unit/test_facet_section_engine.py::TestQuadricFacesOfAFacettedShape`.
+Internal record: `investigations/kb042-analytic-facets/MEASUREMENTS.md`
+(`probe_decompose.py`, `probe_residual.py`, `probe_kernel_budget_cost.py`).
+
+**Context.**  DD-240 left KB-042 open with a specific claim: cone,
+sphere and torus faces of a facetted shape keep the DD-199 parametric
+lift, "so the KB-041 reach defect is fully present for them", measured
+at 7…9e-3 of a cell against the cylinder's 2e-13.  Decomposed, the
+claim has three parts and one survives.
+
+1. *No reach.*  With the free-form neighbour moved from 40 mm to 45 mm
+   the facet answer changes by exactly 0.0 on every body and plane.
+   KB-041 was a triangulated *translation-invariant* face losing its
+   invariance to the node rows; none of the three faces is invariant
+   under any family of grid planes, so there is nothing for the
+   triangulation to break.
+2. *The number is the kernel's.*  Against a converged reference (the
+   kernel Boolean at δ/1000, built at scale 1e3 to get under the kernel
+   path's 1e-7 clamp) the kernel section of the body *alone* sits at
+   6.5e-3…1.0e-2 of a cell — the a-priori sagitta deficit (2/3)·δ·h/h²
+   = 6.7e-3 at the production deflection h/100 — and the facet path at
+   5…8e-4, eight to fifteen times closer.  The cylinder read 2e-13 only
+   because its planes ran along the axis, where both paths are exact;
+   across the axis it reads 6.339e-03, and so does the exact engine
+   (DD-217 tessellates at the kernel's rule).
+3. *One real defect.*  The sphere across its axis read 2.241e-03
+   against 5…8e-4 elsewhere, and the worst cell sits at z = −3.375 mm:
+   the pole.  The parametric lift interpolates the face parameters
+   along the crossed edge, and at a pole they do not describe the
+   point, so the lift is declined and the crossing stays on the chord —
+   worst vertex residual 2.397e-06 m, a full deflection.  The torus
+   showed the lift's second-order residual, 1.490e-09 m.
+
+**Decision.**  Sphere, cone and torus faces are recorded in
+`_build_facets` as their own surface kinds (frame and radii; kinds 2–4
+beside the cylinder's 1) and `_project_implicit` moves each crossing
+within the section plane along the in-plane part of the surface
+gradient until the implicit equation holds — |P − c| − R,
+ρ − R − h·tan α, hypot(ρ − R, h) − r — by Newton iterated to
+|F| ≤ 1e-12·radius, under the bounds `_project_cylinder` already has
+(in-plane share of the gradient above 0.05, shift within 8 δ/sin of the
+cut angle; a vanishing gradient, the cone apex, keeps the chord).  No
+face parameters and no `Geom_Surface.D1`.  A crossing on an edge shared
+with a cylinder is still answered by the cylinder (its conic runs are
+compressed and must start on it), one shared with a free-form face by
+the quadric (`_LIFT_RANK`).  The cylinder keeps its closed-form
+quadratic, so DD-240's numbers are untouched.
+
+Measured: every section vertex on the surface to 2e-18 m (sphere,
+cone, torus; before 2.4e-6 / 8.7e-19 / 1.5e-9 m), the pole cell
+2.241e-03 → 6.336e-04, closed-form areas at (4/3)·(δ/10)/ρ, a section of
+a sphere or torus 30 % cheaper (4.44 → 3.04 ms, 5.38 → 3.81 ms).
+`validation/pair_ladder_choice_certificate.py` — its electrodes are
+filleted, so the facetted solid carries tori — reproduces DD-240's pins
+digit for digit (5.2164e-15 / 1.3072e-13 / 1.4795e-10 / 96.1625 Ω).
+Unit and integration: 3279 passed, 9 skipped; the four failures are
+the sandbox's GPU compile (nvrtc), as `STATUS.md` records.
+
+**Rejected, measured.**  Aligning the exact engine's arc budget to the
+facet path's δ/10 (one line at two sites, `_occ_backend.py` and the
+compiled twin in `_section_kernels.py`) makes exact and facet paths
+bit-identical across a cylinder's axis (6.339e-03 → 2.118e-16 of a
+cell) — and fails the two DD-217 gates that pin the engine to the
+kernel to rounding, by +1.0e-3 relative: it would trade the
+facet/exact discontinuity for an engine/kernel one inside a single
+shape.  Passing δ/10 to the kernel's `GCPnts_TangentialDeflection` as
+well closes all three consistently and costs +11…12 % mesh-build CPU
+on a fillet-heavy kernel-path model (5.44–5.87 s → 6.07–6.61 s, self +
+children) plus a re-pin of every artefact with a curved face.  Left as
+KB-044, a product decision on the section sagitta budget rather than a
+repair.  Extending the exact engine to cone, sphere and torus faces
+(the closure DD-240 named) is not pursued: it would inherit the
+kernel's class and buy nothing the measurement asked for.
+
+**Consequences.**  KB-042 is closed as mis-stated; KB-044 records the
+tessellation-class mismatch with its price.  The exact-path arc comment
+that claimed to be "in step" with the facet path now says which budget
+it carries.  `docs/methods/meshing-conformal.md` describes the three
+paths without the reach caveat.
+
+**Files:** `src/magnelio/geo/_occ_backend.py` (`_build_facets`,
+`_implicit`, `_project_implicit`, `_lift_slots`, `_lift_to_surfaces`,
+`_LIFT_RANK`), `tests/unit/test_facet_section_engine.py`,
+`known-bugs.md`, `CHANGELOG.md`, `docs/methods/meshing-conformal.md`,
+`STATUS.md`.

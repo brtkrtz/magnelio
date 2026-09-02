@@ -2020,6 +2020,12 @@ _FACET_REFINE_FRACTION = 0.1
 #: orders below any length a section resolves.
 _TANGENCY_ROUNDING = 1e-12
 
+#: Which neighbour answers a crossing on a shared facet edge
+#: (``_PlanarSectionEngine._lift_to_surfaces``), indexed by surface
+#: kind + 1: planar (-1), free-form (0), cylinder (1), sphere (2),
+#: cone (3), torus (4).
+_LIFT_RANK = np.array([0, 1, 3, 2, 2, 2], dtype=np.int64)
+
 
 def _facet_sections_enabled() -> bool:
     """``MAGNELIO_FACET_SECTIONS=0`` keeps free-form shapes on the kernel
@@ -2814,7 +2820,13 @@ class _PlanarSectionEngine:
         from OCC.Core.BRep import BRep_Tool  # noqa: PLC0415
         from OCC.Core.BRepAdaptor import BRepAdaptor_Surface  # noqa: PLC0415
         from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh  # noqa: PLC0415
-        from OCC.Core.GeomAbs import GeomAbs_Cylinder, GeomAbs_Plane  # noqa: PLC0415
+        from OCC.Core.GeomAbs import (  # noqa: PLC0415
+            GeomAbs_Cone,
+            GeomAbs_Cylinder,
+            GeomAbs_Plane,
+            GeomAbs_Sphere,
+            GeomAbs_Torus,
+        )
         from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_REVERSED  # noqa: PLC0415
         from OCC.Core.TopExp import TopExp_Explorer  # noqa: PLC0415
         from OCC.Core.TopLoc import TopLoc_Location  # noqa: PLC0415
@@ -2829,14 +2841,19 @@ class _PlanarSectionEngine:
         tri_uv: list[np.ndarray] = []
         surfaces: list = []
         # Per surface slot: 0 = general surface (parametric Newton lift),
-        # 1 = cylinder (closed-form projection), with axis frame and
-        # radius for the latter.
+        # 1 = cylinder (closed-form projection), 2 = sphere, 3 = cone,
+        # 4 = torus (projection onto the implicit surface), with the
+        # axis frame and radii of the analytic ones: ``s_radius`` is the
+        # cylinder/sphere radius, the cone's reference radius or the
+        # torus' major radius; ``s_radius2`` the cone's tan(semi-angle)
+        # or the torus' minor radius.
         s_kind: list[int] = []
         s_axis: list[tuple] = []
         s_xdir: list[tuple] = []
         s_ydir: list[tuple] = []
         s_centre: list[tuple] = []
         s_radius: list[float] = []
+        s_radius2: list[float] = []
         offset = 0
         exp = TopExp_Explorer(shape, TopAbs_FACE)
         while exp.More():
@@ -2859,19 +2876,32 @@ class _PlanarSectionEngine:
                 a, b, c = tri.Triangle(i).Get()
                 con[i - 1] = (c, b, a) if reversed_face else (a, b, c)
             # Planar faces are exact as facets; a cylindrical face is
-            # projected onto its own quadric in closed form (KB-041);
-            # every other face keeps its surface and corner parameters
-            # for the parametric lift.
+            # projected onto its own quadric in closed form (KB-041), a
+            # sphere, cone or torus face onto its implicit surface
+            # (KB-042); every other face keeps its surface and corner
+            # parameters for the parametric lift.
             adaptor = BRepAdaptor_Surface(face, False)
             stype = adaptor.GetType()
             uv_nodes = None
             slot = -1
+            analytic = None
             if stype == GeomAbs_Cylinder:
                 cylinder = adaptor.Cylinder()
-                frame = cylinder.Position()
+                analytic = (1, cylinder.Position(), cylinder.Radius(), 0.0)
+            elif stype == GeomAbs_Sphere:
+                sphere = adaptor.Sphere()
+                analytic = (2, sphere.Position(), sphere.Radius(), 0.0)
+            elif stype == GeomAbs_Cone:
+                cone = adaptor.Cone()
+                analytic = (3, cone.Position(), cone.RefRadius(), math.tan(cone.SemiAngle()))
+            elif stype == GeomAbs_Torus:
+                torus = adaptor.Torus()
+                analytic = (4, torus.Position(), torus.MajorRadius(), torus.MinorRadius())
+            if analytic is not None:
+                kind, frame, radius, radius2 = analytic
                 origin = frame.Location()
                 slot = len(s_kind)
-                s_kind.append(1)
+                s_kind.append(kind)
                 s_centre.append((origin.X(), origin.Y(), origin.Z()))
                 for store, vec in (
                     (s_axis, frame.Direction()),
@@ -2879,7 +2909,8 @@ class _PlanarSectionEngine:
                     (s_ydir, frame.YDirection()),
                 ):
                     store.append((vec.X(), vec.Y(), vec.Z()))
-                s_radius.append(cylinder.Radius())
+                s_radius.append(float(radius))
+                s_radius2.append(float(radius2))
                 surfaces.append(None)
             elif stype != GeomAbs_Plane and tri.HasUVNodes():
                 uv_nodes = np.empty((n_nodes, 2), dtype=np.float64)
@@ -2893,6 +2924,7 @@ class _PlanarSectionEngine:
                 s_xdir.append((1.0, 0.0, 0.0))
                 s_ydir.append((0.0, 1.0, 0.0))
                 s_radius.append(0.0)
+                s_radius2.append(0.0)
                 # The one-argument Surface() is the located copy: the
                 # face's location is already applied, unlike the nodes.
                 surfaces.append(BRep_Tool.Surface(face))
@@ -2968,6 +3000,7 @@ class _PlanarSectionEngine:
         self._s_ydir = np.array(s_ydir, dtype=np.float64).reshape(-1, 3)
         self._s_centre = np.array(s_centre, dtype=np.float64).reshape(-1, 3)
         self._s_radius = np.array(s_radius, dtype=np.float64)
+        self._s_radius2 = np.array(s_radius2, dtype=np.float64)
         # Extent of each surface slot over its own facets, for the
         # tangency screen (_screen_facets): the analytic path reads the
         # same window off the face bounding boxes.
@@ -3054,18 +3087,120 @@ class _PlanarSectionEngine:
         out[ok] += t[ok, None] * d[ok]
         return out, ok
 
+    def _implicit(self, pts: np.ndarray, slot: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Signed distance-like implicit function of the sphere, cone or
+        torus slots at *pts*, and its gradient (unit-scale by
+        construction, so the Newton step below is a length)."""
+        kind = self._s_kind[slot]
+        centre = self._s_centre[slot]
+        a = self._s_axis[slot]
+        r1 = self._s_radius[slot]
+        r2 = self._s_radius2[slot]
+        rel = pts - centre
+        h = np.einsum("ij,ij->i", rel, a)
+        rel_perp = rel - h[:, None] * a
+        rho = np.linalg.norm(rel_perp, axis=1)
+        safe_rho = np.where(rho > 0.0, rho, 1.0)
+        radial = rel_perp / safe_rho[:, None]
+        f = np.zeros(pts.shape[0])
+        grad = np.zeros_like(pts)
+        sph = kind == 2
+        if sph.any():
+            dist = np.linalg.norm(rel[sph], axis=1)
+            f[sph] = dist - r1[sph]
+            grad[sph] = rel[sph] / np.where(dist > 0.0, dist, 1.0)[:, None]
+        con = kind == 3
+        if con.any():
+            # Radius R + h tan(alpha) at the axial coordinate h.
+            f[con] = rho[con] - r1[con] - h[con] * r2[con]
+            grad[con] = radial[con] - r2[con, None] * a[con]
+        tor = kind == 4
+        if tor.any():
+            ring = rho[tor] - r1[tor]
+            dist = np.hypot(ring, h[tor])
+            f[tor] = dist - r2[tor]
+            grad[tor] = (ring[:, None] * radial[tor] + h[tor, None] * a[tor]) / np.where(
+                dist > 0.0, dist, 1.0
+            )[:, None]
+        # A point on the axis (cone apex, sphere centre) has no
+        # gradient; the caller keeps the chord position there.
+        grad[(rho <= 0.0) & (kind != 2)] = 0.0
+        return f, grad
+
+    def _project_implicit(
+        self, chord: np.ndarray, slot: np.ndarray, axis: int
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """In-plane projection of chord points onto their sphere, cone
+        or torus, iterated to convergence.
+
+        The same contract as :meth:`_project_cylinder`, for the surfaces
+        whose in-plane trace has no closed parametric form: each point is
+        moved within the section plane along the in-plane part of the
+        surface gradient until the implicit equation holds to rounding.
+        Newton on that one-dimensional function starts within the chord
+        error of the surface and converges quadratically; the result is
+        a function of the plane and the surface alone — unlike the
+        parametric lift, it needs no face parameters, so the poles of a
+        sphere and the seam of a torus, where the interpolated
+        parameters do not describe the point, are projected like any
+        other point.  Points whose gradient leaves the plane (a
+        tangential cut), whose gradient vanishes (the cone apex) or
+        whose shift is far beyond the chord error keep their chord
+        position.  Returns the points and the mask of moved ones.
+        """
+        f0, grad = self._implicit(chord, slot)
+        g_norm = np.linalg.norm(grad, axis=1)
+        d = grad.copy()
+        d[:, axis] = 0.0
+        d_norm = np.linalg.norm(d, axis=1)
+        ok = (g_norm > 0.0) & (d_norm > 0.05 * g_norm)
+        d = d / np.where(ok, d_norm, 1.0)[:, None]
+        t = np.zeros(chord.shape[0])
+        f = f0.copy()
+        g0 = g_norm.copy()
+        for _ in range(8):
+            live = ok & (np.abs(f) > 0.0)
+            if not live.any():
+                break
+            slope = np.einsum("ij,ij->i", grad, d)
+            step_ok = live & (np.abs(slope) > 0.05 * g_norm)
+            ok &= ~(live & ~step_ok)
+            if not step_ok.any():
+                break
+            t[step_ok] -= f[step_ok] / slope[step_ok]
+            pts = chord[step_ok] + t[step_ok, None] * d[step_ok]
+            f_new, grad_new = self._implicit(pts, slot[step_ok])
+            f[step_ok] = f_new
+            grad[step_ok] = grad_new
+            g_norm[step_ok] = np.linalg.norm(grad_new, axis=1)
+        scale = np.maximum(np.abs(self._s_radius[slot]), np.abs(self._s_radius2[slot]))
+        ok &= np.abs(f) <= 1e-12 * np.maximum(scale, 1e-300)
+        # The in-plane displacement that removes a chord error delta is
+        # delta / sin(cut angle); sin is the in-plane share of the
+        # gradient at the start.
+        bound = 8.0 * self._deflection * g0 / np.where(ok, d_norm, 1.0)
+        ok &= np.abs(t) <= bound
+        out = chord.copy()
+        out[ok] += t[ok, None] * d[ok]
+        return out, ok
+
     def _lift_slots(
         self, slot: np.ndarray, uv: np.ndarray, chord: np.ndarray, axis: int
     ) -> tuple[np.ndarray, np.ndarray]:
         """Move chord points onto the exact surfaces of their slots:
-        closed form for cylinders, one parametric Newton step for the
+        closed form for cylinders, the implicit-surface projection for
+        spheres, cones and tori, one parametric Newton step for the
         general (free-form) surfaces."""
         out = chord.copy()
         ok = np.zeros(chord.shape[0], dtype=np.bool_)
-        cyl = self._s_kind[slot] == 1
+        kind = self._s_kind[slot]
+        cyl = kind == 1
         if cyl.any():
             out[cyl], ok[cyl] = self._project_cylinder(chord[cyl], slot[cyl], axis)
-        gen = ~cyl
+        imp = kind >= 2
+        if imp.any():
+            out[imp], ok[imp] = self._project_implicit(chord[imp], slot[imp], axis)
+        gen = kind == 0
         if gen.any():
             s_pt, s_n = self._surface_points(slot[gen], uv[gen])
             out[gen], ok[gen] = self._lift(chord[gen], s_pt, s_n, axis)
@@ -3120,13 +3255,17 @@ class _PlanarSectionEngine:
         answered from the cylinder, so a trace running along that
         cylinder starts and ends exactly on it and the whole run is
         exact (KB-041) — the residual chord error is spent along the
-        free-form neighbour instead, where it is local.
+        free-form neighbour instead, where it is local.  A sphere, cone
+        or torus neighbour ranks between the two: above a free-form
+        face, below a cylinder (whose conic runs are compressed and must
+        start on the cylinder itself).
         """
         pair = self._e_f[e_idx]
         slots = self._t_face[pair]
         if self._s_kind.size:
             kinds = np.where(slots >= 0, self._s_kind[np.maximum(slots, 0)], -1)
-            f = np.where((kinds[:, 1] == 1) & (kinds[:, 0] != 1), pair[:, 1], pair[:, 0])
+            rank = _LIFT_RANK[kinds + 1]
+            f = np.where(rank[:, 1] > rank[:, 0], pair[:, 1], pair[:, 0])
         else:
             f = pair[:, 0]
         face = self._t_face[f]
@@ -3983,8 +4122,9 @@ class _PlanarSectionEngine:
         if full:
             arcs.append((k - 1, 0, two_pi))
         # Ellipse sagitta r du^2 / (8 |c_n|) at u = +-pi/2 -- exponent 1,
-        # in step with the facet path above (both must book the same
-        # geometry for a shape sectioned by either).
+        # the same form as the facet path above but not the same budget:
+        # this is the kernel's deflection (the engine is pinned to the
+        # kernel to rounding), the facet arc's is a tenth of it (KB-044).
         du_max = min(
             math.radians(5.0) * abs(c_n),
             math.sqrt(8.0 * self._deflection * abs(c_n) / r),
