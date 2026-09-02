@@ -19487,6 +19487,18 @@ band pipeline's boundary; every pinned floor.  Blast radius: unit
 continuation and the power scaling (symmetric fixtures bit-close),
 lint clean.
 
+**Addendum (2026-09-02, tutorial 09).**  The tutorial now designs its
+trace on paper — Hammerstad–Jensen with the thickness correction gives
+1.473 mm for 50 Ω on 0.8 mm ε_r 4.3 with a 0.2 mm trace — so the
+ladder tests the formula instead of a hand-picked width: the 25-node
+grid reads 46.01 Ω, the ladder 46.0 / 48.8 / 50.2 / 50.9 / 51.2 Ω
+(order 1.02, Richardson 51.5 Ω).  The 3 % against the paper design is
+two effects of opposite sign: the shield costs 1.2 Ω (the same ladder
+in a box 2× and 4× larger converges at 52.5 and 52.7 Ω), and the
+formula's thickness correction over-corrects at t/h = 0.25 (the
+thin-trace formula gives 52.1 Ω for the width, closer to the open-box
+52.7 Ω).  DD-239's certificate keeps the earlier 1.2 mm fixture.
+
 **Follow-ups, not started.**  A dispersive *source* for modal QTEM
 ports (a low-rank family of profiles × waveforms at the plane
 overwrite) is the one route left to the user-visible |S11| below the

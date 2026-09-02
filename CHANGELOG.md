@@ -55,11 +55,15 @@ major version is 0, minor releases may change the public API.
   per-frequency decomposition also continues each mode from its
   previous eigenvalue instead of searching the whole arc at every
   point, about seven times faster at identical results.
-- Tutorial 09 gained three sections: the port's own dispersion curve
-  against the one the S21 phase traced, the reference impedance and
-  what renormalising to 50 Ω shows, and the convergence ladder of the
-  port plane — which finds the tutorial's 25-node grid reading the
-  microstrip about 10 % low.
+- Tutorial 09 now tells the port's story before the 3D run: what the
+  report's impedance is (the port-plane value on this grid, labelled
+  so), the port's own dispersion sweep, and the convergence ladder of
+  the port plane — the line is now designed on paper for 50 Ω, the
+  25-node grid reads it at 46 Ω, and the ladder converges at 51.5 Ω,
+  the shield and the formula's thickness correction sharing the
+  difference; after the run, the S21-phase dispersion
+  as a cross-check and the reference impedance with a renormalisation
+  to 50 Ω.  Port reports label their impedances ``(on this grid)``.
 
 ### Removed
 
