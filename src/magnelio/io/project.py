@@ -859,6 +859,30 @@ def _write_band_decomposition(port_group, band) -> None:
         cgm.create_dataset("dual_u", data=np.asarray(du))
         cgm.create_dataset("dual_v", data=np.asarray(dv))
 
+    # DD-244: the plane masses in the recorder's convention and the
+    # port's curl restriction make the record self-contained — the
+    # reader needs no mesh-side operator for the decomposition.
+    if band.me_u is not None:
+        mass = g.create_group("masses")
+        for name in ("me_u", "me_v", "mh_u", "mh_v"):
+            mass.create_dataset(name, data=np.asarray(getattr(band, name), dtype=float))
+    cs = band.curl_slice
+    if cs is not None:
+        sg = g.create_group("curl_slice")
+        _write_sparse(sg, "c_sub", cs.c_sub)
+        sg.create_dataset("mh_rows", data=np.asarray(cs.mh_rows, dtype=float))
+        sg.attrs["n_h_u"] = int(cs.n_h_u)
+        sg.attrs["n_period"] = int(cs.n_period)
+        sg.attrs["n_t"] = int(cs.n_t)
+        sg.attrs["n_edges"] = int(cs.n_edges)
+        sg.attrs["port_key"] = np.asarray(cs.port_key, dtype="i8")
+    if band.g_2d is not None:
+        lg = g.create_group("line")
+        _write_sparse(lg, "g_2d", band.g_2d)
+        lg.attrs["n_signal"] = 0 if band.signal_nodes is None else len(band.signal_nodes)
+        for k, nodes in enumerate(band.signal_nodes or []):
+            lg.create_dataset(f"signal{k}", data=np.asarray(nodes, dtype="i8"))
+
 
 def _read_band_decomposition(port_group, label: str):
     """Rebuild the :class:`BandDecomposition` written for one port."""
@@ -907,6 +931,30 @@ def _read_band_decomposition(port_group, label: str):
     )
     n_modes = int(g.attrs["n_modes"])
     chans = [mg[f"ch{c}"] for c in range(n_modes)]
+    masses = {}
+    if "masses" in g:
+        masses = {name: g["masses"][name][:] for name in ("me_u", "me_v", "mh_u", "mh_v")}
+    curl_slice = None
+    if "curl_slice" in g:
+        from magnelio.ports._modal.zeta_pencil import PortCurlSlice  # noqa: PLC0415
+
+        sg = g["curl_slice"]
+        curl_slice = PortCurlSlice(
+            c_sub=_read_sparse(sg["c_sub"]).tocsr(),
+            mh_rows=sg["mh_rows"][:],
+            n_h_u=int(sg.attrs["n_h_u"]),
+            n_period=int(sg.attrs["n_period"]),
+            n_t=int(sg.attrs["n_t"]),
+            n_edges=int(sg.attrs["n_edges"]),
+            port_key=tuple(int(v) for v in sg.attrs["port_key"]),
+        )
+    g_2d = None
+    signal_nodes = None
+    if "line" in g:
+        lg = g["line"]
+        g_2d = _read_sparse(lg["g_2d"]).tocsr()
+        n_signal = int(lg.attrs["n_signal"])
+        signal_nodes = [lg[f"signal{k}"][:] for k in range(n_signal)] if n_signal else None
     return BandDecomposition(
         name=label,
         n_modes=n_modes,
@@ -919,11 +967,15 @@ def _read_band_decomposition(port_group, label: str):
         h_u_profiles=[c["h_u"][:] for c in chans],
         h_v_profiles=[c["h_v"][:] for c in chans],
         dual_e_profiles=[(c["dual_u"][:], c["dual_v"][:]) for c in chans],
+        curl_slice=curl_slice,
+        g_2d=g_2d,
+        signal_nodes=signal_nodes,
+        **masses,
     )
 
 
-def _band_s_dict(run: dict, f_axis, mesh_ops: tuple) -> dict:
-    """S-column of one stored band run, derived on read (DD-230).
+def _band_s_dict(run: dict, f_axis, mesh_ops: tuple) -> tuple:
+    """``(S, z_ref)`` of one stored band run, derived on read (DD-230).
 
     The band counterpart of :func:`compute_s_parameters` in
     :meth:`Project._s_params`: the stored per-port
@@ -950,6 +1002,8 @@ def _band_s_dict(run: dict, f_axis, mesh_ops: tuple) -> dict:
         m_eps=m_eps,
         m_mu=m_mu,
         c_3d=c_3d,
+        return_reference=True,
+        port_reference_scale=run.get("port_reference_scale"),
     )
 
 
@@ -1015,6 +1069,7 @@ class _RunResultWriter:
         port_normal_dx: dict,
         port_line_params: dict,
         port_band: dict | None = None,
+        port_reference_scale: dict | None = None,
         monitors=None,
         grid=None,
     ) -> None:
@@ -1110,6 +1165,8 @@ class _RunResultWriter:
                 p.attrs["normal_dx"] = float(port_normal_dx[label])
             p.attrs["modes"] = json.dumps([_mode_to_dict(m) for m in modes])
             p.attrs["line_params"] = _line_params_json(port_line_params, label)
+            if port_reference_scale and label in port_reference_scale:
+                p.attrs["reference_scale"] = float(port_reference_scale[label])
             # Band runs decompose per frequency from the port's own
             # chain and profiles, not from the modal line parameters
             # (DD-230); written before the SWMR switch like everything
@@ -1822,11 +1879,14 @@ def _read_run_results(run_dir: Path) -> dict:
         port_normal_dx = {}
         port_line_params = {}
         port_band = {}
+        port_reference_scale = {}
         for label in f["ports"]:
             p = f["ports"][label]
             port_modes[label] = [_mode_from_dict(d) for d in json.loads(p.attrs["modes"])]
             if "band" in p:
                 port_band[label] = _read_band_decomposition(p, label)
+            if "reference_scale" in p.attrs:
+                port_reference_scale[label] = float(p.attrs["reference_scale"])
             if "normal_dx" in p.attrs:
                 port_normal_dx[label] = float(p.attrs["normal_dx"])
             for m_str, params in json.loads(p.attrs["line_params"]).items():
@@ -1850,6 +1910,7 @@ def _read_run_results(run_dir: Path) -> dict:
         port_normal_dx=port_normal_dx,
         port_line_params=port_line_params,
         port_band=port_band,
+        port_reference_scale=port_reference_scale,
         f_axis=f_axis,
     )
 
@@ -2956,6 +3017,7 @@ class ProjectStore:
         recorder,
         port_band: dict | None = None,
         port_model: str = "modal",
+        port_reference_scale: dict | None = None,
         energy_stop_db: float | None = None,
         port_signal_stop_db: float | None = None,
         total_time_steps: int | None = None,
@@ -3001,6 +3063,7 @@ class ProjectStore:
             port_normal_dx=port_normal_dx,
             port_line_params=port_line_params,
             port_band=port_band,
+            port_reference_scale=port_reference_scale,
             monitors=monitors,
             grid=grid,
         )
@@ -3737,9 +3800,9 @@ class Project(ScatteringResultMixin):
                 # functions of the grid, shared by every run and port.
                 if band_ops is None:
                     band_ops = self._band_mesh_operators()
-                s_dict = _band_s_dict(d, f_axis, band_ops)
+                s_dict, z_ref = _band_s_dict(d, f_axis, band_ops)
             else:
-                s_dict = compute_s_parameters(
+                s_dict, z_ref = compute_s_parameters(
                     recorder_signals=d["signals"],
                     port_modes=d["port_modes"],
                     excited=d["excited"],
@@ -3748,12 +3811,15 @@ class Project(ScatteringResultMixin):
                     taper_signals=bool(run_index.get(name, {}).get("taper_signals", False)),
                     port_normal_dx=d["port_normal_dx"],
                     port_line_params=d["port_line_params"],
+                    return_reference=True,
+                    port_reference_scale=d.get("port_reference_scale"),
                 )
             cols.append(
                 SParameterResult.from_single_excitation(
                     s_dict,
                     d["excited"],
                     f_axis,
+                    reference_impedances=z_ref,
                 )
             )
         res = cols[0] if len(cols) == 1 else SParameterResult.merge(cols)
@@ -3790,6 +3856,7 @@ class Project(ScatteringResultMixin):
             run.get("port_line_params"),
             run.get("port_normal_dx"),
             run.get("port_modes"),
+            run.get("port_band") or None,
         )
 
     @property

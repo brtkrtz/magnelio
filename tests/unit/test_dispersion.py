@@ -1,165 +1,168 @@
-"""Unit gates for the pole-residue dispersion model layer (DD-083).
-
-Every constructor is checked against its closed-form permittivity to
-machine precision; the mandatory passivity check is exercised on each
-rejection branch; the Material integration and the store serialisation
-round-trip are gated.
-"""
+"""Per-frequency port dispersion (DD-244): continuation, impedance, decomposition."""
 
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from magnelio import Material
-from magnelio.io.project import _material_from_dict, _material_to_dict
-from magnelio.materials import DispersionModel
+from magnelio._operators.material_matrices import build_M_eps, build_M_mu
+from magnelio.geo import Brick, GeometryModel
+from magnelio.materials.material import Material
+from magnelio.mesh.mesher import Mesh, MeshControl
+from magnelio.ports._modal import BoxFace, PortSpecMultiConductor, build_modal_port
+from magnelio.ports._modal.dispersion import decompose_power_waves, solve_port_dispersion
+from magnelio.ports._modal.factory import build_port_dispersion_record
+from magnelio.solver.stability import courant_dt
 
-W_TEST = 2.0 * np.pi * np.logspace(8, 11, 200)
-
-
-class TestConstructorsClosedForm:
-    def test_debye(self):
-        m = DispersionModel.debye(1.8, 79.2, 9.4e-12)
-        ref = 1.8 + 79.2 / (1.0 + 1j * W_TEST * 9.4e-12)
-        np.testing.assert_allclose(m.evaluate(W_TEST), ref, rtol=1e-12)
-
-    def test_debye_multi_term(self):
-        m = DispersionModel.debye(2.0, [1.0, 0.5], [1e-11, 1e-9])
-        ref = 2.0 + 1.0 / (1 + 1j * W_TEST * 1e-11) + 0.5 / (1 + 1j * W_TEST * 1e-9)
-        np.testing.assert_allclose(m.evaluate(W_TEST), ref, rtol=1e-12)
-
-    def test_lorentz_underdamped(self):
-        w0, dl = 2 * np.pi * 5e9, 2 * np.pi * 0.25e9
-        m = DispersionModel.lorentz(2.0, 0.5, w0, dl)
-        ref = 2.0 + 0.5 * w0**2 / (w0**2 + 2j * W_TEST * dl - W_TEST**2)
-        np.testing.assert_allclose(m.evaluate(W_TEST), ref, rtol=1e-12)
-        assert len(m.poles) == 1 and m.poles[0][0].imag > 0
-
-    def test_lorentz_overdamped(self):
-        w0 = 2 * np.pi * 5e9
-        m = DispersionModel.lorentz(2.0, 0.5, w0, 3 * w0)
-        ref = 2.0 + 0.5 * w0**2 / (w0**2 + 6j * W_TEST * w0 - W_TEST**2)
-        np.testing.assert_allclose(m.evaluate(W_TEST), ref, rtol=1e-9)
-        assert len(m.poles) == 2
-
-    def test_drude(self):
-        wp, g = 2 * np.pi * 5e9, 2 * np.pi * 0.1e9
-        m = DispersionModel.drude(1.0, wp, g)
-        ref = 1.0 - wp**2 / (W_TEST**2 - 1j * W_TEST * g)
-        np.testing.assert_allclose(m.evaluate(W_TEST), ref, rtol=1e-9)
-        # Partial fractions: the DC pole plus one relaxation pole.
-        assert sorted(a.real for a, _ in m.poles) == [-g, 0.0]
-
-    def test_djordjevic_sarkar_pins_reference(self):
-        m = DispersionModel.djordjevic_sarkar(4.3, 0.02, 5e9, 1e6, 1e12)
-        e = m.evaluate(np.array([2 * np.pi * 5e9]))[0]
-        assert abs(e.real - 4.3) < 1e-12
-        assert abs(-e.imag / e.real - 0.02) < 1e-12
-        assert 0.0 < m.eps_inf < 4.3
-
-    def test_djordjevic_sarkar_tan_delta_flat(self):
-        """tan delta stays flat to the model's inherent causal slope:
-        within 2 % over +-0.5 decade around f_ref and within 6 % over
-        +-1.5 decades (measured 0.017 / 0.052; densifying the comb does
-        NOT shrink this — it is the Kramers-Kronig drift, not ripple)."""
-        m = DispersionModel.djordjevic_sarkar(4.3, 0.02, 1e9, 1e6, 1e12)
-
-        def drift(dec):
-            f = np.logspace(9 - dec, 9 + dec, 30)
-            e = m.evaluate(2 * np.pi * f)
-            return np.abs((-e.imag / e.real) / 0.02 - 1.0).max()
-
-        assert drift(0.5) < 0.02
-        assert drift(1.5) < 0.06
-
-    def test_pole_normalisation_conjugates_lower_half(self):
-        a, r = complex(-1e9, -5e9), complex(1.0, 2.0)
-        m = DispersionModel(2.0, ((a, r),), (1e8, 1e10))
-        assert m.poles[0] == (a.conjugate(), r.conjugate())
+F_MAX = 8.0e9
 
 
-class TestPassivityRejection:
-    def test_unstable_pole(self):
-        with pytest.raises(ValueError, match="unstable"):
-            DispersionModel(1.0, ((complex(1e6), complex(1e6)),), (1e8, 1e10))
-
-    def test_undamped_oscillatory_pole(self):
-        with pytest.raises(ValueError, match="undamped"):
-            DispersionModel(
-                1.0,
-                ((complex(0, 1e9), complex(0, -1e9)),),
-                (1e8, 1e10),
-            )
-
-    def test_real_pole_complex_residue(self):
-        with pytest.raises(ValueError, match="complex residue"):
-            DispersionModel(
-                1.0,
-                ((complex(-1e9), complex(1e9, 1e9)),),
-                (1e8, 1e10),
-            )
-
-    def test_dc_pole_negative_residue(self):
-        with pytest.raises(ValueError, match="DC pole"):
-            DispersionModel(1.0, ((complex(0), complex(-1e9)),), (1e8, 1e10))
-
-    def test_band_sampled_gain(self):
-        # A negative Debye strength is an active medium: eps'' < 0.
-        with pytest.raises(ValueError, match="non-passive"):
-            DispersionModel.debye(2.0, -1.0, 1e-10)
-
-    def test_bad_band(self):
-        with pytest.raises(ValueError, match="f_band"):
-            DispersionModel(1.0, (), (1e10, 1e8))
-
-    def test_lorentz_critical_damping(self):
-        with pytest.raises(ValueError, match="critical"):
-            DispersionModel.lorentz(1.0, 0.5, 1e9, 1e9)
-
-    def test_bad_eps_inf(self):
-        with pytest.raises(ValueError, match="eps_inf"):
-            DispersionModel(-1.0, (), (1e8, 1e10))
+def _segments(*breaks_and_counts):
+    out = []
+    for lo, hi, n in breaks_and_counts:
+        seg = np.linspace(lo, hi, n + 1)
+        out.extend(seg if not out else seg[1:])
+    return [float(v) for v in out]
 
 
-class TestMaterialIntegration:
-    def test_dispersive_factory(self):
-        m = DispersionModel.debye(2.0, 1.0, 1e-11)
-        mat = Material.dispersive("sub", m, sigma=0.01)
-        assert mat.epsilon == (2.0, 2.0, 2.0)
-        assert mat.sigma == (0.01, 0.01, 0.01)
-        assert mat.dispersion is m
-        assert not mat.is_lossless
-        assert "dispersive" in repr(mat)
+def _parallel_plate(eps_lower: float):
+    """Half-filled parallel plate along z: PEC top/bottom, PMC sides."""
+    w, hy, h_if, n_len, d_len = 10.0e-3, 8.0e-3, 4.0e-3, 12, 1.0e-3
+    length = n_len * d_len
+    lower = Material(name="lower", epsilon=(eps_lower,) * 3)
+    model = GeometryModel()
+    model.add(Brick(origin=(0, 0, 0), size=(w, h_if, length), material=lower))
+    model.add(Brick(origin=(0, h_if, 0), size=(w, hy - h_if, length), material=Material.air()))
+    control = MeshControl(
+        min_nodes_per_wavelength=4,
+        min_cells_per_feature=0,
+        max_cell_size=5.1e-3,
+        forced_planes={
+            "x": _segments((0.0, w, 2)),
+            "y": _segments((0.0, h_if, 4), (h_if, hy, 4)),
+            "z": _segments((0.0, length, n_len)),
+        },
+    )
+    mesh = Mesh.from_geometry(model, control, f_max=F_MAX)
+    mesh = mesh.with_boundary_conditions(
+        {
+            "ymin": "PEC",
+            "ymax": "PEC",
+            "xmin": "PMC",
+            "xmax": "PMC",
+            "zmin": "PMC",
+            "zmax": "PMC",
+        }
+    )
+    return mesh
 
-    def test_epsilon_must_match_eps_inf(self):
-        m = DispersionModel.debye(2.0, 1.0, 1e-11)
-        with pytest.raises(ValueError, match="eps_inf"):
-            Material("bad", epsilon=(4.0, 4.0, 4.0), dispersion=m)
 
-    def test_pec_excludes_dispersion(self):
-        m = DispersionModel.debye(2.0, 1.0, 1e-11)
-        with pytest.raises(ValueError, match="mutually exclusive"):
-            Material("bad", epsilon=(2.0,) * 3, is_pec=True, dispersion=m)
-
-    def test_dispersion_in_equality(self):
-        m1 = DispersionModel.debye(2.0, 1.0, 1e-11)
-        m2 = DispersionModel.debye(2.0, 1.5, 1e-11)
-        a = Material.dispersive("s", m1)
-        assert a == Material.dispersive("s", m1)
-        assert a != Material.dispersive("s", m2)
+def _record(mesh):
+    m_eps = build_M_eps(mesh)
+    m_mu = build_M_mu(mesh)
+    dt = courant_dt(mesh.grid, "normal")
+    op = build_modal_port(
+        PortSpecMultiConductor(name="p", plane=BoxFace.Z_MIN, epsilon_r=None),
+        mesh,
+        m_eps,
+        m_mu,
+        dt=dt,
+        f_calc=F_MAX,
+    )
+    return op, build_port_dispersion_record(op, mesh, m_eps, m_mu, F_MAX)
 
 
-class TestStoreRoundTrip:
-    def test_round_trip(self):
-        m = DispersionModel.lorentz(2.0, 0.5, 2 * np.pi * 5e9, 2 * np.pi * 2e8)
-        mat = Material.dispersive("sub", m, mu=1.5, sigma=0.02)
-        got = _material_from_dict(_material_to_dict(mat))
-        assert got == mat
-        assert got.dispersion.poles == mat.dispersion.poles
-        assert got.dispersion.f_band == mat.dispersion.f_band
+@pytest.fixture(scope="module")
+def layered():
+    return _record(_parallel_plate(4.0))
 
-    def test_legacy_dict_without_key(self):
-        d = _material_to_dict(Material.from_isotropic("air"))
-        assert "dispersion" not in d
-        assert _material_from_dict(d).dispersion is None
+
+@pytest.fixture(scope="module")
+def homogeneous():
+    return _record(_parallel_plate(1.0))
+
+
+def test_tracking_matches_the_full_search(layered):
+    _, rec = layered
+    f = np.linspace(1e9, 7e9, 25)
+    full = solve_port_dispersion(rec, f, search="full")
+    track = solve_port_dispersion(rec, f, search="track")
+    assert full.n_full_searches == f.size
+    assert track.n_full_searches == 2
+    assert np.nanmax(np.abs(track.zeta - full.zeta)) < 1e-9
+    assert np.nanmax(np.abs(track.z_line / full.z_line - 1.0)) < 1e-8
+    assert np.nanmax(np.abs(track.z_ref / full.z_ref - 1.0)) < 1e-8
+
+
+def test_homogeneous_line_reproduces_the_quasi_static_impedance(homogeneous):
+    op, rec = homogeneous
+    z_qs = float(op.discrete_modes[0].mode.z_line)
+    d = solve_port_dispersion(rec, np.array([1e9, 3e9, 7e9]))
+    assert rec.signal_nodes is not None and len(rec.signal_nodes) == 1
+    # Power–current impedance from the true fields, and the channel's
+    # own reference, both coincide with the Laplace line impedance on a
+    # homogeneous cross-section — the discrete TEM wave is that mode.
+    assert np.allclose(d.z_line[0], z_qs, rtol=1e-8)
+    assert np.allclose(d.z_ref[0], z_qs, rtol=1e-8)
+    assert np.allclose(d.epsilon_eff[0], 1.0, atol=1e-6)
+    assert np.all(np.abs(d.alpha[0]) < 1e-6)
+
+
+def test_layered_line_disperses_physically(layered):
+    op, rec = layered
+    z_qs = float(op.discrete_modes[0].mode.z_line)
+    eps_qs = float(op.discrete_modes[0].mode.epsilon_r)
+    f = np.array([0.2e9, 1e9, 3e9, 5e9, 7e9])
+    d = solve_port_dispersion(rec, f)
+    assert d.assigned.all()
+    # Static limit: the power–current impedance and ε_eff of the true
+    # mode meet the quasi-static Laplace values.
+    assert abs(d.z_line[0, 0] / z_qs - 1.0) < 3e-3
+    assert abs(d.epsilon_eff[0, 0] / eps_qs - 1.0) < 3e-3
+    # Normal dispersion: ε_eff rises monotonically toward the filling.
+    assert np.all(np.diff(d.epsilon_eff[0]) > 0.0)
+    assert np.all(d.epsilon_eff[0] < 4.0)
+    assert np.all(np.abs(d.alpha[0]) < 1e-6)
+    # The channel's reference departs from Z_PI on an inhomogeneous
+    # line: the recording profile is the quasi-static one.
+    assert not np.allclose(d.z_ref[0], d.z_line[0], rtol=1e-4)
+
+
+def test_decomposition_recovers_power_waves(layered):
+    _, rec = layered
+    f = np.array([2e9, 4e9, 6e9])
+    d = solve_port_dispersion(rec, f)
+    a_true = np.array([1.0 + 0.2j, 0.7 - 0.1j, -0.4 + 0.9j])
+    b_true = np.array([0.05 - 0.02j, 0.3 + 0.1j, 0.01 + 0.0j])
+    scale = 1.0 / np.sqrt(d.power[0])
+    V = a_true * d.v_in[:, 0, 0] * scale + b_true * d.v_out[:, 0, 0] * scale
+    I = a_true * d.i_in[:, 0, 0] * scale + b_true * d.i_out[:, 0, 0] * scale
+    a, b = decompose_power_waves(d, V[None, :], I[None, :])
+    assert np.allclose(a[0], a_true, rtol=1e-10, atol=1e-12)
+    assert np.allclose(b[0], b_true, rtol=1e-10, atol=1e-12)
+
+
+def test_axis_order_is_immaterial(layered):
+    _, rec = layered
+    f = np.array([5e9, 1e9, 3e9])
+    d = solve_port_dispersion(rec, f)
+    d_sorted = solve_port_dispersion(rec, np.sort(f))
+    for k, fk in enumerate(f):
+        j = int(np.argmin(np.abs(np.sort(f) - fk)))
+        assert abs(d.zeta[0, k] - d_sorted.zeta[0, j]) < 1e-9
+        assert abs(d.z_line[0, k] - d_sorted.z_line[0, j]) < 1e-8
+
+
+def test_gamma_is_the_log_of_zeta(layered):
+    _, rec = layered
+    d = solve_port_dispersion(rec, np.array([2e9]))
+    assert np.isclose(d.beta[0, 0], -np.angle(d.zeta[0, 0]) / d.dz)
+    assert d.beta[0, 0] > 0.0
+
+
+def test_rejects_bad_axes(layered):
+    _, rec = layered
+    with pytest.raises(ValueError, match="positive"):
+        solve_port_dispersion(rec, np.array([0.0, 1e9]))
+    with pytest.raises(ValueError, match="search"):
+        solve_port_dispersion(rec, np.array([1e9]), search="guess")

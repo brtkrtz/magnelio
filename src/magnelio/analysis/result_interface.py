@@ -89,14 +89,17 @@ class ScatteringResultMixin(SDerivedAccessors):
         accuracy floor of the run itself, including the
         grid-dispersion part that an analytic ``exp(-jβd)`` would
         leave behind on coarse meshes.  It assumes the cross-section
-        stays that of the port over the shifted length; channels
-        without certified discrete line parameters fall back to the
-        mode's continuum ``γ(f)``.  For quasi-TEM channels (microstrip,
-        CPW — inhomogeneous cross-sections on modal Mur) that ``γ`` is
-        the quasi-static one with a frequency-flat ``ε_eff``, so the
-        line's physical dispersion is not removed and remains in the
-        de-embedded matrix; it grows with frequency, shift distance
-        and substrate thickness.
+        stays that of the port over the shifted length.  A quasi-TEM
+        channel (microstrip, CPW — an inhomogeneous cross-section on
+        modal Mur) carries no certified line parameters; the run keeps
+        the port's dispersion record instead, and the shift uses the
+        true discrete modes of the feed solved at every frequency of
+        the axis, so the line's physical dispersion is removed as
+        well (the first call on such a result spends a few seconds on
+        that solve).  Only a channel with neither — a feed section
+        that is not a uniform chain behind the port — falls back to
+        the mode's continuum ``γ(f)``, for a quasi-TEM mode the
+        frequency-flat quasi-static one.
 
         Below its cut-off a channel's factor grows exponentially with
         distance, so de-embedded values there keep the diagnostic
@@ -118,7 +121,8 @@ class ScatteringResultMixin(SDerivedAccessors):
         """
         from magnelio.post.deembed import deembed_s_params  # noqa: PLC0415
 
-        dt, line_params, normal_dx, port_modes = self._deembed_data()
+        dt, line_params, normal_dx, port_modes, *rest = self._deembed_data()
+        port_dispersion = rest[0] if rest else None
         return deembed_s_params(
             self.s_params,
             distances,
@@ -126,10 +130,11 @@ class ScatteringResultMixin(SDerivedAccessors):
             port_line_params=line_params,
             port_normal_dx=normal_dx,
             port_modes=port_modes,
+            port_dispersion=port_dispersion,
         )
 
     def _deembed_data(self) -> tuple:
-        """``(dt, port_line_params, port_normal_dx, port_modes)``.
+        """``(dt, port_line_params, port_normal_dx, port_modes[, port_dispersion])``.
 
         Both implementations override this from their run records; the
         base raises so any other holder of the contract fails loudly
@@ -138,6 +143,56 @@ class ScatteringResultMixin(SDerivedAccessors):
         raise NotImplementedError(
             "this result does not expose the port line records de-embedding needs."
         )
+
+    def reference_impedance(self, port: str, mode: int = 0) -> np.ndarray:
+        """Reference impedance [Ω] of one channel along the frequency axis.
+
+        The real impedance the channel's power waves — and so its row
+        and column of the S-matrix — are defined against: the line
+        impedance of a TEM or quasi-TEM port mode as the grid carries
+        it, the wave impedance of a hollow-pipe mode (which varies
+        with frequency), the Thévenin impedance of a lumped port.
+        Full-model values on ports cut by a symmetry plane.  See
+        :meth:`renormalize` for moving to a common reference.
+        """
+        return self.s_params.reference_impedance(port, mode)
+
+    def renormalize(self, z_ref):
+        """Re-reference the S-matrix to new port impedances.
+
+        The raw S-matrix is measured against each port mode's own
+        impedance on the grid (:meth:`reference_impedance`) — a
+        uniform line is *matched* there whatever its impedance came
+        out at.  This returns the same network against ``z_ref``
+        instead, typically ``renormalize(50)``: what a network
+        analyser with 50 Ω reference planes would read, and what a
+        circuit simulator expects before it cascades this block with
+        others.  It acts on the square matrix over the excited
+        channels: a channel that was observed but never excited stays
+        matched to its own impedance and is left out, as the exports
+        leave it out.
+
+        Whether the re-referenced mismatch is real is a modelling
+        question: a 49 Ω grid line feeding a 50 Ω system does reflect,
+        while a line *meant* to be the 50 Ω one shows a discretisation
+        artefact — converge its impedance on the port plane first
+        (``refine_port_modes``).
+
+        Parameters
+        ----------
+        z_ref : float or dict
+            New real reference impedance [Ω] for every channel, or a
+            mapping ``{port_name: Z}`` / ``{(port, mode): Z}``, each
+            value a scalar or an array on the frequency axis.
+
+        Returns
+        -------
+        SParameterResult
+            A new result on the same channels; the original is
+            untouched.  It answers ``S`` / ``db`` / ``phase`` /
+            ``plot_s`` and the Touchstone / scikit-rf exports.
+        """
+        return self.s_params.renormalize(z_ref)
 
     def _channel_cutoffs(self) -> dict | None:
         """Per-channel cut-off frequency [Hz], or ``None`` if unknown.
@@ -165,7 +220,7 @@ class ScatteringResultMixin(SDerivedAccessors):
             stacklevel=4,
         )
 
-    def to_touchstone(self, path, *, channels=None) -> None:
+    def to_touchstone(self, path, *, channels=None, z_ref=None) -> None:
         """Write the S-matrix as a Touchstone ``.sNp`` file.
 
         Exports the square sub-matrix over the excited channels — one
@@ -175,6 +230,14 @@ class ScatteringResultMixin(SDerivedAccessors):
         reflection-free boundary throughout the run, so the export is
         the network seen with them *matched*, the same quantity a
         network analyser measures with its unused ports terminated.
+
+        The option line's ``R`` states the reference impedance the
+        data refer to.  Touchstone 1.x holds one constant value for
+        all ports, so pass ``z_ref`` (typically ``z_ref=50``) to
+        renormalise first when the ports' own references differ or
+        vary with frequency; without it such a file is written with a
+        nominal ``R 50``, a warning, and each port's actual reference
+        in the header.
 
         Warns when a port that *is* exported carries propagating modes
         that the export leaves out: the file then looks like a
@@ -196,16 +259,20 @@ class ScatteringResultMixin(SDerivedAccessors):
             ``["port1", "port3"]`` to cut a two-port out of a fully
             excited three-port.  A bare port name means mode 0.  Every
             entry must have been excited.
+        z_ref : float or dict, optional
+            Renormalise to this reference before writing, as in
+            :meth:`renormalize`.
         """
         self._warn_export(channels)
-        self.s_params.to_touchstone(path, channels=channels)
+        self.s_params.to_touchstone(path, channels=channels, z_ref=z_ref)
 
-    def to_skrf(self, name: str = "magnelio", *, channels=None):
+    def to_skrf(self, name: str = "magnelio", *, channels=None, z_ref=None):
         """Return the S-matrix as a ``skrf.Network``.
 
         Requires scikit-rf (extra ``magnelio[interop]``).  Same
         sub-matrix, channel selection and warning as
-        :meth:`to_touchstone`.
+        :meth:`to_touchstone`; the network's ``z0`` carries each
+        channel's reference impedance per frequency.
 
         Parameters
         ----------
@@ -213,13 +280,15 @@ class ScatteringResultMixin(SDerivedAccessors):
             Network name.
         channels : sequence of str or (str, int), optional
             Explicit channel selection, as in :meth:`to_touchstone`.
+        z_ref : float or dict, optional
+            Renormalise first, as in :meth:`renormalize`.
 
         Returns
         -------
         skrf.Network
         """
         self._warn_export(channels)
-        return self.s_params.to_skrf(name=name, channels=channels)
+        return self.s_params.to_skrf(name=name, channels=channels, z_ref=z_ref)
 
 
 @runtime_checkable

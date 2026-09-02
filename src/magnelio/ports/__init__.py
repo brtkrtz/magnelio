@@ -2,7 +2,8 @@
 ``PortWaveguide``, ``PortAnalytical`` and ``PortLumped`` are declared
 on the :class:`~magnelio.GeometryModel` before meshing; the
 ``PortSpec*`` family covers custom setups passed to an analysis via
-``ports=``.  The builders and runtime operators behind them are
+``ports=``; :func:`refine_port_modes` converges a port's mode parameters
+on its own plane.  The builders and runtime operators behind them are
 internal.
 """
 
@@ -14,25 +15,26 @@ from magnelio.ports._lumped import (
 from magnelio.ports._modal import (
     BboxLateralConductor,
     ConductorSpec,
-    LevelResult,
     Mode,
-    ModeRefinementReport,
     ModeReport,
     ModeType,
+    PortDispersionReport,
     PortOperatorBandDTBC,
     PortOperatorModal,
     PortOperatorReport,
     PortPlane,
+    PortRefinementReport,
     PortReport,
     PortSpecCoax,
     PortSpecMultiConductor,
     PortSpecNumerical,
     PortSpecRectWG,
+    RefinementLevel,
     RegionConductor,
     WallConductor,
     build_band_dtbc_port,
     build_modal_port,
-    solve_modes_refined,
+    refine_port_modes,
 )
 from magnelio.ports.base import Port
 from magnelio.ports.declarative import PortAnalytical, PortLumped, PortWaveguide
@@ -55,6 +57,9 @@ __all__ = [
     "ModeType",
     "ModeReport",
     "PortReport",
+    "PortDispersionReport",
+    "PortRefinementReport",
+    "RefinementLevel",
+    "refine_port_modes",
     "PortOperatorReport",
-    "ModeRefinementReport",
 ]

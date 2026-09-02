@@ -13,10 +13,14 @@ parameters: the same characteristic root ``lambda(z)`` the transparent
 port boundary is built from, so de-embedding removes exactly the
 propagation the grid applied — including the numerical-dispersion part
 that the continuum ``exp(-γd)`` would leave behind on coarse meshes.
-Channels without certified line parameters fall back to the mode's
-continuum ``γ(ω)`` — for quasi-TEM channels the quasi-static one
-(frequency-flat ``ε_eff``), which leaves the line's physical
-dispersion in the de-embedded matrix.
+Channels without certified line parameters use the port's dispersion
+record where the run recorded one (DD-244): the true discrete modes of
+the feed cross-section solved per frequency, so a quasi-TEM feed is
+de-embedded with its actual ``ζ(f)``, physical dispersion included.
+Only a channel with neither falls back to the mode's continuum
+``γ(ω)`` — for a quasi-TEM channel the quasi-static one (frequency-flat
+``ε_eff``), which leaves the line's physical dispersion in the
+de-embedded matrix.
 
 Users reach this through ``result.deembed(...)`` on any scattering
 result; this module is the shared implementation behind it.
@@ -64,24 +68,42 @@ def _channel_shift_factor(
     line_params: tuple | None,
     dz: float | None,
     mode,
+    zeta: np.ndarray | None = None,
 ) -> np.ndarray | None:
     """Inverse propagation factor of one channel over ``distance``.
 
     Discrete path: ``lambda^(-d/dz)`` — in the passband a pure phase
     advance ``exp(+j·beta_hat·d)``, below cut-off a real growth
-    ``exp(+alpha_hat·d)``.  Continuum fallback: ``exp(+γ(ω)·d)``, the
-    same convention.  Returns ``None`` when the channel carries no
-    line dispersion at all (lumped ports).
+    ``exp(+alpha_hat·d)``.  Dispersion-record path: ``ζ(ω)^(-d/dz)``
+    with the true discrete eigenvalue of the channel's mode, bins
+    without a mode taking the continuum value.  Continuum fallback:
+    ``exp(+γ(ω)·d)``, the same convention.  Returns ``None`` when the
+    channel carries no line dispersion at all (lumped ports).
     """
     if line_params is not None and dz:
         r, q = float(line_params[0]), float(line_params[1])
         log_lam = _chain_lambda_log(omega * dt, r, q)
         return np.exp(-(distance / float(dz)) * log_lam)
     gamma = getattr(mode, "gamma", None)
+    cont = None
     if gamma is not None:
         g = np.array([gamma(float(w)) for w in omega], dtype=complex)
-        return np.exp(g * distance)
-    return None
+        cont = np.exp(g * distance)
+    if zeta is not None and dz:
+        with np.errstate(invalid="ignore", divide="ignore"):
+            disc = np.exp(-(distance / float(dz)) * np.log(zeta))
+        have = np.isfinite(disc.real)
+        if cont is None:
+            return np.where(have, disc, np.nan + 1j * np.nan)
+        return np.where(have, disc, cont)
+    return cont
+
+
+def _dispersion_zetas(record, f_axis: np.ndarray) -> np.ndarray:
+    """``ζ[channel, f]`` of one port's dispersion record on ``f_axis``."""
+    from magnelio.ports._modal.dispersion import solve_port_dispersion  # noqa: PLC0415
+
+    return solve_port_dispersion(record, f_axis).zeta
 
 
 def deembed_s_params(
@@ -92,6 +114,7 @@ def deembed_s_params(
     port_line_params: dict | None = None,
     port_normal_dx: dict | None = None,
     port_modes: dict | None = None,
+    port_dispersion: dict | None = None,
 ) -> SParameterResult:
     """Return ``s_params`` referenced at shifted port planes.
 
@@ -114,6 +137,12 @@ def deembed_s_params(
     port_modes : dict, optional
         Per-port ordered mode list, for the continuum ``γ(ω)``
         fallback on channels without certified line parameters.
+    port_dispersion : dict, optional
+        Per-port dispersion records
+        (:class:`~magnelio.ports._modal.band_dtbc.BandDecomposition`)
+        of ports whose channels carry no certified line parameters —
+        quasi-TEM feeds of a modal run; their true discrete ``ζ(f)``
+        is solved on the result's axis here.
 
     Returns
     -------
@@ -137,23 +166,34 @@ def deembed_s_params(
         if not np.isfinite(d):
             raise ValueError(f"de-embed distance for port '{port}' must be finite; got {d!r}.")
 
-    omega = 2.0 * np.pi * np.asarray(s_params.f_axis, dtype=float)
+    f_axis = np.asarray(s_params.f_axis, dtype=float)
+    omega = 2.0 * np.pi * f_axis
     ones = np.ones_like(omega, dtype=complex)
 
     factors: dict[tuple[str, int], np.ndarray] = {}
+    zetas: dict[str, np.ndarray] = {}
     for key in dict.fromkeys(s_params.channels + s_params.excitations):
         port, mode_idx = key
         if port not in distances:
             factors[key] = ones
             continue
         modes = (port_modes or {}).get(port) or []
+        line_params = (port_line_params or {}).get(key)
+        zeta = None
+        record = (port_dispersion or {}).get(port)
+        if line_params is None and record is not None:
+            if port not in zetas:
+                zetas[port] = _dispersion_zetas(record, f_axis)
+            if mode_idx < zetas[port].shape[0]:
+                zeta = zetas[port][mode_idx]
         factor = _channel_shift_factor(
             omega,
             dt,
             float(distances[port]),
-            (port_line_params or {}).get(key),
+            line_params,
             (port_normal_dx or {}).get(port),
             modes[mode_idx] if mode_idx < len(modes) else None,
+            zeta=zeta,
         )
         if factor is None:
             raise ValueError(
@@ -168,8 +208,9 @@ def deembed_s_params(
     col = np.stack([factors[key] for key in s_params.excitations], axis=1)
     matrix = s_params.matrix * row[:, :, None] * col[:, None, :]
     return SParameterResult(
-        f_axis=np.asarray(s_params.f_axis, dtype=float),
+        f_axis=f_axis,
         channels=s_params.channels,
         excitations=s_params.excitations,
         matrix=matrix,
+        reference_impedances=s_params.reference_impedances,
     )

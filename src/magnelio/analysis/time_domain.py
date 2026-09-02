@@ -512,6 +512,11 @@ class _PreparedRun:
     port_modes: dict
     port_normal_dx: dict
     port_line_params: dict
+    # DD-244: dispersion records of the quasi-TEM modal ports (their
+    # feed chains, for the exact de-embedding) and the half-window →
+    # full-model factor of every port's line impedance.
+    port_dispersion: dict = field(default_factory=dict)
+    port_reference_scale: dict = field(default_factory=dict)
 
     @property
     def keys(self) -> list:
@@ -781,13 +786,33 @@ class AnalysisTD(_AnalysisBase):
         # construction identical to run() (the measured lambda_max is
         # cached on the mesh, so run() pays no second eigensolve).
         dt = spectral_dt(self.mesh, "normal", m_eps=m_eps, m_mu=m_mu)
-        return {
-            spec.name: PortReport.from_operator(
-                self._build_operator(spec, m_eps, m_mu, dt, self.f_max),
+        from magnelio.ports._modal.factory import (  # noqa: PLC0415
+            build_port_dispersion_record,
+        )
+
+        curl_cache: dict = {}
+
+        def _factory_for(op):
+            def _build():
+                if "c_3d" not in curl_cache:
+                    from magnelio._operators.curl import build_curl_matrix  # noqa: PLC0415
+
+                    curl_cache["c_3d"] = build_curl_matrix(self.mesh.grid)
+                return build_port_dispersion_record(
+                    op, self.mesh, m_eps, m_mu, self.f_max, c_3d=curl_cache["c_3d"]
+                )
+
+            return _build
+
+        reports = {}
+        for spec in self.ports:
+            op = self._build_operator(spec, m_eps, m_mu, dt, self.f_max)
+            reports[spec.name] = PortReport.from_operator(
+                op,
                 mesh=self.mesh,
+                dispersion_factory=_factory_for(op) if hasattr(op, "discrete_modes") else None,
             )
-            for spec in self.ports
-        }
+        return reports
 
     # ------------------------------------------------------------------
     # run()
@@ -1238,7 +1263,54 @@ class AnalysisTD(_AnalysisBase):
             port_modes=port_modes,
             port_normal_dx=port_normal_dx,
             port_line_params=port_line_params,
+            port_dispersion=self._dispersion_records(operators, m_eps, m_mu),
+            port_reference_scale=self._reference_scales(operators),
         )
+
+    @staticmethod
+    def _reference_scales(operators) -> dict:
+        """Half-window → full-model factor of each modal port's line impedance."""
+        out = {}
+        for op in operators:
+            scale = getattr(getattr(op, "port_report", None), "z_line_full_scale", None)
+            if scale is not None:
+                out[op.name] = float(scale)
+        return out
+
+    def _dispersion_records(self, operators, m_eps, m_mu) -> dict:
+        """Dispersion records of the quasi-TEM modal ports (DD-244).
+
+        A quasi-TEM channel runs on the modal Mur absorber and carries
+        no certified line parameters, so its de-embedding would fall
+        back to the quasi-static continuum ``γ``; the record lets the
+        result solve the feed's true discrete ``ζ(f)`` instead.  A port
+        whose feed section is not a certified uniform chain is skipped
+        — its de-embedding keeps the continuum fallback, and the port
+        has already warned about the section.
+        """
+        from magnelio.ports._modal.factory import (  # noqa: PLC0415
+            build_port_dispersion_record,
+        )
+
+        records = {}
+        c_3d = None
+        for op in operators:
+            report = getattr(op, "port_report", None)
+            if report is None or not getattr(report, "quasi_static", False):
+                continue
+            if not hasattr(op, "discrete_modes"):
+                continue
+            if c_3d is None:
+                from magnelio._operators.curl import build_curl_matrix  # noqa: PLC0415
+
+                c_3d = build_curl_matrix(self.mesh.grid)
+            try:
+                records[op.name] = build_port_dispersion_record(
+                    op, self.mesh, m_eps, m_mu, self.f_max, c_3d=c_3d
+                )
+            except ValueError:
+                continue
+        return records
 
     # ------------------------------------------------------------------
     # Run length and stop criteria

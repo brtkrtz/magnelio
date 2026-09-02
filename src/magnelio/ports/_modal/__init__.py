@@ -39,16 +39,16 @@ from magnelio.ports._modal.mode import (
     Mode,
     ModeType,
 )
-from magnelio.ports._modal.mode_report import ModeReport, PortReport
+from magnelio.ports._modal.mode_report import ModeReport, PortDispersionReport, PortReport
 from magnelio.ports._modal.numerical_2d import Numerical2DModeSolver
 from magnelio.ports._modal.operator import PortOperatorModal
 from magnelio.ports._modal.port_plane import BoxFace, PortPlane
 from magnelio.ports._modal.port_report import PortOperatorReport
 from magnelio.ports._modal.rect import RectWGAnalyticalModeSolver
 from magnelio.ports._modal.refinement import (
-    LevelResult,
-    ModeRefinementReport,
-    solve_modes_refined,
+    PortRefinementReport,
+    RefinementLevel,
+    refine_port_modes,
 )
 from magnelio.ports._modal.solver import ModeSolver
 from magnelio.ports._modal.tem_laplace import (
@@ -63,6 +63,9 @@ from magnelio.ports._modal.zeta_pencil import (
 )
 
 __all__ = [
+    "PortRefinementReport",
+    "RefinementLevel",
+    "refine_port_modes",
     "BboxLateralConductor",
     "BoxFace",
     "C0",
@@ -79,6 +82,7 @@ __all__ = [
     "ModeSolver",
     "ModeType",
     "PortReport",
+    "PortDispersionReport",
     "PortSpecMultiConductor",
     "Numerical2DModeSolver",
     "PortSpecNumerical",
@@ -88,8 +92,6 @@ __all__ = [
     "PortSpecRectWG",
     "RegionConductor",
     "WallConductor",
-    "LevelResult",
-    "ModeRefinementReport",
     "PortOperatorBandDTBC",
     "BandPortData",
     "CWChannel",
@@ -102,7 +104,6 @@ __all__ = [
     "discretize_modes",
     "extract_conductor_groups_from_mesh",
     "gram_matrix",
-    "solve_modes_refined",
     "solve_qtem_laplace",
     "solve_tem_laplace",
 ]

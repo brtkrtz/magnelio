@@ -84,6 +84,8 @@ from magnelio.ports._modal.port_plane import PortPlane
 from magnelio.ports._modal.port_report import PortOperatorReport
 from magnelio.ports._modal.zeta_pencil import (
     PeriodChain,
+    PortCurlSlice,
+    build_port_curl_slice,
     find_propagating_modes,
     normalize_gauge,
 )
@@ -998,6 +1000,21 @@ class BandDecomposition:
     h_u_profiles: list = field(repr=False, default_factory=list)
     h_v_profiles: list = field(repr=False, default_factory=list)
     dual_e_profiles: list = field(repr=False, default_factory=list)
+    # Plane-local masses in the recorder's convention (the builder-local
+    # flattened values the operator projects with) and the port's curl
+    # restriction — with them the record is self-contained and the
+    # per-frequency decomposition needs no mesh-side operator at all
+    # (DD-244).  ``None`` on records that predate them.
+    me_u: np.ndarray | None = field(repr=False, default=None)
+    me_v: np.ndarray | None = field(repr=False, default=None)
+    mh_u: np.ndarray | None = field(repr=False, default=None)
+    mh_v: np.ndarray | None = field(repr=False, default=None)
+    curl_slice: PortCurlSlice | None = field(repr=False, default=None)
+    # The port plane's 2D gradient (nodes → edges) and the node sets of
+    # the signal conductors, for the power–current impedance of the true
+    # mode (DD-244); ``None`` where the record does not carry them.
+    g_2d: object = field(repr=False, default=None)
+    signal_nodes: list | None = field(repr=False, default=None)
 
     @classmethod
     def from_operator(cls, op) -> "BandDecomposition":
@@ -1020,6 +1037,62 @@ class BandDecomposition:
             h_u_profiles=[np.asarray(dm.h_u_profile) for dm in op.discrete_modes],
             h_v_profiles=[np.asarray(dm.h_v_profile) for dm in op.discrete_modes],
             dual_e_profiles=[(np.asarray(du), np.asarray(dv)) for du, dv in bd.dual_e_profiles],
+            me_u=np.asarray(op._me_u_port, dtype=float),
+            me_v=np.asarray(op._me_v_port, dtype=float),
+            mh_u=np.asarray(op._mh_u, dtype=float),
+            mh_v=np.asarray(op._mh_v, dtype=float),
+            curl_slice=build_port_curl_slice(bd.chain_inward, bd.plane, bd.m_mu, bd.c_3d),
+        )
+
+    @classmethod
+    def from_modal_operator(
+        cls,
+        op,
+        chain: PeriodChain,
+        curl_slice: PortCurlSlice,
+        f_max: float,
+        *,
+        g_2d=None,
+        signal_nodes=None,
+    ) -> "BandDecomposition":
+        """The dispersion record of a modal port (DD-244).
+
+        A modal port records through its frequency-flat profiles; the
+        record pairs them with the feed chain so the true discrete
+        modes of the cross-section can be solved per frequency
+        afterwards — for the report's dispersion sweep and for the
+        de-embedding of quasi-TEM feeds.  The family hint is the
+        quasi-static phase advance, which every guided mode's true
+        phase advance exceeds by less than the arc margin.
+        """
+        from magnelio.constants import C0  # noqa: PLC0415
+
+        eps_hint = max(float(dm.mode.epsilon_r) for dm in op.discrete_modes)
+        dz = float(op.plane.normal_dx)
+        fam_f = np.array([1e-3 * f_max, float(f_max)])
+        fam_z = np.exp(-1j * 2.0 * math.pi * fam_f * math.sqrt(eps_hint) / C0 * dz)
+        dual = op._dual_e_profiles
+        if dual is None:
+            dual = [(dm.e_u_profile, dm.e_v_profile) for dm in op.discrete_modes]
+        return cls(
+            name=op.name,
+            n_modes=int(op.n_modes),
+            chain_inward=chain,
+            plane=op.plane,
+            family_freqs=fam_f,
+            family_zetas=fam_z,
+            e_u_profiles=[np.asarray(dm.e_u_profile) for dm in op.discrete_modes],
+            e_v_profiles=[np.asarray(dm.e_v_profile) for dm in op.discrete_modes],
+            h_u_profiles=[np.asarray(dm.h_u_profile) for dm in op.discrete_modes],
+            h_v_profiles=[np.asarray(dm.h_v_profile) for dm in op.discrete_modes],
+            dual_e_profiles=[(np.asarray(du), np.asarray(dv)) for du, dv in dual],
+            me_u=np.asarray(op._me_u_port, dtype=float),
+            me_v=np.asarray(op._me_v_port, dtype=float),
+            mh_u=np.asarray(op._mh_u, dtype=float),
+            mh_v=np.asarray(op._mh_v, dtype=float),
+            curl_slice=curl_slice,
+            g_2d=g_2d,
+            signal_nodes=signal_nodes,
         )
 
 

@@ -279,6 +279,11 @@ class SParameterResult(SDerivedAccessors):
     channels: tuple[tuple[str, int], ...]
     excitations: tuple[tuple[str, int], ...]
     matrix: np.ndarray
+    # Per-channel real reference impedance [Ω] on ``f_axis`` — the
+    # impedance the power waves of that channel are defined against
+    # (DD-244).  ``None`` when the producer did not record it; NaN at
+    # frequencies where a channel carries no propagating mode.
+    reference_impedances: dict[tuple[str, int], np.ndarray] | None = None
 
     def __post_init__(self) -> None:
         f = np.asarray(self.f_axis)
@@ -288,6 +293,25 @@ class SParameterResult(SDerivedAccessors):
             raise ValueError("f_axis must contain only positive frequencies.")
         n_ch = len(self.channels)
         n_ex = len(self.excitations)
+        if self.reference_impedances is not None:
+            refs = {}
+            for key, z in self.reference_impedances.items():
+                key = (key[0], int(key[1]))
+                if key not in self.channels:
+                    raise ValueError(
+                        f"reference_impedances names channel {key!r}, which is not observed."
+                    )
+                z = np.asarray(z, dtype=float)
+                if z.shape != (f.size,):
+                    raise ValueError(
+                        f"reference_impedances[{key!r}] has shape {z.shape}; "
+                        f"expected ({f.size},) to match f_axis."
+                    )
+                refs[key] = z
+            missing = [c for c in self.channels if c not in refs]
+            if missing:
+                raise ValueError(f"reference_impedances lacks channels {missing}.")
+            object.__setattr__(self, "reference_impedances", refs)
         if n_ch == 0:
             raise ValueError("channels must be non-empty.")
         if n_ex == 0:
@@ -492,11 +516,215 @@ class SParameterResult(SDerivedAccessors):
         cols = [self.excitations.index(chan) for chan in sel]
         return sel, self.matrix[:, rows, :][:, :, cols]
 
+    # ------------------------------------------------------------------
+    # Reference impedance
+    # ------------------------------------------------------------------
+
+    def reference_impedance(self, port: str, mode: int = 0) -> np.ndarray:
+        """Reference impedance [Ω] of one channel along :attr:`f_axis`.
+
+        The real impedance the channel's power waves are defined
+        against: the line impedance of a TEM or quasi-TEM channel, the
+        wave impedance of a hollow-pipe mode (which varies with
+        frequency), the Thévenin impedance of a lumped port.  On a
+        port cut by a symmetry plane it is the full-model value.
+
+        Raises
+        ------
+        ValueError
+            If the result carries no reference impedances.
+        """
+        if self.reference_impedances is None:
+            raise ValueError(
+                "this S-parameter result carries no reference impedances; "
+                "results of a scattering run and of a project store do."
+            )
+        key = (port, int(mode))
+        if key not in self.reference_impedances:
+            raise KeyError(f"channel {key!r} not in result; available: {list(self.channels)}")
+        return self.reference_impedances[key].copy()
+
+    def renormalize(self, z_ref) -> "SParameterResult":
+        """Re-reference the S-matrix to new port impedances.
+
+        A scattering result is measured against each channel's own
+        reference impedance — the impedance its port mode carries on
+        the grid, :meth:`reference_impedance`.  This returns the same
+        network described against ``z_ref`` instead: the S-matrix a
+        network analyser with ``z_ref`` reference planes would read,
+        or the one a circuit simulator expects when it cascades this
+        block with others on a common impedance.
+
+        The transformation is the exact power-wave re-referencing for
+        real reference impedances (Kurokawa): with ``ρ_i = (Z_i −
+        Z'_i)/(Z_i + Z'_i)`` and ``c_i = (Z_i + Z'_i)/(2√(Z_i Z'_i))``,
+
+            S' = C (S + ρ)(I + ρ S)⁻¹ C⁻¹ ,
+
+        applied per frequency to the square matrix over the *excited*
+        channels (:meth:`export_channels`).  A channel that was
+        observed but never excited cannot be re-referenced — its own
+        reflection would enter every other entry once its reference
+        moves — and is left out of the result exactly as the exports
+        leave it out: it stays terminated by its own reflection-free
+        boundary, matched to its own impedance.
+
+        Note what the operation means physically.  A line whose grid
+        impedance came out at 49 Ω against a 50 Ω design is *matched*
+        in the raw result and shows a −40 dB reflection after
+        re-referencing to 50 Ω — that mismatch is real if the line is
+        part of the device and will be fed from 50 Ω, and a
+        discretisation artefact if the line is meant to be the 50 Ω
+        one; converge the port's impedance first
+        (``refine_port_modes``) before reading it either way.
+
+        Parameters
+        ----------
+        z_ref : float or dict
+            New real reference impedance [Ω]: one value for every
+            channel, or a mapping ``{port_name: Z}`` / ``{(port,
+            mode): Z}``; each value may also be an array on
+            :attr:`f_axis`.  Channels not named keep their impedance.
+
+        Returns
+        -------
+        SParameterResult
+            A new result on the same channels, carrying ``z_ref`` as
+            its reference impedances; the original is untouched.
+
+        Raises
+        ------
+        ValueError
+            If the result carries no reference impedances, or a new
+            impedance is not positive.
+        """
+        if self.reference_impedances is None:
+            raise ValueError("cannot renormalize: this result carries no reference impedances.")
+        if not self.is_complete:
+            return self._sub_result(self.export_channels(None)).renormalize(z_ref)
+        n_f = self.n_frequencies
+        new_refs = {key: z.copy() for key, z in self.reference_impedances.items()}
+        if isinstance(z_ref, dict):
+            for key, val in z_ref.items():
+                targets = (
+                    [c for c in self.channels if c[0] == key]
+                    if isinstance(key, str)
+                    else [(key[0], int(key[1]))]
+                )
+                if not targets or any(t not in new_refs for t in targets):
+                    raise KeyError(
+                        f"z_ref names {key!r}, not a channel of this result "
+                        f"({list(self.channels)})."
+                    )
+                for t in targets:
+                    new_refs[t] = np.broadcast_to(np.asarray(val, dtype=float), (n_f,)).copy()
+        else:
+            for key in new_refs:
+                new_refs[key] = np.broadcast_to(np.asarray(z_ref, dtype=float), (n_f,)).copy()
+        for key, z in new_refs.items():
+            if np.any(z[np.isfinite(z)] <= 0.0):
+                raise ValueError(f"reference impedance for {key!r} must be positive.")
+
+        # Square matrix in channel order: rows are self.channels, the
+        # columns follow self.excitations — permute them to match.
+        cols = [self.excitations.index(chan) for chan in self.channels]
+        S = self.matrix[:, :, cols]
+        z_old = np.stack([self.reference_impedances[c] for c in self.channels], axis=1)
+        z_new = np.stack([new_refs[c] for c in self.channels], axis=1)
+        with np.errstate(invalid="ignore", divide="ignore"):
+            rho = (z_old - z_new) / (z_old + z_new)
+            c = (z_old + z_new) / (2.0 * np.sqrt(z_old * z_new))
+        n = len(self.channels)
+        eye = np.eye(n)
+        out = np.empty_like(S)
+        for k in range(n_f):
+            if not np.all(np.isfinite(rho[k])) or not np.all(np.isfinite(S[k])):
+                out[k] = np.nan + 1j * np.nan
+                continue
+            rho_k = np.diag(rho[k])
+            # (S + ρ)(I + ρS)^{-1} without forming the inverse.
+            rhs = np.linalg.solve((eye + rho_k @ S[k]).T, (S[k] + rho_k).T).T
+            out[k] = (c[k][:, None] * rhs) / c[k][None, :]
+        inv_cols = [self.channels.index(chan) for chan in self.excitations]
+        return SParameterResult(
+            f_axis=self.f_axis.copy(),
+            channels=self.channels,
+            excitations=self.excitations,
+            matrix=out[:, :, inv_cols],
+            reference_impedances=new_refs,
+        )
+
+    def _uniform_reference(self, chans) -> float | None:
+        """The one flat reference impedance of ``chans``, or ``None``."""
+        if self.reference_impedances is None:
+            return None
+        z = np.stack([self.reference_impedances[c] for c in chans], axis=1)
+        if not np.all(np.isfinite(z)):
+            return None
+        z0 = float(z[0, 0])
+        if z0 <= 0.0 or not np.allclose(z, z0, rtol=1e-9, atol=0.0):
+            return None
+        return z0
+
+    def _reference_lines(self, chans) -> list[str]:
+        """Comment lines naming each exported channel's reference."""
+        if self.reference_impedances is None:
+            return ["! reference impedances: not recorded"]
+        f = np.asarray(self.f_axis, dtype=float)
+        lines = []
+        for k, chan in enumerate(chans, start=1):
+            z = self.reference_impedances[chan]
+            finite = np.isfinite(z)
+            if not finite.any():
+                lines.append(f"! port {k} reference impedance: undefined on this axis")
+                continue
+            lo, hi = float(np.min(z[finite])), float(np.max(z[finite]))
+            if np.isclose(lo, hi, rtol=1e-9, atol=0.0):
+                lines.append(f"! port {k} reference impedance: {lo:.6g} Ohm (constant)")
+            else:
+                k0 = int(np.flatnonzero(finite)[0])
+                k1 = int(np.flatnonzero(finite)[-1])
+                lines.append(
+                    f"! port {k} reference impedance: {z[k0]:.6g} Ohm at {f[k0]:.6g} Hz "
+                    f"to {z[k1]:.6g} Ohm at {f[k1]:.6g} Hz (frequency dependent)"
+                )
+        return lines
+
+    def _sub_result(self, chans) -> "SParameterResult":
+        """The square result over ``chans`` (their matched sub-network)."""
+        rows = [self.channels.index(chan) for chan in chans]
+        cols = [self.excitations.index(chan) for chan in chans]
+        refs = None
+        if self.reference_impedances is not None:
+            refs = {c: self.reference_impedances[c] for c in chans}
+        return SParameterResult(
+            f_axis=self.f_axis.copy(),
+            channels=tuple(chans),
+            excitations=tuple(chans),
+            matrix=self.matrix[:, rows, :][:, :, cols],
+            reference_impedances=refs,
+        )
+
+    def _for_export(self, channels, z_ref):
+        """``(channels, S, R, source)`` of an export, renormalised when asked.
+
+        ``R`` is the reference impedance the Touchstone option line can
+        state: the value every exported channel shares when all are
+        constant and equal, else ``None``.
+        """
+        sel = self.export_channels(channels)
+        src = self._sub_result(sel)
+        if z_ref is not None:
+            src = src.renormalize(z_ref)
+        chans, s = src._export_matrix(None)
+        return chans, s, src._uniform_reference(chans), src
+
     def to_touchstone(
         self,
         path,
         *,
         channels: Sequence[str | tuple[str, int]] | None = None,
+        z_ref: float | dict | None = None,
     ) -> None:
         """Write the S-matrix as a Touchstone ``.sNp`` file.
 
@@ -506,10 +734,19 @@ class SParameterResult(SDerivedAccessors):
         reduction does and does not describe).  Touchstone ports are
         the exported *channels* in canonical order — a multi-mode port
         occupies one Touchstone port per mode; the mapping is recorded
-        in the file's comment header.  Data are the power-wave
-        (generalised) S-parameters on the per-mode reference
-        impedances; the nominal ``R 50`` of the option line does not
-        renormalise them.
+        in the file's comment header.
+
+        Data are power-wave S-parameters, and the option line's ``R``
+        states the impedance they refer to.  Touchstone 1.x can state
+        one constant value for all ports, so the file is exact when
+        every exported channel shares one frequency-flat reference —
+        pass ``z_ref`` to renormalise to such a value first (typically
+        ``z_ref=50``).  Without it, channels whose references differ
+        or vary with frequency (hollow-pipe modes) are written with a
+        nominal ``R 50`` and a warning; the header then lists each
+        port's actual reference, and a reader that renormalises on
+        ``R`` would be wrong.  :meth:`to_skrf` carries per-port,
+        per-frequency references and needs no such choice.
 
         The ``.sNp`` extension must agree with the exported port
         count: Touchstone 1.x records the port count nowhere else, so
@@ -523,14 +760,31 @@ class SParameterResult(SDerivedAccessors):
             extension filled in.
         channels : sequence of str or (str, int), optional
             Explicit channel selection, as in :meth:`export_channels`.
+        z_ref : float or dict, optional
+            Renormalise to this reference before writing, as in
+            :meth:`renormalize`.
         """
-        chans, s = self._export_matrix(channels)
+        chans, s, r_common, src = self._for_export(channels, z_ref)
         n = len(chans)
         out = _touchstone_path(path, chans)
         lines = ["! magnelio S-parameter export (power-wave S-parameters)"]
         for k, chan in enumerate(chans, start=1):
             lines.append(f"! port {k} = channel {chan[0]!r} mode {chan[1]}")
-        lines.append("# Hz S RI R 50")
+        lines.extend(src._reference_lines(chans))
+        if r_common is None:
+            if src.reference_impedances is not None:
+                warnings.warn(
+                    "Touchstone 1.x states one constant reference impedance for "
+                    "all ports, but the exported channels' references differ or "
+                    "vary with frequency (see the file header); writing the "
+                    "nominal 'R 50' without renormalising.  Pass z_ref= (e.g. "
+                    "z_ref=50) to renormalise first, or use to_skrf(), which "
+                    "carries per-port, per-frequency references.",
+                    stacklevel=2,
+                )
+            lines.append("# Hz S RI R 50")
+        else:
+            lines.append(f"# Hz S RI R {r_common:.10g}")
         for k, f in enumerate(np.asarray(self.f_axis, dtype=float)):
             if n <= 2:
                 # Touchstone 1.x two-port order is S11 S21 S12 S22
@@ -551,6 +805,7 @@ class SParameterResult(SDerivedAccessors):
         name: str = "magnelio",
         *,
         channels: Sequence[str | tuple[str, int]] | None = None,
+        z_ref: float | dict | None = None,
     ):
         """Return the S-matrix as a ``skrf.Network``.
 
@@ -558,7 +813,10 @@ class SParameterResult(SDerivedAccessors):
         Exports the same square sub-matrix as
         :meth:`to_touchstone` — by default every excited channel, with
         the unexcited ones matched; multi-mode ports map to one
-        network port per channel, in canonical channel order.
+        network port per channel, in canonical channel order.  The
+        network's ``z0`` carries each channel's reference impedance
+        per frequency, so scikit-rf's own ``renormalize`` and
+        cascading operate on the right references.
 
         Parameters
         ----------
@@ -566,6 +824,8 @@ class SParameterResult(SDerivedAccessors):
             Network name.
         channels : sequence of str or (str, int), optional
             Explicit channel selection, as in :meth:`export_channels`.
+        z_ref : float or dict, optional
+            Renormalise first, as in :meth:`renormalize`.
 
         Returns
         -------
@@ -578,12 +838,16 @@ class SParameterResult(SDerivedAccessors):
                 "to_skrf() requires scikit-rf — install it via "
                 "'pip install scikit-rf' (or the magnelio[interop] extra)"
             ) from exc
-        chans, s = self._export_matrix(channels)
+        chans, s, _r, src = self._for_export(channels, z_ref)
         freq = skrf.Frequency.from_f(
             np.asarray(self.f_axis, dtype=float),
             unit="hz",
         )
-        ntw = skrf.Network(frequency=freq, s=s, name=name)
+        if src.reference_impedances is not None:
+            z0 = np.stack([src.reference_impedances[c] for c in chans], axis=1)
+            ntw = skrf.Network(frequency=freq, s=s, z0=z0, name=name)
+        else:
+            ntw = skrf.Network(frequency=freq, s=s, name=name)
         ntw.port_names = [f"{p}:{m}" for (p, m) in chans]
         return ntw
 
@@ -595,6 +859,7 @@ class SParameterResult(SDerivedAccessors):
         f_axis: np.ndarray,
         *,
         channel_order: tuple[tuple[str, int], ...] | None = None,
+        reference_impedances: dict | None = None,
     ) -> "SParameterResult":
         """Wrap a single-column :func:`compute_s_parameters` dict.
 
@@ -613,6 +878,8 @@ class SParameterResult(SDerivedAccessors):
             Override the canonical ordering of observed channels.
             Default: keys of ``s_dict`` in their dict-iteration order
             (insertion-order in CPython ≥ 3.7).
+        reference_impedances : dict, optional
+            Per-channel real reference impedance on ``f_axis``.
         """
         if not s_dict:
             raise ValueError("s_dict is empty.")
@@ -649,6 +916,7 @@ class SParameterResult(SDerivedAccessors):
             channels=channel_order,
             excitations=(excited,),
             matrix=matrix,
+            reference_impedances=reference_impedances,
         )
 
     @classmethod
@@ -774,9 +1042,24 @@ class SParameterResult(SDerivedAccessors):
             matrix[:, :, col : col + r.n_excitations] = r.matrix
             col += r.n_excitations
 
+        refs = first.reference_impedances
+        if refs is not None:
+            for k, r in enumerate(results[1:], start=1):
+                if r.reference_impedances is None:
+                    refs = None
+                    break
+                for key, z in refs.items():
+                    if not np.allclose(
+                        r.reference_impedances[key], z, rtol=1e-9, atol=0.0, equal_nan=True
+                    ):
+                        raise ValueError(
+                            f"results[{k}] references channel {key!r} to a different "
+                            "impedance than results[0]; the runs are not on the same ports."
+                        )
         return cls(
             f_axis=first.f_axis.copy(),
             channels=first.channels,
             excitations=tuple(all_excitations),
             matrix=matrix,
+            reference_impedances=refs,
         )
