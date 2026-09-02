@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=57adb930"></script>
+    <script src="../_static/documentation_options.js?v=c1ad62ca"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -564,6 +564,13 @@ power–current impedance <span class="math notranslate nohighlight">\(Z_{\pi}\)
 theory <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>, <a class="reference internal" href="../bibliography.html#id27" title="Nathan Marcuvitz. Waveguide Handbook. Volume 10 of MIT Radiation Laboratory Series. McGraw-Hill, 1951.">18</a>]</span>.  Analytical
 reference modes for coaxial and rectangular-waveguide ports are
 closed-form textbook solutions <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>]</span>.</p>
+<p>The port report labels the impedance of an inhomogeneous cross-section
+<code class="docutils literal notranslate"><span class="pre">(quasi-static)</span></code>: it is frequency-flat by construction, whereas the
+impedance the discrete wave actually carries rises with frequency on a
+dispersive line — by 3 to 7 % at 15 GHz on the tutorial microstrip —
+and that difference, not the absorber, is where most of the
+<span class="math notranslate nohighlight">\(-30\)</span> dB-class <span class="math notranslate nohighlight">\(|S_{11}|\)</span> floor of the default pipeline comes from.  On
+a homogeneous line the label stays <code class="docutils literal notranslate"><span class="pre">(numerical)</span></code>.</p>
 <p><strong>Coupled lines.</strong>  With more than one signal conductor above the
 ground — an edge-coupled microstrip pair, a stripline pickup, a
 multi-wire bus — the per-conductor Laplace solutions are the
@@ -793,11 +800,11 @@ remembers the <em>whole</em> record rather than a few past steps, so its
 memory is checkpointed in full; a continued run is bit-identical to an
 uninterrupted one of the same length.</p>
 <p>None of this has to be looked up.  Whenever a run terminates a
-channel with the Mur fallback, the analysis prints the balance sheet
-once: which channels fell back and what the cross-section measured,
-the floor they trade away against the runtime and the power waves
-they keep, and what <code class="docutils literal notranslate"><span class="pre">port_model=&quot;band&quot;</span></code> would cost on this very
-model.</p>
+channel with the Mur fallback, the analysis prints a short balance
+sheet once: which channels fell back and what the cross-section
+measured, the floor they trade away against the runtime and the power
+waves they keep, and what <code class="docutils literal notranslate"><span class="pre">port_model=&quot;band&quot;</span></code> costs — a few lines; the
+detail is this section.</p>
 <p>Either way the decision is published per channel, so it can be
 inspected before a run is paid for:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">report</span> <span class="ow">in</span> <span class="n">analysis</span><span class="o">.</span><span class="n">solve_ports</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>

@@ -44,6 +44,14 @@ theory {cite}`marcuvitz1951,pozar2012`.  Analytical
 reference modes for coaxial and rectangular-waveguide ports are
 closed-form textbook solutions {cite}`pozar2012`.
 
+The port report labels the impedance of an inhomogeneous cross-section
+`(quasi-static)`: it is frequency-flat by construction, whereas the
+impedance the discrete wave actually carries rises with frequency on a
+dispersive line — by 3 to 7 % at 15 GHz on the tutorial microstrip —
+and that difference, not the absorber, is where most of the
+$-30$ dB-class $|S_{11}|$ floor of the default pipeline comes from.  On
+a homogeneous line the label stays `(numerical)`.
+
 **Coupled lines.**  With more than one signal conductor above the
 ground — an edge-coupled microstrip pair, a stripline pickup, a
 multi-wire bus — the per-conductor Laplace solutions are the
@@ -283,11 +291,11 @@ memory is checkpointed in full; a continued run is bit-identical to an
 uninterrupted one of the same length.
 
 None of this has to be looked up.  Whenever a run terminates a
-channel with the Mur fallback, the analysis prints the balance sheet
-once: which channels fell back and what the cross-section measured,
-the floor they trade away against the runtime and the power waves
-they keep, and what `port_model="band"` would cost on this very
-model.
+channel with the Mur fallback, the analysis prints a short balance
+sheet once: which channels fell back and what the cross-section
+measured, the floor they trade away against the runtime and the power
+waves they keep, and what `port_model="band"` costs — a few lines; the
+detail is this section.
 
 Either way the decision is published per channel, so it can be
 inspected before a run is paid for:

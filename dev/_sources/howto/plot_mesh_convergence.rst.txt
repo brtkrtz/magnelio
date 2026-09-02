@@ -238,7 +238,7 @@ below is that rule.
       16   10368    2.0 s     0.0431     0.0114  
       24   23814    4.1 s     0.0458     0.0129  
       32   41850    7.7 s     0.0158     0.0036  ok
-      48   98496   27.8 s     0.0164     0.0050  ok
+      48   98496   27.5 s     0.0164     0.0050  ok
     converged: mnpw 32 (ΔS < 0.02 on this rung and the next)
 
 
@@ -394,7 +394,7 @@ of a curved cavity.
       16    11.2897     1125    0.1 s   1.02 %   -1.61 %  
       24    11.3902     3703    0.5 s   0.89 %   -0.73 %  ok
       32    11.4487     8100    2.2 s   0.51 %   -0.22 %  ok
-      48    11.4889    28350   40.4 s   0.35 %   +0.13 %  ok
+      48    11.4889    28350   42.2 s   0.35 %   +0.13 %  ok
     converged: mnpw 24 at 1.0 % — its actual error is 0.73 %
 
 
@@ -518,7 +518,7 @@ under :doc:`../methods/meshing-conformal`.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 27.530 seconds)
+   **Total running time of the script:** (1 minutes 29.008 seconds)
 
 
 .. _sphx_glr_download_howto_plot_mesh_convergence.py:

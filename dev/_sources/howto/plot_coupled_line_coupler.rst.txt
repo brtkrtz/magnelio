@@ -241,7 +241,7 @@ odd mode second.
  .. code-block:: none
 
     Port 'pair' — 2 mode(s)
-      z_line = 66.58 Ω (numerical)
+      z_line = 66.58 Ω (quasi-static)
       [0] QTEM_lap00   TEM f_c = 0.0000 GHz  z_line = 66.58 Ω  ε_eff = 2.838  termination = mur (chain spread 2.4e-01)
       [1] QTEM_lap01   TEM f_c = 0.0000 GHz  z_line = 38.84 Ω  ε_eff = 2.440  termination = mur (chain spread 2.6e-01)
 
@@ -613,7 +613,7 @@ chapter of the methods section.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 27.659 seconds)
+   **Total running time of the script:** (1 minutes 27.418 seconds)
 
 
 .. _sphx_glr_download_howto_plot_coupled_line_coupler.py:
