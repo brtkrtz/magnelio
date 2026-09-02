@@ -24,6 +24,23 @@ the tutorials instead.
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="A resonator that is coupled to the outside world does not resonate where the closed one does, and it does not store energy as long.  Both shifts matter as soon as something has to be tuned to the resonator — a particle beam driving the output cavity of a klystron has to be modelled at the loaded frequency, not at the frequency an eigenmode solve of the sealed cavity returns.">
+
+.. only:: html
+
+  .. image:: /howto/images/thumb/sphx_glr_plot_cavity_ringdown_q_thumb.png
+    :alt:
+
+  :doc:`/howto/plot_cavity_ringdown_q`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Ring-down: the loaded frequency and Q budget of a coupled resonator</div>
+    </div>
+
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="Two microstrip lines running side by side for a quarter wavelength form a directional coupler: a fraction of the power entering one line leaves the near end of the other, and — ideally — nothing leaves its far end.  The classic single-section design has two knobs, the gap between the lines and their width, and one number to hit: the coupling at the centre frequency.  This guide sets a −10 dB coupler at 5 GHz on a 0.813 mm substrate and reads the result off a four-port S-parameter run.">
 
 .. only:: html
@@ -36,6 +53,40 @@ the tutorials instead.
 .. raw:: html
 
       <div class="sphx-glr-thumbnail-title">Coupled-line directional coupler: dimensioning the pair with the port solver</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Not every drive is a port.  Sometimes the current is the thing you know — a coil wound to a specification, an interference current measured on a harness, a lightning channel, a probe injecting a known signal — and what you want out of the simulation is the field it produces.  SourceCurrentPath says exactly that: a current I(t) prescribed along a curve through the model.">
+
+.. only:: html
+
+  .. image:: /howto/images/thumb/sphx_glr_plot_current_path_source_thumb.png
+    :alt:
+
+  :doc:`/howto/plot_current_path_source`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Impressed currents: driving a model with a known current</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="A radiator rarely sits alone.  The antenna goes on a mast, the connector into a housing, the scatterer into a scene — and each time the whole thing is meshed together, the fine structure of the radiator sets the cell size for a domain that is mostly empty air.">
+
+.. only:: html
+
+  .. image:: /howto/images/thumb/sphx_glr_plot_field_source_reuse_thumb.png
+    :alt:
+
+  :doc:`/howto/plot_field_source_reuse`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Field sources: simulate a radiator once, reuse it anywhere</div>
     </div>
 
 
@@ -185,7 +236,10 @@ the tutorials instead.
 .. toctree::
    :hidden:
 
+   /howto/plot_cavity_ringdown_q
    /howto/plot_coupled_line_coupler
+   /howto/plot_current_path_source
+   /howto/plot_field_source_reuse
    /howto/plot_lange_coupler
    /howto/plot_lumped_port_investigations
    /howto/plot_lumped_port_tuning_coax

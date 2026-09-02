@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=4f911454"></script>
+    <script src="../_static/documentation_options.js?v=1dd76d02"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -172,6 +172,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
   </a>
 </li>
 
@@ -337,6 +344,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -431,7 +445,10 @@
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="plot_cavity_ringdown_q.html">Ring-down: the loaded frequency and Q budget of a coupled resonator</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_coupled_line_coupler.html">Coupled-line directional coupler: dimensioning the pair with the port solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_current_path_source.html">Impressed currents: driving a model with a known current</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_field_source_reuse.html">Field sources: simulate a radiator once, reuse it anywhere</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lange_coupler.html">Lange coupler: a 3-dB interdigitated coupler dimensioned with the port solver</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_investigations.html">Lumped ports: investigations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_coax.html">Lumped port tuning: coaxial line</a></li>
@@ -851,7 +868,7 @@ box’s own power, is unaffected.</p>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">simulate</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
     <span class="n">mesh</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">mesh_control</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="n">f_max</span><span class="p">)</span>
-    <span class="n">farfield</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarField</span><span class="p">(</span><span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"farfield"</span><span class="p">)</span>
+    <span class="n">farfield</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarFieldFrequency</span><span class="p">(</span><span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"farfield"</span><span class="p">)</span>
     <span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">f_min</span><span class="o">=</span><span class="n">f_min</span><span class="p">,</span> <span class="n">monitors</span><span class="o">=</span><span class="p">(</span><span class="n">farfield</span><span class="p">,),</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">result</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a><span class="o">=</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a><span class="p">,</span> <span class="n">excited</span><span class="o">=</span><span class="p">[</span><span class="s2">"feed"</span><span class="p">])</span>
     <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11</span></a> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s2">"feed"</span><span class="p">,</span> <span class="s2">"feed"</span><span class="p">)</span>
@@ -1074,7 +1091,7 @@ the network needs — the crossbar wants a few substrate heights of
 clearance from the fed edges — and a row pitch below the quarter-
 wave offset’s reach asks for a meandered arm instead of the
 straight one used here.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (11 minutes 47.413 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (14 minutes 0.889 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-patch-array-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/aa1574a624d08bd2fd272ebe92860f60/plot_patch_array.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_patch_array.ipynb</span></code></a></p>

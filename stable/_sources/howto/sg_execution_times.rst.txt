@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**22:39.399** total execution time for 9 files **from howto**:
+**33:05.427** total execution time for 12 files **from howto**:
 
 .. container::
 
@@ -33,29 +33,38 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_howto_plot_patch_array.py` (``plot_patch_array.py``)
-     - 11:47.413
+     - 14:00.889
      - 0.0
    * - :ref:`sphx_glr_howto_plot_stripline_pickup_kicker.py` (``plot_stripline_pickup_kicker.py``)
-     - 05:29.428
+     - 08:01.807
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lange_coupler.py` (``plot_lange_coupler.py``)
-     - 02:02.558
+     - 02:50.352
      - 0.0
-   * - :ref:`sphx_glr_howto_plot_mesh_convergence.py` (``plot_mesh_convergence.py``)
-     - 01:10.102
+   * - :ref:`sphx_glr_howto_plot_current_path_source.py` (``plot_current_path_source.py``)
+     - 02:33.160
      - 0.0
    * - :ref:`sphx_glr_howto_plot_coupled_line_coupler.py` (``plot_coupled_line_coupler.py``)
-     - 01:06.987
+     - 01:42.947
+     - 0.0
+   * - :ref:`sphx_glr_howto_plot_mesh_convergence.py` (``plot_mesh_convergence.py``)
+     - 01:37.875
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_investigations.py` (``plot_lumped_port_investigations.py``)
-     - 00:51.897
+     - 01:17.084
+     - 0.0
+   * - :ref:`sphx_glr_howto_plot_cavity_ringdown_q.py` (``plot_cavity_ringdown_q.py``)
+     - 00:33.821
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_tuning_cpw.py` (``plot_lumped_port_tuning_cpw.py``)
-     - 00:07.377
+     - 00:12.275
+     - 0.0
+   * - :ref:`sphx_glr_howto_plot_field_source_reuse.py` (``plot_field_source_reuse.py``)
+     - 00:10.137
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_tuning_microstrip.py` (``plot_lumped_port_tuning_microstrip.py``)
-     - 00:02.467
+     - 00:03.426
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_tuning_coax.py` (``plot_lumped_port_tuning_coax.py``)
-     - 00:01.170
+     - 00:01.654
      - 0.0

@@ -466,8 +466,6 @@ actually landed on.
  .. code-block:: none
 
     UserWarning: 10 geometry-edge planes (3 on x, 3 on y, 4 on z) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at z = 0.149896 m, would create a 0.00175 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=4.3) keeps it, or refine the mesh.
-    UserWarning: Modal port 'upstream': the feed-chain mass slabs deviate by 2.85e-01 (relative, worst entry) across the first cells behind the port plane — the 2D port modes do not propagate as exact discrete chain modes, so the exact DTBC is withheld and all channels fall back to modal Mur-1st.  Typical causes: a feed that is not translation-invariant along the port normal.
-    UserWarning: Modal port 'downstream': the feed-chain mass slabs deviate by 2.85e-01 (relative, worst entry) across the first cells behind the port plane — the 2D port modes do not propagate as exact discrete chain modes, so the exact DTBC is withheld and all channels fall back to modal Mur-1st.  Typical causes: a feed that is not translation-invariant along the port normal.
     grid: 46 x 56 x 209 cells
     coax port impedance on the grid: 52.3 ohm
     field line recorded at y = 0.90 mm, 209 points
@@ -792,10 +790,10 @@ the distance between the two feeds, not the strip's own length.
  .. code-block:: none
 
     at 0.5 GHz:
-      K_par  = 0.395  (ideal 0.471)
-      K_perp = 2.763  (ideal 3.373)
-      R_par T^2  =    8.2 ohm  (ideal   11.6 ohm)
-      R_perp T^2 =  399.5 ohm  (ideal  595.6 ohm)
+      K_par  = 0.386  (ideal 0.471)
+      K_perp = 2.698  (ideal 3.373)
+      R_par T^2  =    7.8 ohm  (ideal   11.6 ohm)
+      R_perp T^2 =  381.2 ohm  (ideal  595.6 ohm)
 
 
 
@@ -878,7 +876,7 @@ frequency.
 
  .. code-block:: none
 
-    position sensitivity over 0.25-0.75 GHz: 73 ... 74 /m
+    position sensitivity over 0.25-0.75 GHz: 73 ... 73 /m
       = 7.3 %/mm   (ideal 7.6 %/mm)
 
 
@@ -902,7 +900,7 @@ that move the real device toward, or away from, the ideal stripline.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (5 minutes 29.428 seconds)
+   **Total running time of the script:** (8 minutes 1.807 seconds)
 
 
 .. _sphx_glr_download_howto_plot_stripline_pickup_kicker.py:

@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=4f911454"></script>
+    <script src="../_static/documentation_options.js?v=1dd76d02"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -172,6 +172,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
   </a>
 </li>
 
@@ -332,6 +339,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
   </a>
 </li>
 
@@ -530,7 +544,27 @@ tenth of the deflection.  Analytic curved faces — cylinders, cones,
 spheres, tori — go through the kernel’s Boolean section, whose exact
 curves are tessellated at the deflection.  The deflection is a
 hundredth of the smallest cell for the sub-cell fractions and a tenth
-for the cell classification.  Section contours are wound by nesting
+for the cell classification.</p>
+<p>The three paths meet inside one body, and which one a face takes
+depends on its neighbours.  A solid that carries even a single
+free-form face is sectioned on its triangulation as a whole, and that
+reaches further than it looks: a Boolean fuses the operands, so a
+free-form body subtracted from an enclosure puts the enclosure on the
+same path, including faces nowhere near it.  Planar and cylindrical
+faces are exempt — they are answered from their own geometry whatever
+else the solid carries, so a family of parallel planes cutting a bore
+books identical areas and a waveguide port on such a cross-section
+keeps its exact transparent boundary.  Cones, spheres and tori are
+not: in a solid that also carries a free-form face they are sectioned
+from the triangulation, and because a triangulated curved face is a
+prism, the area a plane books there depends on where it falls between
+the facet rows rather than on the surface alone.  The deviation is
+small in absolute terms but it does not repeat from one grid plane to
+the next, which matters wherever a result reads the <em>uniformity</em> of a
+cross-section rather than its accuracy — a port termination is the
+case to watch.  A fillet or a chamfer produces a torus face, so a
+rounded model fused with a lofted or imported body is the ordinary way
+to meet this.  Section contours are wound by nesting
 parity (holes against their outer boundary) before the area kernels
 sum them, whatever path produced them.  The kernel’s section runs over
 the faces whose extent reaches the plane rather than over the whole

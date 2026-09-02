@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=4f911454"></script>
+    <script src="../_static/documentation_options.js?v=1dd76d02"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -62,8 +62,8 @@
     <link rel="canonical" href="https://brtkrtz.github.io/magnelio/stable/howto/plot_coupled_line_coupler.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Lange coupler: a 3-dB interdigitated coupler dimensioned with the port solver" href="plot_lange_coupler.html" />
-    <link rel="prev" title="How-to guides" href="index.html" />
+    <link rel="next" title="Impressed currents: driving a model with a known current" href="plot_current_path_source.html" />
+    <link rel="prev" title="Ring-down: the loaded frequency and Q budget of a coupled resonator" href="plot_cavity_ringdown_q.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -172,6 +172,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
   </a>
 </li>
 
@@ -337,6 +344,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -431,7 +445,10 @@
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="plot_cavity_ringdown_q.html">Ring-down: the loaded frequency and Q budget of a coupled resonator</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Coupled-line directional coupler: dimensioning the pair with the port solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_current_path_source.html">Impressed currents: driving a model with a known current</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_field_source_reuse.html">Field sources: simulate a radiator once, reuse it anywhere</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lange_coupler.html">Lange coupler: a 3-dB interdigitated coupler dimensioned with the port solver</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_investigations.html">Lumped ports: investigations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_lumped_port_tuning_coax.html">Lumped port tuning: coaxial line</a></li>
@@ -650,9 +667,9 @@ odd mode second.</p>
 </pre></div>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Port 'pair' — 2 mode(s)
-  z_line = 66.58 Ω (numerical)
-  [0] QTEM_lap00   TEM f_c = 0.0000 GHz  z_line = 66.58 Ω  ε_eff = 2.838
-  [1] QTEM_lap01   TEM f_c = 0.0000 GHz  z_line = 38.84 Ω  ε_eff = 2.440
+  z_line = 66.58 Ω (quasi-static)
+  [0] QTEM_lap00   TEM f_c = 0.0000 GHz  z_line = 66.58 Ω  ε_eff = 2.838  termination = mur (chain spread 2.4e-01)
+  [1] QTEM_lap01   TEM f_c = 0.0000 GHz  z_line = 38.84 Ω  ε_eff = 2.440  termination = mur (chain spread 2.6e-01)
 </pre></div>
 </div>
 <p>Interpolate the gap that hits the target coupling, and take the
@@ -852,7 +869,7 @@ and every change of substrate, width or mesh resolution means
 running the design step again.  The mode ordering of the pair — even
 first — and the meaning of its impedances are described in the ports
 chapter of the methods section.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 6.987 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 42.947 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-coupled-line-coupler-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/17cb9d50ec3d76d164489a26ad80e3f7/plot_coupled_line_coupler.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_coupled_line_coupler.ipynb</span></code></a></p>
@@ -879,20 +896,20 @@ chapter of the methods section.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="index.html"
+       href="plot_cavity_ringdown_q.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">How-to guides</p>
+        <p class="prev-next-title">Ring-down: the loaded frequency and Q budget of a coupled resonator</p>
       </div>
     </a>
     <a class="right-next"
-       href="plot_lange_coupler.html"
+       href="plot_current_path_source.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Lange coupler: a 3-dB interdigitated coupler dimensioned with the port solver</p>
+        <p class="prev-next-title">Impressed currents: driving a model with a known current</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

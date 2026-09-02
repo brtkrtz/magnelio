@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=4f911454"></script>
+    <script src="../_static/documentation_options.js?v=1dd76d02"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -61,7 +61,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="magnelio.circuit" href="circuit.html" />
-    <link rel="prev" title="magnelio.sources" href="sources.html" />
+    <link rel="prev" title="magnelio.fields" href="fields.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -170,6 +170,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
   </a>
 </li>
 
@@ -335,6 +342,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -438,6 +452,7 @@
 <li class="toctree-l1"><a class="reference internal" href="boundaries.html"><code class="docutils literal notranslate"><span class="pre">magnelio.boundaries</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="ports.html"><code class="docutils literal notranslate"><span class="pre">magnelio.ports</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="sources.html"><code class="docutils literal notranslate"><span class="pre">magnelio.sources</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html"><code class="docutils literal notranslate"><span class="pre">magnelio.fields</span></code></a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">magnelio.monitors</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="circuit.html"><code class="docutils literal notranslate"><span class="pre">magnelio.circuit</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="signals.html"><code class="docutils literal notranslate"><span class="pre">magnelio.signals</span></code></a></li>
@@ -514,13 +529,13 @@ Monitors are attached to the solver via the analysis <code class="docutils liter
 parameter: <code class="docutils literal notranslate"><span class="pre">attach</span></code> once, <code class="docutils literal notranslate"><span class="pre">record</span></code> every step, <code class="docutils literal notranslate"><span class="pre">finalize</span></code> after
 the run.</p>
 <dl class="py class">
-<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarField">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.monitors.</span></span><span class="sig-name descname"><span class="pre">MonitorFarField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freqs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'far_field'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">margin_cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarField" title="Link to this definition">#</a></dt>
-<dd><p>Far-field (antenna pattern) monitor on an automatic Huygens box.</p>
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarFieldFrequency">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.monitors.</span></span><span class="sig-name descname"><span class="pre">MonitorFarFieldFrequency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freqs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'far_field'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">margin_cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarFieldFrequency" title="Link to this definition">#</a></dt>
+<dd><p>Far-field (antenna pattern) monitor at fixed frequencies on an automatic Huygens box.</p>
 <p>Records the surface DFT of the tangential fields on a closed box
 placed <code class="docutils literal notranslate"><span class="pre">margin_cells</span></code> inside the physical domain (the absorber
 layers are excluded automatically).  After a scattering run,
-<a class="reference internal" href="#magnelio.monitors.MonitorFarField.result" title="magnelio.monitors.MonitorFarField.result"><code class="xref py py-meth docutils literal notranslate"><span class="pre">result()</span></code></a> returns the far-field pattern at one of the
+<a class="reference internal" href="#magnelio.monitors.MonitorFarFieldFrequency.result" title="magnelio.monitors.MonitorFarFieldFrequency.result"><code class="xref py py-meth docutils literal notranslate"><span class="pre">result()</span></code></a> returns the far-field pattern at one of the
 requested frequencies.</p>
 <p>Domain faces closed with PEC or PMC — a ground plane — and
 declared symmetry planes are handled by image theory: the box is
@@ -550,30 +565,30 @@ sampling never reads absorber cells.</p></li>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">monitors</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ff</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarField</span><span class="p">(</span><span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="mf">2.45e9</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"pattern"</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ff</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarFieldFrequency</span><span class="p">(</span><span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="mf">2.45e9</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"pattern"</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarField.from_result_dump">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_result_dump</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dump</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarField.from_result_dump" title="Link to this definition">#</a></dt>
-<dd><p>Rebuild a result-serving monitor from a <a class="reference internal" href="#magnelio.monitors.MonitorFarField.result_dump" title="magnelio.monitors.MonitorFarField.result_dump"><code class="xref py py-meth docutils literal notranslate"><span class="pre">result_dump()</span></code></a>.</p>
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarFieldFrequency.from_result_dump">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_result_dump</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dump</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarFieldFrequency.from_result_dump" title="Link to this definition">#</a></dt>
+<dd><p>Rebuild a result-serving monitor from a <a class="reference internal" href="#magnelio.monitors.MonitorFarFieldFrequency.result_dump" title="magnelio.monitors.MonitorFarFieldFrequency.result_dump"><code class="xref py py-meth docutils literal notranslate"><span class="pre">result_dump()</span></code></a>.</p>
 <p>The store reader’s path: the dump carries the box geometry and
 image planes, so no mesh is needed — the rebuilt monitor
-answers <a class="reference internal" href="#magnelio.monitors.MonitorFarField.result" title="magnelio.monitors.MonitorFarField.result"><code class="xref py py-meth docutils literal notranslate"><span class="pre">result()</span></code></a> but cannot <a class="reference internal" href="#magnelio.monitors.MonitorFarField.record" title="magnelio.monitors.MonitorFarField.record"><code class="xref py py-meth docutils literal notranslate"><span class="pre">record()</span></code></a> (it is not
+answers <a class="reference internal" href="#magnelio.monitors.MonitorFarFieldFrequency.result" title="magnelio.monitors.MonitorFarFieldFrequency.result"><code class="xref py py-meth docutils literal notranslate"><span class="pre">result()</span></code></a> but cannot <a class="reference internal" href="#magnelio.monitors.MonitorFarFieldFrequency.record" title="magnelio.monitors.MonitorFarFieldFrequency.record"><code class="xref py py-meth docutils literal notranslate"><span class="pre">record()</span></code></a> (it is not
 attached to a grid).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>dump</strong> (<em>dict</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#magnelio.monitors.MonitorFarField" title="magnelio.monitors.far_field.MonitorFarField"><em>MonitorFarField</em></a></p>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.monitors.MonitorFarFieldFrequency" title="magnelio.monitors.far_field.MonitorFarFieldFrequency"><em>MonitorFarFieldFrequency</em></a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarField.attach">
-<span class="sig-name descname"><span class="pre">attach</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarField.attach" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarFieldFrequency.attach">
+<span class="sig-name descname"><span class="pre">attach</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarFieldFrequency.attach" title="Link to this definition">#</a></dt>
 <dd><p>Place the box on <em>mesh</em> and allocate fresh DFT accumulators.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -583,9 +598,9 @@ attached to a grid).</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarField.load_result_dump">
-<span class="sig-name descname"><span class="pre">load_result_dump</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dump</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarField.load_result_dump" title="Link to this definition">#</a></dt>
-<dd><p>Restore accumulators written by <a class="reference internal" href="#magnelio.monitors.MonitorFarField.result_dump" title="magnelio.monitors.MonitorFarField.result_dump"><code class="xref py py-meth docutils literal notranslate"><span class="pre">result_dump()</span></code></a> (resume).</p>
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarFieldFrequency.load_result_dump">
+<span class="sig-name descname"><span class="pre">load_result_dump</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dump</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarFieldFrequency.load_result_dump" title="Link to this definition">#</a></dt>
+<dd><p>Restore accumulators written by <a class="reference internal" href="#magnelio.monitors.MonitorFarFieldFrequency.result_dump" title="magnelio.monitors.MonitorFarFieldFrequency.result_dump"><code class="xref py py-meth docutils literal notranslate"><span class="pre">result_dump()</span></code></a> (resume).</p>
 <p>The monitor must already be attached to the same mesh, so the
 fresh accumulators have the dumped shapes.</p>
 <dl class="field-list simple">
@@ -599,8 +614,8 @@ fresh accumulators have the dumped shapes.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarField.plot_3d">
-<span class="sig-name descname"><span class="pre">plot_3d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarField.plot_3d" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarFieldFrequency.plot_3d">
+<span class="sig-name descname"><span class="pre">plot_3d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarFieldFrequency.plot_3d" title="Link to this definition">#</a></dt>
 <dd><p>3D radiation surface at one recorded frequency.</p>
 <p>Keyword arguments beyond <em>f</em>/<em>f_index</em> go to
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">FarFieldResult.plot_3d()</span></code>.</p>
@@ -615,8 +630,8 @@ fresh accumulators have the dumped shapes.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarField.plot_cut">
-<span class="sig-name descname"><span class="pre">plot_cut</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarField.plot_cut" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarFieldFrequency.plot_cut">
+<span class="sig-name descname"><span class="pre">plot_cut</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarFieldFrequency.plot_cut" title="Link to this definition">#</a></dt>
 <dd><p>Polar cut of the pattern at one recorded frequency.</p>
 <p>Keyword arguments beyond <em>f</em>/<em>f_index</em> go to
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">FarFieldResult.plot_cut()</span></code> (<code class="docutils literal notranslate"><span class="pre">plane=</span></code>, <code class="docutils literal notranslate"><span class="pre">angle=</span></code>,
@@ -632,8 +647,8 @@ fresh accumulators have the dumped shapes.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarField.record">
-<span class="sig-name descname"><span class="pre">record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarField.record" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarFieldFrequency.record">
+<span class="sig-name descname"><span class="pre">record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarFieldFrequency.record" title="Link to this definition">#</a></dt>
 <dd><p>Accumulate this step’s surface DFT contribution.</p>
 <p>E samples are at time <code class="docutils literal notranslate"><span class="pre">t</span></code>, H samples at <code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">+</span> <span class="pre">dt/2</span></code> (the
 leapfrog stagger); each goes into its accumulator with its own
@@ -653,8 +668,8 @@ time stamp.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarField.renormalize">
-<span class="sig-name descname"><span class="pre">renormalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_signal</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarField.renormalize" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarFieldFrequency.renormalize">
+<span class="sig-name descname"><span class="pre">renormalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_signal</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarFieldFrequency.renormalize" title="Link to this definition">#</a></dt>
 <dd><p>Normalize the surface DFT to 1 W incident CW power.</p>
 <p>Called for you at the end of a scattering run; call directly
 only for hand-driven solver runs.  Stores the excitation
@@ -668,8 +683,8 @@ so repeating the call just replaces the reference.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarField.result">
-<span class="sig-name descname"><span class="pre">result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarField.result" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarFieldFrequency.result">
+<span class="sig-name descname"><span class="pre">result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarFieldFrequency.result" title="Link to this definition">#</a></dt>
 <dd><p>The far-field pattern at one recorded frequency.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -690,8 +705,8 @@ full sphere.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarField.result_dump">
-<span class="sig-name descname"><span class="pre">result_dump</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarField.result_dump" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarFieldFrequency.result_dump">
+<span class="sig-name descname"><span class="pre">result_dump</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFarFieldFrequency.result_dump" title="Link to this definition">#</a></dt>
 <dd><p>The accumulators plus the box geometry, for store and resume.</p>
 <p>The face geometry and image planes travel with the bins so a
 reader can rebuild the transform inputs without the mesh —
@@ -704,14 +719,14 @@ reader == monitor by construction.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarField.f">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">f</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span><a class="headerlink" href="#magnelio.monitors.MonitorFarField.f" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarFieldFrequency.f">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">f</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span><a class="headerlink" href="#magnelio.monitors.MonitorFarFieldFrequency.f" title="Link to this definition">#</a></dt>
 <dd><p>Frequency axis [Hz].</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarField.is_renormalized">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">is_renormalized</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#magnelio.monitors.MonitorFarField.is_renormalized" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFarFieldFrequency.is_renormalized">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">is_renormalized</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#magnelio.monitors.MonitorFarFieldFrequency.is_renormalized" title="Link to this definition">#</a></dt>
 <dd><p>Whether the 1 W renormalization has been applied.</p>
 </dd></dl>
 
@@ -1066,6 +1081,144 @@ reference is set — <a class="reference internal" href="#magnelio.monitors.Moni
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldSurface">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.monitors.</span></span><span class="sig-name descname"><span class="pre">MonitorFieldSurface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corners</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'field_surface'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">margin_cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldSurface" title="Link to this definition">#</a></dt>
+<dd><p>Record the tangential fields on a closed Huygens box.</p>
+<p>The recording is the model’s radiated field in transportable form:
+hand it to <a class="reference internal" href="sources.html#magnelio.sources.SourceFieldSurface" title="magnelio.sources.SourceFieldSurface"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourceFieldSurface</span></code></a> and a
+second model is driven by this one’s radiator without meshing it
+again.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>corners</strong> (<em>tuple</em><em> of </em><em>tuple</em><em>, </em><em>optional</em>) – Two opposite corners <code class="docutils literal notranslate"><span class="pre">((x0,</span> <span class="pre">y0,</span> <span class="pre">z0),</span> <span class="pre">(x1,</span> <span class="pre">y1,</span> <span class="pre">z1))</span></code> of the
+box [m].  Omit it to take the largest box the physical domain
+allows (<code class="docutils literal notranslate"><span class="pre">margin_cells</span></code> inside the absorber) — right for a
+model built around one radiator, while a box drawn close around
+the radiator keeps the recording small.  Faces are snapped to
+the nearest grid-node plane and clamped out of the absorber.</p></li>
+<li><p><strong>interval</strong> (<em>float</em><em>, </em><em>optional</em>) – Recording interval [s].  Defaults to <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">/</span> <span class="pre">(oversample</span> <span class="pre">·</span>
+<span class="pre">f_max)</span></code> of the mesh — the samples the bandwidth actually
+carries.  Give it explicitly only to override that.</p></li>
+<li><p><strong>oversample</strong> (<em>float</em><em>, </em><em>default 8.0</em>) – Samples per period at <code class="docutils literal notranslate"><span class="pre">f_max</span></code> when <em>interval</em> is not given.
+Well above Nyquist on purpose: the replay interpolates the
+recording linearly in time, and that error falls as the square
+of the sample spacing, not with the sampling theorem.  Measured
+on a sphere’s scattered field, the replay reaches its spatial
+floor at eight samples per period and stays 1.2 % short of it
+at four.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Monitor name (store key).</p></li>
+<li><p><strong>margin_cells</strong> (<em>int</em><em>, </em><em>default 3</em>) – Clearance in grid cells between the box and the absorber (or
+domain edge).  At least 1, so the two-layer node-plane
+sampling never reads absorber cells.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The recording is held in memory until the run ends and is written
+with <code class="xref py py-meth docutils literal notranslate"><span class="pre">SurfaceRecording.save()</span></code>; size is faces × patches ×
+samples, which a box drawn close around the radiator keeps small.</p>
+<p>The equivalence principle needs a <strong>closed</strong> surface: the box must
+enclose every source of the field it stands for.  A domain face
+closed with PEC/PMC — a ground plane — leaves the box open there,
+and the recording is then valid only for a second model that
+continues that wall (the replay says so).</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">monitors</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">box</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFieldSurface</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"antenna_box"</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldSurface.attach">
+<span class="sig-name descname"><span class="pre">attach</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldSurface.attach" title="Link to this definition">#</a></dt>
+<dd><p>Place the box on <em>mesh</em> and start a fresh recording.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldSurface.finalize">
+<span class="sig-name descname"><span class="pre">finalize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldSurface.finalize" title="Link to this definition">#</a></dt>
+<dd><p>Nothing to settle — the samples are the result.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldSurface.load_state_dict">
+<span class="sig-name descname"><span class="pre">load_state_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sd</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldSurface.load_state_dict" title="Link to this definition">#</a></dt>
+<dd><p>Restore the schedule cursor (see <a class="reference internal" href="#magnelio.monitors.MonitorFieldSurface.state_dict" title="magnelio.monitors.MonitorFieldSurface.state_dict"><code class="xref py py-meth docutils literal notranslate"><span class="pre">state_dict()</span></code></a>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>sd</strong> (<em>dict</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldSurface.record">
+<span class="sig-name descname"><span class="pre">record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldSurface.record" title="Link to this definition">#</a></dt>
+<dd><p>Sample the box faces when the schedule asks for it.</p>
+<p>The solver calls this after the H update of step <em>n</em>, where
+<code class="docutils literal notranslate"><span class="pre">e</span></code> stands at <code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">+</span> <span class="pre">dt</span></code> and <code class="docutils literal notranslate"><span class="pre">h</span></code> half a step later.  Both
+stamps are kept: the recording stores the E time base and the
+half-step offset, and the replay interpolates each field at its
+own instant.</p>
+<p>At most one sample per step — a schedule finer than the time
+step has no more information to record, and two samples sharing
+an instant would leave the replay dividing by a zero interval.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n</strong> (<em>int</em>)</p></li>
+<li><p><strong>t</strong> (<em>float</em>)</p></li>
+<li><p><strong>dt</strong> (<em>float</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldSurface.recording">
+<span class="sig-name descname"><span class="pre">recording</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldSurface.recording" title="Link to this definition">#</a></dt>
+<dd><p>The recorded surface as a <a class="reference internal" href="fields.html#magnelio.fields.SurfaceRecording" title="magnelio.fields.SurfaceRecording"><code class="xref py py-class docutils literal notranslate"><span class="pre">SurfaceRecording</span></code></a>.</p>
+<p>Hand the result to
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">from_recording()</span></code> to
+drive a second model with it.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldSurface.state_dict">
+<span class="sig-name descname"><span class="pre">state_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldSurface.state_dict" title="Link to this definition">#</a></dt>
+<dd><p>Checkpoint the schedule cursor for a bit-exact resume.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldSurface.t">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">t</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span><a class="headerlink" href="#magnelio.monitors.MonitorFieldSurface.t" title="Link to this definition">#</a></dt>
+<dd><p>Recorded sample times [s] of the E time base.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldTime">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.monitors.</span></span><span class="sig-name descname"><span class="pre">MonitorFieldTime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corners</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">times</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldTime" title="Link to this definition">#</a></dt>
 <dd><p>Record field snapshots at specified time points.</p>
@@ -1351,7 +1504,7 @@ dims are empty, giving shape <code class="docutils literal notranslate"><span cl
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.monitors.MonitorFluxTime">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.monitors.</span></span><span class="sig-name descname"><span class="pre">MonitorFluxTime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plane</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFluxTime" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.monitors.</span></span><span class="sig-name descname"><span class="pre">MonitorFluxTime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">normal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFluxTime" title="Link to this definition">#</a></dt>
 <dd><p>Integrate normal Poynting flux through a mesh-aligned surface.</p>
 <p>The flux is always integrated over the <strong>full</strong> cross-section of
 the domain (a partial-aperture flux is not what this monitor
@@ -1360,17 +1513,16 @@ plane.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>plane</strong> (<em>tuple</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em>) – The cross-section plane as a <code class="docutils literal notranslate"><span class="pre">(normal,</span> <span class="pre">position)</span></code> pair:
-normal axis (<code class="docutils literal notranslate"><span class="pre">'x'</span></code>/<code class="docutils literal notranslate"><span class="pre">'y'</span></code>/<code class="docutils literal notranslate"><span class="pre">'z'</span></code>) and its position along
-that axis [m], e.g. <code class="docutils literal notranslate"><span class="pre">(&quot;z&quot;,</span> <span class="pre">5e-3)</span></code> — the same plane
-vocabulary as <code class="xref py py-attr docutils literal notranslate"><span class="pre">MonitorWallLoss.reference_plane</span></code>.
-Snapped to the nearest grid node.</p></li>
+<li><p><strong>normal</strong> (<em>str</em>) – Normal axis of the cross-section plane (<code class="docutils literal notranslate"><span class="pre">&quot;x&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;y&quot;</span></code> or
+<code class="docutils literal notranslate"><span class="pre">&quot;z&quot;</span></code>).</p></li>
+<li><p><strong>position</strong> (<em>float</em>) – Position of the plane along that axis [m]; snapped to the
+nearest grid node.</p></li>
 <li><p><strong>name</strong> (<em>str</em>) – Monitor label.</p></li>
 </ul>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">flux</span> <span class="o">=</span> <span class="n">MonitorFluxTime</span><span class="p">(</span><span class="n">plane</span><span class="o">=</span><span class="p">(</span><span class="s2">"z"</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s2">"flux_z"</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">flux</span> <span class="o">=</span> <span class="n">MonitorFluxTime</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"flux_z"</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="py method">
@@ -1510,15 +1662,17 @@ on resume.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.monitors.MonitorWallLoss">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.monitors.</span></span><span class="sig-name descname"><span class="pre">MonitorWallLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freqs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference_plane</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roughness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bc_faces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wall_loss'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sibc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">masked_faces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wall_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorWallLoss" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.monitors.</span></span><span class="sig-name descname"><span class="pre">MonitorWallLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freqs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roughness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bc_faces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'wall_loss'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sibc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">masked_faces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wall_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorWallLoss" title="Link to this definition">#</a></dt>
 <dd><p>Frequency-domain wall-loss monitor for time-domain runs.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>freqs</strong> (<em>array_like</em>) – Evaluation frequencies [Hz].</p></li>
-<li><p><strong>reference_plane</strong> (<em>tuple</em><em>[</em><em>str</em><em>, </em><em>float</em><em>]</em>) – <code class="docutils literal notranslate"><span class="pre">(axis,</span> <span class="pre">position)</span></code> of the power-reference cross-section, e.g.
-<code class="docutils literal notranslate"><span class="pre">(&quot;z&quot;,</span> <span class="pre">1e-3)</span></code> — a plane between the excited port and the lossy
-walls.  Snapped to the nearest grid node.</p></li>
+<li><p><strong>normal</strong> (<em>str</em>) – Normal axis (<code class="docutils literal notranslate"><span class="pre">&quot;x&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;y&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;z&quot;</span></code>) of the power-reference
+cross-section — a plane between the excited port and the lossy
+walls.</p></li>
+<li><p><strong>position</strong> (<em>float</em>) – Position of that plane along its normal axis [m]; snapped to
+the nearest grid node.</p></li>
 <li><p><strong>sigma</strong> (<em>float</em><em>, </em><em>optional</em>) – Conductivity [S/m] for walls that are not lossy metals
 (plain-PEC solids and PEC boundary walls); lossy-metal solids
 use their own material values.</p></li>
@@ -1659,12 +1813,12 @@ basis.  Only meaningful relative to <a class="reference internal" href="#magneli
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="sources.html"
+       href="fields.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title"><code class="docutils literal notranslate"><span class="pre">magnelio.sources</span></code></p>
+        <p class="prev-next-title"><code class="docutils literal notranslate"><span class="pre">magnelio.fields</span></code></p>
       </div>
     </a>
     <a class="right-next"
@@ -1695,18 +1849,18 @@ basis.  Only meaningful relative to <a class="reference internal" href="#magneli
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarField"><code class="docutils literal notranslate"><span class="pre">MonitorFarField</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarField.from_result_dump"><code class="docutils literal notranslate"><span class="pre">MonitorFarField.from_result_dump()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarField.attach"><code class="docutils literal notranslate"><span class="pre">MonitorFarField.attach()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarField.load_result_dump"><code class="docutils literal notranslate"><span class="pre">MonitorFarField.load_result_dump()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarField.plot_3d"><code class="docutils literal notranslate"><span class="pre">MonitorFarField.plot_3d()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarField.plot_cut"><code class="docutils literal notranslate"><span class="pre">MonitorFarField.plot_cut()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarField.record"><code class="docutils literal notranslate"><span class="pre">MonitorFarField.record()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarField.renormalize"><code class="docutils literal notranslate"><span class="pre">MonitorFarField.renormalize()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarField.result"><code class="docutils literal notranslate"><span class="pre">MonitorFarField.result()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarField.result_dump"><code class="docutils literal notranslate"><span class="pre">MonitorFarField.result_dump()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarField.f"><code class="docutils literal notranslate"><span class="pre">MonitorFarField.f</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarField.is_renormalized"><code class="docutils literal notranslate"><span class="pre">MonitorFarField.is_renormalized</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarFieldFrequency"><code class="docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarFieldFrequency.from_result_dump"><code class="docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency.from_result_dump()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarFieldFrequency.attach"><code class="docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency.attach()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarFieldFrequency.load_result_dump"><code class="docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency.load_result_dump()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarFieldFrequency.plot_3d"><code class="docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency.plot_3d()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarFieldFrequency.plot_cut"><code class="docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency.plot_cut()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarFieldFrequency.record"><code class="docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency.record()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarFieldFrequency.renormalize"><code class="docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency.renormalize()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarFieldFrequency.result"><code class="docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency.result()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarFieldFrequency.result_dump"><code class="docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency.result_dump()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarFieldFrequency.f"><code class="docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency.f</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFarFieldFrequency.is_renormalized"><code class="docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency.is_renormalized</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency</span></code></a><ul class="nav section-nav flex-column">
@@ -1724,6 +1878,16 @@ basis.  Only meaningful relative to <a class="reference internal" href="#magneli
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.data_raw"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.data_raw</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.f"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.f</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.is_renormalized"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.is_renormalized</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldSurface"><code class="docutils literal notranslate"><span class="pre">MonitorFieldSurface</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldSurface.attach"><code class="docutils literal notranslate"><span class="pre">MonitorFieldSurface.attach()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldSurface.finalize"><code class="docutils literal notranslate"><span class="pre">MonitorFieldSurface.finalize()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldSurface.load_state_dict"><code class="docutils literal notranslate"><span class="pre">MonitorFieldSurface.load_state_dict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldSurface.record"><code class="docutils literal notranslate"><span class="pre">MonitorFieldSurface.record()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldSurface.recording"><code class="docutils literal notranslate"><span class="pre">MonitorFieldSurface.recording()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldSurface.state_dict"><code class="docutils literal notranslate"><span class="pre">MonitorFieldSurface.state_dict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldSurface.t"><code class="docutils literal notranslate"><span class="pre">MonitorFieldSurface.t</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime</span></code></a><ul class="nav section-nav flex-column">

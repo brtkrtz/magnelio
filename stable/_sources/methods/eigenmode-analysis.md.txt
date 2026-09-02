@@ -73,6 +73,19 @@ Quality factors of eigenmodes are evaluated with the perturbative
 wall-loss route (see [conductor losses](conductor-losses.md))
 {cite}`pozar2012,jackson1999`.
 
+### From a mode into the time domain
+
+`EigenmodeResult.field(n)` hands mode *n* over as a
+`magnelio.fields.FieldState` — the same container the monitors and the
+field sources speak.  Fed to `SourceFieldInitial`, it becomes the
+starting state of a transient march, which rings down at the mode's
+frequency and decays at its loaded Q.  The eigenmode solver and the
+time-domain march discretise the same curl-curl operator, so the two
+frequencies agree to the accuracy of the time-step-dependent
+dispersion; the ring-down adds the loss information the lossless
+eigenproblem does not carry.
+
+
 ## 2D mode solver
 
 The port-plane 2D eigenmode machinery (curl-curl restriction, TEM/QTEM

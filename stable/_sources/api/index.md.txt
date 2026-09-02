@@ -29,6 +29,7 @@ mesh
 boundaries
 ports
 sources
+fields
 monitors
 circuit
 signals

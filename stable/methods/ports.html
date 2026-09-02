@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=4f911454"></script>
+    <script src="../_static/documentation_options.js?v=1dd76d02"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -172,6 +172,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
   </a>
 </li>
 
@@ -332,6 +339,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
   </a>
 </li>
 
@@ -550,6 +564,13 @@ power–current impedance <span class="math notranslate nohighlight">\(Z_{\pi}\)
 theory <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>, <a class="reference internal" href="../bibliography.html#id27" title="Nathan Marcuvitz. Waveguide Handbook. Volume 10 of MIT Radiation Laboratory Series. McGraw-Hill, 1951.">18</a>]</span>.  Analytical
 reference modes for coaxial and rectangular-waveguide ports are
 closed-form textbook solutions <span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>]</span>.</p>
+<p>The port report labels the impedance of an inhomogeneous cross-section
+<code class="docutils literal notranslate"><span class="pre">(quasi-static)</span></code>: it is frequency-flat by construction, whereas the
+impedance the discrete wave actually carries rises with frequency on a
+dispersive line — by 3 to 7 % at 15 GHz on the tutorial microstrip —
+and that difference, not the absorber, is where most of the
+<span class="math notranslate nohighlight">\(-30\)</span> dB-class <span class="math notranslate nohighlight">\(|S_{11}|\)</span> floor of the default pipeline comes from.  On
+a homogeneous line the label stays <code class="docutils literal notranslate"><span class="pre">(numerical)</span></code>.</p>
 <p><strong>Coupled lines.</strong>  With more than one signal conductor above the
 ground — an edge-coupled microstrip pair, a stripline pickup, a
 multi-wire bus — the per-conductor Laplace solutions are the
@@ -688,6 +709,130 @@ modal-absorbing-port literature, specifically Luo and Chen
 <span class="bibtex-citation" id="id12">[<a class="reference internal" href="../bibliography.html#id21" title="Shuiping Luo and Zhizhang Chen. An efficient modal FDTD for absorbing boundary conditions and incident wave generator in waveguide structures. Progress In Electromagnetics Research (PIER), 68:229–246, 2007. doi:10.2528/PIER06090506.">26</a>]</span> (DD-047; higher-order Mur/Higdon
 variants were evaluated and rejected, DD-069).</p>
 </section>
+<section id="which-termination-a-channel-gets-and-how-to-see-it">
+<h3>Which termination a channel gets, and how to see it<a class="headerlink" href="#which-termination-a-channel-gets-and-how-to-see-it" title="Link to this heading">#</a></h3>
+<p>The exact termination is not a setting — it is a certificate.  A
+channel earns it when the meshed feed section really is the uniform
+discrete chain the derivation above assumes, which is tested in two
+stages before the run: the <strong>pair-product gate</strong> measures how far the
+co-located products <span class="math notranslate nohighlight">\(M_\varepsilon M_\mu\)</span> spread across the feed
+cross-section (a weighted RMS), and the <strong>slab gate</strong> compares every
+mass entry on the port plane with its continuation into the first feed
+cells.  A channel that fails either one keeps working — it falls back
+to the modal Mur absorber — but its reflection floor rises from below
+<span class="math notranslate nohighlight">\(-100\)</span> dB to the order of <span class="math notranslate nohighlight">\(-30\)</span> dB.</p>
+<p>The threshold of the first gate is a <em>reflection budget</em> (DD-229).
+The termination is exact for the weighted-mean chain, so a spread
+<span class="math notranslate nohighlight">\(\delta\)</span> across the cross-section leaves a residual mismatch, and that
+mismatch was measured through the production solver on three fixtures
+and two shapes of defect.  The worst case rises linearly, at about a
+seventh of the spread; the gate uses the cruder bound
+<span class="math notranslate nohighlight">\(|\Gamma| \le \delta\)</span> and accepts up to <span class="math notranslate nohighlight">\(\delta = 2\cdot 10^{-6}\)</span>, so a
+certified channel contributes at most <span class="math notranslate nohighlight">\(-114\)</span> dB — well below the
+acceptance line the port floors are held to.  Every channel therefore
+publishes what its own cross-section costs it:</p>
+<div class="math notranslate nohighlight">
+\[
+\texttt{chain\_floor\_db} = 20\log_{10}\delta .
+\]</div>
+<p>The shape of the non-uniformity matters more than its size, which is
+why the bound is deliberately crude.  A smooth transversal tilt is
+antisymmetric against a symmetric mode, its first-order overlap
+vanishes, and the reflection falls to second order; a <em>localised</em>
+defect — one cell of the cross-section out of step, which is what
+geometric tolerance produces — keeps first order and reflects orders
+of magnitude more at the same measured spread.  A single scalar cannot
+tell the two apart, so the gate assumes the worse one.</p>
+<p>Failing a gate is two different events, and the reporting separates
+them.  A cross-section that was <em>meant</em> to be uniform and missed the
+budget is the surprising one, and it warns: the port, the channel, the
+measured deviation, and where the mesh can explain it, the conformal
+ladder behind the offending faces (DD-228).  A cross-section that is
+genuinely inhomogeneous is not a defect; a quasi-TEM line deviates at
+the material-contrast level and never qualified for the scalar chain
+in the first place, so the answer there is a different port model, not
+a mesh fix, and Magnelio does not editorialise about it every run.</p>
+<p>That second case is worth stating plainly, because the default hides
+how much is on the table.  On an inhomogeneous line the default
+<code class="docutils literal notranslate"><span class="pre">port_model=&quot;modal&quot;</span></code> terminates with the first-order absorber and
+floors around <span class="math notranslate nohighlight">\(-26\)</span> to <span class="math notranslate nohighlight">\(-39\)</span> dB.  The same line on <code class="docutils literal notranslate"><span class="pre">port_model=&quot;auto&quot;</span></code>
+— which builds the certificates, sees the fallback and switches the
+run to the band pipeline — floors at <span class="math notranslate nohighlight">\(-147\)</span> to <span class="math notranslate nohighlight">\(-168\)</span> dB on a shielded
+microstrip.  So the default gives up 60 to 110 dB of reflection floor
+for the cost of the band pipeline — the low end on a long run, the
+high end on a short one; if the port matters, change it.</p>
+<p>That spread is the second thing to know about the band floor: how deep
+it lands depends on how long the run is.  The exact boundary carries
+the whole recorded history rather than a few past steps, and its floor
+drifts upward as that history grows — measured at roughly five to
+seven decibels per doubling of the number of time steps.  The figures
+above are what a run of the length the port floors are certified at
+reaches; a much longer broadband sweep on the same model floors tens
+of decibels above them.</p>
+<p>Changing the port model changes more than the floor, and the
+differences are worth knowing before the run rather than after.  The
+band pipeline tracks the mode family over a band, but the
+<em>measurement</em> axis is not confined to that band.  On a quasi-TEM line
+the fundamental is the static mode of the cross-section, so its
+excitation direction is continued below the tracked band and closed
+with the static field solution; the drive then needs no roll-off room
+at the bottom and the pulse duration follows the measurement span
+instead of <span class="math notranslate nohighlight">\(1/f_\text{start}\)</span>.  A default axis — which starts at
+<span class="math notranslate nohighlight">\(f_\text{max}/n_\text{freq}\)</span> — runs.</p>
+<p>Two limits remain.  The reflection floor of the boundary degrades
+toward DC: on a coarse two-port fixture the same run measures <span class="math notranslate nohighlight">\(-91\)</span> dB
+at 34 MHz against <span class="math notranslate nohighlight">\(-117\)</span> to <span class="math notranslate nohighlight">\(-140\)</span> dB over the rest of the axis, so a
+measurement whose lowest points carry the answer should still not
+start lower than it needs to.  And a fundamental with a <em>cut-off</em> — a
+hollow waveguide mode — has no static limit to be continued to, so
+there the pulse duration still grows as <span class="math notranslate nohighlight">\(1/f_\text{start}\)</span> and the
+auto-sizing refuses an axis that would make the run disproportionate,
+naming the axis start that fits.</p>
+<p>The record has a fixed length, so <code class="docutils literal notranslate"><span class="pre">energy_stop_db</span></code>
+and signal-decay stops do not apply to it.  The recorded channels are
+subspace projections whose incident/outgoing split is defined per
+frequency, so <code class="docutils literal notranslate"><span class="pre">result.a()</span></code> and <code class="docutils literal notranslate"><span class="pre">result.b()</span></code> are unavailable; the
+S-parameters and the raw V/I are.  Everything else is unchanged —
+including writing to a project store, from which the S-matrix is
+re-derived on read exactly as on the default path, and continuing an
+interrupted run with <code class="docutils literal notranslate"><span class="pre">resume()</span></code>.  The absorbing boundary here
+remembers the <em>whole</em> record rather than a few past steps, so its
+memory is checkpointed in full; a continued run is bit-identical to an
+uninterrupted one of the same length.</p>
+<p>None of this has to be looked up.  Whenever a run terminates a
+channel with the Mur fallback, the analysis prints a short balance
+sheet once: which channels fell back and what the cross-section
+measured, the floor they trade away against the runtime and the power
+waves they keep, and what <code class="docutils literal notranslate"><span class="pre">port_model=&quot;band&quot;</span></code> costs — a few lines; the
+detail is this section.</p>
+<p>Either way the decision is published per channel, so it can be
+inspected before a run is paid for:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">report</span> <span class="ow">in</span> <span class="n">analysis</span><span class="o">.</span><span class="n">solve_ports</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="n">report</span><span class="o">.</span><span class="n">modes</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">termination</span><span class="p">,</span>
+              <span class="n">mode</span><span class="o">.</span><span class="n">chain_spread</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">chain_floor_db</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">termination</span></code> is <code class="docutils literal notranslate"><span class="pre">&quot;dtbc&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;mur&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">chain_spread</span></code> is the
+cross-section measurement behind that decision.  <code class="docutils literal notranslate"><span class="pre">chain_floor_db</span></code> is
+the reflection bound the spread implies, and it is published only
+where it means something: it is <code class="docutils literal notranslate"><span class="pre">None</span></code> on a channel the first-order
+absorber terminates, because there the floor is the absorber’s and not
+the cross-section’s, and <code class="docutils literal notranslate"><span class="pre">None</span></code> again where the measurement does not
+apply at all (a mode with a closed-form field evaluator is ineligible
+by construction).  So on an inhomogeneous line, read <code class="docutils literal notranslate"><span class="pre">chain_spread</span></code> —
+the number that explains <em>why</em> the channel fell back — and take the
+floor from the absorber.  <code class="docutils literal notranslate"><span class="pre">print(report)</span></code> shows the same on one line
+per mode.</p>
+<p>The usual cause of a withheld certificate is a feed that is not
+translation-invariant along the port normal — a taper, a bend or a
+dielectric step too close behind the port plane.  The remedy is to
+move the port back into the uniform part of the feed.  Where the feed
+<em>is</em> uniform by construction and the gate still trips, the deviation
+is geometric tolerance in the solid: a body built by mirroring or
+unioning carries a looser tolerance than the shape it was built from,
+and the conformal cross-section inherits it.</p>
+</section>
 </section>
 <section id="excitation-and-recording">
 <h2>Excitation and recording<a class="headerlink" href="#excitation-and-recording" title="Link to this heading">#</a></h2>
@@ -715,6 +860,66 @@ leak; and CW measurements solve the exact 2×2 phasor system per port
 <p>Excitation amplitudes are pinned to physical units at the source
 (C = 1 convention, DD-085), so recorded V/I and monitor fields are in
 SI units — an in-house calibration convention.</p>
+<section id="band-ports-one-decomposition-per-frequency-dd-235">
+<h3>Band ports: one decomposition per frequency (DD-235)<a class="headerlink" href="#band-ports-one-decomposition-per-frequency-dd-235" title="Link to this heading">#</a></h3>
+<p>A band-subspace port does not record modal amplitudes whose
+incident/outgoing split is fixed once for the run.  Its recording
+channels are subspace projections, and the split is defined per
+frequency: at every point of the measurement axis the true discrete
+modes of the port cross-section are solved on the stored inward chain
+(the ζ-pencil above), their exact V/I responses through the port’s
+<em>fixed</em> recording profiles are synthesised, and the recorded spectra
+are decomposed by one joint least-squares system written over all
+channels <span class="math notranslate nohighlight">\(c\)</span> and all modes <span class="math notranslate nohighlight">\(j\)</span> propagating at that frequency at once,</p>
+<div class="math notranslate nohighlight">
+\[
+V_c(f) = \sum_j a_j v^{\text{in}}_{cj} + b_j v^{\text{out}}_{cj},
+\qquad
+I_c(f) = \sum_j a_j i^{\text{in}}_{cj} + b_j i^{\text{out}}_{cj},
+\]</div>
+<p>with <span class="math notranslate nohighlight">\(S_{c} = b_c / a_\text{excited}\)</span>.  Solving the channels jointly
+rather than one at a time is what makes the extraction exact: the
+recording profiles are frozen when the port is built and are not the
+modes of any single frequency, so every channel sees a mixture of
+every mode present, and only the joint system unmixes them — provided
+the basis it is written in contains them all.</p>
+<p>Three things are worth keeping apart.  A <strong>channel</strong> is a recording
+slot of the port, one per requested mode (<code class="docutils literal notranslate"><span class="pre">n_modes</span></code>), with a profile
+fixed at build time.  A <strong>propagating mode</strong> is what the cross-section
+actually carries at the frequency being evaluated; their number grows
+along the axis, each new one starting at its <strong>cut-on</strong>.  Modes are
+matched to channels per frequency by a weighted overlap test, and
+nothing guarantees the two counts agree.</p>
+<p>They can disagree in either direction, and the two cases behave
+oppositely.  A channel without a mode is <em>visible</em>: it finds no
+overlap, takes no assignment, its S stays NaN at that frequency, and
+the channels that were matched are unaffected (measured at <span class="math notranslate nohighlight">\(10^{-15}\)</span>
+relative, roundoff).  This is the ordinary evanescent case — declaring
+more channels than the axis excites costs a NaN column and nothing
+else.  A mode without a channel is <em>not</em> visible: nothing is skipped,
+so nothing goes NaN, and the fit attributes the missing mode’s
+recorded content to the modes that remain.  The result is a biased
+S-parameter that looks like a converged one.  Measured on a
+two-family fixture whose port was truncated to <code class="docutils literal notranslate"><span class="pre">n_modes</span> <span class="pre">=</span> <span class="pre">1</span></code> above its
+second cut-on at 8.4465 GHz, <span class="math notranslate nohighlight">\(S_{11}\)</span> came out 23 to 30 % wrong, with
+the contamination at <span class="math notranslate nohighlight">\(-129\)</span> dB when the unaccounted mode carried the
+same amplitude as the fundamental and rising exactly 20 dB per decade
+of that amplitude ratio.  Read that level as the mechanism and its
+scaling law, not as a bound: its coefficient is the biorthogonality
+defect between one port’s recording profiles and its true modes
+(about <span class="math notranslate nohighlight">\(6\cdot10^{-7}\)</span> on that cross-section), and a port whose dual
+basis is less clean sits correspondingly higher.</p>
+<p>The rule for a band run follows: <code class="docutils literal notranslate"><span class="pre">n_modes</span></code> must cover every mode that
+propagates <em>anywhere</em> on the measurement axis — which is not the same
+as every mode of interest, and not the same as the tracked band —
+or the axis must stay below the next cut-on of the cross-section.
+Magnelio counts the modes it finds against the modes it assigns at
+each axis point and warns once per port, naming how many frequencies
+are affected and their span.  The warning does not repair the bias:
+the port genuinely carries fewer channels than its cross-section
+carries modes, and only a rebuilt port or a shorter axis fixes that.
+What it does is keep a model error from reading as a result.</p>
+</section>
 <section id="reference-plane-shift-de-embedding-dd-187">
 <h3>Reference-plane shift (de-embedding, DD-187)<a class="headerlink" href="#reference-plane-shift-de-embedding-dd-187" title="Link to this heading">#</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">result.deembed({&quot;port1&quot;:</span> <span class="pre">d})</span></code> returns the S-matrix referenced at
@@ -851,10 +1056,12 @@ path given without an extension gets the matching one, so
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cw-true-mode-ports-for-inhomogeneous-lines-dd-056">CW true-mode ports for inhomogeneous lines (DD-056)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#galerkin-band-subspace-dtbc-for-broadband-runs-dd-057">Galerkin band-subspace DTBC for broadband runs (DD-057)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#modal-mur-fallback">Modal Mur fallback</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#which-termination-a-channel-gets-and-how-to-see-it">Which termination a channel gets, and how to see it</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#excitation-and-recording">Excitation and recording</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#s-parameters">S-parameters</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#band-ports-one-decomposition-per-frequency-dd-235">Band ports: one decomposition per frequency (DD-235)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reference-plane-shift-de-embedding-dd-187">Reference-plane shift (de-embedding, DD-187)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-a-touchstone-export-covers-dd-184">What a Touchstone export covers (DD-184)</a></li>
 </ul>

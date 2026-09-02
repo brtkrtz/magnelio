@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=4f911454"></script>
+    <script src="../_static/documentation_options.js?v=1dd76d02"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -62,7 +62,7 @@
     <link rel="canonical" href="https://brtkrtz.github.io/magnelio/stable/tutorials/19_cassegrain_reflector.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="How-to guides" href="../howto/index.html" />
+    <link rel="next" title="Plane-wave scattering: the radar cross section of a sphere" href="plot_20_plane_wave_scattering.html" />
     <link rel="prev" title="Periodic structures: the dispersion diagram of a TESLA cell" href="plot_18_periodic_tesla_cell.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -172,6 +172,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
   </a>
 </li>
 
@@ -337,6 +344,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -450,6 +464,7 @@
 <li class="toctree-l1"><a class="reference internal" href="plot_17_pcb_import.html">Importing a circuit board</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_18_periodic_tesla_cell.html">Periodic structures: the dispersion diagram of a TESLA cell</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Offset Cassegrain reflector: parametric surfaces and a horn feed</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_20_plane_wave_scattering.html">Plane-wave scattering: the radar cross section of a sphere</a></li>
 </ul>
 </div>
 </nav></div>
@@ -856,7 +871,7 @@ that the feed crosses its box: the <code class="docutils literal notranslate"><s
 absorber interface, the neck’s interior is left out of the surface,
 and the normalisation refers to the incident power the TE10 port
 launched at each frequency.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">farfield</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarField</span><span class="p">(</span><span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"farfield"</span><span class="p">)</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">farfield</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarFieldFrequency</span><span class="p">(</span><span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"farfield"</span><span class="p">)</span>
 <span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">f_min</span><span class="o">=</span><span class="mf">8.5e9</span><span class="p">,</span> <span class="n">monitors</span><span class="o">=</span><span class="p">(</span><span class="n">farfield</span><span class="p">,),</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">f_axis</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.linspace.html#numpy.linspace" title="numpy.linspace" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">linspace</span></a><span class="p">(</span><span class="mf">8.5e9</span><span class="p">,</span> <span class="mf">11.5e9</span><span class="p">,</span> <span class="mi">31</span><span class="p">)</span>
 <span class="n">result</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">f_axis</span><span class="o">=</span><span class="n">f_axis</span><span class="p">,</span> <span class="n">excited</span><span class="o">=</span><span class="p">[</span><span class="s2">"feed"</span><span class="p">])</span>
@@ -989,11 +1004,11 @@ budget the cells accordingly.</p>
       </div>
     </a>
     <a class="right-next"
-       href="../howto/index.html"
+       href="plot_20_plane_wave_scattering.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">How-to guides</p>
+        <p class="prev-next-title">Plane-wave scattering: the radar cross section of a sphere</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

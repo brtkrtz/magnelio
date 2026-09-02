@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=4f911454"></script>
+    <script src="../_static/documentation_options.js?v=1dd76d02"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -170,6 +170,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
   </a>
 </li>
 
@@ -335,6 +342,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -448,6 +462,7 @@
 <li class="toctree-l1"><a class="reference internal" href="plot_17_pcb_import.html">Importing a circuit board</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_18_periodic_tesla_cell.html">Periodic structures: the dispersion diagram of a TESLA cell</a></li>
 <li class="toctree-l1"><a class="reference internal" href="19_cassegrain_reflector.html">Offset Cassegrain reflector: parametric surfaces and a horn feed</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_20_plane_wave_scattering.html">Plane-wave scattering: the radar cross section of a sphere</a></li>
 </ul>
 </div>
 </nav></div>
@@ -615,7 +630,7 @@ symmetry plane automatically.</p>
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"grid: </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Nx</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Ny</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Nz</span><span class="si">}</span><span class="s2"> cells, z from </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">mesh</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">z</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> mm"</span><span class="p">)</span>
 
-<span class="n">farfield</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarField</span><span class="p">(</span><span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"farfield"</span><span class="p">)</span>
+<span class="n">farfield</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarFieldFrequency</span><span class="p">(</span><span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"farfield"</span><span class="p">)</span>
 
 <span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span>
     <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span>
@@ -706,7 +721,7 @@ a half model, and pattern cuts plus the 3D radiation surface.  The
 same three ingredients carry over unchanged to patch antennas and
 arrays — declare the full structure, state its symmetry, and read
 full-model answers.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 20.480 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 25.313 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-15-dipole-farfield-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/dbf98d90590a5c0a0ab189ce2b120c3b/plot_15_dipole_farfield.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_15_dipole_farfield.ipynb</span></code></a></p>

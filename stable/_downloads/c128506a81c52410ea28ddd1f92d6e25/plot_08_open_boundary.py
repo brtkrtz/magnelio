@@ -114,7 +114,7 @@ fig, ax = plots.plot_cross_section(model, "y", 0.0, title="vertical cut (y = 0)"
 # monitors ride the run: a frequency monitor accumulates the complex
 # field pattern at 2.45 GHz on the vertical cut through the wire — the
 # picture that will show the antenna radiating — and a
-# :class:`~magnelio.monitors.MonitorFarField` records the surfaces a
+# :class:`~magnelio.monitors.MonitorFarFieldFrequency` records the surfaces a
 # far-field computation needs.  The latter takes no geometry at all:
 # it places a closed recording box inside the free-space region by
 # itself, and the ground plane is handled for it (more below).
@@ -135,7 +135,7 @@ nearfield = monitors.MonitorFieldFrequency(
     fields=["E"],
     name="nearfield",
 )
-farfield = monitors.MonitorFarField(freqs=[f0], name="farfield")
+farfield = monitors.MonitorFarFieldFrequency(freqs=[f0], name="farfield")
 
 analysis = mio.AnalysisScatteringTD(
     mesh=mesh,
@@ -301,7 +301,7 @@ print(f"radiated power:     {pattern.P_rad:.3f} W per incident W")
 # :class:`~magnelio.geo.ThinWire` conductor, a discrete
 # :class:`~magnelio.ports.PortLumped` feed, reading an antenna's S11
 # and input impedance, and the far field with its gain figures from a
-# :class:`~magnelio.monitors.MonitorFarField`.  A later tutorial
+# :class:`~magnelio.monitors.MonitorFarFieldFrequency`.  A later tutorial
 # returns to antennas with a dipole computed as a half model on a
 # symmetry plane, 3D pattern included.  The next tutorials leave the
 # wire world and move to printed circuits: microstrip lines and the

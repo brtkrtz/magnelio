@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=4f911454"></script>
+    <script src="../_static/documentation_options.js?v=1dd76d02"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -172,6 +172,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
   </a>
 </li>
 
@@ -332,6 +339,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
   </a>
 </li>
 
@@ -576,6 +590,18 @@ periodic box (exact to solver tolerance for <span class="math notranslate nohigh
 wall-loss route (see <a class="reference internal" href="conductor-losses.html"><span class="std std-doc">conductor losses</span></a>)
 <span class="bibtex-citation" id="id9">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>, <a class="reference internal" href="../bibliography.html#id55" title="John David Jackson. Classical Electrodynamics. Wiley, 3rd edition, 1999.">39</a>]</span>.</p>
 </section>
+<section id="from-a-mode-into-the-time-domain">
+<h3>From a mode into the time domain<a class="headerlink" href="#from-a-mode-into-the-time-domain" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">EigenmodeResult.field(n)</span></code> hands mode <em>n</em> over as a
+<code class="docutils literal notranslate"><span class="pre">magnelio.fields.FieldState</span></code> — the same container the monitors and the
+field sources speak.  Fed to <code class="docutils literal notranslate"><span class="pre">SourceFieldInitial</span></code>, it becomes the
+starting state of a transient march, which rings down at the mode’s
+frequency and decays at its loaded Q.  The eigenmode solver and the
+time-domain march discretise the same curl-curl operator, so the two
+frequencies agree to the accuracy of the time-step-dependent
+dispersion; the ring-down adds the loss information the lossless
+eigenproblem does not carry.</p>
+</section>
 </section>
 <section id="d-mode-solver">
 <h2>2D mode solver<a class="headerlink" href="#d-mode-solver" title="Link to this heading">#</a></h2>
@@ -634,6 +660,7 @@ matrices and the ARPACK backend with the 3D solver.</p>
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#d-cavity-eigenmode-solver">3D cavity eigenmode solver</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#periodic-structures-bloch-boundaries-and-the-dispersion-diagram">Periodic structures: Bloch boundaries and the dispersion diagram</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#from-a-mode-into-the-time-domain">From a mode into the time domain</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#d-mode-solver">2D mode solver</a></li>

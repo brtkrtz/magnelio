@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=4f911454"></script>
+    <script src="../_static/documentation_options.js?v=1dd76d02"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -170,6 +170,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
   </a>
 </li>
 
@@ -335,6 +342,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -448,6 +462,7 @@
 <li class="toctree-l1"><a class="reference internal" href="plot_17_pcb_import.html">Importing a circuit board</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_18_periodic_tesla_cell.html">Periodic structures: the dispersion diagram of a TESLA cell</a></li>
 <li class="toctree-l1"><a class="reference internal" href="19_cassegrain_reflector.html">Offset Cassegrain reflector: parametric surfaces and a horn feed</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_20_plane_wave_scattering.html">Plane-wave scattering: the radar cross section of a sphere</a></li>
 </ul>
 </div>
 </nav></div>
@@ -700,8 +715,8 @@ ceiling.</p>
 </pre></div>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Port 'port1' — 1 mode(s)
-  z_line = 49.11 Ω (numerical)
-  [0] QTEM_lap00   TEM f_c = 0.0000 GHz  z_line = 49.11 Ω  ε_eff = 2.773
+  z_line = 49.11 Ω (quasi-static)
+  [0] QTEM_lap00   TEM f_c = 0.0000 GHz  z_line = 49.11 Ω  ε_eff = 2.773  termination = mur (chain spread 2.5e-01)
 </pre></div>
 </div>
 <p>The feed resolves at 49.1 Ω — the trimmed 50 Ω line of the previous
@@ -808,7 +823,7 @@ package-mode band ceiling, and the passive <code class="docutils literal notrans
 doing what only a resistor can do for a divider.  The copper is
 still perfect and the substrate loss-free — making them real is the
 next tutorial’s subject.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 59.587 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 17.785 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-10-lumped-elements-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/83a73d9af24641f40003456f8a59fbb5/plot_10_lumped_elements.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_10_lumped_elements.ipynb</span></code></a></p>

@@ -28,7 +28,7 @@ Taflove {cite}`umashankartaflove1982` and covered in textbook form by
 Taflove and Hagness {cite}`taflovehagness2005`; the antenna-side
 definitions follow Balanis {cite}`balanis2016`.
 
-`monitors.MonitorFarField(freqs=[...])` records everything needed
+`monitors.MonitorFarFieldFrequency(freqs=[...])` records everything needed
 during the run: it places a closed box a few grid cells inside the
 physical domain (the absorber layers are excluded automatically, the
 clearance is `margin_cells`) and accumulates a running DFT of the

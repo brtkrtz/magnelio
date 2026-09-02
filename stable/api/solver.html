@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=4f911454"></script>
+    <script src="../_static/documentation_options.js?v=1dd76d02"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -170,6 +170,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
   </a>
 </li>
 
@@ -335,6 +342,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../bibliography.html">
     Bibliography
   </a>
@@ -438,6 +452,7 @@
 <li class="toctree-l1"><a class="reference internal" href="boundaries.html"><code class="docutils literal notranslate"><span class="pre">magnelio.boundaries</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="ports.html"><code class="docutils literal notranslate"><span class="pre">magnelio.ports</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="sources.html"><code class="docutils literal notranslate"><span class="pre">magnelio.sources</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="fields.html"><code class="docutils literal notranslate"><span class="pre">magnelio.fields</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="monitors.html"><code class="docutils literal notranslate"><span class="pre">magnelio.monitors</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="circuit.html"><code class="docutils literal notranslate"><span class="pre">magnelio.circuit</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="signals.html"><code class="docutils literal notranslate"><span class="pre">magnelio.signals</span></code></a></li>
@@ -518,7 +533,7 @@
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>frequencies</strong> (<em>np.ndarray</em>) – Resonant frequencies [Hz], shape <code class="docutils literal notranslate"><span class="pre">(n_modes,)</span></code>, ascending.</p></li>
-<li><p><strong>modes</strong> (<em>list</em><em>[</em><em>FieldState</em><em>]</em>) – One FieldState per mode with E and H fields on the Yee grid.
+<li><p><strong>modes</strong> (<em>list</em><em>[</em><a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><em>FieldState</em></a><em>]</em>) – One FieldState per mode with E and H fields on the Yee grid.
 Field amplitudes are normalised so that <code class="docutils literal notranslate"><span class="pre">e^T</span> <span class="pre">M_eps</span> <span class="pre">e</span> <span class="pre">=</span> <span class="pre">1</span></code>.</p></li>
 <li><p><strong>mesh</strong> (<a class="reference internal" href="core.html#magnelio.Mesh" title="magnelio.Mesh"><em>Mesh</em></a>) – Reference mesh (grid, material library).</p></li>
 <li><p><strong>solver_info</strong> (<em>dict</em>) – Metadata: solver backend, number of iterations, residuals, etc.</p></li>
@@ -526,18 +541,35 @@ Field amplitudes are normalised so that <code class="docutils literal notranslat
 </dd>
 </dl>
 <dl class="py method">
+<dt class="sig sig-object py" id="magnelio.solver.EigenmodeResult.field">
+<span class="sig-name descname"><span class="pre">field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.solver.EigenmodeResult.field" title="Link to this definition">#</a></dt>
+<dd><p>The mode’s field pattern as a <a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><code class="xref py py-class docutils literal notranslate"><span class="pre">FieldState</span></code></a>.</p>
+<p>The eigenvector is normalised to <code class="docutils literal notranslate"><span class="pre">e^T</span> <span class="pre">M_eps</span> <span class="pre">e</span> <span class="pre">=</span> <span class="pre">1</span></code>, i.e. to a
+peak stored electric energy of 0.5 J; the physical amplitude
+follows from that, the spatial pattern is the physical content.
+A Bloch mode with a phase advance other than 0 or 180 degrees is
+complex.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mode</strong> (<em>int</em>) – Mode index (ascending in frequency).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="magnelio.solver.EigenmodeResult.plot">
 <span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_arrows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.solver.EigenmodeResult.plot" title="Link to this definition">#</a></dt>
 <dd><p>Plot a mode’s field pattern on a slice plane through the cavity.</p>
 <p>The staggered Yee-grid components are interpolated onto cell
 centres and rendered on the plane selected by <em>normal</em> and
-<em>position</em>.  Mode fields are normalised eigenvectors, so the
-amplitudes are in arbitrary units; the spatial pattern is the
-physical content.  A complex mode (Bloch phase advance other
-than 0 or 180 degrees) is drawn as the real snapshot at the
-instant of maximum field energy on the slice — the global phase
-of an eigenvector is arbitrary, and this choice makes the
-picture independent of it.</p>
+<em>position</em> (<a class="reference internal" href="fields.html#magnelio.fields.FieldState.plot" title="magnelio.fields.FieldState.plot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">magnelio.fields.FieldState.plot()</span></code></a>).  Mode
+fields are normalised eigenvectors, so the amplitudes are in
+arbitrary units; the spatial pattern is the physical content.
+A complex mode (Bloch phase advance other than 0 or 180
+degrees) is drawn as the real snapshot at the instant of
+maximum field energy on the slice — the global phase of an
+eigenvector is arbitrary, and this choice makes the picture
+independent of it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -831,6 +863,7 @@ Built from the mesh when omitted.</p></li>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.solver.EigenmodeResult"><code class="docutils literal notranslate"><span class="pre">EigenmodeResult</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.solver.EigenmodeResult.field"><code class="docutils literal notranslate"><span class="pre">EigenmodeResult.field()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.solver.EigenmodeResult.plot"><code class="docutils literal notranslate"><span class="pre">EigenmodeResult.plot()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.solver.EigenmodeResult.n_modes"><code class="docutils literal notranslate"><span class="pre">EigenmodeResult.n_modes</span></code></a></li>
 </ul>

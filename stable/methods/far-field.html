@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=4f911454"></script>
+    <script src="../_static/documentation_options.js?v=1dd76d02"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -172,6 +172,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
   </a>
 </li>
 
@@ -332,6 +339,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
   </a>
 </li>
 
@@ -533,7 +547,7 @@ post-processing, introduced by Umashankar and
 Taflove <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id57" title="Korada Umashankar and Allen Taflove. A novel method to analyze electromagnetic scattering of complex objects. IEEE Transactions on Electromagnetic Compatibility, 24(4):397–405, 1982. doi:10.1109/TEMC.1982.304054.">54</a>]</span> and covered in textbook form by
 Taflove and Hagness <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>; the antenna-side
 definitions follow Balanis <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id58" title="Constantine A. Balanis. Antenna Theory: Analysis and Design. Wiley, Hoboken, NJ, 4th edition, 2016.">55</a>]</span>.</p>
-<p><code class="docutils literal notranslate"><span class="pre">monitors.MonitorFarField(freqs=[...])</span></code> records everything needed
+<p><code class="docutils literal notranslate"><span class="pre">monitors.MonitorFarFieldFrequency(freqs=[...])</span></code> records everything needed
 during the run: it places a closed box a few grid cells inside the
 physical domain (the absorber layers are excluded automatically, the
 clearance is <code class="docutils literal notranslate"><span class="pre">margin_cells</span></code>) and accumulates a running DFT of the

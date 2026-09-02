@@ -1,0 +1,1217 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Upgrading from 0.4.x &#8212; Magnelio Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+
+    <script src="_static/documentation_options.js?v=1dd76d02"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/sg-tags.js?v=d80f6fa4"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'migration-0.5';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/stable/migration-0.5.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Bibliography" href="bibliography.html" />
+    <link rel="prev" title="Implementation engineering (non-method)" href="methods/implementation.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="_static/searchtools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script src="searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Magnelio Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="howto/index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="methods/index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio/discussions" title="Discussions" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-regular fa-comments fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discussions</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="howto/index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="methods/index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio/discussions" title="Discussions" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-regular fa-comments fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discussions</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Upgrading from 0.4.x</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="upgrading-from-0-4-x">
+<h1>Upgrading from 0.4.x<a class="headerlink" href="#upgrading-from-0-4-x" title="Link to this heading">#</a></h1>
+<p>This page is for anyone with a script, a notebook or a saved project
+written against Magnelio 0.4.x.  Release 0.5 renames a number of
+classes and arguments, removes a few, and bumps the project-store
+format.  Nothing here is a silent change of meaning except where this
+page says so; almost every rename fails loudly at import time or at
+the first call, and a 0.4.x store stops at the first read of its
+metadata.  The one rename that can stay silent — the waveform
+functions under their old submodule path — is called out where it
+arises.</p>
+<p>The whole list follows from one change.  In 0.4.x every object that
+could be driven carried its own drive: a plane-wave source took a
+waveform string, a band and an amplitude; a port spec took an
+<code class="docutils literal notranslate"><span class="pre">excitation</span></code> field; the scattering analysis took an <code class="docutils literal notranslate"><span class="pre">ExcitationSpec</span></code>.
+The excitation is now one concept, bound in one place.  A <strong>source</strong>
+(and a <strong>port</strong>) says only <em>what</em> is there and <em>where</em> — geometry, no
+time function, no strength.  A <strong>waveform</strong>
+(<a class="reference internal" href="api/signals.html#magnelio.signals.Waveform" title="magnelio.signals.Waveform"><code class="xref py py-class docutils literal notranslate"><span class="pre">Waveform</span></code></a> and its subclasses) is a pure
+unit-peak function of time that knows its own band and duration, and
+carries no amplitude, so one waveform object can drive several
+channels.  An <strong>excitation</strong> (<a class="reference internal" href="api/core.html#magnelio.Excitation" title="magnelio.Excitation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Excitation</span></code></a>) binds a
+waveform to a named channel or source, with an amplitude in that
+source’s own unit, a delay, and a phase.  Someone who has internalised
+that separation can derive every rename below without reading the
+table: whatever described <em>when</em> and <em>how strongly</em> moved off the
+source and onto the excitation, and whatever described a <em>band</em> became
+a waveform class.</p>
+<section id="quick-reference">
+<h2>Quick reference<a class="headerlink" href="#quick-reference" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>0.4.x</p></th>
+<th class="head"><p>0.5</p></th>
+<th class="head"><p>If you leave it alone</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sources.PlaneWaveSource</span></code></p></td>
+<td><p><a class="reference internal" href="api/sources.html#magnelio.sources.SourcePlaneWave" title="magnelio.sources.SourcePlaneWave"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourcePlaneWave</span></code></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ImportError</span></code> / <code class="docutils literal notranslate"><span class="pre">AttributeError</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PlaneWaveSource(…)</span></code> without a name</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SourcePlaneWave(name=…,</span> <span class="pre">…)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">TypeError</span></code>: missing <code class="docutils literal notranslate"><span class="pre">name</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PlaneWaveSource(waveform=…,</span> <span class="pre">f_max=…,</span> <span class="pre">f_center=…,</span> <span class="pre">amplitude=…)</span></code></p></td>
+<td><p>a waveform and an amplitude on the excitation</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">TypeError</span></code> on each keyword</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ports.ExcitationSpec(f_min=…,</span> <span class="pre">f_max=…)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">WaveformGaussianModulated(f_min=…,</span> <span class="pre">f_max=…)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AttributeError</span></code> / <code class="docutils literal notranslate"><span class="pre">ImportError</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ExcitationSpec(mode_index=n)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Excitation(port,</span> <span class="pre">mode=n)</span></code>, or the <code class="docutils literal notranslate"><span class="pre">(port,</span> <span class="pre">n)</span></code> pair in <code class="docutils literal notranslate"><span class="pre">run(excited=…)</span></code></p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PortSpecCoax/RectWG/Numerical/MultiConductor(excitation=…)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">operator.set_excitation(mode,</span> <span class="pre">waveform)</span></code> on the built operator</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">TypeError</span></code> on <code class="docutils literal notranslate"><span class="pre">excitation</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">AnalysisScatteringTD(excitation=…)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AnalysisScatteringTD(waveform=…)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">TypeError</span></code> on <code class="docutils literal notranslate"><span class="pre">excitation</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">signals.gaussian(t,</span> <span class="pre">f_max)</span></code></p></td>
+<td><p><a class="reference internal" href="api/signals.html#magnelio.signals.WaveformGaussian" title="magnelio.signals.WaveformGaussian"><code class="xref py py-class docutils literal notranslate"><span class="pre">WaveformGaussian</span></code></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AttributeError</span></code> on <code class="docutils literal notranslate"><span class="pre">magnelio.signals</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">signals.modulated_gaussian(t,</span> <span class="pre">f_max,</span> <span class="pre">f_min)</span></code></p></td>
+<td><p><a class="reference internal" href="api/signals.html#magnelio.signals.WaveformGaussianModulated" title="magnelio.signals.WaveformGaussianModulated"><code class="xref py py-class docutils literal notranslate"><span class="pre">WaveformGaussianModulated</span></code></a> — <strong>argument order flips</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AttributeError</span></code> on <code class="docutils literal notranslate"><span class="pre">magnelio.signals</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">signals.waveform_for_mode(f_max,</span> <span class="pre">omega_c,</span> <span class="pre">f_min)</span></code></p></td>
+<td><p>the analysis default; pass no waveform</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AttributeError</span></code> on <code class="docutils literal notranslate"><span class="pre">magnelio.signals</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">monitors.MonitorFarField</span></code></p></td>
+<td><p><a class="reference internal" href="api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency" title="magnelio.monitors.MonitorFarFieldFrequency"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency</span></code></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AttributeError</span></code> / <code class="docutils literal notranslate"><span class="pre">ImportError</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">MonitorFluxTime(plane=(&quot;z&quot;,</span> <span class="pre">z0))</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">MonitorFluxTime(normal=&quot;z&quot;,</span> <span class="pre">position=z0)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">TypeError</span></code> on <code class="docutils literal notranslate"><span class="pre">plane</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">MonitorWallLoss(reference_plane=(&quot;z&quot;,</span> <span class="pre">z0))</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">MonitorWallLoss(normal=&quot;z&quot;,</span> <span class="pre">position=z0)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">TypeError</span></code> on <code class="docutils literal notranslate"><span class="pre">reference_plane</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>a project store written by 0.4.x</p></td>
+<td><p>re-run the analysis</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ProjectSchemaError</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>None of the old names has a compatibility shim.  Where the table says
+<code class="docutils literal notranslate"><span class="pre">AttributeError</span></code> or <code class="docutils literal notranslate"><span class="pre">ImportError</span></code>, the name is gone from the namespace
+the table names.</p>
+</section>
+<section id="sources-waveforms-and-excitations">
+<h2>Sources, waveforms and excitations<a class="headerlink" href="#sources-waveforms-and-excitations" title="Link to this heading">#</a></h2>
+<section id="the-plane-wave">
+<h3>The plane wave<a class="headerlink" href="#the-plane-wave" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">PlaneWaveSource</span></code> is now
+<a class="reference internal" href="api/sources.html#magnelio.sources.SourcePlaneWave" title="magnelio.sources.SourcePlaneWave"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourcePlaneWave</span></code></a>.  Only the name changed —
+<code class="docutils literal notranslate"><span class="pre">magnelio.sources</span></code> and the <code class="docutils literal notranslate"><span class="pre">magnelio.sources.plane_wave</span></code> submodule
+both carried the old class and both carry the new one — and the new
+class requires a <code class="docutils literal notranslate"><span class="pre">name</span></code>, the name an excitation uses to address it.
+<code class="docutils literal notranslate"><span class="pre">direction</span></code>, <code class="docutils literal notranslate"><span class="pre">polarization</span></code> and <code class="docutils literal notranslate"><span class="pre">corners</span></code> keep their meaning and their
+defaults, and <code class="docutils literal notranslate"><span class="pre">SourcePlaneWave.from_ranges(name=…,</span> <span class="pre">x1=…,</span> <span class="pre">x2=…,</span> <span class="pre">…)</span></code>
+still exists.</p>
+<p>At the component level, where the source is handed to the solver
+directly:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 0.4.x</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.sources.plane_wave</span><span class="w"> </span><span class="kn">import</span> <span class="n">PlaneWaveSource</span>
+
+<span class="n">src</span> <span class="o">=</span> <span class="n">PlaneWaveSource</span><span class="p">(</span>
+    <span class="n">direction</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+    <span class="n">polarization</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+    <span class="n">corners</span><span class="o">=</span><span class="n">tf_box</span><span class="p">,</span>
+    <span class="n">f_max</span><span class="o">=</span><span class="n">f_max</span><span class="p">,</span>
+    <span class="n">waveform</span><span class="o">=</span><span class="s2">"gaussian"</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 0.5</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.signals</span><span class="w"> </span><span class="kn">import</span> <span class="n">WaveformGaussian</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.sources</span><span class="w"> </span><span class="kn">import</span> <span class="n">SourcePlaneWave</span>
+
+<span class="n">src</span> <span class="o">=</span> <span class="n">SourcePlaneWave</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"pw"</span><span class="p">,</span>
+    <span class="n">direction</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+    <span class="n">polarization</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+    <span class="n">corners</span><span class="o">=</span><span class="n">tf_box</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">src</span><span class="o">.</span><span class="n">set_excitation</span><span class="p">(</span><span class="n">WaveformGaussian</span><span class="p">(</span><span class="n">f_max</span><span class="o">=</span><span class="n">f_max</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Everything downstream is unchanged: the source still goes to the
+solver as <code class="docutils literal notranslate"><span class="pre">sources=[src]</span></code>.</p>
+<p>Fixing the class name alone is not enough — the removed keywords fail
+next, one at a time:
+<code class="docutils literal notranslate"><span class="pre">SourcePlaneWave.__init__()</span> <span class="pre">got</span> <span class="pre">an</span> <span class="pre">unexpected</span> <span class="pre">keyword</span> <span class="pre">argument</span> <span class="pre">'waveform'</span></code>, likewise <code class="docutils literal notranslate"><span class="pre">f_max</span></code>, <code class="docutils literal notranslate"><span class="pre">f_center</span></code> and <code class="docutils literal notranslate"><span class="pre">amplitude</span></code>.</p>
+</section>
+<section id="the-high-level-form">
+<h3>The high-level form<a class="headerlink" href="#the-high-level-form" title="Link to this heading">#</a></h3>
+<p>A source is now a model object: declare it on the
+<a class="reference internal" href="api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeometryModel</span></code></a> before meshing, and drive it by name
+at run time.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">add_source</span><span class="p">(</span>
+    <span class="n">sources</span><span class="o">.</span><span class="n">SourcePlaneWave</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">"pw"</span><span class="p">,</span>
+        <span class="n">direction</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+        <span class="n">polarization</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+        <span class="n">corners</span><span class="o">=</span><span class="p">((</span><span class="o">-</span><span class="n">box</span><span class="p">,</span> <span class="o">-</span><span class="n">box</span><span class="p">,</span> <span class="o">-</span><span class="n">box</span><span class="p">),</span> <span class="p">(</span><span class="n">box</span><span class="p">,</span> <span class="n">box</span><span class="p">,</span> <span class="n">box</span><span class="p">)),</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+<span class="o">...</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+    <span class="n">excitations</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">mio</span><span class="o">.</span><span class="n">Excitation</span><span class="p">(</span><span class="s2">"pw"</span><span class="p">,</span> <span class="n">waveform</span><span class="o">=</span><span class="n">signals</span><span class="o">.</span><span class="n">WaveformGaussian</span><span class="p">(</span><span class="n">f_max</span><span class="o">=</span><span class="n">f_max</span><span class="p">),</span> <span class="n">amplitude</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
+    <span class="p">],</span>
+    <span class="n">energy_stop_db</span><span class="o">=</span><span class="mf">60.0</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Excitation.amplitude</span></code> is the peak incident field in V/m here; every
+source publishes the unit its amplitude is read in as
+<code class="docutils literal notranslate"><span class="pre">amplitude_unit</span></code>.</p>
+<div class="warning admonition">
+<p class="admonition-title">The one trap in this section</p>
+<p>If you carry <code class="docutils literal notranslate"><span class="pre">f_max</span></code> straight across from the old plane wave into
+<code class="docutils literal notranslate"><span class="pre">WaveformGaussian</span></code>, the pulse changes shape and nothing complains.
+The old plane-wave Gaussian was
+<code class="docutils literal notranslate"><span class="pre">exp(-(t</span> <span class="pre">-</span> <span class="pre">t0)²</span> <span class="pre">/</span> <span class="pre">(2</span> <span class="pre">σ²))</span></code>, while <code class="docutils literal notranslate"><span class="pre">WaveformGaussian</span></code> is
+<code class="docutils literal notranslate"><span class="pre">exp(-(t</span> <span class="pre">-</span> <span class="pre">t0)²</span> <span class="pre">/</span> <span class="pre">σ²)</span></code> with the same <code class="docutils literal notranslate"><span class="pre">σ</span> <span class="pre">=</span> <span class="pre">2</span> <span class="pre">/</span> <span class="pre">(π</span> <span class="pre">f_max)</span></code> and
+<code class="docutils literal notranslate"><span class="pre">t0</span> <span class="pre">=</span> <span class="pre">4</span> <span class="pre">/</span> <span class="pre">f_max</span></code>.  The old pulse is therefore √2 wider in time and its
+spectrum √2 narrower: at <code class="docutils literal notranslate"><span class="pre">f_max</span></code> = 5 GHz and <code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">=</span> <span class="pre">t0</span> <span class="pre">±</span> <span class="pre">t0/2</span></code> the old
+value is 0.007192 and the new one 5.2·10⁻⁵.  A migrated run
+illuminates a wider band than before.</p>
+<p>Usually that is harmless or an improvement.  Where you need the old
+pulse sample for sample — comparing against archived results, say —
+state the old closed form explicitly:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">waveform</span> <span class="o">=</span> <span class="n">signals</span><span class="o">.</span><span class="n">WaveformFunction</span><span class="p">(</span>
+    <span class="n">fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">((</span><span class="n">t</span> <span class="o">-</span> <span class="mi">4</span> <span class="o">/</span> <span class="n">f_max</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">f_max</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)),</span>
+    <span class="n">f_max</span><span class="o">=</span><span class="n">f_max</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
+    <span class="n">t_end</span><span class="o">=</span><span class="mi">8</span> <span class="o">/</span> <span class="n">f_max</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="continuous-wave-drives">
+<h3>Continuous-wave drives<a class="headerlink" href="#continuous-wave-drives" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">PlaneWaveSource(waveform=&quot;sine&quot;,</span> <span class="pre">f_center=…)</span></code> becomes
+<a class="reference internal" href="api/signals.html#magnelio.signals.WaveformSine" title="magnelio.signals.WaveformSine"><code class="xref py py-class docutils literal notranslate"><span class="pre">WaveformSine</span></code></a> on the excitation:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">src</span> <span class="o">=</span> <span class="n">sources</span><span class="o">.</span><span class="n">SourcePlaneWave</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"pw"</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">polarization</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="n">src</span><span class="o">.</span><span class="n">set_excitation</span><span class="p">(</span><span class="n">signals</span><span class="o">.</span><span class="n">WaveformSine</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="mf">1e9</span><span class="p">),</span> <span class="n">amplitude</span><span class="o">=</span><span class="mf">2.5</span><span class="p">)</span>
+<span class="c1"># or, by name, at run level:</span>
+<span class="n">mio</span><span class="o">.</span><span class="n">Excitation</span><span class="p">(</span><span class="s2">"pw"</span><span class="p">,</span> <span class="n">waveform</span><span class="o">=</span><span class="n">signals</span><span class="o">.</span><span class="n">WaveformSine</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="mf">1e9</span><span class="p">),</span> <span class="n">amplitude</span><span class="o">=</span><span class="mf">2.5</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Numerically the two agree — both are <code class="docutils literal notranslate"><span class="pre">A·sin(2π</span> <span class="pre">f</span> <span class="pre">t)</span></code> with a hard
+switch-on — and <code class="docutils literal notranslate"><span class="pre">WaveformSine</span></code> adds a <code class="docutils literal notranslate"><span class="pre">rise_time=</span></code> for a raised-cosine
+switch-on that the old waveform string had no way to express.  Note
+that its <code class="docutils literal notranslate"><span class="pre">t_end</span></code> is infinite, so a run driven by it needs an explicit
+length (<code class="docutils literal notranslate"><span class="pre">run(t_end=…)</span></code> or <code class="docutils literal notranslate"><span class="pre">total_time_steps=</span></code>) and cannot stop on
+energy decay.</p>
+<p>This path was never used in a published example or tutorial; if none
+of your scripts mentions <code class="docutils literal notranslate"><span class="pre">f_center</span></code>, there is nothing to do here.</p>
+</section>
+<section id="excitationspec">
+<h3><code class="docutils literal notranslate"><span class="pre">ExcitationSpec</span></code><a class="headerlink" href="#excitationspec" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">magnelio.ports.ExcitationSpec</span></code> is removed.  It held three kinds of
+information, and each goes somewhere different:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">f_min</span></code>, <code class="docutils literal notranslate"><span class="pre">f_max</span></code> and the <code class="docutils literal notranslate"><span class="pre">waveform</span></code> string become a waveform class —
+<code class="docutils literal notranslate"><span class="pre">waveform=&quot;modulated_gaussian&quot;</span></code> is
+<code class="docutils literal notranslate"><span class="pre">WaveformGaussianModulated(f_min,</span> <span class="pre">f_max)</span></code>, <code class="docutils literal notranslate"><span class="pre">waveform=&quot;gaussian&quot;</span></code> is
+<code class="docutils literal notranslate"><span class="pre">WaveformGaussian(f_max)</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mode_index</span></code> becomes the channel that is driven: the first argument
+of <code class="docutils literal notranslate"><span class="pre">set_excitation</span></code>, or <code class="docutils literal notranslate"><span class="pre">Excitation(port,</span> <span class="pre">mode=…)</span></code>, or the
+<code class="docutils literal notranslate"><span class="pre">(port,</span> <span class="pre">mode)</span></code> pair in <code class="docutils literal notranslate"><span class="pre">run(excited=…)</span></code>;</p></li>
+<li><p>the object itself becomes <a class="reference internal" href="api/core.html#magnelio.Excitation" title="magnelio.Excitation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Excitation</span></code></a> at run
+level, which additionally carries the <code class="docutils literal notranslate"><span class="pre">amplitude</span></code>, <code class="docutils literal notranslate"><span class="pre">delay</span></code> and
+<code class="docutils literal notranslate"><span class="pre">phase</span></code> that <code class="docutils literal notranslate"><span class="pre">ExcitationSpec</span></code> had no field for.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 0.4.x</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.ports._modal</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BoxFace</span><span class="p">,</span>
+    <span class="n">ExcitationSpec</span><span class="p">,</span>
+    <span class="n">PortSpecRectWG</span><span class="p">,</span>
+    <span class="n">build_modal_port</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">excitation</span> <span class="o">=</span> <span class="n">ExcitationSpec</span><span class="p">(</span><span class="n">f_min</span><span class="o">=</span><span class="n">F_MIN</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="n">F_MAX</span><span class="p">,</span> <span class="n">mode_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 0.5</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.ports._modal</span><span class="w"> </span><span class="kn">import</span> <span class="n">BoxFace</span><span class="p">,</span> <span class="n">PortSpecRectWG</span><span class="p">,</span> <span class="n">build_modal_port</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.signals</span><span class="w"> </span><span class="kn">import</span> <span class="n">WaveformGaussianModulated</span>
+
+<span class="n">op_src</span><span class="o">.</span><span class="n">set_excitation</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">WaveformGaussianModulated</span><span class="p">(</span><span class="n">f_min</span><span class="o">=</span><span class="n">F_MIN</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="n">F_MAX</span><span class="p">))</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">ExcitationSpec</span></code> was public and rendered into the API reference, but
+it appeared in no example or tutorial: its real call sites are
+hand-written expert scripts.</p>
+</section>
+<section id="excitations-on-port-specs">
+<h3>Excitations on port specs<a class="headerlink" href="#excitations-on-port-specs" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">PortSpec*</span></code> classes lost their <code class="docutils literal notranslate"><span class="pre">excitation</span></code> field.  A spec is a
+description of a port; a bound waveform is run-time state, and it is
+set on the built operator:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 0.4.x</span>
+<span class="n">excitation</span> <span class="o">=</span> <span class="n">ExcitationSpec</span><span class="p">(</span><span class="n">f_min</span><span class="o">=</span><span class="n">F_MIN</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="n">F_MAX</span><span class="p">,</span> <span class="n">mode_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">spec_src</span> <span class="o">=</span> <span class="n">PortSpecRectWG</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"port1"</span><span class="p">,</span>
+    <span class="n">plane</span><span class="o">=</span><span class="n">BoxFace</span><span class="o">.</span><span class="n">X_MIN</span><span class="p">,</span>
+    <span class="n">width_a</span><span class="o">=</span><span class="n">WR90_A</span><span class="p">,</span>
+    <span class="n">height_b</span><span class="o">=</span><span class="n">WR90_B</span><span class="p">,</span>
+    <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">excitation</span><span class="o">=</span><span class="n">excitation</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">op_src</span> <span class="o">=</span> <span class="n">build_modal_port</span><span class="p">(</span><span class="n">spec_src</span><span class="p">,</span> <span class="n">mesh</span><span class="p">,</span> <span class="n">m_eps</span><span class="p">,</span> <span class="n">m_mu</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span> <span class="n">f_calc</span><span class="o">=</span><span class="n">F_CALC</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 0.5</span>
+<span class="n">spec_src</span> <span class="o">=</span> <span class="n">PortSpecRectWG</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"port1"</span><span class="p">,</span>
+    <span class="n">plane</span><span class="o">=</span><span class="n">BoxFace</span><span class="o">.</span><span class="n">X_MIN</span><span class="p">,</span>
+    <span class="n">width_a</span><span class="o">=</span><span class="n">WR90_A</span><span class="p">,</span>
+    <span class="n">height_b</span><span class="o">=</span><span class="n">WR90_B</span><span class="p">,</span>
+    <span class="n">n_modes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">op_src</span> <span class="o">=</span> <span class="n">build_modal_port</span><span class="p">(</span><span class="n">spec_src</span><span class="p">,</span> <span class="n">mesh</span><span class="p">,</span> <span class="n">m_eps</span><span class="p">,</span> <span class="n">m_mu</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span> <span class="n">f_calc</span><span class="o">=</span><span class="n">F_CALC</span><span class="p">)</span>
+<span class="n">op_src</span><span class="o">.</span><span class="n">set_excitation</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">WaveformGaussianModulated</span><span class="p">(</span><span class="n">f_min</span><span class="o">=</span><span class="n">F_MIN</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="n">F_MAX</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The rewrite is mechanical because 0.4.x’s builder already did exactly
+this internally, one line below where it read the field.  The specs
+are frozen dataclasses, so the stale keyword is a loud <code class="docutils literal notranslate"><span class="pre">TypeError</span></code> at
+construction rather than an ignored field; a port that is never given
+a waveform stays absorber-only, which is what a <code class="docutils literal notranslate"><span class="pre">None</span></code> excitation
+always meant.  <code class="docutils literal notranslate"><span class="pre">PortSpecLumped</span></code> is unaffected — it never had the
+field.</p>
+<p>Two things are new rather than merely relocated: a second
+<code class="docutils literal notranslate"><span class="pre">set_excitation</span></code> call on a <em>different</em> mode drives both modes at once
+(a second call on the same mode replaces its waveform), and
+<code class="docutils literal notranslate"><span class="pre">clear_excitation()</span></code> drops them all.  Neither was expressible with one
+excitation field per spec.</p>
+</section>
+<section id="the-waveform-functions">
+<h3>The waveform functions<a class="headerlink" href="#the-waveform-functions" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">signals.gaussian</span></code>, <code class="docutils literal notranslate"><span class="pre">signals.modulated_gaussian</span></code> and
+<code class="docutils literal notranslate"><span class="pre">signals.waveform_for_mode</span></code> are gone from <code class="docutils literal notranslate"><span class="pre">magnelio.signals</span></code>, replaced
+by the waveform classes.  A bare callable cannot report its own
+bandwidth, and that is what the run-length estimate and the band
+warnings read.</p>
+<p>This is the one rename on the page that need not fail loudly.  The
+three functions still exist in the module that defines them, so
+<code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">magnelio.signals.waveforms</span> <span class="pre">import</span> <span class="pre">modulated_gaussian</span></code> keeps
+resolving and a script written that way keeps running — on a path
+that is no longer part of the public surface.  Only the
+<code class="docutils literal notranslate"><span class="pre">magnelio.signals</span></code> spelling raises.  Grep for <code class="docutils literal notranslate"><span class="pre">signals.waveforms</span></code> as
+well as for the three names.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 0.4.x</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.signals.waveforms</span><span class="w"> </span><span class="kn">import</span> <span class="n">modulated_gaussian</span>
+
+<span class="n">ref_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">modulated_gaussian</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="n">F_MAX</span><span class="p">,</span> <span class="n">F_MIN</span><span class="p">))</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">ref_t</span><span class="p">])</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 0.5</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.signals</span><span class="w"> </span><span class="kn">import</span> <span class="n">WaveformGaussianModulated</span>
+
+<span class="n">waveform</span> <span class="o">=</span> <span class="n">WaveformGaussianModulated</span><span class="p">(</span><span class="n">f_min</span><span class="o">=</span><span class="n">F_MIN</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="n">F_MAX</span><span class="p">)</span>
+<span class="n">ref_values</span> <span class="o">=</span> <span class="n">waveform</span><span class="p">(</span><span class="n">ref_t</span><span class="p">)</span>          <span class="c1"># scalar or array, same closed form</span>
+</pre></div>
+</div>
+<p>The closed form is unchanged: called on an array, the class returns
+the old function’s values bit for bit, and the scalar loop above
+differs only in the last bit — <code class="docutils literal notranslate"><span class="pre">math.exp</span></code> against <code class="docutils literal notranslate"><span class="pre">np.exp</span></code>.  But
+<strong>the argument order flips</strong>: the function was
+<code class="docutils literal notranslate"><span class="pre">modulated_gaussian(t,</span> <span class="pre">f_max,</span> <span class="pre">f_min)</span></code>, with <code class="docutils literal notranslate"><span class="pre">f_max</span></code> first, and the
+class is <code class="docutils literal notranslate"><span class="pre">WaveformGaussianModulated(f_min,</span> <span class="pre">f_max)</span></code>, with <code class="docutils literal notranslate"><span class="pre">f_min</span></code>
+first.  A positional conversion swaps the band edges.  The class
+validates <code class="docutils literal notranslate"><span class="pre">f_max</span> <span class="pre">&gt;</span> <span class="pre">f_min</span></code>, so it usually raises rather than running
+with a mirrored band — but pass the two by keyword and the question
+does not arise.</p>
+<p><code class="docutils literal notranslate"><span class="pre">waveform_for_mode</span></code> chose between the two forms per mode.  That choice
+is now what the analysis does by default, so the migration is usually
+to delete the call:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Default: pass no waveform and let the analysis pick, per excited mode.</span>
+<span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">ports</span><span class="o">=</span><span class="n">specs</span><span class="p">,</span> <span class="n">f_min</span><span class="o">=</span><span class="mf">8.2e9</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="mf">12.4e9</span><span class="p">)</span>
+
+<span class="c1"># Explicit, if you want to name the choice yourself:</span>
+<span class="n">f_lo</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">f_cutoff</span><span class="p">,</span> <span class="n">f_min</span><span class="p">)</span>
+<span class="n">waveform</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">signals</span><span class="o">.</span><span class="n">WaveformGaussianModulated</span><span class="p">(</span><span class="n">f_min</span><span class="o">=</span><span class="n">f_lo</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="n">f_max</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">f_lo</span> <span class="o">&gt;</span> <span class="mf">0.0</span>
+    <span class="k">else</span> <span class="n">signals</span><span class="o">.</span><span class="n">WaveformGaussian</span><span class="p">(</span><span class="n">f_max</span><span class="o">=</span><span class="n">f_max</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The selection rule is preserved exactly: effective lower edge
+<code class="docutils literal notranslate"><span class="pre">max(f_cutoff,</span> <span class="pre">f_min)</span></code>; a zero edge gives the DC-inclusive
+<code class="docutils literal notranslate"><span class="pre">WaveformGaussian</span></code>, a positive edge the modulated Gaussian over
+<code class="docutils literal notranslate"><span class="pre">[max(f_cutoff,</span> <span class="pre">f_min),</span> <span class="pre">f_max]</span></code>.  Note that the old signature took
+<code class="docutils literal notranslate"><span class="pre">omega_c</span></code> in rad/s while the classes take frequencies in Hz — divide
+by 2π.</p>
+<p>Where an <a class="reference internal" href="api/core.html#magnelio.Excitation" title="magnelio.Excitation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Excitation</span></code></a> is concerned a bare callable is
+no longer accepted at all: <code class="docutils literal notranslate"><span class="pre">Excitation(&quot;p1&quot;,</span> <span class="pre">waveform=lambda</span> <span class="pre">t:</span> <span class="pre">0.0)</span></code>
+raises <code class="docutils literal notranslate"><span class="pre">TypeError:</span> <span class="pre">Excitation.waveform</span> <span class="pre">must</span> <span class="pre">be</span> <span class="pre">a</span> <span class="pre">magnelio.signals.Waveform</span> <span class="pre">(or</span> <span class="pre">None);</span> <span class="pre">got</span> <span class="pre">function</span></code>.  Wrap it in
+<code class="docutils literal notranslate"><span class="pre">signals.WaveformFunction(fn=…,</span> <span class="pre">f_max=…)</span></code>.  The operator-level
+<code class="docutils literal notranslate"><span class="pre">set_excitation</span></code> still takes a plain callable.</p>
+</section>
+</section>
+<section id="monitors">
+<h2>Monitors<a class="headerlink" href="#monitors" title="Link to this heading">#</a></h2>
+<p>Monitors adopted the library’s naming grammar, and nothing about what
+they measure changed.  Two rules cover all three changes.</p>
+<p>A monitor’s class name states what it records and in which domain, so
+the far-field monitor — which has always accumulated a running DFT at
+requested frequencies — is <code class="docutils literal notranslate"><span class="pre">MonitorFarFieldFrequency</span></code>, next to
+<code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency</span></code> and <code class="docutils literal notranslate"><span class="pre">MonitorFieldTime</span></code>.  It is a pure rename:
+<code class="docutils literal notranslate"><span class="pre">freqs</span></code>, <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">margin_cells</span></code> and the whole result API (<code class="docutils literal notranslate"><span class="pre">result</span></code>,
+<code class="docutils literal notranslate"><span class="pre">plot_cut</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_3d</span></code>, <code class="docutils literal notranslate"><span class="pre">renormalize</span></code>) are untouched.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 0.4.x</span>
+<span class="n">farfield</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarField</span><span class="p">(</span><span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"farfield"</span><span class="p">)</span>
+
+<span class="c1"># 0.5</span>
+<span class="n">farfield</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorFarFieldFrequency</span><span class="p">(</span><span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="n">f0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"farfield"</span><span class="p">)</span>
+
+<span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">f_min</span><span class="o">=</span><span class="n">f_min</span><span class="p">,</span> <span class="n">monitors</span><span class="o">=</span><span class="p">(</span><span class="n">farfield</span><span class="p">,),</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">f_axis</span><span class="o">=</span><span class="n">f_axis</span><span class="p">,</span> <span class="n">excited</span><span class="o">=</span><span class="p">[</span><span class="s2">"feed"</span><span class="p">])</span>
+<span class="n">pattern</span> <span class="o">=</span> <span class="n">farfield</span><span class="o">.</span><span class="n">result</span><span class="p">(</span><span class="n">f0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>And an axis-aligned plane is spelled as two arguments everywhere,
+<code class="docutils literal notranslate"><span class="pre">normal=&quot;z&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">position=5e-3</span></code>, never as a packed <code class="docutils literal notranslate"><span class="pre">(axis,</span> <span class="pre">position)</span></code>
+pair.  That vocabulary was retired from sources and from the flux and
+wall-loss monitors in one pass, so <code class="docutils literal notranslate"><span class="pre">plane=</span></code> and <code class="docutils literal notranslate"><span class="pre">reference_plane=</span></code> are
+gone:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 0.4.x</span>
+<span class="n">flux</span> <span class="o">=</span> <span class="n">MonitorFluxTime</span><span class="p">(</span><span class="n">plane</span><span class="o">=</span><span class="p">(</span><span class="s2">"z"</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s2">"flux_z"</span><span class="p">)</span>
+
+<span class="c1"># 0.5</span>
+<span class="n">flux</span> <span class="o">=</span> <span class="n">MonitorFluxTime</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"flux_z"</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 0.4.x</span>
+<span class="n">monitor</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorWallLoss</span><span class="p">(</span>
+    <span class="n">freqs</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">f_lo</span><span class="p">,</span> <span class="n">f_hi</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span>
+    <span class="n">reference_plane</span><span class="o">=</span><span class="p">(</span><span class="s2">"z"</span><span class="p">,</span> <span class="mf">5e-3</span><span class="p">),</span>
+    <span class="n">sigma</span><span class="o">=</span><span class="n">sigma_steel</span><span class="p">,</span>
+    <span class="n">bc_faces</span><span class="o">=</span><span class="p">(</span><span class="s2">"xmin"</span><span class="p">,</span> <span class="s2">"xmax"</span><span class="p">,</span> <span class="s2">"ymin"</span><span class="p">,</span> <span class="s2">"ymax"</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="c1"># 0.5</span>
+<span class="n">monitor</span> <span class="o">=</span> <span class="n">monitors</span><span class="o">.</span><span class="n">MonitorWallLoss</span><span class="p">(</span>
+    <span class="n">freqs</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">f_lo</span><span class="p">,</span> <span class="n">f_hi</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span>
+    <span class="n">normal</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span>
+    <span class="n">position</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="o">=</span><span class="n">sigma_steel</span><span class="p">,</span>
+    <span class="n">bc_faces</span><span class="o">=</span><span class="p">(</span><span class="s2">"xmin"</span><span class="p">,</span> <span class="s2">"xmax"</span><span class="p">,</span> <span class="s2">"ymin"</span><span class="p">,</span> <span class="s2">"ymax"</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Full-cross-section integration, node snapping, the symmetry factor,
+<code class="docutils literal notranslate"><span class="pre">sibc</span></code>, <code class="docutils literal notranslate"><span class="pre">masked_faces</span></code>, <code class="docutils literal notranslate"><span class="pre">wall_overrides</span></code> and every recorded quantity
+are as before.</p>
+<p>A keyword call fails cleanly.  A <em>positional</em> call is the one to watch:
+the old pair lands in the new first parameter and the diagnostic then
+points at the value rather than at the renamed argument —
+<code class="docutils literal notranslate"><span class="pre">MonitorFluxTime((&quot;z&quot;,</span> <span class="pre">5e-3),</span> <span class="pre">&quot;flux_z&quot;)</span></code> raises
+<code class="docutils literal notranslate"><span class="pre">ValueError:</span> <span class="pre">MonitorFluxTime</span> <span class="pre">normal</span> <span class="pre">must</span> <span class="pre">be</span> <span class="pre">'x',</span> <span class="pre">'y'</span> <span class="pre">or</span> <span class="pre">'z';</span> <span class="pre">got</span> <span class="pre">('z',</span> <span class="pre">0.005)</span></code>, and in <code class="docutils literal notranslate"><span class="pre">MonitorWallLoss</span></code> every later argument shifts by
+one, so the conductivity ends up in <code class="docutils literal notranslate"><span class="pre">position</span></code>.  Post-run code that
+reads <code class="docutils literal notranslate"><span class="pre">mon.plane</span></code> or <code class="docutils literal notranslate"><span class="pre">mon.reference_plane</span></code> also fails: those
+attributes no longer exist.</p>
+</section>
+<section id="the-analysis-classes">
+<h2>The analysis classes<a class="headerlink" href="#the-analysis-classes" title="Link to this heading">#</a></h2>
+<section id="the-waveform-override">
+<h3>The waveform override<a class="headerlink" href="#the-waveform-override" title="Link to this heading">#</a></h3>
+<p>The scattering analysis takes a waveform instead of an
+<code class="docutils literal notranslate"><span class="pre">ExcitationSpec</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 0.4.x</span>
+<span class="n">excitation</span> <span class="o">=</span> <span class="n">ExcitationSpec</span><span class="p">(</span><span class="n">f_min</span><span class="o">=</span><span class="mf">8.2e9</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="mf">12.4e9</span><span class="p">)</span>
+
+<span class="n">analysis</span> <span class="o">=</span> <span class="n">AnalysisScatteringTD</span><span class="p">(</span>
+    <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">with_boundary_conditions</span><span class="p">(</span><span class="n">_lateral_pec_bcs</span><span class="p">()),</span>
+    <span class="n">ports</span><span class="o">=</span><span class="n">_wr90_specs</span><span class="p">(),</span>
+    <span class="n">f_max</span><span class="o">=</span><span class="mf">12.4e9</span><span class="p">,</span>
+    <span class="n">f_min</span><span class="o">=</span><span class="mf">8.2e9</span><span class="p">,</span>
+    <span class="n">excitation</span><span class="o">=</span><span class="n">excitation</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 0.5</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.signals</span><span class="w"> </span><span class="kn">import</span> <span class="n">WaveformGaussianModulated</span>
+
+<span class="n">analysis</span> <span class="o">=</span> <span class="n">AnalysisScatteringTD</span><span class="p">(</span>
+    <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">with_boundary_conditions</span><span class="p">(</span><span class="n">_lateral_pec_bcs</span><span class="p">()),</span>
+    <span class="n">ports</span><span class="o">=</span><span class="n">_wr90_specs</span><span class="p">(),</span>
+    <span class="n">f_max</span><span class="o">=</span><span class="mf">12.4e9</span><span class="p">,</span>
+    <span class="n">f_min</span><span class="o">=</span><span class="mf">8.2e9</span><span class="p">,</span>
+    <span class="n">waveform</span><span class="o">=</span><span class="n">WaveformGaussianModulated</span><span class="p">(</span><span class="n">f_min</span><span class="o">=</span><span class="mf">8.2e9</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="mf">12.4e9</span><span class="p">),</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The semantics are unchanged.  The argument is still an optional
+override applied to every excited <code class="docutils literal notranslate"><span class="pre">(port,</span> <span class="pre">mode)</span></code>, and omitting it
+still derives a waveform per excited mode from the analysis band —
+Gaussian for TEM and lumped ports, modulated Gaussian above a mode’s
+cut-off.  The two mappings are exact, pulse for pulse:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>0.4.x</p></th>
+<th class="head"><p>0.5</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ExcitationSpec(f_min=A,</span> <span class="pre">f_max=B)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">WaveformGaussianModulated(f_min=A,</span> <span class="pre">f_max=B)</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ExcitationSpec(f_min=A,</span> <span class="pre">f_max=B,</span> <span class="pre">waveform=&quot;gaussian&quot;)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">WaveformGaussian(f_max=B)</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">ExcitationSpec.mode_index</span></code> had no effect here in 0.4.x either — the
+override always applied to every excited mode — so nothing is lost by
+its absence.  Which channels are excited is still <code class="docutils literal notranslate"><span class="pre">run(excited=[…])</span></code>,
+unchanged.</p>
+<p>Two guards are new: the value must be a
+<a class="reference internal" href="api/signals.html#magnelio.signals.Waveform" title="magnelio.signals.Waveform"><code class="xref py py-class docutils literal notranslate"><span class="pre">Waveform</span></code></a> instance, and a waveform whose
+<code class="docutils literal notranslate"><span class="pre">f_max</span></code> reaches above the analysis band now warns — <em>“waveform f_max =
+2e+10 Hz exceeds the analysis band f_max = 1.24e+10 Hz: the pulse
+carries energy the grid and the frequency axis do not resolve.”</em></p>
+<p>Like <code class="docutils literal notranslate"><span class="pre">ExcitationSpec</span></code> itself, <code class="docutils literal notranslate"><span class="pre">excitation=</span></code> appears in no 0.4.x
+tutorial or example.  This one bites hand-written expert scripts, not
+code that followed the published pages.</p>
+</section>
+<section id="what-is-new-rather-than-changed">
+<h3>What is new rather than changed<a class="headerlink" href="#what-is-new-rather-than-changed" title="Link to this heading">#</a></h3>
+<p><a class="reference internal" href="api/core.html#magnelio.AnalysisTD" title="magnelio.AnalysisTD"><code class="xref py py-class docutils literal notranslate"><span class="pre">AnalysisTD</span></code></a> — one march under a list of
+<em>simultaneous</em> excitations — is new, and <code class="docutils literal notranslate"><span class="pre">AnalysisScatteringTD</span></code> is now
+a subclass of it running on the same engine.  Its own API is unchanged
+apart from <code class="docutils literal notranslate"><span class="pre">waveform=</span></code>.  Also new: <code class="docutils literal notranslate"><span class="pre">Project.result(name)</span></code> rebuilds the
+<code class="docutils literal notranslate"><span class="pre">TDResult</span></code> of any run, a scattering channel run included, and the run
+names of a scattering project are still the 0.4.x <code class="docutils literal notranslate"><span class="pre">&quot;port1_mode0&quot;</span></code>
+form.  <a class="reference internal" href="api/core.html#magnelio.resume" title="magnelio.resume"><code class="xref py py-func docutils literal notranslate"><span class="pre">resume()</span></code></a> keeps its exact 0.4.x signature; only
+the meaning of its second argument widened, from a <code class="docutils literal notranslate"><span class="pre">(port,</span> <span class="pre">mode)</span></code> pair
+to that <em>or</em> a run name.  Nothing in existing <code class="docutils literal notranslate"><span class="pre">resume</span></code> calls changes.</p>
+<p>One footnote, because the new vocabulary invites the confusion:
+<code class="docutils literal notranslate"><span class="pre">AnalysisTD.run()</span></code> takes <code class="docutils literal notranslate"><span class="pre">excitations=[…]</span></code> — drives applied together —
+while <code class="docutils literal notranslate"><span class="pre">AnalysisScatteringTD.run()</span></code> takes <code class="docutils literal notranslate"><span class="pre">excited=[…]</span></code> — channels, one
+independent run each.  These are different things, not two spellings
+of one; <code class="docutils literal notranslate"><span class="pre">excited=</span></code> was never renamed.  The scattering analysis rejects
+the wrong one with a message saying which it wants.</p>
+<p>Driving several modes of one port in the same run is likewise new
+capability, not a change; existing single-mode code is unaffected.  It
+is worth knowing about here for one reason: it is why a port
+checkpoint now holds one source-history buffer per excited mode, which
+is part of what the store bump below is.</p>
+</section>
+</section>
+<section id="saved-projects-must-be-re-run">
+<h2>Saved projects must be re-run<a class="headerlink" href="#saved-projects-must-be-re-run" title="Link to this heading">#</a></h2>
+<p>This is the one change that bites without touching a line of your
+code.</p>
+<p><strong>A project store written by 0.4.x cannot be opened by 0.5, and there
+is no in-place migration.</strong>  The store format went from schema 1.0 to
+2.0: <code class="docutils literal notranslate"><span class="pre">results.h5</span></code> now names a run by its excitations, <code class="docutils literal notranslate"><span class="pre">mesh.h5</span></code>
+records the mesh’s element type, and port checkpoints hold one
+source-history buffer per excited mode.  There is no converter, and
+the recipe readers that used to tolerate the pre-0.5 spellings were
+retired in the same bump.</p>
+<p>What you see is a hard, complete stop the first time you touch project
+metadata:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>magnelio.io._schema.ProjectSchemaError: wr90_run/project.json: schema
+version '1.0' is not supported (current: '2.0'). This store was
+written by another magnelio release — re-run the simulation to
+regenerate it.
+</pre></div>
+</div>
+<p>Note <em>when</em> it arrives.  <a class="reference internal" href="api/core.html#magnelio.open_project" title="magnelio.open_project"><code class="xref py py-func docutils literal notranslate"><span class="pre">open_project()</span></code></a> itself
+succeeds — it only checks that <code class="docutils literal notranslate"><span class="pre">project.json</span></code> exists, and the metadata
+is read lazily — so the error comes one line later, at whatever first
+reads the store: <code class="docutils literal notranslate"><span class="pre">project.status</span></code>, <code class="docutils literal notranslate"><span class="pre">project.setup</span></code>, <code class="docutils literal notranslate"><span class="pre">project.runs</span></code>,
+<code class="docutils literal notranslate"><span class="pre">project.s_params</span></code>, <code class="docutils literal notranslate"><span class="pre">project.result(name)</span></code>,
+<a class="reference internal" href="api/core.html#magnelio.resume" title="magnelio.resume"><code class="xref py py-func docutils literal notranslate"><span class="pre">resume()</span></code></a>, and <code class="docutils literal notranslate"><span class="pre">repr(project)</span></code>, so even typing the bare
+name at a REPL prompt raises.</p>
+<p>One part survives, and it is the useful part: <code class="docutils literal notranslate"><span class="pre">project.mesh</span></code>,
+<code class="docutils literal notranslate"><span class="pre">project.grid</span></code> and <code class="docutils literal notranslate"><span class="pre">project.geometry</span></code> still read.  <code class="docutils literal notranslate"><span class="pre">mesh.h5</span></code> carries
+no schema stamp and is not gated, so the <em>model</em> of an old project can
+be recovered and re-run without meshing it again.</p>
+<p>Do not work around the gate by editing the version stamp.  Forcing
+<code class="docutils literal notranslate"><span class="pre">project.json</span></code> and the two HDF5 files to <code class="docutils literal notranslate"><span class="pre">&quot;2.0&quot;</span></code> makes a plain modal
+scattering project appear to read back — status, runs, S-parameters
+all return values — and that is exactly what makes it dangerous.  The
+stored 1.0 recipe key <code class="docutils literal notranslate"><span class="pre">excitation</span></code> is not read by the 2.0 recipe
+reader, so the rebuilt analysis silently falls back to the
+auto-derived per-mode waveform, without a warning.  A resume from that
+state splices a different pulse onto the recorded one.  Re-running the
+analysis is the only supported path, and it is what the error message
+asks for.</p>
+</section>
+<section id="changes-that-are-not-api-breaks">
+<h2>Changes that are not API breaks<a class="headerlink" href="#changes-that-are-not-api-breaks" title="Link to this heading">#</a></h2>
+<p>Three changes move numbers slightly without renaming anything.  They
+are listed here so a result that shifts after the upgrade has an
+explanation.</p>
+<p><strong>The auto-sized run length now follows the pulse.</strong>  The estimate for
+a band-limited drive is the drive’s own duration (<code class="docutils literal notranslate"><span class="pre">waveform.t_end</span></code>,
+plus any delay) instead of a fixed <code class="docutils literal notranslate"><span class="pre">8</span> <span class="pre">/</span> <span class="pre">f_max</span></code>.  A TE- or TM-fed
+scattering run therefore checks its stop criterion on a slightly
+different cadence and may stop a few steps later than before.  On the
+reference waveguides the in-band <code class="docutils literal notranslate"><span class="pre">|S|</span></code> changes by less than 5·10⁻⁴.
+TEM and lumped-port runs are unchanged.</p>
+<p><strong>The default total-field box of a plane wave moved.</strong>  Where a box
+side is not given, it now falls two bulk cells inside the <em>physical</em>
+domain — past the absorber cells the mesher appends — rather than
+being counted from the edge of the padded grid.  This applies per
+side, so it also reaches a <code class="docutils literal notranslate"><span class="pre">corners=</span></code> pair with <code class="docutils literal notranslate"><span class="pre">None</span></code> or infinite
+components.  A box stated in full is unaffected.</p>
+<p><strong>A fallback channel no longer reports a chain floor.</strong>
+<code class="docutils literal notranslate"><span class="pre">analysis.solve_ports()[name].modes[i].chain_floor_db</span></code> is a property
+of the exact transparent termination, so it is now <code class="docutils literal notranslate"><span class="pre">None</span></code> on a channel
+that fell back to the first-order absorber, where it used to read
+around −13 to −10 dB.  That number was neither the reflection floor of
+that channel nor a bound on anything, and code that plotted or
+compared it will now find <code class="docutils literal notranslate"><span class="pre">None</span></code> there.  What such a channel does
+publish is its cross-section measurement, <code class="docutils literal notranslate"><span class="pre">chain_spread</span></code>.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="methods/implementation.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Implementation engineering (non-method)</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="bibliography.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Bibliography</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quick-reference">Quick reference</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sources-waveforms-and-excitations">Sources, waveforms and excitations</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-plane-wave">The plane wave</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-high-level-form">The high-level form</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#continuous-wave-drives">Continuous-wave drives</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#excitationspec"><code class="docutils literal notranslate"><span class="pre">ExcitationSpec</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#excitations-on-port-specs">Excitations on port specs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-waveform-functions">The waveform functions</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#monitors">Monitors</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-analysis-classes">The analysis classes</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-waveform-override">The waveform override</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-is-new-rather-than-changed">What is new rather than changed</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#saved-projects-must-be-re-run">Saved projects must be re-run</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#changes-that-are-not-api-breaks">Changes that are not API breaks</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="_sources/migration-0.5.md.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Bernd Breitkreutz.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

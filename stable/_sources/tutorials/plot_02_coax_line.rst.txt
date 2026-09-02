@@ -504,7 +504,7 @@ Numerical mode vs. analytical reference
 
     Port 'port1' — 1 mode(s)
       z_line = 49.67 Ω (numerical), 51.67 Ω (reference, Δ -3.87 %)
-      [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 49.67 Ω  ε_eff = 2.250
+      [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 49.67 Ω  ε_eff = 2.250  termination = dtbc (chain floor <= -320 dB)
     z_line numerical :   49.67 Ohm  (-3.9 %)
     z_line reference :   51.67 Ohm
 
@@ -586,7 +586,7 @@ Run and S-parameters
 
  .. code-block:: none
 
-    max |S11| in band: -110.0 dB
+    max |S11| in band: -110.3 dB
 
 
 
@@ -661,7 +661,7 @@ interest.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 7.913 seconds)
+   **Total running time of the script:** (0 minutes 9.712 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_02_coax_line.py:
