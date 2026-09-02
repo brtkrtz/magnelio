@@ -12742,7 +12742,8 @@ The eigenmode analysis takes no `f_max` and is untouched.
 ## DD-187 — Post-hoc reference-plane shift (`result.deembed`) on the exact discrete chain dispersion
 
 **Status:** Decided 2026-08-24 (developer approved the post-hoc form
-over a CST-style per-port declaration); shipped 2026-08-24.
+over a per-port declaration of the kind commercial suites offer);
+shipped 2026-08-24.
 
 **Problem.**  Comparing simulated S-parameters against measurements,
 against other tools, or against an on-grid device under test requires
@@ -19082,3 +19083,60 @@ fixture deliberately left as built.
 - Whether this defect also contributed to the level shift of the four
   port-floor certificates is **not measured**.  KB-038 records single
   precision as the leading explanation and nothing here displaces it.
+
+## DD-241 — the public repository has a content gate, not only a branch gate
+
+**Date:** 2026-09-02
+
+**Context.**  The `pre-push` hook of the maintainers' workspace has
+guarded *which commits* reach the public remote since the workspace
+went to two remotes: only `main` and tags on `main`.  It has never looked
+at *what is in them*.  The rules about that — no commercial solver or
+suite named anywhere in the tree, no vendor-coined term for the
+conformal material matrices, private-workspace citations labelled as
+internal records, no home paths, no addresses — were working rules the
+assistant carried in its own notes, enforced by nobody else.  A review
+before the first push after a model change found the rule broken
+twice: one vendor name entered `design-decisions.md` on 2026-08-24
+(DD-187's status line), shipped in v0.4.4 … v0.4.8 and, because the
+source distribution packs the developer records, in every PyPI and
+conda-forge artefact of those releases; a second entered the DD-224
+status line and an intermediate `STATUS.md` on 2026-08-29 and sat in
+all 45 unpublished commits.  The public one cannot be taken back — a
+force-push leaves the objects reachable by hash and the distributions
+are immutable — so it was reworded forward; the unpublished ones were
+removed by rewriting the 45 commits before they left.
+
+**Decision.**  `validation/tools/check_public_hygiene.py` is the
+content gate.  It audits every tracked text file of a tree against a
+short denylist — vendor names, the retired term, private-workspace
+paths that are not labelled within two lines (the preamble of this
+file declares the convention once for every citation it holds, so this
+file is exempt from the labelling rule alone), absolute home paths,
+e-mail addresses other than GitHub noreply and the project contact in
+`SECURITY.md` — and runs in three places: pre-commit and CI on the tree
+they see, and the workspace `pre-push` hook over **every commit of every
+range** pushed to the public remote, reporting only what the remote does
+not already carry.  The range form is the one that matters: a line that
+entered in one commit and left in a later one is published all the
+same, and it was exactly such a line that the tip-only audit of the
+review missed and the range audit found.
+
+**Rejected.**  Excluding the developer records from the source
+distribution would shrink the blast radius of a future slip to GitHub,
+but they are part of the record the tests and the docs cite, and the
+gate — not the packaging — is what keeps the slip from happening; left
+to the maintainer as a packaging choice.  Rewriting public history was
+rejected for the reasons above.
+
+**Consequences.**  A commit that names a vendor, cites a dossier without
+labelling it, or carries an address fails pre-commit; a push carrying
+one in any commit fails at the hook with the offending commit, file and
+line.  The denylist is the script's own module constants, one place to
+extend.  `CLAUDE.md` (workspace, private) names the gate beside the
+lint gate.
+
+**Files:** `validation/tools/check_public_hygiene.py`,
+`.pre-commit-config.yaml`, `.github/workflows/ci.yml`, the workspace
+`git-hooks/pre-push` (outside the repository), `design-decisions.md`
+(DD-187 status line reworded), `STATUS.md`.
