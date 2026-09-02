@@ -10,8 +10,8 @@
    "planes": [
     {
      "domain_end": true,
-     "h_fine": 0.00015,
-     "moved_to": 8.47118e-05,
+     "h_fine": 0.0001841,
+     "moved_to": 0.0001039837,
      "node": 0,
      "position": 0.0,
      "singular": false,
@@ -21,10 +21,10 @@
     },
     {
      "domain_end": false,
-     "h_fine": 0.00015,
+     "h_fine": 0.0001841,
      "moved_to": null,
      "node": 3,
-     "position": 0.0006,
+     "position": 0.0007365,
      "singular": false,
      "sources": [
       "edge #1 Difference(air)",
@@ -36,9 +36,9 @@
     },
     {
      "domain_end": true,
-     "h_fine": 0.00015,
+     "h_fine": 0.0001841,
      "moved_to": null,
-     "node": 14,
+     "node": 13,
      "position": 0.004,
      "singular": false,
      "sources": [
@@ -176,7 +176,7 @@
  },
  "feature_gap": 2.21133e-07,
  "n_nodes": {
-  "x": 15,
+  "x": 14,
   "y": 24,
   "z": 53
  },

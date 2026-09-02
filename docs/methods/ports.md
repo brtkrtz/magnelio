@@ -44,16 +44,19 @@ theory {cite}`marcuvitz1951,pozar2012`.  Analytical
 reference modes for coaxial and rectangular-waveguide ports are
 closed-form textbook solutions {cite}`pozar2012`.
 
-The port report labels the impedance of an inhomogeneous cross-section
-`(quasi-static)`: it is frequency-flat by construction, whereas the
-mode the grid actually carries disperses — its $\varepsilon_{\text{eff}}$
-rises with frequency and its impedance moves with it (by 3 to 7 % at
-15 GHz on the tutorial microstrip) — and that difference, not the
-absorber, is where most of the $-30$ dB-class $|S_{11}|$ floor of the
-default pipeline comes from.  On a homogeneous line the label stays
-`(numerical)`.  The frequency dependence itself is available from the
-same report, `report.dispersion(f_axis)` (section *Reference impedance,
-dispersion and renormalisation* below).
+The port report labels every solved impedance `(on this grid)`: it is
+the value of the port-plane slice of the user's mesh, not a converged
+2D value — the ladder of `refine_port_modes` (section *Converging the
+port cross-section* below) converges it.  An inhomogeneous
+cross-section adds `quasi-static`: the impedance is frequency-flat by
+construction, whereas the mode the grid actually carries disperses —
+its $\varepsilon_{\text{eff}}$ rises with frequency and its impedance
+moves with it (by 3 to 7 % at 15 GHz on the tutorial microstrip) —
+and that difference, not the absorber, is where most of the $-30$
+dB-class $|S_{11}|$ floor of the default pipeline comes from.  The
+frequency dependence itself is available from the same report,
+`report.dispersion(f_axis)` (section *Reference impedance, dispersion
+and renormalisation* below).
 
 **Coupled lines.**  With more than one signal conductor above the
 ground — an edge-coupled microstrip pair, a stripline pickup, a
@@ -493,8 +496,8 @@ definition $Z_{PI} = 2P/|I|^2$ of the true mode, from the discrete
 Poynting flux through the port plane and the Ampère loop around the
 signal conductor; on a homogeneous line it equals the report's line
 impedance to roundoff, on the tutorial microstrip it meets the
-quasi-static value in the static limit and rises to 53.4 Ω at 15 GHz
-from 51.5 Ω, while $\varepsilon_{\text{eff}}$ walks from 2.99 to 3.28
+quasi-static value in the static limit and rises to 47.8 Ω at 15 GHz
+from 46.0 Ω, while $\varepsilon_{\text{eff}}$ walks from 3.05 to 3.37
 — the curve the S21 phase of the full run reproduces.  On a port with
 more than one signal conductor the modal current has no single loop
 and the sweep reports the channel's own reference instead.  Hollow
@@ -546,12 +549,15 @@ $2^k$ ways at level $k$ (`MeshControl(subdivide=...)`, a nested
 h-refinement of the finished grid that keeps every plane the rules
 placed).  Each rung costs $4\times$ the previous one on a slab of six
 cells, the report lists the ladder, its observed order and a
-Richardson estimate, and the lesson is often the one tutorial 09
-draws: its 25-node-per-wavelength grid reads the microstrip at 51.5 Ω
-while the ladder converges at first order (the strip edges) toward
-about 57 Ω — a 10 % error that neither the port's matching nor the
-run's $|S_{11}|$ shows, and exactly the number a renormalisation to
-50 Ω would attribute to the device.
+Richardson estimate, and the lesson is the one tutorial 09 draws: its
+25-node-per-wavelength grid reads a microstrip designed on paper for
+50 Ω at 46.0 Ω, while the ladder converges at first order (the strip
+edges) toward about 51.5 Ω — an 11 % grid error that neither the
+port's matching nor the run's $|S_{11}|$ shows, and exactly the number
+a renormalisation to 50 Ω would attribute to the device; the remaining
+3 % against the paper design splits into the shield (about 1.2 Ω, the
+ladder rerun in a four times larger box converges at 52.7 Ω) and the
+hand formula's thickness correction.
 
 ### What a Touchstone export covers (DD-184)
 

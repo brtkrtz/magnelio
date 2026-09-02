@@ -237,7 +237,7 @@ class TestMergedPortComposition:
         """The report labels a quasi-TEM line impedance for what it is:
         the frequency-flat value of the Laplace mode, a few percent
         below what the discrete wave carries at the top of the band
-        (DD-239).  A homogeneous line keeps the ``(numerical)`` label."""
+        (DD-239).  A homogeneous line keeps the plain grid label."""
         from magnelio.ports._modal.mode_report import PortReport
 
         op = _build(
@@ -246,7 +246,7 @@ class TestMergedPortComposition:
             f_calc=25.0e9,
         )
         assert op.port_report.quasi_static
-        assert "(quasi-static)" in PortReport.from_operator(op).summary()
+        assert "(quasi-static, on this grid)" in PortReport.from_operator(op).summary()
 
         coax = _build(
             _coax_mesh(),
@@ -254,7 +254,7 @@ class TestMergedPortComposition:
             f_calc=25.0e9,
         )
         assert not coax.port_report.quasi_static
-        assert "(numerical)" in PortReport.from_operator(coax).summary()
+        assert "Ω (on this grid)" in PortReport.from_operator(coax).summary()
 
     def test_qtem_multimode_via_zeta_pencil(self):
         """WP-U6: epsilon_r=None with n_modes > K-1 serves the true
