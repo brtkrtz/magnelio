@@ -8,7 +8,9 @@ grammar, `AnalysisTD` + `TDResult`, project-store schema 2.0,
 `magnelio.fields.FieldState`, field and current-path sources,
 tutorial 20), **the pair-product gate as a reflection budget**
 (DD-228/229, closes KB-022) and **the section-engine reach repair**
-(DD-240/DD-242, close KB-041/KB-042, open KB-043/KB-044).  The band/QTEM track
+(DD-240/DD-242, close KB-041/KB-042, open KB-043/KB-044).  **Since the
+release: DD-243 closes KB-044** — one chord budget for all three section
+paths.  The band/QTEM track
 **DD-230…DD-239 is closed, with every shipped default unchanged**:
 project-store runs, `port_model="modal"`, a DC-reaching axis,
 bit-exact resume (closes KB-037), the −70 dB pricing, the short-basis
@@ -17,8 +19,8 @@ path between Mur-1st and the band DTBC, the two-term cancellation
 behind the modal-Mur port floor (DD-238), and the pricing of the number
 a user actually reads (DD-239: an exactly transparent port is worth at
 most 1.93 dB of tutorial 09's |S11|).  Open: KB-023,
-KB-027, KB-038 (diagnosed — the single-precision production default),
-KB-043 and KB-044.  Unit 2830 and integration 452: 3279 passed / 9 skipped
+KB-027, KB-038 (diagnosed — the single-precision production default)
+and KB-043.  Unit 2830 and integration 452: 3279 passed / 9 skipped
 (2026-09-02, with `CUPY_ACCELERATORS=""` — without it four GPU tests
 fail on nvrtc in the sandbox).  Channels: GitHub, PyPI, conda-forge and
 the two docs channels below.
@@ -30,6 +32,8 @@ certificates named in their DD entries.
 
 ## Recent decisions
 
+* **DD-243** (2026-09-02) — one chord budget for all three section paths, closing KB-044.  The facet path refined section chords to a tenth of the deflection, the exact engine's conic arcs and every kernel-delegated plane tessellated at the full deflection: a polygon of chords books (2/3)·sagitta too little area per unit boundary length, a radius short by h_min/150 on every cylinder, cone, sphere or torus cut across its curvature (7.0…9.3e-3 of a cell against a δ/1000 reference), **first order in the cell size** because the deflection is tied to h_min — so it halves where the scheme's own error quarters and leads on fine meshes (Δf/f ≈ 3.3e-4 on a cavity of R = 20 h, 8e-5 at R = 80 h) — and a **step** of that size whenever a sweep carried a body from the kernel's path to the facet path (the first non-zero fillet radius), read by a user as the fillet's effect.  Now `SECTION_CHORD_FRACTION = 0.1` of the deflection everywhere: `GCPnts_TangentialDeflection` is fed the budget (open-chain test and nudge ladder keep the deflection), the exact engine's `du_max` and its compiled twin scale by it.  Measured: kernel vs converged 7.0…9.3e-3 → 0.79…1.15e-3 of a cell; a cylinder across its axis is one polygon on all three paths (kernel vs facet 8e-14, exact vs facet 2e-16); the two DD-217 gates that arm A alone broke pass, engine and kernel having moved together.  Price **+19 % mesh-build CPU** on the fillet-heavy probe (5.41 → 6.43 s), above KB-044's +11…12 % because the exact engine's fillet arcs took the finer budget too.  No pinned number moved; the one fallout was a *fixture*: the round coax forced through the QTEM path lost its exactly degenerate TE11 pair (the inner conductor's 72-point circle was four-fold symmetric under the 5° cap, the 130-point one is not; the split, 2.9e-9 in ζ, clears the pencil's 1e-9 dedup and both polarisations certify as real channels), so the refusal gate is now pinned on a square coax, whose symmetry no tessellation touches.
+
 Newest first, one line each; the full record is the DD entry.
 
 * **DD-241** (2026-09-02) — the public repository has a content gate, not only a branch gate.  The workspace `pre-push` hook had guarded *which* commits reach the public remote and never *what is in them*; the rules about content — no commercial solver named anywhere in the tree, private-workspace citations labelled as internal records, no home paths or addresses — lived in the assistant's own notes, and the review before the first push after a model change found them broken twice (one vendor name public since v0.4.4, in every PyPI and conda-forge artefact because the sdist packs the developer records — reworded forward, it cannot be taken back; a second one in all 45 unpublished commits — removed by rewriting them).  `validation/tools/check_public_hygiene.py` is the gate: pre-commit and CI audit the tree, the `pre-push` hook audits **every commit of every range** pushed to the public remote against what the remote already carries — the form that matters, since a line that entered in one commit and left in a later one is published all the same, and exactly such a line is what the tip-only audit missed and the range audit found.
@@ -38,14 +42,12 @@ Newest first, one line each; the full record is the DD entry.
 * **DD-238** (2026-09-01) — the modal-Mur port floor is a two-term cancellation, and the one gain DD-237 left as free is refuted by the measured run it demanded.  The instrument is `|a2/b2|` at the *passive* port under an exact-DTBC true-mode generator (own floor −145…−176 dB, 90+ dB of headroom, CW lock-in, never `compute_s_parameters` — its de-staggered split caps at −40…−60 dB, above the effect; line length irrelevant, 0.00 dB between Nz = 24 and Nz = 120).  The shipped floor is **better than the a priori said**: worst in band −52.3 dB microstrip, −36.5 dB layered, −55.6 dB block against DD-237's −38.9 / −27.2 / −47.7 — the scalar Γ is an *exact* instrument for what it prices (0.01 dB against measurement on a true discrete profile) but prices only one of the port's two error terms, so it is pessimistic by 7.5–14.9 dB and is **not a bound**.  The mechanism: `build_modal_port` takes the Mur coefficient *and* the mode profile from the same frequency-flat quasi-static Laplace mode, the two errors are comparable and measured 161–180° out of phase, and the floor is their residual — block at 6.2 GHz closes to three digits, boundary 4.103e−3, profile 2.443e−3, residual 1.660e−3 = the measured −55.60 dB.  The 2×2 with the exact-DTBC control shows correcting *either* term alone is worse and correcting **both** lands on the instrument floor (−154.4…−157.3 dB against the control's −156.1), so there is no third error term.  Moving `r` a fraction α toward `r_exact` is worse at α = 1 in 8/8 points (2.7–3.4 dB block, 7.6–11.9 layered, 14.3–15.7 microstrip) and the optimum is **interior** and fixture- and frequency-dependent — ≈ 0.50 block, ≈ 0.25 layered and drifting down with frequency, at most 0 on the production microstrip — because it sits where the two magnitudes are *equal*, which needs a discrete mode solve per port per frequency, i.e. the band path; the shipped `r` sits near a cancellation optimum by accident.  So the minimax objective was wrong in kind (the floor is `|Γ_bnd − Γ_prof|`, not `|Γ_bnd|`), the coefficient is not calibrated on its own, and — the forward coupling worth remembering — a better *mode profile* alone would raise the floor too unless `r` moves in the same step.  Nothing under `src/` moves; the user-visible S11 is a third quantity and the −30 dB-class figures in DD-064, the docs and the runtime notices are untouched.  Certificate: `validation/qtem_mur_floor_decomposition.py`.
 
 Older decisions: `design-decisions.md`.
-
 ## Working practices earned the hard way
 
 * **Verify a numerics fix across the mesh-control range, not on the
-  mesh that exposed it.**  DD-147 was checked at the setting that
-  triggered it and at one neighbour; the same collapse was waiting two
-  cell sizes away.  And a guard written as `== 0` against a computed
-  quantity fires half the time — use a threshold (DD-149).
+  mesh that exposed it** (DD-147: the same collapse waited two cell
+  sizes away); a guard `== 0` on a computed quantity fires half the
+  time — use a threshold (DD-149).
 * **Derive a refinement law from the maximum over the parameter, not
   from a spot check.**  The section arc's sagitta at a *fixed* u is
   `r·du²/(8|cos u|)` and carries no tilt dependence at all, so a probe
@@ -53,31 +55,27 @@ Older decisions: `design-decisions.md`.
   u = ±π/2 — yields the exponent the law needs, 1 in place of the
   shipped 3, which had been over-spending points (DD-240).
 * **A run that never advances looks exactly like a run that needs more
-  steps.**  Compare `dt` against `courant_dt(mesh.grid)` (no material
-  factor) and read `result.reference_signal`: a monotone 1e-18 ramp is
-  a Gaussian tail that has not arrived.  The energy line's `0.0 dB`
-  means "current = running maximum", which a barely-started run reports
-  just like a resonant one (DD-147).
+  steps.**  Compare `dt` against `courant_dt(mesh.grid)` and read
+  `result.reference_signal` (a monotone 1e-18 ramp is a Gaussian tail
+  not yet arrived); the energy line's `0.0 dB` means "current = running
+  maximum", the same for a barely-started and a resonant run (DD-147).
 * **A cached OCC solid is shared mutable state.**  OCCT Booleans edit
-  their arguments and a Boolean *result* shares sub-shapes with its
-  operands, so damage propagates backwards into the user's bodies
-  (DD-146); when geometry misbehaves only after something else ran,
-  measure `BRep_Tool::Tolerance` over edges and vertices —
-  `bounding_box()` stays right while the solid becomes unusable.
-* **Stage hunks, never whole files.**  The working tree is shared: an
-  uncommitted experiment (`energy_stop_db` 70 → 40) was once swept into
-  a commit by a whole-file `git add` and broke 21 physics tests.
+  their arguments and a result shares sub-shapes with its operands, so
+  damage propagates backwards into the user's bodies (DD-146); when
+  geometry misbehaves only after something else ran, measure
+  `BRep_Tool::Tolerance` — `bounding_box()` stays right meanwhile.
+* **Stage hunks, never whole files.**  An uncommitted experiment
+  (`energy_stop_db` 70 → 40) once rode a whole-file `git add` into a
+  commit and broke 21 physics tests.
 * **Worktree A/B runs need `PYTHONPATH=<worktree>/src`** — the editable
-  install pins the main checkout's `src`, so without it the run imports
-  the main tree and the attribution is meaningless.
+  install pins the main checkout's `src`; without it the A/B is void.
 * **A cost pinned on a loaded box is not a cost.**  The same port build
   measured 28.6 ms at load 0.15 and 1801 ms at load 68 on 16 cores —
   63x of spread at constant CPU work, which is how KB-040 was opened.
   Pin thread-limited CPU time, or run alone (DD-239).
 * **Re-check the script directories after every API break.**  Nothing
-  under `examples/`, `validation/`, `benchmarks/` or the internal
-  `investigations/` dossiers has test coverage, so a rename breaks them
-  silently — ten scripts once failed at import for months;
+  under `examples/`, `validation/`, `benchmarks/` or the internal `investigations/` dossiers
+  has test coverage (ten scripts once failed at import for months);
   `validation/tools/check_imports.py` finds it in seconds.
 
 ## Script directories
@@ -323,7 +321,7 @@ flickers to ``"done"`` between sequential runs; the reader skips
   term separated into injected profile against the drive port's own
   re-absorption, nor the decomposition repeated on a homogeneous
   pair-certified TEM line, where the split should vanish.
-* **Facet section engine (DD-240/242; KB-043, KB-044)** — the reach defect
+* **Facet section engine (DD-240/242/243; KB-043)** — the reach defect
   is closed for **planar and cylindrical faces**: analytic faces of a
   facetted shape are sectioned from their own geometry, and the
   pair-ladder coupler's ports terminate DTBC again (spreads 5.2164e-15
@@ -336,7 +334,9 @@ flickers to ``"done"`` between sequential runs; the reader skips
   its axis too), and the one real defect — a sphere's pole crossing left
   a full deflection off the surface by the parametric lift — is closed by
   the projection onto the implicit surface (residual 2e-18 m, −30 % per
-  section).  **KB-044** remains: in-house paths at δ/10, kernel at δ.
+  section).  **KB-044** (in-house paths at δ/10, kernel at δ) is closed
+  by DD-243: one chord budget on all three paths, +19 % mesh-build CPU on
+  a fillet-heavy model, kernel-path curved faces 8–10x closer to truth.
   **KB-043** is pre-existing and two-sided: within ~1e-7 m
   of a generatrix the kernel section collapses to 0.0 while the facet
   path books 44–64 % of truth (r = 2.30 mm, d = 1e-7: 2.7619e-07 facet /
@@ -379,7 +379,7 @@ flickers to ``"done"`` between sequential runs; the reader skips
   9.6 s at 3.7 M cells, 240 posts 1.8 s, 16 × 16 patch array 6.4 s at
   1.8 M, every ladder row on its reference (`pool/hash_refs/`).
   Deferred work, A/B switches, traps: DD-223.  Open against it:
-  KB-042 and KB-043.
+  KB-043.
 
 Closed construction sites are tombstoned where they were decided (the
 DD entry and `known-bugs.md`) and are not repeated here.

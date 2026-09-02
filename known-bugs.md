@@ -16,10 +16,25 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Five entries are open as of 2026-09-02: KB-023, KB-027, KB-038,
-KB-043 and KB-044.**  Everything else is struck through and resolved.
+**Four entries are open as of 2026-09-02: KB-023, KB-027, KB-038 and
+KB-043.**  Everything else is struck through and resolved.
 
-## KB-044: The in-house section paths book a tenth of the deflection, the kernel path the whole of it — Open (2026-09-02)
+## KB-044: ~~The in-house section paths book a tenth of the deflection, the kernel path the whole of it~~ — Resolved (DD-243, 2026-09-02)
+
+**All three section paths now tessellate to one chord budget, a tenth
+of the deflection** (`SECTION_CHORD_FRACTION` in `_section_kernels.py`):
+the kernel Boolean's `GCPnts_TangentialDeflection` is fed the budget,
+the exact engine's conic arcs and their compiled twin use it, the facet
+path already did.  Measured against the converged reference at δ/1000
+(same probe as below): the kernel path's worst per-cell deviation falls
+from 7.0…9.3e-3 to 0.79…1.15e-3 of a cell on cylinder, cone, sphere and
+torus; a cylinder cut across its axis now agrees between kernel, exact
+engine and facet path to 8e-14 / 2e-16 of a cell, and the two DD-217
+gates that pin the engine to the kernel pass unchanged.  Price: +19 %
+mesh-build CPU on the fillet-heavy probe model (5.41 → 6.43 s steady
+state), more than the +11…12 % of arm B alone because the fillets'
+cylinder faces are answered by the exact engine, whose arcs took the
+finer budget too.  The record below is kept as measured before the fix.
 
 Found while decomposing KB-042.  The facet path refines every section
 chord to a sagitta of a tenth of the deflection (DD-199); the exact
