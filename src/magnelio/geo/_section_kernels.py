@@ -54,6 +54,18 @@ except ImportError:  # pragma: no cover - exercised only without numba
 
 TWO_PI = 2.0 * math.pi
 
+#: Chord-sagitta budget of every section polygon as a fraction of the
+#: section deflection.  One budget for all three section paths — the
+#: facet path's in-plane refinement, the exact engine's conic arcs
+#: (here and in ``_occ_backend``) and the kernel Boolean's curve
+#: tessellation — so that a body books the same masses whichever path
+#: answers it.  A section polygon has hundreds of chords whose sagitta
+#: deficits add up to (2/3)·budget per unit boundary length; at the
+#: full deflection that was 7e-3 of a cell on every curved face cut
+#: across its curvature, first order in the cell size (the deflection
+#: is a fraction of the smallest cell).
+SECTION_CHORD_FRACTION = 0.1
+
 DELEGATE = 0
 ANSWERED = 1
 
@@ -287,10 +299,11 @@ def _cylinder_face_pairs(
     if full:
         n_arcs += 1
     # Ellipse sagitta r du^2 / (8 |c_n|) at u = +-pi/2 -- exponent 1, the
-    # compiled twin of the exact path in _occ_backend.
+    # compiled twin of the exact path in _occ_backend, at the common
+    # chord budget of the three section paths.
     du_max = min(
         math.radians(5.0) * abs(c_n),
-        math.sqrt(8.0 * deflection * abs(c_n) / r),
+        math.sqrt(8.0 * SECTION_CHORD_FRACTION * deflection * abs(c_n) / r),
     )
     v_margin = max(tol, 1e-9 * (vmax - vmin))
     for arc in range(n_arcs):

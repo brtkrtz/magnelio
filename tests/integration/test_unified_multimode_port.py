@@ -72,6 +72,30 @@ def _coax_mesh(dx=0.12e-3):
     )
 
 
+def _square_coax_mesh(dx=0.12e-3, outer=2.95e-3, inner=0.81e-3):
+    """The round coax's dimensions on square conductors: exactly
+    four-fold symmetric on the Cartesian grid whatever the section
+    path does, so its TE11-like pair is exactly degenerate.  (The round
+    coax's tessellated circles split the pair by ~3e-9 in the pencil
+    eigenvalue since the section chord budget was unified — above the
+    pencil's 1e-9 dedup — and both polarisations then certify as real
+    channels; the exact degeneracy this fixture pins was a property of
+    the tessellation, not of the coax.)"""
+    pec = Material.pec()
+    diel = Material.from_isotropic(name="pe", epsilon=EPS_R_COAX)
+    length = 12.0 * dx
+    o = Brick(origin=(-outer / 2, -outer / 2, 0.0), size=(outer, outer, length), material=diel)
+    i = Brick(origin=(-inner / 2, -inner / 2, 0.0), size=(inner, inner, length), material=pec)
+    model = GeometryModel(background=pec)
+    model.add(Difference(o, i))
+    model.add(i)
+    return Mesh.from_geometry(
+        model,
+        MeshControl(min_nodes_per_wavelength=15, max_cell_size=dx),
+        f_max=50.0e9,
+    )
+
+
 def _two_wire_mesh(length=6.0e-3):
     w, s, box = 1.0e-3, 3.0e-3, 10.0e-3
     pec = Material.pec()
@@ -271,13 +295,13 @@ class TestMergedPortComposition:
             )
 
     def test_qtem_degenerate_hybrid_pair_not_certified(self):
-        """Known WP-U6 limit: on the coax forced through the QTEM
+        """Known WP-U6 limit: on a square coax forced through the QTEM
         path the first hybrid is one polarisation of the exactly
         degenerate TE11-like pair — the pencil dedup collapses the
         eigenvalue to one representative whose tangential profile is
         not real in the DD-056 gauge; the factory refuses loudly
         instead of shipping an uncertified channel."""
-        mesh = _coax_mesh()
+        mesh = _square_coax_mesh()
         with pytest.raises(ValueError, match="degenerate or complex"):
             _build(
                 mesh,

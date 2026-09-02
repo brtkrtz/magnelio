@@ -15851,7 +15851,9 @@ section (1.3 of `sheets` 1.8 s on the 16 × 16 array).
 **Status:** Decided and implemented 2026-08-28, branch
 `perf/quadric-facet-sections`.  DD-216's open item 1; the "exact
 plane × quadric section" DD-199 named as the DD-102 follow-up, for
-cylinders.
+cylinders.  The arc budget the engine shares with the kernel is a
+tenth of the deflection since DD-243 (the pin to the kernel holds;
+both moved together).
 
 **Problem.**  The post row was the one ladder row not bound by
 Python bookkeeping: 6 284 `cross_section_polygons` calls took 14.2 s
@@ -19242,3 +19244,118 @@ paths without the reach caveat.
 `_LIFT_RANK`), `tests/unit/test_facet_section_engine.py`,
 `known-bugs.md`, `CHANGELOG.md`, `docs/methods/meshing-conformal.md`,
 `STATUS.md`.
+
+## DD-243 — one chord budget for all three section paths
+
+**Status:** Decided and implemented 2026-09-02, branch
+`fix/section-chord-budget`.  Closes KB-044, the product decision DD-242
+left open.
+
+**Problem.**  The three section paths tessellated to two accuracy
+classes.  The facet path refined every chord to a sagitta of a tenth of
+the deflection (DD-199, because a section polygon has hundreds of
+chords whose deficits add up); the exact engine's conic arcs took the
+kernel's rule, the full deflection (DD-217 pins the engine to the kernel
+to rounding), and so did every plane delegated to the kernel Boolean.
+A polygon of chords books (2/3)·sagitta too little area per unit
+boundary length — a radius short by (2/3)·δ = h_min/150 at the
+production deflection of a hundredth of the smallest cell, 7.0…9.3e-3
+of a cell on cylinder, cone, sphere and torus cut across their
+curvature (converged reference at δ/1000, DD-242's table).  Two things
+were wrong with that, and neither is the absolute size.  The offset is
+**first order in the cell size** — the deflection is tied to h_min, so
+it halves where the conformal scheme's own error quarters, and on a
+fine mesh it becomes the leading geometry error of a curved face
+(Δf/f = −ΔR/R on a cavity's fundamental: 3.3e-4 at R = 20 h, 8e-5 at
+R = 80 h).  And it was a **step**: a body that changes path — the first
+non-zero fillet radius of a sweep, a loft joining or leaving a solid —
+moved every curved face it owns by h_min/150, whether or not the fillet
+was anywhere near it, and a user reads that as the fillet's effect.
+
+**Decision.**  One budget, `SECTION_CHORD_FRACTION = 0.1` of the
+deflection, defined beside its compiled consumer in
+`_section_kernels.py` and aliased as `_SECTION_CHORD_FRACTION` in
+`_occ_backend.py`; the former `_FACET_REFINE_FRACTION` is gone.
+`cross_section_polygons` feeds the budget to
+`GCPnts_TangentialDeflection` and keeps the deflection for what is
+measured in it — the open-chain test (8 δ) and the nudge ladder; the
+exact engine's `_cylinder_face_pairs` and its compiled twin scale their
+`du_max` by it, as `_cylinder_arc` already did.  The triangulation the
+facet path lifts from stays at the deflection: the lift removes the
+chord error, the in-plane refinement holds the budget.  Semantics of
+the `deflection` argument unchanged — it is the accuracy contract of a
+section; the chord budget is how the tessellation honours it.
+
+**Measured** (`investigations/kb042-analytic-facets/probe_decompose.py`
+and `probe_kernel_budget_cost.py`, internal record; worst per-cell
+deviation of a cell area, converged reference at δ/1000):
+
+    body        kernel vs converged      kernel vs facet
+                before      after        before      after
+    cylinder    7.023e-03   7.873e-04    6.339e-03   8.1e-14
+    cone        9.280e-03   9.757e-04    8.831e-03   9.6e-04
+    sphere      7.775e-03   8.299e-04    7.485e-03   6.6e-04
+    torus       8.983e-03   1.150e-03    8.742e-03   7.6e-04
+
+The cylinder across its axis is now one polygon on all three paths
+(exact vs facet 2.1e-16); sphere, cone and torus agree within the
+budget, their vertices placed differently but all on the surface.  The
+DD-217 gates `test_post_row_matches_the_kernel_to_rounding` and
+`test_partial_cylinder_face_with_a_seam`, which arm A alone broke by
++1.0e-3, pass — engine and kernel moved together.  Cost on the
+fillet-heavy kernel-path probe (filleted brick r 1.5 mm + torus +
+sphere in an air box, max cell 0.5 mm), CPU self + children over three
+builds: 5.89 / 5.42 / 5.41 s → 6.96 / 6.45 / 6.43 s, **+19 %** at
+steady state — more than KB-044's +11…12 % for arm B alone, because the
+fillets' cylinder faces are answered by the exact engine and its arcs
+took the finer budget too.  `validation/pair_ladder_choice_certificate.py`
+reproduces DD-240's pins digit for digit (5.2164e-15 / 1.3072e-13 /
+1.4795e-10 / 96.1625 Ω): its coax stubs are cut along their axes, where
+every path is exact, and its filleted electrodes were on the facet
+path already.  Suites: 3279 passed / 9 skipped (unit 2830, integration
+452; the four nvrtc failures are the sandbox GPU, `STATUS.md`).
+
+**Fallout: one fixture, no pin.**  `test_qtem_degenerate_hybrid_pair_not_certified`
+forced the round coax through the QTEM path and expected the factory
+to refuse the first hybrid as a "degenerate or complex mode pair".  On
+`main` the pair *was* exactly degenerate: the inner conductor's circle
+tessellated to 72 points under the 5° angular cap — four-fold
+symmetric to 2e-18 m — and the outer's 78 points broke the symmetry by
+less than the pencil's 1e-9 dedup, so one complex representative
+survived (reality residual 7.25e-02) and the refusal fired.  At the
+chord budget the circles carry 130 and 247 points, neither four-fold
+symmetric, the pair splits by 2.9e-9 in ζ, both polarisations survive
+with reality residuals 3.5e-08 / 3.6e-08 and the port builds with two
+certified real channels — the better answer, but one that sits on a
+knife edge (a 1e-9 absolute dedup against a tessellation-set split;
+both outcomes are correct behaviour, so no KB).  The gate is now
+pinned on a **square coax** of the same dimensions, four-fold
+symmetric on the Cartesian grid whatever the section path does
+(residual 1.47e-01, refused on every variant tried).
+`investigations/kb042-analytic-facets/probe_coax_degenerate_pair.py`,
+internal record.
+
+**Rejected.**  *Lowering the facet path to the deflection* would have
+been consistent and cheaper, and wrong by 1e-3 on every convex section
+(DD-199's measurement).  *A finer deflection instead of a finer chord
+budget* (`SECTION_DEFLECTION_FRACTION` 1e-2 → 1e-3) moves the
+triangulation, the nudge ladder, the tangency pads and the kernel's
+1e-7 clamp along with it — ten times the triangles for the same
+answer.  *Exposing the budget as a user knob*: nothing in the measured
+range wants a coarser one, and a finer one is paid for by the
+deflection.
+
+**Consequences.**  KB-044 closed.  Results of models with curved faces
+on the kernel path move, toward the converged value, by up to the old
+offset (~7e-3 of a boundary cell's mass); planar models are
+bit-identical.  `docs/methods/meshing-conformal.md` describes one chord
+budget and what it buys; the DD-242 comment on the exact-path arc
+("the facet arc's is a tenth of it") is replaced.
+
+**Files:** `src/magnelio/geo/_section_kernels.py`
+(`SECTION_CHORD_FRACTION`, `_cylinder_face_pairs`),
+`src/magnelio/geo/_occ_backend.py` (`cross_section_polygons`,
+`_PlanarSectionEngine._cylinder_face_pairs`, `_cylinder_arc`,
+`_refine_segments`), `tests/integration/test_unified_multimode_port.py`
+(`_square_coax_mesh`), `docs/methods/meshing-conformal.md`,
+`known-bugs.md`, `CHANGELOG.md`, `STATUS.md`.

@@ -21,9 +21,16 @@ which removes the chord error that a shallow cut would otherwise
 amplify), and each segment is refined in-plane until its sagitta is a
 tenth of the deflection.  Analytic curved faces — cylinders, cones,
 spheres, tori — go through the kernel's Boolean section, whose exact
-curves are tessellated at the deflection.  The deflection is a
-hundredth of the smallest cell for the sub-cell fractions and a tenth
-for the cell classification.
+curves are tessellated to the same chord budget, a tenth of the
+deflection.  The deflection is a hundredth of the smallest cell for
+the sub-cell fractions and a tenth for the cell classification.  The
+chord budget is what sets the residual geometry error of a curved
+face: a polygon of chords books (2/3) of the sagitta budget too little
+area per unit boundary length, which is a radius short by about a
+1500th of the smallest cell — first order in the cell size, so it is
+kept an order below the deflection rather than at it (at the full
+deflection it was a 150th of a cell, and it did not shrink faster than
+the mesh).
 
 The three paths meet inside one body, and which one a face takes
 depends on its neighbours.  A solid that carries even a single
@@ -38,13 +45,15 @@ conics, so a family of parallel planes cutting a bore books identical
 areas and a waveguide port on such a cross-section keeps its exact
 transparent boundary; spheres, cones and tori are projected onto their
 implicit surface, so every section vertex lies on the surface to
-rounding, the poles of a sphere included.  What the path switch still
-changes is the tessellation class: the in-house paths refine section
-chords to a tenth of the deflection while the kernel's Boolean section
-tessellates at the deflection, so a curved face that moves onto the
-facet path books slightly more of its true area than before — of the
-order of the deflection per unit boundary length, and toward the
-converged value.  Section contours are wound by nesting
+rounding, the poles of a sphere included.  All three paths hold the
+same chord budget, so a body books the same masses to within that
+budget whichever path answers it: a cylinder sectioned across its axis
+by the exact engine, the facet path and the kernel's Boolean section
+agrees to rounding, and a sphere, cone or torus agrees within the
+budget (their vertices are placed differently but all lie on the
+surface).  A parameter sweep that carries a body from one path to
+another — the first non-zero fillet radius, a loft joining a solid —
+therefore sees no step from the change of path.  Section contours are wound by nesting
 parity (holes against their outer boundary) before the area kernels
 sum them, whatever path produced them.  The kernel's section runs over
 the faces whose extent reaches the plane rather than over the whole

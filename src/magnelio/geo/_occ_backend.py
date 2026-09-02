@@ -1745,10 +1745,12 @@ def cross_section_polygons(
     """Compute 2D polygon boundaries of a solid intersected with a plane.
 
     OCC's ``GCPnts_TangentialDeflection`` rejects ``deflection <= 0`` with
-    a ``Standard_ConstructionError``; we clamp to ``1e-7`` *in scaled
-    model units* (well above OCC's internal tolerance) to keep the
-    function robust.  For auto-scaled models the clamp is unreachable —
-    the DD-120 scale puts ``deflection * scale`` far above it.
+    a ``Standard_ConstructionError``; we clamp the deflection and the
+    chord budget it is tessellated at (a tenth of it, the budget every
+    section path holds) to ``1e-7`` *in scaled model units* (well above
+    OCC's internal tolerance) to keep the function robust.  For
+    auto-scaled models the clamp is unreachable — the DD-120 scale puts
+    ``deflection * scale`` far above it.
 
     Intersects the OCC shape with an axis-aligned plane and returns the
     boundary curves as tessellated polygons in the plane's local (u, v)
@@ -1763,7 +1765,10 @@ def cross_section_polygons(
     plane_position : float
         Position along the normal axis [m].
     deflection : float
-        Chordal deflection for curve tessellation [m].
+        Section deflection [m]: the accuracy contract of the section.
+        Curves are tessellated to a chord sagitta of a tenth of it, the
+        budget shared with the in-house section paths; the closedness
+        test and the default nudge step are measured in it.
     scale : float
         DD-120 model scale factor of the shape.
     exact_at_faces : bool
@@ -1820,6 +1825,12 @@ def cross_section_polygons(
     plane_position = plane_position * scale
     nudge_step = (deflection if nudge is None else nudge) * scale
     deflection = max(deflection * scale, 1e-7)
+    # The curve tessellation runs at the chord budget the in-house
+    # section paths hold (a tenth of the deflection), so that a body
+    # books the same masses whether a plane is answered by the engine,
+    # the facet path or this Boolean; the closedness test and the nudge
+    # ladder below keep the deflection itself.
+    chord = max(_SECTION_CHORD_FRACTION * deflection, 1e-7)
 
     try:
         from OCC.Core.BRepAdaptor import BRepAdaptor_Curve  # noqa: PLC0415
@@ -1919,7 +1930,7 @@ def cross_section_polygons(
                 discretizer = GCPnts_TangentialDeflection(
                     curve,
                     math.radians(5.0),
-                    deflection,
+                    chord,
                 )
                 n_pts = discretizer.NbPoints()
                 rng = range(n_pts, 0, -1) if flipped else range(1, n_pts + 1)
@@ -2009,10 +2020,11 @@ def cross_section_polygons(
     return [arr / scale for arr in polygons_scaled]
 
 
-#: Chord-sagitta budget of the facet path's section polygons as a
-#: fraction of the section deflection (see
+#: Chord-sagitta budget of every section polygon as a fraction of the
+#: section deflection, shared by the three section paths (defined beside
+#: its compiled twin in ``_section_kernels``; see
 #: ``_PlanarSectionEngine._refine_segments``).
-_FACET_REFINE_FRACTION = 0.1
+_SECTION_CHORD_FRACTION = _sk.SECTION_CHORD_FRACTION
 
 #: Rounding guard of the facet path's cylinder-tangency test
 #: (``_PlanarSectionEngine._cylinder_tangency``), relative to the
@@ -2476,7 +2488,8 @@ class _PlanarSectionEngine:
       when the plane is parallel to the axis, a conic otherwise —
       split at the face's boundary crossings and kept where it lies
       within the face's (u, v) rectangle, arcs tessellated at the
-      kernel's rule (chord ≤ deflection, turn ≤ 5°) and directed the
+      kernel's rule (chord sagitta ≤ a tenth of the deflection, the
+      common budget of all section paths, turn ≤ 5°) and directed the
       same way (:meth:`_cylinder_face_pairs`),
     - segments stitched into closed chains through shared edge
       indices — exact, no tolerance matching, because both adjacent
@@ -3296,11 +3309,11 @@ class _PlanarSectionEngine:
         not the deflection.  The chord midpoint is lifted onto the
         surface, the lift distance *is* the sagitta, and the segment is
         subdivided into ``ceil(sqrt(sagitta / budget))`` parts whose
-        interior points are lifted likewise, with a budget of a fraction
-        of the deflection: a section polygon has hundreds of chords and
-        their sagittas add up — at the full deflection the area of a
-        convex section came out 1e-3 low, at a tenth the facet path
-        matches the kernel's tessellation.  Returns the
+        interior points are lifted likewise, with a budget of a tenth of
+        the deflection, the chord budget every section path holds: a
+        section polygon has hundreds of chords and their sagittas add
+        up — at the full deflection the area of a convex section came
+        out 1e-3 low.  Returns the
         interior (u, v) points [scaled units] keyed by the segment's
         start point, or ``None`` when no segment needed any.
         """
@@ -3318,7 +3331,7 @@ class _PlanarSectionEngine:
         mid, ok = self._lift_slots(face, 0.5 * (uv_s + uv_e), chord_mid, axis)
         sagitta = np.linalg.norm(mid - chord_mid, axis=1)
         parts = np.ones(sel.size, dtype=np.int64)
-        budget = _FACET_REFINE_FRACTION * self._deflection
+        budget = _SECTION_CHORD_FRACTION * self._deflection
         parts[ok] = np.clip(np.ceil(np.sqrt(sagitta[ok] / budget)), 1, 32).astype(np.int64)
         u_idx, v_idx = self._UV[axis]
         interior: dict[int, np.ndarray] = {}
@@ -3405,7 +3418,7 @@ class _PlanarSectionEngine:
         # over-refined by 1/c_n^2 until the arc was declined outright.)
         du_max = min(
             math.radians(5.0) * abs(c_n),
-            math.sqrt(8.0 * _FACET_REFINE_FRACTION * self._deflection * abs(c_n) / r),
+            math.sqrt(8.0 * _SECTION_CHORD_FRACTION * self._deflection * abs(c_n) / r),
         )
         if not du_max > 0.0:
             return None
@@ -4122,12 +4135,12 @@ class _PlanarSectionEngine:
         if full:
             arcs.append((k - 1, 0, two_pi))
         # Ellipse sagitta r du^2 / (8 |c_n|) at u = +-pi/2 -- exponent 1,
-        # the same form as the facet path above but not the same budget:
-        # this is the kernel's deflection (the engine is pinned to the
-        # kernel to rounding), the facet arc's is a tenth of it (KB-044).
+        # the same form and the same budget as the facet arc above: the
+        # engine is pinned to the kernel Boolean to rounding, and the
+        # kernel tessellates at the common chord budget too (KB-044).
         du_max = min(
             math.radians(5.0) * abs(c_n),
-            math.sqrt(8.0 * self._deflection * abs(c_n) / r),
+            math.sqrt(8.0 * _SECTION_CHORD_FRACTION * self._deflection * abs(c_n) / r),
         )
         v_margin = max(self._tol, 1e-9 * (vmax - vmin))
         for i, j, wrap in arcs:

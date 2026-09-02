@@ -9,6 +9,21 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+### Changed
+
+- Every section path tessellates curved faces to the same chord budget,
+  a tenth of the section deflection.  Cylinders, cones, spheres and
+  tori of a body without a free-form face were sectioned by the CAD
+  kernel at the full deflection, which books a radius short by about a
+  150th of the smallest cell — a systematic offset of the order of
+  3e-4 in the resonant frequency of a cavity twenty cells in radius,
+  and a step of that size whenever a parameter sweep carried a body
+  from the kernel's path to the in-house one (the first non-zero fillet
+  radius, for instance).  The offset is now a 1500th of a cell on every
+  path, so results with curved faces move slightly, toward the
+  converged value, and the mesh build of curved-face-heavy models costs
+  up to about a fifth more CPU.
+
 ### Fixed
 
 - Sphere, cone and torus faces of a body that shares its solid with a
