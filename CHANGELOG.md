@@ -7,7 +7,11 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
-## [Unreleased]
+## [0.5.0] - 2026-09-02
+
+Ten changes in this release break 0.4.x scripts and saved projects; the
+upgrade guide *Upgrading from 0.4.x* (`docs/migration-0.5.md`) walks
+through every one of them.
 
 ### Added
 
