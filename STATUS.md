@@ -23,9 +23,10 @@ unchanged**; its closing result is that the port floor is not what caps
 the number a user reads (DD-239: an exactly transparent port is worth
 at most 1.93 dB of tutorial 09's |S11|), and it opened KB-038.
 
-Not yet on `main`, both green and on `private`: branch
-`perf/band-partitioned-convolution` (**DD-245**, below) and branch
-`docs/precision-page` (the *Numerical precision* methods chapter).
+On `main` since 2026-09-03, unreleased: **DD-245** (the partitioned
+boundary convolution, below) and the *Numerical precision* methods
+chapter `docs/methods/precision.md`, whose measurement of the
+single-precision length law is recorded in KB-038.
 
 Open: KB-023, KB-038 and KB-043.  Unit and integration together: 3289
 passed / 10 skipped (2026-09-03, with `CUPY_ACCELERATORS=""`).
