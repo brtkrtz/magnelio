@@ -708,7 +708,8 @@ class AnalysisScatteringTD(AnalysisTD):
     monitors : iterable, default ()
         Field monitors forwarded to every ``FITTimeDomainSolver`` run.
     verbose : bool, default True
-        Print solver progress.
+        Print solver progress.  ``None`` (the default) follows
+        :func:`magnelio.set_verbosity`.
     port_model : {"modal", "band", "auto"}, default "modal"
         Which port pipeline terminates and measures the run.
 
@@ -1084,9 +1085,19 @@ class AnalysisScatteringTD(AnalysisTD):
 
         bc_objects = self._resolve_bc()
 
+        from magnelio._progress import Reporter  # noqa: PLC0415
+
+        # The setup ahead of the time-domain loop is not free: the
+        # CFL eigenvalue is a Lanczos iteration over the whole update
+        # operator, and each port is a 2D mode solve.  Name them, or
+        # the run looks stalled before step 1 appears.
+        self._setup_reporter = Reporter("setup", self._verbose)
+        self._setup_reporter.stage("material matrices")
         m_eps = build_M_eps(self.mesh)
         m_mu = build_M_mu(self.mesh)
+        self._setup_reporter.stage("CFL eigenvalue")
         dt = spectral_dt(self.mesh, accuracy, m_eps=m_eps, m_mu=m_mu)
+        self._setup_reporter.finish()
 
         if self._resolve_port_model(m_eps, m_mu, dt) == "band":
             return self._run_band(
@@ -1391,7 +1402,7 @@ class AnalysisScatteringTD(AnalysisTD):
                 ),
             )
 
-        if self.verbose:
+        if self._verbose:
             print(
                 f"[AnalysisScatteringTD] streamed {len(excited_list)} run(s) to project {path}",
             )
@@ -1455,7 +1466,7 @@ class AnalysisScatteringTD(AnalysisTD):
                 f"port_model='modal' to accept the Mur fallback "
                 f"(−30 dB-class |S11| floor) on those channels.",
             )
-        if self.verbose:
+        if self._verbose:
             print(
                 f"[AnalysisScatteringTD] channels {mur_channels} are "
                 f"not DTBC-certifiable (inhomogeneous cross-section); "
@@ -1677,7 +1688,7 @@ class AnalysisScatteringTD(AnalysisTD):
             raise ValueError("f_axis must be sorted strictly ascending")
         cfg = self._band_setup(f_axis, dt, total_time_steps)
 
-        if self.verbose:
+        if self._verbose:
             print(
                 f"[AnalysisScatteringTD] building "
                 f"{len(self.ports)} band ports: band "
@@ -1706,7 +1717,7 @@ class AnalysisScatteringTD(AnalysisTD):
             for spec in self.ports
         ]
         label_to_op = {op.name: op for op in operators}
-        if self.verbose:
+        if self._verbose:
             op0 = operators[0]
             print(
                 f"[AnalysisScatteringTD] band ports built: "
@@ -1756,7 +1767,7 @@ class AnalysisScatteringTD(AnalysisTD):
                 recorder=recorder,
                 total_time_steps=n_steps,
                 dt=dt,
-                verbose=self.verbose,
+                verbose=self._verbose,
                 monitors=list(self.monitors),
                 backend=self.backend,
                 precision=self.precision,
@@ -1922,7 +1933,7 @@ class AnalysisScatteringTD(AnalysisTD):
                 recorder=recorder,
                 total_time_steps=n_steps,
                 dt=dt,
-                verbose=self.verbose,
+                verbose=self._verbose,
                 monitors=run_monitors,
                 backend=self.backend,
                 precision=self.precision,
@@ -1957,7 +1968,7 @@ class AnalysisScatteringTD(AnalysisTD):
                 ),
             )
 
-        if self.verbose:
+        if self._verbose:
             print(
                 f"[AnalysisScatteringTD] streamed {len(excited_list)} "
                 f"band run(s) to project {path}",

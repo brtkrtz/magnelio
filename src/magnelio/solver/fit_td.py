@@ -561,7 +561,9 @@ class FITTimeDomainSolver:
                 self._tile_zero_E = xp.asarray(plan.dead_zero_idx_E)
                 self._tile_zero_H = xp.asarray(plan.dead_zero_idx_H)
                 self._tile_skip_stats = plan.stats
-                if self.verbose:
+                # A plan with no dead tiles has nothing to report; the
+                # line would appear on every run that gains nothing.
+                if self.verbose and plan.stats["total"] > 0.0:
                     print(f"Tile skip: {plan.stats['total']:.1%} of kernel elements in dead tiles")
 
         # H-face offsets
@@ -749,6 +751,9 @@ class FITTimeDomainSolver:
                 f"(absolute step count) or None to march uncapped",
             )
         total_str = "∞" if unbounded else str(n_steps)
+        from magnelio._progress import Reporter  # noqa: PLC0415
+
+        rep = Reporter("FIT-TD", self.verbose)
         self._stop_reason = None
         self._final_signal_db = None
         dt = self.dt
@@ -1116,11 +1121,11 @@ class FITTimeDomainSolver:
                         )
                         if self.verbose:
                             energy_db = 10 * np.log10(max(current_energy, 1e-300) / peak_energy)
-                            print(
-                                f"\r  FIT-TD | time step {n + 1}/{total_str} "
+                            rep.final(
+                                f"time step {n + 1}/{total_str} "
                                 f"| stored energy [dB] {energy_db:.1f}/"
                                 f"{-energy_stop:.0f} "
-                                f"| done (energy criterion)          "
+                                f"| done (energy criterion)"
                             )
                         for mon in self.monitors:
                             if hasattr(mon, "finalize"):
@@ -1156,11 +1161,11 @@ class FITTimeDomainSolver:
                                 dt,
                             )
                             if self.verbose:
-                                print(
-                                    f"\r  FIT-TD | time step {n + 1}/{total_str} "
+                                rep.final(
+                                    f"time step {n + 1}/{total_str} "
                                     f"| port signal [dB] {sig_db:.1f}/"
                                     f"{-signal_stop:.0f} "
-                                    f"| done (port-signal criterion)     "
+                                    f"| done (port-signal criterion)"
                                 )
                             for mon in self.monitors:
                                 if hasattr(mon, "finalize"):
@@ -1208,11 +1213,11 @@ class FITTimeDomainSolver:
                                 stacklevel=2,
                             )
                             if self.verbose:
-                                print(
-                                    f"\r  FIT-TD | time step {n + 1}/{total_str} "
+                                rep.final(
+                                    f"time step {n + 1}/{total_str} "
                                     f"| port signal [dB] {sig_db:.1f}/"
                                     f"{-signal_stop:.0f} "
-                                    f"| done (port signal stalled)       "
+                                    f"| done (port signal stalled)"
                                 )
                             for mon in self.monitors:
                                 if hasattr(mon, "finalize"):
@@ -1230,18 +1235,10 @@ class FITTimeDomainSolver:
                         status = f"stored energy [dB] {energy_db:.1f}/{-energy_stop:.0f}"
                     else:
                         status = f"stored energy {current_energy:.3e} J"
-                    print(
-                        f"\r  FIT-TD | time step {n}/{total_str} | {status}          ",
-                        end="",
-                        flush=True,
-                    )
+                    rep.line(f"time step {n}/{total_str} | {status}")
                 elif self.verbose:
                     pct = 100.0 * n / n_steps
-                    print(
-                        f"\r  FIT-TD {pct:5.1f}% ({n}/{n_steps})",
-                        end="",
-                        flush=True,
-                    )
+                    rep.line(f"{pct:5.1f}% ({n}/{n_steps})")
 
         # Graceful stop (top-of-loop break): the state is consistent at
         # _resume_step, so drain the V/I tail and persist a resume
@@ -1258,9 +1255,7 @@ class FITTimeDomainSolver:
                 if hasattr(mon, "finalize"):
                     mon.finalize()
             if self.verbose:
-                print(
-                    f"\r  FIT-TD | graceful stop at step {self._resume_step}/{total_str}          "
-                )
+                rep.final(f"graceful stop at step {self._resume_step}/{total_str}")
             if self.sink is not None:
                 self.sink.flush()
                 self.sink.write_checkpoint()
@@ -1295,16 +1290,11 @@ class FITTimeDomainSolver:
                 stacklevel=2,
             )
             if self.verbose:
-                print(
-                    f"\r  FIT-TD | time step {end_step}/{total_str} "
-                    f"| done (runtime cap)               "
-                )
+                rep.final(f"time step {end_step}/{total_str} | done (runtime cap)")
         else:
             self._stop_reason = "steps"
             if self.verbose:
-                print(
-                    f"\r  FIT-TD | time step {n_steps}/{n_steps} | done (n_periods limit)          "
-                )
+                rep.final(f"time step {n_steps}/{n_steps} | done (n_periods limit)")
 
         for mon in self.monitors:
             if hasattr(mon, "finalize"):

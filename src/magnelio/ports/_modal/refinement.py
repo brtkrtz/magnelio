@@ -206,7 +206,7 @@ def refine_port_modes(
     mode: int = 0,
     tol: float = 1e-3,
     slab_cells: int = 6,
-    verbose: bool = False,
+    verbose: bool | None = None,
 ) -> PortRefinementReport:
     """Converge a port mode's parameter by refining the port plane alone.
 
@@ -242,8 +242,11 @@ def refine_port_modes(
     slab_cells : int, default 6
         Depth of the slab in cells of the user's mesh behind the port
         face (at least four: the port's equidistant buffer).
-    verbose : bool, default False
-        Print one line per level.
+    verbose : bool, optional
+        Report each level as it runs — the mesh build and port
+        solve of the rung in progress, then its converged value.
+        ``None`` (the default) follows
+        :func:`magnelio.set_verbosity`.
 
     Returns
     -------
@@ -298,6 +301,15 @@ def refine_port_modes(
         slab.add(shape)
     slab.add_port(declared)
 
+    from magnelio._progress import Reporter  # noqa: PLC0415
+
+    # A rung is a full mesh build plus a port solve, so the ladder is
+    # where a user waits longest with nothing to look at.  The rung is
+    # announced *before* it runs, and its inner work reports through
+    # the same setting rather than being silenced outright.
+    rep = Reporter("refine", verbose)
+    inner_verbose = rep.enabled
+
     rungs: list[RefinementLevel] = []
     reports = []
     prev: Optional[float] = None
@@ -307,8 +319,9 @@ def refine_port_modes(
         for a in tangential:
             sub[a] = int(sub.get(a, 1)) * 2**k
         ctrl = dataclasses.replace(control, subdivide=sub)
-        mesh_k = Mesh.from_geometry(slab, ctrl, f_max=float(mesh.f_max))
-        report = AnalysisScatteringTD(mesh=mesh_k, verbose=False).solve_ports()[port]
+        rep.note(f"level {k}/{levels - 1}: meshing and solving the port slab")
+        mesh_k = Mesh.from_geometry(slab, ctrl, f_max=float(mesh.f_max), verbose=inner_verbose)
+        report = AnalysisScatteringTD(mesh=mesh_k, verbose=inner_verbose).solve_ports()[port]
         value = _extract(report, target, mode)
         n_per_axis = (mesh_k.Nx, mesh_k.Ny, mesh_k.Nz)
         n_plane = int(np.prod([n_per_axis[i] for i in range(3) if i != n_axis]))
@@ -323,12 +336,8 @@ def refine_port_modes(
             )
         )
         reports.append(report)
-        if verbose:
-            change = "" if prev is None else f"  Δ {100.0 * rel:+.3f} %"
-            print(
-                f"[refine_port_modes] level {k}: {n_plane} plane cells, "
-                f"{target} = {value:.6g}{change}"
-            )
+        change = "" if prev is None else f"  Δ {100.0 * rel:+.3f} %"
+        rep.note(f"level {k}: {n_plane} plane cells, {target} = {value:.6g}{change}")
         if prev is not None and rel < tol:
             converged = True
             prev = value
@@ -347,6 +356,7 @@ def refine_port_modes(
         p = 2.0 if order is None else max(order, 0.5)
         extrapolated = vals[-1] + (vals[-1] - vals[-2]) / (2.0**p - 1.0)
 
+    rep.close()
     return PortRefinementReport(
         port_name=port,
         target=target,

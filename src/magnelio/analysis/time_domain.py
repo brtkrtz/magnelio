@@ -169,6 +169,11 @@ def _renormalize_freq_monitors(monitors, reference_signal) -> None:
     renormalize_all(monitors, reference_signal)
 
 
+def _port_stage(name: str, index: int, total: int) -> str:
+    """Phase label for one port build; the count only helps above one."""
+    return f"port {name!r}" if total == 1 else f"port {name!r} ({index}/{total})"
+
+
 @dataclass(frozen=True)
 class _LumpedModeStub:
     """Mode-shaped stub for ``PortOperatorLumped`` in compute_s_parameters.
@@ -779,12 +784,20 @@ class AnalysisTD(_AnalysisBase):
         dict[str, PortReport]
             Keyed by port name, in ``ports`` order.
         """
+        from magnelio._progress import Reporter  # noqa: PLC0415
+
+        rep = Reporter("setup", self._verbose)
+        rep.stage("material matrices")
         m_eps = build_M_eps(self.mesh)
         m_mu = build_M_mu(self.mesh)
         # dt only parameterises the operator's Mur coefficients, which
         # the report does not expose — the spectral value keeps the
         # construction identical to run() (the measured lambda_max is
         # cached on the mesh, so run() pays no second eigensolve).
+        # It is a Lanczos iteration over the whole update operator and
+        # dominates a standalone solve_ports (62 % of it on a 2 M-cell
+        # model), which is why it gets a phase of its own.
+        rep.stage("CFL eigenvalue")
         dt = spectral_dt(self.mesh, "normal", m_eps=m_eps, m_mu=m_mu)
         from magnelio.ports._modal.factory import (  # noqa: PLC0415
             build_port_dispersion_record,
@@ -805,13 +818,16 @@ class AnalysisTD(_AnalysisBase):
             return _build
 
         reports = {}
-        for spec in self.ports:
+        n_ports = len(self.ports)
+        for i, spec in enumerate(self.ports, start=1):
+            rep.stage(_port_stage(spec.name, i, n_ports))
             op = self._build_operator(spec, m_eps, m_mu, dt, self.f_max)
             reports[spec.name] = PortReport.from_operator(
                 op,
                 mesh=self.mesh,
                 dispersion_factory=_factory_for(op) if hasattr(op, "discrete_modes") else None,
             )
+        rep.finish()
         return reports
 
     # ------------------------------------------------------------------
@@ -893,9 +909,19 @@ class AnalysisTD(_AnalysisBase):
         self._wire_far_field_ports()
         bc_objects = self._resolve_bc()
 
+        from magnelio._progress import Reporter  # noqa: PLC0415
+
+        # The setup ahead of the time-domain loop is not free: the
+        # CFL eigenvalue is a Lanczos iteration over the whole update
+        # operator, and each port is a 2D mode solve.  Name them, or
+        # the run looks stalled before step 1 appears.
+        self._setup_reporter = Reporter("setup", self._verbose)
+        self._setup_reporter.stage("material matrices")
         m_eps = build_M_eps(self.mesh)
         m_mu = build_M_mu(self.mesh)
+        self._setup_reporter.stage("CFL eigenvalue")
         dt = spectral_dt(self.mesh, accuracy, m_eps=m_eps, m_mu=m_mu)
+        self._setup_reporter.finish()
 
         prepared = self._prepare_run(exc_list, m_eps, m_mu, dt)
         total_time_steps, energy_stop_db, port_signal_stop_db = self._duration_rules(
@@ -1162,12 +1188,20 @@ class AnalysisTD(_AnalysisBase):
         step 0.  Elements (DD-123) join the solver's operator list but
         stay out of the recorder and the port metadata.
         """
-        operators = [self._build_operator(spec, m_eps, m_mu, dt, self.f_max) for spec in self.ports]
+        rep = getattr(self, "_setup_reporter", None)
+        operators = []
+        n_ports = len(self.ports)
+        for i, spec in enumerate(self.ports, start=1):
+            if rep is not None:
+                rep.stage(_port_stage(spec.name, i, n_ports))
+            operators.append(self._build_operator(spec, m_eps, m_mu, dt, self.f_max))
+        if rep is not None:
+            rep.finish()
         element_ops = [
             build_lumped_element(e, self.mesh, m_eps, m_mu, dt=dt) for e in self.elements
         ]
 
-        if self.verbose and not self._mur_notice_printed:
+        if self._verbose and not self._mur_notice_printed:
             # DD-231: the balance sheet, once per analysis.
             notice = self._mur_fallback_notice(operators, dt)
             if notice:
@@ -1460,7 +1494,7 @@ class AnalysisTD(_AnalysisBase):
             max_time_steps=self._resolve_cap(
                 max_time_steps, total_time_steps, prepared.n_steps_estimate, start_step
             ),
-            verbose=self.verbose,
+            verbose=self._verbose,
             monitors=monitors,
             sink=sink,
             backend=self.backend,
@@ -1608,7 +1642,7 @@ class AnalysisTD(_AnalysisBase):
                 and type(m).__module__.startswith("magnelio.monitors")
             }
         )
-        if not_streamed and self.verbose:
+        if not_streamed and self._verbose:
             print(
                 f"[{type(self).__name__}] monitor type(s) {not_streamed} are "
                 f"not yet streamed to the project store (DD-070); they run in "
@@ -1695,7 +1729,7 @@ class AnalysisTD(_AnalysisBase):
         )
         sink.enable_checkpoints(solver.state_dict, ckpt_interval)
         self._drive_streamed_solver(solver, sink, run_name, path)
-        if self.verbose:
+        if self._verbose:
             print(f"[{type(self).__name__}] streamed run {run_name!r} to project {path}")
         return open_project(path)
 

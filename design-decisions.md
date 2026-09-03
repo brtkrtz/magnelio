@@ -19638,3 +19638,141 @@ the certificates show it is invisible at the reported precision), a
 GPU-resident partition, and any change to the kernel build or the
 decomposition — the two items that are now the largest.
 
+
+---
+
+## DD-246 — the long-running operations report through one reporter, and its policy is a decision
+
+**Date:** 2026-09-03 (branch `feat/progress-reporting`).
+**Status:** Accepted — implemented and gated
+(`tests/unit/test_progress_reporting.py`, 19 cases: setting resolution,
+line shape, cadence, phase closure, and the reporting of the mesh build
+and the port solve).
+**Files:** `src/magnelio/_progress.py` (new), `src/magnelio/__init__.py`
+(`set_verbosity`, `get_verbosity`), `src/magnelio/mesh/mesher.py`
+(`Mesh.from_geometry`), `src/magnelio/analysis/_base.py` (`_verbose`),
+`src/magnelio/analysis/time_domain.py`,
+`src/magnelio/analysis/scattering_td.py`,
+`src/magnelio/solver/fit_td.py`,
+`src/magnelio/solver/_eigenmode_3d.py`,
+`src/magnelio/ports/_modal/refinement.py`.
+**Measurements:** internal record `investigations/verbose-progress/`
+(`probe_solve_ports_cost.py`, MEASUREMENTS.md).
+
+**Problem.**  Only the time-domain loop reported anything.  Everything
+before it — the mesh build, the CFL eigenvalue, the port mode solves —
+ran silent, and there was no reporting *mechanism* at all: eleven
+hand-written `print` sites, no test (`capsys` appeared zero times in the
+suite), no terminal detection anywhere in the package.  Measured on
+tutorial 19 (2.08 M cells, one waveguide port): **23.3 s** mesh build,
+**14.1 s** CFL eigenvalue, **8.6 s** port build — some **46 s** with no
+output before the first `FIT-TD` line.  A silence that long is not
+merely uninformative: while measuring this, a probe run sat at 0.0 % CPU
+for 1h38 on a blocked viewer window, and nothing about its output
+distinguished it from a working run.
+
+**Decision.**  One `Reporter` owns every progress line, and three
+policy questions are settled in it rather than at each print site:
+
+* **Where the setting comes from.**  A process-wide default
+  (`magnelio.set_verbosity`) that any object overrides locally with
+  `verbose=`.  The analysis field becomes tri-state — `verbose=None`
+  (the new default) follows the global setting, `True`/`False` override
+  it — resolved through `_AnalysisBase._verbose`.  This is what lets a
+  setting reach *nested* work: `refine_port_modes` meshes and solves
+  ports once per rung, and used to pass `verbose=False` to them
+  unconditionally, throwing the user's setting away.
+* **Where the line goes.**  A terminal (`isatty`) gets one overwritten
+  `\r` line, the way the time-domain loop always reported; anything else
+  — a log file, a CI job, a notebook — gets whole lines on a slow
+  cadence (30 s).  This is not cosmetic: piping a run to a file used to
+  concatenate every status update into one unreadable row, and Jupyter
+  is on the non-tty side of that split.
+* **Who stays silent.**  Worker processes.  The section engine and the
+  band kernel run over spawn pools; eight workers writing one terminal
+  interleave into noise.
+
+**Rejected — making `solve_ports` cheaper instead.**  The suspicion was
+that building the full 3D `M_eps`/`M_mu` to flatten two cell slabs at
+the port plane was wasteful, and that a standalone port report need not
+pay the spectral time step at all.  Measured, both fail:
+
+    build_M_eps + build_M_mu    0.16 s      (2.08 M cells)
+    spectral_dt (cold)         14.06 s      62 % of a cold solve_ports
+    spectral_dt (2nd call)      0.00 s      lambda_max cache confirmed
+
+The material matrices cost nothing worth caching, and the Lanczos is
+*already* paid once: `lambda_max` lives on the mesh, so the documented
+workflow — inspect the port report, then run — is optimal as it stands.
+Substituting `courant_dt` is worse than unnecessary: on this fixture it
+returns a step **2.47x larger** than the measured spectral limit
+(ratio 0.405), i.e. unstable, and even corrected it would give the port
+operators different Mur coefficients than `run()` uses — a report
+describing a port that is not the one being simulated, the failure mode
+[[DD-066]] paid for at −42 dB.  **No numerical change was made.**
+
+**Also.**  The `Tile skip: 0.0%` line no longer prints when there are no
+dead tiles to skip — a report of nothing gained, on every run that
+gained nothing.
+
+**The output policy, decided on what the phases then measured.**  With
+the phases in place they were pointed at tutorial 19, and the answer
+was not the expected one: `materials` (the cross-section fill) takes
+**1.6 s**, `conformal cells` (sub-cell classification) **20.2 s** — 90 %
+of a 22.4 s build, because every partially filled cell needs its own
+cross-section through a curved face.  A cProfile run puts 22.3 s of it
+in `compute_face_material_areas` and 19.0 s of that in the facet
+section path.  Three consequences:
+
+* **The counter went there, not into the process pool.**  The pool
+  (`_parallel_section_prefill`) is the obvious place for a percentage —
+  known denominator, parent-side consumption — but on this fixture it
+  never runs: `materials` has already filled the section cache, and the
+  batchable engine answers the rest in-process.  The count sits on the
+  cache misses in `compute_face_material_areas` instead, where the work
+  actually is.
+* **It is a count, not a percentage.**  That phase makes six passes for
+  different material properties; a per-pass percentage would run to 100
+  and restart five times, which reads as a stall followed by a restart.
+  `Reporter.advance` keeps a running total per phase and reports it
+  through `tick`.
+* **It is reached through a `ContextVar`, not a parameter.**  Four call
+  levels separate `Mesh.from_geometry` from that loop, none of which has
+  any interest in output; `_progress.current_reporter()` keeps the
+  concern out of geometry signatures and is safe across threads and
+  async tasks in a way a module global is not.  A reporter registers
+  itself on construction and stands down in `finish`/`final`/`close`.
+
+**A phase under 0.5 s does not report that it finished.**  Without the
+threshold a small model — every tutorial, most tests — prints one
+`done (0.0 s)` per phase and says nothing with any of them, which is the
+same defect as the `Tile skip: 0.0%` line this DD removes.  On a
+terminal the announcement is erased; in a log it stands, being the only
+live sign the phase ran.  The closing line carries the operation's
+total where the total is itself worth reporting.
+
+**Two labels were wrong and are fixed.**  The same three phases were
+reported as `setup` inside `run` and `ports` inside `solve_ports` (now
+`setup` in both), and the eigensolver printed its shift as a bare
+`sigma=2.012e+21` — an eigenvalue of the curl-curl operator, i.e.
+`(2*pi*f)**2`, which reads as an arbitrary number.  It now carries the
+frequency it targets (`7.14 GHz`), which is what a user checks against
+the model.  A single port is no longer counted `(1/1)`.
+
+**Known cosmetic defect.**  A warning written to stderr while a `\r`
+line is running cuts through it on a terminal; the running line is
+rebuilt by the next refresh, so nothing is lost, but the row is briefly
+mixed.  Fixing it properly means owning `warnings.showwarning` for the
+duration of an operation, which is a global hook with its own failure
+modes (nesting, restoration on error) and was judged not worth it here.
+
+**Progress where there is no fraction.**  An eigensolve has no step
+count: ARPACK converges when it converges.  What it has is a phase
+structure, and the phases are wildly uneven — measured on a 48,910-DOF
+cavity, **14.0 s factorising** against 2.7 s iterating.  Naming the
+phase is therefore most of the answer.  Beyond that, [[DD-195]] pulled
+the SuperLU factorisation out of `eigsh` so that several requests at one
+shift could share it; that also leaves `lu.solve` exposed as a callable
+this side owns, which is the only place an ARPACK iteration can be
+counted from — the library offers no progress callback.  The matvec
+counter rides there, and on the AMG-CG path in its own `opinv_matvec`.

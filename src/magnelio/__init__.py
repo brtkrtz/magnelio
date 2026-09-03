@@ -5,8 +5,8 @@ simulation.
 This namespace is the **core**: the model container and run vocabulary
 (``GeometryModel``, ``Material``, ``Mesh``/``MeshControl``,
 ``BoundaryConditions``, ``Excitation``), the problem classes
-(``Analysis*``) and the project-store entry points (``open_project``,
-``resume``).  Every other
+(``Analysis*``), the project-store entry points (``open_project``,
+``resume``) and the progress-output default (``set_verbosity``).  Every other
 public name lives in exactly one domain namespace —
 ``magnelio.geo``, ``magnelio.materials``, ``magnelio.mesh``,
 ``magnelio.boundaries``, ``magnelio.ports``, ``magnelio.sources``,
@@ -17,6 +17,7 @@ public name lives in exactly one domain namespace —
 underscore modules are internal.
 """
 
+from magnelio._progress import get_verbosity, set_verbosity
 from magnelio._version import __version__
 
 # Problem classes + project store entry points
@@ -51,4 +52,6 @@ __all__ = [
     "AnalysisEigenmode",
     "resume",
     "open_project",
+    "set_verbosity",
+    "get_verbosity",
 ]

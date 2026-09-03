@@ -47,8 +47,9 @@ class AnalysisEigenmode(_AnalysisBase):
         (``sigma=(2*pi*f_estimate)**2``) to pin the shift; a run that
         still returns fewer than ``n_modes`` modes emits a
         ``RuntimeWarning`` either way.
-    verbose : bool
-        Print solver progress information.
+    verbose : bool, optional
+        Print solver progress.  ``None`` (the default) follows
+        :func:`magnelio.set_verbosity`.
     project, geometry, params
         Project-store hooks: ``project`` names a directory the model
         and the result are written into, ``geometry`` the model to
@@ -121,7 +122,7 @@ class AnalysisEigenmode(_AnalysisBase):
             boundary_conditions=self.boundary_conditions,
             solver=self.solver,
             sigma=self.sigma,
-            verbose=self.verbose,
+            verbose=self._verbose,
             phase_advance_deg=self.phase_advance_deg,
         )
 

@@ -31,7 +31,7 @@ class _AnalysisBase:
     """
 
     mesh: Mesh
-    verbose: bool = True
+    verbose: bool | None = None
     project: object | None = None
     geometry: object | None = None
     params: dict | None = None
@@ -39,6 +39,20 @@ class _AnalysisBase:
     precision: str | None = None
     method: str = "auto"
     solver: str | None = None
+
+    @property
+    def _verbose(self) -> bool:
+        """The effective verbosity: the local setting, else the global one.
+
+        ``verbose=None`` (the default) means "follow
+        :func:`magnelio.set_verbosity`", so the process-wide setting
+        reaches nested work — a port refinement that meshes and solves
+        ports per rung passes its own setting down instead of silencing
+        the inner calls.  ``True``/``False`` override it locally.
+        """
+        from magnelio._progress import get_verbosity  # noqa: PLC0415
+
+        return get_verbosity() if self.verbose is None else bool(self.verbose)
 
     def __post_init__(self) -> None:
         if self.backend not in _BACKENDS:
