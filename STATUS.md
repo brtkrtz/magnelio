@@ -23,8 +23,9 @@ path between Mur-1st and the band DTBC, the two-term cancellation
 behind the modal-Mur port floor (DD-238), and the pricing of the number
 a user actually reads (DD-239: an exactly transparent port is worth at
 most 1.93 dB of tutorial 09's |S11|).  Open: KB-023,
-KB-038 (diagnosed — the single-precision production default) and
-KB-043.  Unit and integration together: 3281 passed / 10 skipped
+KB-038 (the cause is now located — the field/port interface, not the
+convolution, which was already double), KB-043 and the new KB-045 (the
+band port does not run on the CuPy backend).  Unit and integration together: 3281 passed / 10 skipped
 (2026-09-02, with `CUPY_ACCELERATORS=""` — without it four GPU tests
 fail on nvrtc in the sandbox).  Channels: GitHub, PyPI, conda-forge and
 the two docs channels below.
@@ -308,14 +309,24 @@ flickers to ``"done"`` between sequential runs; the reader skips
   201-point axis the postprocessing 51 %; the fixture's 12-13x modal
   (DD-234) has no production counterpart.  Leads: the exact blocked FFT
   convolution, then the arc-fan cut (3.12x, bit-identical, `k`-gated).
-* **Band port floor (KB-038)** — diagnosed, not closed: both halves are
-  the single-precision production default (numbers above).  What is
-  open is a wordlength decision, not an absorber hunt — does the
-  band-DTBC convolution state have to be double? — answered by one run
-  with the solver in single and the port convolution forced to double.
-  An integration test guards the degradation *rate*, one-sided, so a fix
-  cannot fail it; CI never saw the defect because `tests/conftest.py`
-  pins the suite to double, and nothing in DD-240 displaces it.
+* **Band port floor (KB-038)** — wordlength question answered, defect
+  not fixed.  The convolution state was **already double** and always
+  has been, so the probe the register proposed was a no-op; the
+  single-precision contact is the per-step round trip through the field
+  array in `update_e`.  A double solver with only that interface
+  quantised reproduces the production length law (+6.55 dB per doubling
+  against single's +6.35) and covers 84-92 % of the double-to-single
+  gap; the volume march carries the rest, worth 2.6 dB but not the law.
+  The two sides partly cancel — quantising one is worse than both.
+  What is left is a *solver* decision (port plane and first interior
+  period in double, bulk single), not a port-side one; not priced.
+  Internal dossier `investigations/kb038-wordlength/`.  The rate guard
+  is one-sided, so a fix cannot fail it.
+* **Band port on the GPU (KB-045)** — new, found alongside:
+  `band_dtbc.py` is written in `np.` throughout with no `_gather_host`,
+  so a band port under the shipped `backend="auto"` crashes on the
+  first recorder call on a CUDA machine (class of the resolved KB-006).
+  No GPU test covers it and the suite is pinned to NumPy.
 * **The quasi-static power-wave split (DD-239 → DD-244)** — the exact
   per-frequency split alone is *measured not to help*: on the tutorial
   record it exposes the drive-port launch residue and reads −27.9 dB
@@ -324,35 +335,22 @@ flickers to ``"done"`` between sequential runs; the reader skips
   *source* on the modal port (a low-rank family of profiles × waveforms
   at the plane overwrite, the band port's source without its
   boundary); not started, not priced.
-* **Facet section engine (DD-240/242/243; KB-043)** — the reach defect
-  is closed for **planar and cylindrical faces**: analytic faces of a
-  facetted shape are sectioned from their own geometry, and the
-  pair-ladder coupler's ports terminate DTBC again (spreads 5.2164e-15
-  / 1.3072e-13, slab defect 1.4795e-10, z_line 96.1625 Ω) with its
-  loft in place — the model that failed is the model that passes, so
-  the fixture question resolved itself and KB-039 is closed.  **KB-042** did not survive
-  measurement (DD-242): the facet answer on a sphere, cone or torus is
-  exactly independent of the free-form neighbour, the 7…9e-3 per cell
-  was the kernel's own δ-tessellation (the cylinder reads 6.3e-3 across
-  its axis too), and the one real defect — a sphere's pole crossing left
-  a full deflection off the surface by the parametric lift — is closed by
-  the projection onto the implicit surface (residual 2e-18 m, −30 % per
-  section).  **KB-044** (in-house paths at δ/10, kernel at δ) is closed
-  by DD-243: one chord budget on all three paths, +19 % mesh-build CPU on
-  a fillet-heavy model, kernel-path curved faces 8–10x closer to truth.
-  **KB-043** is pre-existing and two-sided: within ~1e-7 m
-  of a generatrix the kernel section collapses to 0.0 while the facet
-  path books 44–64 % of truth (r = 2.30 mm, d = 1e-7: 2.7619e-07 facet /
-  0.0 kernel / 4.2895e-07 true), so neither is trustworthy there and
-  widening the tangency band would hand those planes to the worse one —
-  which is why it stays a rounding guard.  Undecided beside it:
-  `radians(5)·|c_n|` binds in every fixture tested and its origin is
-  undocumented, so the corrected sagitta exponent is largely latent and
-  the facet/exact bit-identity now measured is a consequence of that
-  cap, not a structural guarantee; and `_FACET_REFINE_FRACTION = 0.1`
-  leaves the facet path a 3.16x finer sagitta budget than the exact one.
-  One guard test (`TestConicRunSurvivesAnUnbuildableArc`) flaked 4/4 in
-  a tree-copy window and has passed 13/13 since — unreproduced.
+* **Facet section engine (KB-043)** — the reach campaign is closed
+  (DD-240/242/243 close KB-039, KB-041, KB-042 and KB-044; the records
+  are there and in `known-bugs.md`).  Open: **KB-043**, pre-existing and
+  two-sided — within ~1e-7 m of a generatrix the kernel section
+  collapses to 0.0 while the facet path books 44–64 % of truth
+  (r = 2.30 mm, d = 1e-7: 2.7619e-07 facet / 0.0 kernel / 4.2895e-07
+  true), so neither is trustworthy there and widening the tangency band
+  would hand those planes to the worse one — which is why it stays a
+  rounding guard.  Undecided beside it: `radians(5)·|c_n|` binds in
+  every fixture tested and its origin is undocumented, so the corrected
+  sagitta exponent is largely latent and the measured facet/exact
+  bit-identity is a consequence of that cap, not a structural
+  guarantee; and `_FACET_REFINE_FRACTION = 0.1` leaves the facet path a
+  3.16x finer sagitta budget than the exact one.  One guard test
+  (`TestConicRunSurvivesAnUnbuildableArc`) flaked 4/4 in a tree-copy
+  window and has passed 13/13 since — unreproduced.
 * **API blueprint (DD-224) — Phases A–D complete** (listed above);
   Phase E ff. is a reserved-name roadmap, not scheduled work, each
   entry earning its own DD.  Field-source limits: the recording lives

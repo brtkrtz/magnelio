@@ -16,8 +16,39 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Three entries are open as of 2026-09-02: KB-023, KB-038 and
-KB-043.**  Everything else is struck through and resolved.
+**Four entries are open as of 2026-09-03: KB-023, KB-038, KB-043 and
+KB-045.**  Everything else is struck through and resolved.
+
+## KB-045: The band-DTBC port does not run on the CuPy backend — Open (2026-09-03)
+
+**A band-DTBC port under the shipped default `backend="auto"` dies on
+the first recorder call on any machine with a usable CUDA device.**
+Found while setting up the KB-038 wordlength probe, which ran outside
+pytest and therefore without the suite's `MAGNELIO_BACKEND=numpy` pin:
+
+    File "src/magnelio/ports/_modal/band_dtbc.py", line 1627, in _project_V_at
+      V[m] = float(np.dot(me_u, p_u * e_u)) + float(np.dot(me_v, p_v * e_v))
+    TypeError: Unsupported type <class 'numpy.ndarray'>   [cupy/_core/_scalar.pyx]
+
+`p_u` is a host-side mode profile, `e_u` a CuPy slice of the field.
+`band_dtbc.py` is written in `np.` throughout and, unlike
+`_modal/operator.py`, has no `_gather_host` — the one-line D2H gather
+that lets the modal port keep its host-side recursion on the GPU
+backend.  This is the class of the resolved KB-006 (`MonitorWallLoss`
+crashing on the CuPy backend for the same reason).
+
+Not covered anywhere: `tests/integration/test_gpu_backend.py` does not
+mention the band port, and `tests/conftest.py` pins the whole suite to
+NumPy, so neither CI nor a developer running the suite on a CUDA box
+ever exercises the combination.
+
+What is measured is the crash and its cause.  What is *not* established
+is the full extent: `project_V`/`project_V_interior` are where it was
+observed, `project_I` and `update_e` index the field the same way and
+would be expected to fail likewise, but that was not run.  Whether the
+band boundary should gain a `_gather_host` like the modal port (its
+recursion is the same shape of small host-side work) or a genuine
+device path is undecided.
 
 ## KB-044: ~~The in-house section paths book a tenth of the deflection, the kernel path the whole of it~~ — Resolved (DD-243, 2026-09-02)
 
@@ -242,7 +273,7 @@ internal record `investigations/qtem-midpath/baseline/`
 (`pair_ladder_choice_certificate.stdout` / `.stderr`, `DRIFT.md`
 section 9).
 
-## KB-038: The band-DTBC port floor degrades with the length of the run — Open, diagnosed (2026-08-31)
+## KB-038: The band-DTBC port floor degrades with the length of the run — Open, cause located (2026-09-03)
 
 Both halves of this entry — the level shift against the pinned floors
 and the growth of the floor with the length of the run — are the
@@ -312,14 +343,51 @@ than an absolute floor — median below 8.0 dB per doubling (measured
 6.35) and worst below 7.0 (measured 4.75), both one-sided, so a fix
 cannot fail the test.
 
-**What stays open** is one question: whether the `float32` accumulation
-sits in the DTBC convolution or in the field march.  The cheap probe
-that would separate them is to run the pair with the solver in single
-but the port operators' convolution state forced to double.  Until that
-is answered the wordlength requirement of the band-DTBC path is not
-known, and that is a design decision — whether the convolution state
-must be carried in double regardless of the solver's precision — not a
-bug hunt.
+**Where the accumulation sits — answered 2026-09-03** (internal record
+`investigations/kb038-wordlength/`).  The probe this entry proposed —
+solver in single, the convolution state forced to double — is a no-op:
+**the convolution state is already double and always was.**  Every piece
+of boundary state is allocated with `dtype=float` irrespective of
+`MAGNELIO_PRECISION`, which reaches only the solver's field arrays; read
+off a running single-precision solve, `xt`, `w_hist`, `s_hist`, both
+kernels and the coupling matrices are float64 while `e_flat`, `h_flat`
+and `x1_prev` are float32.  The modal port is built the same way
+(`_gather_host` + `np.asarray(..., dtype=float)`).
+
+The only single-precision contact is a per-step round trip through the
+field array in `PortOperatorBandDTBC.update_e`: the double
+reconstruction `W @ xt` is rounded into a float32 store, and `x1_prev`
+reads the first interior period back out of the float32 field.  The
+separating experiment therefore runs the other way — solver in
+**double**, only that interface quantised to float32.  On the CI band
+fixture at 4064 / 8128 steps:
+
+    arm                     4064            8128        rate w / m
+    single              -128.72/-136.19  -123.97/-129.85  +4.75/+6.35
+    double              -149.12/-185.09  -149.13/-185.81  -0.01/-0.71
+    double, read q'd    -130.69/-135.24  -121.90/-127.27  +8.79/+7.97
+    double, write q'd   -143.52/-146.07  -131.82/-137.77 +11.70/+8.30
+    double, both q'd    -131.28/-140.87  -127.96/-134.32  +3.32/+6.55
+
+(worst/median |S11| in dB; the two unmodified arms reproduce the
+`TestBandDTBCLengthLaw` pins to the printed digit.)  Quantising nothing
+but the interface reproduces the production length law — +6.55 dB per
+doubling against single's +6.35 — and accounts for **84-92 %** of the
+gap between the double and single floors.  The volume march carries the
+remaining 8-16 %: it is worth 2.6 dB but does not flatten the law.  The
+two sides partly cancel, so neither alone is the cause: quantising one
+is *worse* than quantising both (+8.79 / +11.70 worst against +3.32),
+because rounding one side puts the port's idea of the port plane out of
+step with what the field holds, while rounding both is the consistent
+state production is already in.
+
+**What stays open** is therefore no longer a port-side wordlength
+question — that one is answered, and widening the convolution further
+is not available because it is already double.  What the values the
+port reads were rounded to was decided by the solver when it marched
+them, and cannot be recovered at the read.  Any fix is a *solver*
+decision: carrying the port plane and its first interior period in
+double while the bulk stays single.  Not priced.
 
 Consequences while it is open: a long band run at the default precision
 has a floor that depends on its own length, at roughly five to seven
