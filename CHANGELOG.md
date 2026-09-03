@@ -7,6 +7,24 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Changed
+
+- Band ports are much faster on long records.  The transparent
+  boundary's history convolution reaches back over the whole run, and
+  it was folded in full at every step, so its cost grew with the square
+  of the step count and dominated a production band run.  It is now
+  folded in logarithmically growing blocks — the same sum, no
+  approximation — which makes it grow almost linearly instead: the fold
+  itself is 52 times cheaper on a 36 864-step run, and the time-domain
+  run of the validation microstrip drops from 109 s to 24 s.  The gain
+  grows with the length of the record.  S-parameters are unchanged:
+  both band certificates print every reflection value they did before,
+  to the last digit shown.  The boundary now holds about twice as much
+  memory per kernel and port (85 MB on that microstrip) for the
+  transformed blocks.
+
 ## [0.5.1] - 2026-09-03
 
 ### Added

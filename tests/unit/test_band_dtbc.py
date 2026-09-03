@@ -274,6 +274,94 @@ class TestBoundaryStateMachine:
         b.advance(np.zeros(ext.p), np.ones(ext.p))
 
 
+class TestPartitionedConvolution:
+    """The history fold is partitioned; it must answer what the direct
+    sum answers.
+
+    The boundary convolution reaches over the whole record.  Folding it
+    directly is O(n) work at step n; the shipped form splits the taps
+    into a directly folded head and logarithmically growing FFT blocks,
+    which is the same sum in a different accumulation order.  These
+    tests hold it against the sum it replaces — at kernel lengths that
+    leave no levels at all, that fill an exact power of two, and that
+    leave the top level partial.
+    """
+
+    @staticmethod
+    def _direct(kflip, hist, n):
+        if n == 0:
+            return np.zeros(kflip.shape[1])
+        return np.einsum("mij,mj->i", kflip[kflip.shape[0] - n :], hist[:n])
+
+    @staticmethod
+    def _partitioned(conv, hist, n):
+        out = conv.head_fold(n, hist)
+        tail = conv.tail(n, hist)
+        return out if tail is None else out + tail
+
+    @pytest.mark.parametrize(
+        ("n_kernel", "p", "steps", "head"),
+        [
+            (64, 4, 60, 256),  # head swallows the kernel: no levels
+            (256, 5, 250, 64),
+            (2048, 9, 600, 256),
+            (3000, 12, 900, 128),  # top level partial
+        ],
+    )
+    def test_matches_the_direct_fold(self, n_kernel, p, steps, head):
+        rng = np.random.default_rng(11)
+        kflip = rng.standard_normal((n_kernel - 1, p, p))
+        conv = band_dtbc._PartitionedConvolution(kflip, head=head)
+        hist = np.zeros((max(steps, n_kernel), p))
+        for n in range(steps):
+            got = self._partitioned(conv, hist, n)
+            ref = self._direct(kflip, hist, n)
+            # The yardstick is the size of the sum, not of its
+            # individual entries: this is a reduction over up to n taps,
+            # and its rounding scales with the total, so an entry that
+            # happens to land near zero carries the same absolute error
+            # as its neighbours (which is what an element-wise rtol
+            # would wrongly hold it to).
+            scale = max(float(np.max(np.abs(ref))), 1.0)
+            assert np.max(np.abs(got - ref)) < 1e-11 * scale
+            hist[n] = rng.standard_normal(p)
+
+    def test_resync_lands_on_the_uninterrupted_answer(self):
+        """A restore mid-record replays the window each level is inside.
+
+        Everything older is already summed into the state the caller
+        restores; everything newer is still in the future.  Only the
+        open windows have to be rebuilt, and a boundary that rebuilt
+        them must march on identically to one that never stopped.
+        """
+        rng = np.random.default_rng(5)
+        n_kernel, p, steps = 2048, 9, 900
+        kflip = rng.standard_normal((n_kernel - 1, p, p))
+        hist = rng.standard_normal((max(steps, n_kernel), p))
+        for cut in (7, 257, 512):
+            cold = band_dtbc._PartitionedConvolution(kflip)
+            for n in range(cut):
+                self._partitioned(cold, hist, n)
+            warm = band_dtbc._PartitionedConvolution(kflip)
+            warm.resync(cut, hist)
+            for n in range(cut, steps):
+                # Bit-identical, not merely close: the accumulator is
+                # replayed in the order the windows opened in, because a
+                # resumed band run is contractually indistinguishable
+                # from an uninterrupted one.
+                np.testing.assert_array_equal(
+                    self._partitioned(warm, hist, n),
+                    self._partitioned(cold, hist, n),
+                )
+
+    def test_head_only_kernel_has_no_levels(self):
+        rng = np.random.default_rng(2)
+        kflip = rng.standard_normal((31, 3, 3))
+        conv = band_dtbc._PartitionedConvolution(kflip, head=256)
+        assert conv.tail(10, np.zeros((32, 3))) is None
+        assert conv.head == 32
+
+
 class TestContourParallelism:
     """The contour loop may run in processes, and must not change a number.
 

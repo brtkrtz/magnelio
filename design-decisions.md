@@ -19506,3 +19506,101 @@ launch residue without the band boundary; the modal current of a
 K > 1 signal-conductor port (the sweep falls back to the channel
 reference there); `TDResult` (general time-domain runs) does not carry
 references or records.
+
+## DD-245 — the boundary convolution is partitioned, and the band pipeline's largest item goes with it
+
+**Date:** 2026-09-03 (branch `perf/band-partitioned-convolution`).
+**Status:** Accepted — implemented and gated
+(`tests/unit/test_band_dtbc.py::TestPartitionedConvolution`, plus the
+existing band gates unchanged:
+`tests/integration/test_analysis_scattering_band.py`,
+`tests/integration/test_qtem_band_dtbc_sparams.py`).
+**Files:** `src/magnelio/ports/_modal/band_dtbc.py`
+(`_PartitionedConvolution`, `BandDTBCBoundary.advance`).
+**Measurements:** internal record `investigations/band-convolution/`
+(`probe_conv_law.py`, `probe_partition_exactness.py`,
+`probe_partition_speed.py`, `run_certificate_direct.py`,
+MEASUREMENTS.md).
+
+**Problem.**  `BandDTBCBoundary.advance` folded the whole history at
+every step — `conv[n] = sum_{m=1..n} L[m] w[n-m]`, O(n p^2) at step n
+and **O(N^2 p^2)** over a run.  [[DD-236]] priced it at 59.3 % of an
+18-point production run and named it the largest item of the pipeline,
+displacing the kernel build the campaign had been optimising.  Measured
+again at this HEAD: 44.9 ns per (tap, kernel) at p = 9, which is 91.6 s
+for the three kernels of a validation-microstrip run and 234 s at
+p = 17.
+
+**Decision.**  The taps are partitioned non-uniformly: a **head**
+`[1, H)` folded directly every step, and levels `[H·2^k, H·2^(k+1))` of
+block length `B_k = H·2^k` carried by overlap-save FFTs.  Level k
+reaches no closer to the present than `B_k` steps, so the whole next
+window of `B_k` outputs is computable the moment the window opens, from
+history already written; firing once per `B_k` steps amortises the FFT
+to O(p^2) per step and level, and there are log(N/H) levels —
+**O(N log^2 N p^2)** for the run.  `H = 256`, past the per-call NumPy
+overhead of the direct einsum while keeping the head's O(H p^2) an
+order below the partition.  This is the same sum in a different
+accumulation order: no fit, no approximation, no passivity question,
+which is why it was ranked above every approximate boundary the
+campaign priced ([[DD-237]]).
+
+**Evidence — exactness.**  Against the direct fold on random kernels
+and histories, every step compared: max relative error 3.5e-15 to
+1.0e-14 over kernel lengths 64 to 8192 and ranks 4 to 17, i.e. FFT
+rounding.  The error is held against the *norm* of the sum rather than
+element-wise, which is the honest yardstick for a reduction whose
+rounding scales with the total and not with the entry that happens to
+land near zero.
+
+**Evidence — the certificates do not move.**  Same tree, partition
+against the direct fold (the direct arm obtained by setting the head
+above the kernel length, which leaves no levels):
+
+    case         arm           build   3D run   decomp.   worst |S11|
+    layered      direct         18 s     31 s     3.1 s     -120.1 dB
+    layered      partitioned    21 s     11 s     1.7 s     -120.1 dB
+    microstrip   direct         43 s    109 s     4.2 s     -146.4 dB
+    microstrip   partitioned    54 s     24 s     4.5 s     -146.4 dB
+
+Every |S11| value on both axes is identical to the printed digit; the
+only line that differs between the logs is the port-build wall clock.
+**No certificate is re-pinned by this change** — which was not a given
+for an algorithm swap, and matters because KB-038 already has the
+pinned floors under question for an unrelated reason.
+
+**Evidence — what it is worth.**  The history fold alone, direct
+against partitioned: 6.6x at 4096 steps, 23.1x at 16384, **51.7x** at
+36864 steps and p = 9 (28.16 s -> 0.54 s), 56.1x at p = 17.  The factor
+grows with the record, which is O(N^2) -> O(N log^2 N) becoming
+visible.  End to end the production microstrip 3D run falls **4.5x**
+(109 s -> 24 s): the 85 s difference is the convolution, 78 % of the
+direct run.  The run is field-march dominated again and the port build
+is now the largest item of an 18-point case.
+
+**The accumulation order is part of the resumed state.**  All levels
+accumulate into one array as their windows open, so a slot receives its
+contributions spread over time.  The first implementation rebuilt that
+array in one pass on restore and failed
+`test_band_run_resumes_bit_exactly` by 2.8e-14 — the same numbers added
+in a different order, floating-point addition not being associative.
+`resync` therefore replays in `sorted((window_open_time, level))` order,
+exactly as the march would have fired them, and the restore is
+bit-identical again (0 non-equal steps over four cut points and three
+(n_kernel, rank) combinations).  Recorded because the failure mode is
+invisible in any closeness test and the contract ([[DD-230]] D4) is
+bit-exactness.
+
+**Cost.**  The block spectra are **exactly twice the kernel array** —
+an rfft of a real block of length 2B has B+1 complex bins — so 84.6 MB
+at p = 9 / n_kernel = 65536 and 301.9 MB at p = 17, per kernel and per
+port.  The flipped kernel array is kept whole although only its first
+255 taps are still read, because internal probes address it; trimming
+it to the head would remove one of the three copies and is available as
+a follow-up.
+
+**Non-goals.**  Bit-identity with the pre-change results (FFT rounding;
+the certificates show it is invisible at the reported precision), a
+GPU-resident partition, and any change to the kernel build or the
+decomposition — the two items that are now the largest.
+
