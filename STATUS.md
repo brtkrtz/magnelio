@@ -23,15 +23,13 @@ unchanged**; its closing result is that the port floor is not what caps
 the number a user reads (DD-239: an exactly transparent port is worth
 at most 1.93 dB of tutorial 09's |S11|), and it opened KB-038.
 
-Unreleased on `main` since v0.5.1: **DD-245**, the partitioned
-boundary convolution (below), and the *Numerical precision* methods
-chapter.
+Not yet on `main`, both green and on `private`: branch
+`perf/band-partitioned-convolution` (**DD-245**, below) and branch
+`docs/precision-page` (the *Numerical precision* methods chapter).
 
-Open: KB-023, KB-038 (cause located — the field/port interface, not
-the convolution, which was already double) and KB-043.  Unit and
-integration together: 3289 passed / 10 skipped (2026-09-03, with
-`CUPY_ACCELERATORS=""`).  Channels: GitHub, PyPI, conda-forge and the
-two docs channels below.
+Open: KB-023, KB-038 and KB-043.  Unit and integration together: 3289
+passed / 10 skipped (2026-09-03, with `CUPY_ACCELERATORS=""`).
+Channels: GitHub, PyPI, conda-forge and the two docs channels below.
 
 This file states what *is*.  Chronology: `git log --first-parent main`
 (one feature per merge); reasoning: `design-decisions.md`; open bugs:
@@ -306,41 +304,47 @@ flickers to ``"done"`` between sequential runs; the reader skips
 
 * **Band-pipeline runtime** — the convolution lead is **done**
   (DD-245): partitioned history fold, O(N²p²) → O(N log²N p²), 51.7x on
-  the fold and 4.5x on the production 3D run (109 → 24 s), every
-  certificate |S11| unchanged to the digit.  Costs twice the kernel
-  array in block spectra (84.6 MB at p = 9 / n_kernel = 65536).  Left:
-  the **kernel build** is now the largest item of an 18-point run, and
-  on a 201-point axis the **postprocessing** (51 % at DD-236) is the
-  whole question — the arc-fan cut is 3.12x and bit-identical but wants
-  a gate expressed as a `k` argument, not a point count.
+  the fold, 4.5x on the production 3D run (109 → 24 s), every
+  certificate |S11| unchanged to the digit, at twice the kernel array in
+  block spectra (84.6 MB at p = 9 / n_kernel = 65536).  End to end on
+  DD-231's fixture the band-against-modal ratio falls **1453x → 45.6x**
+  (2688.9 → 93.3 s; this entry 3.38x of it, the rest of the stack 8.5x),
+  floor 9 dB *better* than DD-231 recorded.  DD-231's default stands —
+  its deciding blockers were the axis refusal and the missing `a()`/
+  `b()`, not the cost.  Left: the **kernel build** is now the largest
+  item of an 18-point run; on a 201-point axis the **postprocessing**
+  (51 % at DD-236) is the whole question, where the arc-fan cut is 3.12x
+  and bit-identical but wants a gate expressed as a `k` argument, not a
+  point count; and the like-for-like default-axis run is possible for
+  the first time (22610 steps under the DC anchor, fewer than the 39831
+  at f_min = 3 GHz) and unmeasured.
 * **Band port floor (KB-038)** — wordlength question answered, defect
-  not fixed.  The convolution state was **already double** and always
-  has been, so the probe the register proposed was a no-op; the
-  single-precision contact is the per-step round trip through the field
-  array in `update_e`.  A double solver with only that interface
-  quantised reproduces the production length law (+6.55 dB per doubling
-  against single's +6.35) and covers 84-92 % of the double-to-single
-  gap; the volume march carries the rest, worth 2.6 dB but not the law.
-  The two sides partly cancel — quantising one is worse than both.
+  not fixed.  The convolution state was **already double**, so the probe
+  the register proposed was a no-op; the single-precision contact is the
+  per-step round trip through the field array in `update_e`, which alone
+  reproduces the length law and covers 84-92 % of the double-to-single
+  gap (the two sides partly cancel — quantising one is worse than both).
   What is left is a *solver* decision (port plane and first interior
-  period in double, bulk single), not a port-side one; not priced.
-  Internal dossier `investigations/kb038-wordlength/`.  The rate guard
-  is one-sided, so a fix cannot fail it.
+  period in double, bulk single), not a port-side one; not priced.  The
+  law is **not band-specific**: the ordinary modal port erodes at the
+  same rate but saturates at the float32 floor (−112.6 dB) where the
+  band port runs past it, and the band-median does not move at all — now
+  documented for users in `docs/methods/precision.md`.  Full register
+  entry and dossier `investigations/kb038-wordlength/`.
 * **Ports on the GPU** — nothing outside `TestBandDTBCOnGPU` (KB-045,
-  closed) exercises a port on a device, because `tests/conftest.py`
-  pins the suite to NumPy.  Worth knowing for the next port family.
+  closed) exercises a port on a device: `tests/conftest.py` pins the
+  suite to NumPy.  Worth knowing for the next port family.
 * **The quasi-static power-wave split (DD-239 → DD-244)** — the exact
-  per-frequency split alone is *measured not to help*: on the tutorial
-  record it exposes the drive-port launch residue and reads −27.9 dB
-  worst against the shipped −32.9.  The one route left to the
-  user-visible |S11| without the band boundary is a dispersive
-  *source* on the modal port (a low-rank family of profiles × waveforms
-  at the plane overwrite, the band port's source without its
-  boundary); not started, not priced.
+  per-frequency split alone is *measured not to help*: it exposes the
+  drive-port launch residue and reads −27.9 dB worst against the shipped
+  −32.9.  The one route left to the user-visible |S11| without the band
+  boundary is a dispersive *source* on the modal port (a low-rank family
+  of profiles × waveforms at the plane overwrite — the band port's
+  source without its boundary); not started, not priced.
 * **Facet section engine (KB-043)** — the reach campaign is closed
-  (DD-240/242/243 close KB-039, KB-041, KB-042 and KB-044; the records
-  are there and in `known-bugs.md`).  Open: **KB-043**, pre-existing and
-  two-sided — within ~1e-7 m of a generatrix the kernel section
+  (DD-240/242/243 close KB-039, KB-041, KB-042 and KB-044).  Open:
+  **KB-043**, pre-existing and two-sided — within ~1e-7 m of a
+  generatrix the kernel section
   collapses to 0.0 while the facet path books 44–64 % of truth
   (r = 2.30 mm, d = 1e-7: 2.7619e-07 facet / 0.0 kernel / 4.2895e-07
   true), so neither is trustworthy there and widening the tangency band
@@ -377,23 +381,20 @@ flickers to ``"done"`` between sequential runs; the reader skips
   DD-223): `benchmarks/bench_mesh_build.py` reads 16 Lange couplers
   9.6 s at 3.7 M cells, 240 posts 1.8 s, 16 × 16 patch array 6.4 s at
   1.8 M, every ladder row on its reference (`pool/hash_refs/`).
-  Deferred work, A/B switches, traps: DD-223.  Open against it:
-  KB-043.
+  Deferred work, A/B switches, traps: DD-223.  Open against it: KB-043.
 
 Closed construction sites are tombstoned where they were decided (the
 DD entry and `known-bugs.md`) and are not repeated here.
 
 ## Deferred / nice-to-have
 
-* **Pulsed band-edge S-parameters on dispersive lines** are
-  record-truncation limited; candidate: late-time AR estimation.
+* **Pulsed band-edge S-parameters on dispersive lines** are record-
+  truncation limited; candidate: late-time AR estimation.
 * **A third compute backend** — assessed, nothing built (DD-180);
-  blocker is `xp is not np` as the capability test.  Metal rejected
-  (no FP64), CuPy on ROCm is the candidate.
+  blocker is `xp is not np` as the capability test.  Metal rejected (no
+  FP64), CuPy on ROCm is the candidate.
 * **Residual GPU small-grid floor** (~0.41 ms/step at 10k cells, port
-  feedback round trips — DD-092); **tensor (gyrotropic) μ** (the DD-089
-  ADE is scalar per axis); **off-Yee field-monitor interpolation**
-  (must preserve the DD-085 units).
-* **Far-field accepted-power wiring on the streamed path** — the reader
-  serves ``realized_gain``/``directivity``; ``gain`` raises until it
-  wires ``1 − Σ|S|²`` (DD-070 follow-up; DD-198's ratio *is* derived).
+  round trips — DD-092); **tensor (gyrotropic) μ** (DD-089's ADE is
+  scalar per axis); **off-Yee field-monitor interpolation** (must
+  preserve the DD-085 units); **far-field accepted power on the streamed
+  path** (``gain`` raises until it wires ``1 − Σ|S|²``, DD-070).

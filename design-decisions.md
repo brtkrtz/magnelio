@@ -19599,6 +19599,40 @@ port.  The flipped kernel array is kept whole although only its first
 it to the head would remove one of the three copies and is available as
 a follow-up.
 
+**What it does to the port-model choice.**  [[DD-231]] priced the
+switch end to end on tutorial 09's shielded microstrip (coarse grid,
+one excitation, band axis forced to `f_min` = 3 GHz because the default
+could not be sized then) and read modal 1.9 s against band 2688.9 s — a
+factor 1453, which is the number that decision rests on.  Re-run at
+this HEAD, both arms of the fold:
+
+    when / arm                       band run   ratio to modal   worst |S11|
+    DD-231, 2026-08-30                2688.9 s         1453x       -137.2 dB
+    2026-09-03, direct fold            315.4 s          155.8x     -146.02 dB
+    2026-09-03, partitioned             93.3 s           45.6x     -146.01 dB
+
+This entry is worth **3.38x** of that run; the rest of the stack since
+DD-231 (the DC anchor, the contour pool's 6x on the kernel build, the
+postprocessing work) is worth 8.5x, together 28.8x, and the headline
+ratio falls from **1453x to 45.6x**.  The floor did not pay for it — it
+*improved* 9 dB against DD-231 from elsewhere in the stack, and the
+partition moves it 0.01 dB, which is the exactness claim confirmed end
+to end rather than on random data.  The comparison is still the tilted
+one DD-231 flagged (the band axis measures 80 % less of the band); since
+[[DD-232]] the default axis sizes at 22610 steps, *fewer* than the 39831
+at 3 GHz, so a like-for-like run is possible for the first time and has
+not been measured.  **DD-231's decision is not re-opened by this** — its
+two deciding blockers were the axis refusal and the missing `a()`/`b()`,
+not the cost.
+
+**Method note.**  `probe_ab.py` carried no `if __name__ == "__main__":`.
+DD-231 measured it one day before [[DD-234]] gave the contour kernel a
+process pool, so its recorded number is clean; on this tree every
+spawned child re-executes module level, and the first re-run forked nine
+concurrent modal arms and never reached the band arm.  A probe that was
+safe when written was made unsafe by a later change elsewhere — the
+guard is now in the file with that history in its docstring.
+
 **Non-goals.**  Bit-identity with the pre-change results (FFT rounding;
 the certificates show it is invisible at the reported precision), a
 GPU-resident partition, and any change to the kernel build or the
