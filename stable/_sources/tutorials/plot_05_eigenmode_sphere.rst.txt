@@ -156,14 +156,14 @@ frequencies and the full 3D field pattern of every mode.
 
  .. code-block:: none
 
-    mode 0: 6.5461 GHz
-    mode 1: 6.5461 GHz
-    mode 2: 6.5472 GHz
-    mode 3: 9.2116 GHz
-    mode 4: 9.2120 GHz
-    mode 5: 9.2131 GHz
-    mode 6: 9.2403 GHz
-    mode 7: 9.2423 GHz
+    mode 0: 6.5431 GHz
+    mode 1: 6.5433 GHz
+    mode 2: 6.5437 GHz
+    mode 3: 9.2062 GHz
+    mode 4: 9.2064 GHz
+    mode 5: 9.2066 GHz
+    mode 6: 9.2354 GHz
+    mode 7: 9.2370 GHz
 
 
 
@@ -195,8 +195,8 @@ quintet:
 
  .. code-block:: none
 
-    TM n=1: analytic 6.5456 GHz, found 3 modes, deviations +0.008 % .. +0.025 %
-    TM n=2: analytic 9.2331 GHz, found 5 modes, deviations -0.233 % .. +0.100 %
+    TM n=1: analytic 6.5456 GHz, found 3 modes, deviations -0.038 % .. -0.029 %
+    TM n=2: analytic 9.2331 GHz, found 5 modes, deviations -0.292 % .. +0.042 %
 
 
 
@@ -238,7 +238,7 @@ dashed circle is the cavity wall, sliced from the actual model:
 
 
 .. image-sg:: /tutorials/images/sphx_glr_plot_05_eigenmode_sphere_001.png
-   :alt: Mode 0 (6.546 GHz) — |E|, y=0.667 mm, Mode 3 (9.212 GHz) — |E|, y=0.667 mm
+   :alt: Mode 0 (6.543 GHz) — |E|, y=0.667 mm, Mode 3 (9.206 GHz) — |E|, y=0.667 mm
    :srcset: /tutorials/images/sphx_glr_plot_05_eigenmode_sphere_001.png
    :class: sphx-glr-single-img
 
@@ -287,7 +287,7 @@ markers resolve and a magnitude plot would hide:
 
 
 .. image-sg:: /tutorials/images/sphx_glr_plot_05_eigenmode_sphere_002.png
-   :alt: Mode 3 (9.212 GHz) — E-field, x=0.667 mm, Mode 3 (9.212 GHz) — H-field, x=0.667 mm
+   :alt: Mode 3 (9.206 GHz) — E-field, x=0.667 mm, Mode 3 (9.206 GHz) — H-field, x=0.667 mm
    :srcset: /tutorials/images/sphx_glr_plot_05_eigenmode_sphere_002.png
    :class: sphx-glr-single-img
 
@@ -314,7 +314,7 @@ the solvers — starting with field monitors, which record fields
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 28.787 seconds)
+   **Total running time of the script:** (0 minutes 30.579 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_05_eigenmode_sphere.py:

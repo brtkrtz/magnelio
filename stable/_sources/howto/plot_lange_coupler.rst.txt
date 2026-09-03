@@ -642,7 +642,7 @@ The four S-parameters and the quadrature phase over the band.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 389-401
+.. GENERATED FROM PYTHON SOURCE LINES 389-402
 
 Carry it over
 -------------
@@ -654,13 +654,14 @@ grid the coupler will be solved on.  The lead-to-finger joint and the
 ribbon bonds carry small parasitics that the synthesis does not know;
 a fraction of a decibel of balance and a few degrees of phase are
 theirs, and the knob for both is the finger length.  The leads are
-short and not de-embedded: the quasi-TEM de-embedding available in
-the result would remove the quasi-static phase only.
+short and not de-embedded: the result's de-embedding removes the
+propagation of a *uniform* quasi-TEM feed, dispersion included, and
+the lead-to-finger joint is not one.
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (2 minutes 50.352 seconds)
+   **Total running time of the script:** (2 minutes 51.258 seconds)
 
 
 .. _sphx_glr_download_howto_plot_lange_coupler.py:

@@ -342,7 +342,7 @@ textbook formula.
  .. code-block:: none
 
     Port 'port1' — 1 mode(s)
-      z_line = 188.37 Ω (numerical)
+      z_line = 188.37 Ω (on this grid)
       [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 188.37 Ω  ε_eff = 1.000  termination = dtbc (chain floor <= -329 dB)
     Z_L (port solver):  188.3652 Ohm
     Z_L (eta0 * b/a) :  188.3652 Ohm
@@ -497,7 +497,7 @@ spec matched to its cross-section.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 39.222 seconds)
+   **Total running time of the script:** (0 minutes 37.486 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_01_parallel_plate.py:

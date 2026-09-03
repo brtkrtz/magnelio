@@ -332,7 +332,7 @@ full-model answers.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 25.313 seconds)
+   **Total running time of the script:** (0 minutes 26.643 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_15_dipole_farfield.py:

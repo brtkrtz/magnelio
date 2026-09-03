@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=1dd76d02"></script>
+    <script src="../_static/documentation_options.js?v=b9afe91b"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -743,10 +743,10 @@ permittivity.</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"drift between the two grids: </span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_fine</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_coarse</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">:</span><span class="s2">+.1f</span><span class="si">}</span><span class="s2"> %"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>coarse (  7056 cells):  f0 = 2.7284 GHz
-fine   ( 14700 cells):  f0 = 2.7270 GHz
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>coarse (  7056 cells):  f0 = 2.7275 GHz
+fine   ( 14700 cells):  f0 = 2.7262 GHz
 next mode is at 4.85 GHz — the band is clear
-drift between the two grids: -0.1 %
+drift between the two grids: -0.0 %
 </pre></div>
 </div>
 </section>
@@ -843,10 +843,10 @@ much.</p>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"window </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">w</span></a><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">4.1f</span><span class="si">}</span><span class="s2"> mm -&gt;  k = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">k</span></a><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">,  centre </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">fc</span></a><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> GHz"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>window  4.0 mm -&gt;  k = 0.00801,  centre 3.0288 GHz
-window  6.0 mm -&gt;  k = 0.03101,  centre 2.9618 GHz
-window  8.0 mm -&gt;  k = 0.06523,  centre 2.8896 GHz
-window 10.0 mm -&gt;  k = 0.10558,  centre 2.8141 GHz
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>window  4.0 mm -&gt;  k = 0.00801,  centre 3.0285 GHz
+window  6.0 mm -&gt;  k = 0.03102,  centre 2.9615 GHz
+window  8.0 mm -&gt;  k = 0.06525,  centre 2.8893 GHz
+window 10.0 mm -&gt;  k = 0.10561,  centre 2.8137 GHz
 </pre></div>
 </div>
 </section>
@@ -880,8 +880,8 @@ the pair’s frequency is a fraction of the passband.</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">window for k = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">K12_TARGET</span></a><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">IRIS_WINDOW</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_13_dielectric_filter_003.png" srcset="../_images/sphx_glr_plot_13_dielectric_filter_003.png" alt="Coupling is set by the window" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>window 6.0 mm, coarse grid:  k = 0.03101, f = 2.9618 GHz
-window 6.0 mm, fine grid:    k = 0.03124, f = 2.9610 GHz
+<img src="../_images/sphx_glr_plot_13_dielectric_filter_003.png" srcset="../_images/sphx_glr_plot_13_dielectric_filter_003.png" alt="Coupling is set by the window" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>window 6.0 mm, coarse grid:  k = 0.03102, f = 2.9615 GHz
+window 6.0 mm, fine grid:    k = 0.03125, f = 2.9609 GHz
 k moves 0.7 %, f moves 0.0 %
 
 window for k = 0.0332: 6.13 mm
@@ -999,9 +999,9 @@ either number alone.</p>
 <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">qe_values</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html#numpy.array" title="numpy.array" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">array</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">qe_values</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>probe at 6.0 mm:  f0 = 3.1095 GHz,  Qe = 14.4 (group delay) / 14.0 (ring-down)
-probe at 7.0 mm:  f0 = 3.0518 GHz,  Qe = 22.4 (group delay) / 21.9 (ring-down)
-probe at 8.0 mm:  f0 = 3.0143 GHz,  Qe = 36.2 (group delay) / 35.4 (ring-down)
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>probe at 6.0 mm:  f0 = 3.1092 GHz,  Qe = 14.3 (group delay) / 14.0 (ring-down)
+probe at 7.0 mm:  f0 = 3.0515 GHz,  Qe = 22.4 (group delay) / 21.9 (ring-down)
+probe at 8.0 mm:  f0 = 3.0137 GHz,  Qe = 36.2 (group delay) / 35.4 (ring-down)
 </pre></div>
 </div>
 </section>
@@ -1033,7 +1033,7 @@ is real.</p>
 </pre></div>
 </div>
 <img src="../_images/sphx_glr_plot_13_dielectric_filter_004.png" srcset="../_images/sphx_glr_plot_13_dielectric_filter_004.png" alt="Feed coupling is exponential in distance" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>probe radius for Qe = 33.3: 7.83 mm
-loaded resonator at that radius: 3.0206 GHz
+loaded resonator at that radius: 3.0201 GHz
 </pre></div>
 </div>
 </section>
@@ -1151,7 +1151,7 @@ would make this filter look more than twice too wide.</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"deviation from the synthesised response: max </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">deviation</span></a><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> dB"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>band centre     3.0195 GHz   (loaded resonator 3.0206 GHz)
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>band centre     3.0191 GHz   (loaded resonator 3.0201 GHz)
 ripple bandwidth 2.14 %      (target 2.00 %)
 worst in-band insertion loss 0.062 dB
 deviation from the synthesised response: max 0.02 dB
@@ -1228,9 +1228,9 @@ housing and compare the phases.</p>
 </pre></div>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>f [GHz]   phase L    phase R   difference
- 2.9904     +50.9°    +112.9°     +62.0°
- 3.0206     +51.9°    +149.1°     +97.2°
- 3.0508     +56.1°    -175.1°    +128.9°
+ 2.9899     +50.8°    +112.6°     +61.8°
+ 3.0201     +51.9°    +148.9°     +96.9°
+ 3.0503     +56.0°    -175.3°    +128.7°
 </pre></div>
 </div>
 <p>A steady drift of tens of degrees, not the 0° or 180° a standing
@@ -1276,7 +1276,7 @@ halved the runtime and left the answer where it was.</p></li>
 <p>Extending to a higher order changes nothing structural: synthesise
 more prototype elements, extract one <span class="math notranslate nohighlight">\(k\)</span> per adjacent pair,
 and mirror one more chamber into the housing.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (7 minutes 31.601 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (8 minutes 21.704 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-13-dielectric-filter-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/95600003609aa4cead576ecb61ae602f/plot_13_dielectric_filter.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_13_dielectric_filter.ipynb</span></code></a></p>

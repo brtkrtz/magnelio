@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=1dd76d02"></script>
+    <script src="../_static/documentation_options.js?v=b9afe91b"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -674,8 +674,8 @@ numerical precision:</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"max |S11 - S22| (symmetry)   : </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11</span></a><span class="w"> </span><span class="o">-</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s22</span></a><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S12 - S21| (reciprocity): 3.46e-07
-max |S11 - S22| (symmetry)   : 1.27e-06
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S12 - S21| (reciprocity): 3.66e-07
+max |S11 - S22| (symmetry)   : 1.92e-07
 </pre></div>
 </div>
 <p>In practice these identities are cheap health checks: a broken
@@ -721,7 +721,7 @@ ideal impedances of the circular cross-section
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"max ||S11|sim - |S11|theory|: </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11</span></a><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11_tl</span></a><span class="p">))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.1e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_03_coax_smatrix_002.png" srcset="../_images/sphx_glr_plot_03_coax_smatrix_002.png" alt="Reflection at the air gap vs. cascade model" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max ||S11|sim - |S11|theory|: 5.1e-04
+<img src="../_images/sphx_glr_plot_03_coax_smatrix_002.png" srcset="../_images/sphx_glr_plot_03_coax_smatrix_002.png" alt="Reflection at the air gap vs. cascade model" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max ||S11|sim - |S11|theory|: 2.6e-04
 </pre></div>
 </div>
 <p>The two curves agree to better than 0.001 in magnitude across the
@@ -752,7 +752,7 @@ and it is filled in for you.</p>
 </pre></div>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>! magnelio S-parameter export (power-wave S-parameters)
-... 205 lines
+... 207 lines
 </pre></div>
 </div>
 </section>
@@ -764,7 +764,7 @@ checks, a transmission-line cascade as reference, and the Touchstone
 export.  The next tutorial raises the frequency until the line
 carries more than one mode — and the S-matrix gains mode indices on
 top of the port indices.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 8.079 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 8.797 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-03-coax-smatrix-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/2a9054853abfb9fb8c9a86d028d6fd6c/plot_03_coax_smatrix.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_03_coax_smatrix.ipynb</span></code></a></p>

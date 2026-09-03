@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=1dd76d02"></script>
+    <script src="../_static/documentation_options.js?v=b9afe91b"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -528,7 +528,8 @@
 <code class="docutils literal notranslate"><span class="pre">PortWaveguide</span></code>, <code class="docutils literal notranslate"><span class="pre">PortAnalytical</span></code> and <code class="docutils literal notranslate"><span class="pre">PortLumped</span></code> are declared
 on the <a class="reference internal" href="core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeometryModel</span></code></a> before meshing; the
 <code class="docutils literal notranslate"><span class="pre">PortSpec*</span></code> family covers custom setups passed to an analysis via
-<code class="docutils literal notranslate"><span class="pre">ports=</span></code>.  The builders and runtime operators behind them are
+<code class="docutils literal notranslate"><span class="pre">ports=</span></code>; <a class="reference internal" href="#magnelio.ports.refine_port_modes" title="magnelio.ports.refine_port_modes"><code class="xref py py-func docutils literal notranslate"><span class="pre">refine_port_modes()</span></code></a> converges a port’s mode parameters
+on its own plane.  The builders and runtime operators behind them are
 internal.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.ports.BboxLateralConductor">
@@ -652,122 +653,6 @@ absorption update.</p>
 <dd class="field-even"><p>complex</p>
 </dd>
 </dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="magnelio.ports.ModeRefinementReport">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">ModeRefinementReport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">history</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">converged</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_rel_err</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extrapolated_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convergence_order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.ModeRefinementReport" title="Link to this definition">#</a></dt>
-<dd><p>Refinement convergence history + extrapolated converged value.</p>
-<p>The report is <em>purely diagnostic</em>; it carries no operator-bound
-state.  The values stored here are computed on independent 3D
-meshes (each level rebuilds the mesh) and <em>must not</em> be used to
-drive the user’s working <code class="xref py py-class docutils literal notranslate"><span class="pre">PortOperatorModal</span></code>, which
-remains bound to its own 3D mesh.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>target</strong> (<em>str</em>)</p></li>
-<li><p><strong>history</strong> (<em>tuple</em><em>[</em><em>LevelResult</em><em>, </em><em>...</em><em>]</em>)</p></li>
-<li><p><strong>converged</strong> (<em>bool</em>)</p></li>
-<li><p><strong>target_rel_err</strong> (<em>float</em>)</p></li>
-<li><p><strong>extrapolated_value</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
-<li><p><strong>convergence_order</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="magnelio.ports.ModeRefinementReport.target">
-<span class="sig-name descname"><span class="pre">target</span></span><a class="headerlink" href="#magnelio.ports.ModeRefinementReport.target" title="Link to this definition">#</a></dt>
-<dd><p>Name of the convergence target (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;z_line&quot;</span></code>).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="magnelio.ports.ModeRefinementReport.history">
-<span class="sig-name descname"><span class="pre">history</span></span><a class="headerlink" href="#magnelio.ports.ModeRefinementReport.history" title="Link to this definition">#</a></dt>
-<dd><p>Per-level results in refinement order (level 0 first).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple of LevelResult</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="magnelio.ports.ModeRefinementReport.converged">
-<span class="sig-name descname"><span class="pre">converged</span></span><a class="headerlink" href="#magnelio.ports.ModeRefinementReport.converged" title="Link to this definition">#</a></dt>
-<dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if the last <code class="docutils literal notranslate"><span class="pre">rel_change</span></code> fell below
-<code class="docutils literal notranslate"><span class="pre">target_rel_err</span></code> before <code class="docutils literal notranslate"><span class="pre">max_levels</span></code> was reached.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="magnelio.ports.ModeRefinementReport.target_rel_err">
-<span class="sig-name descname"><span class="pre">target_rel_err</span></span><a class="headerlink" href="#magnelio.ports.ModeRefinementReport.target_rel_err" title="Link to this definition">#</a></dt>
-<dd><p>The user’s requested relative-error threshold.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="magnelio.ports.ModeRefinementReport.extrapolated_value">
-<span class="sig-name descname"><span class="pre">extrapolated_value</span></span><a class="headerlink" href="#magnelio.ports.ModeRefinementReport.extrapolated_value" title="Link to this definition">#</a></dt>
-<dd><p>Richardson-extrapolated value computed from the last two
-levels assuming O(h²) convergence:
-<code class="docutils literal notranslate"><span class="pre">(4</span> <span class="pre">·</span> <span class="pre">v_{h/2}</span> <span class="pre">-</span> <span class="pre">v_h)</span> <span class="pre">/</span> <span class="pre">3</span></code>.  <code class="docutils literal notranslate"><span class="pre">None</span></code> if extrapolation
-was disabled or fewer than two levels were run.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float or None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="magnelio.ports.ModeRefinementReport.convergence_order">
-<span class="sig-name descname"><span class="pre">convergence_order</span></span><a class="headerlink" href="#magnelio.ports.ModeRefinementReport.convergence_order" title="Link to this definition">#</a></dt>
-<dd><p>Empirical convergence order from the last three levels,
-<code class="docutils literal notranslate"><span class="pre">log2(|Δ_{k-1}|</span> <span class="pre">/</span> <span class="pre">|Δ_k|)</span></code> with <code class="docutils literal notranslate"><span class="pre">Δ_k</span> <span class="pre">=</span> <span class="pre">v_k</span> <span class="pre">-</span> <span class="pre">v_{k-1}</span></code>.
-Should match the expected O(h²) ≈ 2.0 for Dey-Mittra-
-refined geometries; lower values typically indicate
-Cartesian-staircase-dominated convergence (≈ 1) or a
-pathological setup.  <code class="docutils literal notranslate"><span class="pre">None</span></code> if fewer than three levels.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float or None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="magnelio.ports.ModeRefinementReport.converged_value">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">converged_value</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#magnelio.ports.ModeRefinementReport.converged_value" title="Link to this definition">#</a></dt>
-<dd><p>Best estimate of the converged value.</p>
-<p>Returns the Richardson-extrapolated value when available,
-otherwise the last level’s value.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="magnelio.ports.ModeRefinementReport.estimated_error">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">estimated_error</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#magnelio.ports.ModeRefinementReport.estimated_error" title="Link to this definition">#</a></dt>
-<dd><p>Conservative relative-error estimate for <code class="docutils literal notranslate"><span class="pre">converged_value</span></code>.</p>
-<p>Equal to the last <code class="docutils literal notranslate"><span class="pre">rel_change</span></code> in <code class="docutils literal notranslate"><span class="pre">history</span></code>.  When
-Richardson extrapolation is used, the <em>actual</em> error of
-<code class="docutils literal notranslate"><span class="pre">extrapolated_value</span></code> is typically smaller than this
-estimate — it is intentionally conservative.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1051,6 +936,131 @@ already and is ignored (<code class="docutils literal notranslate"><span class="
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="magnelio.ports.PortDispersionReport">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">PortDispersionReport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_line</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon_eff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortDispersionReport" title="Link to this definition">#</a></dt>
+<dd><p>Frequency dependence of a port’s modes on the grid.</p>
+<p>Returned by <a class="reference internal" href="#magnelio.ports.PortReport.dispersion" title="magnelio.ports.PortReport.dispersion"><code class="xref py py-meth docutils literal notranslate"><span class="pre">PortReport.dispersion()</span></code></a>.  Every array is indexed
+<code class="docutils literal notranslate"><span class="pre">[mode,</span> <span class="pre">frequency]</span></code> in the port’s mode order; a mode that does
+not propagate at a frequency (below its cut-on) is NaN there.  The
+values are those of the <em>true discrete modes</em> of the feed
+cross-section — the modes the grid actually carries, solved per
+frequency — not the frequency-flat mode the port’s report lists.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>port_name</strong> (<em>str</em>)</p></li>
+<li><p><strong>f_axis</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a>)</p></li>
+<li><p><strong>z_line</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a>)</p></li>
+<li><p><strong>epsilon_eff</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a>)</p></li>
+<li><p><strong>gamma</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.PortDispersionReport.port_name">
+<span class="sig-name descname"><span class="pre">port_name</span></span><a class="headerlink" href="#magnelio.ports.PortDispersionReport.port_name" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.PortDispersionReport.f_axis">
+<span class="sig-name descname"><span class="pre">f_axis</span></span><a class="headerlink" href="#magnelio.ports.PortDispersionReport.f_axis" title="Link to this definition">#</a></dt>
+<dd><p>Frequencies [Hz].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.PortDispersionReport.z_line">
+<span class="sig-name descname"><span class="pre">z_line</span></span><a class="headerlink" href="#magnelio.ports.PortDispersionReport.z_line" title="Link to this definition">#</a></dt>
+<dd><p>Reference impedance [Ω] the mode carries at each frequency,
+full-model value on a port cut by a symmetry plane: the line
+impedance of a TEM or quasi-TEM mode, the modal impedance of a
+hollow-pipe mode in the port’s V/I convention.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.PortDispersionReport.epsilon_eff">
+<span class="sig-name descname"><span class="pre">epsilon_eff</span></span><a class="headerlink" href="#magnelio.ports.PortDispersionReport.epsilon_eff" title="Link to this definition">#</a></dt>
+<dd><p>Effective permittivity <code class="docutils literal notranslate"><span class="pre">(β</span> <span class="pre">c</span> <span class="pre">/</span> <span class="pre">ω)²</span></code> with the grid’s own
+dispersion divided out — comparable with the closed-form
+<code class="docutils literal notranslate"><span class="pre">ε_eff(f)</span></code> of the microstrip literature.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.PortDispersionReport.gamma">
+<span class="sig-name descname"><span class="pre">gamma</span></span><a class="headerlink" href="#magnelio.ports.PortDispersionReport.gamma" title="Link to this definition">#</a></dt>
+<dd><p>Propagation constant <code class="docutils literal notranslate"><span class="pre">α</span> <span class="pre">+</span> <span class="pre">jβ</span></code> [1/m], complex.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.ports.PortDispersionReport.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortDispersionReport.plot" title="Link to this definition">#</a></dt>
+<dd><p>Line impedance and effective permittivity against frequency.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ax</strong> (<em>matplotlib Axes</em><em>, </em><em>optional</em>) – Axes for the impedance; <code class="docutils literal notranslate"><span class="pre">ε_eff</span></code> goes on a twin axis.</p></li>
+<li><p><strong>mode</strong> (<em>int</em><em>, </em><em>optional</em>) – One mode; default all.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The matplotlib figure and the impedance axes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.ports.PortDispersionReport.summary">
+<span class="sig-name descname"><span class="pre">summary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortDispersionReport.summary" title="Link to this definition">#</a></dt>
+<dd><p>Multi-line summary at the first, middle and last frequency.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.ports.PortDispersionReport.alpha">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">alpha</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span><a class="headerlink" href="#magnelio.ports.PortDispersionReport.alpha" title="Link to this definition">#</a></dt>
+<dd><p>Attenuation constant [Np/m] — zero to roundoff on a lossless feed.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.ports.PortDispersionReport.beta">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">beta</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span><a class="headerlink" href="#magnelio.ports.PortDispersionReport.beta" title="Link to this definition">#</a></dt>
+<dd><p>Phase constant [rad/m].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="magnelio.ports.PortLumped">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">PortLumped</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortLumped" title="Link to this definition">#</a></dt>
 <dd><p>Declarative lumped port on a straight interior edge path.</p>
@@ -1085,15 +1095,14 @@ internal impedance.  Also declared with full-model values.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.ports.PortOperatorReport">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">PortOperatorReport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_line_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'Optional[float]'</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_line_ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'Optional[float]'</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'Optional[float]'</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'Optional[float]'</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">refinement_log</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">&quot;'Optional[ModeRefinementReport]'&quot;</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symmetry_faces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'tuple'</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quasi_static</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'bool'</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortOperatorReport" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">PortOperatorReport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_line_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'Optional[float]'</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_line_ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'Optional[float]'</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'Optional[float]'</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'Optional[float]'</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symmetry_faces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'tuple'</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quasi_static</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'bool'</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortOperatorReport" title="Link to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>z_line_num</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>)</p></li>
-<li><p><strong>z_line_ref</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>)</p></li>
-<li><p><strong>cutoff_num</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>)</p></li>
-<li><p><strong>cutoff_ref</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>)</p></li>
-<li><p><strong>refinement_log</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="#magnelio.ports.ModeRefinementReport" title="magnelio.ports.ModeRefinementReport"><em>ModeRefinementReport</em></a><em>]</em>)</p></li>
+<li><p><strong>z_line_num</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>z_line_ref</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>cutoff_num</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>cutoff_ref</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>symmetry_faces</strong> (<em>tuple</em>)</p></li>
 <li><p><strong>quasi_static</strong> (<em>bool</em>)</p></li>
 </ul>
@@ -1124,8 +1133,147 @@ in series (<code class="docutils literal notranslate"><span class="pre">z_full</
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="magnelio.ports.PortRefinementReport">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">PortRefinementReport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">levels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">converged</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extrapolated</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reports</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortRefinementReport" title="Link to this definition">#</a></dt>
+<dd><p>Convergence of one port’s mode parameter under port-plane refinement.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>port_name</strong> (<em>str</em>)</p></li>
+<li><p><strong>target</strong> (<em>str</em>)</p></li>
+<li><p><strong>mode</strong> (<em>int</em>)</p></li>
+<li><p><strong>levels</strong> (<em>tuple</em><em>[</em><a class="reference internal" href="#magnelio.ports.RefinementLevel" title="magnelio.ports._modal.refinement.RefinementLevel"><em>RefinementLevel</em></a><em>, </em><em>...</em><em>]</em>)</p></li>
+<li><p><strong>tol</strong> (<em>float</em>)</p></li>
+<li><p><strong>converged</strong> (<em>bool</em>)</p></li>
+<li><p><strong>extrapolated</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>order</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>reports</strong> (<em>tuple</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.PortRefinementReport.port_name">
+<span class="sig-name descname"><span class="pre">port_name</span></span><a class="headerlink" href="#magnelio.ports.PortRefinementReport.port_name" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.PortRefinementReport.target">
+<span class="sig-name descname"><span class="pre">target</span></span><a class="headerlink" href="#magnelio.ports.PortRefinementReport.target" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">&quot;z_line&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;epsilon_eff&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;f_cutoff&quot;</span></code> of mode
+<code class="docutils literal notranslate"><span class="pre">mode</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.PortRefinementReport.mode">
+<span class="sig-name descname"><span class="pre">mode</span></span><a class="headerlink" href="#magnelio.ports.PortRefinementReport.mode" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.PortRefinementReport.levels">
+<span class="sig-name descname"><span class="pre">levels</span></span><a class="headerlink" href="#magnelio.ports.PortRefinementReport.levels" title="Link to this definition">#</a></dt>
+<dd><p>The ladder, level 0 first.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple of <a class="reference internal" href="#magnelio.ports.RefinementLevel" title="magnelio.ports.RefinementLevel">RefinementLevel</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.PortRefinementReport.tol">
+<span class="sig-name descname"><span class="pre">tol</span></span><a class="headerlink" href="#magnelio.ports.PortRefinementReport.tol" title="Link to this definition">#</a></dt>
+<dd><p>The relative change the ladder was asked to reach.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.PortRefinementReport.converged">
+<span class="sig-name descname"><span class="pre">converged</span></span><a class="headerlink" href="#magnelio.ports.PortRefinementReport.converged" title="Link to this definition">#</a></dt>
+<dd><p>Whether the last change fell below <code class="docutils literal notranslate"><span class="pre">tol</span></code> before the level
+cap.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.PortRefinementReport.extrapolated">
+<span class="sig-name descname"><span class="pre">extrapolated</span></span><a class="headerlink" href="#magnelio.ports.PortRefinementReport.extrapolated" title="Link to this definition">#</a></dt>
+<dd><p>Richardson estimate from the last two levels (<code class="docutils literal notranslate"><span class="pre">None</span></code> with a
+single level).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.PortRefinementReport.order">
+<span class="sig-name descname"><span class="pre">order</span></span><a class="headerlink" href="#magnelio.ports.PortRefinementReport.order" title="Link to this definition">#</a></dt>
+<dd><p>Observed convergence order from the last three levels
+(<code class="docutils literal notranslate"><span class="pre">None</span></code> with fewer).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.PortRefinementReport.reports">
+<span class="sig-name descname"><span class="pre">reports</span></span><a class="headerlink" href="#magnelio.ports.PortRefinementReport.reports" title="Link to this definition">#</a></dt>
+<dd><p>The port report of every level, for the modes themselves.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple of <a class="reference internal" href="#magnelio.ports.PortReport" title="magnelio.ports.PortReport">PortReport</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.ports.PortRefinementReport.estimated_error">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">estimated_error</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#magnelio.ports.PortRefinementReport.estimated_error" title="Link to this definition">#</a></dt>
+<dd><p>Conservative relative error of <a class="reference internal" href="#magnelio.ports.PortRefinementReport.value" title="magnelio.ports.PortRefinementReport.value"><code class="xref py py-attr docutils literal notranslate"><span class="pre">value</span></code></a> — the last rung’s change.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.ports.PortRefinementReport.value">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">value</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#magnelio.ports.PortRefinementReport.value" title="Link to this definition">#</a></dt>
+<dd><p>the extrapolated value, else the finest level’s.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Best estimate</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="magnelio.ports.PortReport">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">PortReport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortReport" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">PortReport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_dispersion_factory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_dispersion_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortReport" title="Link to this definition">#</a></dt>
 <dd><p>Per-port mode-solution report (no TD run required).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1133,6 +1281,8 @@ in series (<code class="docutils literal notranslate"><span class="pre">z_full</
 <li><p><strong>name</strong> (<em>str</em>)</p></li>
 <li><p><strong>modes</strong> (<em>tuple</em><em>[</em><a class="reference internal" href="#magnelio.ports.ModeReport" title="magnelio.ports._modal.mode_report.ModeReport"><em>ModeReport</em></a><em>, </em><em>...</em><em>]</em>)</p></li>
 <li><p><strong>report</strong> (<a class="reference internal" href="#magnelio.ports.PortOperatorReport" title="magnelio.ports._modal.port_report.PortOperatorReport"><em>PortOperatorReport</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>_dispersion_factory</strong> (<em>object</em>)</p></li>
+<li><p><strong>_dispersion_cache</strong> (<em>dict</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -1176,7 +1326,7 @@ ports a synthetic report carrying <code class="docutils literal notranslate"><sp
 
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.ports.PortReport.from_operator">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_operator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortReport.from_operator" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_operator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">dispersion_factory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortReport.from_operator" title="Link to this definition">#</a></dt>
 <dd><p>Build a report from a built port operator.</p>
 <p>Modal operators contribute one <a class="reference internal" href="#magnelio.ports.ModeReport" title="magnelio.ports.ModeReport"><code class="xref py py-class docutils literal notranslate"><span class="pre">ModeReport</span></code></a> per
 <code class="docutils literal notranslate"><span class="pre">discrete_modes</span></code> entry; lumped operators (no mode solve)
@@ -1185,10 +1335,42 @@ yield an empty mode tuple and a synthetic <code class="docutils literal notransl
 <p>Passing the <em>mesh</em> lets the mode plots resolve the symmetry
 planes cutting the port window, so they show the full
 cross-section instead of the solved half; without it they show
-the solved window.</p>
+the solved window.  <code class="docutils literal notranslate"><span class="pre">dispersion_factory</span></code> — a callable
+returning the port’s dispersion record — enables
+<a class="reference internal" href="#magnelio.ports.PortReport.dispersion" title="magnelio.ports.PortReport.dispersion"><code class="xref py py-meth docutils literal notranslate"><span class="pre">dispersion()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#magnelio.ports.PortReport" title="magnelio.ports._modal.mode_report.PortReport"><em>PortReport</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.ports.PortReport.dispersion">
+<span class="sig-name descname"><span class="pre">dispersion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_axis</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortReport.dispersion" title="Link to this definition">#</a></dt>
+<dd><p>Impedance, <code class="docutils literal notranslate"><span class="pre">ε_eff</span></code> and <code class="docutils literal notranslate"><span class="pre">γ</span></code> of the port’s modes per frequency.</p>
+<p>Solves the true discrete modes of the feed cross-section at
+every point of <code class="docutils literal notranslate"><span class="pre">f_axis</span></code> — the modes the grid carries there,
+as opposed to the single frequency-flat mode the port operates
+with — and returns what each carries: its impedance, its
+effective permittivity and its propagation constant.  On a
+quasi-TEM line these move with frequency (the impedance of the
+tutorial microstrip rises by 7 % over its band); on a
+homogeneous line they are flat, and the impedance is the exact
+discrete value the port’s power waves already use.</p>
+<p>The mode order is the port’s.  A mode below its cut-on at a
+frequency is NaN there.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>f_axis</strong> (<em>array_like</em>) – Frequencies [Hz].</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.ports.PortDispersionReport" title="magnelio.ports.PortDispersionReport">PortDispersionReport</a></p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – On a lumped port, or when the feed behind the port plane is
+    not a uniform chain (fewer than four equidistant cells, a
+    taper or step too close to the port).</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1442,6 +1624,79 @@ face, or a window whose ring lies in free space, is rejected.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="magnelio.ports.RefinementLevel">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">RefinementLevel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cells_port_plane</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cells_3d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_change</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.RefinementLevel" title="Link to this definition">#</a></dt>
+<dd><p>One rung of the refinement ladder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>level</strong> (<em>int</em>)</p></li>
+<li><p><strong>n_cells_port_plane</strong> (<em>int</em>)</p></li>
+<li><p><strong>n_cells_3d</strong> (<em>int</em>)</p></li>
+<li><p><strong>value</strong> (<em>float</em>)</p></li>
+<li><p><strong>rel_change</strong> (<em>float</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.RefinementLevel.level">
+<span class="sig-name descname"><span class="pre">level</span></span><a class="headerlink" href="#magnelio.ports.RefinementLevel.level" title="Link to this definition">#</a></dt>
+<dd><p>0 is the user’s port-plane grid; level <code class="docutils literal notranslate"><span class="pre">k</span></code> bisects it <code class="docutils literal notranslate"><span class="pre">k</span></code>
+times along both tangential axes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.RefinementLevel.n_cells_port_plane">
+<span class="sig-name descname"><span class="pre">n_cells_port_plane</span></span><a class="headerlink" href="#magnelio.ports.RefinementLevel.n_cells_port_plane" title="Link to this definition">#</a></dt>
+<dd><p>Cross-section cell count on the port plane.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.RefinementLevel.n_cells_3d">
+<span class="sig-name descname"><span class="pre">n_cells_3d</span></span><a class="headerlink" href="#magnelio.ports.RefinementLevel.n_cells_3d" title="Link to this definition">#</a></dt>
+<dd><p>Cell count of the slab mesh.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.RefinementLevel.value">
+<span class="sig-name descname"><span class="pre">value</span></span><a class="headerlink" href="#magnelio.ports.RefinementLevel.value" title="Link to this definition">#</a></dt>
+<dd><p>The target quantity at this level (full-model value).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="magnelio.ports.RefinementLevel.rel_change">
+<span class="sig-name descname"><span class="pre">rel_change</span></span><a class="headerlink" href="#magnelio.ports.RefinementLevel.rel_change" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">|value</span> <span class="pre">−</span> <span class="pre">value_prev|</span> <span class="pre">/</span> <span class="pre">|value|</span></code>; <code class="docutils literal notranslate"><span class="pre">nan</span></code> at level 0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="magnelio.ports.RegionConductor">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">RegionConductor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axis_a_range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis_b_range</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.RegionConductor" title="Link to this definition">#</a></dt>
 <dd><p>Axis-aligned rectangular conductor region on the port plane.</p>
@@ -1483,6 +1738,47 @@ conductor.  Mirrors the validation in
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>face</strong> (<a class="reference internal" href="mesh.html#magnelio.mesh.BoxFace" title="magnelio.mesh.faces.BoxFace"><em>BoxFace</em></a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="magnelio.ports.refine_port_modes">
+<span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">refine_port_modes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">control</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'z_line'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slab_cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.refine_port_modes" title="Link to this definition">#</a></dt>
+<dd><p>Converge a port mode’s parameter by refining the port plane alone.</p>
+<p>Builds a slab of the model behind the port face — the model’s
+shapes, materials and lateral closure, cut <code class="docutils literal notranslate"><span class="pre">slab_cells</span></code> of the
+user’s mesh in with the mesher’s own domain clip — and meshes it
+with the user’s mesh control at level 0 and every tangential cell
+split <code class="docutils literal notranslate"><span class="pre">2^k</span></code> ways at level <code class="docutils literal notranslate"><span class="pre">k</span></code>.  Level 0 reproduces the port
+report of <code class="docutils literal notranslate"><span class="pre">mesh</span></code>; the ladder converges the cross-section at
+<code class="docutils literal notranslate"><span class="pre">4×</span></code> the cells per level instead of the <code class="docutils literal notranslate"><span class="pre">8×</span></code> a 3D refinement
+costs, on a slab a few cells deep.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<a class="reference internal" href="core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><em>GeometryModel</em></a>) – The model <code class="docutils literal notranslate"><span class="pre">mesh</span></code> was generated from, ports declared.</p></li>
+<li><p><strong>control</strong> (<a class="reference internal" href="core.html#magnelio.MeshControl" title="magnelio.MeshControl"><em>MeshControl</em></a>) – The mesh control <code class="docutils literal notranslate"><span class="pre">mesh</span></code> was generated with; every level keeps
+it and sets its <code class="docutils literal notranslate"><span class="pre">subdivide</span></code> on the tangential axes.</p></li>
+<li><p><strong>mesh</strong> (<a class="reference internal" href="core.html#magnelio.Mesh" title="magnelio.Mesh"><em>Mesh</em></a>) – The user’s mesh (supplies the level-0 grid, <code class="docutils literal notranslate"><span class="pre">f_max</span></code> and the
+port declaration).</p></li>
+<li><p><strong>port</strong> (<em>str</em>) – Name of a declared waveguide port.</p></li>
+<li><p><strong>levels</strong> (<em>int</em><em>, </em><em>default 3</em>) – Number of ladder rungs including level 0 (at most).</p></li>
+<li><p><strong>target</strong> (<em>{&quot;z_line&quot;</em><em>, </em><em>&quot;epsilon_eff&quot;</em><em>, </em><em>&quot;f_cutoff&quot;}</em>) – Quantity to converge.</p></li>
+<li><p><strong>mode</strong> (<em>int</em><em>, </em><em>default 0</em>) – Mode index on the port.</p></li>
+<li><p><strong>tol</strong> (<em>float</em><em>, </em><em>default 1e-3</em>) – Stop once the relative change between rungs falls below it.</p></li>
+<li><p><strong>slab_cells</strong> (<em>int</em><em>, </em><em>default 6</em>) – Depth of the slab in cells of the user’s mesh behind the port
+face (at least four: the port’s equidistant buffer).</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em><em>, </em><em>default False</em>) – Print one line per level.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.ports.PortRefinementReport" title="magnelio.ports.PortRefinementReport">PortRefinementReport</a></p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the port is not declared on the mesh, the model declares a
+    symmetry plane on the port’s axis, or the target is not
+    defined for the mode.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1543,17 +1839,6 @@ conductor.  Mirrors the validation in
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.Mode.z_wave"><code class="docutils literal notranslate"><span class="pre">Mode.z_wave()</span></code></a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeRefinementReport"><code class="docutils literal notranslate"><span class="pre">ModeRefinementReport</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeRefinementReport.target"><code class="docutils literal notranslate"><span class="pre">ModeRefinementReport.target</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeRefinementReport.history"><code class="docutils literal notranslate"><span class="pre">ModeRefinementReport.history</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeRefinementReport.converged"><code class="docutils literal notranslate"><span class="pre">ModeRefinementReport.converged</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeRefinementReport.target_rel_err"><code class="docutils literal notranslate"><span class="pre">ModeRefinementReport.target_rel_err</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeRefinementReport.extrapolated_value"><code class="docutils literal notranslate"><span class="pre">ModeRefinementReport.extrapolated_value</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeRefinementReport.convergence_order"><code class="docutils literal notranslate"><span class="pre">ModeRefinementReport.convergence_order</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeRefinementReport.converged_value"><code class="docutils literal notranslate"><span class="pre">ModeRefinementReport.converged_value</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeRefinementReport.estimated_error"><code class="docutils literal notranslate"><span class="pre">ModeRefinementReport.estimated_error</span></code></a></li>
-</ul>
-</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeReport"><code class="docutils literal notranslate"><span class="pre">ModeReport</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeReport.port_name"><code class="docutils literal notranslate"><span class="pre">ModeReport.port_name</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeReport.name"><code class="docutils literal notranslate"><span class="pre">ModeReport.name</span></code></a></li>
@@ -1572,10 +1857,36 @@ conductor.  Mirrors the validation in
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.ModeType"><code class="docutils literal notranslate"><span class="pre">ModeType</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortAnalytical"><code class="docutils literal notranslate"><span class="pre">PortAnalytical</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortDispersionReport"><code class="docutils literal notranslate"><span class="pre">PortDispersionReport</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortDispersionReport.port_name"><code class="docutils literal notranslate"><span class="pre">PortDispersionReport.port_name</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortDispersionReport.f_axis"><code class="docutils literal notranslate"><span class="pre">PortDispersionReport.f_axis</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortDispersionReport.z_line"><code class="docutils literal notranslate"><span class="pre">PortDispersionReport.z_line</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortDispersionReport.epsilon_eff"><code class="docutils literal notranslate"><span class="pre">PortDispersionReport.epsilon_eff</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortDispersionReport.gamma"><code class="docutils literal notranslate"><span class="pre">PortDispersionReport.gamma</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortDispersionReport.plot"><code class="docutils literal notranslate"><span class="pre">PortDispersionReport.plot()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortDispersionReport.summary"><code class="docutils literal notranslate"><span class="pre">PortDispersionReport.summary()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortDispersionReport.alpha"><code class="docutils literal notranslate"><span class="pre">PortDispersionReport.alpha</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortDispersionReport.beta"><code class="docutils literal notranslate"><span class="pre">PortDispersionReport.beta</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortLumped"><code class="docutils literal notranslate"><span class="pre">PortLumped</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortOperatorReport"><code class="docutils literal notranslate"><span class="pre">PortOperatorReport</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortOperatorReport.power_wave_full_scale"><code class="docutils literal notranslate"><span class="pre">PortOperatorReport.power_wave_full_scale</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortOperatorReport.z_line_full_scale"><code class="docutils literal notranslate"><span class="pre">PortOperatorReport.z_line_full_scale</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortRefinementReport"><code class="docutils literal notranslate"><span class="pre">PortRefinementReport</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortRefinementReport.port_name"><code class="docutils literal notranslate"><span class="pre">PortRefinementReport.port_name</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortRefinementReport.target"><code class="docutils literal notranslate"><span class="pre">PortRefinementReport.target</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortRefinementReport.mode"><code class="docutils literal notranslate"><span class="pre">PortRefinementReport.mode</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortRefinementReport.levels"><code class="docutils literal notranslate"><span class="pre">PortRefinementReport.levels</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortRefinementReport.tol"><code class="docutils literal notranslate"><span class="pre">PortRefinementReport.tol</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortRefinementReport.converged"><code class="docutils literal notranslate"><span class="pre">PortRefinementReport.converged</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortRefinementReport.extrapolated"><code class="docutils literal notranslate"><span class="pre">PortRefinementReport.extrapolated</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortRefinementReport.order"><code class="docutils literal notranslate"><span class="pre">PortRefinementReport.order</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortRefinementReport.reports"><code class="docutils literal notranslate"><span class="pre">PortRefinementReport.reports</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortRefinementReport.estimated_error"><code class="docutils literal notranslate"><span class="pre">PortRefinementReport.estimated_error</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortRefinementReport.value"><code class="docutils literal notranslate"><span class="pre">PortRefinementReport.value</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortReport"><code class="docutils literal notranslate"><span class="pre">PortReport</span></code></a><ul class="nav section-nav flex-column">
@@ -1583,6 +1894,7 @@ conductor.  Mirrors the validation in
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortReport.modes"><code class="docutils literal notranslate"><span class="pre">PortReport.modes</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortReport.report"><code class="docutils literal notranslate"><span class="pre">PortReport.report</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortReport.from_operator"><code class="docutils literal notranslate"><span class="pre">PortReport.from_operator()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortReport.dispersion"><code class="docutils literal notranslate"><span class="pre">PortReport.dispersion()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortReport.summary"><code class="docutils literal notranslate"><span class="pre">PortReport.summary()</span></code></a></li>
 </ul>
 </li>
@@ -1592,8 +1904,17 @@ conductor.  Mirrors the validation in
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortSpecNumerical"><code class="docutils literal notranslate"><span class="pre">PortSpecNumerical</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortSpecRectWG"><code class="docutils literal notranslate"><span class="pre">PortSpecRectWG</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.PortWaveguide"><code class="docutils literal notranslate"><span class="pre">PortWaveguide</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.RefinementLevel"><code class="docutils literal notranslate"><span class="pre">RefinementLevel</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.RefinementLevel.level"><code class="docutils literal notranslate"><span class="pre">RefinementLevel.level</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.RefinementLevel.n_cells_port_plane"><code class="docutils literal notranslate"><span class="pre">RefinementLevel.n_cells_port_plane</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.RefinementLevel.n_cells_3d"><code class="docutils literal notranslate"><span class="pre">RefinementLevel.n_cells_3d</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.RefinementLevel.value"><code class="docutils literal notranslate"><span class="pre">RefinementLevel.value</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.RefinementLevel.rel_change"><code class="docutils literal notranslate"><span class="pre">RefinementLevel.rel_change</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.RegionConductor"><code class="docutils literal notranslate"><span class="pre">RegionConductor</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.WallConductor"><code class="docutils literal notranslate"><span class="pre">WallConductor</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.ports.refine_port_modes"><code class="docutils literal notranslate"><span class="pre">refine_port_modes()</span></code></a></li>
 </ul>
   </nav></div>
 
