@@ -23,6 +23,7 @@ import warnings
 import numpy as np
 import pytest
 
+from magnelio._backend.array_api import resolve_backend
 from magnelio._operators.material_matrices import build_M_eps, build_M_mu
 from magnelio.geo import Brick, GeometryModel
 from magnelio.materials.material import Material
@@ -88,12 +89,14 @@ def band_mesh():
     )
 
 
-def _band_run(mesh, n_steps, precision=None):
+def _band_run(mesh, n_steps, precision=None, backend=None):
     """Run the production chain once and return ``(signals, S, f_axis)``.
 
     ``precision=None`` follows the suite-wide pin (double, see
     ``tests/conftest.py``); the length-law fixtures below pass
     ``"single"`` explicitly, which is the production default.
+    ``backend=None`` likewise follows the suite pin (NumPy); the GPU
+    gate passes ``"cupy"`` explicitly, which bypasses it.
     """
     dt = courant_dt(mesh.grid, "normal")
 
@@ -134,6 +137,7 @@ def _band_run(mesh, n_steps, precision=None):
         dt=dt,
         precision=precision,
         verbose=False,
+        **({} if backend is None else {"backend": backend}),
     )
     with warnings.catch_warnings():
         warnings.filterwarnings(
@@ -160,6 +164,11 @@ def _s11_db(S):
 @pytest.fixture(scope="module")
 def band_run(band_mesh):
     return _band_run(band_mesh, N_STEPS_BASE)
+
+
+@pytest.fixture(scope="module")
+def band_run_gpu(band_mesh):
+    return _band_run(band_mesh, N_STEPS_BASE, backend="cupy")
 
 
 @pytest.fixture(scope="module")
@@ -270,3 +279,43 @@ class TestBandDTBCLengthLaw:
         signals, _, _ = band_run_single_doubled
         v1 = signals[("port1", 0)][0].values
         assert np.abs(v1[-128:]).max() < 1e-5 * np.abs(v1).max()
+
+
+try:
+    resolve_backend("cupy")
+    HAS_GPU = True
+except Exception:
+    HAS_GPU = False
+
+
+@pytest.mark.skipif(not HAS_GPU, reason="no usable CuPy/CUDA device")
+class TestBandDTBCOnGPU:
+    """The band port must survive the shipped ``backend="auto"``.
+
+    It did not: ``band_dtbc.py`` was written in ``np.`` throughout and,
+    unlike the modal operator, had no host gather, so ``project_V``
+    multiplied a host mode profile by a device field slice and the run
+    died on the first recorder call.  Nothing saw it -- no GPU test
+    named the band port, and ``tests/conftest.py`` pins the suite to
+    NumPy.
+
+    The port's own work (subspace, kernels, the projected chain step)
+    is host-side double either way; only the field round trip changes.
+    So the GPU answer is expected to agree with the CPU one to
+    round-off, not merely in trend.
+    """
+
+    def test_matches_the_cpu_answer(self, band_run, band_run_gpu):
+        _, s_cpu, _ = band_run
+        _, s_gpu, _ = band_run_gpu
+        db_cpu = _s11_db(s_cpu)
+        db_gpu = _s11_db(s_gpu)
+        assert np.all(np.isfinite(db_gpu))
+        assert np.max(np.abs(db_gpu - db_cpu)) < 1e-6, (
+            f"GPU |S11| departs from the CPU answer: {db_gpu} vs {db_cpu}"
+        )
+
+    def test_s21_flat_on_gpu(self, band_run_gpu):
+        _, s_gpu, _ = band_run_gpu
+        s21_db = 20.0 * np.log10(np.abs(s_gpu[("port2", 0)]) + 1e-300)
+        assert np.all(np.abs(s21_db) < 0.05)

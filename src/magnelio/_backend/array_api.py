@@ -192,6 +192,37 @@ def copy_into(dst, src) -> None:
         dst[:] = src
 
 
+def array_module_of(arr):
+    """The array module ``arr`` belongs to.
+
+    Resolved from the object itself rather than from a solver's ``xp``,
+    for the few places that only ever see a field array: port operators
+    hooked into the time loop, which are handed ``fields.e_flat`` and
+    nothing else.  NumPy subclasses that mimic the device interface (the
+    unit-test path without CUDA) resolve to NumPy.
+    """
+    if isinstance(arr, np.ndarray):
+        return np
+    import importlib  # noqa: PLC0415 — only reachable with device arrays
+
+    return importlib.import_module(type(arr).__module__.split(".")[0])
+
+
+def gather_host(arr, idx):
+    """Gather ``arr[idx]`` as a NumPy array.
+
+    The port recursions (Mur / DTBC histories, source buffers, the band
+    boundary's projected chain step) are host-side work on a few hundred
+    port-plane values, carried in double whatever the solver's precision
+    is.  On the CuPy backend the port-edge subset is pulled to the host
+    once per call (one small D2H transfer) instead of porting the
+    recursion to the GPU.  No-op pass-through on NumPy, so the CPU path
+    keeps its operation order bit-for-bit.
+    """
+    out = arr[idx]
+    return out.get() if hasattr(out, "get") else out
+
+
 def set_backend(name: str) -> None:
     """Switch the global array backend.
 

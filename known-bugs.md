@@ -16,39 +16,45 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Four entries are open as of 2026-09-03: KB-023, KB-038, KB-043 and
-KB-045.**  Everything else is struck through and resolved.
+**Three entries are open as of 2026-09-03: KB-023, KB-038 and
+KB-043.**  Everything else is struck through and resolved.
 
-## KB-045: The band-DTBC port does not run on the CuPy backend — Open (2026-09-03)
+## KB-045: ~~The band-DTBC port does not run on the CuPy backend~~ — Resolved (2026-09-03)
 
-**A band-DTBC port under the shipped default `backend="auto"` dies on
-the first recorder call on any machine with a usable CUDA device.**
-Found while setting up the KB-038 wordlength probe, which ran outside
-pytest and therefore without the suite's `MAGNELIO_BACKEND=numpy` pin:
+**The band boundary now exchanges the port plane with the device the
+way the modal operator already did.**  `gather_host` and
+`array_module_of` moved from `_modal/operator.py` into
+`_backend/array_api.py` (next to `copy_into`, which solves the mirror
+problem) and both port families import them from there; the band port
+reads through `gather_host` in `project_V`, `project_V_interior`,
+`project_I` and `initialize_state`, and `update_e` writes the port
+plane in ONE fused scatter (`e_u_indices` and `e_v_indices`
+concatenated, cached device-side) before reading the first interior
+period back.  The port's own arithmetic is untouched host-side double,
+so the CPU path is bit-identical — the KB-038 length-law probe
+reproduces -128.72 / -136.19 dB at 4064 steps and -123.97 / -129.85 at
+8128, every digit as before — and the GPU answer matches the CPU one to
+better than 1e-6 dB.  Gated by
+`test_qtem_band_dtbc_sparams.py::TestBandDTBCOnGPU`, which skips
+without a CUDA device.
+
+**What it was.**  A band port under the shipped default
+`backend="auto"` died on the first recorder call on any machine with a
+usable CUDA device:
 
     File "src/magnelio/ports/_modal/band_dtbc.py", line 1627, in _project_V_at
       V[m] = float(np.dot(me_u, p_u * e_u)) + float(np.dot(me_v, p_v * e_v))
     TypeError: Unsupported type <class 'numpy.ndarray'>   [cupy/_core/_scalar.pyx]
 
 `p_u` is a host-side mode profile, `e_u` a CuPy slice of the field.
-`band_dtbc.py` is written in `np.` throughout and, unlike
-`_modal/operator.py`, has no `_gather_host` — the one-line D2H gather
-that lets the modal port keep its host-side recursion on the GPU
-backend.  This is the class of the resolved KB-006 (`MonitorWallLoss`
-crashing on the CuPy backend for the same reason).
-
-Not covered anywhere: `tests/integration/test_gpu_backend.py` does not
-mention the band port, and `tests/conftest.py` pins the whole suite to
+`band_dtbc.py` was written in `np.` throughout and, unlike
+`_modal/operator.py`, had no host gather — the class of the resolved
+KB-006.  Nothing saw it: `tests/integration/test_gpu_backend.py` never
+mentioned the band port and `tests/conftest.py` pins the suite to
 NumPy, so neither CI nor a developer running the suite on a CUDA box
-ever exercises the combination.
-
-What is measured is the crash and its cause.  What is *not* established
-is the full extent: `project_V`/`project_V_interior` are where it was
-observed, `project_I` and `update_e` index the field the same way and
-would be expected to fail likewise, but that was not run.  Whether the
-band boundary should gain a `_gather_host` like the modal port (its
-recursion is the same shape of small host-side work) or a genuine
-device path is undecided.
+exercised the combination.  Found while setting up the KB-038
+wordlength probe, which ran outside pytest and therefore without that
+pin.
 
 ## KB-044: ~~The in-house section paths book a tenth of the deflection, the kernel path the whole of it~~ — Resolved (DD-243, 2026-09-02)
 
