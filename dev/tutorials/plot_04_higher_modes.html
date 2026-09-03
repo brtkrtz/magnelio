@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=c1ad62ca"></script>
+    <script src="../_static/documentation_options.js?v=3cdd5d8c"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -611,14 +611,14 @@ only TEM.)</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">report</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>UserWarning: Modal port 'port1': modes 'TE_num00' (fc = 34.5063 GHz) and 'TE_num01' (fc = 34.5067 GHz) are degenerate within 0.001% relative cut-off difference.  Their power-flux inner product is not orthogonal under degeneracy, so non-trivial cross-coupling at the modal port is expected and does not vanish with mesh refinement. Either restrict the operating band so the degenerate pair stays evanescent, or break the underlying symmetry of the cross-section (e.g. by inhomogeneous filling or by choosing a non-rectangular geometry).
-UserWarning: Modal port 'port2': modes 'TE_num00' (fc = 34.5063 GHz) and 'TE_num01' (fc = 34.5067 GHz) are degenerate within 0.001% relative cut-off difference.  Their power-flux inner product is not orthogonal under degeneracy, so non-trivial cross-coupling at the modal port is expected and does not vanish with mesh refinement. Either restrict the operating band so the degenerate pair stays evanescent, or break the underlying symmetry of the cross-section (e.g. by inhomogeneous filling or by choosing a non-rectangular geometry).
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>UserWarning: Modal port 'port1': modes 'TE_num00' (fc = 34.4956 GHz) and 'TE_num01' (fc = 34.4956 GHz) are degenerate within 0.000% relative cut-off difference.  Their power-flux inner product is not orthogonal under degeneracy, so non-trivial cross-coupling at the modal port is expected and does not vanish with mesh refinement. Either restrict the operating band so the degenerate pair stays evanescent, or break the underlying symmetry of the cross-section (e.g. by inhomogeneous filling or by choosing a non-rectangular geometry).
+UserWarning: Modal port 'port2': modes 'TE_num00' (fc = 34.4956 GHz) and 'TE_num01' (fc = 34.4956 GHz) are degenerate within 0.000% relative cut-off difference.  Their power-flux inner product is not orthogonal under degeneracy, so non-trivial cross-coupling at the modal port is expected and does not vanish with mesh refinement. Either restrict the operating band so the degenerate pair stays evanescent, or break the underlying symmetry of the cross-section (e.g. by inhomogeneous filling or by choosing a non-rectangular geometry).
 Port 'port1' — 3 mode(s)
-  z_line = 51.04 Ω (numerical)
-  f_cutoff = 34.5063 GHz (numerical)
-  [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 51.04 Ω  ε_eff = 2.250  termination = dtbc (chain floor &lt;= -314 dB)
-  [1] TE_num00     TE  f_c = 34.5063 GHz  termination = dtbc (chain floor &lt;= -314 dB)
-  [2] TE_num01     TE  f_c = 34.5067 GHz  termination = dtbc (chain floor &lt;= -319 dB)
+  z_line = 51.04 Ω (on this grid)
+  f_cutoff = 34.4956 GHz (on this grid)
+  [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 51.04 Ω  ε_eff = 2.250  termination = dtbc (chain floor &lt;= -321 dB)
+  [1] TE_num00     TE  f_c = 34.4956 GHz  termination = dtbc (chain floor &lt;= -314 dB)
+  [2] TE_num01     TE  f_c = 34.4956 GHz  termination = dtbc (chain floor &lt;= -321 dB)
 </pre></div>
 </div>
 <p>The report lists the ladder: TEM at <span class="math notranslate nohighlight">\(f_c = 0\)</span>, then the TE11
@@ -671,7 +671,7 @@ exists above its cut-off:</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_04_higher_modes_002.png" srcset="../_images/sphx_glr_plot_04_higher_modes_002.png" alt="Transmission: TEM everywhere, TE11 only above cut-off" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f4ce310aa10&gt;
+<img src="../_images/sphx_glr_plot_04_higher_modes_002.png" srcset="../_images/sphx_glr_plot_04_higher_modes_002.png" alt="Transmission: TEM everywhere, TE11 only above cut-off" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f6ac6556310&gt;
 </pre></div>
 </div>
 <p>Below its cut-off the TE11 wave is evanescent — nothing arrives at
@@ -687,7 +687,7 @@ entry?  Look at the degenerate 2x2 block at 45 GHz:</p>
 <span class="nb">print</span><span class="p">(</span><span class="s2">"|S21| block (TE11_a excited -&gt; [TE11_a, TE11_b] received):"</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.round.html#numpy.round" title="numpy.round" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">round</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">block</span></a><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>|S21| block (TE11_a excited -&gt; [TE11_a, TE11_b] received): [[0. 1.]]
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>|S21| block (TE11_a excited -&gt; [TE11_a, TE11_b] received): [[0.     0.9999]]
 </pre></div>
 </div>
 <p>Port 2 reports the transmitted wave in its <em>own</em> TE11 basis — and
@@ -706,8 +706,8 @@ non-degenerate modes, and on this uniform line it is absent:</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"TE11 power balance: min sum |S|^2 = </span><span class="si">{</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">p11</span></a><span class="w"> </span><span class="o">+</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">p21</span></a><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>worst TE11 -&gt; TEM conversion above cut-off: -169.4 dB
-TE11 power balance: min sum |S|^2 = 0.9997
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>worst TE11 -&gt; TEM conversion above cut-off: -166.8 dB
+TE11 power balance: min sum |S|^2 = 0.9996
 </pre></div>
 </div>
 </section>
@@ -761,7 +761,7 @@ degenerate pairs and what is (and is not) invariant about them, and
 the waveguide dispersion as an analytical anchor.  The next tutorial
 leaves driven problems altogether and computes the <em>eigenmodes</em> of a
 closed cavity.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 12.330 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 10.304 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-04-higher-modes-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/fd041f631a6de46771d068c734665f91/plot_04_higher_modes.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_04_higher_modes.ipynb</span></code></a></p>

@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=c1ad62ca"></script>
+    <script src="../_static/documentation_options.js?v=3cdd5d8c"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -546,17 +546,76 @@ subject.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span>
 </pre></div>
 </div>
+<section id="designing-the-line">
+<h2>Designing the line<a class="headerlink" href="#designing-the-line" title="Link to this heading">#</a></h2>
+<p>A microstrip is designed on paper first.  The classic closed-form
+synthesis is Hammerstad and Jensen’s: the impedance and effective
+permittivity of an <em>open</em> microstrip — infinite ground, no lid, no
+side walls — with a correction for the trace thickness.  We use it
+the way a designer does, solving the width for a 50 Ω line on a
+0.8 mm FR4-class substrate (εᵣ = 4.3) with a 0.2 mm thick trace:</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span><span class="p">,</span> <span class="n">ports</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.constants</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">h_sub</span> <span class="o">=</span> <span class="mf">0.8e-3</span>  <span class="c1"># substrate height</span>
+<span class="n">t_strip</span> <span class="o">=</span> <span class="mf">0.2e-3</span>  <span class="c1"># trace thickness</span>
+<span class="n">eps_r</span> <span class="o">=</span> <span class="mf">4.3</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">hammerstad_jensen</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">eps_r</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Open-microstrip (Z0, eps_eff) with the thickness correction."""</span>
+    <span class="n">u</span><span class="p">,</span> <span class="n">th</span> <span class="o">=</span> <span class="n">w</span> <span class="o">/</span> <span class="n">h</span><span class="p">,</span> <span class="n">t</span> <span class="o">/</span> <span class="n">h</span>
+    <span class="n">du1</span> <span class="o">=</span> <span class="p">(</span><span class="n">th</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">e</span> <span class="o">/</span> <span class="p">(</span><span class="n">th</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">6.517</span> <span class="o">*</span> <span class="n">u</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">dur</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">cosh</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">eps_r</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)))</span> <span class="o">*</span> <span class="n">du1</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">z01</span><span class="p">(</span><span class="n">u</span><span class="p">):</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="mi">6</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="mi">6</span><span class="p">)</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">((</span><span class="mf">30.666</span> <span class="o">/</span> <span class="n">u</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.7528</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">ETA0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">f</span> <span class="o">/</span> <span class="n">u</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span> <span class="o">/</span> <span class="n">u</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">eps_eff</span><span class="p">(</span><span class="n">u</span><span class="p">):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="n">u</span><span class="o">**</span><span class="mi">4</span> <span class="o">+</span> <span class="p">(</span><span class="n">u</span> <span class="o">/</span> <span class="mi">52</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">u</span><span class="o">**</span><span class="mi">4</span> <span class="o">+</span> <span class="mf">0.432</span><span class="p">))</span> <span class="o">/</span> <span class="mi">49</span>
+        <span class="n">a</span> <span class="o">+=</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">u</span> <span class="o">/</span> <span class="mf">18.1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span><span class="p">)</span> <span class="o">/</span> <span class="mf">18.7</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="mf">0.564</span> <span class="o">*</span> <span class="p">((</span><span class="n">eps_r</span> <span class="o">-</span> <span class="mf">0.9</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">eps_r</span> <span class="o">+</span> <span class="mi">3</span><span class="p">))</span> <span class="o">**</span> <span class="mf">0.053</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">eps_r</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">eps_r</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">10</span> <span class="o">/</span> <span class="n">u</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">a</span> <span class="o">*</span> <span class="n">b</span><span class="p">)</span>
+
+    <span class="n">e</span> <span class="o">=</span> <span class="n">eps_eff</span><span class="p">(</span><span class="n">u</span> <span class="o">+</span> <span class="n">dur</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">z01</span><span class="p">(</span><span class="n">u</span> <span class="o">+</span> <span class="n">du1</span><span class="p">)</span> <span class="o">/</span> <span class="n">z01</span><span class="p">(</span><span class="n">u</span> <span class="o">+</span> <span class="n">dur</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">z01</span><span class="p">(</span><span class="n">u</span> <span class="o">+</span> <span class="n">dur</span><span class="p">)</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">e</span><span class="p">),</span> <span class="n">e</span>
+
+
+<span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="mf">0.5e-3</span><span class="p">,</span> <span class="mf">3.0e-3</span>  <span class="c1"># bisection on the width: Z0 falls with w</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">50</span><span class="p">):</span>
+    <span class="n">mid</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">lo</span> <span class="o">+</span> <span class="n">hi</span><span class="p">)</span>
+    <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="p">(</span><span class="n">mid</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span> <span class="k">if</span> <span class="n">hammerstad_jensen</span><span class="p">(</span><span class="n">mid</span><span class="p">,</span> <span class="n">h_sub</span><span class="p">,</span> <span class="n">t_strip</span><span class="p">,</span> <span class="n">eps_r</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">50</span> <span class="k">else</span> <span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">mid</span><span class="p">)</span>
+<span class="n">w_strip</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">lo</span> <span class="o">+</span> <span class="n">hi</span><span class="p">),</span> <span class="mi">6</span><span class="p">)</span>
+<span class="n">z_formula</span><span class="p">,</span> <span class="n">eps_formula</span> <span class="o">=</span> <span class="n">hammerstad_jensen</span><span class="p">(</span><span class="n">w_strip</span><span class="p">,</span> <span class="n">h_sub</span><span class="p">,</span> <span class="n">t_strip</span><span class="p">,</span> <span class="n">eps_r</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"design width: </span><span class="si">{</span><span class="n">w_strip</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> mm -&gt; </span><span class="si">{</span><span class="n">z_formula</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> Ohm, eps_eff </span><span class="si">{</span><span class="n">eps_formula</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>design width: 1.473 mm -&gt; 50.00 Ohm, eps_eff 3.101
+</pre></div>
+</div>
+<p>The formula answers 1.473 mm.  Hold on to its two assumptions — an
+open line, and a thickness correction calibrated on thin copper
+foils (our trace is a quarter of the substrate height thick) — because
+the simulation below will test both.</p>
+</section>
 <section id="the-geometry-substrate-trace-shield">
 <h2>The geometry: substrate, trace, shield<a class="headerlink" href="#the-geometry-substrate-trace-shield" title="Link to this heading">#</a></h2>
-<p>Three bricks build the cross-section: the dielectric substrate
-(εᵣ = 4.3, 0.8 mm — FR4 territory), the air volume above it with the
-trace cut out, and the PEC trace itself, 1.2 mm wide and 0.2 mm
-thick.  Everything sits in a PEC shield box, whose floor doubles as
-the ground plane — the same hole-in-metal pattern as before, just
-with two filling materials instead of one.</p>
+<p>Three bricks build the cross-section: the dielectric substrate, the
+air volume above it with the trace cut out, and the PEC trace itself
+at the width just designed.  Everything sits in a PEC shield box,
+whose floor doubles as the ground plane — the same hole-in-metal
+pattern as before, just with two filling materials instead of one.</p>
 <p>Two remarks on the box.  It is wide and tall enough (side walls
-more than four trace widths away, lid five substrate heights up)
-that it barely disturbs the line.  And like every closed metal
+more than two trace widths away, lid five substrate heights up)
+that it disturbs the line only a little — about a Ω, measured
+further down.  And like every closed metal
 enclosure it has resonances of its own: box modes that would sit on
 top of the line’s behaviour.  The band below stays under the first
 one — for this cross-section the lowest box mode comes in near
@@ -588,20 +647,9 @@ happens to be antisymmetric is filtered out of the model entirely —
 convenient here, where such a mode could only be spurious clutter,
 but worth remembering whenever a symmetry plane is declared: the
 structure and the excitation must both respect it.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mio</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span><span class="p">,</span> <span class="n">ports</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.constants</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
-
-<span class="n">h_sub</span> <span class="o">=</span> <span class="mf">0.8e-3</span>  <span class="c1"># substrate height</span>
-<span class="n">w_strip</span> <span class="o">=</span> <span class="mf">1.2e-3</span>  <span class="c1"># trace width (tuned for 50 ohm, see below)</span>
-<span class="n">t_strip</span> <span class="o">=</span> <span class="mf">0.2e-3</span>  <span class="c1"># trace thickness</span>
-<span class="n">W_box</span> <span class="o">=</span> <span class="mf">8.0e-3</span>  <span class="c1"># shield width</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">W_box</span> <span class="o">=</span> <span class="mf">8.0e-3</span>  <span class="c1"># shield width</span>
 <span class="n">H_box</span> <span class="o">=</span> <span class="mf">5.0e-3</span>  <span class="c1"># shield height</span>
 <span class="n">L</span> <span class="o">=</span> <span class="mf">20.0e-3</span>  <span class="c1"># line length</span>
-<span class="n">eps_r</span> <span class="o">=</span> <span class="mf">4.3</span>
 <span class="n">f_max</span> <span class="o">=</span> <span class="mf">15.0e9</span>
 
 <span class="n">fr4</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Material</span><span class="o">.</span><span class="n">from_isotropic</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"FR4"</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="n">eps_r</span><span class="p">)</span>
@@ -628,7 +676,7 @@ structure and the excitation must both respect it.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">plot_cross_section</span><span class="p">(</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">L</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"microstrip cross-section"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_09_microstrip_line_001.png" srcset="../_images/sphx_glr_plot_09_microstrip_line_001.png" alt="microstrip cross-section" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>grid: 14 x 23 x 52 cells
+<img src="../_images/sphx_glr_plot_09_microstrip_line_001.png" srcset="../_images/sphx_glr_plot_09_microstrip_line_001.png" alt="microstrip cross-section" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>grid: 13 x 23 x 52 cells
 </pre></div>
 </div>
 <p>The cross-section plot shows the mesher at work on thin layers: the
@@ -664,19 +712,27 @@ the 2D cross-section problem numerically, before any time stepping:</p>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Port 'port1' — 1 mode(s)
   cut by symmetry plane(s) xmin (PMC) — impedances are full-model values
-  z_line = 51.52 Ω (quasi-static)
-  [0] QTEM_lap00   TEM f_c = 0.0000 GHz  z_line = 51.52 Ω  ε_eff = 2.985  termination = mur (chain spread 3.2e-01)
-eps_eff (quasi-static): 2.985
+  z_line = 46.01 Ω (quasi-static, on this grid)
+  [0] QTEM_lap00   TEM f_c = 0.0000 GHz  z_line = 46.01 Ω  ε_eff = 3.047  termination = mur (chain spread 3.1e-01)
+eps_eff (quasi-static): 3.047
 </pre></div>
 </div>
-<p>Two numbers to hold on to.  The line impedance comes out at
-<strong>51.5 Ω</strong> — the trace width was picked to land near 50 Ω, and it
-does so within 3 %.  The classic Hammerstad hand formula (open
-microstrip, infinitely thin trace) predicts about 58 Ω for this
-width; the shield lid pushes the impedance down and so does the very
-real 0.2 mm trace thickness.  Closed formulas stop where real
-cross-sections begin — which is precisely why the port runs a
-numerical mode solver.</p>
+<p>Two numbers to hold on to, and a label to read carefully.  The line
+impedance comes out at <strong>46.0 Ω</strong> — eight percent below the 50 Ω the
+formula designed.  Do not be alarmed, and do not reach for the
+trace width yet: read the label.</p>
+<p>It says <em>quasi-static, on this grid</em>, and both halves matter.  <strong>On
+this grid</strong>: the port solves its mode on the port-plane slice of the
+3D mesh you just built — the same cells, the same conformal material
+averages — so this is the impedance of the cross-section <em>as this
+grid resolves it</em>, not a converged value.  At 25 nodes per
+wavelength the trace is four cells wide, and the field singularities
+at its four edges are what the grid resolves worst; the section
+after next converges the number and shows how much of the eight
+percent is the grid’s.  <strong>Quasi-static</strong>: it is the impedance of the
+frequency-flat mode the port operates with, the static limit of a
+line that in truth disperses (the next section shows what the grid
+carries at each frequency).</p>
 <p>Note what the report says above the numbers: the port window is cut
 by the symmetry plane, and the impedance is reported for the <em>full</em>
 model.  On the meshed half the mode solver actually measures twice
@@ -698,6 +754,99 @@ the mirror image is filled in for the picture.</p>
 </pre></div>
 </div>
 </section>
+<section id="what-the-port-carries-at-each-frequency">
+<h2>What the port carries at each frequency<a class="headerlink" href="#what-the-port-carries-at-each-frequency" title="Link to this heading">#</a></h2>
+<p>The port <em>operates</em> with one frozen mode, but the report can solve
+the modes the grid actually carries at any frequency — the true
+discrete eigenmodes of the feed cross-section — and hand back their
+impedance, effective permittivity and propagation constant as
+curves.  No 3D run is involved; this is the port alone:</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_sweep</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.linspace.html#numpy.linspace" title="numpy.linspace" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">linspace</span></a><span class="p">(</span><span class="mf">0.5e9</span><span class="p">,</span> <span class="n">f_max</span><span class="p">,</span> <span class="mi">41</span><span class="p">)</span>
+<span class="n">disp</span> <span class="o">=</span> <span class="n">report</span><span class="o">.</span><span class="n">dispersion</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_sweep</span></a><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">disp</span><span class="p">)</span>
+
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">disp</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
+
+<span class="k">for</span> <span class="n">f_probe</span> <span class="ow">in</span> <span class="p">(</span><span class="mf">5e9</span><span class="p">,</span> <span class="mf">10e9</span><span class="p">,</span> <span class="mf">15e9</span><span class="p">):</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.argmin.html#numpy.argmin" title="numpy.argmin" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">argmin</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_sweep</span></a> <span class="o">-</span> <span class="n">f_probe</span><span class="p">)))</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">f_probe</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">4.0f</span><span class="si">}</span><span class="s2"> GHz: Z = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">disp</span><span class="o">.</span><span class="n">z_line</span></a><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> Ω, "</span>
+        <span class="sa">f</span><span class="s2">"eps_eff = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">disp</span><span class="o">.</span><span class="n">epsilon_eff</span></a><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, beta = </span><span class="si">{</span><span class="n">disp</span><span class="o">.</span><span class="n">beta</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> rad/m"</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<img src="../_images/sphx_glr_plot_09_microstrip_line_003.png" srcset="../_images/sphx_glr_plot_09_microstrip_line_003.png" alt="port 'port1': dispersion on the grid" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Port 'port1' — dispersion of 1 mode(s)
+  [0]
+        0.5000 GHz  z_line =   46.004 Ω  ε_eff = 3.0480  β = 18.30 rad/m
+        7.7500 GHz  z_line =   45.875 Ω  ε_eff = 3.1737  β = 289.51 rad/m
+       15.0000 GHz  z_line =   47.784 Ω  ε_eff = 3.3660  β = 577.96 rad/m
+   5 GHz: Z = 45.78 Ω, eps_eff = 3.103, beta = 179.1 rad/m
+  10 GHz: Z = 46.24 Ω, eps_eff = 3.233, beta = 374.3 rad/m
+  15 GHz: Z = 47.78 Ω, eps_eff = 3.366, beta = 578.0 rad/m
+</pre></div>
+</div>
+<p>This is the microstrip’s signature: as frequency rises the field
+retreats into the substrate, ε_eff walks from the quasi-static 3.05
+toward εᵣ — 3.37 at 15 GHz, a 10 % move across the band, right in
+the range the classical dispersion models of the Getsinger family
+predict for this geometry — and the impedance moves with it, from
+46 Ω to about 48 Ω.  The impedance is the power–current
+definition of the true mode (power through the port plane over the
+square of the strip current), which meets the quasi-static value in
+the static limit; on a homogeneous line the curve would be flat.
+This is the practical reason quasi-static design formulas come with
+frequency disclaimers: the line the formulas describe at 1 GHz is
+measurably <em>electrically longer</em> at 15.</p>
+</section>
+<section id="how-good-is-46-converging-the-port-plane">
+<h2>How good is 46 Ω?  Converging the port plane<a class="headerlink" href="#how-good-is-46-converging-the-port-plane" title="Link to this heading">#</a></h2>
+<p>Everything so far is exact for <em>this grid</em>.  The question a designer
+asks next is how far the grid is from the cross-section itself — and
+whether the paper design was right.  Refining the whole 3D mesh to
+find out costs eightfold per halving; <code class="docutils literal notranslate"><span class="pre">refine_port_modes</span></code> converges
+the cross-section on a thin slab behind the port instead, starting
+from this very grid (level 0 reproduces the 46.0 Ω) and splitting
+every cell of the port plane in four per level, until the change
+between levels falls below <code class="docutils literal notranslate"><span class="pre">tol</span></code>:</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">ladder</span> <span class="o">=</span> <span class="n">ports</span><span class="o">.</span><span class="n">refine_port_modes</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">mio</span><span class="o">.</span><span class="n">MeshControl</span><span class="p">(</span><span class="n">min_nodes_per_wavelength</span><span class="o">=</span><span class="mi">25</span><span class="p">),</span> <span class="n">mesh</span><span class="p">,</span> <span class="s2">"port1"</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span><span class="mi">3</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ladder</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Port 'port1' — z_line of mode 0 under port-plane refinement (not converged at tol 1.0e-03)
+  level 0:     299 plane cells  46.0082 Ω
+  level 1:    1196 plane cells  48.7687 Ω  Δ +5.660 %
+  level 2:    4784 plane cells  50.1695 Ω  Δ +2.792 %
+  extrapolated: 51.6128 Ω, observed order 0.98
+</pre></div>
+</div>
+<p>The ladder climbs: 46.0, 48.8, 50.2 Ω and an extrapolated value of
+about 51.5 Ω, at first order — the field singularities at the
+strip’s edges set the rate, and a fourth and fifth rung (not run
+here) reach 50.9 and 51.2 Ω.  So the grid’s 46 Ω was the grid’s
+number: the cross-section itself sits within three percent of the
+paper design.  Neither the port’s matching nor the reflection you are
+about to read could have told you that — a port is matched to <em>its</em>
+grid — which is why the ladder is the instrument for the impedance
+and the S-parameters are not.</p>
+<p>The remaining three percent is physics, and it is worth taking
+apart.  The shield costs about 1.2 Ω: rerunning the ladder with the
+box twice and four times as large converges at 52.5 and 52.7 Ω, so
+the lid and side walls of our box pull the impedance <em>down</em> by that
+much, exactly as the open-line formula cannot know.  Set against the
+open-box 52.7 Ω, the formula’s 50 Ω is then 2.7 Ω low — its thickness
+correction over-corrects for a trace this thick (t/h = 0.25 is far
+from the thin foils it was fitted on); the thin-trace formula gives
+52.1 Ω for this width and lands closer.  The two errors happen to
+pull in opposite directions here, which is why 50 Ω on paper became
+51.5 Ω in the box.  Whoever needs 50.0 Ω in this box trims the width
+up by about four percent, to 1.53 mm, on the strength of the
+ladder — and reruns the ladder to confirm it; <code class="docutils literal notranslate"><span class="pre">tol</span></code> and <code class="docutils literal notranslate"><span class="pre">levels</span></code>
+set how far it goes, and <code class="docutils literal notranslate"><span class="pre">target=&quot;epsilon_eff&quot;</span></code> converges the
+permittivity the same way.</p>
+</section>
 <section id="running-the-line-and-reading-the-s-parameters">
 <h2>Running the line and reading the S-parameters<a class="headerlink" href="#running-the-line-and-reading-the-s-parameters" title="Link to this heading">#</a></h2>
 <p>A matched straight line is the simplest possible S-parameter test:
@@ -713,8 +862,8 @@ everything should go through, nothing should come back.</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"|S11|: max </span><span class="si">{</span><span class="mi">20</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11</span></a><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">())</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> dB"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_09_microstrip_line_003.png" srcset="../_images/sphx_glr_plot_09_microstrip_line_003.png" alt="straight 50 Ω microstrip" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>|S21|: min -0.00 dB
-|S11|: max -32.9 dB
+<img src="../_images/sphx_glr_plot_09_microstrip_line_004.png" srcset="../_images/sphx_glr_plot_09_microstrip_line_004.png" alt="straight 50 Ω microstrip" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>|S21|: min -0.00 dB
+|S11|: max -31.6 dB
 </pre></div>
 </div>
 <p>Transmission hugs 0 dB.  The reflection sits near −32 dB at its
@@ -728,57 +877,92 @@ and the −30 dB class is the honest broadband floor of its
 termination — background, not physics, and far below anything a
 real component (or a real connector) will reflect.</p>
 </section>
-<section id="dispersion-the-microstrip-s-signature">
-<h2>Dispersion: the microstrip’s signature<a class="headerlink" href="#dispersion-the-microstrip-s-signature" title="Link to this heading">#</a></h2>
-<p>The port’s ε_eff was <em>one number</em> — the quasi-static limit.  But a
-microstrip is dispersive: as frequency rises the field retreats
-into the substrate and ε_eff creeps upward toward εᵣ.  The 3D
-simulation contains that physics, and the phase of S21 is the
-instrument to extract it: over a line of length L, the mode
-accumulates φ = −β L, so β — and with it
-ε_eff = (c₀ β / ω)² — can be read off per frequency:</p>
+<section id="dispersion-cross-checked-from-the-3d-run">
+<h2>Dispersion, cross-checked from the 3D run<a class="headerlink" href="#dispersion-cross-checked-from-the-3d-run" title="Link to this heading">#</a></h2>
+<p>The port’s sweep above came from the cross-section alone.  The 3D
+simulation contains the same physics, and the phase of S21 is the
+instrument to extract it independently: over a line of length L
+the mode accumulates φ = −β L, so β — and with it
+ε_eff = (c₀ β / ω)² — can be read off per frequency and laid over
+the port’s curve:</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a>
 <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">phase</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.unwrap.html#numpy.unwrap" title="numpy.unwrap" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">unwrap</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.angle.html#numpy.angle" title="numpy.angle" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">angle</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s21</span></a><span class="p">))</span>
 <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">eps_eff_td</span></a> <span class="o">=</span> <span class="p">(</span><span class="n">C0</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">phase</span></a><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a> <span class="o">*</span> <span class="n">L</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span>
 
 <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sel</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a> <span class="o">&gt;=</span> <span class="mf">1.0e9</span>  <span class="c1"># phase-derived values are 0/0-noisy near DC</span>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">))</span>
-<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html#matplotlib.axes.Axes.plot" title="matplotlib.axes.Axes.plot" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a><span class="p">[</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sel</span></a><span class="p">]</span> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">eps_eff_td</span></a><span class="p">[</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sel</span></a><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">"3D simulation (from S21 phase)"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html#matplotlib.axes.Axes.plot" title="matplotlib.axes.Axes.plot" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a><span class="p">[</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sel</span></a><span class="p">]</span> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">eps_eff_td</span></a><span class="p">[</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sel</span></a><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">"3D run (from S21 phase)"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html#matplotlib.axes.Axes.plot" title="matplotlib.axes.Axes.plot" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">plot</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_sweep</span></a> <span class="o">/</span> <span class="mf">1e9</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">disp</span><span class="o">.</span><span class="n">epsilon_eff</span></a><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">"o"</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"port alone (dispersion sweep)"</span><span class="p">)</span>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.axhline.html#matplotlib.axes.Axes.axhline" title="matplotlib.axes.Axes.axhline" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">axhline</span></a><span class="p">(</span><span class="n">eps_eff_static</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"gray"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">"--"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"port mode solver (quasi-static)"</span><span class="p">)</span>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_xlabel.html#matplotlib.axes.Axes.set_xlabel" title="matplotlib.axes.Axes.set_xlabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span></a><span class="p">(</span><span class="s2">"frequency [GHz]"</span><span class="p">)</span>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_ylabel.html#matplotlib.axes.Axes.set_ylabel" title="matplotlib.axes.Axes.set_ylabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span></a><span class="p">(</span><span class="sa">r</span><span class="s2">"$\varepsilon_\mathrm</span><span class="si">{eff}</span><span class="s2">$"</span><span class="p">)</span>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
-<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">"microstrip dispersion"</span><span class="p">)</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">"microstrip dispersion: two instruments, one curve"</span><span class="p">)</span>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 
 <span class="k">for</span> <span class="n">f_probe</span> <span class="ow">in</span> <span class="p">(</span><span class="mf">5e9</span><span class="p">,</span> <span class="mf">10e9</span><span class="p">,</span> <span class="mf">15e9</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"eps_eff(</span><span class="si">{</span><span class="n">f_probe</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> GHz) = </span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.interp.html#numpy.interp" title="numpy.interp" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">interp</span></a><span class="p">(</span><span class="n">f_probe</span><span class="p">,</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a><span class="p">,</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">eps_eff_td</span></a><span class="p">))</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_09_microstrip_line_004.png" srcset="../_images/sphx_glr_plot_09_microstrip_line_004.png" alt="microstrip dispersion" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>eps_eff(5 GHz) = 3.030
-eps_eff(10 GHz) = 3.139
-eps_eff(15 GHz) = 3.275
+<img src="../_images/sphx_glr_plot_09_microstrip_line_005.png" srcset="../_images/sphx_glr_plot_09_microstrip_line_005.png" alt="microstrip dispersion: two instruments, one curve" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>eps_eff(5 GHz) = 3.096
+eps_eff(10 GHz) = 3.216
+eps_eff(15 GHz) = 3.361
 </pre></div>
 </div>
-<p>The curve starts at the quasi-static value and rises to ≈ 3.3 at
-15 GHz — a 10 % walk toward εᵣ across the band, right in the range
-classical dispersion models of the Getsinger family predict for
-this geometry.  This is the practical reason quasi-static design
-formulas come with frequency disclaimers, and why a broadband
-design gets verified in a full-wave solver: the line the formulas
-describe at 1 GHz is measurably <em>electrically longer</em> at 15.</p>
+<p>The two instruments agree to about half a percent — the remainder
+is the port’s own launch residue, the −30 dB floor above.  That
+agreement is also what makes de-embedding trustworthy here: <code class="docutils literal notranslate"><span class="pre">result.deembed</span></code>
+shifts the reference planes of a quasi-TEM feed with exactly these
+per-frequency modes, so it removes the line’s real dispersion and
+not a frequency-flat stand-in.</p>
+</section>
+<section id="reference-impedance-and-renormalisation">
+<h2>Reference impedance and renormalisation<a class="headerlink" href="#reference-impedance-and-renormalisation" title="Link to this heading">#</a></h2>
+<p>One more thing every S-parameter carries silently: the impedance it
+is referenced to.  Magnelio measures each channel against its port
+mode’s own impedance — the 46.0 Ω above — which is why a uniform
+line is <em>matched</em> whatever its impedance came out at.  A network
+analyser reads a device against 50 Ω, and a circuit simulator
+cascades blocks on a common reference; every result knows its
+references and can be re-referenced:</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"reference impedance of port1: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">reference_impedance</span><span class="p">(</span><span class="s1">'port1'</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> Ω"</span><span class="p">)</span>
+<span class="n">result_50</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">renormalize</span><span class="p">(</span><span class="mf">50.0</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11_50</span></a> <span class="o">=</span> <span class="n">result_50</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s2">"port1"</span><span class="p">,</span> <span class="s2">"port1"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"|S11| against the line's own impedance: </span><span class="si">{</span><span class="mi">20</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11</span></a><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">())</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> dB"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"|S11| re-referenced to 50 Ω:          </span><span class="si">{</span><span class="mi">20</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">log10</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11_50</span></a><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">())</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> dB"</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>reference impedance of port1: 46.01 Ω
+|S11| against the line's own impedance: -31.6 dB
+|S11| re-referenced to 50 Ω:          -26.1 dB
+</pre></div>
+</div>
+<p>Against 50 Ω the line reflects −26 dB instead of −32: the mismatch
+between 46 Ω and 50 Ω at port 1, exactly what a 50 Ω instrument
+would see at this end (only port 1 was excited, so the
+renormalisation acts on that one-port; port 2 stays terminated in
+its own impedance — excite both to re-reference the full two-port).
+And now the ladder pays off a second time: 46 Ω was the grid’s
+number and the line is really a 51.5 Ω line, so the −26 dB is a
+discretisation artefact, and the mismatch a 50 Ω system will see is
+nearer −36 dB.  A Touchstone export states the reference in its
+option line; <code class="docutils literal notranslate"><span class="pre">result.to_touchstone(&quot;line.s2p&quot;,</span> <span class="pre">z_ref=50)</span></code>
+renormalises on the way out.</p>
 </section>
 <section id="where-to-go-next">
 <h2>Where to go next<a class="headerlink" href="#where-to-go-next" title="Link to this heading">#</a></h2>
-<p>New in this tutorial: an inhomogeneous cross-section built from two
-dielectrics plus a trace, a symmetry plane that halves the model for
-free, the quasi-TEM port with its numerically solved impedance and
-mode profile, the honest reading of a quasi-TEM termination floor,
-and dispersion extracted from the S21 phase.  The next tutorial
+<p>New in this tutorial: a line designed on paper and checked in the
+solver, an inhomogeneous cross-section built from two dielectrics
+plus a trace, a symmetry plane that halves the model for free, the
+quasi-TEM port with its numerically solved impedance and
+mode profile, the port’s own dispersion sweep and the convergence
+ladder for its plane, the honest reading of a quasi-TEM termination
+floor, dispersion cross-checked from the S21 phase, and the
+reference impedance behind every S-parameter.  The next tutorial
 bends this line around corners and builds a real component out of
 it — a Wilkinson power divider, including its lumped isolation
 resistor.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 3.347 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 6.699 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-09-microstrip-line-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/ece9595c24bada77761a617e20b4f479/plot_09_microstrip_line.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_09_microstrip_line.ipynb</span></code></a></p>
@@ -841,11 +1025,15 @@ resistor.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#designing-the-line">Designing the line</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-geometry-substrate-trace-shield">The geometry: substrate, trace, shield</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#half-the-model-is-enough">Half the model is enough</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-quasi-tem-mode">The quasi-TEM mode</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-the-port-carries-at-each-frequency">What the port carries at each frequency</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-good-is-46-converging-the-port-plane">How good is 46 Ω?  Converging the port plane</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-the-line-and-reading-the-s-parameters">Running the line and reading the S-parameters</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dispersion-the-microstrip-s-signature">Dispersion: the microstrip’s signature</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dispersion-cross-checked-from-the-3d-run">Dispersion, cross-checked from the 3D run</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reference-impedance-and-renormalisation">Reference impedance and renormalisation</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#where-to-go-next">Where to go next</a></li>
 </ul>
   </nav></div>

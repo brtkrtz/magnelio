@@ -307,10 +307,10 @@ Always check how many modes actually came back.
 
  .. code-block:: none
 
-    coarse (  7056 cells):  f0 = 2.7284 GHz
-    fine   ( 14700 cells):  f0 = 2.7270 GHz
+    coarse (  7056 cells):  f0 = 2.7275 GHz
+    fine   ( 14700 cells):  f0 = 2.7262 GHz
     next mode is at 4.85 GHz — the band is clear
-    drift between the two grids: -0.1 %
+    drift between the two grids: -0.0 %
 
 
 
@@ -452,10 +452,10 @@ Sweeping the window
 
  .. code-block:: none
 
-    window  4.0 mm ->  k = 0.00801,  centre 3.0288 GHz
-    window  6.0 mm ->  k = 0.03101,  centre 2.9618 GHz
-    window  8.0 mm ->  k = 0.06523,  centre 2.8896 GHz
-    window 10.0 mm ->  k = 0.10558,  centre 2.8141 GHz
+    window  4.0 mm ->  k = 0.00801,  centre 3.0285 GHz
+    window  6.0 mm ->  k = 0.03102,  centre 2.9615 GHz
+    window  8.0 mm ->  k = 0.06525,  centre 2.8893 GHz
+    window 10.0 mm ->  k = 0.10561,  centre 2.8137 GHz
 
 
 
@@ -511,8 +511,8 @@ the pair's frequency is a fraction of the passband.
 
  .. code-block:: none
 
-    window 6.0 mm, coarse grid:  k = 0.03101, f = 2.9618 GHz
-    window 6.0 mm, fine grid:    k = 0.03124, f = 2.9610 GHz
+    window 6.0 mm, coarse grid:  k = 0.03102, f = 2.9615 GHz
+    window 6.0 mm, fine grid:    k = 0.03125, f = 2.9609 GHz
     k moves 0.7 %, f moves 0.0 %
 
     window for k = 0.0332: 6.13 mm
@@ -667,9 +667,9 @@ either number alone.
 
  .. code-block:: none
 
-    probe at 6.0 mm:  f0 = 3.1095 GHz,  Qe = 14.4 (group delay) / 14.0 (ring-down)
-    probe at 7.0 mm:  f0 = 3.0518 GHz,  Qe = 22.4 (group delay) / 21.9 (ring-down)
-    probe at 8.0 mm:  f0 = 3.0143 GHz,  Qe = 36.2 (group delay) / 35.4 (ring-down)
+    probe at 6.0 mm:  f0 = 3.1092 GHz,  Qe = 14.3 (group delay) / 14.0 (ring-down)
+    probe at 7.0 mm:  f0 = 3.0515 GHz,  Qe = 22.4 (group delay) / 21.9 (ring-down)
+    probe at 8.0 mm:  f0 = 3.0137 GHz,  Qe = 36.2 (group delay) / 35.4 (ring-down)
 
 
 
@@ -724,7 +724,7 @@ is real.
 
 
     probe radius for Qe = 33.3: 7.83 mm
-    loaded resonator at that radius: 3.0206 GHz
+    loaded resonator at that radius: 3.0201 GHz
 
 
 
@@ -900,7 +900,7 @@ would make this filter look more than twice too wide.
 
  .. code-block:: none
 
-    band centre     3.0195 GHz   (loaded resonator 3.0206 GHz)
+    band centre     3.0191 GHz   (loaded resonator 3.0201 GHz)
     ripple bandwidth 2.14 %      (target 2.00 %)
     worst in-band insertion loss 0.062 dB
     deviation from the synthesised response: max 0.02 dB
@@ -1018,9 +1018,9 @@ housing and compare the phases.
  .. code-block:: none
 
       f [GHz]   phase L    phase R   difference
-       2.9904     +50.9°    +112.9°     +62.0°
-       3.0206     +51.9°    +149.1°     +97.2°
-       3.0508     +56.1°    -175.1°    +128.9°
+       2.9899     +50.8°    +112.6°     +61.8°
+       3.0201     +51.9°    +148.9°     +96.9°
+       3.0503     +56.0°    -175.3°    +128.7°
 
 
 
@@ -1080,7 +1080,7 @@ and mirror one more chamber into the housing.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (8 minutes 10.693 seconds)
+   **Total running time of the script:** (7 minutes 1.112 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_13_dielectric_filter.py:

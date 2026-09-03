@@ -259,8 +259,8 @@ numerical precision:
 
  .. code-block:: none
 
-    max |S12 - S21| (reciprocity): 3.46e-07
-    max |S11 - S22| (symmetry)   : 1.27e-06
+    max |S12 - S21| (reciprocity): 1.12e-06
+    max |S11 - S22| (symmetry)   : 3.75e-07
 
 
 
@@ -329,7 +329,7 @@ ideal impedances of the circular cross-section
 
  .. code-block:: none
 
-    max ||S11|sim - |S11|theory|: 5.1e-04
+    max ||S11|sim - |S11|theory|: 2.6e-04
 
 
 
@@ -379,7 +379,7 @@ and it is filled in for you.
  .. code-block:: none
 
     ! magnelio S-parameter export (power-wave S-parameters)
-    ... 205 lines
+    ... 207 lines
 
 
 
@@ -399,7 +399,7 @@ top of the port indices.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 8.446 seconds)
+   **Total running time of the script:** (0 minutes 8.084 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_03_coax_smatrix.py:

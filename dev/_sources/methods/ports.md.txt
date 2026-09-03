@@ -44,13 +44,19 @@ theory {cite}`marcuvitz1951,pozar2012`.  Analytical
 reference modes for coaxial and rectangular-waveguide ports are
 closed-form textbook solutions {cite}`pozar2012`.
 
-The port report labels the impedance of an inhomogeneous cross-section
-`(quasi-static)`: it is frequency-flat by construction, whereas the
-impedance the discrete wave actually carries rises with frequency on a
-dispersive line — by 3 to 7 % at 15 GHz on the tutorial microstrip —
-and that difference, not the absorber, is where most of the
-$-30$ dB-class $|S_{11}|$ floor of the default pipeline comes from.  On
-a homogeneous line the label stays `(numerical)`.
+The port report labels every solved impedance `(on this grid)`: it is
+the value of the port-plane slice of the user's mesh, not a converged
+2D value — the ladder of `refine_port_modes` (section *Converging the
+port cross-section* below) converges it.  An inhomogeneous
+cross-section adds `quasi-static`: the impedance is frequency-flat by
+construction, whereas the mode the grid actually carries disperses —
+its $\varepsilon_{\text{eff}}$ rises with frequency and its impedance
+moves with it (by 3 to 7 % at 15 GHz on the tutorial microstrip) —
+and that difference, not the absorber, is where most of the $-30$
+dB-class $|S_{11}|$ floor of the default pipeline comes from.  The
+frequency dependence itself is available from the same report,
+`report.dispersion(f_axis)` (section *Reference impedance, dispersion
+and renormalisation* below).
 
 **Coupled lines.**  With more than one signal conductor above the
 ground — an edge-coupled microstrip pair, a stripline pickup, a
@@ -441,25 +447,117 @@ the accuracy floor of the run itself (measured: −120 dB TEM, −67 dB
 TE10 at 8 cells/λ), whereas the textbook continuum $e^{-\gamma d}$
 would leave the grid-dispersion gap behind — degrees of phase on
 coarse meshes, silently attributed to the device under test.
-Channels without certified line parameters fall back to the mode's
-continuum $\gamma(\omega)$.
-
 For a **quasi-TEM channel** — microstrip, CPW, any inhomogeneous
-cross-section, terminated by modal Mur in the default pipeline — that
-fallback is the quasi-static $\gamma$ of the 2D Laplace mode,
-$\varepsilon_{\text{eff}} = C'/C'_0$ taken frequency-flat.  The
-physical dispersion of the line (its $\varepsilon_{\text{eff}}$
-rising with frequency) is therefore *not* removed and stays in the
-de-embedded matrix: on a 16 mm microstrip on 0.8 mm
-$\varepsilon_r = 4.3$ the residual S21 phase after de-embedding the
-full length is about 1°, 8° and 22° at 5, 10 and 15 GHz, growing with
-substrate thickness.  Keep quasi-TEM feed lines short when the
-reference plane matters, or compare raw S-parameters.
+cross-section, terminated by modal Mur in the default pipeline — there
+are no certified line parameters, and the shift uses the port's
+*dispersion record* instead: the true discrete modes of the feed
+cross-section, solved at every point of the axis (the same solve
+behind `report.dispersion`), so the removed propagation is the one the
+grid applied, physical dispersion included.  On the 20 mm tutorial
+microstrip (0.8 mm $\varepsilon_r = 4.3$, 25 nodes per wavelength) the
+S21 phase left after de-embedding the whole line is 0.3°, 1.5° and
+1.8° at 5, 10 and 15 GHz, against $-1.5$°, $-11$° and $-30$° with the
+quasi-static $\gamma$ the fallback used to take; what remains is the
+drive port's launch residue (DD-239), not the line.  Only a channel
+with neither — a feed section that is not a uniform chain behind the
+port — falls back to the mode's continuum $\gamma(\omega)$, for a
+quasi-TEM mode the frequency-flat quasi-static one, which leaves the
+line's dispersion in the de-embedded matrix.
 
 The shift assumes the port cross-section continues over the shifted
 length.  Below its cut-off a channel's factor grows as $e^{+\alpha
 d}$; those bins keep the diagnostic character the raw values have.
 Lumped ports carry no feed line and cannot be de-embedded.
+
+### Reference impedance, dispersion and renormalisation (DD-244)
+
+Every S-parameter is a ratio of power waves, and power waves are
+defined against a reference impedance.  Magnelio measures each
+channel against *its own*: the impedance its port mode carries on the
+grid — `result.reference_impedance(port)` on any scattering result.
+On a TEM or quasi-TEM channel that is the line impedance the port
+report prints (frequency-flat; the quasi-static value on an
+inhomogeneous line), on a certified Klein–Gordon channel the exact
+discrete wave impedance of the chain, on a hollow-pipe mode the wave
+impedance, which varies with frequency, on a lumped port its Thévenin
+impedance.  A uniform line is therefore *matched* in the raw result
+whatever its impedance came out at: tutorial 02's coax reflects
+$-110$ dB while its grid impedance sits a few percent off the design
+value, because port matching is between port and grid.
+
+**What the modes really carry.**  `report.dispersion(f_axis)` on a
+port report solves the true discrete modes of the feed cross-section
+at every requested frequency — the ζ-pencil above, continued along
+the axis from each mode's previous eigenvalue so a 201-point sweep
+costs a few seconds — and returns per mode the impedance, the
+effective permittivity and the propagation constant $\gamma = \alpha +
+j\beta$ as functions of frequency.  The impedance is the power–current
+definition $Z_{PI} = 2P/|I|^2$ of the true mode, from the discrete
+Poynting flux through the port plane and the Ampère loop around the
+signal conductor; on a homogeneous line it equals the report's line
+impedance to roundoff, on the tutorial microstrip it meets the
+quasi-static value in the static limit and rises to 47.8 Ω at 15 GHz
+from 46.0 Ω, while $\varepsilon_{\text{eff}}$ walks from 3.05 to 3.37
+— the curve the S21 phase of the full run reproduces.  On a port with
+more than one signal conductor the modal current has no single loop
+and the sweep reports the channel's own reference instead.  Hollow
+pipes work the same way (the TE/TM wave impedance, frequency by
+frequency); lumped ports carry no cross-section and raise.
+
+**Renormalisation.**  `result.renormalize(50)` returns the same
+network re-referenced to a common impedance — what a network analyser
+with 50 Ω reference planes reads, and what a circuit simulator needs
+before it cascades this block with others.  The transformation is the
+exact power-wave re-referencing for real references {cite}`kurokawa1965`:
+with $\rho_i = (Z_i - Z'_i)/(Z_i + Z'_i)$ and $c_i = (Z_i +
+Z'_i)/(2\sqrt{Z_i Z'_i})$,
+
+$$
+S' = C\,(S + \rho)\,(I + \rho S)^{-1}\,C^{-1},
+$$
+
+per frequency, on the complete matrix (every observed channel
+excited — a channel's own reflection enters every other entry once
+its reference moves).  A dict renormalises port by port, an array per
+frequency.  Whether the mismatch that appears is real is a modelling
+question: a 49 Ω grid line feeding a 50 Ω system does reflect, and a
+line *meant* to be the 50 Ω one shows a discretisation artefact —
+which is where the next subsection comes in.
+
+**Exports.**  A Touchstone file states one constant reference
+impedance for all ports in its option line, so `to_touchstone` writes
+that value when every exported channel shares one frequency-flat
+reference (the 49.3 Ω of a coax as it came out, not a nominal 50),
+and takes `z_ref=50` to renormalise first.  Channels whose references
+differ or vary with frequency cannot be expressed in Touchstone 1.x;
+the file is then written with a nominal `R 50`, a warning, and each
+port's actual reference in the header, and a reader that renormalises
+on `R` would be wrong.  `to_skrf` carries per-port, per-frequency
+references in the network's `z0` and needs no such choice.
+
+### Converging the port cross-section (DD-244)
+
+The 2D mode problem is the port-plane slice of the 3D operator, so its
+parameters carry the discretisation of the user's mesh, and converging
+them by refining that mesh costs $8\times$ cells per halving.
+`refine_port_modes(model, control, mesh, "port1")` converges them on a
+**port slab** instead: a slice of the model a few cells deep behind
+the port face, cut with the mesher's own domain clip, meshed with the
+user's control at level 0 — which reproduces the user's port-plane
+grid and its report exactly — and with every tangential cell split
+$2^k$ ways at level $k$ (`MeshControl(subdivide=...)`, a nested
+h-refinement of the finished grid that keeps every plane the rules
+placed).  Each rung costs $4\times$ the previous one on a slab of six
+cells, the report lists the ladder, its observed order and a
+Richardson estimate, and the lesson is the one tutorial 09 draws: its
+25-node-per-wavelength grid reads a microstrip designed on paper for
+50 Ω at 46.0 Ω, while the ladder converges at first order (the strip
+edges) toward about 51.5 Ω — an 11 % grid error that neither the
+port's matching nor the run's $|S_{11}|$ shows, and exactly the number
+a renormalisation to 50 Ω would attribute to the device; the remaining
+3 % against the paper design splits into the shield (about 1.2 Ω, the
+ladder rerun in a four times larger box converges at 52.7 Ω) and the
+hand formula's thickness correction.
 
 ### What a Touchstone export covers (DD-184)
 

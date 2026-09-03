@@ -514,7 +514,7 @@ and optimization with ordinary Python loops.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 22.635 seconds)
+   **Total running time of the script:** (0 minutes 20.279 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_11_losses.py:

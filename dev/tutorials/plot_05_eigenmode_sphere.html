@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=c1ad62ca"></script>
+    <script src="../_static/documentation_options.js?v=3cdd5d8c"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -629,14 +629,14 @@ frequencies and the full 3D field pattern of every mode.</p>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"mode </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">fi</span></a><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> GHz"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>mode 0: 6.5461 GHz
-mode 1: 6.5461 GHz
-mode 2: 6.5472 GHz
-mode 3: 9.2116 GHz
-mode 4: 9.2120 GHz
-mode 5: 9.2131 GHz
-mode 6: 9.2403 GHz
-mode 7: 9.2423 GHz
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>mode 0: 6.5431 GHz
+mode 1: 6.5433 GHz
+mode 2: 6.5437 GHz
+mode 3: 9.2062 GHz
+mode 4: 9.2064 GHz
+mode 5: 9.2066 GHz
+mode 6: 9.2354 GHz
+mode 7: 9.2370 GHz
 </pre></div>
 </div>
 <p>The spectrum shows exactly the predicted structure — a triplet and a
@@ -651,8 +651,8 @@ quintet:</p>
     <span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>TM n=1: analytic 6.5456 GHz, found 3 modes, deviations +0.008 % .. +0.025 %
-TM n=2: analytic 9.2331 GHz, found 5 modes, deviations -0.233 % .. +0.100 %
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>TM n=1: analytic 6.5456 GHz, found 3 modes, deviations -0.038 % .. -0.029 %
+TM n=2: analytic 9.2331 GHz, found 5 modes, deviations -0.292 % .. +0.042 %
 </pre></div>
 </div>
 <p>The triplet lands within 0.03 % of the Bessel value, the quintet
@@ -680,7 +680,7 @@ dashed circle is the cavity wall, sliced from the actual model:</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_05_eigenmode_sphere_001.png" srcset="../_images/sphx_glr_plot_05_eigenmode_sphere_001.png" alt="Mode 0 (6.546 GHz) — |E|, y=0.667 mm, Mode 3 (9.212 GHz) — |E|, y=0.667 mm" class = "sphx-glr-single-img"/><p>Mode 0 shows the dipole-like pattern of the lowest TM resonance;
+<img src="../_images/sphx_glr_plot_05_eigenmode_sphere_001.png" srcset="../_images/sphx_glr_plot_05_eigenmode_sphere_001.png" alt="Mode 0 (6.543 GHz) — |E|, y=0.667 mm, Mode 3 (9.206 GHz) — |E|, y=0.667 mm" class = "sphx-glr-single-img"/><p>Mode 0 shows the dipole-like pattern of the lowest TM resonance;
 mode 3, the first member of the quintet, already carries the richer
 angular structure of the <span class="math notranslate nohighlight">\(n = 2\)</span> level.</p>
 <p><code class="docutils literal notranslate"><span class="pre">plot_type=&quot;vector&quot;</span></code> shows the field <em>direction</em>.  Arrows draw
@@ -709,7 +709,7 @@ markers resolve and a magnitude plot would hide:</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_05_eigenmode_sphere_002.png" srcset="../_images/sphx_glr_plot_05_eigenmode_sphere_002.png" alt="Mode 3 (9.212 GHz) — E-field, x=0.667 mm, Mode 3 (9.212 GHz) — H-field, x=0.667 mm" class = "sphx-glr-single-img"/><p>(Which sector carries ⊙ and which ⊗ is not meaningful — the overall
+<img src="../_images/sphx_glr_plot_05_eigenmode_sphere_002.png" srcset="../_images/sphx_glr_plot_05_eigenmode_sphere_002.png" alt="Mode 3 (9.206 GHz) — E-field, x=0.667 mm, Mode 3 (9.206 GHz) — H-field, x=0.667 mm" class = "sphx-glr-single-img"/><p>(Which sector carries ⊙ and which ⊗ is not meaningful — the overall
 sign of an eigenmode is arbitrary, and inside a degenerate cluster
 the same holds for the mode’s <em>orientation</em>.)</p>
 </section>
@@ -721,7 +721,7 @@ discretisation fingerprint), and mode field plots on slice planes
 through the cavity.  The next tutorials turn to the toolbox around
 the solvers — starting with field monitors, which record fields
 <em>during</em> a driven simulation.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 32.094 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 33.672 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-05-eigenmode-sphere-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/58d5022b9d63b83aed3b5a4b7ebb5b07/plot_05_eigenmode_sphere.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_05_eigenmode_sphere.ipynb</span></code></a></p>

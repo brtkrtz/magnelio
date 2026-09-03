@@ -21,19 +21,77 @@ subject.
 # sphinx_gallery_thumbnail_number = 2
 
 # %%
+# Designing the line
+# ------------------
+#
+# A microstrip is designed on paper first.  The classic closed-form
+# synthesis is Hammerstad and Jensen's: the impedance and effective
+# permittivity of an *open* microstrip — infinite ground, no lid, no
+# side walls — with a correction for the trace thickness.  We use it
+# the way a designer does, solving the width for a 50 Ω line on a
+# 0.8 mm FR4-class substrate (εᵣ = 4.3) with a 0.2 mm thick trace:
+
+import math
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+import magnelio as mio
+from magnelio import geo, ports
+from magnelio.constants import *
+
+h_sub = 0.8e-3  # substrate height
+t_strip = 0.2e-3  # trace thickness
+eps_r = 4.3
+
+
+def hammerstad_jensen(w, h, t, eps_r):
+    """Open-microstrip (Z0, eps_eff) with the thickness correction."""
+    u, th = w / h, t / h
+    du1 = (th / math.pi) * math.log(1 + 4 * math.e / (th / math.tanh(math.sqrt(6.517 * u)) ** 2))
+    dur = 0.5 * (1 + 1 / math.cosh(math.sqrt(eps_r - 1))) * du1
+
+    def z01(u):
+        f = 6 + (2 * math.pi - 6) * math.exp(-((30.666 / u) ** 0.7528))
+        return ETA0 / (2 * math.pi) * math.log(f / u + math.sqrt(1 + (2 / u) ** 2))
+
+    def eps_eff(u):
+        a = 1 + math.log((u**4 + (u / 52) ** 2) / (u**4 + 0.432)) / 49
+        a += math.log(1 + (u / 18.1) ** 3) / 18.7
+        b = 0.564 * ((eps_r - 0.9) / (eps_r + 3)) ** 0.053
+        return (eps_r + 1) / 2 + (eps_r - 1) / 2 * (1 + 10 / u) ** (-a * b)
+
+    e = eps_eff(u + dur) * (z01(u + du1) / z01(u + dur)) ** 2
+    return z01(u + dur) / math.sqrt(e), e
+
+
+lo, hi = 0.5e-3, 3.0e-3  # bisection on the width: Z0 falls with w
+for _ in range(50):
+    mid = 0.5 * (lo + hi)
+    lo, hi = (mid, hi) if hammerstad_jensen(mid, h_sub, t_strip, eps_r)[0] > 50 else (lo, mid)
+w_strip = round(0.5 * (lo + hi), 6)
+z_formula, eps_formula = hammerstad_jensen(w_strip, h_sub, t_strip, eps_r)
+print(f"design width: {w_strip * 1e3:.3f} mm -> {z_formula:.2f} Ohm, eps_eff {eps_formula:.3f}")
+
+# %%
+# The formula answers 1.473 mm.  Hold on to its two assumptions — an
+# open line, and a thickness correction calibrated on thin copper
+# foils (our trace is a quarter of the substrate height thick) — because
+# the simulation below will test both.
+#
 # The geometry: substrate, trace, shield
 # --------------------------------------
 #
-# Three bricks build the cross-section: the dielectric substrate
-# (εᵣ = 4.3, 0.8 mm — FR4 territory), the air volume above it with the
-# trace cut out, and the PEC trace itself, 1.2 mm wide and 0.2 mm
-# thick.  Everything sits in a PEC shield box, whose floor doubles as
-# the ground plane — the same hole-in-metal pattern as before, just
-# with two filling materials instead of one.
+# Three bricks build the cross-section: the dielectric substrate, the
+# air volume above it with the trace cut out, and the PEC trace itself
+# at the width just designed.  Everything sits in a PEC shield box,
+# whose floor doubles as the ground plane — the same hole-in-metal
+# pattern as before, just with two filling materials instead of one.
 #
 # Two remarks on the box.  It is wide and tall enough (side walls
-# more than four trace widths away, lid five substrate heights up)
-# that it barely disturbs the line.  And like every closed metal
+# more than two trace widths away, lid five substrate heights up)
+# that it disturbs the line only a little — about a Ω, measured
+# further down.  And like every closed metal
 # enclosure it has resonances of its own: box modes that would sit on
 # top of the line's behaviour.  The band below stays under the first
 # one — for this cross-section the lowest box mode comes in near
@@ -70,20 +128,9 @@ subject.
 # but worth remembering whenever a symmetry plane is declared: the
 # structure and the excitation must both respect it.
 
-import matplotlib.pyplot as plt
-import numpy as np
-
-import magnelio as mio
-from magnelio import geo, ports
-from magnelio.constants import *
-
-h_sub = 0.8e-3  # substrate height
-w_strip = 1.2e-3  # trace width (tuned for 50 ohm, see below)
-t_strip = 0.2e-3  # trace thickness
 W_box = 8.0e-3  # shield width
 H_box = 5.0e-3  # shield height
 L = 20.0e-3  # line length
-eps_r = 4.3
 f_max = 15.0e9
 
 fr4 = mio.Material.from_isotropic(name="FR4", epsilon=eps_r)
@@ -143,14 +190,23 @@ eps_eff_static = (C0 * qtem.gamma(10e9).imag / (2 * np.pi * 10e9)) ** 2
 print(f"eps_eff (quasi-static): {eps_eff_static:.3f}")
 
 # %%
-# Two numbers to hold on to.  The line impedance comes out at
-# **51.5 Ω** — the trace width was picked to land near 50 Ω, and it
-# does so within 3 %.  The classic Hammerstad hand formula (open
-# microstrip, infinitely thin trace) predicts about 58 Ω for this
-# width; the shield lid pushes the impedance down and so does the very
-# real 0.2 mm trace thickness.  Closed formulas stop where real
-# cross-sections begin — which is precisely why the port runs a
-# numerical mode solver.
+# Two numbers to hold on to, and a label to read carefully.  The line
+# impedance comes out at **46.0 Ω** — eight percent below the 50 Ω the
+# formula designed.  Do not be alarmed, and do not reach for the
+# trace width yet: read the label.
+#
+# It says *quasi-static, on this grid*, and both halves matter.  **On
+# this grid**: the port solves its mode on the port-plane slice of the
+# 3D mesh you just built — the same cells, the same conformal material
+# averages — so this is the impedance of the cross-section *as this
+# grid resolves it*, not a converged value.  At 25 nodes per
+# wavelength the trace is four cells wide, and the field singularities
+# at its four edges are what the grid resolves worst; the section
+# after next converges the number and shows how much of the eight
+# percent is the grid's.  **Quasi-static**: it is the impedance of the
+# frequency-flat mode the port operates with, the static limit of a
+# line that in truth disperses (the next section shows what the grid
+# carries at each frequency).
 #
 # Note what the report says above the numbers: the port window is cut
 # by the symmetry plane, and the impedance is reported for the *full*
@@ -171,6 +227,87 @@ fig, ax = qtem.plot(geometry=model)
 ax.set_title("quasi-TEM mode, transverse E")
 
 # %%
+# What the port carries at each frequency
+# ---------------------------------------
+#
+# The port *operates* with one frozen mode, but the report can solve
+# the modes the grid actually carries at any frequency — the true
+# discrete eigenmodes of the feed cross-section — and hand back their
+# impedance, effective permittivity and propagation constant as
+# curves.  No 3D run is involved; this is the port alone:
+
+f_sweep = np.linspace(0.5e9, f_max, 41)
+disp = report.dispersion(f_sweep)
+print(disp)
+
+fig, ax = disp.plot()
+fig.tight_layout()
+
+for f_probe in (5e9, 10e9, 15e9):
+    k = int(np.argmin(np.abs(f_sweep - f_probe)))
+    print(
+        f"{f_probe / 1e9:4.0f} GHz: Z = {disp.z_line[0, k]:.2f} Ω, "
+        f"eps_eff = {disp.epsilon_eff[0, k]:.3f}, beta = {disp.beta[0, k]:.1f} rad/m"
+    )
+
+# %%
+# This is the microstrip's signature: as frequency rises the field
+# retreats into the substrate, ε_eff walks from the quasi-static 3.05
+# toward εᵣ — 3.37 at 15 GHz, a 10 % move across the band, right in
+# the range the classical dispersion models of the Getsinger family
+# predict for this geometry — and the impedance moves with it, from
+# 46 Ω to about 48 Ω.  The impedance is the power–current
+# definition of the true mode (power through the port plane over the
+# square of the strip current), which meets the quasi-static value in
+# the static limit; on a homogeneous line the curve would be flat.
+# This is the practical reason quasi-static design formulas come with
+# frequency disclaimers: the line the formulas describe at 1 GHz is
+# measurably *electrically longer* at 15.
+#
+# How good is 46 Ω?  Converging the port plane
+# -------------------------------------------
+#
+# Everything so far is exact for *this grid*.  The question a designer
+# asks next is how far the grid is from the cross-section itself — and
+# whether the paper design was right.  Refining the whole 3D mesh to
+# find out costs eightfold per halving; ``refine_port_modes`` converges
+# the cross-section on a thin slab behind the port instead, starting
+# from this very grid (level 0 reproduces the 46.0 Ω) and splitting
+# every cell of the port plane in four per level, until the change
+# between levels falls below ``tol``:
+
+ladder = ports.refine_port_modes(
+    model, mio.MeshControl(min_nodes_per_wavelength=25), mesh, "port1", levels=3
+)
+print(ladder)
+
+# %%
+# The ladder climbs: 46.0, 48.8, 50.2 Ω and an extrapolated value of
+# about 51.5 Ω, at first order — the field singularities at the
+# strip's edges set the rate, and a fourth and fifth rung (not run
+# here) reach 50.9 and 51.2 Ω.  So the grid's 46 Ω was the grid's
+# number: the cross-section itself sits within three percent of the
+# paper design.  Neither the port's matching nor the reflection you are
+# about to read could have told you that — a port is matched to *its*
+# grid — which is why the ladder is the instrument for the impedance
+# and the S-parameters are not.
+#
+# The remaining three percent is physics, and it is worth taking
+# apart.  The shield costs about 1.2 Ω: rerunning the ladder with the
+# box twice and four times as large converges at 52.5 and 52.7 Ω, so
+# the lid and side walls of our box pull the impedance *down* by that
+# much, exactly as the open-line formula cannot know.  Set against the
+# open-box 52.7 Ω, the formula's 50 Ω is then 2.7 Ω low — its thickness
+# correction over-corrects for a trace this thick (t/h = 0.25 is far
+# from the thin foils it was fitted on); the thin-trace formula gives
+# 52.1 Ω for this width and lands closer.  The two errors happen to
+# pull in opposite directions here, which is why 50 Ω on paper became
+# 51.5 Ω in the box.  Whoever needs 50.0 Ω in this box trims the width
+# up by about four percent, to 1.53 mm, on the strength of the
+# ladder — and reruns the ladder to confirm it; ``tol`` and ``levels``
+# set how far it goes, and ``target="epsilon_eff"`` converges the
+# permittivity the same way.
+#
 # Running the line and reading the S-parameters
 # ---------------------------------------------
 #
@@ -199,16 +336,15 @@ print(f"|S11|: max {20 * np.log10(np.abs(s11).max()):.1f} dB")
 # termination — background, not physics, and far below anything a
 # real component (or a real connector) will reflect.
 #
-# Dispersion: the microstrip's signature
-# --------------------------------------
+# Dispersion, cross-checked from the 3D run
+# -----------------------------------------
 #
-# The port's ε_eff was *one number* — the quasi-static limit.  But a
-# microstrip is dispersive: as frequency rises the field retreats
-# into the substrate and ε_eff creeps upward toward εᵣ.  The 3D
-# simulation contains that physics, and the phase of S21 is the
-# instrument to extract it: over a line of length L, the mode
-# accumulates φ = −β L, so β — and with it
-# ε_eff = (c₀ β / ω)² — can be read off per frequency:
+# The port's sweep above came from the cross-section alone.  The 3D
+# simulation contains the same physics, and the phase of S21 is the
+# instrument to extract it independently: over a line of length L
+# the mode accumulates φ = −β L, so β — and with it
+# ε_eff = (c₀ β / ω)² — can be read off per frequency and laid over
+# the port's curve:
 
 f_axis = result.f_axis
 phase = np.unwrap(np.angle(s21))
@@ -216,34 +352,67 @@ eps_eff_td = (C0 * (-phase) / (2 * np.pi * f_axis * L)) ** 2
 
 sel = f_axis >= 1.0e9  # phase-derived values are 0/0-noisy near DC
 fig, ax = plt.subplots(figsize=(7, 4.2))
-ax.plot(f_axis[sel] / 1e9, eps_eff_td[sel], label="3D simulation (from S21 phase)")
+ax.plot(f_axis[sel] / 1e9, eps_eff_td[sel], label="3D run (from S21 phase)")
+ax.plot(f_sweep / 1e9, disp.epsilon_eff[0], "o", ms=4, label="port alone (dispersion sweep)")
 ax.axhline(eps_eff_static, color="gray", ls="--", label="port mode solver (quasi-static)")
 ax.set_xlabel("frequency [GHz]")
 ax.set_ylabel(r"$\varepsilon_\mathrm{eff}$")
 ax.legend()
-ax.set_title("microstrip dispersion")
+ax.set_title("microstrip dispersion: two instruments, one curve")
 fig.tight_layout()
 
 for f_probe in (5e9, 10e9, 15e9):
     print(f"eps_eff({f_probe / 1e9:.0f} GHz) = {float(np.interp(f_probe, f_axis, eps_eff_td)):.3f}")
 
 # %%
-# The curve starts at the quasi-static value and rises to ≈ 3.3 at
-# 15 GHz — a 10 % walk toward εᵣ across the band, right in the range
-# classical dispersion models of the Getsinger family predict for
-# this geometry.  This is the practical reason quasi-static design
-# formulas come with frequency disclaimers, and why a broadband
-# design gets verified in a full-wave solver: the line the formulas
-# describe at 1 GHz is measurably *electrically longer* at 15.
+# The two instruments agree to about half a percent — the remainder
+# is the port's own launch residue, the −30 dB floor above.  That
+# agreement is also what makes de-embedding trustworthy here: ``result.deembed``
+# shifts the reference planes of a quasi-TEM feed with exactly these
+# per-frequency modes, so it removes the line's real dispersion and
+# not a frequency-flat stand-in.
+#
+# Reference impedance and renormalisation
+# ---------------------------------------
+#
+# One more thing every S-parameter carries silently: the impedance it
+# is referenced to.  Magnelio measures each channel against its port
+# mode's own impedance — the 46.0 Ω above — which is why a uniform
+# line is *matched* whatever its impedance came out at.  A network
+# analyser reads a device against 50 Ω, and a circuit simulator
+# cascades blocks on a common reference; every result knows its
+# references and can be re-referenced:
+
+print(f"reference impedance of port1: {result.reference_impedance('port1')[0]:.2f} Ω")
+result_50 = result.renormalize(50.0)
+s11_50 = result_50.S("port1", "port1")
+print(f"|S11| against the line's own impedance: {20 * np.log10(np.abs(s11).max()):.1f} dB")
+print(f"|S11| re-referenced to 50 Ω:          {20 * np.log10(np.abs(s11_50).max()):.1f} dB")
+
+# %%
+# Against 50 Ω the line reflects −26 dB instead of −32: the mismatch
+# between 46 Ω and 50 Ω at port 1, exactly what a 50 Ω instrument
+# would see at this end (only port 1 was excited, so the
+# renormalisation acts on that one-port; port 2 stays terminated in
+# its own impedance — excite both to re-reference the full two-port).
+# And now the ladder pays off a second time: 46 Ω was the grid's
+# number and the line is really a 51.5 Ω line, so the −26 dB is a
+# discretisation artefact, and the mismatch a 50 Ω system will see is
+# nearer −36 dB.  A Touchstone export states the reference in its
+# option line; ``result.to_touchstone("line.s2p", z_ref=50)``
+# renormalises on the way out.
 #
 # Where to go next
 # ----------------
 #
-# New in this tutorial: an inhomogeneous cross-section built from two
-# dielectrics plus a trace, a symmetry plane that halves the model for
-# free, the quasi-TEM port with its numerically solved impedance and
-# mode profile, the honest reading of a quasi-TEM termination floor,
-# and dispersion extracted from the S21 phase.  The next tutorial
+# New in this tutorial: a line designed on paper and checked in the
+# solver, an inhomogeneous cross-section built from two dielectrics
+# plus a trace, a symmetry plane that halves the model for free, the
+# quasi-TEM port with its numerically solved impedance and
+# mode profile, the port's own dispersion sweep and the convergence
+# ladder for its plane, the honest reading of a quasi-TEM termination
+# floor, dispersion cross-checked from the S21 phase, and the
+# reference impedance behind every S-parameter.  The next tutorial
 # bends this line around corners and builds a real component out of
 # it — a Wilkinson power divider, including its lumped isolation
 # resistor.

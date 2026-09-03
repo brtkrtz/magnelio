@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=c1ad62ca"></script>
+    <script src="../_static/documentation_options.js?v=3cdd5d8c"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -650,14 +650,17 @@ de-embedding a uniform feed line removes its phase down to the
 accuracy floor of the run itself, including the
 grid-dispersion part that an analytic <code class="docutils literal notranslate"><span class="pre">exp(-jβd)</span></code> would
 leave behind on coarse meshes.  It assumes the cross-section
-stays that of the port over the shifted length; channels
-without certified discrete line parameters fall back to the
-mode’s continuum <code class="docutils literal notranslate"><span class="pre">γ(f)</span></code>.  For quasi-TEM channels (microstrip,
-CPW — inhomogeneous cross-sections on modal Mur) that <code class="docutils literal notranslate"><span class="pre">γ</span></code> is
-the quasi-static one with a frequency-flat <code class="docutils literal notranslate"><span class="pre">ε_eff</span></code>, so the
-line’s physical dispersion is not removed and remains in the
-de-embedded matrix; it grows with frequency, shift distance
-and substrate thickness.</p>
+stays that of the port over the shifted length.  A quasi-TEM
+channel (microstrip, CPW — an inhomogeneous cross-section on
+modal Mur) carries no certified line parameters; the run keeps
+the port’s dispersion record instead, and the shift uses the
+true discrete modes of the feed solved at every frequency of
+the axis, so the line’s physical dispersion is removed as
+well (the first call on such a result spends a few seconds on
+that solve).  Only a channel with neither — a feed section
+that is not a uniform chain behind the port — falls back to
+the mode’s continuum <code class="docutils literal notranslate"><span class="pre">γ(f)</span></code>, for a quasi-TEM mode the
+frequency-flat quasi-static one.</p>
 <p>Below its cut-off a channel’s factor grows exponentially with
 distance, so de-embedded values there keep the diagnostic
 character the raw ones have.  Lumped ports carry no feed-line
@@ -844,6 +847,30 @@ plotted.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="magnelio.io.Project.reference_impedance">
+<span class="sig-name descname"><span class="pre">reference_impedance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.reference_impedance" title="Link to this definition">#</a></dt>
+<dd><p>Reference impedance [Ω] of one channel along the frequency axis.</p>
+<p>The real impedance the channel’s power waves — and so its row
+and column of the S-matrix — are defined against: the line
+impedance of a TEM or quasi-TEM port mode as the grid carries
+it, the wave impedance of a hollow-pipe mode (which varies
+with frequency), the Thévenin impedance of a lumped port.
+Full-model values on ports cut by a symmetry plane.  See
+<a class="reference internal" href="#magnelio.io.Project.renormalize" title="magnelio.io.Project.renormalize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">renormalize()</span></code></a> for moving to a common reference.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>port</strong> (<em>str</em>)</p></li>
+<li><p><strong>mode</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="magnelio.io.Project.refresh">
 <span class="sig-name descname"><span class="pre">refresh</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.refresh" title="Link to this definition">#</a></dt>
 <dd><p>Re-read the metadata and drop cached run / S-parameter data.</p>
@@ -855,6 +882,43 @@ kept.  Returns <code class="docutils literal notranslate"><span class="pre">self
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#magnelio.io.Project" title="magnelio.io.project.Project"><em>Project</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.io.Project.renormalize">
+<span class="sig-name descname"><span class="pre">renormalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_ref</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.renormalize" title="Link to this definition">#</a></dt>
+<dd><p>Re-reference the S-matrix to new port impedances.</p>
+<p>The raw S-matrix is measured against each port mode’s own
+impedance on the grid (<a class="reference internal" href="#magnelio.io.Project.reference_impedance" title="magnelio.io.Project.reference_impedance"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reference_impedance()</span></code></a>) — a
+uniform line is <em>matched</em> there whatever its impedance came
+out at.  This returns the same network against <code class="docutils literal notranslate"><span class="pre">z_ref</span></code>
+instead, typically <code class="docutils literal notranslate"><span class="pre">renormalize(50)</span></code>: what a network
+analyser with 50 Ω reference planes would read, and what a
+circuit simulator expects before it cascades this block with
+others.  It acts on the square matrix over the excited
+channels: a channel that was observed but never excited stays
+matched to its own impedance and is left out, as the exports
+leave it out.</p>
+<p>Whether the re-referenced mismatch is real is a modelling
+question: a 49 Ω grid line feeding a 50 Ω system does reflect,
+while a line <em>meant</em> to be the 50 Ω one shows a discretisation
+artefact — converge its impedance on the port plane first
+(<code class="docutils literal notranslate"><span class="pre">refine_port_modes</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>z_ref</strong> (<em>float</em><em> or </em><em>dict</em>) – New real reference impedance [Ω] for every channel, or a
+mapping <code class="docutils literal notranslate"><span class="pre">{port_name:</span> <span class="pre">Z}</span></code> / <code class="docutils literal notranslate"><span class="pre">{(port,</span> <span class="pre">mode):</span> <span class="pre">Z}</span></code>, each
+value a scalar or an array on the frequency axis.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new result on the same channels; the original is
+untouched.  It answers <code class="docutils literal notranslate"><span class="pre">S</span></code> / <code class="docutils literal notranslate"><span class="pre">db</span></code> / <code class="docutils literal notranslate"><span class="pre">phase</span></code> /
+<code class="docutils literal notranslate"><span class="pre">plot_s</span></code> and the Touchstone / scikit-rf exports.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="post.html#magnelio.post.SParameterResult" title="magnelio.post.SParameterResult">SParameterResult</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -879,16 +943,18 @@ holds one run.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.io.Project.to_skrf">
-<span class="sig-name descname"><span class="pre">to_skrf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'magnelio'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.to_skrf" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">to_skrf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'magnelio'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.to_skrf" title="Link to this definition">#</a></dt>
 <dd><p>Return the S-matrix as a <code class="docutils literal notranslate"><span class="pre">skrf.Network</span></code>.</p>
 <p>Requires scikit-rf (extra <code class="docutils literal notranslate"><span class="pre">magnelio[interop]</span></code>).  Same
 sub-matrix, channel selection and warning as
-<a class="reference internal" href="#magnelio.io.Project.to_touchstone" title="magnelio.io.Project.to_touchstone"><code class="xref py py-meth docutils literal notranslate"><span class="pre">to_touchstone()</span></code></a>.</p>
+<a class="reference internal" href="#magnelio.io.Project.to_touchstone" title="magnelio.io.Project.to_touchstone"><code class="xref py py-meth docutils literal notranslate"><span class="pre">to_touchstone()</span></code></a>; the network’s <code class="docutils literal notranslate"><span class="pre">z0</span></code> carries each
+channel’s reference impedance per frequency.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – Network name.</p></li>
 <li><p><strong>channels</strong> (<em>sequence</em><em> of </em><em>str</em><em> or </em><em>(</em><em>str</em><em>, </em><em>int</em><em>)</em><em>, </em><em>optional</em>) – Explicit channel selection, as in <a class="reference internal" href="#magnelio.io.Project.to_touchstone" title="magnelio.io.Project.to_touchstone"><code class="xref py py-meth docutils literal notranslate"><span class="pre">to_touchstone()</span></code></a>.</p></li>
+<li><p><strong>z_ref</strong> (<em>float</em><em> or </em><em>dict</em><em>, </em><em>optional</em>) – Renormalise first, as in <a class="reference internal" href="#magnelio.io.Project.renormalize" title="magnelio.io.Project.renormalize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">renormalize()</span></code></a>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -899,7 +965,7 @@ sub-matrix, channel selection and warning as
 
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.io.Project.to_touchstone">
-<span class="sig-name descname"><span class="pre">to_touchstone</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.to_touchstone" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">to_touchstone</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.to_touchstone" title="Link to this definition">#</a></dt>
 <dd><p>Write the S-matrix as a Touchstone <code class="docutils literal notranslate"><span class="pre">.sNp</span></code> file.</p>
 <p>Exports the square sub-matrix over the excited channels — one
 Touchstone port per channel, so a multi-mode port occupies one
@@ -908,6 +974,13 @@ are dropped from rows and columns alike; they carry a
 reflection-free boundary throughout the run, so the export is
 the network seen with them <em>matched</em>, the same quantity a
 network analyser measures with its unused ports terminated.</p>
+<p>The option line’s <code class="docutils literal notranslate"><span class="pre">R</span></code> states the reference impedance the
+data refer to.  Touchstone 1.x holds one constant value for
+all ports, so pass <code class="docutils literal notranslate"><span class="pre">z_ref</span></code> (typically <code class="docutils literal notranslate"><span class="pre">z_ref=50</span></code>) to
+renormalise first when the ports’ own references differ or
+vary with frequency; without it such a file is written with a
+nominal <code class="docutils literal notranslate"><span class="pre">R</span> <span class="pre">50</span></code>, a warning, and each port’s actual reference
+in the header.</p>
 <p>Warns when a port that <em>is</em> exported carries propagating modes
 that the export leaves out: the file then looks like a
 complete N-port while the mode conversion at that port is
@@ -925,6 +998,8 @@ extension filled in.</p></li>
 <code class="docutils literal notranslate"><span class="pre">[&quot;port1&quot;,</span> <span class="pre">&quot;port3&quot;]</span></code> to cut a two-port out of a fully
 excited three-port.  A bare port name means mode 0.  Every
 entry must have been excited.</p></li>
+<li><p><strong>z_ref</strong> (<em>float</em><em> or </em><em>dict</em><em>, </em><em>optional</em>) – Renormalise to this reference before writing, as in
+<a class="reference internal" href="#magnelio.io.Project.renormalize" title="magnelio.io.Project.renormalize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">renormalize()</span></code></a>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -1108,7 +1183,7 @@ and generate the per-run ParaView session at run close.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.io.ProjectStore.open_run">
-<span class="sig-name descname"><span class="pre">open_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_name</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">excitations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excited</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_modes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_normal_dx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_line_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excitation_fns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recorder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'modal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_signal_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_time_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">taper_signals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">monitors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.ProjectStore.open_run" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">open_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_name</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">excitations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excited</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_modes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_normal_dx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_line_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excitation_fns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recorder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'modal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_reference_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port_signal_stop_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_time_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">taper_signals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">monitors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.ProjectStore.open_run" title="Link to this definition">#</a></dt>
 <dd><p>Open a live streaming sink for one time-domain run.</p>
 <p>Declares the run’s resizable <code class="docutils literal notranslate"><span class="pre">results.h5</span></code> streams (HDF5-SWMR),
 registers the run in <code class="docutils literal notranslate"><span class="pre">project.json</span></code> as <code class="docutils literal notranslate"><span class="pre">running</span></code> (replacing a
@@ -1141,6 +1216,7 @@ proceeds.</p>
 <li><p><strong>port_line_params</strong> (<em>dict</em>)</p></li>
 <li><p><strong>port_band</strong> (<em>dict</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>port_model</strong> (<em>str</em>)</p></li>
+<li><p><strong>port_reference_scale</strong> (<em>dict</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>energy_stop_db</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>port_signal_stop_db</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>total_time_steps</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
@@ -1537,7 +1613,9 @@ recovered verbatim by <a class="reference internal" href="#magnelio.io.read_brep
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.monitors_for"><code class="docutils literal notranslate"><span class="pre">Project.monitors_for()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.phase"><code class="docutils literal notranslate"><span class="pre">Project.phase()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.plot_s"><code class="docutils literal notranslate"><span class="pre">Project.plot_s()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.reference_impedance"><code class="docutils literal notranslate"><span class="pre">Project.reference_impedance()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.refresh"><code class="docutils literal notranslate"><span class="pre">Project.refresh()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.renormalize"><code class="docutils literal notranslate"><span class="pre">Project.renormalize()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.result"><code class="docutils literal notranslate"><span class="pre">Project.result()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.to_skrf"><code class="docutils literal notranslate"><span class="pre">Project.to_skrf()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.to_touchstone"><code class="docutils literal notranslate"><span class="pre">Project.to_touchstone()</span></code></a></li>

@@ -396,5 +396,6 @@ fig.tight_layout()
 # ribbon bonds carry small parasitics that the synthesis does not know;
 # a fraction of a decibel of balance and a few degrees of phase are
 # theirs, and the knob for both is the finger length.  The leads are
-# short and not de-embedded: the quasi-TEM de-embedding available in
-# the result would remove the quasi-static phase only.
+# short and not de-embedded: the result's de-embedding removes the
+# propagation of a *uniform* quasi-TEM feed, dispersion included, and
+# the lead-to-finger joint is not one.
