@@ -24,8 +24,8 @@ behind the modal-Mur port floor (DD-238), and the pricing of the number
 a user actually reads (DD-239: an exactly transparent port is worth at
 most 1.93 dB of tutorial 09's |S11|).  Open: KB-023,
 KB-038 (the cause is now located — the field/port interface, not the
-convolution, which was already double), KB-043 and the new KB-045 (the
-band port does not run on the CuPy backend).  Unit and integration together: 3281 passed / 10 skipped
+convolution, which was already double), and KB-043 (KB-045, the band port's
+missing GPU path, was found and closed the same day).  Unit and integration together: 3281 passed / 10 skipped
 (2026-09-02, with `CUPY_ACCELERATORS=""` — without it four GPU tests
 fail on nvrtc in the sandbox).  Channels: GitHub, PyPI, conda-forge and
 the two docs channels below.
@@ -322,11 +322,13 @@ flickers to ``"done"`` between sequential runs; the reader skips
   period in double, bulk single), not a port-side one; not priced.
   Internal dossier `investigations/kb038-wordlength/`.  The rate guard
   is one-sided, so a fix cannot fail it.
-* **Band port on the GPU (KB-045)** — new, found alongside:
-  `band_dtbc.py` is written in `np.` throughout with no `_gather_host`,
-  so a band port under the shipped `backend="auto"` crashes on the
-  first recorder call on a CUDA machine (class of the resolved KB-006).
-  No GPU test covers it and the suite is pinned to NumPy.
+* **Band port on the GPU** — closed the day it was found (KB-045): the
+  band boundary now exchanges the port plane with the device the way
+  the modal operator did, `gather_host`/`array_module_of` having moved
+  into `_backend/array_api.py` for both families.  CPU bit-identical,
+  GPU within 1e-6 dB, gated by `TestBandDTBCOnGPU`.  Worth noting for
+  the next port family: nothing outside that new gate exercises a port
+  on the GPU, because `tests/conftest.py` pins the suite to NumPy.
 * **The quasi-static power-wave split (DD-239 → DD-244)** — the exact
   per-frequency split alone is *measured not to help*: on the tutorial
   record it exposes the drive-port launch residue and reads −27.9 dB

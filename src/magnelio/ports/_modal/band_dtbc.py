@@ -77,6 +77,7 @@ import scipy.sparse as sp
 from scipy.interpolate import CubicSpline
 from scipy.special import erfc, erfcinv
 
+from magnelio._backend.array_api import array_module_of, gather_host
 from magnelio._fields.field_arrays import FieldState
 from magnelio.mesh.mesher import Mesh  # noqa: F401  (type reference)
 from magnelio.ports._modal.discrete import DiscreteMode
@@ -1295,6 +1296,8 @@ class PortOperatorBandDTBC:
             (chain.D_p1.T @ exterior.VtW.T).T,
         )
         self._x1_prev = np.zeros(self._x1_idx.size)
+        #: Device-resident index arrays, built on first use (GPU only).
+        self._dev_idx: dict | None = None
 
         self._excitation_mode: int | None = None
         self._excitation_waveform = None
@@ -1534,7 +1537,7 @@ class PortOperatorBandDTBC:
         (and the boundary period itself) is quiescent at ``t = 0``;
         an interior IC that has not reached the port satisfies this.
         """
-        self._x1_prev = np.asarray(e, dtype=float)[self._x1_idx].copy()
+        self._x1_prev = np.asarray(gather_host(e, self._x1_idx), dtype=float).copy()
 
     def reset_state(self) -> None:
         """Reset the run state for a fresh solver run.
@@ -1579,6 +1582,24 @@ class PortOperatorBandDTBC:
     # Projections (recorder-facing fixed channels)
     # ------------------------------------------------------------------
 
+    def _device_indices(self, arr) -> dict:
+        """Device-resident index arrays for the field round trip, cached.
+
+        The port plane is written in one scatter rather than two, and
+        the first interior period is read back through the same cache;
+        built on the first call that sees a device array.
+        """
+        if self._dev_idx is None:
+            xp = array_module_of(arr)
+            self._dev_idx = {
+                "xp": xp,
+                "port_e": xp.asarray(
+                    np.concatenate([self.plane.e_u_indices, self.plane.e_v_indices]),
+                ),
+                "x1": xp.asarray(self._x1_idx),
+            }
+        return self._dev_idx
+
     def project_V(self, e: np.ndarray) -> np.ndarray:
         """``V_m`` at the port plane (dual-basis when configured)."""
         return self._project_V_at(
@@ -1601,8 +1622,8 @@ class PortOperatorBandDTBC:
 
     def project_I(self, h: np.ndarray) -> np.ndarray:
         """``I_m = <h_m, h>_Mmu`` at the port plane's dual edges."""
-        h_u = h[self.plane.h_u_indices]
-        h_v = h[self.plane.h_v_indices]
+        h_u = gather_host(h, self.plane.h_u_indices)
+        h_v = gather_host(h, self.plane.h_v_indices)
         I = np.empty(self._n_modes)
         for m, dm in enumerate(self.discrete_modes):
             I[m] = float(np.dot(self._mh_u, dm.h_u_profile * h_u)) + float(
@@ -1611,8 +1632,8 @@ class PortOperatorBandDTBC:
         return I
 
     def _project_V_at(self, e, e_u_idx, e_v_idx, me_u, me_v):
-        e_u = e[e_u_idx]
-        e_v = e[e_v_idx]
+        e_u = gather_host(e, e_u_idx)
+        e_v = gather_host(e, e_v_idx)
         V = np.empty(self._n_modes)
         for m, dm in enumerate(self.discrete_modes):
             dual = self._dual_e_profiles[m] if self._dual_e_profiles is not None else None
@@ -1654,10 +1675,20 @@ class PortOperatorBandDTBC:
         coup = self._M_coup @ self._x1_prev
         xt = self._boundary.advance(coup, src)
 
-        e[self.plane.e_u_indices] = self._Wu @ xt
-        e[self.plane.e_v_indices] = self._Wv @ xt
-
-        self._x1_prev = e[self._x1_idx].copy()
+        # Reconstruction is host-side double whatever the solver's
+        # precision is (the boundary state is float64 throughout), so
+        # the CPU branch keeps its operation order bit-for-bit and the
+        # device branch stages the two writes as ONE H2D scatter.
+        e_u_new = self._Wu @ xt
+        e_v_new = self._Wv @ xt
+        if hasattr(e, "get"):
+            idx = self._device_indices(e)
+            e[idx["port_e"]] = idx["xp"].asarray(np.concatenate([e_u_new, e_v_new]))
+            self._x1_prev = gather_host(e, idx["x1"])
+        else:
+            e[self.plane.e_u_indices] = e_u_new
+            e[self.plane.e_v_indices] = e_v_new
+            self._x1_prev = e[self._x1_idx].copy()
 
 
 # ----------------------------------------------------------------------

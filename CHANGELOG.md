@@ -85,6 +85,14 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- Band-DTBC ports run on the GPU.  A port built with
+  `port_model="band"` crashed on the first recorded step on any machine
+  with a CUDA device — that is, under the shipped `backend="auto"` —
+  because the port read the field with host index arrays.  The port
+  plane is now exchanged with the device the way the modal port already
+  does it: one gather to the host per projection, one scatter back per
+  step.  The port's own arithmetic stays host-side and in double, so a
+  GPU run returns the CPU answer to rounding.
 - Sphere, cone and torus faces of a body that shares its solid with a
   free-form face are sectioned by a projection onto their own surface
   instead of a one-step lift from the triangulation's face parameters.

@@ -189,13 +189,13 @@ The measured pre-pin scale is kept per mode in ``state_scale``.
 from __future__ import annotations
 
 import collections
-import importlib
 import math
 import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
 
+from magnelio._backend.array_api import array_module_of, gather_host
 from magnelio._fields.field_arrays import FieldState
 from magnelio.constants import C0, EPS0, MU0
 from magnelio.ports._modal.discrete import DiscreteMode
@@ -268,19 +268,6 @@ _DTBC_WEIGHT_FLOOR = 1e-12
 # z-translation-invariant feed measures ~1e-15 here; any defect
 # above the gate sends every channel of the port to Mur.
 _DTBC_SLAB_DEFECT_TOL = 1e-8
-
-
-def _gather_host(arr, idx):
-    """Gather ``arr[idx]`` as a NumPy array.
-
-    The modal recursion (Mur / DTBC histories, source buffers) is pure
-    host-side scalar work on a few hundred port-plane values — on the
-    CuPy backend the port-edge subset is pulled to the host once per
-    call (one small D2H transfer) instead of porting the recursion to
-    the GPU.  No-op pass-through on NumPy.
-    """
-    out = arr[idx]
-    return out.get() if hasattr(out, "get") else out
 
 
 def _dual_spacings(nodes: np.ndarray) -> np.ndarray:
@@ -1110,8 +1097,8 @@ class PortOperatorModal:
                     "_comp_port_prev_v",
                 ),
             ):
-                cu = np.asarray(_gather_host(e, idx_u), dtype=float).copy()
-                cv = np.asarray(_gather_host(e, idx_v), dtype=float).copy()
+                cu = np.asarray(gather_host(e, idx_u), dtype=float).copy()
+                cv = np.asarray(gather_host(e, idx_v), dtype=float).copy()
                 for m, dm in enumerate(self.discrete_modes):
                     cu -= V[m] * dm.e_u_profile
                     cv -= V[m] * dm.e_v_profile
@@ -1365,11 +1352,7 @@ class PortOperatorModal:
         the device interface — the unit-test path without CUDA).
         """
         if self._dev_idx is None:
-            xp = (
-                np
-                if isinstance(arr, np.ndarray)
-                else (importlib.import_module(type(arr).__module__.split(".")[0]))
-            )
+            xp = array_module_of(arr)
             self._dev_idx = {
                 "xp": xp,
                 "port_e": xp.asarray(self._g_port_e),
@@ -1381,7 +1364,7 @@ class PortOperatorModal:
     def project_V(self, e: np.ndarray) -> np.ndarray:
         """``V_m`` at the port plane: ``Σ_p M_ε[p] · ê_m,p · e_pp,p``."""
         if hasattr(e, "get"):  # WP-G2: ONE fused gather round trip
-            return self.project_V_samples(_gather_host(e, self._fused_indices(e)["port_e"]))
+            return self.project_V_samples(gather_host(e, self._fused_indices(e)["port_e"]))
         return self._project_V_at(
             e,
             self.plane.e_u_indices,
@@ -1393,7 +1376,7 @@ class PortOperatorModal:
     def project_V_interior(self, e: np.ndarray) -> np.ndarray:
         """``V_m`` at the one-cell-inside companion plane."""
         if hasattr(e, "get"):  # WP-G2: ONE fused gather round trip
-            s = _gather_host(e, self._fused_indices(e)["int_e"])
+            s = gather_host(e, self._fused_indices(e)["int_e"])
             n_u = self.plane.e_u_indices_interior.size
             return self._V_from_samples(s[:n_u], s[n_u:], self._me_u_int, self._me_v_int)
         return self._project_V_at(
@@ -1407,9 +1390,9 @@ class PortOperatorModal:
     def project_I(self, h: np.ndarray) -> np.ndarray:
         """``I_m = ⟨ĥ_m, h⟩_Mμ`` at the port plane's dual edges."""
         if hasattr(h, "get"):  # WP-G2: ONE fused gather round trip
-            return self.project_I_samples(_gather_host(h, self._fused_indices(h)["port_h"]))
-        h_u = _gather_host(h, self.plane.h_u_indices)
-        h_v = _gather_host(h, self.plane.h_v_indices)
+            return self.project_I_samples(gather_host(h, self._fused_indices(h)["port_h"]))
+        h_u = gather_host(h, self.plane.h_u_indices)
+        h_v = gather_host(h, self.plane.h_v_indices)
         return self._I_from_samples(h_u, h_v)
 
     # ------------------------------------------------------------------
@@ -1467,8 +1450,8 @@ class PortOperatorModal:
         me_u: np.ndarray,
         me_v: np.ndarray,
     ) -> np.ndarray:
-        e_u = _gather_host(e, e_u_idx)
-        e_v = _gather_host(e, e_v_idx)
+        e_u = gather_host(e, e_u_idx)
+        e_v = gather_host(e, e_v_idx)
         return self._V_from_samples(e_u, e_v, me_u, me_v)
 
     def _V_from_samples(
@@ -1571,12 +1554,12 @@ class PortOperatorModal:
             # ``project_V_interior`` — a gather-then-split reproduces
             # the per-array gathers element for element).
             if hasattr(e, "get"):
-                s_int = _gather_host(e, self._fused_indices(e)["int_e"])
+                s_int = gather_host(e, self._fused_indices(e)["int_e"])
             else:
                 s_int = np.concatenate(
                     [
-                        _gather_host(e, self.plane.e_u_indices_interior),
-                        _gather_host(e, self.plane.e_v_indices_interior),
+                        gather_host(e, self.plane.e_u_indices_interior),
+                        gather_host(e, self.plane.e_v_indices_interior),
                     ]
                 )
             n_u_int = self.plane.e_u_indices_interior.size
