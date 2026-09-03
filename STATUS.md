@@ -1,34 +1,33 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-09-02.*  **Released v0.5.0** (2026-09-02;
-DD-224…DD-241 — the first minor bump under the Cargo reading, ten
-breaking changes, upgrade guide `docs/migration-0.5.md`; the public
-remote has a content gate since DD-241).  In it: **DD-224 Phases A–D complete** (the API
-grammar, `AnalysisTD` + `TDResult`, project-store schema 2.0,
-`magnelio.fields.FieldState`, field and current-path sources,
-tutorial 20), **the pair-product gate as a reflection budget**
-(DD-228/229, closes KB-022) and **the section-engine reach repair**
-(DD-240/DD-242, close KB-041/KB-042, open KB-043/KB-044).  **Since the
-release: DD-243 closes KB-044** — one chord budget for all three section
-paths — **and DD-244 gives every scattering result its reference
-impedances and a `renormalize`, every port report a per-frequency
-`dispersion` sweep, and the port plane its own convergence ladder
-(`refine_port_modes`, `MeshControl.subdivide`); KB-027 closed** (on the
-branch `feat/qtem-dispersive-reference`).  The band/QTEM track
-**DD-230…DD-239 is closed, with every shipped default unchanged**:
-project-store runs, `port_model="modal"`, a DC-reaching axis,
-bit-exact resume (closes KB-037), the −70 dB pricing, the short-basis
-warning, the production cost ranking (opens KB-038), the dead middle
-path between Mur-1st and the band DTBC, the two-term cancellation
-behind the modal-Mur port floor (DD-238), and the pricing of the number
-a user actually reads (DD-239: an exactly transparent port is worth at
-most 1.93 dB of tutorial 09's |S11|).  Open: KB-023,
-KB-038 (the cause is now located — the field/port interface, not the
-convolution, which was already double), and KB-043 (KB-045, the band port's
-missing GPU path, was found and closed the same day).  Unit and integration together: 3281 passed / 10 skipped
-(2026-09-02, with `CUPY_ACCELERATORS=""` — without it four GPU tests
-fail on nvrtc in the sandbox).  Channels: GitHub, PyPI, conda-forge and
-the two docs channels below.
+*Last updated: 2026-09-03.*  **Released v0.5.1** (2026-09-03; a patch
+under the Cargo reading — nothing in it breaks a 0.5.0 script).  In it:
+**DD-242/DD-243 finish the section-engine reach repair** (quadric faces
+projected onto their implicit surface, then one chord budget for all
+three section paths — curved-face results move slightly toward the
+converged value and cost up to a fifth more mesh CPU; KB-041/042/044
+closed), **DD-244 makes the reference impedance a published quantity**
+(`reference_impedance`, `renormalize`, a per-frequency
+`report.dispersion` sweep, and the port plane's own convergence ladder
+`refine_port_modes` on a new `MeshControl(subdivide=...)`; KB-027
+closed), and **the band-DTBC port runs on the GPU** (KB-045, found and
+closed the same day: it had crashed under `backend="auto"` on any CUDA
+machine).
+
+Before it, v0.5.0 (2026-09-02) carried DD-224…DD-241 — the API grammar
+and its Phases A–D, the pair-product gate as a reflection budget
+(DD-228/229, closes KB-022), the content gate on the public remote
+(DD-241) — with ten breaking changes and `docs/migration-0.5.md`.  The
+band/QTEM track **DD-230…DD-239 is closed, with every shipped default
+unchanged**; its closing result is that the port floor is not what caps
+the number a user reads (DD-239: an exactly transparent port is worth
+at most 1.93 dB of tutorial 09's |S11|), and it opened KB-038.
+
+Open: KB-023, KB-038 (cause located — the field/port interface, not
+the convolution, which was already double) and KB-043.  Unit and
+integration together: 3283 passed / 10 skipped (2026-09-03, with
+`CUPY_ACCELERATORS=""`).  Channels: GitHub, PyPI, conda-forge and the
+two docs channels below.
 
 This file states what *is*.  Chronology: `git log --first-parent main`
 (one feature per merge); reasoning: `design-decisions.md`; open bugs:

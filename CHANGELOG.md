@@ -7,7 +7,7 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
-## [Unreleased]
+## [0.5.1] - 2026-09-03
 
 ### Added
 
@@ -65,11 +65,6 @@ major version is 0, minor releases may change the public API.
   as a cross-check and the reference impedance with a renormalisation
   to 50 Ω.  Port reports label their impedances ``(on this grid)``.
 
-### Removed
-
-- The undocumented `solve_modes_refined` helper (a whole-mesh
-  refinement loop) is replaced by `refine_port_modes`.
-
 - Every section path tessellates curved faces to the same chord budget,
   a tenth of the section deflection.  Cylinders, cones, spheres and
   tori of a body without a free-form face were sectioned by the CAD
@@ -82,6 +77,11 @@ major version is 0, minor releases may change the public API.
   path, so results with curved faces move slightly, toward the
   converged value, and the mesh build of curved-face-heavy models costs
   up to about a fifth more CPU.
+
+### Removed
+
+- The undocumented `solve_modes_refined` helper (a whole-mesh
+  refinement loop) is replaced by `refine_port_modes`.
 
 ### Fixed
 
