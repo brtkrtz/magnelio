@@ -6513,11 +6513,25 @@ def _parallel_section_prefill(
             ) as ex,
         ):
             chunk = max(1, len(tasks) // (n_workers * 32))
-            for key, polys in zip(
-                queries,
-                ex.map(_section_worker, tasks, chunksize=chunk),
+            # The only honest percentage in the package: the parent
+            # consumes results in submission order, so the count is
+            # monotone and its denominator is known up front.  The
+            # workers themselves report nothing (their reporters see a
+            # parent process and disable).
+            from magnelio._progress import current_reporter  # noqa: PLC0415
+
+            rep = current_reporter()
+            n_tasks = len(tasks)
+            for done, (key, polys) in enumerate(
+                zip(
+                    queries,
+                    ex.map(_section_worker, tasks, chunksize=chunk),
+                ),
+                start=1,
             ):
                 section_cache[key] = _annotate_sections(polys, annotate)
+                if rep is not None:
+                    rep.step(done, n_tasks, "sections")
     except Exception as exc:
         warnings.warn(
             f"Parallel cross-section prefill failed ({exc!r}); "
@@ -7155,6 +7169,12 @@ def compute_face_material_areas(
             slabs=[engine.slab for engine in engines],
         )
 
+    # Cache misses are the real work of this phase — a hit costs
+    # nothing and would inflate the count.
+    from magnelio._progress import current_reporter  # noqa: PLC0415
+
+    _rep = current_reporter()
+
     def _sections_at(axis: int, pos: float) -> list:
         per_shape: list = [[] for _ in shapes_with_material]
         for si in _shapes_reaching(axis, pos):
@@ -7166,6 +7186,8 @@ def compute_face_material_areas(
                 polys = _shape_sections(si, axis, pos)
                 annotated = _annotate_sections(polys, _annotate)
                 section_cache[cache_key] = annotated
+                if _rep is not None:
+                    _rep.advance(detail="sections")
             per_shape[si] = annotated
         return per_shape
 

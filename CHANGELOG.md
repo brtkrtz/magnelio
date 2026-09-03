@@ -11,6 +11,28 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- Progress reporting for every operation that takes real time.  The
+  mesh build, the stability time step and each port's mode solve used
+  to run silently — on a two-million-cell model, more than half a
+  minute before the first line appeared — which made a long call
+  indistinguishable from a stalled one.  Each now reports its phases as
+  it works, with the time each took.  `magnelio.set_verbosity(False)`
+  turns all of it off for a batch sweep, and every operation still
+  takes its own `verbose=` argument; leaving that unset follows the
+  process-wide setting, so it also reaches nested work such as the
+  port-refinement ladder.  A phase that finishes in under half a second
+  reports nothing, so a small model stays quiet instead of printing a
+  wall of `done (0.0 s)` lines, and the closing line carries the total.
+  The mesh build's longest phase — classifying partially filled cells,
+  20 of the 22 seconds on a reflector antenna — shows a running count
+  of the cross-sections it has taken.  New methods chapter *Progress
+  output* describes what the phases mean and which of them are usually
+  the slow ones.
+- The cavity eigenmode solver reports its phases.  The factorisation of
+  the shifted operator regularly costs several times the iteration that
+  follows it (14.0 s against 2.7 s on a 49 000-DOF cavity), which was
+  previously invisible.  Its shift is now printed with the frequency it
+  targets rather than as a bare eigenvalue.
 - Methods chapter *Numerical precision*: what the `precision` switch
   reaches and what stays double regardless, what single precision buys
   (the time-loop state is exactly halved at 192 → 96 bytes per cell,
@@ -28,8 +50,21 @@ major version is 0, minor releases may change the public API.
   result and the one-line test for it (re-run with `precision="double"`;
   if the number moves, it was the word length).
 
+### Fixed
+
+- The `Tile skip: 0.0%` notice no longer appears on runs with no
+  dead tiles to skip — it reported a saving that was not made.
+
 ### Changed
 
+- Progress output adapts to where it is going.  On a terminal it is one
+  line that updates in place, as the time-domain loop always did;
+  redirected to a file, a CI job or a Jupyter notebook it is whole
+  lines at a slow cadence, so a captured run is a readable record
+  instead of every refresh concatenated into one row.
+- `refine_port_modes` now reports by default, like every other
+  long-running call.  It used to be silent unless asked; pass
+  `verbose=False` (or set the process-wide default) to restore that.
 - Band ports are much faster on long records.  The transparent
   boundary's history convolution reaches back over the whole run, and
   it was folded in full at every step, so its cost grew with the square

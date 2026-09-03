@@ -500,6 +500,8 @@ class Mesh:
         geometry,
         control: MeshControl,
         f_max: float,
+        *,
+        verbose: bool | None = None,
     ) -> "Mesh":
         """Generate a mesh from a geometry model.
 
@@ -510,6 +512,9 @@ class Mesh:
                        cell size and is recorded on the mesh as its design
                        frequency (``mesh.f_max``); the scattering analysis
                        defaults its band to it.
+            verbose:   Print build progress.  ``None`` (the default) follows
+                       the process-wide setting of
+                       :func:`magnelio.set_verbosity`.
 
         The boundary closure is read off
         ``geometry.boundary_conditions``; every mesh-time consequence
@@ -543,6 +548,7 @@ class Mesh:
         """
         # Design: WP-U0 stage 2 (PMC grid-line pull-in lands the natural
         # magnetic wall on the declared face).
+        from magnelio._progress import Reporter  # noqa: PLC0415
         from magnelio.boundaries.boundary_conditions import (  # noqa: PLC0415
             bc_type_entries,
             cpml_thickness_of,
@@ -554,6 +560,8 @@ class Mesh:
             extract_feature_planes_per_shape,
         )
         from magnelio.mesh.indexing import build_pec_mask_faces
+
+        rep = Reporter("mesh", verbose)
 
         # Collect shapes early (GeometryModel or plain list) — the
         # thin-sheet detection must run BEFORE grid-line generation.
@@ -632,6 +640,7 @@ class Mesh:
                 "solid."
             )
 
+        rep.stage("feature planes")
         # Step 0: Thin PEC metallization detection (WP-M2).  Only
         # active when the user sets the hard min_cell_size floor — the
         # floor is the thin/resolved threshold; without it the local
@@ -994,6 +1003,7 @@ class Mesh:
             feature_gap,
         )
 
+        rep.stage("grid lines")
         # Step 2: Generate grid lines for each axis
 
         # Feature-based fine size for cells touching material interfaces
@@ -1278,6 +1288,7 @@ class Mesh:
 
         Nx, Ny, Nz = grid.Nx, grid.Ny, grid.Nz
 
+        rep.stage("materials")
         # Step 3: Fill material IDs via cross-section polygons
         from magnelio.geo._filling import classify_cells_from_cross_sections
         from magnelio.geo._occ_backend import batch_cross_sections
@@ -1387,6 +1398,7 @@ class Mesh:
                         dst[ai] = offset
                         material_id[tuple(dst)] = material_id[tuple(src_slice)]
 
+        rep.stage("conformal cells")
         # Step 3c: Sub-cell classification + conformal mu (DD-051)
         edge_material_data = None
         face_material_data = None
@@ -1524,6 +1536,7 @@ class Mesh:
                     pec_mask, edge_material_data, face_material_data, grid, _pml_cells
                 )
 
+        rep.stage("PEC masks")
         # Step 4: Build PEC masks (staircase fallback if no conformal)
         if pec_mask is None:
             pec_mask = build_pec_mask_faces(grid, material_id, material_library)
@@ -1670,6 +1683,7 @@ class Mesh:
 
             warn_unregistered_walls(mesh, stacklevel=2)
 
+        rep.finish(f"{mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
         return mesh
 
     # ------------------------------------------------------------------

@@ -54,6 +54,7 @@ See design-decisions.md DD-007, DD-033.
 
 from __future__ import annotations
 
+import itertools
 import warnings
 from dataclasses import dataclass, field
 
@@ -65,6 +66,20 @@ from magnelio._operators.curl import build_curl_matrix, curl_e_stencil
 from magnelio._operators.material_matrices import build_M_eps, build_M_mu
 from magnelio.constants import C0 as _C0  # noqa: E402
 from magnelio.mesh.mesher import Mesh
+
+
+def _sigma_label(sigma: float) -> str:
+    """``sigma`` with the frequency it targets — the number a user checks.
+
+    The shift is an eigenvalue of the curl-curl operator, i.e.
+    ``(2*pi*f)**2`` in rad^2/s^2, which reads as an arbitrary large
+    number on its own.
+    """
+    if sigma <= 0.0:
+        return f"sigma={sigma:.3e}"
+    f_hz = float(np.sqrt(sigma)) / (2.0 * np.pi)
+    return f"sigma={sigma:.3e} ({f_hz / 1e9:.2f} GHz)"
+
 
 _F_PHYSICAL_MIN = 1e6  # 1 MHz — modes below are null-space artefacts
 _AMG_THRESHOLD = 50_000  # switch to AMG above this many free DOFs
@@ -615,8 +630,20 @@ class EigenmodeSolver3D:
         H_modes : np.ndarray
             H-field eigenvectors, shape ``(n_H, n_modes)``.
         """
+        from magnelio._progress import Reporter  # noqa: PLC0415
+
+        # An eigensolve has no step count to report against: ARPACK
+        # converges when it converges.  What it does have is a phase
+        # structure — assembly, factorisation, iteration — and the
+        # factorisation is a single long call, so naming the phase is
+        # the only progress there is for it.
+        rep = Reporter("eigen", self.verbose)
+        self._rep = rep
+
         grid = mesh.grid
         Nx, Ny, Nz = grid.Nx, grid.Ny, grid.Nz
+
+        rep.stage("operators")
 
         # DD-051 Scope: under the unified sub-cell pipeline the curved-
         # PEC formula is ``ε̄ · A_free / L_free`` (one stage, no ``/= f_L``
@@ -732,8 +759,10 @@ class EigenmodeSolver3D:
                 # the SuperLU factorisation is shared across the grows.
                 op_inv = None
                 if solver_key not in ("arpack-cholmod", "arpack-amg"):
-                    op_inv = self._arpack_op_inv(A_f, B_f, sigma)
+                    rep.stage(f"factorising at {_sigma_label(sigma)}")
+                    op_inv = self._arpack_op_inv(A_f, B_f, sigma, rep=rep)
                 for grow in range(_NULL_GROW_RETRIES + 1):
+                    rep.stage(f"eigensolve at {_sigma_label(sigma)}")
                     if solver_key == "arpack-cholmod":
                         vals, vecs = self._solve_arpack_cholmod(
                             A_f,
@@ -779,21 +808,20 @@ class EigenmodeSolver3D:
                     ):
                         break
                     k_request = min(k_request + n_null_new + 2, n_free - 2)
-                    if self.verbose:
-                        print(
-                            f"  {eigenvalues.size}/{self.n_modes} physical "
-                            f"modes, {n_null_new} null-space artefacts at "
-                            f"sigma={sigma:.3e}; growing the request to "
-                            f"k={k_request}"
-                        )
+                    rep.note(
+                        f"{eigenvalues.size}/{self.n_modes} physical modes, "
+                        f"{n_null_new} null-space artefacts at "
+                        f"sigma={sigma:.3e}; growing the request to k={k_request}"
+                    )
                 if eigenvalues.size >= self.n_modes:
                     break
-                if self.verbose and attempt + 1 < len(ladder):
-                    print(
-                        f"  {eigenvalues.size}/{self.n_modes} physical "
-                        f"modes at sigma={sigma:.3e}; retrying with a "
-                        f"higher shift"
+                if attempt + 1 < len(ladder):
+                    rep.note(
+                        f"{eigenvalues.size}/{self.n_modes} physical modes at "
+                        f"sigma={sigma:.3e}; retrying with a higher shift"
                     )
+
+        rep.finish()
 
         # ── Post-processing ─────────────────────────────────────────────────
         order = np.argsort(eigenvalues)
@@ -928,24 +956,38 @@ class EigenmodeSolver3D:
     # ── ARPACK + SuperLU (small problems) ───────────────────────────────────
 
     @staticmethod
-    def _arpack_op_inv(A_f, B_f, sigma):
+    def _arpack_op_inv(A_f, B_f, sigma, rep=None):
         """``(A − σB)⁻¹`` as a linear operator over one SuperLU factorisation.
 
         ``eigsh`` factorises the shifted operator itself when given
         only ``sigma``; handing it the factorisation lets several
-        requests at one shift share it (DD-195).
+        requests at one shift share it (DD-195).  It also puts the
+        solve behind a callable this side owns, which is the only
+        place an ARPACK iteration can be counted from: the library
+        offers no progress callback, but every iteration passes
+        through here.
         """
         from scipy.sparse.linalg import splu  # noqa: PLC0415
 
         shifted = (A_f - sigma * B_f).tocsc()
         lu = splu(shifted)
         dtype = np.result_type(shifted.dtype, np.float64)
-        return LinearOperator(shifted.shape, matvec=lu.solve, dtype=dtype)
+        if rep is None or not rep.enabled:
+            return LinearOperator(shifted.shape, matvec=lu.solve, dtype=dtype)
+
+        counter = itertools.count(1)
+
+        def _counting_solve(x):
+            rep.tick(next(counter), "matvec")
+            return lu.solve(x)
+
+        return LinearOperator(shifted.shape, matvec=_counting_solve, dtype=dtype)
 
     def _solve_arpack(self, A_f, B_f, sigma, n_free, k_request, op_inv=None):
         """Solve via ARPACK eigsh with SuperLU direct factorisation."""
-        if self.verbose:
-            print(f"ARPACK (SuperLU): n_free={n_free:,d}, k={k_request}, sigma={sigma:.3e}")
+        rep = getattr(self, "_rep", None)
+        if rep is not None:
+            rep.note(f"ARPACK (SuperLU): n_free={n_free:,d}, k={k_request}, {_sigma_label(sigma)}")
 
         eigenvalues, eigenvectors_free = eigsh(
             A_f,
@@ -1017,8 +1059,9 @@ class EigenmodeSolver3D:
         rng = np.random.default_rng(42)
         X0 = rng.standard_normal((n_free, k_request))
 
-        if self.verbose:
-            print(
+        rep = getattr(self, "_rep", None)
+        if rep is not None:
+            rep.note(
                 f"LOBPCG (folded): n_free={n_free:,d}, k={k_request}, "
                 f"sigma={sigma:.3e}, nnz(S)={S_f.nnz:,d}"
             )
@@ -1029,7 +1072,7 @@ class EigenmodeSolver3D:
             largest=False,
             tol=1e-8,
             maxiter=500,
-            verbosityLevel=1 if self.verbose else 0,
+            verbosityLevel=1 if (rep is not None and rep.enabled) else 0,
         )
 
         # ── Recover original eigenvectors and true eigenvalues ─────────
@@ -1092,12 +1135,13 @@ class EigenmodeSolver3D:
                 f"default SuperLU backend."
             ) from exc
 
-        if self.verbose:
+        rep = getattr(self, "_rep", None)
+        if rep is not None:
             n_tree = len(tree_edge_dofs)
-            print(
+            rep.note(
                 f"ARPACK (CHOLMOD): n_free={n_free:,d}, "
                 f"n_tree={n_tree:,d}, n_cotree={n_cotree:,d}, "
-                f"k={k_request}, sigma={sigma:.3e}"
+                f"k={k_request}, {_sigma_label(sigma)}"
             )
 
         def opinv_matvec(b):
@@ -1145,16 +1189,22 @@ class EigenmodeSolver3D:
         )
         M_prec = ml.aspreconditioner(cycle="V")
 
-        if self.verbose:
-            print(
+        rep = getattr(self, "_rep", None)
+        if rep is not None:
+            rep.note(
                 f"ARPACK (AMG-CG): n_free={n_free:,d}, k={k_request}, "
                 f"sigma={sigma:.3e}, AMG levels={len(ml.levels)}"
             )
 
+        counter = itertools.count(1)
+
         def opinv_matvec(b):
             x, info = cg(S, b, M=M_prec, atol=0.0, rtol=1e-8, maxiter=500)
-            if info != 0 and self.verbose:
-                print(f"  AMG-CG inner: info={info}")
+            if rep is not None:
+                if info != 0:
+                    rep.note(f"AMG-CG inner: info={info}")
+                else:
+                    rep.tick(next(counter), "matvec")
             return x
 
         OPinv = LinearOperator(
