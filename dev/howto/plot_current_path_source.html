@@ -587,6 +587,14 @@ declared, whatever the cell size.</p>
 <span class="n">dipole</span> <span class="o">=</span> <span class="n">radiate</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">"fil"</span><span class="p">)</span>
 </pre></div>
 </div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>mesh | feature planes
+mesh | grid lines
+mesh | materials
+mesh | conformal cells
+mesh | PEC masks
+mesh | 92 x 92 x 96 cells
+</pre></div>
+</div>
 <p>The Hertzian dipole radiates <span class="math notranslate nohighlight">\(\eta_0 (k I L)^2 / 6\pi\)</span> and has
 a peak directivity of 1.5.  Amplitudes in Magnelio are effective
 values — the same convention that makes a port’s <code class="docutils literal notranslate"><span class="pre">amplitude</span></code> of
@@ -623,7 +631,13 @@ masked below the plane and the horizon directivity doubles.</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"ground plane: peak directivity  </span><span class="si">{</span><span class="n">monopole</span><span class="o">.</span><span class="n">directivity</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">   (3.00, see below)"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>ground plane: P_rad / monopole  0.960   (target 1.00 +- 0.05)
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 92 x 92 x 49 cells
+ground plane: P_rad / monopole  0.960   (target 1.00 +- 0.05)
 ground plane: peak directivity  3.135   (3.00, see below)
 </pre></div>
 </div>
@@ -707,7 +721,7 @@ the path in that half and let the symmetry wall supply its image.</p></li>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.show.html#matplotlib.pyplot.show" title="matplotlib.pyplot.show" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">show</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (3 minutes 15.291 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (2 minutes 35.822 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-current-path-source-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/91d55e6409f4dc1250dd08c55ac2d62f/plot_current_path_source.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_current_path_source.ipynb</span></code></a></p>

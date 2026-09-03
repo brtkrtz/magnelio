@@ -319,6 +319,36 @@ energy.  Everything below has to sit far above it.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 10 x 5 x 13 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 10 x 5 x 13 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 10 x 5 x 13 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 10 x 5 x 36 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 10 x 5 x 36 cells
     sealed  f0 = 8.2151 GHz
     loaded  f0 = 8.1135 GHz   (-1.24 %)
     numerical floor      Q =     5.39e+08
@@ -467,7 +497,7 @@ What the number sees
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 30.301 seconds)
+   **Total running time of the script:** (0 minutes 32.817 seconds)
 
 
 .. _sphx_glr_download_howto_plot_cavity_ringdown_q.py:

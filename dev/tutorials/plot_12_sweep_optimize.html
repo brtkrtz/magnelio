@@ -539,7 +539,7 @@ does what I want”.</p>
 <p>Magnelio has no sweep API and no built-in optimiser — deliberately.
 A simulation is an ordinary Python object built by ordinary Python
 code, so a sweep is a <code class="docutils literal notranslate"><span class="pre">for</span></code> loop and an optimisation is
-<code class="xref py py-mod docutils literal notranslate"><span class="pre">scipy.optimize</span></code> calling a function you wrote.  Everything the
+<a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/optimize.html#module-scipy.optimize" title="(in SciPy v1.18.0)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">scipy.optimize</span></code></a> calling a function you wrote.  Everything the
 Python ecosystem offers applies directly: SciPy’s optimisers, NumPy
 for the bookkeeping, and any parallel-execution tool you already use.</p>
 <p>The device is the magic tee from the field-monitor tutorial.  Its
@@ -564,7 +564,7 @@ to cancel the mismatch.  We put it on the symmetry plane
 what the post is allowed to disturb.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">minimize_scalar</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize_scalar.html#scipy.optimize.minimize_scalar" title="scipy.optimize.minimize_scalar" class="sphx-glr-backref-module-scipy-optimize sphx-glr-backref-type-py-function"><span class="n">minimize_scalar</span></a>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mio</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span><span class="p">,</span> <span class="n">plots</span><span class="p">,</span> <span class="n">ports</span>
@@ -695,7 +695,13 @@ percent of the incident power comes back on average.</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"bare tee: mean reflected power </span><span class="si">{</span><span class="n">reflected_power_db</span><span class="p">(</span><span class="n">baseline</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> dB"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>UserWarning: Smallest cell 0.001254 m (x, in the 0.01016 m interval [-0.00508, 0.00508]) is 21% below the 0.001587 m this interval asked for, and it sets the time step. MeshControl(min_cell_size=0.00159) removes the undershoot.
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+UserWarning: Smallest cell 0.001254 m (x, in the 0.01016 m interval [-0.00508, 0.00508]) is 21% below the 0.001587 m this interval asked for, and it sets the time step. MeshControl(min_cell_size=0.00159) removes the undershoot.
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 53 x 34 x 26 cells
 bare tee: mean reflected power -3.45 dB
 </pre></div>
 </div>
@@ -716,13 +722,61 @@ exact bottom is the optimiser’s job.</p>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  y = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">y</span></a><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">+5.2f</span><span class="si">}</span><span class="s2"> mm -&gt; </span><span class="si">{</span><span class="n">refl_sweep</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">6.2f</span><span class="si">}</span><span class="s2"> dB"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>y = -8.00 mm -&gt;  -7.83 dB
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>mesh | feature planes
+mesh | grid lines
+mesh | materials
+mesh | conformal cells
+mesh | PEC masks
+mesh | 58 x 36 x 26 cells
+y = -8.00 mm -&gt;  -7.83 dB
+mesh | feature planes
+mesh | grid lines
+mesh | materials
+mesh | conformal cells
+mesh | PEC masks
+mesh | 58 x 36 x 26 cells
 y = -7.00 mm -&gt; -10.05 dB
+mesh | feature planes
+mesh | grid lines
+mesh | materials
+mesh | conformal cells
+mesh | PEC masks
+mesh | 58 x 37 x 26 cells
 y = -6.00 mm -&gt; -13.01 dB
+mesh | feature planes
+mesh | grid lines
+mesh | materials
+mesh | conformal cells
+mesh | PEC masks
+mesh | 58 x 37 x 26 cells
 y = -5.00 mm -&gt; -17.46 dB
+mesh | feature planes
+mesh | grid lines
+mesh | materials
+mesh | conformal cells
+mesh | PEC masks
+mesh | 58 x 37 x 26 cells
 y = -4.00 mm -&gt; -22.93 dB
+mesh | feature planes
+mesh | grid lines
+mesh | materials
+mesh | conformal cells
+mesh | PEC masks
+mesh | 58 x 37 x 26 cells
 y = -3.00 mm -&gt; -18.31 dB
+mesh | feature planes
+mesh | grid lines
+mesh | materials
+mesh | conformal cells
+mesh | PEC masks
+mesh | 58 x 37 x 26 cells
 y = -2.00 mm -&gt; -12.77 dB
+mesh | feature planes
+mesh | grid lines
+mesh | materials
+mesh | conformal cells
+mesh | PEC masks
+mesh | 58 x 37 x 26 cells
 y = -1.00 mm -&gt;  -8.93 dB
 </pre></div>
 </div>
@@ -771,16 +825,58 @@ honest and costs seven evaluations.</p>
     <span class="k">return</span> <span class="n">value</span>
 
 
-<span class="n">opt</span> <span class="o">=</span> <span class="n">minimize_scalar</span><span class="p">(</span><span class="n">objective</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">8.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s2">"bounded"</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">"xatol"</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">})</span>
+<a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.OptimizeResult.html#scipy.optimize.OptimizeResult" title="scipy.optimize.OptimizeResult" class="sphx-glr-backref-module-scipy-optimize sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">opt</span></a> <span class="o">=</span> <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize_scalar.html#scipy.optimize.minimize_scalar" title="scipy.optimize.minimize_scalar" class="sphx-glr-backref-module-scipy-optimize sphx-glr-backref-type-py-function"><span class="n">minimize_scalar</span></a><span class="p">(</span><span class="n">objective</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">8.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s2">"bounded"</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">"xatol"</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">})</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">optimum: y = </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">opt</span><span class="o">.</span><span class="n">x</span></a><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm, mean reflected power </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">opt</span><span class="o">.</span><span class="n">fun</span></a><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> dB"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  eval y = -5.326 mm -&gt; -15.97 dB
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 58 x 36 x 26 cells
+  eval y = -5.326 mm -&gt; -15.97 dB
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 58 x 37 x 26 cells
   eval y = -3.674 mm -&gt; -22.55 dB
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 58 x 37 x 26 cells
   eval y = -2.652 mm -&gt; -16.03 dB
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 58 x 37 x 26 cells
   eval y = -3.986 mm -&gt; -22.95 dB
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 58 x 36 x 26 cells
   eval y = -4.086 mm -&gt; -22.77 dB
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 58 x 37 x 26 cells
   eval y = -3.886 mm -&gt; -23.02 dB
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 58 x 37 x 26 cells
   eval y = -3.786 mm -&gt; -22.90 dB
 
 optimum: y = -3.89 mm, mean reflected power -23.02 dB
@@ -836,7 +932,15 @@ scattering matrix can be compared against the bare tee.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_12_sweep_optimize_004.png" srcset="../_images/sphx_glr_plot_12_sweep_optimize_004.png" alt="H-arm match, power split (ideal: −3.01 dB)" class = "sphx-glr-single-img"/><p>Both panels improve, and they improve for the same reason.  Power
+<img src="../_images/sphx_glr_plot_12_sweep_optimize_004.png" srcset="../_images/sphx_glr_plot_12_sweep_optimize_004.png" alt="H-arm match, power split (ideal: −3.01 dB)" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>mesh | feature planes
+mesh | grid lines
+mesh | materials
+mesh | conformal cells
+mesh | PEC masks
+mesh | 58 x 37 x 26 cells
+</pre></div>
+</div>
+<p>Both panels improve, and they improve for the same reason.  Power
 that no longer returns to the H-arm has nowhere to go but the
 collinear arms, so the splitting moves from its mismatched value
 onto the ideal −3.01 dB line.  A match and a split are not two
@@ -879,8 +983,8 @@ zero — it is nearly invisible to the E-arm, not exactly invisible.</p>
     <span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>bare tee    isolation |S43|  -168.3 dB   E-arm match |S44|  -4.96 dB
-with post   isolation |S43|  -155.6 dB   E-arm match |S44|  -3.86 dB
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>bare tee    isolation |S43|  -160.7 dB   E-arm match |S44|  -4.96 dB
+with post   isolation |S43|  -156.2 dB   E-arm match |S44|  -3.86 dB
 </pre></div>
 </div>
 </section>
@@ -907,7 +1011,7 @@ further.  That is a property of the discretisation, not of the
 optimiser, and no amount of extra iterations will improve it — the
 way to a sharper answer is a finer grid, at a cost that the sweep
 above lets you estimate before you commit to it.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (2 minutes 57.150 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (3 minutes 12.858 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-12-sweep-optimize-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/190f43d1c9b2cf1103dfe95f743d31a8/plot_12_sweep_optimize.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_12_sweep_optimize.ipynb</span></code></a></p>

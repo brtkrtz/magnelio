@@ -605,7 +605,7 @@ circle.</p>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">brentq</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.brentq.html#scipy.optimize.brentq" title="scipy.optimize.brentq" class="sphx-glr-backref-module-scipy-optimize sphx-glr-backref-type-py-function"><span class="n">brentq</span></a>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mio</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span><span class="p">,</span> <span class="n">plots</span>
@@ -639,7 +639,7 @@ circle.</p>
     <span class="k">return</span> <span class="p">(</span><span class="n">c_eq</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">normal</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">c_eq</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">normal</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">R_ARC</span>
 
 
-<span class="n">theta</span> <span class="o">=</span> <span class="n">brentq</span><span class="p">(</span><span class="n">tangent_gap</span><span class="p">,</span> <span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="o">-</span><span class="mf">1e-6</span><span class="p">)</span>
+<span class="n">theta</span> <span class="o">=</span> <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.brentq.html#scipy.optimize.brentq" title="scipy.optimize.brentq" class="sphx-glr-backref-module-scipy-optimize sphx-glr-backref-type-py-function"><span class="n">brentq</span></a><span class="p">(</span><span class="n">tangent_gap</span><span class="p">,</span> <span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="o">-</span><span class="mf">1e-6</span><span class="p">)</span>
 <span class="n">p_ell</span> <span class="o">=</span> <span class="n">on_ellipse</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
 <span class="n">t_wall</span> <span class="o">=</span> <span class="n">ellipse_tangent</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
 <span class="n">p_arc</span> <span class="o">=</span> <span class="p">(</span><span class="n">c_eq</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">R_ARC</span> <span class="o">*</span> <span class="n">t_wall</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">c_eq</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">R_ARC</span> <span class="o">*</span> <span class="n">t_wall</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
@@ -743,7 +743,14 @@ is the magnetic one (tutorial 09).</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"grid: </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Nx</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Ny</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Nz</span><span class="si">}</span><span class="s2"> cells"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>grid: 26 x 26 x 30 cells
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | conformal cells | done (2.9 s)
+  mesh | PEC masks
+  mesh | 26 x 26 x 30 cells (3.1 s total)
+grid: 26 x 26 x 30 cells
 </pre></div>
 </div>
 </section>
@@ -771,7 +778,22 @@ nothing periodic about them:</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"magnetic walls on the iris planes (pi-mode): </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">f_pi_walls</span></a><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e9</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> GHz"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>electric walls on the iris planes (0-mode):  1.2774 GHz
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | conformal cells | done (2.4 s)
+  mesh | PEC masks
+  mesh | 26 x 26 x 30 cells (2.6 s total)
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | materials | done (0.6 s)
+  mesh | conformal cells
+  mesh | conformal cells | done (2.7 s)
+  mesh | PEC masks
+  mesh | 26 x 26 x 30 cells (3.3 s total)
+electric walls on the iris planes (0-mode):  1.2774 GHz
 magnetic walls on the iris planes (pi-mode): 1.3016 GHz
 </pre></div>
 </div>
@@ -910,7 +932,7 @@ parameter table leaves implicit.  The same pair of declarations
 serves any periodic structure whose unit cell fits in a box —
 disk-loaded waveguides, photonic-crystal slabs, frequency-selective
 surfaces at normal incidence.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (4 minutes 15.246 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (3 minutes 46.652 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-18-periodic-tesla-cell-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/784a329cd82bda387fe74c6dd69b284a/plot_18_periodic_tesla_cell.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_18_periodic_tesla_cell.ipynb</span></code></a></p>

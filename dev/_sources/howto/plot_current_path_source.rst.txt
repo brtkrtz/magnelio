@@ -111,6 +111,17 @@ declared, whatever the cell size.
 
 
 
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 92 x 92 x 96 cells
+
 
 
 
@@ -182,6 +193,12 @@ masked below the plane and the horizon directivity doubles.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 92 x 92 x 49 cells
     ground plane: P_rad / monopole  0.960   (target 1.00 +- 0.05)
     ground plane: peak directivity  3.135   (3.00, see below)
 
@@ -307,7 +324,7 @@ What to watch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (3 minutes 15.291 seconds)
+   **Total running time of the script:** (2 minutes 35.822 seconds)
 
 
 .. _sphx_glr_download_howto_plot_current_path_source.py:

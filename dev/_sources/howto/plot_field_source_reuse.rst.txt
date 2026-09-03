@@ -172,6 +172,12 @@ keeps them as a time series.  ``recording()`` hands the result over;
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 56 x 56 x 56 cells
     SurfaceRecording(name='scatterer', faces=6, samples=50, duration=4.075e-10 s)
     sample interval    7.56 ps over 408 ps
 
@@ -204,6 +210,17 @@ recording *is* the time function — only a scale factor.
 
 
 
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 40 x 40 x 40 cells
 
 
 
@@ -354,7 +371,7 @@ What to watch
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 16.899 seconds)
+   **Total running time of the script:** (0 minutes 16.062 seconds)
 
 
 .. _sphx_glr_download_howto_plot_field_source_reuse.py:

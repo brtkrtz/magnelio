@@ -458,6 +458,8 @@
 <li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a></li>
 <li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
 </ul>
@@ -524,9 +526,10 @@ into Magnelio, in the order a simulation passes through them: spatial
 discretisation, geometry and board input, mesh generation and conformal
 geometry, boundary conditions, port models, lumped circuit elements, dispersive
 materials, conductor losses, sources and monitors, far-field
-computation, and the eigenmode solver.  Two final chapters cover the 3D
-viewer and implementation-level engineering (backends, precision) that
-are not themselves research methods.</p>
+computation, and the eigenmode solver.  Four final chapters cover
+numerical precision, the progress a run reports, the 3D viewer and
+implementation-level engineering (backends, kernel dispatch) that are
+not themselves research methods.</p>
 <p>Every method that originates in published research carries a citation;
 in-house derivations are marked as such in the text.</p>
 <div class="toctree-wrapper compound">
@@ -630,6 +633,22 @@ in-house derivations are marked as such in the text.</p>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="eigenmode-analysis.html#d-cavity-eigenmode-solver">3D cavity eigenmode solver</a></li>
 <li class="toctree-l2"><a class="reference internal" href="eigenmode-analysis.html#d-mode-solver">2D mode solver</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="precision.html#the-switch">The switch</a></li>
+<li class="toctree-l2"><a class="reference internal" href="precision.html#what-the-switch-reaches">What the switch reaches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="precision.html#what-single-precision-buys">What single precision buys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="precision.html#what-single-precision-costs">What single precision costs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="precision.html#recognising-a-word-length-limited-result">Recognising a word-length-limited result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="precision.html#choosing">Choosing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="progress-output.html#the-switch">The switch</a></li>
+<li class="toctree-l2"><a class="reference internal" href="progress-output.html#what-the-phases-mean">What the phases mean</a></li>
+<li class="toctree-l2"><a class="reference internal" href="progress-output.html#short-phases">Short phases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="progress-output.html#terminals-logs-and-notebooks">Terminals, logs and notebooks</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a><ul>

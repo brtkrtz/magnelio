@@ -204,6 +204,18 @@ resolution parameter.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 14 x 14 x 36 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 14 x 14 x 38 cells
     coax line impedance on this grid: 47.31 Ohm
     --- coax, naive start values ---
     worst |S11| in band :  -19.5 dB
@@ -251,8 +263,26 @@ reactance is what reflects at the top of the band.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 14 x 14 x 37 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 14 x 14 x 38 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 14 x 14 x 39 cells
 
-    <matplotlib.legend.Legend object at 0x7f6a617a4910>
+    <matplotlib.legend.Legend object at 0x7faf1a4d2610>
 
 
 
@@ -297,12 +327,36 @@ whole band; hold that thought for the microstrip section.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 14 x 14 x 38 cells
     coax, gap start at 0·gap: max |phase error|  28.97 deg
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 14 x 14 x 36 cells
     coax, gap start at -1·gap: max |phase error|  17.40 deg
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 14 x 14 x 34 cells
     coax, gap start at -2·gap: max |phase error|   5.83 deg
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 14 x 14 x 32 cells
     coax, gap start at -3·gap: max |phase error|   5.74 deg
 
-    <matplotlib.legend.Legend object at 0x7f6aca426d90>
+    <matplotlib.legend.Legend object at 0x7faebc056290>
 
 
 
@@ -348,8 +402,14 @@ mismatch.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 14 x 14 x 38 cells
 
-    <matplotlib.legend.Legend object at 0x7f6a407e4910>
+    <matplotlib.legend.Legend object at 0x7fae878988d0>
 
 
 
@@ -447,6 +507,18 @@ they would in a real layout.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 24 x 23 x 16 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 24 x 23 x 22 cells
     microstrip line impedance on this grid: 50.23 Ohm
     --- microstrip, trace end at the reference plane ---
     worst |S11| in band :  -14.4 dB
@@ -496,12 +568,36 @@ of the band that matters most in your application.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 24 x 23 x 22 cells
     microstrip, trace end at 0.0·h_sub: max |phase error|  23.73 deg
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 24 x 23 x 21 cells
     microstrip, trace end at -0.5·h_sub: max |phase error|  10.59 deg
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 24 x 23 x 20 cells
     microstrip, trace end at -1.0·h_sub: max |phase error|   2.53 deg
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 24 x 23 x 19 cells
     microstrip, trace end at -1.5·h_sub: max |phase error|  15.63 deg
 
-    <matplotlib.legend.Legend object at 0x7f6a63d2c910>
+    <matplotlib.legend.Legend object at 0x7faf19c4cfd0>
 
 
 
@@ -627,6 +723,24 @@ impedance.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 9 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 33 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 33 cells
     CPW line impedance on this grid: 42.22 Ohm
     --- CPW, naive start values ---
     worst |S11| in band :  -26.6 dB
@@ -689,9 +803,93 @@ reference plane on this structure.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 33 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 33 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 31 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 31 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 25 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 25 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 33 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 33 cells
     CPW, gap start at +0·s: max |phase error|  21.35 deg
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 34 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 34 cells
     CPW, gap start at +8·s: max |phase error|  11.02 deg
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 35 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 35 cells
     CPW, gap start at +16·s: max |phase error|   0.74 deg
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 35 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 35 cells
     CPW, gap start at +24·s: max |phase error|   9.60 deg
 
 
@@ -731,8 +929,20 @@ catalogue value leaves a visible broadband pedestal.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 33 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 33 cells
 
-    <matplotlib.legend.Legend object at 0x7f6a70534910>
+    <matplotlib.legend.Legend object at 0x7faeb0908a10>
 
 
 
@@ -796,7 +1006,7 @@ quantities of your production model, run, and read the scoreboard.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 4.807 seconds)
+   **Total running time of the script:** (1 minutes 9.437 seconds)
 
 
 .. _sphx_glr_download_howto_plot_lumped_port_investigations.py:

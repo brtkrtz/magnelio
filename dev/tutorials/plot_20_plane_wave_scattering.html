@@ -569,7 +569,7 @@ The box edges are chosen 15 mm clear of the sphere; the domain adds
 another 45 mm of scattered-field room around the box.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">spherical_jn</span><span class="p">,</span> <span class="n">spherical_yn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.spherical_jn.html#scipy.special.spherical_jn" title="scipy.special.spherical_jn" class="sphx-glr-backref-module-scipy-special sphx-glr-backref-type-py-function"><span class="n">spherical_jn</span></a><span class="p">,</span> <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.spherical_yn.html#scipy.special.spherical_yn" title="scipy.special.spherical_yn" class="sphx-glr-backref-module-scipy-special sphx-glr-backref-type-py-function"><span class="n">spherical_yn</span></a>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mio</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span><span class="p">,</span> <span class="n">monitors</span><span class="p">,</span> <span class="n">signals</span><span class="p">,</span> <span class="n">sources</span>
@@ -612,7 +612,14 @@ all of it, and the mesh is sized for the top of the band.</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"grid: </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Nx</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Ny</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Nz</span><span class="si">}</span><span class="s2"> cells"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>grid: 94 x 94 x 94 cells
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | conformal cells | done (1.0 s)
+  mesh | PEC masks
+  mesh | 94 x 94 x 94 cells (1.4 s total)
+grid: 94 x 94 x 94 cells
 </pre></div>
 </div>
 <p>Two monitors watch the run.  The far-field monitor records the
@@ -697,8 +704,8 @@ interferes with the specular return from the front.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">mie_rcs_pec</span><span class="p">(</span><span class="n">ka</span><span class="p">,</span> <span class="n">n_terms</span><span class="o">=</span><span class="mi">40</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Monostatic RCS of a PEC sphere, normalised to πa²."""</span>
     <span class="n">n</span> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.arange.html#numpy.arange" title="numpy.arange" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">arange</span></a><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_terms</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">jn</span><span class="p">,</span> <span class="n">yn</span> <span class="o">=</span> <span class="n">spherical_jn</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">ka</span><span class="p">),</span> <span class="n">spherical_yn</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">ka</span><span class="p">)</span>
-    <span class="n">djn</span><span class="p">,</span> <span class="n">dyn</span> <span class="o">=</span> <span class="n">spherical_jn</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">ka</span><span class="p">,</span> <span class="n">derivative</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">spherical_yn</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">ka</span><span class="p">,</span> <span class="n">derivative</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">jn</span><span class="p">,</span> <span class="n">yn</span> <span class="o">=</span> <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.spherical_jn.html#scipy.special.spherical_jn" title="scipy.special.spherical_jn" class="sphx-glr-backref-module-scipy-special sphx-glr-backref-type-py-function"><span class="n">spherical_jn</span></a><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">ka</span><span class="p">),</span> <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.spherical_yn.html#scipy.special.spherical_yn" title="scipy.special.spherical_yn" class="sphx-glr-backref-module-scipy-special sphx-glr-backref-type-py-function"><span class="n">spherical_yn</span></a><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">ka</span><span class="p">)</span>
+    <span class="n">djn</span><span class="p">,</span> <span class="n">dyn</span> <span class="o">=</span> <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.spherical_jn.html#scipy.special.spherical_jn" title="scipy.special.spherical_jn" class="sphx-glr-backref-module-scipy-special sphx-glr-backref-type-py-function"><span class="n">spherical_jn</span></a><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">ka</span><span class="p">,</span> <span class="n">derivative</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.spherical_yn.html#scipy.special.spherical_yn" title="scipy.special.spherical_yn" class="sphx-glr-backref-module-scipy-special sphx-glr-backref-type-py-function"><span class="n">spherical_yn</span></a><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">ka</span><span class="p">,</span> <span class="n">derivative</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">hn</span> <span class="o">=</span> <span class="n">jn</span> <span class="o">-</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">yn</span>  <span class="c1"># spherical Hankel of the second kind</span>
     <span class="n">dhn</span> <span class="o">=</span> <span class="n">djn</span> <span class="o">-</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">dyn</span>
     <span class="n">a_n</span> <span class="o">=</span> <span class="n">jn</span> <span class="o">/</span> <span class="n">hn</span>
@@ -799,7 +806,7 @@ scattered power as its reflection.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">"lower right"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_20_plane_wave_scattering_003.png" srcset="../_images/sphx_glr_plot_20_plane_wave_scattering_003.png" alt="bistatic scattering, E-plane (dB rel. to peak)" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f6a407c18d0&gt;
+<img src="../_images/sphx_glr_plot_20_plane_wave_scattering_003.png" srcset="../_images/sphx_glr_plot_20_plane_wave_scattering_003.png" alt="bistatic scattering, E-plane (dB rel. to peak)" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7fae8789ecd0&gt;
 </pre></div>
 </div>
 </section>
@@ -812,7 +819,7 @@ the illumination — is applied <em>simultaneously</em>, which is what
 <code class="docutils literal notranslate"><span class="pre">AnalysisTD</span></code> is for.  Dielectric spheres, several scatterers and
 an antenna under illumination need no new machinery; the plane wave
 only requires that its direction follows a grid axis.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 28.742 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 22.264 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-20-plane-wave-scattering-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/efc3df15c2af3e3892436b6ab72e2f69/plot_20_plane_wave_scattering.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_20_plane_wave_scattering.ipynb</span></code></a></p>

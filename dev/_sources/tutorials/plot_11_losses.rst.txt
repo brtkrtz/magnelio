@@ -133,6 +133,18 @@ loss levels 24 mm of line eats a measurable half dB.
 
 
 
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | conformal cells | done (2.1 s)
+      mesh | PEC masks
+      mesh | 17 x 17 x 150 cells (2.1 s total)
+
 
 
 
@@ -272,6 +284,17 @@ walls also mean the closed form is trustworthy across the band.
 
 
 
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 18 x 8 x 75 cells
 
 
 
@@ -444,6 +467,12 @@ the TE₁₀₁ mode of a rectangular copper cavity.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 16 x 8 x 20 cells
     TE101 at 9.585 GHz (analytical 9.598 GHz)
     wall_loss_Q: 7740   closed form: 7687   ratio 1.007
 
@@ -514,7 +543,7 @@ and optimization with ordinary Python loops.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 20.279 seconds)
+   **Total running time of the script:** (0 minutes 22.629 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_11_losses.py:

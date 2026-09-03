@@ -220,7 +220,25 @@ fine gap and the port travels on the mesh.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 9 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 33 cells
     line impedance on this grid: 42.22 Ohm
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 23 x 31 x 33 cells
 
 
 
@@ -370,7 +388,7 @@ resolution or band changes, run this page again.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 9.038 seconds)
+   **Total running time of the script:** (0 minutes 9.802 seconds)
 
 
 .. _sphx_glr_download_howto_plot_lumped_port_tuning_cpw.py:

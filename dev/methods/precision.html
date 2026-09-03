@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Implementation engineering (non-method) &#8212; Magnelio Documentation</title>
+    <title>Numerical precision &#8212; Magnelio Documentation</title>
   
   
   
@@ -48,7 +48,9 @@
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'methods/implementation';</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'methods/precision';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
@@ -57,11 +59,11 @@
             true;
         </script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
-    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/dev/methods/implementation.html" />
+    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/dev/methods/precision.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Upgrading from 0.4.x" href="../migration-0.5.html" />
-    <link rel="prev" title="3D viewer" href="viewer.html" />
+    <link rel="next" title="Progress output" href="progress-output.html" />
+    <link rel="prev" title="Eigenmode analysis" href="eigenmode-analysis.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -456,10 +458,10 @@
 <li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Numerical precision</a></li>
 <li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a></li>
 <li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Implementation engineering (non-method)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
 </ul>
 </div>
 </nav></div>
@@ -503,7 +505,7 @@
     
     <li class="breadcrumb-item"><a href="index.html" class="nav-link">Numerical methods</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Implementation engineering (non-method)</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Numerical precision</span></li>
   </ul>
 </nav>
 </div>
@@ -520,41 +522,302 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section class="tex2jax_ignore mathjax_ignore" id="implementation-engineering-non-method">
-<h1>Implementation engineering (non-method)<a class="headerlink" href="#implementation-engineering-non-method" title="Link to this heading">#</a></h1>
-<p>The items in this chapter are software engineering, not numerical
-research methods; they are listed for completeness and to delimit the
-citation apparatus of the previous chapters.</p>
-<section id="kernel-dispatch-and-backends">
-<h2>Kernel dispatch and backends<a class="headerlink" href="#kernel-dispatch-and-backends" title="Link to this heading">#</a></h2>
-<p>Three-tier kernel dispatch (DD-032): NumPy reference kernels,
-Numba-JIT CPU stencil kernels <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id64" title="Siu Kwan Lam, Antoine Pitrou, and Stanley Seibert. Numba: a LLVM-based Python JIT compiler. In Proceedings of the Second Workshop on the LLVM Compiler Infrastructure in HPC (LLVM '15). 2015. doi:10.1145/2833157.2833162.">62</a>]</span>, and
-CUDA kernels via CuPy <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id65" title="Ryosuke Okuta, Yuya Unno, Daisuke Nishino, Shohei Hido, and Crissman Loomis. CuPy: a NumPy-compatible library for NVIDIA GPU calculations. In Proceedings of the Workshop on Machine Learning Systems (LearningSys) at NIPS 2017. 2017.">63</a>]</span> with
-<code class="docutils literal notranslate"><span class="pre">backend=&quot;auto&quot;</span></code> GPU selection (DD-090).  GPU step orchestration
-(device-resident recorder staging, fused port-plane transfers, CUDA
-graph capture of the device phases, DD-092) is performance
-engineering.  S-parameters on GPU are gated bit-exact against CPU.</p>
+  <section class="tex2jax_ignore mathjax_ignore" id="numerical-precision">
+<h1>Numerical precision<a class="headerlink" href="#numerical-precision" title="Link to this heading">#</a></h1>
+<p>Magnelio runs its time loop in <strong>IEEE-754 single precision by
+default</strong> and offers double precision as an opt-in.  This chapter says
+what the switch reaches, what single precision buys, what it costs,
+and — the part that is easy to miss — how to recognise a number that
+is limited by the word length rather than by the mesh.</p>
+<section id="the-switch">
+<h2>The switch<a class="headerlink" href="#the-switch" title="Link to this heading">#</a></h2>
+<p>Precision is a per-analysis argument:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="s2">"double"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">precision</span></code> takes <code class="docutils literal notranslate"><span class="pre">&quot;single&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;double&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">None</span></code>.  <code class="docutils literal notranslate"><span class="pre">None</span></code> — the
+unspecified default — first consults the <code class="docutils literal notranslate"><span class="pre">MAGNELIO_PRECISION</span></code>
+environment variable (<code class="docutils literal notranslate"><span class="pre">&quot;single&quot;</span></code> / <code class="docutils literal notranslate"><span class="pre">&quot;double&quot;</span></code>), which is the
+deterministic override for test suites and batch farms, and otherwise
+resolves to <code class="docutils literal notranslate"><span class="pre">&quot;single&quot;</span></code>.  An explicit argument always wins over the
+environment, so a script that asks for double gets double wherever it
+runs.  The resolved value — never the <code class="docutils literal notranslate"><span class="pre">None</span></code> sentinel — is stored in
+the project recipe, so a resumed run continues in the precision it
+started in.</p>
+<p>Precision and compute backend are <strong>orthogonal axes</strong>: any precision
+runs on any backend, and <code class="docutils literal notranslate"><span class="pre">precision=</span></code> says nothing about <code class="docutils literal notranslate"><span class="pre">backend=</span></code>.</p>
 </section>
-<section id="precision">
-<h2>Precision<a class="headerlink" href="#precision" title="Link to this heading">#</a></h2>
-<p>Selectable single/double precision for the whole time-loop state
-(DD-094).  The switch, its cost and its accuracy consequences have
-their own chapter — see <a class="reference internal" href="precision.html"><span class="std std-doc">numerical precision</span></a>.</p>
-</section>
-<section id="parallel-mesh-building">
-<h2>Parallel mesh building<a class="headerlink" href="#parallel-mesh-building" title="Link to this heading">#</a></h2>
-<p>The CSG/section pipeline parallelises cross-section extraction and
-face accounting (process pool with cost-aware scheduling, Numba
-polygon kernels).  Engineering only.</p>
-</section>
-<section id="dependencies-with-numerical-relevance">
-<h2>Dependencies with numerical relevance<a class="headerlink" href="#dependencies-with-numerical-relevance" title="Link to this heading">#</a></h2>
+<section id="what-the-switch-reaches">
+<h2>What the switch reaches<a class="headerlink" href="#what-the-switch-reaches" title="Link to this heading">#</a></h2>
+<p>The switch sets the scalar type of the <strong>time-loop state</strong>: both field
+vectors, the α/β update coefficients, the material diagonals, the CPML
+auxiliary variables, and the auxiliary states of the dispersive-material
+and surface-impedance recursions.  In single precision the whole marched
+state is <code class="docutils literal notranslate"><span class="pre">float32</span></code>.</p>
+<p>Three groups stay in double precision regardless of the switch, because
+none of them is a per-cell-per-step cost and all of them accumulate:</p>
 <ul class="simple">
-<li><p>NumPy/SciPy: sparse matrices, <code class="docutils literal notranslate"><span class="pre">eigsh</span></code> (ARPACK), <code class="docutils literal notranslate"><span class="pre">spsolve</span></code> (SuperLU),
-<code class="docutils literal notranslate"><span class="pre">nnls</span></code> (Lawson–Hanson <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id45" title="Charles L. Lawson and Richard J. Hanson. Solving Least Squares Problems. Prentice-Hall, 1974. NNLS algorithm (ch. 23); reprinted as SIAM Classics in Applied Mathematics 15, 1995.">47</a>]</span>).</p></li>
-<li><p>pythonocc-core / Open CASCADE: geometry kernel.</p></li>
-<li><p>h5py/HDF5, VTK, XDMF: storage and visualisation formats.</p></li>
+<li><p><strong>the frequency-domain accumulators</strong> — the running DFT sums behind
+S-parameters, field monitors and wall-loss integrals, which run over
+<span class="math notranslate nohighlight">\(10^5\)</span>–<span class="math notranslate nohighlight">\(10^6\)</span> steps and would be the textbook naive-summation
+catastrophe in single;</p></li>
+<li><p><strong>the port machinery</strong> — the 2D mode solve, the reference impedances
+and the transparent-boundary convolution state;</p></li>
+<li><p><strong>geometry and meshing</strong> — Boolean robustness is not negotiable at
+reduced word length.</p></li>
 </ul>
+<p>This mixed layout is ordinary engineering practice in production
+time-domain field solvers, not a research method (DD-094).</p>
+</section>
+<section id="what-single-precision-buys">
+<h2>What single precision buys<a class="headerlink" href="#what-single-precision-buys" title="Link to this heading">#</a></h2>
+<p><strong>Memory: exactly half, and the law is flat.</strong>  The dtype-carrying
+time-loop state is 24 scalars per cell — six field components, twelve
+update coefficients, six material-diagonal entries — so it costs</p>
+<div class="math notranslate nohighlight">
+\[
+192\ \text{bytes/cell in double},\qquad 96\ \text{bytes/cell in single}.
+\]</div>
+<p>Measured in-house on a plain air-filled line, the ratio is 0.5000 at
+every grid size, approaching the asymptotic values from above (the
+excess at small counts is the extra surface layer of the staggered
+component shapes):</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>cells</p></th>
+<th class="head"><p>double</p></th>
+<th class="head"><p>single</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>4 096</p></td>
+<td><p>213.4 B/cell</p></td>
+<td><p>106.7 B/cell</p></td>
+</tr>
+<tr class="row-odd"><td><p>32 768</p></td>
+<td><p>202.6 B/cell</p></td>
+<td><p>101.3 B/cell</p></td>
+</tr>
+<tr class="row-even"><td><p>110 592</p></td>
+<td><p>199.0 B/cell</p></td>
+<td><p>99.5 B/cell</p></td>
+</tr>
+<tr class="row-odd"><td><p>262 144</p></td>
+<td><p>197.3 B/cell</p></td>
+<td><p>98.6 B/cell</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Ports, recorders and DFT accumulators are <em>not</em> in this budget and are
+not halved.  On a small port-heavy fixture they dominate the process
+footprint, so the saving a user actually observes is well below 50 %;
+on the large field-dominated meshes single precision is meant for, it
+approaches the full halving.</p>
+<p><strong>Throughput: the win is bandwidth, so it appears at a threshold.</strong>
+The leapfrog is a memory-bound stencil.  Halving the word length halves
+the traffic, but that only pays once the working set no longer fits in
+the last-level cache — below that threshold the loop is latency-bound
+and the word length is nearly free.  Measured in-house on the bare time
+loop (no ports, no monitors) on a desktop CPU with 96 MiB of last-level
+cache:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>cells</p></th>
+<th class="head"><p>double</p></th>
+<th class="head"><p>single</p></th>
+<th class="head"><p>speed-up</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>32 768</p></td>
+<td><p>0.138 ms/step</p></td>
+<td><p>0.123 ms/step</p></td>
+<td><p>1.12×</p></td>
+</tr>
+<tr class="row-odd"><td><p>262 144</p></td>
+<td><p>0.412 ms/step</p></td>
+<td><p>0.354 ms/step</p></td>
+<td><p>1.16×</p></td>
+</tr>
+<tr class="row-even"><td><p>884 736</p></td>
+<td><p>1.956 ms/step</p></td>
+<td><p>0.936 ms/step</p></td>
+<td><p>2.09×</p></td>
+</tr>
+<tr class="row-odd"><td><p>2 097 152</p></td>
+<td><p>9.805 ms/step</p></td>
+<td><p>3.908 ms/step</p></td>
+<td><p>2.51×</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The two small grids fit in cache in both precisions and gain about a
+tenth.  At 884 736 cells the double state (~175 MB) spills while the
+single state (~87 MB) still fits, which is why the ratio <em>overshoots</em>
+two.  Beyond that both spill and the ratio settles into the bandwidth
+regime.  The threshold moves with the machine; the shape of the law
+does not.</p>
+<p>The same effect drives the GPU case, where consumer cards additionally
+run FP64 at a fraction of the FP32 rate: the fused update kernels
+measure 1.25× at 97 k cells and 2.43× at 373 k on the reference card
+(DD-094).</p>
+<p>Whole-run speed-ups are smaller than kernel speed-ups, and on a small
+port-heavy model can vanish entirely — the double-only parts above do
+not shrink, and Amdahl’s law does the rest.  The end-to-end figure for
+the 262 144-cell fixture with two ports and a full DFT is 1.03×.</p>
+</section>
+<section id="what-single-precision-costs">
+<h2>What single precision costs<a class="headerlink" href="#what-single-precision-costs" title="Link to this heading">#</a></h2>
+<p>Not the transmitted quantities.  On the same fixture, single against
+double over the whole band:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>quantity</p></th>
+<th class="head"><p>difference</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>max ⏐ΔS₁₁⏐ (linear)</p></td>
+<td><p>5.6 · 10⁻⁷</p></td>
+</tr>
+<tr class="row-odd"><td><p>max ⏐ΔS₂₁⏐ (linear)</p></td>
+<td><p>7.7 · 10⁻⁷</p></td>
+</tr>
+<tr class="row-even"><td><p>⏐S₂₁⏐ at band centre</p></td>
+<td><p>identical to four decimals in dB</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>For comparison, the <em>discretisation</em> error of the same run — the
+deviation of the computed insertion loss from the closed-form value —
+is on the order of <span class="math notranslate nohighlight">\(10^{-2}\)</span> dB, three to four orders of magnitude
+larger.  For everything a converged mesh is capable of resolving,
+the word length is irrelevant.</p>
+<p>What single precision costs is <strong>dynamic range</strong>.  The one quantity
+that visibly moves is the reflection floor: on that fixture ⏐S₁₁⏐
+bottoms out at −171.4 dB in double and −145.2 dB in single.  More
+sharply: a single-precision run cannot show a reflection floor much
+below</p>
+<div class="math notranslate nohighlight">
+\[
+20 \log_{10}(2 \cdot 10^{-6}) \approx -114\ \text{dB},
+\]</div>
+<p>the rounding floor of <code class="docutils literal notranslate"><span class="pre">float32</span></code> fields, no matter how good the mesh,
+the port or the absorber is.</p>
+<section id="the-floor-moves-with-the-length-of-the-run">
+<h3>The floor moves with the length of the run<a class="headerlink" href="#the-floor-moves-with-the-length-of-the-run" title="Link to this heading">#</a></h3>
+<p>This is the property most likely to surprise, and it has no analogue in
+double precision.  In single precision the <em>worst-case</em> reflection
+floor of a run degrades as the record grows, because per-step rounding
+of the marched state accumulates while the signal being measured
+decays.  Measured in-house on the same fixture and an exact
+transparent port, ⏐S₁₁⏐ over the band:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>steps</p></th>
+<th class="head"><p>single, worst</p></th>
+<th class="head"><p>single, median</p></th>
+<th class="head"><p>double, worst</p></th>
+<th class="head"><p>double, median</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>2 000</p></td>
+<td><p>−125.8 dB</p></td>
+<td><p>−139.4 dB</p></td>
+<td><p>−166.5 dB</p></td>
+<td><p>−166.5 dB</p></td>
+</tr>
+<tr class="row-odd"><td><p>4 000</p></td>
+<td><p>−120.0 dB</p></td>
+<td><p>−139.4 dB</p></td>
+<td><p>−166.4 dB</p></td>
+<td><p>−166.5 dB</p></td>
+</tr>
+<tr class="row-even"><td><p>8 000</p></td>
+<td><p>−113.0 dB</p></td>
+<td><p>−139.5 dB</p></td>
+<td><p>−166.0 dB</p></td>
+<td><p>−166.5 dB</p></td>
+</tr>
+<tr class="row-odd"><td><p>16 000</p></td>
+<td><p>−112.6 dB</p></td>
+<td><p>−139.6 dB</p></td>
+<td><p>−166.0 dB</p></td>
+<td><p>−166.5 dB</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Three things to read out of it:</p>
+<ol class="arabic simple">
+<li><p><strong>In single the worst-case floor erodes at about 6–7 dB per
+doubling of the record; in double it is flat</strong> to a few tenths of a
+dB over the same range.  The mechanism is the word length, not the
+absorber and not the port.</p></li>
+<li><p><strong>It saturates</strong> at the <code class="docutils literal notranslate"><span class="pre">float32</span></code> field floor — here −112.6 dB.
+Once a run has arrived there, further steps cost no further dynamic
+range.</p></li>
+<li><p><strong>The median does not move.</strong>  Over eight times the record it
+travels 0.2 dB.  It is the single worst frequency point that
+erodes, so a band-averaged figure of merit shows nothing at all
+while the worst point loses 13 dB.</p></li>
+</ol>
+<p>Point 3 is the reason this belongs in the documentation rather than in
+a release note: the degradation is invisible in exactly the summary
+number most users look at.</p>
+</section>
+</section>
+<section id="recognising-a-word-length-limited-result">
+<h2>Recognising a word-length-limited result<a class="headerlink" href="#recognising-a-word-length-limited-result" title="Link to this heading">#</a></h2>
+<p>Signs that a number is limited by precision rather than by the model:</p>
+<ul class="simple">
+<li><p>a reflection or isolation floor that settles near −110 to −120 dB and
+refuses to improve when the mesh is refined;</p></li>
+<li><p>a floor that gets <em>worse</em> when the run is made longer, or that
+changes when a stop criterion is loosened;</p></li>
+<li><p>a high-Q resonance whose Q saturates: <code class="docutils literal notranslate"><span class="pre">float32</span></code> coefficient
+resolution limits the achievable Q from roughly <span class="math notranslate nohighlight">\(10^4\)</span>–<span class="math notranslate nohighlight">\(10^5\)</span>
+upward;</p></li>
+<li><p>run-to-run or CPU-versus-GPU differences at the <span class="math notranslate nohighlight">\(10^{-6}\)</span> level,
+which are the expected <code class="docutils literal notranslate"><span class="pre">float32</span></code> field floor and not a defect.</p></li>
+</ul>
+<p><strong>The operational test is one line.</strong>  Re-run the case with
+<code class="docutils literal notranslate"><span class="pre">precision=&quot;double&quot;</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="s2">"double"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If the number of interest moves, it was limited by the word length.  If
+it stays, the limit is physical or discretisation-related and double
+precision will not help — refine the mesh instead.  Because the two
+axes are independent, this test costs one run and changes nothing else
+about the model.</p>
+</section>
+<section id="choosing">
+<h2>Choosing<a class="headerlink" href="#choosing" title="Link to this heading">#</a></h2>
+<p>Stay with the default <code class="docutils literal notranslate"><span class="pre">&quot;single&quot;</span></code> for the standard workflow: broadband
+S-parameters on a converged mesh, far fields, radiation patterns,
+matching and coupling studies — anything whose accuracy is set by the
+discretisation, which is everything down to roughly −60 dB of dynamic
+range.  Large 3D models benefit twice, in memory and in throughput.</p>
+<p>Switch to <code class="docutils literal notranslate"><span class="pre">&quot;double&quot;</span></code> for:</p>
+<ul class="simple">
+<li><p><strong>high-Q work</strong> — resonators and filters at <span class="math notranslate nohighlight">\(Q \gtrsim 10^4\)</span>,
+ring-down and eigenfrequency extraction from long records;</p></li>
+<li><p><strong>high dynamic range</strong> — isolation, cross-talk, directivity or
+return-loss floors below about −100 dB, where the numbers in this
+chapter show single precision is the limit;</p></li>
+<li><p><strong>long runs whose deepest points matter</strong>, per the length law above;</p></li>
+<li><p><strong>reference and certification runs</strong>, where a floor is the result
+being reported rather than a byproduct.</p></li>
+</ul>
+<p>Any reported floor should name the precision it was taken at; the same
+model, mesh and port yield floors tens of decibels apart between the
+two settings, and a floor quoted without its word length is not
+reproducible.</p>
 </section>
 </section>
 
@@ -569,20 +832,20 @@ polygon kernels).  Engineering only.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="viewer.html"
+       href="eigenmode-analysis.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">3D viewer</p>
+        <p class="prev-next-title">Eigenmode analysis</p>
       </div>
     </a>
     <a class="right-next"
-       href="../migration-0.5.html"
+       href="progress-output.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Upgrading from 0.4.x</p>
+        <p class="prev-next-title">Progress output</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -605,17 +868,22 @@ polygon kernels).  Engineering only.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#kernel-dispatch-and-backends">Kernel dispatch and backends</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#precision">Precision</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#parallel-mesh-building">Parallel mesh building</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dependencies-with-numerical-relevance">Dependencies with numerical relevance</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-switch">The switch</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-the-switch-reaches">What the switch reaches</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-single-precision-buys">What single precision buys</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-single-precision-costs">What single precision costs</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-floor-moves-with-the-length-of-the-run">The floor moves with the length of the run</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#recognising-a-word-length-limited-result">Recognising a word-length-limited result</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#choosing">Choosing</a></li>
 </ul>
   </nav></div>
 
   <div class="sidebar-secondary-item">
 
   <div class="tocsection sourcelink">
-    <a href="../_sources/methods/implementation.md.txt">
+    <a href="../_sources/methods/precision.md.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>

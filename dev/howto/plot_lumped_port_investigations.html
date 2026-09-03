@@ -674,7 +674,19 @@ resolution parameter.</p>
 <span class="n">scoreboard</span><span class="p">(</span><span class="n">coax</span><span class="p">,</span> <span class="n">ref_coax</span><span class="p">,</span> <span class="s2">"coax, naive start values"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>coax line impedance on this grid: 47.31 Ohm
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 14 x 14 x 36 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 14 x 14 x 38 cells
+coax line impedance on this grid: 47.31 Ohm
 --- coax, naive start values ---
 worst |S11| in band :  -19.5 dB
 |S11| &lt; -20 dB up to:  14.18 GHz
@@ -699,7 +711,26 @@ reactance is what reflects at the top of the band.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_lumped_port_investigations_001.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_001.png" alt="Coax: gap length moves the reflection level" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f6a617a4910&gt;
+<img src="../_images/sphx_glr_plot_lumped_port_investigations_001.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_001.png" alt="Coax: gap length moves the reflection level" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 14 x 14 x 37 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 14 x 14 x 38 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 14 x 14 x 39 cells
+
+&lt;matplotlib.legend.Legend object at 0x7faf1a4d2610&gt;
 </pre></div>
 </div>
 <p><strong>Gap position</strong> moves the phase error.  The termination does not
@@ -723,12 +754,36 @@ whole band; hold that thought for the microstrip section.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_lumped_port_investigations_002.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_002.png" alt="Coax: gap position moves the phase error" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>coax, gap start at 0·gap: max |phase error|  28.97 deg
+<img src="../_images/sphx_glr_plot_lumped_port_investigations_002.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_002.png" alt="Coax: gap position moves the phase error" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 14 x 14 x 38 cells
+coax, gap start at 0·gap: max |phase error|  28.97 deg
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 14 x 14 x 36 cells
 coax, gap start at -1·gap: max |phase error|  17.40 deg
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 14 x 14 x 34 cells
 coax, gap start at -2·gap: max |phase error|   5.83 deg
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 14 x 14 x 32 cells
 coax, gap start at -3·gap: max |phase error|   5.74 deg
 
-&lt;matplotlib.legend.Legend object at 0x7f6aca426d90&gt;
+&lt;matplotlib.legend.Legend object at 0x7faebc056290&gt;
 </pre></div>
 </div>
 <p><strong>Port impedance</strong> sets the low-frequency floor: the constant
@@ -753,7 +808,14 @@ mismatch.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_lumped_port_investigations_003.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_003.png" alt="Coax: port impedance sets the low-frequency floor" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f6a407e4910&gt;
+<img src="../_images/sphx_glr_plot_lumped_port_investigations_003.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_003.png" alt="Coax: port impedance sets the low-frequency floor" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 14 x 14 x 38 cells
+
+&lt;matplotlib.legend.Legend object at 0x7fae878988d0&gt;
 </pre></div>
 </div>
 </section>
@@ -834,7 +896,19 @@ they would in a real layout.</p>
 <span class="n">scoreboard</span><span class="p">(</span><span class="n">ms</span><span class="p">,</span> <span class="n">ref_ms</span><span class="p">,</span> <span class="s2">"microstrip, trace end at the reference plane"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>microstrip line impedance on this grid: 50.23 Ohm
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 24 x 23 x 16 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 24 x 23 x 22 cells
+microstrip line impedance on this grid: 50.23 Ohm
 --- microstrip, trace end at the reference plane ---
 worst |S11| in band :  -14.4 dB
 |S11| &lt; -20 dB up to:   5.97 GHz
@@ -861,12 +935,36 @@ of the band that matters most in your application.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_lumped_port_investigations_004.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_004.png" alt="Microstrip: the position compromise is frequency-dependent" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>microstrip, trace end at 0.0·h_sub: max |phase error|  23.73 deg
+<img src="../_images/sphx_glr_plot_lumped_port_investigations_004.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_004.png" alt="Microstrip: the position compromise is frequency-dependent" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 24 x 23 x 22 cells
+microstrip, trace end at 0.0·h_sub: max |phase error|  23.73 deg
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 24 x 23 x 21 cells
 microstrip, trace end at -0.5·h_sub: max |phase error|  10.59 deg
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 24 x 23 x 20 cells
 microstrip, trace end at -1.0·h_sub: max |phase error|   2.53 deg
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 24 x 23 x 19 cells
 microstrip, trace end at -1.5·h_sub: max |phase error|  15.63 deg
 
-&lt;matplotlib.legend.Legend object at 0x7f6a63d2c910&gt;
+&lt;matplotlib.legend.Legend object at 0x7faf19c4cfd0&gt;
 </pre></div>
 </div>
 </section>
@@ -975,7 +1073,25 @@ impedance.</p>
 <span class="n">scoreboard</span><span class="p">(</span><span class="n">cpw</span><span class="p">,</span> <span class="n">ref_cpw</span><span class="p">,</span> <span class="s2">"CPW, naive start values"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>CPW line impedance on this grid: 42.22 Ohm
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 31 x 9 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 31 x 33 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 31 x 33 cells
+CPW line impedance on this grid: 42.22 Ohm
 --- CPW, naive start values ---
 worst |S11| in band :  -26.6 dB
 |S11| &lt; -20 dB up to:  15.00 GHz
@@ -1015,9 +1131,93 @@ reference plane on this structure.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_lumped_port_investigations_005.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_005.png" alt="CPW: end-gap width, CPW: end-gap position" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>CPW, gap start at +0·s: max |phase error|  21.35 deg
+<img src="../_images/sphx_glr_plot_lumped_port_investigations_005.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_005.png" alt="CPW: end-gap width, CPW: end-gap position" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 31 x 33 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 31 x 33 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 31 x 31 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 31 x 31 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 31 x 25 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 31 x 25 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 31 x 33 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 31 x 33 cells
+CPW, gap start at +0·s: max |phase error|  21.35 deg
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 31 x 34 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 31 x 34 cells
 CPW, gap start at +8·s: max |phase error|  11.02 deg
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 31 x 35 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 31 x 35 cells
 CPW, gap start at +16·s: max |phase error|   0.74 deg
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 31 x 35 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 31 x 35 cells
 CPW, gap start at +24·s: max |phase error|   9.60 deg
 </pre></div>
 </div>
@@ -1035,7 +1235,20 @@ catalogue value leaves a visible broadband pedestal.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_lumped_port_investigations_006.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_006.png" alt="CPW: impedance mismatch floor" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f6a70534910&gt;
+<img src="../_images/sphx_glr_plot_lumped_port_investigations_006.png" srcset="../_images/sphx_glr_plot_lumped_port_investigations_006.png" alt="CPW: impedance mismatch floor" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 31 x 33 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 31 x 33 cells
+
+&lt;matplotlib.legend.Legend object at 0x7faeb0908a10&gt;
 </pre></div>
 </div>
 </section>
@@ -1078,7 +1291,7 @@ worst |S11| in band :  -26.6 dB
 max |phase error|   :  21.35 deg
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 4.807 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 9.437 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-lumped-port-investigations-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/c9ef743082ff880408b55ba207ef6782/plot_lumped_port_investigations.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_lumped_port_investigations.ipynb</span></code></a></p>

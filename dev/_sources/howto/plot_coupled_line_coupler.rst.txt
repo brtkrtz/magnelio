@@ -211,6 +211,30 @@ the loop below takes a few seconds per gap.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 20 x 111 x 34 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 20 x 112 x 34 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 20 x 112 x 34 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 20 x 112 x 34 cells
     s = 0.15 mm: Z_even =  68.8 ohm, Z_odd =  31.7 ohm, sqrt(Ze Zo) =  46.7 ohm, C =  -8.64 dB
     s = 0.20 mm: Z_even =  68.0 ohm, Z_odd =  35.3 ohm, sqrt(Ze Zo) =  49.0 ohm, C = -10.00 dB
     s = 0.25 mm: Z_even =  67.3 ohm, Z_odd =  37.3 ohm, sqrt(Ze Zo) =  50.1 ohm, C = -10.85 dB
@@ -328,6 +352,17 @@ solver sees them:
    :srcset: /howto/images/sphx_glr_plot_coupled_line_coupler_002.png
    :class: sphx-glr-single-img
 
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 20 x 112 x 34 cells
 
 
 
@@ -482,6 +517,13 @@ coupled section is solved on the grid it was dimensioned on.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | conformal cells | done (0.6 s)
+      mesh | PEC masks
+      mesh | 138 x 104 x 34 cells (0.8 s total)
     grid: 138 x 104 x 34 cells
 
 
@@ -613,7 +655,7 @@ chapter of the methods section.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 37.414 seconds)
+   **Total running time of the script:** (1 minutes 32.566 seconds)
 
 
 .. _sphx_glr_download_howto_plot_coupled_line_coupler.py:

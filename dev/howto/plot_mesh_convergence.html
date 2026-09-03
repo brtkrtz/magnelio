@@ -542,7 +542,7 @@ into any script.</p>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">jn_zeros</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.jn_zeros.html#scipy.special.jn_zeros" title="scipy.special.jn_zeros" class="sphx-glr-backref-module-scipy-special sphx-glr-backref-type-py-function"><span class="n">jn_zeros</span></a>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mio</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">geo</span><span class="p">,</span> <span class="n">ports</span>
@@ -673,12 +673,48 @@ below is that rule.</p>
 </pre></div>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>mnpw   cells    time    max |ΔS|   max Δ|S|
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 11 x 17 x 15 cells
    8    2805    0.7 s
-  12    6930    1.3 s     0.1289     0.0216
-  16   10368    1.9 s     0.0431     0.0114
-  24   23814    4.1 s     0.0458     0.0129
-  32   41850    8.0 s     0.0158     0.0036  ok
-  48   98496   28.1 s     0.0164     0.0050  ok
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 15 x 21 x 22 cells
+  12    6930    1.4 s     0.1289     0.0216
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 16 x 24 x 27 cells
+  16   10368    2.0 s     0.0431     0.0114
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 21 x 27 x 42 cells
+  24   23814    4.3 s     0.0458     0.0129
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 25 x 31 x 54 cells
+  32   41850    8.5 s     0.0158     0.0036  ok
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 32 x 38 x 81 cells
+  48   98496   29.1 s     0.0164     0.0050  ok
 converged: mnpw 32 (ΔS &lt; 0.02 on this rung and the next)
 </pre></div>
 </div>
@@ -745,7 +781,7 @@ partially filled cells, not by a staircase.  The ladder starts at
 12 because a driven run tolerates a coarser grid than an eigenmode
 of a curved cavity.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">R_CAV</span><span class="p">,</span> <span class="n">H_CAV</span> <span class="o">=</span> <span class="mf">10e-3</span><span class="p">,</span> <span class="mf">6e-3</span>
-<span class="n">F_EXACT</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">jn_zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">C0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">*</span> <span class="n">R_CAV</span><span class="p">)</span>
+<span class="n">F_EXACT</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.jn_zeros.html#scipy.special.jn_zeros" title="scipy.special.jn_zeros" class="sphx-glr-backref-module-scipy-special sphx-glr-backref-type-py-function"><span class="n">jn_zeros</span></a><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">C0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">*</span> <span class="n">R_CAV</span><span class="p">)</span>
 <span class="n">TOL_F</span> <span class="o">=</span> <span class="mf">1e-2</span>  <span class="c1"># relative change in f0 that your specification allows</span>
 
 
@@ -788,11 +824,41 @@ of a curved cavity.</p>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>exact TM010: 11.4743 GHz
 mnpw   f0 [GHz]   cells   time   change    error
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 12 x 12 x 4 cells
   12    11.4057      576    0.1 s            -0.60 %
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 15 x 15 x 5 cells
   16    11.2897     1125    0.1 s   1.02 %   -1.61 %
-  24    11.3901     3703    0.4 s   0.89 %   -0.73 %  ok
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 23 x 23 x 7 cells
+  24    11.3901     3703    0.5 s   0.89 %   -0.73 %  ok
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 30 x 30 x 9 cells
   32    11.4487     8100    2.2 s   0.51 %   -0.22 %  ok
-  48    11.4889    28350   43.3 s   0.35 %   +0.13 %  ok
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 45 x 45 x 14 cells
+  48    11.4889    28350   38.4 s   0.35 %   +0.13 %  ok
 converged: mnpw 24 at 1.0 % — its actual error is 0.73 %
 </pre></div>
 </div>
@@ -872,7 +938,7 @@ under <a class="reference internal" href="../methods/meshing-conformal.html"><sp
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.show.html#matplotlib.pyplot.show" title="matplotlib.pyplot.show" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">show</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 30.307 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 27.424 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-mesh-convergence-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/54afa4040a53bfa87fc500f6dd90c432/plot_mesh_convergence.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_mesh_convergence.ipynb</span></code></a></p>

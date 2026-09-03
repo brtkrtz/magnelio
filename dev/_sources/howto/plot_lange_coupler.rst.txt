@@ -250,6 +250,102 @@ well under a second each.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 5 x 55 x 26 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 5 x 55 x 26 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 5 x 56 x 26 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 5 x 57 x 26 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 5 x 55 x 26 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 5 x 55 x 26 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 5 x 56 x 26 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 5 x 57 x 26 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 5 x 57 x 26 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 5 x 57 x 26 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 5 x 58 x 26 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 5 x 59 x 26 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 5 x 57 x 26 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 5 x 57 x 26 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 5 x 58 x 26 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 5 x 59 x 26 cells
     w =  12 um, s =  20 um: Z_even =  181.7, Z_odd =  49.0 ohm, ratio 3.71, mean  94.4 ohm
     w =  12 um, s =  25 um: Z_even =  177.7, Z_odd =  52.7 ohm, ratio 3.37, mean  96.8 ohm
     w =  12 um, s =  30 um: Z_even =  174.7, Z_odd =  56.6 ohm, ratio 3.08, mean  99.5 ohm
@@ -517,6 +613,12 @@ on top.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 119 x 57 x 33 cells (0.7 s total)
     grid: 119 x 57 x 33 = 0.22 M cells
 
     (-0.25, 0.25)
@@ -661,7 +763,7 @@ the lead-to-finger joint is not one.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (2 minutes 54.073 seconds)
+   **Total running time of the script:** (2 minutes 48.447 seconds)
 
 
 .. _sphx_glr_download_howto_plot_lange_coupler.py:

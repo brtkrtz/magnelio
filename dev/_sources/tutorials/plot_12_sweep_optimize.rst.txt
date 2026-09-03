@@ -285,7 +285,13 @@ percent of the incident power comes back on average.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
     UserWarning: Smallest cell 0.001254 m (x, in the 0.01016 m interval [-0.00508, 0.00508]) is 21% below the 0.001587 m this interval asked for, and it sets the time step. MeshControl(min_cell_size=0.00159) removes the undershoot.
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 53 x 34 x 26 cells
     bare tee: mean reflected power -3.45 dB
 
 
@@ -323,13 +329,61 @@ exact bottom is the optimiser's job.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 58 x 36 x 26 cells
       y = -8.00 mm ->  -7.83 dB
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 58 x 36 x 26 cells
       y = -7.00 mm -> -10.05 dB
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 58 x 37 x 26 cells
       y = -6.00 mm -> -13.01 dB
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 58 x 37 x 26 cells
       y = -5.00 mm -> -17.46 dB
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 58 x 37 x 26 cells
       y = -4.00 mm -> -22.93 dB
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 58 x 37 x 26 cells
       y = -3.00 mm -> -18.31 dB
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 58 x 37 x 26 cells
       y = -2.00 mm -> -12.77 dB
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 58 x 37 x 26 cells
       y = -1.00 mm ->  -8.93 dB
 
 
@@ -419,12 +473,54 @@ honest and costs seven evaluations.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 58 x 36 x 26 cells
       eval y = -5.326 mm -> -15.97 dB
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 58 x 37 x 26 cells
       eval y = -3.674 mm -> -22.55 dB
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 58 x 37 x 26 cells
       eval y = -2.652 mm -> -16.03 dB
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 58 x 37 x 26 cells
       eval y = -3.986 mm -> -22.95 dB
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 58 x 36 x 26 cells
       eval y = -4.086 mm -> -22.77 dB
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 58 x 37 x 26 cells
       eval y = -3.886 mm -> -23.02 dB
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 58 x 37 x 26 cells
       eval y = -3.786 mm -> -22.90 dB
 
     optimum: y = -3.89 mm, mean reflected power -23.02 dB
@@ -517,6 +613,17 @@ scattering matrix can be compared against the bare tee.
    :class: sphx-glr-single-img
 
 
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 58 x 37 x 26 cells
+
 
 
 
@@ -596,8 +703,8 @@ zero — it is nearly invisible to the E-arm, not exactly invisible.
 
  .. code-block:: none
 
-    bare tee    isolation |S43|  -168.3 dB   E-arm match |S44|  -4.96 dB
-    with post   isolation |S43|  -155.6 dB   E-arm match |S44|  -3.86 dB
+    bare tee    isolation |S43|  -160.7 dB   E-arm match |S44|  -4.96 dB
+    with post   isolation |S43|  -156.2 dB   E-arm match |S44|  -3.86 dB
 
 
 
@@ -634,7 +741,7 @@ above lets you estimate before you commit to it.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (2 minutes 57.150 seconds)
+   **Total running time of the script:** (3 minutes 12.858 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_12_sweep_optimize.py:

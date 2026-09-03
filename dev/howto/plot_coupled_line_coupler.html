@@ -654,7 +654,31 @@ the loop below takes a few seconds per gap.</p>
     <span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>s = 0.15 mm: Z_even =  68.8 ohm, Z_odd =  31.7 ohm, sqrt(Ze Zo) =  46.7 ohm, C =  -8.64 dB
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 20 x 111 x 34 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 20 x 112 x 34 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 20 x 112 x 34 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 20 x 112 x 34 cells
+s = 0.15 mm: Z_even =  68.8 ohm, Z_odd =  31.7 ohm, sqrt(Ze Zo) =  46.7 ohm, C =  -8.64 dB
 s = 0.20 mm: Z_even =  68.0 ohm, Z_odd =  35.3 ohm, sqrt(Ze Zo) =  49.0 ohm, C = -10.00 dB
 s = 0.25 mm: Z_even =  67.3 ohm, Z_odd =  37.3 ohm, sqrt(Ze Zo) =  50.1 ohm, C = -10.85 dB
 s = 0.30 mm: Z_even =  66.6 ohm, Z_odd =  38.8 ohm, sqrt(Ze Zo) =  50.9 ohm, C = -11.59 dB
@@ -715,7 +739,15 @@ solver sees them:</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_coupled_line_coupler_002.png" srcset="../_images/sphx_glr_plot_coupled_line_coupler_002.png" alt="QTEM_lap00: ε_eff = 2.834, QTEM_lap01: ε_eff = 2.419" class = "sphx-glr-single-img"/></section>
+<img src="../_images/sphx_glr_plot_coupled_line_coupler_002.png" srcset="../_images/sphx_glr_plot_coupled_line_coupler_002.png" alt="QTEM_lap00: ε_eff = 2.834, QTEM_lap01: ε_eff = 2.419" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>mesh | feature planes
+mesh | grid lines
+mesh | materials
+mesh | conformal cells
+mesh | PEC masks
+mesh | 20 x 112 x 34 cells
+</pre></div>
+</div>
+</section>
 <section id="the-coupler">
 <h2>The coupler<a class="headerlink" href="#the-coupler" title="Link to this heading">#</a></h2>
 <p>Each line is one path: from its port on the box wall, straight in,
@@ -801,7 +833,14 @@ coupled section is solved on the grid it was dimensioned on.</p>
 <span class="n">result</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a><span class="o">=</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f_axis</span></a><span class="p">,</span> <span class="n">excited</span><span class="o">=</span><span class="p">[</span><span class="s2">"p1"</span><span class="p">])</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>grid: 138 x 104 x 34 cells
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | conformal cells | done (0.6 s)
+  mesh | PEC masks
+  mesh | 138 x 104 x 34 cells (0.8 s total)
+grid: 138 x 104 x 34 cells
 </pre></div>
 </div>
 </section>
@@ -869,7 +908,7 @@ and every change of substrate, width or mesh resolution means
 running the design step again.  The mode ordering of the pair — even
 first — and the meaning of its impedances are described in the ports
 chapter of the methods section.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 37.414 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 32.566 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-coupled-line-coupler-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/17cb9d50ec3d76d164489a26ad80e3f7/plot_coupled_line_coupler.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_coupled_line_coupler.ipynb</span></code></a></p>

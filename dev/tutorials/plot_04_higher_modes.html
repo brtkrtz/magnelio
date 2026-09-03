@@ -600,7 +600,13 @@ only TEM.)</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"grid: </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Nx</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Ny</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">Nz</span><span class="si">}</span><span class="s2"> cells"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>grid: 22 x 22 x 54 cells
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 22 x 22 x 54 cells
+grid: 22 x 22 x 54 cells
 </pre></div>
 </div>
 </section>
@@ -616,9 +622,9 @@ UserWarning: Modal port 'port2': modes 'TE_num00' (fc = 34.4956 GHz) and 'TE_num
 Port 'port1' — 3 mode(s)
   z_line = 51.04 Ω (on this grid)
   f_cutoff = 34.4956 GHz (on this grid)
-  [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 51.04 Ω  ε_eff = 2.250  termination = dtbc (chain floor &lt;= -321 dB)
-  [1] TE_num00     TE  f_c = 34.4956 GHz  termination = dtbc (chain floor &lt;= -314 dB)
-  [2] TE_num01     TE  f_c = 34.4956 GHz  termination = dtbc (chain floor &lt;= -321 dB)
+  [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 51.04 Ω  ε_eff = 2.250  termination = dtbc (chain floor &lt;= -315 dB)
+  [1] TE_num00     TE  f_c = 34.4956 GHz  termination = dtbc (chain floor &lt;= -315 dB)
+  [2] TE_num01     TE  f_c = 34.4956 GHz  termination = dtbc (chain floor &lt;= -314 dB)
 </pre></div>
 </div>
 <p>The report lists the ladder: TEM at <span class="math notranslate nohighlight">\(f_c = 0\)</span>, then the TE11
@@ -671,7 +677,7 @@ exists above its cut-off:</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_04_higher_modes_002.png" srcset="../_images/sphx_glr_plot_04_higher_modes_002.png" alt="Transmission: TEM everywhere, TE11 only above cut-off" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f6ac6556310&gt;
+<img src="../_images/sphx_glr_plot_04_higher_modes_002.png" srcset="../_images/sphx_glr_plot_04_higher_modes_002.png" alt="Transmission: TEM everywhere, TE11 only above cut-off" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7faf1bb08490&gt;
 </pre></div>
 </div>
 <p>Below its cut-off the TE11 wave is evanescent — nothing arrives at
@@ -706,7 +712,7 @@ non-degenerate modes, and on this uniform line it is absent:</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"TE11 power balance: min sum |S|^2 = </span><span class="si">{</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">p11</span></a><span class="w"> </span><span class="o">+</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">p21</span></a><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>worst TE11 -&gt; TEM conversion above cut-off: -166.8 dB
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>worst TE11 -&gt; TEM conversion above cut-off: -173.4 dB
 TE11 power balance: min sum |S|^2 = 0.9996
 </pre></div>
 </div>
@@ -761,7 +767,7 @@ degenerate pairs and what is (and is not) invariant about them, and
 the waveguide dispersion as an analytical anchor.  The next tutorial
 leaves driven problems altogether and computes the <em>eigenmodes</em> of a
 closed cavity.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 10.304 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 11.408 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-04-higher-modes-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/fd041f631a6de46771d068c734665f91/plot_04_higher_modes.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_04_higher_modes.ipynb</span></code></a></p>
