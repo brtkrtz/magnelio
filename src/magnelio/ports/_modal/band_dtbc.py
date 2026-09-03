@@ -701,6 +701,157 @@ def galerkin_exterior(chain: PeriodChain, V: np.ndarray) -> BandExterior:
 
 
 # ----------------------------------------------------------------------
+# History convolution
+# ----------------------------------------------------------------------
+
+# Taps below this index are folded directly every step; everything above
+# is carried by the FFT partition.  256 sits well past the per-call
+# NumPy overhead of the direct einsum while keeping the head's O(H p^2)
+# per-step cost an order below the partition's amortised cost.
+_PARTITION_HEAD = 256
+
+
+class _PartitionedConvolution:
+    """Exact ``sum_{m=1..n} L[m] x[n-m]`` in O(log^2 n) work per step.
+
+    The boundary convolution reaches back over the whole record, so
+    folding it directly costs O(n p^2) at step ``n`` and O(N^2 p^2) over
+    a run — the largest single item of a production band run.  This is
+    the standard non-uniformly partitioned (logarithmically blocked)
+    form of the same sum (DD-245): identical in exact arithmetic, no fit
+    and no passivity question, differing only in the order the same
+    products are accumulated.
+
+    The taps are split into a *head* ``[1, H)``, folded directly at
+    every step, and levels ``[H 2^k, H 2^(k+1))`` of block length
+    ``B_k = H 2^k``.  Level ``k`` reaches no closer to the present than
+    ``B_k`` steps, so its whole next window of ``B_k`` outputs can be
+    computed in one overlap-save FFT the moment the window opens, from
+    history that is already written.  Firing once per ``B_k`` steps
+    amortises that FFT to O(p^2) per step and level, and there are
+    ``log(N/H)`` levels.
+
+    All levels' windows are accumulated into one array as they are
+    computed, so a step reads a single vector rather than summing over
+    levels.  The block lengths all divide the largest, which is what
+    lets that accumulator be cleared once per top-level window.
+    """
+
+    __slots__ = ("_p", "_head", "_kflip", "_b", "_spec", "_acc", "_span")
+
+    def __init__(self, kflip: np.ndarray, head: int | None = None) -> None:
+        head = _PARTITION_HEAD if head is None else head
+        # ``kflip`` is the reversed tap array the direct path uses:
+        # ``kflip[-m] == L[m]``, m = 1 .. M.  A head at or above the
+        # kernel length leaves no levels and folds everything directly,
+        # which is the reference path the partition is measured against.
+        self._kflip = kflip
+        m_max = kflip.shape[0]
+        self._p = kflip.shape[1]
+        self._head = min(int(head), m_max + 1)
+        self._b: list[int] = []
+        self._spec: list[np.ndarray] = []
+        b = self._head
+        while b <= m_max:
+            hi = min(2 * b, m_max + 1)  # taps [b, hi)
+            block = np.zeros((b, self._p, self._p))
+            # kflip[m_max - m] == L[m]; taps b .. hi-1 ascending.
+            block[: hi - b] = kflip[m_max - hi + 1 : m_max - b + 1][::-1]
+            self._spec.append(np.fft.rfft(block, n=2 * b, axis=0))
+            self._b.append(b)
+            b *= 2
+        self._span = self._b[-1] if self._b else 0
+        self._acc = np.zeros((self._span, self._p)) if self._span else None
+
+    @property
+    def head(self) -> int:
+        """Exclusive upper tap of the directly folded head ``[1, head)``."""
+        return self._head
+
+    def _window(self, level: int, t: int, hist: np.ndarray) -> np.ndarray:
+        """Level ``level``'s contribution to steps ``[t, t + B)``.
+
+        Needs history up to ``t - 1`` only: the level's nearest tap is
+        ``B`` steps back and its window is ``B`` steps long.
+        """
+        b = self._b[level]
+        lo = t - 2 * b + 1
+        g = np.zeros((2 * b, self._p))
+        src = max(lo, 0)
+        g[src - lo : t - lo] = hist[src:t]
+        y = np.fft.irfft(
+            np.einsum("fij,fj->fi", self._spec[level], np.fft.rfft(g, axis=0)),
+            n=2 * b,
+            axis=0,
+        )
+        return y[b - 1 : 2 * b - 1]
+
+    def _fire(self, level: int, t: int, hist: np.ndarray) -> None:
+        b = self._b[level]
+        if t < b:
+            return  # the level's taps all reach before the record began
+        off = t % self._span
+        self._acc[off : off + b] += self._window(level, t, hist)
+
+    def tail(self, n: int, hist: np.ndarray) -> np.ndarray | None:
+        """Everything the taps ``>= head`` contribute at step ``n``.
+
+        Refreshes whichever levels open a window at ``n``.  Returns
+        ``None`` when the kernel is short enough to have no levels.
+        """
+        if self._acc is None:
+            return None
+        if n % self._span == 0:
+            self._acc[:] = 0.0
+        for level, b in enumerate(self._b):
+            if n % b == 0:
+                self._fire(level, n, hist)
+        return self._acc[n % self._span]
+
+    def head_fold(self, n: int, hist: np.ndarray) -> np.ndarray:
+        """Direct fold of the head taps at step ``n``."""
+        h = min(n, self._head - 1)
+        if h <= 0:
+            return np.zeros(self._p)
+        # einsum keeps the reduction single-threaded SIMD — the
+        # DD-054 BLAS-threading lesson applies per matrix row.
+        return np.einsum(
+            "mij,mj->i",
+            self._kflip[self._kflip.shape[0] - h :],
+            hist[n - h : n],
+        )
+
+    def reset(self) -> None:
+        if self._acc is not None:
+            self._acc[:] = 0.0
+
+    def resync(self, n: int, hist: np.ndarray) -> None:
+        """Rebuild the accumulator so step ``n`` can be taken next.
+
+        Used after a checkpoint restore and after a kernel rebuild.
+        Only the window each level is *currently inside* has to be
+        replayed: later windows are still in the future and will be
+        computed when they open, and a level whose window opens exactly
+        at ``n`` is left to :meth:`tail`.
+
+        The replay follows the order the windows *opened* in — earliest
+        first, and within one instant by level, exactly as :meth:`tail`
+        would have fired them.  Floating-point addition is not
+        associative, and a resumed run is contractually bit-identical to
+        an uninterrupted one (DD-230 D4), so the order the accumulator
+        was built in is part of the state being restored — rebuilding it
+        in one pass misses that gate by ~3e-14 (DD-245).
+        """
+        if self._acc is None:
+            return
+        self._acc[:] = 0.0
+        top = (n // self._span) * self._span
+        opened = [(top + ((n - top) // b) * b, level) for level, b in enumerate(self._b) if n % b]
+        for t, level in sorted(opened):
+            self._fire(level, t, hist)
+
+
+# ----------------------------------------------------------------------
 # Boundary state machine
 # ----------------------------------------------------------------------
 
@@ -744,13 +895,15 @@ class BandDTBCBoundary:
         self._p = exterior.p
         self._n_kernel = int(n_kernel_init)
         self._need_in_kernel = False
+        # Set before the kernels: rebuilding them rebuilds the history
+        # partition, which needs to know where in the record it is.
+        self._n = 0
+        self._w_hist = np.zeros((self._n_kernel, self._p))
+        self._s_hist = np.zeros((self._n_kernel, self._p))
         self._rebuild_kernels()
 
         self._xt = np.zeros(self._p)
         self._xt_prev = np.zeros(self._p)
-        self._n = 0
-        self._w_hist = np.zeros((self._n_kernel, self._p))
-        self._s_hist = np.zeros((self._n_kernel, self._p))
 
     def _rebuild_kernels(self) -> None:
         # Ghost kernel: outgoing radiation decays toward -p, i.e. the
@@ -762,12 +915,14 @@ class BandDTBCBoundary:
             self._n_kernel,
         )
         self._kflip_out = L_out[1:][::-1].copy()
+        self._conv_out = _PartitionedConvolution(self._kflip_out)
         self.kernel_certificate = dict(out=cert_out)
         # Incoming kernel: the incident wave prescribed at the ghost
         # decays toward +p — the UNSWAPPED pencil.  Only excited
         # ports need it; built lazily (halves the contour-QZ cost of
         # passive ports).
         self._kflip_in: np.ndarray | None = None
+        self._conv_in: _PartitionedConvolution | None = None
         if self._need_in_kernel:
             self._build_in_kernel()
 
@@ -779,8 +934,14 @@ class BandDTBCBoundary:
             self._n_kernel,
         )
         self._kflip_in = L_in[1:][::-1].copy()
+        self._conv_in = _PartitionedConvolution(self._kflip_in)
         self.kernel_certificate["into"] = cert_in
         self._need_in_kernel = True
+        # A port that is excited mid-run gets its incoming kernel here,
+        # with history already on the books; the partition has to be
+        # told where in the record it is starting.
+        if self._n:
+            self._conv_in.resync(self._n, self._s_hist)
 
     def require_in_kernel(self) -> None:
         """Ensure the incoming (excitation) kernel exists."""
@@ -788,10 +949,10 @@ class BandDTBCBoundary:
             self._build_in_kernel()
 
     def _ensure_capacity(self, n: int) -> None:
-        if n + 1 > self._n_kernel:
+        regrown = n + 1 > self._n_kernel
+        if regrown:
             while self._n_kernel < n + 1:
                 self._n_kernel *= 2
-            self._rebuild_kernels()
         if n + 1 > self._w_hist.shape[0]:
             grow = max(2 * self._w_hist.shape[0], n + 1)
             for name in ("_w_hist", "_s_hist"):
@@ -799,6 +960,18 @@ class BandDTBCBoundary:
                 new = np.zeros((grow, self._p))
                 new[: old.shape[0]] = old
                 setattr(self, name, new)
+        if regrown:
+            # Histories first: the rebuilt partition replays the window
+            # each level is inside, and reads them to do it.
+            self._rebuild_kernels()
+            self._resync_partitions(n)
+
+    def _resync_partitions(self, n: int) -> None:
+        if not n:
+            return
+        self._conv_out.resync(n, self._w_hist)
+        if self._conv_in is not None:
+            self._conv_in.resync(n, self._s_hist)
 
     @property
     def p(self) -> int:
@@ -842,19 +1015,17 @@ class BandDTBCBoundary:
         if src is None:
             src = np.zeros(self._p)
 
-        if n == 0:
-            xt_inc = np.zeros(self._p)
-            conv_w = np.zeros(self._p)
+        conv_w = self._conv_out.head_fold(n, self._w_hist)
+        tail_w = self._conv_out.tail(n, self._w_hist)
+        if tail_w is not None:
+            conv_w = conv_w + tail_w
+        if self._conv_in is not None:
+            xt_inc = self._conv_in.head_fold(n, self._s_hist)
+            tail_s = self._conv_in.tail(n, self._s_hist)
+            if tail_s is not None:
+                xt_inc = xt_inc + tail_s
         else:
-            # einsum keeps the reduction single-threaded SIMD — the
-            # DD-054 BLAS-threading lesson applies per matrix row.
-            kf_out = self._kflip_out[self._kflip_out.shape[0] - n :]
-            conv_w = np.einsum("mij,mj->i", kf_out, self._w_hist[:n])
-            if self._kflip_in is not None:
-                kf_in = self._kflip_in[self._kflip_in.shape[0] - n :]
-                xt_inc = np.einsum("mij,mj->i", kf_in, self._s_hist[:n])
-            else:
-                xt_inc = np.zeros(self._p)
+            xt_inc = np.zeros(self._p)
 
         ghost = src + conv_w
         self._w_hist[n] = self._xt - xt_inc
@@ -879,6 +1050,9 @@ class BandDTBCBoundary:
         self._n = 0
         self._w_hist[:] = 0.0
         self._s_hist[:] = 0.0
+        self._conv_out.reset()
+        if self._conv_in is not None:
+            self._conv_in.reset()
 
     def state_dict(self) -> dict:
         """Checkpoint the projected boundary state and both histories.
@@ -935,6 +1109,7 @@ class BandDTBCBoundary:
                     "before loading the state",
                 )
         self._n = n
+        self._resync_partitions(n)
 
 
 @dataclass
