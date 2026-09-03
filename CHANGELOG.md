@@ -7,6 +7,27 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Added
+
+- Methods chapter *Numerical precision*: what the `precision` switch
+  reaches and what stays double regardless, what single precision buys
+  (the time-loop state is exactly halved at 192 → 96 bytes per cell,
+  and the throughput gain appears where the working set crosses the
+  last-level cache — a tenth below it, more than two above), and what
+  it costs.  S-parameters themselves are unaffected to seven digits;
+  the quantity that moves is the dynamic range, and a single-precision
+  run cannot show a reflection floor much below −114 dB however good
+  the mesh, the port and the absorber are.  The chapter documents a
+  property that has no analogue in double precision: in single, the
+  *worst-case* floor of a run erodes with the length of the record, at
+  6–7 dB per doubling, until it reaches that plateau — while the median
+  over the band moves by tenths, so a band-averaged figure of merit
+  shows nothing.  It closes with how to recognise a word-length-limited
+  result and the one-line test for it (re-run with `precision="double"`;
+  if the number moves, it was the word length).
+
 ## [0.5.1] - 2026-09-03
 
 ### Added

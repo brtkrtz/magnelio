@@ -409,6 +409,35 @@ record `investigations/port-model-default/` (`probe_record_length.py`,
 record `investigations/qtem-midpath/baseline/` (per-script stdout and
 `DRIFT.md`).
 
+**The length law is not a band-port property — measured 2026-09-03**
+(internal record `investigations/precision-docs/`,
+`probe_length_law_modal.py`).  The same erosion runs on the *ordinary*
+exact TEM DTBC modal port.  Tutorial-01 parallel plate, 32768 cells,
+`energy_stop_db=None`, worst / median |S11| over the band:
+
+    steps    single worst  single med   double worst  double med
+     2000       -125.76      -139.40       -166.48     -166.50
+     4000       -119.98      -139.40       -166.39     -166.50
+     8000       -113.02      -139.46       -166.03     -166.51
+    16000       -112.60      -139.64       -166.01     -166.50
+
+Single erodes at +5.78 / +6.95 dB per doubling — the same order as this
+entry's 4.75-7.5 dB — while double is flat to +0.02…+0.35 dB.  Two
+things follow.  First, the mechanism is the wordlength itself, not the
+band boundary, so a fix aimed only at `PortOperatorBandDTBC.update_e`
+would leave the modal port where it is.  Second, **the modal port
+saturates and the band port does not**: from 8000 steps on the modal
+floor stops at -112.6 dB, the float32 field floor
+(20·log10(2e-6) ~ -114 dB), whereas this entry records -99.6 dB at
+49152 steps — past that plateau.  So the band boundary carries an
+*additional* mechanism on top of the general erosion, which is
+consistent with the interface round trip located above.  Also worth
+knowing when reading any of these numbers: the **median does not move**
+(-139.40 -> -139.64 dB over eight times the record) — only the worst
+frequency point erodes, so a band-averaged figure of merit shows
+nothing.  This is now documented for users in
+`docs/methods/precision.md`.
+
 ## KB-037: ~~Two builds of the same band port gave different Galerkin subspaces~~ — Resolved (2026-08-31)
 
 `zeta_pencil.find_propagating_modes` called `spla.eigs` without a start

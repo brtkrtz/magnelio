@@ -100,15 +100,18 @@ the [conformal geometry chapter](meshing-conformal.md).
 The whole time-loop state (fields, update coefficients, CPML and
 auxiliary ADE/SIBC states) can run in IEEE-754 single precision
 (`precision="single"`, the production default) or double precision
-(DD-094).  Accumulating quantities (energy reduction, DFT
-accumulators, port arithmetic, geometry and mode solves) always stay
-in double precision.  This mixed-precision layout is engineering
-practice in production FDTD/FIT codes, not a research method; the
-observed error floor ($\sim 10^{-6}$ relative on S-parameters)
-corresponds to float32 rounding.  Stability of the reduced-precision
-auxiliary recursions follows from their contractive form
-($|k| < 1$ for every decaying IIR branch); this is analysed per
-operator in the repository (DD-094), not taken from the literature.
+(DD-094), while accumulating quantities — the energy reduction, the
+DFT accumulators, the port arithmetic, geometry and mode solves —
+always stay in double.  This mixed-precision layout is engineering
+practice in production FDTD/FIT codes, not a research method.
+Stability of the reduced-precision auxiliary recursions follows from
+their contractive form ($|k| < 1$ for every decaying IIR branch); this
+is analysed per operator in the repository (DD-094), not taken from
+the literature.
+
+What the choice costs and buys, and how to recognise a result limited
+by the word length rather than by the mesh, is the subject of its own
+chapter — see [numerical precision](precision.md).
 
 ## Simulation duration and energy stopping
 
