@@ -17,8 +17,8 @@ engineering.  S-parameters on GPU are gated bit-exact against CPU.
 ## Precision
 
 Selectable single/double precision for the whole time-loop state
-(DD-094); see the [discretisation chapter](fit-discretization.md)
-for the numerical argument.
+(DD-094).  The switch, its cost and its accuracy consequences have
+their own chapter — see [numerical precision](precision.md).
 
 ## Parallel mesh building
 

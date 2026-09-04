@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=b9afe91b"></script>
+    <script src="../_static/documentation_options.js?v=8e576371"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -458,6 +458,8 @@
 <li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a></li>
 <li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
 </ul>
@@ -616,15 +618,17 @@ the <a class="reference internal" href="meshing-conformal.html"><span class="std
 <p>The whole time-loop state (fields, update coefficients, CPML and
 auxiliary ADE/SIBC states) can run in IEEE-754 single precision
 (<code class="docutils literal notranslate"><span class="pre">precision=&quot;single&quot;</span></code>, the production default) or double precision
-(DD-094).  Accumulating quantities (energy reduction, DFT
-accumulators, port arithmetic, geometry and mode solves) always stay
-in double precision.  This mixed-precision layout is engineering
-practice in production FDTD/FIT codes, not a research method; the
-observed error floor (<span class="math notranslate nohighlight">\(\sim 10^{-6}\)</span> relative on S-parameters)
-corresponds to float32 rounding.  Stability of the reduced-precision
-auxiliary recursions follows from their contractive form
-(<span class="math notranslate nohighlight">\(|k| &lt; 1\)</span> for every decaying IIR branch); this is analysed per
-operator in the repository (DD-094), not taken from the literature.</p>
+(DD-094), while accumulating quantities — the energy reduction, the
+DFT accumulators, the port arithmetic, geometry and mode solves —
+always stay in double.  This mixed-precision layout is engineering
+practice in production FDTD/FIT codes, not a research method.
+Stability of the reduced-precision auxiliary recursions follows from
+their contractive form (<span class="math notranslate nohighlight">\(|k| &lt; 1\)</span> for every decaying IIR branch); this
+is analysed per operator in the repository (DD-094), not taken from
+the literature.</p>
+<p>What the choice costs and buys, and how to recognise a result limited
+by the word length rather than by the mesh, is the subject of its own
+chapter — see <a class="reference internal" href="precision.html"><span class="std std-doc">numerical precision</span></a>.</p>
 </section>
 <section id="simulation-duration-and-energy-stopping">
 <h2>Simulation duration and energy stopping<a class="headerlink" href="#simulation-duration-and-energy-stopping" title="Link to this heading">#</a></h2>

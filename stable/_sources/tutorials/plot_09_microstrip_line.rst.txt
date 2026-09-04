@@ -224,6 +224,12 @@ structure and the excitation must both respect it.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 13 x 23 x 52 cells
     grid: 13 x 23 x 52 cells
 
 
@@ -446,6 +452,40 @@ between levels falls below ``tol``:
 
  .. code-block:: none
 
+      refine | level 0/2: meshing and solving the port slab
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 13 x 23 x 6 cells
+      setup | material matrices
+      setup | CFL eigenvalue
+      setup | port 'port1'
+      refine | level 0: 299 plane cells, z_line = 46.0082
+      refine | level 1/2: meshing and solving the port slab
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 26 x 46 x 6 cells
+      setup | material matrices
+      setup | CFL eigenvalue
+      setup | port 'port1'
+      refine | level 1: 1196 plane cells, z_line = 48.7687  Δ +5.660 %
+      refine | level 2/2: meshing and solving the port slab
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 52 x 92 x 6 cells
+      setup | material matrices
+      setup | CFL eigenvalue
+      setup | CFL eigenvalue | done (1.4 s)
+      setup | port 'port1'
+      refine | level 2: 4784 plane cells, z_line = 50.1695  Δ +2.792 %
     Port 'port1' — z_line of mode 0 under port-plane refinement (not converged at tol 1.0e-03)
       level 0:     299 plane cells  46.0082 Ω
       level 1:    1196 plane cells  48.7687 Ω  Δ +5.660 %
@@ -667,7 +707,7 @@ resistor.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 7.185 seconds)
+   **Total running time of the script:** (0 minutes 5.690 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_09_microstrip_line.py:

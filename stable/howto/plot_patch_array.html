@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=b9afe91b"></script>
+    <script src="../_static/documentation_options.js?v=8e576371"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -684,7 +684,25 @@ edge refinement of the Lange page, at several times the run time.</p>
 <span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>grid: trunk 44.7 ohm, transformer 63.2 ohm, arm 86.7 ohm
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 3 x 22 x 22 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 3 x 26 x 22 cells
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 3 x 26 x 22 cells
+grid: trunk 44.7 ohm, transformer 63.2 ohm, arm 86.7 ohm
       arm/trunk = 1.94 (2), transformer/trunk = 1.41 (1.414)
       quarter wave (transformer) 5.51 mm, arm lambda_g 22.34 mm
 </pre></div>
@@ -941,7 +959,13 @@ first would hand the trim a moving target.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_patch_array_001.png" srcset="../_images/sphx_glr_plot_patch_array_001.png" alt="Element: length trim, then the inset" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>--- element, cavity-model length, inset 0.25 L ---
+<img src="../_images/sphx_glr_plot_patch_array_001.png" srcset="../_images/sphx_glr_plot_patch_array_001.png" alt="Element: length trim, then the inset" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 78 x 69 x 31 cells
+--- element, cavity-model length, inset 0.25 L ---
 |S11| at f0      :   -2.6 dB
 dip              :  -17.3 dB at 9.57 GHz
 -10 dB band      : 9.45 - 9.68 GHz (2.3 %)
@@ -949,18 +973,36 @@ peak directivity :   7.06 dBi
 realized gain    :   3.40 dBi
 length 9.653 -&gt; 9.238 mm
 
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 78 x 73 x 31 cells
 --- element, trimmed length, inset 0.20 L ---
 |S11| at f0      :  -12.6 dB
 dip              :  -12.6 dB at 10.00 GHz
 -10 dB band      : 9.89 - 10.10 GHz (2.1 %)
 peak directivity :   7.49 dBi
 realized gain    :   7.35 dBi
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 78 x 69 x 31 cells
 --- element, trimmed length, inset 0.25 L ---
 |S11| at f0      :  -15.9 dB
 dip              :  -20.7 dB at 9.94 GHz
 -10 dB band      : 9.82 - 10.07 GHz (2.5 %)
 peak directivity :   7.43 dBi
 realized gain    :   7.40 dBi
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 78 x 68 x 31 cells
 --- element, trimmed length, inset 0.30 L ---
 |S11| at f0      :   -8.3 dB
 dip              :  -20.3 dB at 9.87 GHz
@@ -1015,13 +1057,27 @@ trims the length only.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_patch_array_003.png" srcset="../_images/sphx_glr_plot_patch_array_003.png" alt="Return loss at the feed" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>grid: 134 x 123 x 39 = 0.64 M cells
+<img src="../_images/sphx_glr_plot_patch_array_003.png" srcset="../_images/sphx_glr_plot_patch_array_003.png" alt="Return loss at the feed" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | conformal cells | done (0.7 s)
+  mesh | PEC masks
+  mesh | 134 x 123 x 39 cells (1.1 s total)
+grid: 134 x 123 x 39 = 0.64 M cells
 --- array, element length ---
 |S11| at f0      :  -14.3 dB
 dip              :  -14.7 dB at 10.04 GHz
 -10 dB band      : 9.87 - 10.21 GHz (3.4 %)
 peak directivity :  12.92 dBi
 realized gain    :  12.81 dBi
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | conformal cells | done (0.7 s)
+  mesh | PEC masks
+  mesh | 134 x 123 x 39 cells (1.2 s total)
 --- array, trimmed (L = 9.28 mm) ---
 |S11| at f0      :  -14.4 dB
 dip              :  -14.4 dB at 10.00 GHz
@@ -1091,7 +1147,7 @@ the network needs — the crossbar wants a few substrate heights of
 clearance from the fed edges — and a row pitch below the quarter-
 wave offset’s reach asks for a meandered arm instead of the
 straight one used here.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (14 minutes 51.776 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (12 minutes 39.110 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-patch-array-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/aa1574a624d08bd2fd272ebe92860f60/plot_patch_array.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_patch_array.ipynb</span></code></a></p>

@@ -126,6 +126,12 @@ only TEM.)
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 22 x 22 x 54 cells
     grid: 22 x 22 x 54 cells
 
 
@@ -158,9 +164,9 @@ The mode ladder
     Port 'port1' — 3 mode(s)
       z_line = 51.04 Ω (on this grid)
       f_cutoff = 34.4956 GHz (on this grid)
-      [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 51.04 Ω  ε_eff = 2.250  termination = dtbc (chain floor <= -315 dB)
-      [1] TE_num00     TE  f_c = 34.4956 GHz  termination = dtbc (chain floor <= -315 dB)
-      [2] TE_num01     TE  f_c = 34.4956 GHz  termination = dtbc (chain floor <= -314 dB)
+      [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 51.04 Ω  ε_eff = 2.250  termination = dtbc (chain floor <= -321 dB)
+      [1] TE_num00     TE  f_c = 34.4956 GHz  termination = dtbc (chain floor <= -314 dB)
+      [2] TE_num01     TE  f_c = 34.4956 GHz  termination = dtbc (chain floor <= -321 dB)
 
 
 
@@ -270,7 +276,7 @@ exists above its cut-off:
  .. code-block:: none
 
 
-    <matplotlib.legend.Legend object at 0x7f97f6f6da10>
+    <matplotlib.legend.Legend object at 0x7efd1fbfda10>
 
 
 
@@ -338,7 +344,7 @@ non-degenerate modes, and on this uniform line it is absent:
 
  .. code-block:: none
 
-    worst TE11 -> TEM conversion above cut-off: -173.4 dB
+    worst TE11 -> TEM conversion above cut-off: -166.8 dB
     TE11 power balance: min sum |S|^2 = 0.9996
 
 
@@ -427,7 +433,7 @@ closed cavity.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 12.177 seconds)
+   **Total running time of the script:** (0 minutes 8.803 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_04_higher_modes.py:

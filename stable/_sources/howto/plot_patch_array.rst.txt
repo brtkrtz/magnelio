@@ -243,6 +243,24 @@ edge refinement of the Lange page, at several times the run time.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 3 x 22 x 22 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 3 x 26 x 22 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 3 x 26 x 22 cells
     grid: trunk 44.7 ohm, transformer 63.2 ohm, arm 86.7 ohm
           arm/trunk = 1.94 (2), transformer/trunk = 1.41 (1.414)
           quarter wave (transformer) 5.51 mm, arm lambda_g 22.34 mm
@@ -567,6 +585,12 @@ first would hand the trim a moving target.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 78 x 69 x 31 cells
     --- element, cavity-model length, inset 0.25 L ---
     |S11| at f0      :   -2.6 dB
     dip              :  -17.3 dB at 9.57 GHz
@@ -575,18 +599,36 @@ first would hand the trim a moving target.
     realized gain    :   3.40 dBi
     length 9.653 -> 9.238 mm
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 78 x 73 x 31 cells
     --- element, trimmed length, inset 0.20 L ---
     |S11| at f0      :  -12.6 dB
     dip              :  -12.6 dB at 10.00 GHz
     -10 dB band      : 9.89 - 10.10 GHz (2.1 %)
     peak directivity :   7.49 dBi
     realized gain    :   7.35 dBi
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 78 x 69 x 31 cells
     --- element, trimmed length, inset 0.25 L ---
     |S11| at f0      :  -15.9 dB
     dip              :  -20.7 dB at 9.94 GHz
     -10 dB band      : 9.82 - 10.07 GHz (2.5 %)
     peak directivity :   7.43 dBi
     realized gain    :   7.40 dBi
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 78 x 68 x 31 cells
     --- element, trimmed length, inset 0.30 L ---
     |S11| at f0      :   -8.3 dB
     dip              :  -20.3 dB at 9.87 GHz
@@ -682,6 +724,13 @@ trims the length only.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | conformal cells | done (0.7 s)
+      mesh | PEC masks
+      mesh | 134 x 123 x 39 cells (1.1 s total)
     grid: 134 x 123 x 39 = 0.64 M cells
     --- array, element length ---
     |S11| at f0      :  -14.3 dB
@@ -689,6 +738,13 @@ trims the length only.
     -10 dB band      : 9.87 - 10.21 GHz (3.4 %)
     peak directivity :  12.92 dBi
     realized gain    :  12.81 dBi
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | conformal cells | done (0.7 s)
+      mesh | PEC masks
+      mesh | 134 x 123 x 39 cells (1.2 s total)
     --- array, trimmed (L = 9.28 mm) ---
     |S11| at f0      :  -14.4 dB
     dip              :  -14.4 dB at 10.00 GHz
@@ -804,7 +860,7 @@ straight one used here.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (14 minutes 51.776 seconds)
+   **Total running time of the script:** (12 minutes 39.110 seconds)
 
 
 .. _sphx_glr_download_howto_plot_patch_array.py:

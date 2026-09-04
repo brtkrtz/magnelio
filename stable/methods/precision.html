@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Board import &#8212; Magnelio Documentation</title>
+    <title>Numerical precision &#8212; Magnelio Documentation</title>
   
   
   
@@ -48,7 +48,9 @@
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'methods/pcb-import';</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'methods/precision';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
@@ -57,11 +59,11 @@
             false;
         </script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
-    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/stable/methods/pcb-import.html" />
+    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/stable/methods/precision.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Mesh generation and conformal geometry" href="meshing-conformal.html" />
-    <link rel="prev" title="CAD import" href="cad-import.html" />
+    <link rel="next" title="Progress output" href="progress-output.html" />
+    <link rel="prev" title="Eigenmode analysis" href="eigenmode-analysis.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -446,7 +448,7 @@
 <li class="toctree-l1"><a class="reference internal" href="fit-discretization.html">Spatial discretisation and time integration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geometry.html">Geometry construction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cad-import.html">CAD import</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Board import</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pcb-import.html">Board import</a></li>
 <li class="toctree-l1"><a class="reference internal" href="meshing-conformal.html">Mesh generation and conformal geometry</a></li>
 <li class="toctree-l1"><a class="reference internal" href="boundaries.html">Boundary conditions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ports.html">Waveguide ports and S-parameter extraction</a></li>
@@ -456,7 +458,7 @@
 <li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Numerical precision</a></li>
 <li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a></li>
 <li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
@@ -503,7 +505,7 @@
     
     <li class="breadcrumb-item"><a href="index.html" class="nav-link">Numerical methods</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Board import</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Numerical precision</span></li>
   </ul>
 </nav>
 </div>
@@ -520,230 +522,302 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section class="tex2jax_ignore mathjax_ignore" id="board-import">
-<h1>Board import<a class="headerlink" href="#board-import" title="Link to this heading">#</a></h1>
-<p>A printed circuit board is drawn in a layout tool, not in a field
-solver, and it leaves that tool as <em>fabrication data</em>: the set of files
-a board house is sent.  <a class="reference internal" href="../api/io.html#magnelio.io.import_pcb" title="magnelio.io.import_pcb"><code class="xref py py-func docutils literal notranslate"><span class="pre">import_pcb()</span></code></a> reads that set
-and returns ordinary geometry — one solid per layer of the stackup,
-one per plated hole, each carrying a name and a material
-(<code class="docutils literal notranslate"><span class="pre">io/pcb.py</span></code>, DD-179).</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">GeometryModel</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_pcb</span>
-
-<span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span><span class="s2">"fabrication/"</span><span class="p">)</span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">GeometryModel</span><span class="p">()</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+  <section class="tex2jax_ignore mathjax_ignore" id="numerical-precision">
+<h1>Numerical precision<a class="headerlink" href="#numerical-precision" title="Link to this heading">#</a></h1>
+<p>Magnelio runs its time loop in <strong>IEEE-754 single precision by
+default</strong> and offers double precision as an opt-in.  This chapter says
+what the switch reaches, what single precision buys, what it costs,
+and — the part that is easy to miss — how to recognise a number that
+is limited by the word length rather than by the mesh.</p>
+<section id="the-switch">
+<h2>The switch<a class="headerlink" href="#the-switch" title="Link to this heading">#</a></h2>
+<p>Precision is a per-analysis argument:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="s2">"double"</span><span class="p">)</span>
 </pre></div>
 </div>
-<section id="what-a-fabrication-export-carries">
-<h2>What a fabrication export carries<a class="headerlink" href="#what-a-fabrication-export-carries" title="Link to this heading">#</a></h2>
-<p>The set is deliberately the fabrication output rather than any one
-tool’s project file: Gerber and Excellon are what every layout tool
-writes and what every board house reads, so the import is not tied to
-the tool the board was drawn in.</p>
+<p><code class="docutils literal notranslate"><span class="pre">precision</span></code> takes <code class="docutils literal notranslate"><span class="pre">&quot;single&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;double&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">None</span></code>.  <code class="docutils literal notranslate"><span class="pre">None</span></code> — the
+unspecified default — first consults the <code class="docutils literal notranslate"><span class="pre">MAGNELIO_PRECISION</span></code>
+environment variable (<code class="docutils literal notranslate"><span class="pre">&quot;single&quot;</span></code> / <code class="docutils literal notranslate"><span class="pre">&quot;double&quot;</span></code>), which is the
+deterministic override for test suites and batch farms, and otherwise
+resolves to <code class="docutils literal notranslate"><span class="pre">&quot;single&quot;</span></code>.  An explicit argument always wins over the
+environment, so a script that asks for double gets double wherever it
+runs.  The resolved value — never the <code class="docutils literal notranslate"><span class="pre">None</span></code> sentinel — is stored in
+the project recipe, so a resumed run continues in the precision it
+started in.</p>
+<p>Precision and compute backend are <strong>orthogonal axes</strong>: any precision
+runs on any backend, and <code class="docutils literal notranslate"><span class="pre">precision=</span></code> says nothing about <code class="docutils literal notranslate"><span class="pre">backend=</span></code>.</p>
+</section>
+<section id="what-the-switch-reaches">
+<h2>What the switch reaches<a class="headerlink" href="#what-the-switch-reaches" title="Link to this heading">#</a></h2>
+<p>The switch sets the scalar type of the <strong>time-loop state</strong>: both field
+vectors, the α/β update coefficients, the material diagonals, the CPML
+auxiliary variables, and the auxiliary states of the dispersive-material
+and surface-impedance recursions.  In single precision the whole marched
+state is <code class="docutils literal notranslate"><span class="pre">float32</span></code>.</p>
+<p>Three groups stay in double precision regardless of the switch, because
+none of them is a per-cell-per-step cost and all of them accumulate:</p>
+<ul class="simple">
+<li><p><strong>the frequency-domain accumulators</strong> — the running DFT sums behind
+S-parameters, field monitors and wall-loss integrals, which run over
+<span class="math notranslate nohighlight">\(10^5\)</span>–<span class="math notranslate nohighlight">\(10^6\)</span> steps and would be the textbook naive-summation
+catastrophe in single;</p></li>
+<li><p><strong>the port machinery</strong> — the 2D mode solve, the reference impedances
+and the transparent-boundary convolution state;</p></li>
+<li><p><strong>geometry and meshing</strong> — Boolean robustness is not negotiable at
+reduced word length.</p></li>
+</ul>
+<p>This mixed layout is ordinary engineering practice in production
+time-domain field solvers, not a research method (DD-094).</p>
+</section>
+<section id="what-single-precision-buys">
+<h2>What single precision buys<a class="headerlink" href="#what-single-precision-buys" title="Link to this heading">#</a></h2>
+<p><strong>Memory: exactly half, and the law is flat.</strong>  The dtype-carrying
+time-loop state is 24 scalars per cell — six field components, twelve
+update coefficients, six material-diagonal entries — so it costs</p>
+<div class="math notranslate nohighlight">
+\[
+192\ \text{bytes/cell in double},\qquad 96\ \text{bytes/cell in single}.
+\]</div>
+<p>Measured in-house on a plain air-filled line, the ratio is 0.5000 at
+every grid size, approaching the asymptotic values from above (the
+excess at small counts is the extra surface layer of the staggered
+component shapes):</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
-<tr class="row-odd"><th class="head"><p>File</p></th>
-<th class="head"><p>What it carries</p></th>
+<tr class="row-odd"><th class="head"><p>cells</p></th>
+<th class="head"><p>double</p></th>
+<th class="head"><p>single</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">*.gbr</span></code> per copper layer</p></td>
-<td><p>where the copper is, in two dimensions</p></td>
+<tr class="row-even"><td><p>4 096</p></td>
+<td><p>213.4 B/cell</p></td>
+<td><p>106.7 B/cell</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">*.gbr</span></code> profile layer</p></td>
-<td><p>the board edge, as a line</p></td>
+<tr class="row-odd"><td><p>32 768</p></td>
+<td><p>202.6 B/cell</p></td>
+<td><p>101.3 B/cell</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">*.drl</span></code> drill files</p></td>
-<td><p>hole positions, diameters, plating, layer span</p></td>
+<tr class="row-even"><td><p>110 592</p></td>
+<td><p>199.0 B/cell</p></td>
+<td><p>99.5 B/cell</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">*.gbrjob</span></code> job file</p></td>
-<td><p>the stackup: layer order, thicknesses, dielectric</p></td>
+<tr class="row-odd"><td><p>262 144</p></td>
+<td><p>197.3 B/cell</p></td>
+<td><p>98.6 B/cell</p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<p>The job file is required.  Gerber files are flat drawings: nothing in
-them says how thick a copper layer is, how far apart two layers sit, or
-what the dielectric between them is made of.  Without the job file
-there is no third dimension to build, and the import says so rather
-than inventing one.  In a layout tool the job file is part of the
-Gerber export; the stackup it records has to be filled in first (in
-KiCad, <em>Board Setup → Physical Stackup</em>), because a stackup without
-thicknesses is refused for the same reason.</p>
-<p>Solder mask and silkscreen are ignored.  They are thin coatings whose
-effect on a board’s fields is below the accuracy of everything else in
-the model.</p>
-</section>
-<section id="the-stackup-is-taken-literally">
-<h2>The stackup is taken literally<a class="headerlink" href="#the-stackup-is-taken-literally" title="Link to this heading">#</a></h2>
-<p>Each copper and dielectric layer of the stackup becomes one solid at
-its own height.  A layer is built as an <em>area</em> in a plane first — pads,
-tracks and filled zones merged where they overlap, clipped to the board
-outline, with the drilled circles removed — and raised into a slab
-once, at the end.  Nothing is extruded and then fused, which is what
-keeps a Boolean operation from having to resolve thousands of
-35 µm-thin fragments against each other.</p>
-<p>The origin sits on the <strong>top face of the topmost dielectric</strong>, and the
-stack grows downwards:</p>
+<p>Ports, recorders and DFT accumulators are <em>not</em> in this budget and are
+not halved.  On a small port-heavy fixture they dominate the process
+footprint, so the saving a user actually observes is well below 50 %;
+on the large field-dominated meshes single precision is meant for, it
+approaches the full halving.</p>
+<p><strong>Throughput: the win is bandwidth, so it appears at a threshold.</strong>
+The leapfrog is a memory-bound stencil.  Halving the word length halves
+the traffic, but that only pays once the working set no longer fits in
+the last-level cache — below that threshold the loop is latency-bound
+and the word length is nearly free.  Measured in-house on the bare time
+loop (no ports, no monitors) on a desktop CPU with 96 MiB of last-level
+cache:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
-<tr class="row-odd"><th class="head"><p>Layer</p></th>
-<th class="head"><p>z range</p></th>
+<tr class="row-odd"><th class="head"><p>cells</p></th>
+<th class="head"><p>double</p></th>
+<th class="head"><p>single</p></th>
+<th class="head"><p>speed-up</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">F.Cu</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">0</span></code> … <code class="docutils literal notranslate"><span class="pre">+35</span> <span class="pre">µm</span></code></p></td>
+<tr class="row-even"><td><p>32 768</p></td>
+<td><p>0.138 ms/step</p></td>
+<td><p>0.123 ms/step</p></td>
+<td><p>1.12×</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dielectric_1</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">−1.53</span> <span class="pre">mm</span></code> … <code class="docutils literal notranslate"><span class="pre">0</span></code></p></td>
+<tr class="row-odd"><td><p>262 144</p></td>
+<td><p>0.412 ms/step</p></td>
+<td><p>0.354 ms/step</p></td>
+<td><p>1.16×</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">B.Cu</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">−1.565</span> <span class="pre">mm</span></code> … <code class="docutils literal notranslate"><span class="pre">−1.53</span> <span class="pre">mm</span></code></p></td>
+<tr class="row-even"><td><p>884 736</p></td>
+<td><p>1.956 ms/step</p></td>
+<td><p>0.936 ms/step</p></td>
+<td><p>2.09×</p></td>
+</tr>
+<tr class="row-odd"><td><p>2 097 152</p></td>
+<td><p>9.805 ms/step</p></td>
+<td><p>3.908 ms/step</p></td>
+<td><p>2.51×</p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<p>Fixing the origin to the substrate rather than to the outermost copper
-keeps the reference plane where the fields are: adding a layer to the
-stack does not move the rest of the board.</p>
-<section id="what-the-layers-are-named">
-<h3>What the layers are named<a class="headerlink" href="#what-the-layers-are-named" title="Link to this heading">#</a></h3>
-<p>Names are the key materials are assigned against, so they have to be
-unique and to survive a re-export.  Copper layers keep the name the
-stackup gives them (<code class="docutils literal notranslate"><span class="pre">F.Cu</span></code>, <code class="docutils literal notranslate"><span class="pre">In1.Cu</span></code>, <code class="docutils literal notranslate"><span class="pre">B.Cu</span></code>).  Dielectrics are named
-by their position — <code class="docutils literal notranslate"><span class="pre">dielectric_1</span></code>, <code class="docutils literal notranslate"><span class="pre">dielectric_2</span></code>, … — because layout
-tools name every core and prepreg after its material, and two layers
-called <code class="docutils literal notranslate"><span class="pre">FR4</span></code> would make the assignment ambiguous.  Plated barrels are
-<code class="docutils literal notranslate"><span class="pre">via_1</span></code>, <code class="docutils literal notranslate"><span class="pre">via_2</span></code>, … numbered in coordinate order.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span><span class="s2">"fabrication/"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">([</span><span class="n">solid</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">solid</span> <span class="ow">in</span> <span class="n">board</span><span class="o">.</span><span class="n">members</span><span class="p">()])</span>
-</pre></div>
+<p>The two small grids fit in cache in both precisions and gain about a
+tenth.  At 884 736 cells the double state (~175 MB) spills while the
+single state (~87 MB) still fits, which is why the ratio <em>overshoots</em>
+two.  Beyond that both spill and the ratio settles into the bandwidth
+regime.  The threshold moves with the machine; the shape of the law
+does not.</p>
+<p>The same effect drives the GPU case, where consumer cards additionally
+run FP64 at a fraction of the FP32 rate: the fused update kernels
+measure 1.25× at 97 k cells and 2.43× at 373 k on the reference card
+(DD-094).</p>
+<p>Whole-run speed-ups are smaller than kernel speed-ups, and on a small
+port-heavy model can vanish entirely — the double-only parts above do
+not shrink, and Amdahl’s law does the rest.  The end-to-end figure for
+the 262 144-cell fixture with two ports and a full DFT is 1.03×.</p>
+</section>
+<section id="what-single-precision-costs">
+<h2>What single precision costs<a class="headerlink" href="#what-single-precision-costs" title="Link to this heading">#</a></h2>
+<p>Not the transmitted quantities.  On the same fixture, single against
+double over the whole band:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>quantity</p></th>
+<th class="head"><p>difference</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>max ⏐ΔS₁₁⏐ (linear)</p></td>
+<td><p>5.6 · 10⁻⁷</p></td>
+</tr>
+<tr class="row-odd"><td><p>max ⏐ΔS₂₁⏐ (linear)</p></td>
+<td><p>7.7 · 10⁻⁷</p></td>
+</tr>
+<tr class="row-even"><td><p>⏐S₂₁⏐ at band centre</p></td>
+<td><p>identical to four decimals in dB</p></td>
+</tr>
+</tbody>
+</table>
 </div>
-</section>
-<section id="holes-and-vias">
-<h3>Holes and vias<a class="headerlink" href="#holes-and-vias" title="Link to this heading">#</a></h3>
-<p>A plated hole becomes a solid copper cylinder running between the
-copper layers its drill file declares — the whole board for a through
-hole, two adjacent layers for a blind or buried via.  The same circle
-is removed from every layer the hole passes through, so the barrel
-fills the void exactly: barrel and pad meet on coincident faces, with
-no overlap for the mesher to resolve and no gap between them.</p>
-<p>The barrel is solid metal rather than a plated wall around a void.  The
-wall is a closed conductor and the space it encloses carries no field,
-so the two are the same model with one fewer surface.</p>
-<p>Unplated holes and slots are removed from everything they pass through
-and leave no solid behind.</p>
-</section>
-<section id="where-the-model-is-not-the-board">
-<h3>Where the model is not the board<a class="headerlink" href="#where-the-model-is-not-the-board" title="Link to this heading">#</a></h3>
-<p>Between the copper features of an inner layer, a real board has
-prepreg that flowed into the gaps during lamination.  Here those gaps
-fall to the model background instead, because filling them would mean a
-35 µm-thin dielectric slab beside the copper — and a slab that thin
-forces the grid to resolve it, which is exactly what the thin-sheet
-treatment below exists to avoid.  The difference is a 35 µm sliver of
-substrate against air, at the height of an inner layer.</p>
-</section>
-</section>
-<section id="meshing-a-board">
-<h2>Meshing a board<a class="headerlink" href="#meshing-a-board" title="Link to this heading">#</a></h2>
-<p>Copper is thin.  At 35 µm it is two decades below any cell size a board
-simulation can afford, and a grid that resolved it would be unusable.
-The mesher does not have to: a <strong>perfectly conducting</strong> layer thinner
-than the cell-size floor is given a single grid plane on its substrate
-side, and its thickness enters through the sub-cell material fractions
-of the neighbouring cells instead of through a layer of cells of its
-own (see <a class="reference internal" href="meshing-conformal.html"><span class="doc">Mesh generation and conformal geometry</span></a>).</p>
-<p>Two conditions have to hold, and both are the caller’s to arrange:</p>
+<p>For comparison, the <em>discretisation</em> error of the same run — the
+deviation of the computed insertion loss from the closed-form value —
+is on the order of <span class="math notranslate nohighlight">\(10^{-2}\)</span> dB, three to four orders of magnitude
+larger.  For everything a converged mesh is capable of resolving,
+the word length is irrelevant.</p>
+<p>What single precision costs is <strong>dynamic range</strong>.  The one quantity
+that visibly moves is the reflection floor: on that fixture ⏐S₁₁⏐
+bottoms out at −171.4 dB in double and −145.2 dB in single.  More
+sharply: a single-precision run cannot show a reflection floor much
+below</p>
+<div class="math notranslate nohighlight">
+\[
+20 \log_{10}(2 \cdot 10^{-6}) \approx -114\ \text{dB},
+\]</div>
+<p>the rounding floor of <code class="docutils literal notranslate"><span class="pre">float32</span></code> fields, no matter how good the mesh,
+the port or the absorber is.</p>
+<section id="the-floor-moves-with-the-length-of-the-run">
+<h3>The floor moves with the length of the run<a class="headerlink" href="#the-floor-moves-with-the-length-of-the-run" title="Link to this heading">#</a></h3>
+<p>This is the property most likely to surprise, and it has no analogue in
+double precision.  In single precision the <em>worst-case</em> reflection
+floor of a run degrades as the record grows, because per-step rounding
+of the marched state accumulates while the signal being measured
+decays.  Measured in-house on the same fixture and an exact
+transparent port, ⏐S₁₁⏐ over the band:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>steps</p></th>
+<th class="head"><p>single, worst</p></th>
+<th class="head"><p>single, median</p></th>
+<th class="head"><p>double, worst</p></th>
+<th class="head"><p>double, median</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>2 000</p></td>
+<td><p>−125.8 dB</p></td>
+<td><p>−139.4 dB</p></td>
+<td><p>−166.5 dB</p></td>
+<td><p>−166.5 dB</p></td>
+</tr>
+<tr class="row-odd"><td><p>4 000</p></td>
+<td><p>−120.0 dB</p></td>
+<td><p>−139.4 dB</p></td>
+<td><p>−166.4 dB</p></td>
+<td><p>−166.5 dB</p></td>
+</tr>
+<tr class="row-even"><td><p>8 000</p></td>
+<td><p>−113.0 dB</p></td>
+<td><p>−139.5 dB</p></td>
+<td><p>−166.0 dB</p></td>
+<td><p>−166.5 dB</p></td>
+</tr>
+<tr class="row-odd"><td><p>16 000</p></td>
+<td><p>−112.6 dB</p></td>
+<td><p>−139.6 dB</p></td>
+<td><p>−166.0 dB</p></td>
+<td><p>−166.5 dB</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Three things to read out of it:</p>
 <ol class="arabic simple">
-<li><p><strong>The cell-size floor has to be set.</strong>  The mechanism runs only when
-<a class="reference internal" href="../api/core.html#magnelio.MeshControl" title="magnelio.MeshControl"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeshControl</span></code></a> carries a <code class="docutils literal notranslate"><span class="pre">min_cell_size</span></code>; the floor
-is what “thin” is measured against, and without it the layer is
-meshed as an ordinary solid.</p></li>
-<li><p><strong>The copper has to be a perfect conductor.</strong>  This is the default
-for an imported board.  Giving <code class="docutils literal notranslate"><span class="pre">copper=</span></code> a finite conductivity turns
-the layers into ordinary lossy solids, which the grid then has to
-resolve.</p></li>
+<li><p><strong>In single the worst-case floor erodes at about 6–7 dB per
+doubling of the record; in double it is flat</strong> to a few tenths of a
+dB over the same range.  The mechanism is the word length, not the
+absorber and not the port.</p></li>
+<li><p><strong>It saturates</strong> at the <code class="docutils literal notranslate"><span class="pre">float32</span></code> field floor — here −112.6 dB.
+Once a run has arrived there, further steps cost no further dynamic
+range.</p></li>
+<li><p><strong>The median does not move.</strong>  Over eight times the record it
+travels 0.2 dB.  It is the single worst frequency point that
+erodes, so a band-averaged figure of merit shows nothing at all
+while the worst point loses 13 dB.</p></li>
 </ol>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">MeshControl</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.mesh.mesher</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mesh</span>
-
-<span class="n">mesh</span> <span class="o">=</span> <span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span>
-    <span class="n">model</span><span class="p">,</span>
-    <span class="n">MeshControl</span><span class="p">(</span><span class="n">min_nodes_per_wavelength</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_cell_size</span><span class="o">=</span><span class="mf">200e-6</span><span class="p">),</span>
-    <span class="n">f_max</span><span class="o">=</span><span class="mf">5e9</span><span class="p">,</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-<p>The floor has to be larger than the copper thickness — that is the
-comparison the detection makes — and there is no reason to put it close
-to it: its purpose is to keep the grid from following the metal, so a
-floor several times the thickness, chosen from the smallest feature the
-<em>fields</em> need resolved, is the useful setting.  200 µm on 35 µm copper
-is a typical starting point.</p>
-<p>Because a copper layer arrives as <strong>one</strong> solid spanning the whole
-board, this works regardless of how narrow the individual tracks are:
-what is compared against the floor is the layer’s thickness, and the
-copper’s actual footprint is classified afterwards, feature by feature.</p>
-<p>Conductor loss on such a layer is not modelled by giving the metal a
-conductivity — see <a class="reference internal" href="conductor-losses.html"><span class="doc">Conductor losses</span></a> for the surface-impedance
-route, which applies to a perfectly conducting boundary.</p>
-</section>
-<section id="materials">
-<h2>Materials<a class="headerlink" href="#materials" title="Link to this heading">#</a></h2>
-<p>Copper layers and barrels default to a perfect electric conductor.
-Dielectrics take the permittivity the job file states; a dielectric
-whose permittivity is missing arrives <strong>without</strong> a material — a
-construction body that the model refuses to accept — rather than
-silently as vacuum.</p>
-<p>Anything can be overridden by name:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">Material</span>
-
-<span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span>
-    <span class="s2">"fabrication/"</span><span class="p">,</span>
-    <span class="p">{</span><span class="s2">"dielectric_1"</span><span class="p">:</span> <span class="n">Material</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"RO4350B"</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="p">(</span><span class="mf">3.66</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)},</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-<p>Keys may use shell wildcards (<code class="docutils literal notranslate"><span class="pre">&quot;via_*&quot;</span></code>), a literal name beats a
-wildcard, and a key that matches no solid is an error rather than a
-silent no-op.</p>
-<section id="loss-tangent">
-<h3>Loss tangent<a class="headerlink" href="#loss-tangent" title="Link to this heading">#</a></h3>
-<p>A stackup states a loss tangent, and the import reports it but does not
-model it.  A loss tangent is a single number, and the job file does not
-record the frequency it was measured at; a loss tangent that does not
-vary with frequency violates Kramers–Kronig, so there is nothing in it
-alone to build a causal material from.</p>
-<p>Supplying that missing frequency is the caller’s decision, and once it
-is supplied the standard causal substrate model
-(<a class="reference internal" href="dispersive-materials.html"><span class="doc">Dispersive and lossy materials</span></a>) does the rest:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">Material</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">magnelio.materials.dispersion</span><span class="w"> </span><span class="kn">import</span> <span class="n">DispersionModel</span>
-
-<span class="n">fr4</span> <span class="o">=</span> <span class="n">Material</span><span class="o">.</span><span class="n">dispersive</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">"FR4"</span><span class="p">,</span>
-    <span class="n">model</span><span class="o">=</span><span class="n">DispersionModel</span><span class="o">.</span><span class="n">djordjevic_sarkar</span><span class="p">(</span>
-        <span class="n">eps_r</span><span class="o">=</span><span class="mf">4.5</span><span class="p">,</span> <span class="n">tan_delta</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span> <span class="n">f_ref</span><span class="o">=</span><span class="mf">1e9</span>
-    <span class="p">),</span>
-<span class="p">)</span>
-<span class="n">board</span> <span class="o">=</span> <span class="n">import_pcb</span><span class="p">(</span><span class="s2">"fabrication/"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"dielectric_1"</span><span class="p">:</span> <span class="n">fr4</span><span class="p">})</span>
-</pre></div>
-</div>
+<p>Point 3 is the reason this belongs in the documentation rather than in
+a release note: the degradation is invisible in exactly the summary
+number most users look at.</p>
 </section>
 </section>
-<section id="limits">
-<h2>Limits<a class="headerlink" href="#limits" title="Link to this heading">#</a></h2>
-<p>The reader refuses, with the file and line, anything it cannot turn
-into copper rather than dropping it silently — a missing pad in a board
-is not something a caller can be expected to notice.  Currently
-refused: step-and-repeat blocks, negative images, the deprecated image
-transformations, single-quadrant arc mode, tracks drawn with a
-rectangular aperture, and the moiré and thermal aperture macro
-primitives.  In each case the remedy is to re-export the layer with the
-construct resolved, which every layout tool can do.</p>
+<section id="recognising-a-word-length-limited-result">
+<h2>Recognising a word-length-limited result<a class="headerlink" href="#recognising-a-word-length-limited-result" title="Link to this heading">#</a></h2>
+<p>Signs that a number is limited by precision rather than by the model:</p>
+<ul class="simple">
+<li><p>a reflection or isolation floor that settles near −110 to −120 dB and
+refuses to improve when the mesh is refined;</p></li>
+<li><p>a floor that gets <em>worse</em> when the run is made longer, or that
+changes when a stop criterion is loosened;</p></li>
+<li><p>a high-Q resonance whose Q saturates: <code class="docutils literal notranslate"><span class="pre">float32</span></code> coefficient
+resolution limits the achievable Q from roughly <span class="math notranslate nohighlight">\(10^4\)</span>–<span class="math notranslate nohighlight">\(10^5\)</span>
+upward;</p></li>
+<li><p>run-to-run or CPU-versus-GPU differences at the <span class="math notranslate nohighlight">\(10^{-6}\)</span> level,
+which are the expected <code class="docutils literal notranslate"><span class="pre">float32</span></code> field floor and not a defect.</p></li>
+</ul>
+<p><strong>The operational test is one line.</strong>  Re-run the case with
+<code class="docutils literal notranslate"><span class="pre">precision=&quot;double&quot;</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">analysis</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="s2">"double"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If the number of interest moves, it was limited by the word length.  If
+it stays, the limit is physical or discretisation-related and double
+precision will not help — refine the mesh instead.  Because the two
+axes are independent, this test costs one run and changes nothing else
+about the model.</p>
+</section>
+<section id="choosing">
+<h2>Choosing<a class="headerlink" href="#choosing" title="Link to this heading">#</a></h2>
+<p>Stay with the default <code class="docutils literal notranslate"><span class="pre">&quot;single&quot;</span></code> for the standard workflow: broadband
+S-parameters on a converged mesh, far fields, radiation patterns,
+matching and coupling studies — anything whose accuracy is set by the
+discretisation, which is everything down to roughly −60 dB of dynamic
+range.  Large 3D models benefit twice, in memory and in throughput.</p>
+<p>Switch to <code class="docutils literal notranslate"><span class="pre">&quot;double&quot;</span></code> for:</p>
+<ul class="simple">
+<li><p><strong>high-Q work</strong> — resonators and filters at <span class="math notranslate nohighlight">\(Q \gtrsim 10^4\)</span>,
+ring-down and eigenfrequency extraction from long records;</p></li>
+<li><p><strong>high dynamic range</strong> — isolation, cross-talk, directivity or
+return-loss floors below about −100 dB, where the numbers in this
+chapter show single precision is the limit;</p></li>
+<li><p><strong>long runs whose deepest points matter</strong>, per the length law above;</p></li>
+<li><p><strong>reference and certification runs</strong>, where a floor is the result
+being reported rather than a byproduct.</p></li>
+</ul>
+<p>Any reported floor should name the precision it was taken at; the same
+model, mesh and port yield floors tens of decibels apart between the
+two settings, and a floor quoted without its word length is not
+reproducible.</p>
 </section>
 </section>
 
@@ -758,20 +832,20 @@ construct resolved, which every layout tool can do.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="cad-import.html"
+       href="eigenmode-analysis.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">CAD import</p>
+        <p class="prev-next-title">Eigenmode analysis</p>
       </div>
     </a>
     <a class="right-next"
-       href="meshing-conformal.html"
+       href="progress-output.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Mesh generation and conformal geometry</p>
+        <p class="prev-next-title">Progress output</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -794,26 +868,22 @@ construct resolved, which every layout tool can do.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-a-fabrication-export-carries">What a fabrication export carries</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-stackup-is-taken-literally">The stackup is taken literally</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-the-layers-are-named">What the layers are named</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#holes-and-vias">Holes and vias</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#where-the-model-is-not-the-board">Where the model is not the board</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-switch">The switch</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-the-switch-reaches">What the switch reaches</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-single-precision-buys">What single precision buys</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-single-precision-costs">What single precision costs</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-floor-moves-with-the-length-of-the-run">The floor moves with the length of the run</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#meshing-a-board">Meshing a board</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#materials">Materials</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#loss-tangent">Loss tangent</a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#limits">Limits</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#recognising-a-word-length-limited-result">Recognising a word-length-limited result</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#choosing">Choosing</a></li>
 </ul>
   </nav></div>
 
   <div class="sidebar-secondary-item">
 
   <div class="tocsection sourcelink">
-    <a href="../_sources/methods/pcb-import.md.txt">
+    <a href="../_sources/methods/precision.md.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>

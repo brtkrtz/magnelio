@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=b9afe91b"></script>
+    <script src="../_static/documentation_options.js?v=8e576371"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -676,7 +676,13 @@ structure and the excitation must both respect it.</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">plot_cross_section</span><span class="p">(</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">L</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"microstrip cross-section"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_09_microstrip_line_001.png" srcset="../_images/sphx_glr_plot_09_microstrip_line_001.png" alt="microstrip cross-section" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>grid: 13 x 23 x 52 cells
+<img src="../_images/sphx_glr_plot_09_microstrip_line_001.png" srcset="../_images/sphx_glr_plot_09_microstrip_line_001.png" alt="microstrip cross-section" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 13 x 23 x 52 cells
+grid: 13 x 23 x 52 cells
 </pre></div>
 </div>
 <p>The cross-section plot shows the mesher at work on thin layers: the
@@ -815,7 +821,41 @@ between levels falls below <code class="docutils literal notranslate"><span clas
 <span class="nb">print</span><span class="p">(</span><span class="n">ladder</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Port 'port1' — z_line of mode 0 under port-plane refinement (not converged at tol 1.0e-03)
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  refine | level 0/2: meshing and solving the port slab
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 13 x 23 x 6 cells
+  setup | material matrices
+  setup | CFL eigenvalue
+  setup | port 'port1'
+  refine | level 0: 299 plane cells, z_line = 46.0082
+  refine | level 1/2: meshing and solving the port slab
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 26 x 46 x 6 cells
+  setup | material matrices
+  setup | CFL eigenvalue
+  setup | port 'port1'
+  refine | level 1: 1196 plane cells, z_line = 48.7687  Δ +5.660 %
+  refine | level 2/2: meshing and solving the port slab
+  mesh | feature planes
+  mesh | grid lines
+  mesh | materials
+  mesh | conformal cells
+  mesh | PEC masks
+  mesh | 52 x 92 x 6 cells
+  setup | material matrices
+  setup | CFL eigenvalue
+  setup | CFL eigenvalue | done (1.4 s)
+  setup | port 'port1'
+  refine | level 2: 4784 plane cells, z_line = 50.1695  Δ +2.792 %
+Port 'port1' — z_line of mode 0 under port-plane refinement (not converged at tol 1.0e-03)
   level 0:     299 plane cells  46.0082 Ω
   level 1:    1196 plane cells  48.7687 Ω  Δ +5.660 %
   level 2:    4784 plane cells  50.1695 Ω  Δ +2.792 %
@@ -962,7 +1002,7 @@ reference impedance behind every S-parameter.  The next tutorial
 bends this line around corners and builds a real component out of
 it — a Wilkinson power divider, including its lumped isolation
 resistor.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 7.185 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 5.690 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-09-microstrip-line-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/ece9595c24bada77761a617e20b4f479/plot_09_microstrip_line.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_09_microstrip_line.ipynb</span></code></a></p>

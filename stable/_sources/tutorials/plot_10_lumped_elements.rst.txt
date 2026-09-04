@@ -222,6 +222,12 @@ lossless PEC anyway.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 95 x 17 x 58 cells (0.6 s total)
     grid: 95 x 17 x 58 cells
 
 
@@ -390,6 +396,12 @@ the same divider again without it:
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 95 x 17 x 58 cells
     @5 GHz without resistor: S22 -5.6 dB, S23 -6.5 dB
 
 
@@ -428,7 +440,7 @@ next tutorial's subject.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 23.925 seconds)
+   **Total running time of the script:** (1 minutes 10.030 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_10_lumped_elements.py:

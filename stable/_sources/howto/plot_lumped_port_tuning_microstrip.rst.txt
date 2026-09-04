@@ -197,6 +197,18 @@ behind the trace end as they would in a real layout.
 
  .. code-block:: none
 
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 24 x 23 x 16 cells
+      mesh | feature planes
+      mesh | grid lines
+      mesh | materials
+      mesh | conformal cells
+      mesh | PEC masks
+      mesh | 24 x 23 x 22 cells
     line impedance on this grid: 50.23 Ohm
 
 
@@ -332,7 +344,7 @@ resolution or band changes, run this page again.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 3.492 seconds)
+   **Total running time of the script:** (0 minutes 2.641 seconds)
 
 
 .. _sphx_glr_download_howto_plot_lumped_port_tuning_microstrip.py:
