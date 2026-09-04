@@ -287,9 +287,9 @@ dielectric gap.
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (5.4 s)
+      mesh | conformal cells | done (5.8 s)
       mesh | PEC masks
-      mesh | 25 x 25 x 67 cells (5.4 s total)
+      mesh | 25 x 25 x 67 cells (5.9 s total)
     grid: 25 x 25 x 67 cells
 
 
@@ -668,7 +668,7 @@ interest.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 10.888 seconds)
+   **Total running time of the script:** (0 minutes 11.796 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_02_coax_line.py:

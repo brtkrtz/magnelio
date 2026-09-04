@@ -556,9 +556,9 @@ actually landed on.
       mesh | materials
       mesh | materials | done (1.6 s)
       mesh | conformal cells
-      mesh | conformal cells | done (17.1 s)
+      mesh | conformal cells | done (18.1 s)
       mesh | PEC masks
-      mesh | 46 x 56 x 209 cells (20.2 s total)
+      mesh | 46 x 56 x 209 cells (21.1 s total)
     grid: 46 x 56 x 209 cells
     coax port impedance on the grid: 52.3 ohm
     field line recorded at y = 0.90 mm, 209 points
@@ -796,9 +796,9 @@ constant and shunt impedance are (eqs. 4.1 and 4.10)
       mesh | materials
       mesh | materials | done (1.6 s)
       mesh | conformal cells
-      mesh | conformal cells | done (17.1 s)
+      mesh | conformal cells | done (17.6 s)
       mesh | PEC masks
-      mesh | 46 x 56 x 209 cells (20.3 s total)
+      mesh | 46 x 56 x 209 cells (20.6 s total)
 
 
 
@@ -1007,7 +1007,7 @@ that move the real device toward, or away from, the ideal stripline.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (7 minutes 36.693 seconds)
+   **Total running time of the script:** (7 minutes 23.461 seconds)
 
 
 .. _sphx_glr_download_howto_plot_stripline_pickup_kicker.py:

@@ -730,7 +730,7 @@ trims the length only.
       mesh | conformal cells
       mesh | conformal cells | done (0.7 s)
       mesh | PEC masks
-      mesh | 134 x 123 x 39 cells (1.0 s total)
+      mesh | 134 x 123 x 39 cells (1.1 s total)
     grid: 134 x 123 x 39 = 0.64 M cells
     --- array, element length ---
     |S11| at f0      :  -14.3 dB
@@ -744,7 +744,7 @@ trims the length only.
       mesh | conformal cells
       mesh | conformal cells | done (0.7 s)
       mesh | PEC masks
-      mesh | 134 x 123 x 39 cells (1.1 s total)
+      mesh | 134 x 123 x 39 cells (1.2 s total)
     --- array, trimmed (L = 9.28 mm) ---
     |S11| at f0      :  -14.4 dB
     dip              :  -14.4 dB at 10.00 GHz
@@ -860,7 +860,7 @@ straight one used here.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (14 minutes 26.606 seconds)
+   **Total running time of the script:** (15 minutes 18.805 seconds)
 
 
 .. _sphx_glr_download_howto_plot_patch_array.py:

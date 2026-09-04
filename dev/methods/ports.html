@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=3cdd5d8c"></script>
+    <script src="../_static/documentation_options.js?v=e03c1a07"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -850,6 +850,55 @@ recorded on a single co-located plane (DD-041).  Time signals are
 smooth pulses (Gaussian and derived shapes, <code class="docutils literal notranslate"><span class="pre">signals/waveforms.py</span></code>) —
 standard practice
 <span class="bibtex-citation" id="id13">[<a class="reference internal" href="../bibliography.html#id8" title="Allen Taflove and Susan C. Hagness. Computational Electrodynamics: The Finite-Difference Time-Domain Method. Artech House, Norwood, MA, 3rd edition, 2005.">5</a>]</span>.</p>
+<section id="what-the-port-launches-frozen-or-dispersive">
+<h3>What the port launches: frozen or dispersive<a class="headerlink" href="#what-the-port-launches-frozen-or-dispersive" title="Link to this heading">#</a></h3>
+<p>By default a port imprints <strong>one mode profile with one propagation
+delay</strong> — the quasi-static profile its Laplace solve produced, held
+fixed across the band.  On a homogeneously filled cross-section that is
+exact: a hollow waveguide’s <span class="math notranslate nohighlight">\(\sin(\pi x/a)\)</span> does not move with
+frequency, however strongly its propagation constant does.  On an
+<strong>inhomogeneous</strong> cross-section — a microstrip, a layered or a
+partially filled line — the mode the grid carries changes shape with
+frequency, and the frozen profile launches a field the line cannot
+support unchanged.  The mismatch radiates into evanescent modes at the
+port and returns as a reflection the structure never produced.</p>
+<p><code class="docutils literal notranslate"><span class="pre">port_source=&quot;dispersive&quot;</span></code> replaces it with a <strong>low-rank family</strong>: the
+true mode is solved along the band, decomposed into a handful of
+profiles (two or three suffice; the rank is chosen against a
+profile-error target and grows per channel, since the even and odd
+modes of a coupled pair do not need the same), and each profile is
+driven by its own waveform.  The launched field is then the mode the
+grid actually carries at every frequency.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span>
+    <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span>
+    <span class="n">port_source</span><span class="o">=</span><span class="s2">"dispersive"</span><span class="p">,</span>
+<span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">excited</span><span class="o">=</span><span class="p">[</span><span class="s2">"port1"</span><span class="p">])</span>
+</pre></div>
+</div>
+<p><strong>What it buys and where.</strong>  On a straight 50 Ω microstrip, whose true
+reflection is zero, the reported worst <span class="math notranslate nohighlight">\(|S_{11}|\)</span> falls from about
+−32.9 dB to −38.9 dB — the remaining reflection is the far port’s
+absorbing floor, not the launch.  On a hollow guide it buys nothing,
+because there is nothing to repair.  It costs roughly 1 % of the
+marching time per rank term.</p>
+<p><strong>Why it is one switch and not two.</strong>  The launched profile and the
+frequency-flat impedance used to split incident from reflected waves
+are the same defect seen twice, and on a microstrip they stand nearly
+in antiphase — repairing either alone <em>increases</em> the reported
+reflection, because the accidental cancellation between them is lost.
+<code class="docutils literal notranslate"><span class="pre">port_source=&quot;dispersive&quot;</span></code> therefore also selects the per-frequency
+decomposition (the one a band run uses), so the two are always repaired
+together.  This is why the option changes how S-parameters are read as
+well as what the port emits.</p>
+<p><strong>Limits.</strong>  The option applies to the modal Mur branch; a channel
+terminated by an exact DTBC prescribes its own incident wave and is
+left alone.  A channel with no propagating mode over the band keeps the
+frozen source and says so.  The per-frequency decomposition slightly
+overshoots unity transmission on a lossless line (about 0.3 % with the
+frozen source, 0.8 % with the dispersive one, growing with frequency);
+this is a property of the decomposition rather than of the source, and
+it does not depend on the rank.</p>
+</section>
 </section>
 <section id="s-parameters">
 <h2>S-parameters<a class="headerlink" href="#s-parameters" title="Link to this heading">#</a></h2>
@@ -1156,7 +1205,10 @@ path given without an extension gets the matching one, so
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#which-termination-a-channel-gets-and-how-to-see-it">Which termination a channel gets, and how to see it</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#excitation-and-recording">Excitation and recording</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#excitation-and-recording">Excitation and recording</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-the-port-launches-frozen-or-dispersive">What the port launches: frozen or dispersive</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#s-parameters">S-parameters</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#band-ports-one-decomposition-per-frequency-dd-235">Band ports: one decomposition per frequency (DD-235)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reference-plane-shift-de-embedding-dd-187">Reference-plane shift (de-embedding, DD-187)</a></li>

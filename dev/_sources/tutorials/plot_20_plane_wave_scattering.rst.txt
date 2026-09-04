@@ -152,7 +152,7 @@ all of it, and the mesh is sized for the top of the band.
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (1.0 s)
+      mesh | conformal cells | done (1.1 s)
       mesh | PEC masks
       mesh | 94 x 94 x 94 cells (1.4 s total)
     grid: 94 x 94 x 94 cells
@@ -469,7 +469,7 @@ scattered power as its reflection.
  .. code-block:: none
 
 
-    <matplotlib.legend.Legend object at 0x7fae8789ecd0>
+    <matplotlib.legend.Legend object at 0x7fc66d27bd10>
 
 
 
@@ -489,7 +489,7 @@ only requires that its direction follows a grid axis.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 22.264 seconds)
+   **Total running time of the script:** (1 minutes 26.456 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_20_plane_wave_scattering.py:
