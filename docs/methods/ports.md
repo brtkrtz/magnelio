@@ -343,6 +343,60 @@ smooth pulses (Gaussian and derived shapes, `signals/waveforms.py`) —
 standard practice
 {cite}`taflovehagness2005`.
 
+### What the port launches: frozen or dispersive
+
+By default a port imprints **one mode profile with one propagation
+delay** — the quasi-static profile its Laplace solve produced, held
+fixed across the band.  On a homogeneously filled cross-section that is
+exact: a hollow waveguide's $\sin(\pi x/a)$ does not move with
+frequency, however strongly its propagation constant does.  On an
+**inhomogeneous** cross-section — a microstrip, a layered or a
+partially filled line — the mode the grid carries changes shape with
+frequency, and the frozen profile launches a field the line cannot
+support unchanged.  The mismatch radiates into evanescent modes at the
+port and returns as a reflection the structure never produced.
+
+`port_source="dispersive"` replaces it with a **low-rank family**: the
+true mode is solved along the band, decomposed into a handful of
+profiles (two or three suffice; the rank is chosen against a
+profile-error target and grows per channel, since the even and odd
+modes of a coupled pair do not need the same), and each profile is
+driven by its own waveform.  The launched field is then the mode the
+grid actually carries at every frequency.
+
+```python
+result = mio.AnalysisScatteringTD(
+    mesh=mesh,
+    port_source="dispersive",
+).run(excited=["port1"])
+```
+
+**What it buys and where.**  On a straight 50 Ω microstrip, whose true
+reflection is zero, the reported worst $|S_{11}|$ falls from about
+−32.9 dB to −38.9 dB — the remaining reflection is the far port's
+absorbing floor, not the launch.  On a hollow guide it buys nothing,
+because there is nothing to repair.  It costs roughly 1 % of the
+marching time per rank term.
+
+**Why it is one switch and not two.**  The launched profile and the
+frequency-flat impedance used to split incident from reflected waves
+are the same defect seen twice, and on a microstrip they stand nearly
+in antiphase — repairing either alone *increases* the reported
+reflection, because the accidental cancellation between them is lost.
+`port_source="dispersive"` therefore also selects the per-frequency
+decomposition (the one a band run uses), so the two are always repaired
+together.  This is why the option changes how S-parameters are read as
+well as what the port emits.
+
+**Limits.**  The option applies to the modal Mur branch; a channel
+terminated by an exact DTBC prescribes its own incident wave and is
+left alone.  A channel with no propagating mode over the band keeps the
+frozen source and says so.  The per-frequency decomposition slightly
+overshoots unity transmission on a lossless line (about 0.3 % with the
+frozen source, 0.8 % with the dispersive one, growing with frequency);
+this is a property of the decomposition rather than of the source, and
+it does not depend on the rank.
+
 ## S-parameters
 
 S-parameters are computed as **power waves** with $\sqrt{\mathrm W}$

@@ -574,6 +574,15 @@ class AnalysisTD(_AnalysisBase):
     port_model : {"modal"}, default "modal"
         The port pipeline.  The band-subspace pipeline decomposes
         S-parameters and belongs to the scattering analysis.
+    port_source : {"frozen", "dispersive"}, default "frozen"
+        What the port imprints.  ``"frozen"`` drives one quasi-static
+        mode profile with one propagation delay.  ``"dispersive"``
+        drives a low-rank family solved along the band, so the launched
+        field is the mode the grid actually carries at each frequency —
+        worth 15-20 dB of reflection on an inhomogeneous line such as a
+        microstrip, and nothing at all on a hollow guide, whose profile
+        does not move with frequency.  It costs one waveform and one
+        plane write per rank term per step, about 1 % of the march.
     wall_model, wall_sigma, wall_mu, wall_roughness
         Conductor-loss model of the run, as on
         :class:`~magnelio.AnalysisScatteringTD`.
@@ -599,6 +608,7 @@ class AnalysisTD(_AnalysisBase):
     sources: Sequence | None = None
     monitors: tuple = field(default_factory=tuple)
     port_model: str = "modal"
+    port_source: str = "frozen"
     wall_model: str = "perturbative"
     wall_sigma: float | None = None
     wall_mu: float = 1.0
@@ -615,6 +625,7 @@ class AnalysisTD(_AnalysisBase):
         PortLumped,
     )
     _PORT_MODELS = ("modal",)
+    _PORT_SOURCES = ("frozen", "dispersive")
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -652,6 +663,10 @@ class AnalysisTD(_AnalysisBase):
         if self.port_model not in self._PORT_MODELS:
             raise ValueError(
                 f"port_model must be one of {self._PORT_MODELS}; got {self.port_model!r}",
+            )
+        if self.port_source not in self._PORT_SOURCES:
+            raise ValueError(
+                f"port_source must be one of {self._PORT_SOURCES}; got {self.port_source!r}",
             )
         if self.wall_model not in ("perturbative", "sibc"):
             raise ValueError(
@@ -1270,6 +1285,11 @@ class AnalysisTD(_AnalysisBase):
             drives[_excitation_key(exc)] = fn
 
         n_steps_estimate = self._estimate_steps(self.mesh.grid, self._pulse_duration(resolved), dt)
+        port_dispersion = self._dispersion_records(operators, m_eps, m_mu)
+        if self.port_source == "dispersive":
+            self._bind_dispersive_sources(
+                resolved, drives, label_to_op, port_dispersion, dt, n_steps_estimate
+            )
         recorder = PortSignalRecorder(dt=dt, ports=operators) if operators else None
         port_modes = {op.name: self._modes_for_operator(op) for op in operators}
         # Spatial de-stagger of the I sampling plane (modal ports only;
@@ -1297,9 +1317,56 @@ class AnalysisTD(_AnalysisBase):
             port_modes=port_modes,
             port_normal_dx=port_normal_dx,
             port_line_params=port_line_params,
-            port_dispersion=self._dispersion_records(operators, m_eps, m_mu),
+            port_dispersion=port_dispersion,
             port_reference_scale=self._reference_scales(operators),
         )
+
+    def _bind_dispersive_sources(self, resolved, drives, label_to_op, records, dt, n_steps) -> None:
+        """Synthesise and attach a rank-r source per excited modal mode.
+
+        A channel that carries no propagating mode over the band, or a
+        port with no dispersion record, keeps the frozen source and says
+        so: the dispersive source is an accuracy option, not a
+        precondition for the run.
+        """
+        from magnelio.ports._modal.dispersive_source import synthesise_dispersive_source
+
+        f_hi = float(self.f_max) if self.f_max else None
+        if not f_hi:
+            warnings.warn(
+                "port_source='dispersive' needs f_max to size its band; keeping the frozen source",
+                UserWarning,
+                stacklevel=2,
+            )
+            return
+        band = (max(f_hi / 50.0, 1.0e6), 1.2 * f_hi)
+        t_grid = np.arange(int(n_steps)) * dt
+        for exc in resolved:
+            op = label_to_op.get(exc.source)
+            if op is None or getattr(op, "plane", None) is None:
+                continue
+            record = records.get(op.name)
+            if record is None:
+                continue
+            fn = drives.get(_excitation_key(exc))
+            if fn is None:
+                continue
+            try:
+                terms = synthesise_dispersive_source(
+                    record,
+                    int(exc.mode),
+                    np.array([float(fn(float(tt))) for tt in t_grid]),
+                    dt,
+                    band,
+                    dual_projector=op.dual_projection_of,
+                )
+                op.set_excitation_dispersive(int(exc.mode), terms)
+            except ValueError as err:
+                warnings.warn(
+                    f"port '{op.name}' mode {exc.mode} keeps the frozen source: {err}",
+                    UserWarning,
+                    stacklevel=2,
+                )
 
     @staticmethod
     def _reference_scales(operators) -> dict:

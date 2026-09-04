@@ -15,17 +15,17 @@ Before it, v0.5.0 (2026-09-02) carried DD-224…DD-241 — the API grammar
 and its Phases A–D, the pair-product gate as a reflection budget
 (DD-228/229, closes KB-022), the content gate on the public remote
 (DD-241), ten breaking changes and `docs/migration-0.5.md`.  The
-band/QTEM track **DD-230…DD-239 is closed, every shipped default
-unchanged**, and it opened KB-038.
+band/QTEM track **DD-230…DD-239 is closed** and opened KB-038.
 
 On `main` since 2026-09-03, unreleased: **DD-245** (partitioned
 boundary convolution), **DD-246** (progress output), the *Numerical
 precision* chapter `docs/methods/precision.md` (its single-precision
-length law recorded in KB-038) and **DD-247** (the 201-point axis
-re-measured: no dominant item left, the arc-fan lead void).
+length law recorded in KB-038), **DD-247** (the 201-point axis
+re-measured: no dominant item left, the arc-fan lead void) and
+**DD-248** (`port_source="dispersive"`).
 
-Open: KB-023, KB-038 and KB-043.  Unit and integration: 3308 passed /
-10 skipped (2026-09-03, `CUPY_ACCELERATORS=""`).  Channels: GitHub,
+Open: KB-023, KB-038 and KB-043.  Unit and integration: 3339 passed /
+10 skipped (2026-09-04, `CUPY_ACCELERATORS=""`).  Channels: GitHub,
 PyPI, conda-forge and the two docs channels below.
 
 This file states what *is*.  Chronology: `git log --first-parent main`;
@@ -36,9 +36,9 @@ floors regenerate from the `validation/` certificates their DDs name.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-248** (2026-09-04) — the modal port launches the mode the grid carries, and the launch repair travels with the split.  A port imprints one frozen quasi-static profile with one delay; on an inhomogeneous line the grid's mode changes shape with frequency, and DD-239 priced that mismatch as one of the two terms that cap the reported |S11| — the other being the frequency-flat split DD-244 repaired, which *alone* reads worse because the two stand 170.9° apart.  Priced before building: rank **2-3** (SVD of the true mode along the band), the drive-port term is **entirely profile and chain** (its Mur re-absorption sits 122-135 dB below, measured on DD-239's own instrument), **1.1 %** of the march per rank term, and the prototype's endpoint is DD-239's independently measured far-port floor to **0.07 dB**.  Scope: a hollow guide's frozen profile is already exact (**−273.8 dB** on WR90 while its eps_eff sweeps +504 % — profile and chain dispersion are independent), and on a coupled pair the even and odd channels sit **19-20 dB apart at equal rank**, so the rank is per channel.  Ships as `port_source={"frozen","dispersive"}`, default frozen; tutorial 09 reads **−32.88 → −38.90 dB**.  Three things were not optional: DD-096's complement absorber assumes the incident wave is modal and ate the excess (11-17 dB worse) until `update_e` subtracted it; the option must select the per-frequency decomposition too, since a dispersive source read through the flat split reads −28.83 against −32.88; and the synthesis must continue its coefficients past the solved band rather than truncate (a cut spectrum rings and the run never decays).  Gates `tests/unit/test_dispersive_source.py`, `tests/integration/test_dispersive_source_run.py`; chapter `docs/methods/ports.md`; record `investigations/qtem-dispersive-source/`.
 * **DD-247** (2026-09-04) — the 201-point axis has no dominant item, and the arc-fan lead closes without being taken.  Re-measured after DD-244/DD-245 on DD-236's own fixture and probe, two runs at 1-min loads 7.37 and 0.80 agreeing to 0.4 % and to every printed |S11| digit: postprocessing **32.8 %**, kernels 30.1 %, build mode tracking 24.9 %, field 5.9 %, convolution 4.4 % — **314.9 s → 81.2 s**, and the two items behind the postprocessing are *port build*, together 55 %, so DD-245's verdict survives the longest axis anyone runs.  The postprocessing fell **6.1x without being optimised**: DD-244's continuation holds each channel's (ζ, φ, f), extrapolates the phase advance as `ζ_prev^(f/f_prev)` and solves one shift-invert per channel, so the full arc fan runs at **4 of 402 axis points** — the cut DD-236 priced at 3.12x of the largest item is worth ~5 % of the axis, and **DD-235's `k` gate need not be earned**; mode continuity on a smooth dispersion curve is a physical argument where the number of arc targets was a bet.  What replaces it: `eigs` + `splu` at **96.6 %** of the postprocessing, over an LU that cannot be amortised because both the shift and `A_lin` move with frequency through `sig_hat = 2 − 2·cos(ω·dt)`; unpriced beside it, one factorisation **per channel** per frequency and `k = 4` where one mode is consumed — both bite on multi-conductor cross-sections.  Method note: the DD-236 buckets had gone **blind, not wrong** — attached by name, they booked 57 % of the call into `_gaps` after DD-244 re-routed the decomposition, with the wall clock and the sum still correct.  Record `investigations/port-model-default/MEASUREMENTS.md` section 20.
 * **DD-246** (2026-09-03) — the long-running operations report through one reporter, and its policy is a decision.  Only the time-domain loop reported anything: the mesh build, the CFL eigenvalue and each port's mode solve ran silent, through eleven hand-written `print` sites with **no test** (`capsys` appeared zero times in the suite) and no terminal detection anywhere in the package.  Measured on tutorial 19 (2.08 M cells, one port): mesh **23.3 s**, CFL eigenvalue **14.1 s**, port build **8.6 s** — some **46 s** of silence before the first `FIT-TD` line, long enough that a *hung* run is indistinguishable from a working one (a probe for this very DD sat at 0.0 % CPU for 1h38 on a blocked viewer window).  `_progress.Reporter` now owns every line and settles three questions once: the setting is a process-wide default (`magnelio.set_verbosity`) that any object overrides with `verbose=`, tri-state through `_AnalysisBase._verbose` so `verbose=None` reaches **nested** work (`refine_port_modes` used to pass `verbose=False` down unconditionally, throwing the user's setting away); a terminal gets one overwritten `\r` line and everything else — log, CI, **Jupyter** — whole lines at a 30 s cadence; worker processes stay silent.  **Rejected on measurement: making `solve_ports` cheaper.**  `build_M_eps` + `build_M_mu` cost 0.16 s on 2.08 M cells (the suspected waste is two orders of magnitude off), `spectral_dt` is 14.06 s cold and **0.00 s on the second call** — the `lambda_max` mesh cache means the documented inspect-then-run workflow already pays the Lanczos once — and `courant_dt` returns a step **2.47x larger** than the spectral limit (ratio 0.405), i.e. unstable, and would give the report a port that is not the one simulated.  No numerical change.  Where there is no fraction to report, phases carry it: an eigensolve measured **14.0 s factorising against 2.7 s iterating** on a 48 910-DOF cavity, and the matvec counter rides on the `lu.solve` that DD-195 exposed (ARPACK offers no progress callback).  `Tile skip: 0.0%` no longer prints.  **The phases then measured themselves and moved the counter**: on tutorial 19 `materials` is 1.6 s against `conformal cells` **20.2 s** (90 % of a 22.4 s build; cProfile puts 19.0 s of it in the facet section path), and the process pool that looked like the natural place for a percentage never fires there — the section cache is already filled — so the count sits on the cache misses in `compute_face_material_areas`, as a running *count* rather than a percentage because that phase makes six passes and a per-pass percentage would restart five times.  It reaches four call levels down through a `ContextVar` (`current_reporter()`), not a threaded parameter.  A phase under **0.5 s** reports no `done` line at all (a small model printed five `done (0.0 s)` lines saying nothing); the closing line carries the total.  Gate `tests/unit/test_progress_reporting.py` (34 cases); chapter `docs/methods/progress-output.md`; record `investigations/verbose-progress/MEASUREMENTS.md`.
-* **DD-245** (2026-09-03) — the boundary convolution is partitioned, and the band pipeline's largest item goes with it.  `advance` folded the whole history every step, O(N²p²), which DD-236 had priced at 59.3 % of an 18-point production run; it is now a directly folded head `[1, 256)` plus levels `[H·2^k, H·2^(k+1))` carried by overlap-save FFTs — each level reaches no closer to the present than its own block length, so its whole next window is computable from history already written and one FFT per `B_k` steps amortises to O(p²) per step, O(N log²N p²) for the run.  The same sum in a different accumulation order: no fit, no approximation, no passivity question.  Measured — the fold alone 6.6x at 4096 steps, 23.1x at 16384, **51.7x** at 36864 and p = 9 (28.16 → 0.54 s), 56.1x at p = 17; against the direct sum, max relative error 3.5e-15…1.0e-14 held against the *norm* of the sum, which is the yardstick a reduction needs; end to end the production microstrip 3D run 109 → 24 s (**4.5x**), the layered case 31 → 11 s, and **every |S11| on both certificate axes is identical to the printed digit**, so no floor is re-pinned.  Two things worth carrying: the accumulator's **build order is part of the resumed state** — replaying it in one pass instead of in window-opening order misses the bit-exact resume gate by 3e-14 — and the block spectra cost **exactly twice the kernel array** (84.6 MB at p = 9 / n_kernel = 65536, 301.9 MB at p = 17, per kernel per port), because a real rfft of length 2B has B+1 complex bins.  Gate `tests/unit/test_band_dtbc.py::TestPartitionedConvolution`; record `investigations/band-convolution/MEASUREMENTS.md`.
 
 Older decisions: `design-decisions.md`.
 
@@ -331,16 +331,17 @@ flickers to ``"done"`` between sequential runs; the reader skips
   band port runs past it, and the band-median does not move at all — now
   documented for users in `docs/methods/precision.md`.  Full register
   entry and dossier `investigations/kb038-wordlength/`.
-* **Ports on the GPU** — nothing outside `TestBandDTBCOnGPU` (KB-045,
-  closed) exercises a port on a device: `tests/conftest.py` pins the
-  suite to NumPy.  Worth knowing for the next port family.
-* **The quasi-static power-wave split (DD-239 → DD-244)** — the exact
-  per-frequency split alone is *measured not to help*: it exposes the
-  drive-port launch residue and reads −27.9 dB worst against the shipped
-  −32.9.  The one route left to the user-visible |S11| without the band
-  boundary is a dispersive *source* on the modal port (a low-rank family
-  of profiles × waveforms at the plane overwrite — the band port's
-  source without its boundary); not started, not priced.
+* **Ports on the GPU** — only `TestBandDTBCOnGPU` (KB-045) exercises a
+  port on a device; `tests/conftest.py` pins the suite to NumPy.
+* **The launch pair (DD-239 → DD-244 → DD-248) — closed.**
+  `port_source="dispersive"` launches a rank-2/3 family and carries the
+  per-frequency split with it; tutorial 09 reads **−32.88 → −38.90 dB**,
+  the endpoint being DD-239's far-port floor to 0.07 dB.  Default
+  unchanged.  Left behind it: the decomposition **overshoots unity
+  transmission** (|S21| 1.0030 frozen, 1.0078 dispersive, rank-
+  independent, growing with f) — DD-244's to own; and the far-port
+  floor is now the *only* term left, so the band DTBC's decibels reach
+  the user again.
 * **Facet section engine (KB-043)** — the reach campaign is closed
   (DD-240/242/243 close KB-039, KB-041, KB-042 and KB-044).  Open:
   **KB-043**, pre-existing and two-sided — within ~1e-7 m of a
@@ -375,16 +376,15 @@ flickers to ``"done"`` between sequential runs; the reader skips
   resonant open structures floors at ~1e-2.
 * **Ports with several signal conductors** report the channel's own
   reference in `dispersion()` rather than a modal power–current
-  impedance (no single Ampère loop; DD-244), and `TDResult` carries
-  neither reference impedances nor dispersion records.
-* **Mesh build** — the speed campaign closed 2026-08-29 (DD-201…
-  DD-223): `benchmarks/bench_mesh_build.py` reads 16 Lange couplers
-  9.6 s at 3.7 M cells, 240 posts 1.8 s, 16 × 16 patch array 6.4 s at
-  1.8 M, every ladder row on its reference (`pool/hash_refs/`).
+  impedance (no single Ampère loop; DD-244); `TDResult` carries neither
+  reference impedances nor dispersion records.
+* **Mesh build** — speed campaign closed 2026-08-29 (DD-201…DD-223):
+  `benchmarks/bench_mesh_build.py` reads 16 Lange couplers 9.6 s at
+  3.7 M cells, 240 posts 1.8 s, 16 × 16 patch array 6.4 s at 1.8 M.
   Deferred work, A/B switches, traps: DD-223.  Open against it: KB-043.
 
-Closed construction sites are tombstoned where they were decided (the
-DD entry and `known-bugs.md`) and are not repeated here.
+Closed construction sites are tombstoned where they were decided and
+are not repeated here.
 
 ## Deferred / nice-to-have
 

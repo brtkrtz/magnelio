@@ -552,6 +552,10 @@ class PortOperatorModal:
         # ring buffer)}``.  Several modes of one port may be driven in one
         # run, each with its own waveform and TF/SF retardation buffer.
         self._excitations: dict[int, tuple] = {}
+        # DD-248: per-mode rank-r dispersive source terms.  Empty on
+        # every port that does not ask for one, and every branch below
+        # is guarded on it, so the frozen path stays bit-identical.
+        self._disp_sources: dict[int, object] = {}
 
         # Pre-extract M_eps slices (port + interior planes) and M_mu slice.
         self._me_u_port = np.asarray(m_eps_flat[plane.e_u_indices], dtype=float)
@@ -1326,9 +1330,61 @@ class PortOperatorModal:
         )
         self._excitations[mode_idx] = (waveform_fn, collections.deque(maxlen=buf_len))
 
+    def _disp_step(self, t: float, terms) -> int:
+        """Sample index of the synthesised source at solver time ``t``.
+
+        The waveform arrays are sampled on ``n * dt`` — the same grid
+        the scalar waveform is evaluated on — so the index comes from
+        the time rather than from a call counter, which keeps it right
+        across a resume.  Past the end the last sample is held; the
+        synthesis is sized for the run and the tail is quiescent.
+        """
+        n = int(round(float(t) / self._dt))
+        last = terms.projected.size - 1
+        return 0 if n < 0 else (last if n > last else n)
+
+    def dual_projection_of(self, profile_u, profile_v):
+        """Project a transverse profile onto this channel's dual basis.
+
+        Returns the pair ``(port plane, interior plane)`` for channel 0
+        of the port; the dispersive-source synthesis uses it so its
+        scalar subtraction lands in the same basis the recorder reads.
+        """
+        v_port = self._V_from_samples(profile_u, profile_v, self._me_u_port, self._me_v_port)
+        v_int = self._V_from_samples(profile_u, profile_v, self._me_u_int, self._me_v_int)
+        return float(v_port[0]), float(v_int[0])
+
+    def set_excitation_dispersive(self, mode_idx: int, terms) -> None:
+        """Drive ``mode_idx`` with a rank-r dispersive source.
+
+        ``terms`` comes from
+        :func:`~magnelio.ports._modal.dispersive_source.synthesise_dispersive_source`.
+        The mode must already carry a scalar excitation: that waveform
+        stays the run's reference signal, while the imprinted field
+        becomes the rank-r family.
+
+        Raises
+        ------
+        ValueError
+            If ``mode_idx`` has no excitation, or the mode terminates on
+            a DTBC (which takes its incident at the ghost plane and has
+            no frozen profile to repair).
+        """
+        if mode_idx not in self._excitations:
+            raise ValueError(
+                f"mode {mode_idx} carries no excitation; call set_excitation first",
+            )
+        if self._dtbc[mode_idx] is not None:
+            raise ValueError(
+                f"mode {mode_idx} terminates on a DTBC, which prescribes its own "
+                "incident wave; a dispersive source applies to the Mur branch",
+            )
+        self._disp_sources[mode_idx] = terms
+
     def clear_excitation(self) -> None:
         """Deactivate every TF/SF source — operator becomes a passive absorber."""
         self._excitations = {}
+        self._disp_sources = {}
 
     @property
     def excited_modes(self) -> tuple[int, ...]:
@@ -1580,6 +1636,21 @@ class PortOperatorModal:
                 dm = self.discrete_modes[m]
                 comp_u_int -= V_int_new[m] * dm.e_u_profile
                 comp_v_int -= V_int_new[m] * dm.e_v_profile
+            if self._disp_sources:
+                # DD-248: the extraction above assumes the incident wave
+                # lies entirely on the modal profile, which is exactly
+                # what a dispersive source stops doing.  Without this the
+                # absorber damps the excess the source adds -- measured
+                # 11-17 dB worse than the frozen source.  The absorber
+                # belongs on the scattered field, so the incident excess
+                # comes off here.
+                for m, terms in self._disp_sources.items():
+                    n_s = self._disp_step(t, terms)
+                    dm = self.discrete_modes[m]
+                    w_i = terms.waveform_interior[:, n_s]
+                    p_i = float(terms.projected_interior[n_s])
+                    comp_u_int -= terms.profiles_u.T @ w_i - p_i * dm.e_u_profile
+                    comp_v_int -= terms.profiles_v.T @ w_i - p_i * dm.e_v_profile
         else:
             V_int_new = self.project_V_interior(e)
 
@@ -1593,22 +1664,35 @@ class PortOperatorModal:
             src_val_new = float(exc_fn(t))
             src_buffer.append(src_val_new)
 
-            tau = self._tau_m[m_exc]
-            v_inc_int_now = _interp_delayed(
-                src_buffer,
-                tau,
-                self._dt,
-            )
-            v_inc_int_prev = _interp_delayed(
-                src_buffer,
-                tau + self._dt,
-                self._dt,
-            )
-            v_inc_face_prev = _interp_delayed(
-                src_buffer,
-                self._dt,
-                self._dt,
-            )
+            terms = self._disp_sources.get(m_exc)
+            if terms is not None:
+                # DD-248: the incident wave is the rank-r family, and
+                # both planes read their own synthesised series -- the
+                # interior one is not the port one delayed, because the
+                # delay is what disperses.
+                n_s = self._disp_step(t, terms)
+                n_p = n_s - 1 if n_s else 0
+                src_val_new = float(terms.projected[n_s])
+                v_inc_int_now = float(terms.projected_interior[n_s])
+                v_inc_int_prev = float(terms.projected_interior[n_p]) if n_s else 0.0
+                v_inc_face_prev = float(terms.projected[n_p]) if n_s else 0.0
+            else:
+                tau = self._tau_m[m_exc]
+                v_inc_int_now = _interp_delayed(
+                    src_buffer,
+                    tau,
+                    self._dt,
+                )
+                v_inc_int_prev = _interp_delayed(
+                    src_buffer,
+                    tau + self._dt,
+                    self._dt,
+                )
+                v_inc_face_prev = _interp_delayed(
+                    src_buffer,
+                    self._dt,
+                    self._dt,
+                )
 
             scat_int_now = V_int_new[m_exc] - v_inc_int_now
             scat_int_prev = self._V_interior_prev[m_exc] - v_inc_int_prev
@@ -1651,8 +1735,19 @@ class PortOperatorModal:
         e_v_new = np.zeros(self.plane.e_v_indices.size)
         for m in range(self._n_modes):
             dm = self.discrete_modes[m]
-            e_u_new += V_port_corr[m] * dm.e_u_profile
-            e_v_new += V_port_corr[m] * dm.e_v_profile
+            terms = self._disp_sources.get(m)
+            if terms is None:
+                e_u_new += V_port_corr[m] * dm.e_u_profile
+                e_v_new += V_port_corr[m] * dm.e_v_profile
+            else:
+                # DD-248: the scattered amplitude keeps the modal
+                # profile (its own reflection is modal by construction);
+                # the incident half is written on the rank-r family.
+                n_s = self._disp_step(t, terms)
+                scat = V_port_corr[m] - float(terms.projected[n_s])
+                w_s = terms.waveform[:, n_s]
+                e_u_new += scat * dm.e_u_profile + terms.profiles_u.T @ w_s
+                e_v_new += scat * dm.e_v_profile + terms.profiles_v.T @ w_s
         if comp_on:
             # Complement absorber: advance the remainder to the plane
             # with the per-edge Mur-1 and ADD it to the modal write

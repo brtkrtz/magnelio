@@ -19876,3 +19876,132 @@ re-routing, and the failure is silent.
 **Non-goals.**  Any change to the arc fan on the port-build path
 (untouched, and the gate that protects it stands), any change to the
 continuation itself, and pricing the two reductions above.
+
+---
+
+## DD-248 — the modal port launches the mode the grid carries, and the launch repair travels with the split
+
+**Date:** 2026-09-04 (branch `feat/dispersive-modal-source`).
+**Status:** Implemented and gated
+(`tests/unit/test_dispersive_source.py`,
+`tests/integration/test_dispersive_source_run.py`).
+**Files:** `src/magnelio/ports/_modal/dispersive_source.py` (new),
+`ports/_modal/operator.py` (`set_excitation_dispersive`,
+`dual_projection_of`, `_disp_step`, three branches in `update_e`),
+`analysis/time_domain.py` (`port_source`, `_bind_dispersive_sources`),
+`analysis/scattering_td.py` (`port_source_used` and the decomposition
+it selects).  **Measurements:** internal record
+`investigations/qtem-dispersive-source/` (MEASUREMENTS.md sections 1-7,
+`probe_source_rank.py`, `probe_drive_split.py`, `probe_source_cost.py`,
+`probe_dispersive_source.py`, `probe_rank_cases.py`,
+`probe_rank_coupled.py`, `fixture_coupled.py`).
+
+**Problem.**  [[DD-239]] decomposed tutorial 09's reported |S11| into
+three terms and found the port floor worth at most 1.93 dB of it; the
+two that dominate are the quasi-static a/b split and the drive port's
+source, both descending from the one frozen Laplace mode the port
+derives everything from.  [[DD-244]] built the exact per-frequency
+split and measured that it *alone* reads −27.9 dB against the shipped
+−32.9: the two errors stand 170.9° apart, and repairing one destroys
+the near-cancellation.  The remaining half — a dispersive *source* —
+was named there as the one route left to the user-visible number and
+left "not started, not priced".
+
+**Priced first, in five measurements, before anything was built.**
+
+1. *Rank.*  The true mode's transverse field, solved along the band and
+   decomposed by SVD, needs **2-3 profiles**: worst profile error
+   −32.6 dB at rank 2 and −58.9 dB at rank 3 on tutorial 09, stable
+   between 41 and 201 axis points.
+2. *Attribution.*  DD-239 left open whether the drive-port term is the
+   injected profile or the drive port's own Mur re-absorption.  Only
+   the first is reachable by a source.  Measured on that entry's own
+   instrument, with a true-mode drive port whose DTBC is switched off:
+   the term is **entirely profile and chain**, its Mur re-absorption
+   sitting 122-135 dB below it, at the instrument floor.
+3. *Cost.*  One rank term is 2.35 µs/step against a 218 µs march —
+   **1.1 %**, and less on a larger model, because the field update grows
+   with the cell count while the source grows with the port plane.
+4. *Prototype.*  Rank 2 reads **−62.45 / −51.70 / −43.75 dB** at
+   5 / 10 / 15 GHz against the shipped −43.92 / −30.85 / −28.88, and
+   the endpoint is DD-239's independently measured far-port floor
+   (−62.28 / −50.23 / −43.73) to **0.07 dB** — the attribution was
+   complete.  Against the production numbers the gain is
+   +24.2 / +3.6 / +10.1 dB where DD-239's counterfactual predicted
+   +24.03 / +3.68 / +10.34.
+5. *Scope.*  Across the validation cross-sections the frozen profile is
+   already exact on a hollow guide (**−273.8 dB** on WR90, whose
+   `sin(pi x/a)` does not move with frequency) while its `eps_eff`
+   sweeps +504 %: **profile dispersion and chain dispersion are
+   independent**, and only the first needs a rank.  On a two-conductor
+   line the even and odd channels sit **19-20 dB apart at equal rank**,
+   so the rank is chosen per channel, not per port.
+
+**Decision — what ships.**  `AnalysisTD`/`AnalysisScatteringTD` take
+`port_source={"frozen", "dispersive"}`, default **`"frozen"`**: no
+shipped result moves.  Under `"dispersive"` each excited modal channel
+gets a rank-r family synthesised from its own dispersion record, the
+rank grown until the worst profile error is under −60 dB, capped at 4.
+A channel with no propagating mode over the band keeps the frozen
+source and warns; the option is an accuracy choice, never a
+precondition for the run.  On tutorial 09 through the public path the
+reported worst |S11| moves **−32.88 → −38.90 dB**.
+
+**Three things the implementation had to settle, none of them
+optional.**
+
+1. **The absorber has to learn the source's basis.**  [[DD-096]]'s
+   complement absorber extracts `comp = e_int − V_int·phi_qs`, the
+   *total* field minus its modal part, and damps the remainder as an
+   unrepresented family.  That is correct only while the incident wave
+   lies entirely on `phi_qs` — precisely what a dispersive source stops
+   doing — so the absorber ate the excess the source adds and read
+   **11-17 dB worse** than the frozen control.  Disabling it is not the
+   answer either: it is worth 4-11 dB on its own.  `update_e` now
+   subtracts the incident excess before the extraction, which puts the
+   absorber back on the scattered field where it belongs.
+2. **The launch repair carries the split with it.**  A dispersive
+   source read through the frequency-flat split reads
+   **−28.83 dB against the shipped −32.88** — worse, and for exactly
+   DD-244's reason mirrored.  `port_source="dispersive"` therefore
+   selects the per-frequency decomposition, as a band run does.  The
+   two halves of one defect are not independently switchable, and
+   offering them as two knobs would ship a setting that makes the
+   number worse.
+3. **The synthesis must not truncate its spectrum.**  The coefficients
+   are known only where the dispersion was solved; zeroing them outside
+   makes `irfft` ring, and the incident wave then stands at 3.5e-2 of
+   its peak at *both* ends of the window — the run never decays and the
+   S-parameters are read off a moving signal.  They are continued by
+   their edge value, and `zeta` by holding `eps_eff`.  The same class of
+   failure comes from `normalize_gauge`, which phases each profile on
+   its own largest component: which component that is can change with
+   frequency, and the jump survives the SVD (the rank is unchanged)
+   while destroying the time signal.  Profiles are re-phased against
+   the channel's recording profile, which is smooth in frequency.
+
+**Nebenbefund, pre-existing and now visible: the per-frequency
+decomposition is not passive.**  Reading the *frozen* source through
+it gives max |S21| = **1.0030** on a lossless line, growing with
+frequency (1.000000 at 2 GHz, 1.0029 at 15); the dispersive source
+reads 1.0078.  The overshoot **does not depend on the rank** (1.00781
+at rank 2, 3 and 4), so it is not a truncation error of this entry but
+a property of the decomposition [[DD-244]] built.  Recorded here
+because this entry makes it reachable from the public path; the
+integration gate pins |S21| ≤ 1.02 rather than asserting a passivity
+the decomposition does not deliver.
+
+**What this does to the strategy.**  DD-239 fixed the port floor's
+worth at "at most 1.93 dB" and closed the boundary campaign on it.
+That ceiling was conditional on the split and the source dominating.
+With both repaired the far-port floor is the **only** term left, so
+every dB the boundary work takes off it now reaches the number the user
+reads — the band DTBC above all.  This entry and DD-239 invert each
+other's priorities, and neither is visible without the other.
+
+**Non-goals.**  Changing any shipped default; a dispersive source on a
+DTBC-terminated mode (it prescribes its own incident wave at the ghost
+plane and has no frozen profile to repair); the rank as a user-facing
+argument (it is chosen against a profile-error target, and section 5 of
+the record shows the far-port floor caps what any rank can buy); and
+repairing the decomposition's passivity, which is DD-244's to own.
