@@ -129,13 +129,22 @@ def _show_when_server_ready(pl, mode: str, jupyter_kwargs: dict) -> None:
     """
     import asyncio  # noqa: PLC0415
 
+    import pyvista as pv  # noqa: PLC0415
     from IPython.display import display  # noqa: PLC0415
     from ipywidgets import HTML, VBox, Widget  # noqa: PLC0415
     from pyvista.trame.jupyter import launch_server  # noqa: PLC0415
 
     box = VBox()
     display(box)
-    server = launch_server()
+    # Name the transport.  With the trame Jupyter server extension
+    # installed, the kernel inherits TRAME_BACKEND=jupyter, and a start
+    # without an explicit backend takes it: a comm-based transport that
+    # binds no TCP port, so the iframe is built for `localhost:0` and
+    # stays blank.  PyVista's own path names the backend for the same
+    # reason; the widget talks over the websocket the viewer disabled
+    # the extension for (see _configure_pyvista).
+    backend = "jupyter" if pv.global_theme.trame.jupyter_extension_enabled else "aiohttp"
+    server = launch_server(wslink_backend=backend)
 
     async def fill() -> None:
         try:

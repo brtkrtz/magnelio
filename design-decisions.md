@@ -20251,7 +20251,19 @@ silenced its `0.0%` case.
   whenever it arrives — the repro shows the late `comm_open HTMLModel`
   and `comm_msg children = 1` under the plot cells.  Two cells that
   both plot before the server is up each take this path and each is
-  filled.
+  filled.  **And the transport has to be named.**  The second cut
+  rendered a grey "page could not load" frame in JupyterLab: its
+  kernel inherits `TRAME_BACKEND=jupyter` (with `TRAME_IFRAME_BUILDER`
+  and `TRAME_JUPYTER_ENDPOINT`) from the trame Jupyter server
+  extension, and `launch_server()` without an explicit backend takes
+  it — a comm-based transport whose `port_callback(0)` binds no TCP
+  port, so the iframe was built for `localhost:0`.  A kernel started
+  through `jupyter_client` has no such variable, which is why every
+  kernel-side probe showed a real port.  PyVista's own path names
+  `aiohttp` for the same reason; `_show_when_server_ready` now passes
+  `wslink_backend="aiohttp"` (or `"jupyter"` when the extension is
+  enabled).  Verified in the browser: *Restart Kernel and Run All* on
+  a three-cell notebook renders both views.
   Rejected: documenting `await launch_server().ready` as a cell the
   user has to run first — it works, and it puts the library's problem
   on the notebook.  `nest_asyncio2` is no longer on Magnelio's path;
