@@ -133,21 +133,20 @@ The closing line of an operation carries its total wall time whenever
 that total is itself worth reporting, so a build with several long
 phases needs no addition in your head.
 
-## Terminals, logs and notebooks
+## Terminals, notebooks and logs
 
-On a terminal, progress is one line that updates in place.  Everywhere
-else — a log file, a CI job, a captured pipe, a Jupyter notebook —
-Magnelio writes whole lines at a slow cadence instead, because
-overwriting depends on carriage returns that a log file records
+On a terminal, progress is one line that updates in place a few times a
+second.  A notebook cell redraws such a line the same way, so there the
+line updates in place too, about twice a second — every refresh is a
+message to the browser, and that cadence keeps the line live without
+flooding the connection.  Everywhere else — a log file, a CI job, a
+captured pipe — Magnelio writes whole lines at a slow cadence instead,
+because overwriting depends on carriage returns that a log file records
 literally and concatenates into one unreadable row.  You do not
 configure this; it follows from where the output is going.
 
-Two consequences worth knowing:
-
-* Redirecting a run to a file gives you a readable record, not a
-  transcript of every refresh.
-* In a notebook you see a phase announced when it begins and again when
-  it ends, rather than a single updating line.
+One consequence worth knowing: redirecting a run to a file gives you a
+readable record, not a transcript of every refresh.
 
 Work running inside worker processes stays silent.  Mesh sectioning and
 the band port kernel are computed by process pools, and every worker

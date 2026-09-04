@@ -17,6 +17,25 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- In a Jupyter notebook, *Run All* aborted at the first `plot()` with
+  `RuntimeError: cannot enter context ... is already entered` and left
+  the remaining cells unexecuted, while running the cells one by one
+  worked.  The viewer now starts its websocket server on the kernel's
+  event loop instead of nesting a second loop into it, and fills the
+  cell's output the moment the server is up — under *Run All*, once the
+  cells queued behind it have run.
+- `refine_port_modes()` on a hollow-waveguide port raised `mode 0 of
+  port ... has no line impedance`, because it converged the line
+  impedance by default.  The default target now follows the mode
+  family: line impedance for TEM and quasi-TEM modes, cut-off frequency
+  for TE and TM modes; the report names the quantity it converged.
+- Progress lines in a notebook arrived every 30 s — on a one-minute GPU
+  run the first one at 86 % of the march — because the notebook's
+  output stream was filed as a log.  A notebook cell now gets the
+  in-place line a terminal gets, refreshed about twice a second.
+- The time-domain solver no longer prints `Tile skip: N% of kernel
+  elements in dead tiles`, a performance statistic with nothing in it
+  to act on.
 - `lofted(..., blend="tangent")` between two faces that look straight at
   each other — the two ends of a waveguide taper, such as a rectangular
   guide opening into a round one — raised `OCC tangent blend

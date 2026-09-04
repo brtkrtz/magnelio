@@ -20183,3 +20183,148 @@ translational Hermite loft would thin the elbow);
 `geo.Loft(a, b, blend="tangent")` for two planar sheets with their own
 normals — the same backend rows, an extension when a model asks for it;
 an N-section loft with end tangents.
+
+## DD-251 — a notebook is an in-place stream, the viewer starts its server on the running loop, and the tile-skip line is gone
+
+**Date:** 2026-09-04 (branch `fix/jupyter-progress-viewer`).
+**Status:** Implemented and gated
+(`tests/unit/test_progress_reporting.py::TestNotebookStream`; the
+*Run All* race is reproduced and closed by
+`investigations/viewer3d/runall_repro.py`, internal record).
+**Files:** `src/magnelio/_progress.py` (`_is_notebook_stream`,
+`_NOTEBOOK_INTERVAL`, `Reporter._inplace`), `src/magnelio/post/plot_3d.py`
+(`_show_when_server_ready`, `_loop_is_running`),
+`src/magnelio/solver/fit_td.py`, `docs/methods/progress-output.md`,
+`docs/methods/viewer.md`.
+**Amends:** [[DD-246]] (the terminal/log policy) and [[DD-190]] (the
+viewer's first call in a kernel).
+
+**Problem.**  Three findings from one notebook session
+(`userscripts/rect2circ.ipynb`, developer worksheet):
+
+1. *Run All* aborted at the first `GeometryModel.plot()` with
+   `RuntimeError: cannot enter context: <Context ...> is already
+   entered` from ipykernel's `_async_in_context`, and the cells after
+   it never ran; executing the cells by hand worked.
+2. The time-domain march printed nothing for 30 s at a time.  On a
+   one-minute GPU run the first line came at step 75 900 of 88 601 —
+   86 % of the march — and the user read the heartbeat and the final
+   line as one failed overwrite.
+3. `Tile skip: 17.6% of kernel elements in dead tiles` appeared as a
+   bare `print` outside the reporter, and nobody could act on it.
+
+**Causes.**  (1) PyVista's first-call path `elegantly_launch` applies
+`nest_asyncio2` and runs `asyncio.run(...)` *inside* the kernel's
+running loop until the trame server is ready.  Under ipykernel 7 every
+cell executes in its own `contextvars` context; the nested loop picks
+up the next queued `execute_request` — which *Run All* has already
+sent — and re-enters a context that is still entered.  Manual
+execution only works because the queue is empty while the server comes
+up.  Reproduced without a browser by queueing four requests at once
+through `jupyter_client` (`runall_repro.py`): the old code raises in
+cell 2 and cells 3–4 never execute.  (2) DD-246 keyed the policy on
+`isatty()`: ipykernel's `OutStream` answers no, so the notebook was
+filed with the logs and their 30 s cadence — although a notebook cell
+redraws a carriage-returned line exactly like a terminal.  (3) The
+line predates the reporter and slipped past DD-246, which had only
+silenced its `0.0%` case.
+
+**Decision.**
+
+- **The viewer starts the server as a task on the loop that is
+  already running.**  When the trame server is not yet running and a
+  loop is (every Jupyter cell), `plot()` displays an empty
+  `ipywidgets.VBox` in the cell at once, calls PyVista's
+  `launch_server()` — which schedules `server.start(exec_mode="task")`
+  on that loop — and, from a task that awaits `server.ready`, builds
+  the view with `return_viewer=True` and makes it the box's child.
+  No loop is nested, so the request queue is never read out of turn.
+  Later calls find the server running and take the direct path as
+  before.  Reproduction after the change: all four queued cells run,
+  both views arrive, no error.  The cost is that the first view in a
+  kernel appears a fraction of a second after its cell returns.
+  **The hand-over has to be a widget-state change.**  The first cut
+  used an `ipywidgets.Output` and `display()` from the task; the kernel
+  sent the view, the cell stayed white.  Once a cell has returned, the
+  frontend drops `display_data` addressed to it, while a widget's
+  state (`children`) travels over the comm channel and renders
+  whenever it arrives — the repro shows the late `comm_open HTMLModel`
+  and `comm_msg children = 1` under the plot cells.  Two cells that
+  both plot before the server is up each take this path and each is
+  filled.  **And the transport has to be named.**  The second cut
+  rendered a grey "page could not load" frame in JupyterLab: its
+  kernel inherits `TRAME_BACKEND=jupyter` (with `TRAME_IFRAME_BUILDER`
+  and `TRAME_JUPYTER_ENDPOINT`) from the trame Jupyter server
+  extension, and `launch_server()` without an explicit backend takes
+  it — a comm-based transport whose `port_callback(0)` binds no TCP
+  port, so the iframe was built for `localhost:0`.  A kernel started
+  through `jupyter_client` has no such variable, which is why every
+  kernel-side probe showed a real port.  PyVista's own path names
+  `aiohttp` for the same reason; `_show_when_server_ready` now passes
+  `wslink_backend="aiohttp"` (or `"jupyter"` when the extension is
+  enabled).  Verified in the browser: *Restart Kernel and Run All* on
+  a three-cell notebook renders both views.
+  **Rejected on measurement: starting the server at import.**  The
+  hand-over from a task runs only once the loop is free — after every
+  queued cell of a *Run All*, since a mesh build or a march holds the
+  loop — so the view appears last.  A warm start (`import magnelio` in
+  a kernel scheduling `launch_server`) was built and measured in the
+  browser on a notebook whose plot cell was followed by a 15 s cell:
+  with the plot in the cell right after the import *and* with an
+  ordinary cell in between, the server was still pending when
+  `plot()` ran, and the view arrived after the sleeping cell as before.
+  Between two queued cells ipykernel gives the loop no usable time —
+  the next `execute_request` is already on the socket — and the
+  aiohttp start needs several iterations.  What the warm start would
+  have bought is a fraction of a second on the first hand-executed
+  plot, at the price of the PyVista and trame imports (0.36 s) and a
+  listening socket in every notebook that imports Magnelio.  Not
+  taken; the docs state the *Run All* behaviour.
+- **Three stream classes, not two.**  A stream from the `ipykernel`
+  package (`type(stream).__module__`) is an *in-place* stream like a
+  terminal, with its own cadence `_NOTEBOOK_INTERVAL = 0.5 s`: a
+  terminal takes ten refreshes a second without flicker, a notebook
+  sends each refresh to the browser, and half a second keeps the line
+  live without flooding the connection.  Logs keep their 30 s and
+  whole lines.  Measured in the kernel: the reporter's `\r` lines
+  arrive per refresh and the closing line terminates them.
+- **The tile-skip line is removed**, not moved onto the reporter.  The
+  fraction of dead tiles is a kernel statistic; it stays readable on
+  the solver as `_tile_skip_stats` (the integration test reads it
+  there), and the user has no decision that depends on it.
+
+**Non-goals.**  Making the two stop criteria print on one line (they
+are two criteria: the stored-energy stop and the port-signal stop,
+whichever fires first ends the run, and the heartbeat line shows the
+one it happens to sample); a configurable notebook cadence.
+
+## DD-252 — `refine_port_modes` converges what the mode family defines
+
+**Date:** 2026-09-04 (branch `fix/jupyter-progress-viewer`).
+**Status:** Implemented and gated
+(`tests/unit/test_modal_refinement.py::TestRefinePortModes::test_auto_target_follows_the_mode_family`,
+`::test_z_line_on_a_te_mode_names_the_way_out`).
+**Files:** `src/magnelio/ports/_modal/refinement.py`, `docs/methods/ports.md`.
+**Amends:** [[DD-244]].
+
+**Problem.**  `refine_port_modes(model, control, mesh, "port2")` on the
+round port of a rectangular-to-circular taper raised `ValueError: mode 0
+of port 'port2' has no line impedance`.  DD-244 built the ladder for
+the quasi-TEM case and made `target="z_line"` the default; a TE mode
+has a wave impedance but no line impedance, and the one quantity its
+user wants converged — the cut-off, which the grid reads 0.33 % low
+on that taper and which β amplifies to 2 % at 11.9 GHz — was available
+as `target="f_cutoff"` but had to be known.
+
+**Decision.**  The default is `target="auto"`: the line impedance for a
+mode that has one (TEM, quasi-TEM), the cut-off frequency for a TE or
+TM mode, resolved from the level-0 port report and written into the
+report's `target` so the ladder says what it converged.  An explicit
+`z_line` or `epsilon_eff` on a TE/TM mode still raises, and the message
+now names `target='f_cutoff'` and the default.  A mode index past the
+solved modes raises with the count instead of an `IndexError`.
+
+**Non-goals.**  Converging the wave impedance or the propagation
+constant at a frequency (the ladder converges cross-section
+parameters, and the cut-off carries the TE/TM cross-section
+completely); a per-mode target list.

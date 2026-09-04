@@ -87,6 +87,100 @@ def _in_notebook() -> bool:
     return ip is not None and "IPKernelApp" in getattr(ip, "config", {})
 
 
+def _loop_is_running() -> bool:
+    """True inside a running asyncio loop -- every cell of a Jupyter kernel."""
+    import asyncio  # noqa: PLC0415
+
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return False
+    return True
+
+
+# Tasks started by _show_when_server_ready, held until they finish so
+# the loop does not garbage-collect a pending one.
+_PENDING_VIEWS: set = set()
+
+
+def _launch_viewer_server():
+    """Schedule the trame server's start on the running loop; return the server.
+
+    Names the transport.  With the trame Jupyter server extension
+    installed, the kernel inherits ``TRAME_BACKEND=jupyter``, and a start
+    without an explicit backend takes it: a comm-based transport that
+    binds no TCP port, so the iframe is built for ``localhost:0`` and
+    stays blank.  PyVista's own path names the backend for the same
+    reason; the widget talks over the websocket the viewer disabled the
+    extension for (see :func:`_configure_pyvista`).  A second call finds
+    the server pending or running and changes nothing.
+    """
+    import pyvista as pv  # noqa: PLC0415
+    from pyvista.trame.jupyter import launch_server  # noqa: PLC0415
+
+    backend = "jupyter" if pv.global_theme.trame.jupyter_extension_enabled else "aiohttp"
+    return launch_server(wslink_backend=backend)
+
+
+def _show_when_server_ready(pl, mode: str, jupyter_kwargs: dict) -> None:
+    """Start the trame server on the running loop and show the view once it is up.
+
+    PyVista's own first-call path (``elegantly_launch``) re-enters the
+    kernel's event loop through ``nest_asyncio2`` and blocks until the
+    server is ready.  Under ipykernel 7 every cell runs in its own
+    ``contextvars`` context, and a nested loop that picks up the *next*
+    queued cell -- exactly what "Run all" produces -- trips
+    ``RuntimeError: cannot enter context ... is already entered`` and
+    aborts the run.  Manual execution only worked because the queue was
+    empty while the server came up.
+
+    Here the server is started as a task on the loop that is already
+    running (``launch_server`` does that) and an empty container widget
+    takes the view's place in the cell at once.  The moment the server
+    reports ready the view becomes the container's child.  That has to
+    be a widget *state* change: once the cell has returned, the
+    frontend no longer routes ``display_data`` to it (an
+    ``ipywidgets.Output`` filled from a task stays blank), while a
+    widget's state travels over the comm channel and renders whenever
+    it arrives.  No loop is nested, so the queue is never read out of
+    turn; ``nest_asyncio2`` is not needed.  Later calls find the server
+    running and take the direct path (DD-251).
+
+    The view therefore lands when the loop is next free.  Under *Run
+    All* that is after the queued cells, and starting the server at
+    import does not change it: measured in the browser, the loop gets
+    no usable time between two queued cells, so a server scheduled at
+    import is still pending when the next cell plots.
+    """
+    import asyncio  # noqa: PLC0415
+
+    from IPython.display import display  # noqa: PLC0415
+    from ipywidgets import HTML, VBox, Widget  # noqa: PLC0415
+
+    box = VBox()
+    display(box)
+    server = _launch_viewer_server()
+
+    async def fill() -> None:
+        try:
+            await server.ready
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message="Suppress rendering")
+                view = pl.show(
+                    jupyter_backend=mode, jupyter_kwargs=jupyter_kwargs, return_viewer=True
+                )
+            if not isinstance(view, Widget):
+                # An IFrame (server-proxy setups) is plain HTML.
+                view = HTML(view._repr_html_())
+            box.children = (view,)
+        except Exception as exc:  # pragma: no cover - reported into the cell
+            box.children = (HTML(f"<pre>3D view could not start: {exc!r}</pre>"),)
+
+    task = asyncio.get_running_loop().create_task(fill())
+    _PENDING_VIEWS.add(task)
+    task.add_done_callback(_PENDING_VIEWS.discard)
+
+
 def _configure_pyvista() -> None:
     """One-time process settings the viewer relies on.
 
@@ -1116,6 +1210,7 @@ def show_geometry(
         return pl
 
     if notebook and mode in ("client", "server", "trame"):
+        server = None
         try:
             from trame.app import get_server  # noqa: PLC0415
 
@@ -1124,6 +1219,9 @@ def show_geometry(
             jupyter_kwargs = {"add_menu_items": menu_items}
         except ImportError:
             jupyter_kwargs = {}
+        if server is not None and not server.running and _loop_is_running():
+            _show_when_server_ready(pl, mode, jupyter_kwargs)
+            return None
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="Suppress rendering")
             pl.show(jupyter_backend=mode, jupyter_kwargs=jupyter_kwargs)

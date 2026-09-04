@@ -42,7 +42,10 @@ from magnelio.geo import GeometryModel
 from magnelio.mesh.mesher import Mesh, MeshControl
 from magnelio.ports.declarative import normalize_box_face
 
-_VALID_TARGETS = ("z_line", "epsilon_eff", "f_cutoff")
+_VALID_TARGETS = ("auto", "z_line", "epsilon_eff", "f_cutoff")
+#: What a mode family has to converge: a TEM/quasi-TEM line its
+#: impedance, a TE/TM mode its cut-off (DD-252).
+_AUTO_TARGET = {True: "z_line", False: "f_cutoff"}
 
 
 @dataclass(frozen=True)
@@ -80,7 +83,8 @@ class PortRefinementReport:
     port_name : str
     target : str
         ``"z_line"``, ``"epsilon_eff"`` or ``"f_cutoff"`` of mode
-        ``mode``.
+        ``mode`` -- the resolved quantity, also when ``"auto"`` was
+        asked for.
     mode : int
     levels : tuple of RefinementLevel
         The ladder, level 0 first.
@@ -180,15 +184,37 @@ def _slab_boundary_conditions(model: GeometryModel, far_face: str, position: flo
     return BoundaryConditions(**out, cpml_thickness_cells=int(bc.cpml_thickness_cells))
 
 
+def _resolve_target(report, target: str, mode: int) -> str:
+    """The quantity to converge: as asked, or the one the mode family defines."""
+    if target != "auto":
+        return target
+    if mode >= len(report.modes):
+        raise ValueError(
+            f"port {report.name!r} solves {len(report.modes)} mode(s); mode {mode} does not exist"
+        )
+    return _AUTO_TARGET[report.modes[mode].z_line is not None]
+
+
 def _extract(report, target: str, mode: int) -> float:
+    if mode >= len(report.modes):
+        raise ValueError(
+            f"port {report.name!r} solves {len(report.modes)} mode(s); mode {mode} does not exist"
+        )
     m = report.modes[mode]
     if target == "z_line":
         if m.z_line is None:
-            raise ValueError(f"mode {mode} of port {report.name!r} has no line impedance")
+            raise ValueError(
+                f"mode {mode} of port {report.name!r} has no line impedance: it is a "
+                f"TE/TM mode, which the ladder converges by its cut-off -- pass "
+                f"target='f_cutoff', or leave target='auto'."
+            )
         return float(m.z_line)
     if target == "epsilon_eff":
         if m.epsilon_eff is None:
-            raise ValueError(f"mode {mode} of port {report.name!r} has no ε_eff")
+            raise ValueError(
+                f"mode {mode} of port {report.name!r} has no ε_eff: it is a TE/TM "
+                f"mode -- pass target='f_cutoff', or leave target='auto'."
+            )
         return float(m.epsilon_eff)
     if target == "f_cutoff":
         return float(m.f_cutoff)
@@ -202,7 +228,7 @@ def refine_port_modes(
     port: str,
     *,
     levels: int = 3,
-    target: str = "z_line",
+    target: str = "auto",
     mode: int = 0,
     tol: float = 1e-3,
     slab_cells: int = 6,
@@ -233,8 +259,11 @@ def refine_port_modes(
         Name of a declared waveguide port.
     levels : int, default 3
         Number of ladder rungs including level 0 (at most).
-    target : {"z_line", "epsilon_eff", "f_cutoff"}
-        Quantity to converge.
+    target : {"auto", "z_line", "epsilon_eff", "f_cutoff"}
+        Quantity to converge.  ``"auto"`` (default) follows the mode
+        family: the line impedance of a TEM or quasi-TEM mode, the
+        cut-off frequency of a TE or TM mode, which has no line
+        impedance.  The report names the quantity it converged.
     mode : int, default 0
         Mode index on the port.
     tol : float, default 1e-3
@@ -322,6 +351,7 @@ def refine_port_modes(
         rep.note(f"level {k}/{levels - 1}: meshing and solving the port slab")
         mesh_k = Mesh.from_geometry(slab, ctrl, f_max=float(mesh.f_max), verbose=inner_verbose)
         report = AnalysisScatteringTD(mesh=mesh_k, verbose=inner_verbose).solve_ports()[port]
+        target = _resolve_target(report, target, mode)
         value = _extract(report, target, mode)
         n_per_axis = (mesh_k.Nx, mesh_k.Ny, mesh_k.Nz)
         n_plane = int(np.prod([n_per_axis[i] for i in range(3) if i != n_axis]))
