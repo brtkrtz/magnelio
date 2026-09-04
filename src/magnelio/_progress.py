@@ -44,6 +44,10 @@ __all__ = ["Reporter", "current_reporter", "get_verbosity", "set_verbosity"]
 # per phase plus the occasional heartbeat on a long one.
 _TTY_INTERVAL = 0.1
 _LOG_INTERVAL = 30.0
+# A notebook cell redraws an overwritten line like a terminal does, but
+# every refresh is a message to the browser; half a second keeps the
+# line live without flooding the connection.
+_NOTEBOOK_INTERVAL = 0.5
 
 # A phase that finishes faster than this is not worth a line of its
 # own.  Without it a small model — every tutorial, every test —
@@ -107,6 +111,18 @@ def get_verbosity() -> bool:
     return _verbosity
 
 
+def _is_notebook_stream(stream) -> bool:
+    """True for the stdout a Jupyter kernel hands its cells.
+
+    ``ipykernel.iostream.OutStream`` is not a TTY, yet the cell it feeds
+    redraws a carriage-returned line in place the way a terminal does.
+    Treating it as a log (DD-246's first policy) left a notebook user
+    without a word for 30 s at a time -- on a one-minute GPU run the
+    first line arrived at 86 % of the march.
+    """
+    return type(stream).__module__.split(".")[0] == "ipykernel"
+
+
 def _in_worker_process() -> bool:
     """True inside a multiprocessing worker, where output would interleave."""
     import multiprocessing  # noqa: PLC0415
@@ -149,7 +165,17 @@ class Reporter:
             self._tty = bool(self._stream.isatty())
         except (AttributeError, ValueError):
             self._tty = False
-        self._interval = _TTY_INTERVAL if self._tty else _LOG_INTERVAL
+        notebook = not self._tty and _is_notebook_stream(self._stream)
+        # Where a carriage return redraws the line rather than being
+        # recorded: a terminal, or a notebook cell.  Everything else is
+        # a log and gets whole lines.
+        self._inplace = self._tty or notebook
+        if self._tty:
+            self._interval = _TTY_INTERVAL
+        elif notebook:
+            self._interval = _NOTEBOOK_INTERVAL
+        else:
+            self._interval = _LOG_INTERVAL
         self._phase: str | None = None
         self._phase_t0 = 0.0
         self._last_emit = time.perf_counter()
@@ -161,7 +187,7 @@ class Reporter:
     # ── line plumbing ───────────────────────────────────────────────
 
     def _write(self, text: str, *, overwrite: bool) -> None:
-        if overwrite and self._tty:
+        if overwrite and self._inplace:
             # Trailing blanks erase the tail of a longer previous line.
             self._stream.write(f"\r  {text}          ")
         elif self._dirty:
@@ -172,7 +198,7 @@ class Reporter:
         else:
             self._stream.write(f"  {text}\n")
         self._stream.flush()
-        self._dirty = overwrite and self._tty
+        self._dirty = overwrite and self._inplace
 
     def _erase_line(self) -> None:
         """Drop the running line without leaving it on screen."""

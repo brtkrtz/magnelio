@@ -560,11 +560,10 @@ class FITTimeDomainSolver:
                 }
                 self._tile_zero_E = xp.asarray(plan.dead_zero_idx_E)
                 self._tile_zero_H = xp.asarray(plan.dead_zero_idx_H)
+                # The fraction of dead tiles is a performance statistic
+                # with nothing for the user to act on; it stays readable
+                # here and is not printed (DD-251).
                 self._tile_skip_stats = plan.stats
-                # A plan with no dead tiles has nothing to report; the
-                # line would appear on every run that gains nothing.
-                if self.verbose and plan.stats["total"] > 0.0:
-                    print(f"Tile skip: {plan.stats['total']:.1%} of kernel elements in dead tiles")
 
         # H-face offsets
         self._n_Hx = (Nx + 1) * Ny * Nz

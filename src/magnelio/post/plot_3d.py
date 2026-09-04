@@ -87,6 +87,71 @@ def _in_notebook() -> bool:
     return ip is not None and "IPKernelApp" in getattr(ip, "config", {})
 
 
+def _loop_is_running() -> bool:
+    """True inside a running asyncio loop -- every cell of a Jupyter kernel."""
+    import asyncio  # noqa: PLC0415
+
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return False
+    return True
+
+
+# Tasks started by _show_when_server_ready, held until they finish so
+# the loop does not garbage-collect a pending one.
+_PENDING_VIEWS: set = set()
+
+
+def _show_when_server_ready(pl, mode: str, jupyter_kwargs: dict) -> None:
+    """Start the trame server on the running loop and show the view once it is up.
+
+    PyVista's own first-call path (``elegantly_launch``) re-enters the
+    kernel's event loop through ``nest_asyncio2`` and blocks until the
+    server is ready.  Under ipykernel 7 every cell runs in its own
+    ``contextvars`` context, and a nested loop that picks up the *next*
+    queued cell -- exactly what "Run all" produces -- trips
+    ``RuntimeError: cannot enter context ... is already entered`` and
+    aborts the run.  Manual execution only worked because the queue was
+    empty while the server came up.
+
+    Here the server is started as a task on the loop that is already
+    running (``launch_server`` does that), an empty output widget takes
+    the view's place in the cell at once, and the widget is filled the
+    moment the server reports ready -- a fraction of a second later, in
+    the same cell.  No loop is nested, so the queue is never read out of
+    turn; ``nest_asyncio2`` is not needed.  Later calls find the server
+    running and take the direct path (DD-251).
+    """
+    import asyncio  # noqa: PLC0415
+
+    from IPython.display import display  # noqa: PLC0415
+    from ipywidgets import Output  # noqa: PLC0415
+    from pyvista.trame.jupyter import launch_server  # noqa: PLC0415
+
+    out = Output()
+    display(out)
+    server = launch_server()
+
+    async def fill() -> None:
+        try:
+            await server.ready
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message="Suppress rendering")
+                widget = pl.show(
+                    jupyter_backend=mode, jupyter_kwargs=jupyter_kwargs, return_viewer=True
+                )
+            with out:
+                display(widget)
+        except Exception as exc:  # pragma: no cover - reported into the cell
+            with out:
+                print(f"3D view could not start: {exc!r}")
+
+    task = asyncio.get_running_loop().create_task(fill())
+    _PENDING_VIEWS.add(task)
+    task.add_done_callback(_PENDING_VIEWS.discard)
+
+
 def _configure_pyvista() -> None:
     """One-time process settings the viewer relies on.
 
@@ -1116,6 +1181,7 @@ def show_geometry(
         return pl
 
     if notebook and mode in ("client", "server", "trame"):
+        server = None
         try:
             from trame.app import get_server  # noqa: PLC0415
 
@@ -1124,6 +1190,9 @@ def show_geometry(
             jupyter_kwargs = {"add_menu_items": menu_items}
         except ImportError:
             jupyter_kwargs = {}
+        if server is not None and not server.running and _loop_is_running():
+            _show_when_server_ready(pl, mode, jupyter_kwargs)
+            return None
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="Suppress rendering")
             pl.show(jupyter_backend=mode, jupyter_kwargs=jupyter_kwargs)

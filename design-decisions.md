@@ -20183,3 +20183,84 @@ translational Hermite loft would thin the elbow);
 `geo.Loft(a, b, blend="tangent")` for two planar sheets with their own
 normals — the same backend rows, an extension when a model asks for it;
 an N-section loft with end tangents.
+
+## DD-251 — a notebook is an in-place stream, the viewer starts its server on the running loop, and the tile-skip line is gone
+
+**Date:** 2026-09-04 (branch `fix/jupyter-progress-viewer`).
+**Status:** Implemented and gated
+(`tests/unit/test_progress_reporting.py::TestNotebookStream`; the
+*Run All* race is reproduced and closed by
+`investigations/viewer3d/runall_repro.py`, internal record).
+**Files:** `src/magnelio/_progress.py` (`_is_notebook_stream`,
+`_NOTEBOOK_INTERVAL`, `Reporter._inplace`), `src/magnelio/post/plot_3d.py`
+(`_show_when_server_ready`, `_loop_is_running`),
+`src/magnelio/solver/fit_td.py`, `docs/methods/progress-output.md`,
+`docs/methods/viewer.md`.
+**Amends:** [[DD-246]] (the terminal/log policy) and [[DD-190]] (the
+viewer's first call in a kernel).
+
+**Problem.**  Three findings from one notebook session
+(`userscripts/rect2circ.ipynb`, developer worksheet):
+
+1. *Run All* aborted at the first `GeometryModel.plot()` with
+   `RuntimeError: cannot enter context: <Context ...> is already
+   entered` from ipykernel's `_async_in_context`, and the cells after
+   it never ran; executing the cells by hand worked.
+2. The time-domain march printed nothing for 30 s at a time.  On a
+   one-minute GPU run the first line came at step 75 900 of 88 601 —
+   86 % of the march — and the user read the heartbeat and the final
+   line as one failed overwrite.
+3. `Tile skip: 17.6% of kernel elements in dead tiles` appeared as a
+   bare `print` outside the reporter, and nobody could act on it.
+
+**Causes.**  (1) PyVista's first-call path `elegantly_launch` applies
+`nest_asyncio2` and runs `asyncio.run(...)` *inside* the kernel's
+running loop until the trame server is ready.  Under ipykernel 7 every
+cell executes in its own `contextvars` context; the nested loop picks
+up the next queued `execute_request` — which *Run All* has already
+sent — and re-enters a context that is still entered.  Manual
+execution only works because the queue is empty while the server comes
+up.  Reproduced without a browser by queueing four requests at once
+through `jupyter_client` (`runall_repro.py`): the old code raises in
+cell 2 and cells 3–4 never execute.  (2) DD-246 keyed the policy on
+`isatty()`: ipykernel's `OutStream` answers no, so the notebook was
+filed with the logs and their 30 s cadence — although a notebook cell
+redraws a carriage-returned line exactly like a terminal.  (3) The
+line predates the reporter and slipped past DD-246, which had only
+silenced its `0.0%` case.
+
+**Decision.**
+
+- **The viewer starts the server as a task on the loop that is
+  already running.**  When the trame server is not yet running and a
+  loop is (every Jupyter cell), `plot()` displays an empty
+  `ipywidgets.Output` in the cell at once, calls PyVista's
+  `launch_server()` — which schedules `server.start(exec_mode="task")`
+  on that loop — and fills the widget from a task that awaits
+  `server.ready` and then builds the view with `return_viewer=True`.
+  No loop is nested, so the request queue is never read out of turn.
+  Later calls find the server running and take the direct path as
+  before.  Reproduction after the change: all four queued cells run,
+  both views are displayed, no error.  The cost is that the first view
+  in a kernel appears a fraction of a second after its cell returns.
+  Rejected: documenting `await launch_server().ready` as a cell the
+  user has to run first — it works, and it puts the library's problem
+  on the notebook.  `nest_asyncio2` is no longer on Magnelio's path;
+  it stays in the `[jupyter]` extra for PyVista's own use.
+- **Three stream classes, not two.**  A stream from the `ipykernel`
+  package (`type(stream).__module__`) is an *in-place* stream like a
+  terminal, with its own cadence `_NOTEBOOK_INTERVAL = 0.5 s`: a
+  terminal takes ten refreshes a second without flicker, a notebook
+  sends each refresh to the browser, and half a second keeps the line
+  live without flooding the connection.  Logs keep their 30 s and
+  whole lines.  Measured in the kernel: the reporter's `\r` lines
+  arrive per refresh and the closing line terminates them.
+- **The tile-skip line is removed**, not moved onto the reporter.  The
+  fraction of dead tiles is a kernel statistic; it stays readable on
+  the solver as `_tile_skip_stats` (the integration test reads it
+  there), and the user has no decision that depends on it.
+
+**Non-goals.**  Making the two stop criteria print on one line (they
+are two criteria: the stored-energy stop and the port-signal stop,
+whichever fires first ends the run, and the heartbeat line shows the
+one it happens to sample); a configurable notebook cadence.

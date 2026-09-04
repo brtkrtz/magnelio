@@ -111,6 +111,13 @@ widget talks to the kernel over its own websocket on `localhost`; on a
 remote JupyterHub set `PYVISTA_TRAME_JUPYTER_MODE` as described in the
 PyVista documentation.
 
+The first `plot()` in a kernel starts that websocket server on the
+kernel's own event loop and fills the cell's output the moment the
+server is up — a fraction of a second after the cell returns.  Nothing
+is nested into the running loop, so *Run All* works like running the
+cells one by one; `nest-asyncio2` is what PyVista's own first-call path
+uses and is not needed for Magnelio's viewer.
+
 ## Limitations
 
 - Names are flat 3D text placed in the scene (the browser renderer has

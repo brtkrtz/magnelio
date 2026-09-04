@@ -165,6 +165,47 @@ class TestCadence:
         assert tty.getvalue().count("/100") > log.getvalue().count("/100")
 
 
+class FakeOutStream(io.StringIO):
+    """A stream shaped like the one a Jupyter kernel gives its cells."""
+
+
+# Only the module name marks the kernel's stream; ipykernel is not a
+# test dependency.
+FakeOutStream.__module__ = "ipykernel.iostream"
+
+
+class TestNotebookStream:
+    """A notebook cell redraws a carriage-returned line like a terminal.
+
+    ipykernel's OutStream is not a TTY, so the first policy filed it as
+    a log and a notebook user waited 30 s for a line.  It is now an
+    in-place stream with its own cadence between terminal and log.
+    """
+
+    def test_is_recognised_by_its_module(self):
+        from magnelio._progress import _is_notebook_stream
+
+        assert _is_notebook_stream(FakeOutStream())
+        assert not _is_notebook_stream(io.StringIO())
+        assert not _is_notebook_stream(FakeTTY())
+
+    def test_writes_in_place(self):
+        s = FakeOutStream()
+        rep = Reporter("x", True, stream=s)
+        rep.stage("phase")
+        rep.step(1, 2)
+        assert "\r" in s.getvalue()
+        rep.finish("summary")
+        assert s.getvalue().endswith("summary\n")
+
+    def test_refreshes_faster_than_a_log_and_slower_than_a_terminal(self):
+        from magnelio._progress import _LOG_INTERVAL, _NOTEBOOK_INTERVAL, _TTY_INTERVAL
+
+        assert _TTY_INTERVAL < _NOTEBOOK_INTERVAL < _LOG_INTERVAL
+        assert Reporter("x", True, stream=FakeOutStream())._interval == _NOTEBOOK_INTERVAL
+        assert Reporter("x", True, stream=io.StringIO())._interval == _LOG_INTERVAL
+
+
 class TestPhaseContext:
     def test_a_raising_phase_closes_its_line(self):
         s = FakeTTY()
