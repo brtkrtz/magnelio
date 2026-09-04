@@ -37,6 +37,16 @@ def _ipc_2141a_z_line(B: float, a: float) -> float:
     return 60.0 * math.log(1.0787 * B / a)
 
 
+def _hollow_guide():
+    """A short WR-90-like PEC-walled air guide with one waveguide port."""
+    guide = GeometryModel(background="pec")
+    guide.add(Brick(origin=(0, 0, 0), size=(22.86e-3, 10.16e-3, 12e-3), material=Material.air()))
+    guide.add_port(PortWaveguide(name="wg", plane="zmin", n_modes=1))
+    control = MeshControl(min_nodes_per_wavelength=6, conformal=False, max_cell_size=2e-3)
+    mesh = Mesh.from_geometry(guide, control, f_max=12e9)
+    return guide, control, mesh
+
+
 @pytest.fixture(scope="module")
 def coax():
     model, a, b_air = _rect_coax()
@@ -115,6 +125,29 @@ class TestRefinePortModes:
         eps = refine_port_modes(model, control, mesh, "p", levels=2, target="epsilon_eff")
         assert all(lv.value == pytest.approx(1.0, abs=1e-9) for lv in eps.levels)
         assert eps.converged
+
+    def test_auto_target_follows_the_mode_family(self, coax):
+        """A TEM line converges its impedance, a hollow guide its cut-off.
+
+        The default used to be ``z_line`` outright, and a rectangular-to-
+        circular taper's round port answered with ``has no line
+        impedance`` -- the one port a taper's user wants to converge.
+        """
+        model, control, mesh, *_ = coax
+        tem = refine_port_modes(model, control, mesh, "p", levels=1)
+        assert tem.target == "z_line"
+
+        guide, g_control, g_mesh = _hollow_guide()
+        te = refine_port_modes(guide, g_control, g_mesh, "wg", levels=1)
+        assert te.target == "f_cutoff"
+        f_c = AnalysisScatteringTD(mesh=g_mesh, verbose=False).solve_ports()["wg"].modes[0]
+        assert te.levels[0].value == pytest.approx(f_c.f_cutoff, rel=1e-12)
+        assert "f_cutoff" in str(te)
+
+    def test_z_line_on_a_te_mode_names_the_way_out(self):
+        guide, control, mesh = _hollow_guide()
+        with pytest.raises(ValueError, match="target='f_cutoff'"):
+            refine_port_modes(guide, control, mesh, "wg", levels=1, target="z_line")
 
     def test_rejections(self, coax):
         model, control, mesh, *_ = coax

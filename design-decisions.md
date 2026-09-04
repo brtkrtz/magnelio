@@ -20264,10 +20264,22 @@ silenced its `0.0%` case.
   `wslink_backend="aiohttp"` (or `"jupyter"` when the extension is
   enabled).  Verified in the browser: *Restart Kernel and Run All* on
   a three-cell notebook renders both views.
-  Rejected: documenting `await launch_server().ready` as a cell the
-  user has to run first — it works, and it puts the library's problem
-  on the notebook.  `nest_asyncio2` is no longer on Magnelio's path;
-  it stays in the `[jupyter]` extra for PyVista's own use.
+  **Rejected on measurement: starting the server at import.**  The
+  hand-over from a task runs only once the loop is free — after every
+  queued cell of a *Run All*, since a mesh build or a march holds the
+  loop — so the view appears last.  A warm start (`import magnelio` in
+  a kernel scheduling `launch_server`) was built and measured in the
+  browser on a notebook whose plot cell was followed by a 15 s cell:
+  with the plot in the cell right after the import *and* with an
+  ordinary cell in between, the server was still pending when
+  `plot()` ran, and the view arrived after the sleeping cell as before.
+  Between two queued cells ipykernel gives the loop no usable time —
+  the next `execute_request` is already on the socket — and the
+  aiohttp start needs several iterations.  What the warm start would
+  have bought is a fraction of a second on the first hand-executed
+  plot, at the price of the PyVista and trame imports (0.36 s) and a
+  listening socket in every notebook that imports Magnelio.  Not
+  taken; the docs state the *Run All* behaviour.
 - **Three stream classes, not two.**  A stream from the `ipykernel`
   package (`type(stream).__module__`) is an *in-place* stream like a
   terminal, with its own cadence `_NOTEBOOK_INTERVAL = 0.5 s`: a
@@ -20285,3 +20297,34 @@ silenced its `0.0%` case.
 are two criteria: the stored-energy stop and the port-signal stop,
 whichever fires first ends the run, and the heartbeat line shows the
 one it happens to sample); a configurable notebook cadence.
+
+## DD-252 — `refine_port_modes` converges what the mode family defines
+
+**Date:** 2026-09-04 (branch `fix/jupyter-progress-viewer`).
+**Status:** Implemented and gated
+(`tests/unit/test_modal_refinement.py::TestRefinePortModes::test_auto_target_follows_the_mode_family`,
+`::test_z_line_on_a_te_mode_names_the_way_out`).
+**Files:** `src/magnelio/ports/_modal/refinement.py`, `docs/methods/ports.md`.
+**Amends:** [[DD-244]].
+
+**Problem.**  `refine_port_modes(model, control, mesh, "port2")` on the
+round port of a rectangular-to-circular taper raised `ValueError: mode 0
+of port 'port2' has no line impedance`.  DD-244 built the ladder for
+the quasi-TEM case and made `target="z_line"` the default; a TE mode
+has a wave impedance but no line impedance, and the one quantity its
+user wants converged — the cut-off, which the grid reads 0.33 % low
+on that taper and which β amplifies to 2 % at 11.9 GHz — was available
+as `target="f_cutoff"` but had to be known.
+
+**Decision.**  The default is `target="auto"`: the line impedance for a
+mode that has one (TEM, quasi-TEM), the cut-off frequency for a TE or
+TM mode, resolved from the level-0 port report and written into the
+report's `target` so the ladder says what it converged.  An explicit
+`z_line` or `epsilon_eff` on a TE/TM mode still raises, and the message
+now names `target='f_cutoff'` and the default.  A mode index past the
+solved modes raises with the count instead of an `IndexError`.
+
+**Non-goals.**  Converging the wave impedance or the propagation
+constant at a frequency (the ladder converges cross-section
+parameters, and the cut-off carries the TE/TM cross-section
+completely); a per-mode target list.

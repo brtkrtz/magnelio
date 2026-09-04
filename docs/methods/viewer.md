@@ -113,10 +113,12 @@ PyVista documentation.
 
 The first `plot()` in a kernel starts that websocket server on the
 kernel's own event loop and fills the cell's output the moment the
-server is up — a fraction of a second after the cell returns.  Nothing
-is nested into the running loop, so *Run All* works like running the
-cells one by one; `nest-asyncio2` is what PyVista's own first-call path
-uses and is not needed for Magnelio's viewer.
+server is up — a fraction of a second after the cell returns when you
+run cells by hand.  Under *Run All* the cells queued behind it hold the
+loop, so the view appears once they have run.  Nothing is nested into
+the running loop, so *Run All* works like running the cells one by one;
+`nest-asyncio2` is what PyVista's own first-call path uses and is not
+needed for Magnelio's viewer.
 
 ## Limitations
 

@@ -595,7 +595,10 @@ The 2D mode problem is the port-plane slice of the 3D operator, so its
 parameters carry the discretisation of the user's mesh, and converging
 them by refining that mesh costs $8\times$ cells per halving.
 `refine_port_modes(model, control, mesh, "port1")` converges them on a
-**port slab** instead: a slice of the model a few cells deep behind
+**port slab** instead — by default the line impedance of a TEM or
+quasi-TEM mode and the cut-off frequency of a TE or TM mode, which has
+no line impedance (`target=` names one of `z_line`, `epsilon_eff`,
+`f_cutoff` explicitly): a slice of the model a few cells deep behind
 the port face, cut with the mesher's own domain clip, meshed with the
 user's control at level 0 — which reproduces the user's port-plane
 grid and its report exactly — and with every tangential cell split

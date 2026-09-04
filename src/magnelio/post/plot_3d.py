@@ -103,6 +103,25 @@ def _loop_is_running() -> bool:
 _PENDING_VIEWS: set = set()
 
 
+def _launch_viewer_server():
+    """Schedule the trame server's start on the running loop; return the server.
+
+    Names the transport.  With the trame Jupyter server extension
+    installed, the kernel inherits ``TRAME_BACKEND=jupyter``, and a start
+    without an explicit backend takes it: a comm-based transport that
+    binds no TCP port, so the iframe is built for ``localhost:0`` and
+    stays blank.  PyVista's own path names the backend for the same
+    reason; the widget talks over the websocket the viewer disabled the
+    extension for (see :func:`_configure_pyvista`).  A second call finds
+    the server pending or running and changes nothing.
+    """
+    import pyvista as pv  # noqa: PLC0415
+    from pyvista.trame.jupyter import launch_server  # noqa: PLC0415
+
+    backend = "jupyter" if pv.global_theme.trame.jupyter_extension_enabled else "aiohttp"
+    return launch_server(wslink_backend=backend)
+
+
 def _show_when_server_ready(pl, mode: str, jupyter_kwargs: dict) -> None:
     """Start the trame server on the running loop and show the view once it is up.
 
@@ -126,25 +145,21 @@ def _show_when_server_ready(pl, mode: str, jupyter_kwargs: dict) -> None:
     it arrives.  No loop is nested, so the queue is never read out of
     turn; ``nest_asyncio2`` is not needed.  Later calls find the server
     running and take the direct path (DD-251).
+
+    The view therefore lands when the loop is next free.  Under *Run
+    All* that is after the queued cells, and starting the server at
+    import does not change it: measured in the browser, the loop gets
+    no usable time between two queued cells, so a server scheduled at
+    import is still pending when the next cell plots.
     """
     import asyncio  # noqa: PLC0415
 
-    import pyvista as pv  # noqa: PLC0415
     from IPython.display import display  # noqa: PLC0415
     from ipywidgets import HTML, VBox, Widget  # noqa: PLC0415
-    from pyvista.trame.jupyter import launch_server  # noqa: PLC0415
 
     box = VBox()
     display(box)
-    # Name the transport.  With the trame Jupyter server extension
-    # installed, the kernel inherits TRAME_BACKEND=jupyter, and a start
-    # without an explicit backend takes it: a comm-based transport that
-    # binds no TCP port, so the iframe is built for `localhost:0` and
-    # stays blank.  PyVista's own path names the backend for the same
-    # reason; the widget talks over the websocket the viewer disabled
-    # the extension for (see _configure_pyvista).
-    backend = "jupyter" if pv.global_theme.trame.jupyter_extension_enabled else "aiohttp"
-    server = launch_server(wslink_backend=backend)
+    server = _launch_viewer_server()
 
     async def fill() -> None:
         try:

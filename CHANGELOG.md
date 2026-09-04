@@ -22,7 +22,13 @@ major version is 0, minor releases may change the public API.
   the remaining cells unexecuted, while running the cells one by one
   worked.  The viewer now starts its websocket server on the kernel's
   event loop instead of nesting a second loop into it, and fills the
-  cell's output the moment the server is up.
+  cell's output the moment the server is up — under *Run All*, once the
+  cells queued behind it have run.
+- `refine_port_modes()` on a hollow-waveguide port raised `mode 0 of
+  port ... has no line impedance`, because it converged the line
+  impedance by default.  The default target now follows the mode
+  family: line impedance for TEM and quasi-TEM modes, cut-off frequency
+  for TE and TM modes; the report names the quantity it converged.
 - Progress lines in a notebook arrived every 30 s — on a one-minute GPU
   run the first one at 86 % of the march — because the notebook's
   output stream was filed as a log.  A notebook cell now gets the
