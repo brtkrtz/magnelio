@@ -19776,3 +19776,103 @@ shift could share it; that also leaves `lu.solve` exposed as a callable
 this side owns, which is the only place an ARPACK iteration can be
 counted from — the library offers no progress callback.  The matvec
 counter rides there, and on the AMG-CG path in its own `opinv_matvec`.
+
+---
+
+## DD-247 — the 201-point axis has no dominant item, and the arc-fan lead closes without being taken
+
+**Date:** 2026-09-04.  **Status:** Accepted — this entry records a
+measurement that closes a lead and re-ranks the remaining ones; no
+shipped default changes and no source file moves.  **Measurements:**
+internal record `investigations/port-model-default/`
+(`probe_production_e2e.py`, MEASUREMENTS.md section 20), two runs
+`--tag prod245` and `--tag prod245b`.
+
+**Problem.**  [[DD-236]] measured the band pipeline on a 201-point
+production axis and found the postprocessing at 51.4 %, the
+convolution at 31.4 % and the kernels at 7.4 %.  It named two leads:
+the exact blocked convolution, and the arc-fan cut at the
+postprocessing site — 3.12x and bit-identical, but declined by
+[[DD-235]] until someone makes an argument about `k` rather than
+counting agreeing points.  [[DD-245]] then took the convolution.  The
+axis-length question was left standing in the old terms, and the
+201-point run had not been repeated since.
+
+**The ranking is flat now.**  Same fixture as DD-236 (validation
+microstrip, 106743 cells, 2n = 5420, p = 9, 36864 steps,
+n_kernel = 65536), same probe, at `22329b1`:
+
+    item                     DD-236 (08-31)      this entry (09-04)
+    postprocessing            163.5 s  51.9 %     26.6 s  32.8 %
+    all three kernels          23.6 s   7.5 %     24.4 s  30.1 %
+    mode tracking (build)      20.8 s   6.6 %     20.2 s  24.9 %
+    field update                5.6 s   1.8 %      4.8 s   5.9 %
+    convolution               100.1 s  31.8 %      3.6 s   4.4 %
+    recorder                    1.2 s   0.4 %      1.6 s   2.0 %
+                             --------            -------
+    total                     314.9 s             81.2 s   (3.88x)
+
+**No item dominates**: the first three are 32.8 / 30.1 / 24.9 %, and
+the two behind the postprocessing are both *port build* rather than
+axis work — together 55.0 %.  DD-245's observation that the port build
+is the largest block of an 18-point run therefore survives the longest
+axis anyone runs.  Two runs at 1-min loads of 7.37 and 0.80 agree to
+0.4 % on the axis wall clock and to every printed digit of |S11|
+(worst −148.7 dB over 18 points), so the ranking is not a load artefact.
+
+**The postprocessing fell 6.1x without being optimised, and that
+closes the arc-fan lead.**  [[DD-244]] built the per-frequency
+decomposition on a continuation: `solve_port_dispersion` holds each
+channel's last (ζ, φ, f), extrapolates the phase advance as
+`ζ_prev^(f/f_prev)`, and solves *one* shift-invert with `k = 4` per
+tracked channel, falling back to the full `find_propagating_modes`
+only when the overlap match fails, or at the first and last axis
+point.  Measured on the 201-point axis: **4 full searches out of 402**,
+and 418 ARPACK runs = 2 × (2 × 5 fan targets + 199 continuations).
+
+The fan is therefore 6.5 % of the postprocessing and the whole cut is
+worth about 5 % of the axis, against the 3.12x of the largest item
+DD-236 priced.  Measured again here at 1.92x and 1.52x on the
+*18-point* axis (where 4 of 36 points are full searches, so the fan
+still carries weight), `max |ΔS| = 0.000e+00` in both runs as before.
+**DD-235's gate is not to be earned — the lead is void.**  The
+continuation took the prize by the better route: mode continuity along
+a smooth dispersion curve is a physical argument, where the number of
+arc targets was only ever a bet on how many shifts it takes to see a
+family.  Nothing about `k` needs deciding, and the four port-build call
+sites the gate was protecting keep the full fan untouched.
+
+**The lead that replaces it.**  Inside the postprocessing, `eigs` and
+`splu` are **96.6 %** (71.3 % / 25.3 %), everything else — the wave
+fields, the power-wave split, the lstsq — is under 0.3 % together.  The
+LU is not amortisable: `zeta_pencil.solve_zeta_modes` factorises
+`A_lin - target·B_lin` per solve, and both the shift *and* `A_lin`
+itself move with frequency through `sig_hat = 2 - 2·cos(ω·dt)`, so
+there is no fixed operator to reuse a factorisation for.  Two unpriced
+reductions sit next to it, neither measured here:
+
+1. `solve_port_dispersion` issues **one target per tracked channel**,
+   i.e. one factorisation per channel per frequency.  Invisible on a
+   one-channel microstrip; it multiplies on the multi-conductor
+   cross-sections the library exists for.
+2. The continuation asks for `k = 4` eigenpairs where one mode per
+   channel is consumed.
+
+**Method note — a cost split can go blind without going wrong.**  The
+DD-236 buckets attach by name to `zeta_pencil.find_propagating_modes`,
+`.cw_wave_phasors` and an `spla` proxy.  DD-244 re-routed the
+decomposition onto `ports/_modal/dispersion.py`, and at this HEAD the
+old hooks booked **57 % of the postprocessing call into `_gaps`**
+(DD-236: 0.2 %), with `cw_wave_phasors` dropping from 36 calls to 0.
+The wall clock stayed correct and the percentages still summed to it —
+only the attribution was wrong, which no assertion in the probe could
+catch.  `install_post_hooks` now also wraps `solve_port_dispersion`,
+`decompose_power_waves`, `solve_zeta_modes` and `_wave_fields`, and
+`partition` nests `fpm`/`lstsq`/`cwp` when a `disp` event is present so
+both readings stay comparable; `_gaps` is 1.1 % afterwards.  A split
+whose buckets are attached by name survives a rename but not a
+re-routing, and the failure is silent.
+
+**Non-goals.**  Any change to the arc fan on the port-build path
+(untouched, and the gate that protects it stands), any change to the
+continuation itself, and pricing the two reductions above.
