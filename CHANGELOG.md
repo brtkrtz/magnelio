@@ -7,6 +7,22 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Fixed
+
+- `lofted(..., blend="tangent")` between two faces that look straight at
+  each other — the two ends of a coaxial taper, such as a rectangular
+  waveguide opening into a round one — raised `OCC tangent blend
+  (MakePipeShell) operation failed` instead of building.  It now builds,
+  and says what it built: the tangent blend curves the *path* between
+  two faces that point in different directions, so faces that face each
+  other leave it nothing to curve and the result is the same solid
+  `blend="spline"` or `"ruled"` gives.  A taper whose wall meets both
+  ends with no slope is a `geo.Loft` through intermediate
+  cross-sections, spaced by a law that flattens at both ends; the
+  warning names it.
+
 ## [0.5.2] - 2026-09-04
 
 ### Added

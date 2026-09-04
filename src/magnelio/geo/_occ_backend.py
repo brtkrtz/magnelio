@@ -8395,6 +8395,15 @@ def make_extrude(face, vector, scale: float = 1.0):
     return prism.Shape()
 
 
+# Lateral run-out of a blend spine's interior control points, relative
+# to the span between the two faces, below which the spine counts as
+# straight.  Face centroids come out of OCC with a few ulps of noise on
+# the axes they are centred on, so a spine that is straight by
+# construction still arrives with ~1e-16 * span of wobble -- enough to
+# leave the swept frame without a well-defined normal.
+_BLEND_SPINE_STRAIGHT_RTOL = 1e-9
+
+
 def make_loft(wires, is_solid=True, is_ruled=False):
     """Loft through a series of wire profiles to produce a solid.
 
@@ -8569,6 +8578,38 @@ def make_tangent_blend(face_a, face_b, tension):
         tuple(p + n * tension_b * span for p, n in zip(point_b, normal_b)),
         point_b,
     ]
+
+    # DD-249: two faces that look at each other along their common normal put
+    # every control point on the chord, so the spine is a straight line
+    # -- except for the ~1e-16 * span of lateral noise the centroids
+    # carry, which is enough to make the swept frame ill-conditioned and
+    # the sweep fail outright.  Snap that away, and say so: on a
+    # straight spine the sweep is the same solid a plain loft builds,
+    # so the caller asked for a smooth joint and is not getting one.
+    chord = tuple((q - p) / span for p, q in zip(point_a, point_b))
+    lateral = []
+    snapped = []
+    for point in control[1:3]:
+        offset = tuple(q - p for p, q in zip(point_a, point))
+        along = sum(o * c for o, c in zip(offset, chord))
+        side = tuple(o - along * c for o, c in zip(offset, chord))
+        lateral.append(math.sqrt(sum(c * c for c in side)))
+        snapped.append(tuple(p + along * c for p, c in zip(point_a, chord)))
+    if max(lateral) <= _BLEND_SPINE_STRAIGHT_RTOL * span:
+        control[1:3] = snapped
+        warnings.warn(
+            "blend='tangent' has no effect here: the two faces face each "
+            "other along their shared normal, so the spine the blend "
+            "curves along is a straight line and the result is the same "
+            "solid blend='spline' or 'ruled' would build.  The tangent "
+            "blend bends the path between two faces that are not aligned; "
+            "it does not shape the cross-section along the way.  To ease "
+            "the profile itself into each end -- a taper that leaves both "
+            "waveguides with zero wall slope -- loft through intermediate "
+            "cross-sections with geo.Loft(...) instead.",
+            stacklevel=2,
+        )
+
     array = TColgp_Array1OfPnt(1, 4)
     for index, point in enumerate(control, start=1):
         array.SetValue(index, gp_Pnt(*point))

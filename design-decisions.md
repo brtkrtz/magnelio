@@ -20005,3 +20005,64 @@ plane and has no frozen profile to repair); the rank as a user-facing
 argument (it is chosen against a profile-error target, and section 5 of
 the record shows the far-port floor caps what any rank can buy); and
 repairing the decomposition's passivity, which is DD-244's to own.
+
+---
+
+## DD-249 — a tangent blend between two facing profiles bends nothing, and used to fail saying so
+
+**Date:** 2026-09-04 (branch `fix/tangent-blend-straight-spine`).
+**Status:** Implemented and gated
+(`tests/unit/test_modifications.py::TestTangentBlend::test_facing_pair_builds_and_says_the_blend_is_idle`,
+`::test_a_bent_pair_stays_silent`).
+**Files:** `src/magnelio/geo/_occ_backend.py`
+(`make_tangent_blend`, `_BLEND_SPINE_STRAIGHT_RTOL`),
+`src/magnelio/geo/shape.py` (`lofted` docstring).
+
+**Problem.**  A rectangular-to-circular waveguide taper is the
+textbook use for `lofted(..., blend="tangent")`: the user wants the
+transition to leave both guides with no crease.  It raised
+`RuntimeError: OCC tangent blend (MakePipeShell) operation failed` on
+every such model.
+
+**Cause.**  [[DD-144]] builds the spine as a cubic Bezier whose two
+interior control points sit along the outward face normals.  When the
+two faces look straight at each other — antiparallel normals on the
+line through both centroids, which is exactly the coaxial taper — all
+four control points land on that line and the spine is a straight
+segment.  The centroids, however, come back from
+`BRepGProp::SurfaceProperties` with a few ulps on the axes they are
+centred on: measured `3.2e-16` and `-8.9e-16` in x on a `59.055`-long
+span.  That leaves a curve which is straight to 1e-17 relative but not
+exactly straight, and the corrected-Frenet frame `MakePipeShell`
+builds on it has no usable normal.  The sweep succeeds on the same two
+wires the moment the control points are snapped to exact zeros.
+
+**Decision.**  Project the interior control points onto the chord when
+their lateral run-out is below `_BLEND_SPINE_STRAIGHT_RTOL = 1e-9` of
+the span, and warn that the blend is idle.  The snap is what makes the
+solid build; the warning is what makes the outcome honest, because a
+straight spine reduces the sweep to the loft `blend="ruled"` already
+builds — measured **4.2e-5** relative volume difference on the WR-75
+case (11326.20 vs 11326.68 mm³), the residual being the sweep's own
+tessellation of the circular section, not a shape difference.  Failing
+loudly was also on the table and was rejected: the solid is
+well-defined and usable, it is only not the *smooth* one the caller
+asked for.
+
+**What the caller actually wants.**  The tangent blend bends the path
+between two faces that point in different directions ([[DD-144]]'s
+stripline-into-coax elbow); it does not shape the cross-section along
+the way.  A taper that eases its profile into both ends is a
+`geo.Loft` through intermediate cross-sections with a weight law
+whose derivative vanishes at both ends.  On the WR-75 → Ø15.9 mm case,
+13 sections under `w(s) = 3s² − 2s³` take the wall slope at both
+joints from `-0.0267 / +0.0540` (straight loft) to
+`-0.0002 / +0.0004`, at 6.7 s of mesh build against 5.8 s for the
+two-profile loft and the same 13 × 9 × 100 grid.  The warning names
+`geo.Loft` for that reason.
+
+**Non-goals.**  Making `blend="tangent"` interpolate profiles (that is
+`geo.Loft`'s job and needs a section count the two-face verb has no
+place for); a public knob for the straightness tolerance; and
+suppressing the warning when the caller passed an explicit `tension`,
+which changes nothing about a straight spine.

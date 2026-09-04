@@ -625,7 +625,14 @@ class Shape:
             at whatever angle the straight connection happens to make.
             ``'tangent'`` instead leaves both faces along their outward
             normal and curves between them, which is what turns a crease
-            at the joint into a smooth bend.
+            at the joint into a smooth bend.  It bends the *path* between
+            two faces that point in different directions; it does not
+            shape the cross-section along the way, so two faces looking
+            straight at each other give it nothing to bend and it warns
+            that the result is the plain loft.  A taper that eases its
+            profile into each end -- zero wall slope where it meets both
+            solids -- is a :class:`~magnelio.geo.Loft` through
+            intermediate cross-sections instead.
         tension : float or tuple of float, optional
             Only for ``blend='tangent'``: how stiffly the blend holds its
             normal direction before turning, as a fraction of the

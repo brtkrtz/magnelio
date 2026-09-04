@@ -410,6 +410,35 @@ class TestTangentBlend:
         with pytest.raises(ValueError, match="tension must be positive"):
             self._blend(blend="tangent", tension=-0.2)
 
+    def test_facing_pair_builds_and_says_the_blend_is_idle(self):
+        """Two faces looking at each other leave the blend nothing to bend.
+
+        Their normals are antiparallel and lie on the line between the
+        centroids, so all four Bezier control points land on that line
+        and the spine is straight -- the swept solid is the one a plain
+        loft builds.  The sweep used to fail outright on it, because the
+        centroids carry a few ulps of lateral noise and a spine that
+        wobbles by 1e-16 of its span has no usable frame.  It now snaps
+        straight, builds, and warns that the smooth joint the caller
+        asked for is not what a tangent blend can give here.
+        """
+        mat = Material.pec()
+        rect = Brick(origin=(-9e-3, -4e-3, -10e-3), size=(18e-3, 8e-3, 10e-3), material=mat)
+        circ = Cylinder(origin=(0.0, 0.0, 40e-3), axis="z", radius=6e-3, height=10e-3, material=mat)
+        blend = loft(rect, (0, 0, 0), circ, (0, 0, 40e-3), material=mat, blend="tangent")
+        with pytest.warns(UserWarning, match="no effect here"):
+            volume = blend.volume()
+        straight = loft(rect, (0, 0, 0), circ, (0, 0, 40e-3), material=mat, blend="ruled")
+        assert volume == pytest.approx(straight.volume(), rel=1e-3)
+
+    def test_a_bent_pair_stays_silent(self):
+        """The warning speaks only for a spine with no bend in it."""
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            assert self._blend(blend="tangent").volume() > 0.0
+
     def test_n_ary_loft_points_at_the_verb_for_tangent(self):
         from magnelio.geo import Face, Loft
 

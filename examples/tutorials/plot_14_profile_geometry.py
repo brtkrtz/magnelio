@@ -227,7 +227,12 @@ fig, ax = plots.plot_cross_section(
 # :meth:`~magnelio.geo.Shape.lofted` verb takes those instead, and adds a
 # third mode: ``blend="tangent"`` leaves each face along its own normal,
 # so a bend between two parts that face different directions comes out
-# smooth rather than creased.
+# smooth rather than creased.  That mode bends the *path* between the
+# two faces; it does not shape the cross-section along the way, so two
+# faces looking straight at each other -- the two ends of a coaxial
+# taper -- give it nothing to bend, and it says so.  A taper whose wall
+# leaves both ends with no slope is a ``Loft`` through intermediate
+# cross-sections, spaced by a law that flattens at both ends.
 
 
 def square(half, z):
