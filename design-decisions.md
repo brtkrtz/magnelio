@@ -20008,61 +20008,178 @@ repairing the decomposition's passivity, which is DD-244's to own.
 
 ---
 
-## DD-249 — a tangent blend between two facing profiles bends nothing, and used to fail saying so
+## DD-249 — ~~a tangent blend between two facing profiles bends nothing, and used to fail saying so~~ → Superseded by DD-250
 
-**Date:** 2026-09-04 (branch `fix/tangent-blend-straight-spine`).
+**Date:** 2026-09-04.  Superseded the same day, before any release.
+
+What it was: `lofted(..., blend="tangent")` between two faces that look
+straight at each other raised `OCC tangent blend (MakePipeShell)
+operation failed`, because the four Bezier control points of the spine
+all lie on the chord and the ~1e-16 · span of lateral noise the face
+centroids carry left the corrected-Frenet frame without a normal.  The
+fix snapped the interior control points onto the chord
+(`_BLEND_SPINE_STRAIGHT_RTOL = 1e-9`), so the sweep built, and warned
+that the result was the plain loft with its creased joints, pointing
+at `geo.Loft` through hand-spaced intermediate sections.
+
+Why it went: the warning was a placeholder for a missing capability.
+The docstring's promise — leaves both faces along their outward normal
+— *is* zero wall slope at both ends for facing faces, and [[DD-250]]
+keeps it by building the eased taper itself.  Facing pairs never reach
+the sweep any more, so the snap went with the case it served; the
+measurement that the 13-section recipe takes the joint slopes from
+−0.0267 / +0.0540 to −0.0002 / +0.0004 lives on in
+`investigations/taper-tangency/MEASUREMENTS.md` (internal record).
+
+## DD-250 — `blend="tangent"` between facing profiles is a loft with Hermite end rows, not a sweep
+
+**Date:** 2026-09-04 (branch `fix/tangent-blend-straight-spine`, continuing DD-249's branch).
 **Status:** Implemented and gated
-(`tests/unit/test_modifications.py::TestTangentBlend::test_facing_pair_builds_and_says_the_blend_is_idle`,
-`::test_a_bent_pair_stays_silent`).
-**Files:** `src/magnelio/geo/_occ_backend.py`
-(`make_tangent_blend`, `_BLEND_SPINE_STRAIGHT_RTOL`),
-`src/magnelio/geo/shape.py` (`lofted` docstring).
+(`tests/unit/test_modifications.py::TestTangentBlend::test_facing_pair_builds_the_taper_silently`,
+`::test_taper_reaches_both_faces`,
+`::test_taper_leaves_both_faces_with_zero_wall_slope`,
+`::test_taper_between_two_circles_has_the_smoothstep_volume`,
+`::test_offset_parallel_faces_make_a_smooth_dog_leg`,
+`::test_tension_shapes_the_taper`,
+`::test_faces_looking_away_from_each_other_are_rejected`).
+**Files:** `src/magnelio/geo/_occ_backend.py` (`make_tangent_blend`,
+`_make_tangent_loft`, `_hermite_lateral_face`, `_face_lies_on_plane`,
+`_BLEND_FACING_ATOL`), `src/magnelio/geo/shape.py`
+(`lofted` docstring), `docs/methods/geometry.md` (section *Lofts*),
+`examples/tutorials/plot_14_profile_geometry.py`, `CHANGELOG.md`.
+**Record:** `investigations/taper-tangency/MEASUREMENTS.md` with the
+probes `p_iso2.py`, `p_hermite.py`, `p_cases.py`, `p_notebook_check.py`
+(internal dossier); trigger `userscripts/rect2circ.ipynb` (developer
+worksheet).
 
-**Problem.**  A rectangular-to-circular waveguide taper is the
-textbook use for `lofted(..., blend="tangent")`: the user wants the
-transition to leave both guides with no crease.  It raised
-`RuntimeError: OCC tangent blend (MakePipeShell) operation failed` on
-every such model.
+**Problem.**  After [[DD-249]] a rectangular-to-circular waveguide taper
+asked for with `blend="tangent"` came out as the creased straight loft
+plus a warning, and the notebook that had asked for it kept forty lines
+of hand mathematics instead: a rectangle–circle correspondence
+(`_rect_radius`), angles that hit the four corners exactly (or the
+polygon cut 65 µm off them), thirteen sampled sections under a
+smoothstep and a `geo.Loft` through them.  The verb's own promise —
+"leaves both faces along their outward normal" — is, for two facing
+faces, exactly "zero wall slope at both joints", and the library did
+not keep it.
 
-**Cause.**  [[DD-144]] builds the spine as a cubic Bezier whose two
-interior control points sit along the outward face normals.  When the
-two faces look straight at each other — antiparallel normals on the
-line through both centroids, which is exactly the coaxial taper — all
-four control points land on that line and the spine is a straight
-segment.  The centroids, however, come back from
-`BRepGProp::SurfaceProperties` with a few ulps on the axes they are
-centred on: measured `3.2e-16` and `-8.9e-16` in x on a `59.055`-long
-span.  That leaves a curve which is straight to 1e-17 relative but not
-exactly straight, and the corrected-Frenet frame `MakePipeShell`
-builds on it has no usable normal.  The sweep succeeds on the same two
-wires the moment the control points are snapped to exact zeros.
+**Insight.**  The eased taper is not new geometry; it is the plain loft
+**re-parametrised along its length**.  The plain loft carries the
+sections `M(v) = (1 − v)·A + v·B` at `z = l·v`; the wanted body has
+`M(w(t))` at `z = l·t` with `w'(0) = w'(1) = 0`.  Same family of
+cross-sections, redistributed along the axis — so the hard part, the
+correspondence between a rectangle and a circle, is already solved by
+`BRepOffsetAPI_ThruSections`, which matches the outlines, splits the
+edges into compatible pairs and approximates each pair.  What it hands
+back is the key: every lateral face is a B-spline surface of **degree 1
+along the length with exactly one row of poles on each end wire**
+(measured on the WR-75 case: five faces, u-degree 6–9, the circle
+arriving as a *polynomial* of degree 7; on a coaxial pair of circles a
+single `Cone` that `BRepBuilderAPI_NurbsConvert` turns into a rational
+periodic surface of u-degree 2; on an offset pair a polynomial of
+degree 14).
 
-**Decision.**  Project the interior control points onto the chord when
-their lateral run-out is below `_BLEND_SPINE_STRAIGHT_RTOL = 1e-9` of
-the span, and warn that the blend is idle.  The snap is what makes the
-solid build; the warning is what makes the outcome honest, because a
-straight spine reduces the sweep to the loft `blend="ruled"` already
-builds — measured **4.2e-5** relative volume difference on the WR-75
-case (11326.20 vs 11326.68 mm³), the residual being the sweep's own
-tessellation of the circular section, not a shape difference.  Failing
-loudly was also on the table and was rejected: the solid is
-well-defined and usable, it is only not the *smooth* one the caller
-asked for.
+**Decision.**  When the two outward normals are antiparallel
+(`|n_a + n_b| ≤ _BLEND_FACING_ATOL = 1e-6`), `make_tangent_blend`
+builds the plain ruled loft, keeps its two caps, and rebuilds every
+lateral face as a **cubic Bezier along the length with the Hermite
+control rows** `A, A + r_a·n_a, B + r_b·n_b, B`, where `r = tension ×
+d` and `d` is the distance between the two face planes; the
+u-structure (degree, knots, periodicity, **weights**) is copied
+verbatim so neighbouring faces keep sharing their boundary poles, and
+the faces are sewn and oriented (`BRepLib::OrientClosedSolid`).  The
+length derivative at both ends is then a multiple of the face normal
+*by construction*, not by fitting; at the default `tension = 1/3` the
+rows sit at `z = 0, l/3, 2l/3, l`, so the axial position is exactly
+linear in the parameter and the morph is exactly `3s² − 2s³` — the
+befund's reparametrisation, in closed form.  This is the standard CAD
+loft with a *normal-to-profile* end constraint, and it is the same
+Hermite construction [[DD-144]] uses for the spine, applied per pole
+instead of to the centroid path.  Faces that point in different
+directions keep DD-144's `MakePipeShell` sweep unchanged.
 
-**What the caller actually wants.**  The tangent blend bends the path
-between two faces that point in different directions ([[DD-144]]'s
-stripline-into-coax elbow); it does not shape the cross-section along
-the way.  A taper that eases its profile into both ends is a
-`geo.Loft` through intermediate cross-sections with a weight law
-whose derivative vanishes at both ends.  On the WR-75 → Ø15.9 mm case,
-13 sections under `w(s) = 3s² − 2s³` take the wall slope at both
-joints from `-0.0267 / +0.0540` (straight loft) to
-`-0.0002 / +0.0004`, at 6.7 s of mesh build against 5.8 s for the
-two-profile loft and the same 13 × 9 × 100 grid.  The warning names
-`geo.Loft` for that reason.
+- **Why not N sampled sections** (DD-249's recipe, the notebook's, and
+  the first probe `p_iso2.py`).  Thirteen sections take the joint
+  slopes from −0.0267 / +0.0540 to −0.0002 / +0.0004 — two orders
+  better, not zero — need a section count nobody can justify, and put
+  thirteen knot spans on every face: the notebook's mesh took 6.7 s
+  against 5.8 s for the plain loft.  The Hermite faces have the lateral
+  component of `∂S/∂v` at both ends equal to **0.0e+00** (sampled at 50
+  u-stations on all five faces), one Bezier span each, build in 4 ms,
+  and the same mesh builds in **2.2 s** — cheaper than the plain loft
+  used to be, because the facet section path has fewer spans to chase.
+- **Why the regime is the normals, not the spine's straightness.**
+  DD-249 keyed on the spine's lateral run-out (1e-9 of the span).  A
+  laterally offset pair — the rectangle not on the round guide's axis
+  — has a *bent* spine and antiparallel normals; the sweep would turn
+  its sections perpendicular to the S-shaped spine and keep the linear
+  morph, creased at both ends, where a loft keeps the sections parallel
+  to the two faces and eases the profile: a smooth dog-leg
+  (`test_offset_parallel_faces_make_a_smooth_dog_leg`, departure from
+  the start face O(d²)).  The sweep survives deliberate tilts of 1e-2,
+  1e-3, 1e-5 and 1e-7 rad without a warning (`p_cases.py`), so 1e-6 on
+  `|n_a + n_b|` leaves no gap through which a straight spine could
+  still reach `MakePipeShell`; the snap and its warning are removed.
+- **Rational sections stay exact where it matters.**  With equal
+  weights along the two rows — a cone: both circles carry the same
+  control-polygon weights — the rational denominator factorises and the
+  length direction is polynomial: measured `r(t) = 3 + 3·w(t)` at five
+  stations to four digits, volume 1341.0113 mm³ against the closed form
+  `π·l·(r₀² + r₀·Δr + Δr²·(9/5 − 2 + 4/7))` = 1341.0113.  With unequal
+  weights (a rational arc paired with a polynomial edge) the end
+  tangency still holds exactly — it is a statement about the first two
+  and the last two rows — and only the intermediate axial law varies
+  slightly around the perimeter; the rectangle-to-circle case does not
+  even exercise this, because ThruSections hands back polynomial faces.
+- **Faces that look away from each other are refused** (`ValueError`):
+  the axial distance from A along `n_a` to B is negative, and rows
+  leaving both faces along their normals would run through both solids.
+- **`tension` keeps its meaning and gains a reference length.**  For
+  the sweep it stays a fraction of the centroid distance; for the loft
+  it is a fraction of the distance between the two face *planes*, which
+  coincide for a coaxial pair and keep the axial law linear at 1/3 for
+  an offset one.  Volumes at 0.2 / 1/3 / 0.5 / 0.66 on the cone:
+  1344.3 / 1353.0 / 1363.9 / 1374.4 mm³ (fixed rule), monotone.
+- **`volume()` is quadrature-limited on the rational face — KB-046.**
+  OCC's fixed Gauss rule, which `occ_volume` uses, reads the cone taper
+  **0.9 % too large** (1352.86 against 1341.01) while landing on every
+  other shape measured — sphere, torus, filleted brick, the DD-144
+  elbow, the rectangle-to-circle taper (polynomial faces) — to ≤ 1e-8.
+  The adaptive rule `VolumeProperties(shape, props, 1e-9)` reads the
+  taper to 1.6e-8, but is *not* the fix: on the polar-parametrised
+  paraboloid dish of `test_geo_surface.py` (degenerate pole at r = 0)
+  it drifts with its tolerance (−2.2e-3 at 1e-9, −3.8e-4 at 1e-12)
+  where the fixed rule is right to 4e-6, and knot insertion on the
+  Hermite face does not converge the fixed rule either (v-spans 2/4/8:
+  +8e-4, −1.6e-3, +1.4e-4; u-splits change nothing).  `occ_volume`
+  therefore stays as it was, the limitation is recorded, and the gate
+  integrates the taper adaptively itself — it is a test of the
+  geometry, not of the quadrature.
 
-**Non-goals.**  Making `blend="tangent"` interpolate profiles (that is
-`geo.Loft`'s job and needs a section count the two-face verb has no
-place for); a public knob for the straightness tolerance; and
-suppressing the warning when the caller passed an explicit `tension`,
-which changes nothing about a straight spine.
+**Measured (WR-75 → Ø 15.9 mm, l = 3.1·a, the notebook's model through
+the public API, `p_notebook_check.py`).**  Volume 11302.45 mm³ (plain
+11326.68); max|y| 7.9492 mm against r = 7.9500 (no bulge); iso-section
+non-planarity 3e-13 mm; mesh 13 × 9 × 100 as before, both ports `dtbc`
+(chain floor ≤ −290 dB); GPU march (RTX 4070 SUPER), 11.8–15 GHz:
+worst |S11| **−18.47 dB** eased against **−13.92 dB** straight, median
+−21.12 against −18.65 dB, min |S21| −0.076 against −0.192 dB.  The
+notebook's helper block is gone; its geometry is the one line the
+befund started from.
+
+**On the two entry points.**  `Loft(*sections)` and `Shape.lofted()`
+are not a duplication to fold: they mirror the CAD pair *loft from
+sketches* / *loft between faces of existing parts*, share their
+validation (`_check_blend`) and their kernel call (`make_loft`), and
+differ in what they can know — only the verb sees face normals, which
+is why only it offers `"tangent"`.  What was circular — each pointing
+at the other as the remedy for a taper — is resolved by this DD, not by
+a merge.
+
+**Non-goals.**  Easing the profile morph on the *bent* sweep
+(`MakePipeShell` interpolates its two profiles linearly along the
+spine, so a strip flaring into a pin still creases by the morph; the
+DD-144 gates and the kicker how-to pin that geometry, and a
+translational Hermite loft would thin the elbow);
+`geo.Loft(a, b, blend="tangent")` for two planar sheets with their own
+normals — the same backend rows, an extension when a model asks for it;
+an N-section loft with end tangents.

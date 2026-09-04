@@ -8395,13 +8395,15 @@ def make_extrude(face, vector, scale: float = 1.0):
     return prism.Shape()
 
 
-# Lateral run-out of a blend spine's interior control points, relative
-# to the span between the two faces, below which the spine counts as
-# straight.  Face centroids come out of OCC with a few ulps of noise on
-# the axes they are centred on, so a spine that is straight by
-# construction still arrives with ~1e-16 * span of wobble -- enough to
-# leave the swept frame without a well-defined normal.
-_BLEND_SPINE_STRAIGHT_RTOL = 1e-9
+#: Two outward face normals whose sum is shorter than this count as
+#: antiparallel: the faces look at each other, and the blend between them
+#: is a loft with tangent end conditions rather than a sweep along a bent
+#: spine (DD-250).  Well above the ~1e-16 of noise a rotated solid's
+#: normals carry, well below any tilt a model would carry on purpose.
+_BLEND_FACING_ATOL = 1e-6
+#: Relative tolerance, in units of the distance between the two face
+#: planes, for a vertex to count as lying on one of them.
+_BLEND_PLANE_RTOL = 1e-6
 
 
 def make_loft(wires, is_solid=True, is_ruled=False):
@@ -8505,23 +8507,37 @@ def face_outward_normal(face):
 def make_tangent_blend(face_a, face_b, tension):
     """Blend two faces so the solid meets each of them at a right angle.
 
-    Sweeps the outer wire of *face_a* into that of *face_b* along a cubic
-    Bezier spine whose end tangents are the two outward face normals.
-    ``BRepOffsetAPI_MakePipeShell`` keeps the profiles perpendicular to
-    that spine, so the transition leaves both faces along their normal
-    instead of meeting them at a crease.
+    Two constructions, chosen by how the faces are posed (DD-144, DD-250):
 
-    The spine is built from the faces as given, so it inherits whatever
-    length unit they carry and needs no separate scale argument.
+    * Faces that look at each other — antiparallel outward normals, the
+      two ends of a taper — get a **tangent loft**: the plain ruled loft
+      between the two outer wires, re-parametrised along its length by a
+      cubic Hermite law whose derivative vanishes at both ends.  The
+      cross-section eases out of one face and into the other with zero
+      wall slope, both faces are met exactly along their normals, and the
+      sections stay parallel to the faces, so a lateral offset between
+      the two comes out as a smooth dog-leg.
+    * Faces that point in different directions get a **sweep**: the outer
+      wire of *face_a* is swept into that of *face_b* along a cubic Bezier
+      spine whose end tangents are the two outward normals.
+      ``BRepOffsetAPI_MakePipeShell`` keeps the profiles perpendicular to
+      that spine, so the transition turns the corner without a crease.
+
+    Both work on the faces as given, so they inherit whatever length unit
+    the faces carry and need no separate scale argument.
 
     Parameters
     ----------
     face_a, face_b : TopoDS_Face
         The two faces to bridge.
     tension : tuple of float
-        Tangent stiffness ``(t_a, t_b)`` at each end, as a fraction of
-        the centroid distance.  Larger values push the blend further
-        along the normal before it turns.
+        Tangent stiffness ``(t_a, t_b)`` at each end.  For the sweep, how
+        far the spine keeps its normal direction before turning, as a
+        fraction of the centroid distance; for the loft, the reach of the
+        Hermite tangent as a fraction of the distance between the two face
+        planes (at ``1/3`` the axial position stays linear in the surface
+        parameter).  Larger values push the blend further along the
+        normals before it turns.
 
     Returns
     -------
@@ -8531,7 +8547,8 @@ def make_tangent_blend(face_a, face_b, tension):
     Raises
     ------
     ValueError
-        If the two face centroids coincide, leaving no span to blend over.
+        If the two face centroids coincide, leaving no span to blend over,
+        or if two parallel faces look away from each other.
     RuntimeError
         If the sweep fails or does not close into a solid.
     """
@@ -8568,6 +8585,14 @@ def make_tangent_blend(face_a, face_b, tension):
             "over.  Pick faces that are apart from each other."
         )
 
+    # DD-250: faces that look at each other have nothing for a spine to
+    # bend -- every Bezier control point would land on the chord, and the
+    # sweep along a straight spine is the plain loft with its creased
+    # joints.  What they need is the profile eased into both ends.
+    facing = math.sqrt(sum((a + b) ** 2 for a, b in zip(normal_a, normal_b)))
+    if facing <= _BLEND_FACING_ATOL:
+        return _make_tangent_loft(face_a, face_b, point_a, point_b, normal_a, normal_b, tension)
+
     # Hermite end conditions written as a cubic Bezier: the two interior
     # control points sit along the outward normals, which is what makes
     # the spine — and with it the swept solid — leave each face squarely.
@@ -8578,38 +8603,6 @@ def make_tangent_blend(face_a, face_b, tension):
         tuple(p + n * tension_b * span for p, n in zip(point_b, normal_b)),
         point_b,
     ]
-
-    # DD-249: two faces that look at each other along their common normal put
-    # every control point on the chord, so the spine is a straight line
-    # -- except for the ~1e-16 * span of lateral noise the centroids
-    # carry, which is enough to make the swept frame ill-conditioned and
-    # the sweep fail outright.  Snap that away, and say so: on a
-    # straight spine the sweep is the same solid a plain loft builds,
-    # so the caller asked for a smooth joint and is not getting one.
-    chord = tuple((q - p) / span for p, q in zip(point_a, point_b))
-    lateral = []
-    snapped = []
-    for point in control[1:3]:
-        offset = tuple(q - p for p, q in zip(point_a, point))
-        along = sum(o * c for o, c in zip(offset, chord))
-        side = tuple(o - along * c for o, c in zip(offset, chord))
-        lateral.append(math.sqrt(sum(c * c for c in side)))
-        snapped.append(tuple(p + along * c for p, c in zip(point_a, chord)))
-    if max(lateral) <= _BLEND_SPINE_STRAIGHT_RTOL * span:
-        control[1:3] = snapped
-        warnings.warn(
-            "blend='tangent' has no effect here: the two faces face each "
-            "other along their shared normal, so the spine the blend "
-            "curves along is a straight line and the result is the same "
-            "solid blend='spline' or 'ruled' would build.  The tangent "
-            "blend bends the path between two faces that are not aligned; "
-            "it does not shape the cross-section along the way.  To ease "
-            "the profile itself into each end -- a taper that leaves both "
-            "waveguides with zero wall slope -- loft through intermediate "
-            "cross-sections with geo.Loft(...) instead.",
-            stacklevel=2,
-        )
-
     array = TColgp_Array1OfPnt(1, 4)
     for index, point in enumerate(control, start=1):
         array.SetValue(index, gp_Pnt(*point))
@@ -8631,6 +8624,237 @@ def make_tangent_blend(face_a, face_b, tension):
     if not pipe.MakeSolid():
         raise RuntimeError("OCC tangent blend did not close into a solid.")
     return pipe.Shape()
+
+
+def _make_tangent_loft(face_a, face_b, point_a, point_b, normal_a, normal_b, tension):
+    """Loft *face_a* into *face_b*, leaving both along their normals (DD-250).
+
+    Starts from the plain ruled loft: OCC has already matched the two
+    outlines, split their edges into compatible pairs and approximated
+    each pair as a B-spline surface of degree 1 along the length, with
+    one row of poles on each end wire.  Every lateral face is then rebuilt
+    as a cubic Bezier along the length with the Hermite control rows
+    ``A, A + r_a n_a, B + r_b n_b, B``.  Its length derivative at both
+    ends is then a multiple of the face normal — zero wall slope by
+    construction, not by fitting — and with ``r = depth / 3`` the axial
+    position stays linear in the parameter while the cross-section
+    morphs under ``3 s² − 2 s³``: the same family of sections the plain
+    loft carries, redistributed along the axis.  Weights travel with
+    their row, so rational sections (a cone between two circles) keep
+    their exact outlines.
+
+    Parameters
+    ----------
+    face_a, face_b : TopoDS_Face
+        The two faces, with antiparallel outward normals.
+    point_a, point_b : tuple of float
+        Their centroids.
+    normal_a, normal_b : tuple of float
+        Their outward unit normals.
+    tension : tuple of float
+        Reach of the Hermite tangent at each end, as a fraction of the
+        distance between the two face planes.
+
+    Returns
+    -------
+    TopoDS_Solid
+
+    Raises
+    ------
+    ValueError
+        If *face_b* lies behind *face_a* — the faces look away from each
+        other, and a loft leaving both along their normals would have to
+        pass through both solids.
+    RuntimeError
+        If the plain loft hands back a face the reparametrisation cannot
+        read, or the rebuilt faces do not close into a solid.
+    """
+    try:
+        from OCC.Core.BRepBuilderAPI import (  # noqa: PLC0415
+            BRepBuilderAPI_MakeSolid,
+            BRepBuilderAPI_Sewing,
+        )
+        from OCC.Core.BRepLib import breplib  # noqa: PLC0415
+        from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_SHELL  # noqa: PLC0415
+        from OCC.Core.TopExp import TopExp_Explorer  # noqa: PLC0415
+        from OCC.Core.TopoDS import topods  # noqa: PLC0415
+    except ImportError as exc:
+        raise ImportError("pythonocc-core is required for a tangent blend.") from exc
+
+    depth = sum((b - a) * n for a, b, n in zip(point_a, point_b, normal_a))
+    if depth <= 0.0:
+        raise ValueError(
+            "blend='tangent' has to leave both faces along their outward "
+            "normals, but these two faces look away from each other: the "
+            "second face lies behind the first.  Pick the faces of the two "
+            "solids that face each other."
+        )
+    plane_tol = _BLEND_PLANE_RTOL * depth
+    reach = (tension[0] * depth, tension[1] * depth)
+
+    plain = make_loft(
+        [extract_face_wire(face_a), extract_face_wire(face_b)], is_solid=True, is_ruled=True
+    )
+    sewing = BRepBuilderAPI_Sewing(plane_tol)
+    explorer = TopExp_Explorer(plain, TopAbs_FACE)
+    while explorer.More():
+        face = topods.Face(explorer.Current())
+        explorer.Next()
+        if _face_lies_on_plane(face, point_a, normal_a, plane_tol) or _face_lies_on_plane(
+            face, point_b, normal_b, plane_tol
+        ):
+            sewing.Add(face)  # an end cap: the wire's own face, kept as is
+        else:
+            sewing.Add(
+                _hermite_lateral_face(
+                    face, point_a, normal_a, reach[0], point_b, normal_b, reach[1], plane_tol
+                )
+            )
+    sewing.Perform()
+    shell = sewing.SewedShape()
+    if shell.ShapeType() != TopAbs_SHELL or sewing.NbFreeEdges() > 0:
+        raise RuntimeError("OCC tangent loft did not close into a shell.")
+    solid = BRepBuilderAPI_MakeSolid(topods.Shell(shell)).Solid()
+    breplib.OrientClosedSolid(solid)
+    return solid
+
+
+def _face_lies_on_plane(face, point, normal, tol):
+    """True if every vertex of *face* is within *tol* of the given plane."""
+    from OCC.Core.BRep import BRep_Tool  # noqa: PLC0415
+    from OCC.Core.TopAbs import TopAbs_VERTEX  # noqa: PLC0415
+    from OCC.Core.TopExp import TopExp_Explorer  # noqa: PLC0415
+    from OCC.Core.TopoDS import topods  # noqa: PLC0415
+
+    explorer = TopExp_Explorer(face, TopAbs_VERTEX)
+    while explorer.More():
+        p = BRep_Tool.Pnt(topods.Vertex(explorer.Current()))
+        offset = (p.X() - point[0]) * normal[0]
+        offset += (p.Y() - point[1]) * normal[1]
+        offset += (p.Z() - point[2]) * normal[2]
+        if abs(offset) > tol:
+            return False
+        explorer.Next()
+    return True
+
+
+def _hermite_lateral_face(face, point_a, normal_a, reach_a, point_b, normal_b, reach_b, tol):
+    """Rebuild one ruled lateral face of a loft with Hermite end rows.
+
+    *face* runs between the two end wires, degree 1 along the length.
+    The returned face is the cubic Bezier along the length through the
+    control rows ``A, A + reach_a n_a, B + reach_b n_b, B``, with the
+    u-structure (degree, knots, periodicity, weights) copied verbatim so
+    that neighbouring faces keep sharing their boundary poles.
+    """
+    from OCC.Core.BRep import BRep_Tool  # noqa: PLC0415
+    from OCC.Core.BRepBuilderAPI import (  # noqa: PLC0415
+        BRepBuilderAPI_MakeFace,
+        BRepBuilderAPI_NurbsConvert,
+    )
+    from OCC.Core.BRepTools import breptools  # noqa: PLC0415
+    from OCC.Core.Geom import Geom_BSplineSurface  # noqa: PLC0415
+    from OCC.Core.gp import gp_Pnt  # noqa: PLC0415
+    from OCC.Core.Precision import precision  # noqa: PLC0415
+    from OCC.Core.TColgp import TColgp_Array2OfPnt  # noqa: PLC0415
+    from OCC.Core.TColStd import (  # noqa: PLC0415
+        TColStd_Array1OfInteger,
+        TColStd_Array1OfReal,
+        TColStd_Array2OfReal,
+    )
+    from OCC.Core.TopoDS import topods  # noqa: PLC0415
+
+    # NurbsConvert turns an analytic lateral surface (a cone between two
+    # circles) into the B-spline with the same structure the free-form
+    # faces already have, bounded to the face.
+    converted = topods.Face(BRepBuilderAPI_NurbsConvert(face, True).Shape())
+    try:
+        # pythonocc raises rather than returning None on a failed downcast.
+        surface = Geom_BSplineSurface.DownCast(BRep_Tool.Surface(converted))
+    except (TypeError, SystemError) as exc:
+        raise RuntimeError(
+            "OCC tangent loft: a lateral face did not convert to a B-spline."
+        ) from exc
+    if not (surface.VDegree() == 1 and surface.NbVPoles() == 2):
+        if surface.UDegree() == 1 and surface.NbUPoles() == 2:
+            surface.ExchangeUV()
+        else:
+            raise RuntimeError(
+                "OCC tangent loft: a lateral face of the ruled loft is not ruled along its length."
+            )
+    u_min, u_max, v_min, v_max = breptools.UVBounds(converted)
+    s_u_min, s_u_max, s_v_min, s_v_max = surface.Bounds()
+    if max(
+        abs(u_min - s_u_min), abs(u_max - s_u_max), abs(v_min - s_v_min), abs(v_max - s_v_max)
+    ) > 1e-9 * max(1.0, abs(u_max - u_min), abs(v_max - v_min)):
+        raise RuntimeError("OCC tangent loft: a lateral face does not span its surface.")
+
+    n_u = surface.NbUPoles()
+
+    def plane_offset(row, point, normal):
+        total = 0.0
+        for i in range(1, n_u + 1):
+            p = surface.Pole(i, row)
+            total += abs(
+                (p.X() - point[0]) * normal[0]
+                + (p.Y() - point[1]) * normal[1]
+                + (p.Z() - point[2]) * normal[2]
+            )
+        return total / n_u
+
+    row_a, row_b = (
+        (1, 2)
+        if plane_offset(1, point_a, normal_a) <= plane_offset(2, point_a, normal_a)
+        else (2, 1)
+    )
+    if plane_offset(row_a, point_a, normal_a) > tol or plane_offset(row_b, point_b, normal_b) > tol:
+        raise RuntimeError("OCC tangent loft: a lateral face does not end on the two profiles.")
+
+    poles = TColgp_Array2OfPnt(1, n_u, 1, 4)
+    weights = TColStd_Array2OfReal(1, n_u, 1, 4)
+    for i in range(1, n_u + 1):
+        a, b = surface.Pole(i, row_a), surface.Pole(i, row_b)
+        rows = (
+            (a.X(), a.Y(), a.Z()),
+            (
+                a.X() + reach_a * normal_a[0],
+                a.Y() + reach_a * normal_a[1],
+                a.Z() + reach_a * normal_a[2],
+            ),
+            (
+                b.X() + reach_b * normal_b[0],
+                b.Y() + reach_b * normal_b[1],
+                b.Z() + reach_b * normal_b[2],
+            ),
+            (b.X(), b.Y(), b.Z()),
+        )
+        for j, p in enumerate(rows, start=1):
+            poles.SetValue(i, j, gp_Pnt(*p))
+            weights.SetValue(i, j, surface.Weight(i, row_a if j <= 2 else row_b))
+
+    u_knots = TColStd_Array1OfReal(1, surface.NbUKnots())
+    surface.UKnots(u_knots)
+    u_mults = TColStd_Array1OfInteger(1, surface.NbUKnots())
+    surface.UMultiplicities(u_mults)
+    v_knots = TColStd_Array1OfReal(1, 2)
+    v_knots.SetValue(1, 0.0)
+    v_knots.SetValue(2, 1.0)
+    v_mults = TColStd_Array1OfInteger(1, 2)
+    v_mults.SetValue(1, 4)
+    v_mults.SetValue(2, 4)
+    hermite = Geom_BSplineSurface(
+        poles,
+        weights,
+        u_knots,
+        v_knots,
+        u_mults,
+        v_mults,
+        surface.UDegree(),
+        3,
+        surface.IsUPeriodic(),
+        False,
+    )
+    return BRepBuilderAPI_MakeFace(hermite, precision.Confusion()).Face()
 
 
 # ---------------------------------------------------------------------------

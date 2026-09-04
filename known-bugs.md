@@ -19,6 +19,46 @@ dedicated DD keep their record here.
 **Three entries are open as of 2026-09-03: KB-023, KB-038 and
 KB-043.**  Everything else is struck through and resolved.
 
+## KB-046: `volume()` is quadrature-limited on rational B-spline faces — Open (2026-09-04)
+
+**What was measured.**  A `lofted(..., blend="tangent")` between two
+coaxial circles of radii 3 and 6 mm over 20 mm (DD-250) has the
+closed-form volume `π·l·(r₀² + r₀·Δr + Δr²·(9/5 − 2 + 4/7))` =
+1341.0113 mm³.  `Shape.volume()` reports **1352.86 mm³ (+0.88 %)**.
+The lateral face is the cone's own rational periodic B-spline (u-degree
+2, six poles, weights 1/0.5) with the DD-250 Hermite rows along v;
+OCC's fixed-order Gauss rule (`BRepGProp::VolumeProperties(shape,
+props)`) does not integrate it exactly.  The adaptive rule
+(`VolumeProperties(shape, props, 1e-9)`) reads 1341.0113 to 1.6e-8 —
+and is still not the fix: on the polar-parametrised paraboloid dish of
+`tests/unit/test_geo_surface.py` (degenerate pole at r = 0, target
+π(D/2)²·T) it drifts with its tolerance, −2.2e-3 at 1e-9 and −3.8e-4
+at 1e-12, where the fixed rule is right to 4e-6.  Inserting knots into
+the Hermite face does not converge the fixed rule either (v-spans
+2 / 4 / 8: +8.4e-4 / −1.6e-3 / +1.4e-4; u-splits change nothing).
+Record: `investigations/taper-tangency/MEASUREMENTS.md` §3 (internal
+dossier).
+
+**Scope.**  Rational B-spline faces only: the round-to-round tangent
+taper (a `Cone` or `Cylinder` lateral converted by `NurbsConvert`) and,
+presumably, rational surfaces arriving through CAD import.  Polynomial
+B-spline faces (the rectangle-to-circle taper, whose circle
+`ThruSections` approximates as a degree-7 polynomial; the parametric
+dish) and analytic faces are exact under the fixed rule — sphere,
+torus, filleted brick and the DD-144 swept elbow all agree with the
+adaptive rule to ≤ 1e-8.  Only `Shape.volume()` is affected: the mesher
+never integrates volumes over faces (it works on sections), so no
+simulated quantity moves.
+
+**Why it stays open.**  Neither rule is right everywhere, so the fix is
+not a switch of rule.  Candidates: choose per face (adaptive on
+`BRepAdaptor_Surface.IsURational()/IsVRational()` faces, fixed
+elsewhere), or a higher fixed integration order through
+`BRepGProp_Face`.  Closes when
+`TestTangentBlend::test_taper_between_two_circles_has_the_smoothstep_volume`
+passes through `volume()` at rel 1e-6 — today it integrates the shape
+adaptively itself.
+
 ## KB-045: ~~The band-DTBC port does not run on the CuPy backend~~ — Resolved (2026-09-03)
 
 **The band boundary now exchanges the port plane with the device the

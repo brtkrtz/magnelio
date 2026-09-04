@@ -410,26 +410,140 @@ class TestTangentBlend:
         with pytest.raises(ValueError, match="tension must be positive"):
             self._blend(blend="tangent", tension=-0.2)
 
-    def test_facing_pair_builds_and_says_the_blend_is_idle(self):
-        """Two faces looking at each other leave the blend nothing to bend.
+    # -- facing faces: the tangent loft (DD-250) ---------------------------
 
-        Their normals are antiparallel and lie on the line between the
-        centroids, so all four Bezier control points land on that line
-        and the spine is straight -- the swept solid is the one a plain
-        loft builds.  The sweep used to fail outright on it, because the
-        centroids carry a few ulps of lateral noise and a spine that
-        wobbles by 1e-16 of its span has no usable frame.  It now snaps
-        straight, builds, and warns that the smooth joint the caller
-        asked for is not what a tangent blend can give here.
+    # WR-75-like rectangle at z = 0 into a round guide starting at z = 40 mm.
+    RECT = dict(origin=(-9e-3, -4e-3, -10e-3), size=(18e-3, 8e-3, 10e-3))
+    CIRC = dict(origin=(0.0, 0.0, 40e-3), axis="z", radius=6e-3, height=10e-3)
+
+    def _taper(self, **kwargs):
+        mat = Material.pec()
+        rect = Brick(material=mat, **self.RECT)
+        circ = Cylinder(material=mat, **self.CIRC)
+        return loft(rect, (0, 0, 0), circ, (0, 0, 40e-3), material=mat, **kwargs)
+
+    @staticmethod
+    def _half_extent(solid, z_lo, z_hi):
+        """(max |x|, max |y|) of *solid* within the slab z_lo <= z <= z_hi."""
+        from magnelio.geo import Intersection
+
+        slab = Brick(
+            origin=(-20e-3, -20e-3, z_lo), size=(40e-3, 40e-3, z_hi - z_lo), material=Material.pec()
+        )
+        lo, hi = Intersection(solid, slab).bounding_box()
+        return max(-lo[0], hi[0]), max(-lo[1], hi[1])
+
+    def test_facing_pair_builds_the_taper_silently(self):
+        """Two faces looking at each other get a loft, not an idle sweep.
+
+        The sweep used to fail outright on this pair (its straight spine
+        has no usable frame) and then, for one commit, to build the plain
+        loft with a warning.  It now builds the eased taper without a
+        word, and that taper is a different solid from the plain one.
+        """
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            soft = self._taper(blend="tangent").volume()
+        hard = self._taper(blend="ruled").volume()
+        assert soft > 0.0
+        assert soft != pytest.approx(hard, rel=1e-3)
+
+    def test_taper_reaches_both_faces(self):
+        lo, hi = self._taper(blend="tangent").bounding_box()
+        assert lo[2] == pytest.approx(0.0, abs=1e-6)
+        assert hi[2] == pytest.approx(40e-3, abs=1e-6)
+        # No bulge past either profile: the sections are convex mixes.
+        assert hi[0] == pytest.approx(9e-3, abs=1e-6)
+        assert hi[1] == pytest.approx(6e-3, abs=1e-6)
+
+    def test_taper_leaves_both_faces_with_zero_wall_slope(self):
+        """The wall's departure from each profile grows as depth squared.
+
+        At the rectangle the half-height has to grow from 4 mm towards
+        the 6 mm radius, at the circle the half-width from 6 mm towards
+        the 9 mm half-width; with zero slope at the joint both departures
+        are O(d**2), so doubling the depth quadruples them.  The straight
+        loft would give ratio 2 on the same slabs.
+        """
+        taper = self._taper(blend="tangent")
+
+        def rect_side(depth):
+            return self._half_extent(taper, 0.0, depth)[1] - 4e-3
+
+        def circ_side(depth):
+            return self._half_extent(taper, 40e-3 - depth, 40e-3)[0] - 6e-3
+
+        for side in (rect_side, circ_side):
+            near, mid, far = side(0.5e-3), side(1e-3), side(2e-3)
+            assert 0.0 < near < 0.02e-3
+            assert mid / near == pytest.approx(4.0, abs=0.4)
+            assert far / mid == pytest.approx(4.0, abs=0.4)
+
+    def test_taper_between_two_circles_has_the_smoothstep_volume(self):
+        """A round taper is the exact reparametrised cone.
+
+        Between radii r0 and r1 the eased profile is r0 + (r1 - r0) w(s)
+        with w = 3 s**2 - 2 s**3, whose volume is closed-form.  The
+        lateral face is a rational periodic B-spline here (the cone's own
+        circles), which is the branch that carries weights along.
+
+        Integrated with the kernel's adaptive rule rather than through
+        volume(): the fixed Gauss rule volume() uses reads this rational
+        face 0.9 % too large (KB-046), and this test is about the
+        geometry, not the quadrature.
+        """
+        import math
+
+        from OCC.Core.BRepGProp import brepgprop
+        from OCC.Core.GProp import GProp_GProps
+
+        mat = Material.pec()
+        r0, r1, length = 3e-3, 6e-3, 20e-3
+        c0 = Cylinder(origin=(0, 0, -5e-3), axis="z", radius=r0, height=5e-3, material=mat)
+        c1 = Cylinder(origin=(0, 0, length), axis="z", radius=r1, height=5e-3, material=mat)
+        taper = loft(c0, (0, 0, 0), c1, (0, 0, length), material=mat, blend="tangent")
+        props = GProp_GProps()
+        brepgprop.VolumeProperties(taper._occ_shape(1000.0), props, 1e-9)
+        dr = r1 - r0
+        # int_0^1 w ds = 1/2, int_0^1 w**2 ds = 9/5 - 2 + 4/7
+        expected = math.pi * length * (r0**2 + 2 * r0 * dr * 0.5 + dr**2 * (9 / 5 - 2 + 4 / 7))
+        assert props.Mass() * 1e-9 == pytest.approx(expected, rel=1e-6)
+
+    def test_offset_parallel_faces_make_a_smooth_dog_leg(self):
+        """Parallel faces that are not coaxial still take the loft branch.
+
+        The sections stay parallel to the two faces and the solid meets
+        both along their normals, so the lateral shift is absorbed by an
+        S-shaped run whose departure from the start face is O(d**2).
         """
         mat = Material.pec()
-        rect = Brick(origin=(-9e-3, -4e-3, -10e-3), size=(18e-3, 8e-3, 10e-3), material=mat)
-        circ = Cylinder(origin=(0.0, 0.0, 40e-3), axis="z", radius=6e-3, height=10e-3, material=mat)
-        blend = loft(rect, (0, 0, 0), circ, (0, 0, 40e-3), material=mat, blend="tangent")
-        with pytest.warns(UserWarning, match="no effect here"):
-            volume = blend.volume()
-        straight = loft(rect, (0, 0, 0), circ, (0, 0, 40e-3), material=mat, blend="ruled")
-        assert volume == pytest.approx(straight.volume(), rel=1e-3)
+        c0 = Cylinder(origin=(0, 0, -5e-3), axis="z", radius=3e-3, height=5e-3, material=mat)
+        c1 = Cylinder(origin=(4e-3, 0, 20e-3), axis="z", radius=3e-3, height=5e-3, material=mat)
+        dog_leg = loft(c0, (0, 0, 0), c1, (4e-3, 0, 20e-3), material=mat, blend="tangent")
+        lo, hi = dog_leg.bounding_box()
+        assert lo[0] == pytest.approx(-3e-3, abs=1e-6)
+        assert hi[0] == pytest.approx(7e-3, abs=1e-6)
+
+        def shift(depth):
+            return self._half_extent(dog_leg, 0.0, depth)[0] - 3e-3
+
+        near, mid = shift(1e-3), shift(2e-3)
+        assert 0.0 < near < 0.05e-3
+        assert mid / near == pytest.approx(4.0, abs=0.4)
+
+    def test_tension_shapes_the_taper(self):
+        volumes = [self._taper(blend="tangent", tension=t).volume() for t in (0.2, 1 / 3, 0.5)]
+        assert len({round(v, 12) for v in volumes}) == 3
+
+    def test_faces_looking_away_from_each_other_are_rejected(self):
+        mat = Material.pec()
+        rect = Brick(material=mat, **self.RECT)
+        circ = Cylinder(material=mat, **self.CIRC)
+        # The far faces: rect's zmin at -10 mm, circ's zmax at 50 mm.
+        with pytest.raises(ValueError, match="look away from each other"):
+            loft(rect, (0, 0, -10e-3), circ, (0, 0, 50e-3), material=mat, blend="tangent").volume()
 
     def test_a_bent_pair_stays_silent(self):
         """The warning speaks only for a spine with no bend in it."""
