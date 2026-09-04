@@ -116,21 +116,25 @@ def _show_when_server_ready(pl, mode: str, jupyter_kwargs: dict) -> None:
     empty while the server came up.
 
     Here the server is started as a task on the loop that is already
-    running (``launch_server`` does that), an empty output widget takes
-    the view's place in the cell at once, and the widget is filled the
-    moment the server reports ready -- a fraction of a second later, in
-    the same cell.  No loop is nested, so the queue is never read out of
+    running (``launch_server`` does that) and an empty container widget
+    takes the view's place in the cell at once.  The moment the server
+    reports ready the view becomes the container's child.  That has to
+    be a widget *state* change: once the cell has returned, the
+    frontend no longer routes ``display_data`` to it (an
+    ``ipywidgets.Output`` filled from a task stays blank), while a
+    widget's state travels over the comm channel and renders whenever
+    it arrives.  No loop is nested, so the queue is never read out of
     turn; ``nest_asyncio2`` is not needed.  Later calls find the server
     running and take the direct path (DD-251).
     """
     import asyncio  # noqa: PLC0415
 
     from IPython.display import display  # noqa: PLC0415
-    from ipywidgets import Output  # noqa: PLC0415
+    from ipywidgets import HTML, VBox, Widget  # noqa: PLC0415
     from pyvista.trame.jupyter import launch_server  # noqa: PLC0415
 
-    out = Output()
-    display(out)
+    box = VBox()
+    display(box)
     server = launch_server()
 
     async def fill() -> None:
@@ -138,14 +142,15 @@ def _show_when_server_ready(pl, mode: str, jupyter_kwargs: dict) -> None:
             await server.ready
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", message="Suppress rendering")
-                widget = pl.show(
+                view = pl.show(
                     jupyter_backend=mode, jupyter_kwargs=jupyter_kwargs, return_viewer=True
                 )
-            with out:
-                display(widget)
+            if not isinstance(view, Widget):
+                # An IFrame (server-proxy setups) is plain HTML.
+                view = HTML(view._repr_html_())
+            box.children = (view,)
         except Exception as exc:  # pragma: no cover - reported into the cell
-            with out:
-                print(f"3D view could not start: {exc!r}")
+            box.children = (HTML(f"<pre>3D view could not start: {exc!r}</pre>"),)
 
     task = asyncio.get_running_loop().create_task(fill())
     _PENDING_VIEWS.add(task)

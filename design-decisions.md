@@ -20234,15 +20234,24 @@ silenced its `0.0%` case.
 - **The viewer starts the server as a task on the loop that is
   already running.**  When the trame server is not yet running and a
   loop is (every Jupyter cell), `plot()` displays an empty
-  `ipywidgets.Output` in the cell at once, calls PyVista's
+  `ipywidgets.VBox` in the cell at once, calls PyVista's
   `launch_server()` — which schedules `server.start(exec_mode="task")`
-  on that loop — and fills the widget from a task that awaits
-  `server.ready` and then builds the view with `return_viewer=True`.
+  on that loop — and, from a task that awaits `server.ready`, builds
+  the view with `return_viewer=True` and makes it the box's child.
   No loop is nested, so the request queue is never read out of turn.
   Later calls find the server running and take the direct path as
   before.  Reproduction after the change: all four queued cells run,
-  both views are displayed, no error.  The cost is that the first view
-  in a kernel appears a fraction of a second after its cell returns.
+  both views arrive, no error.  The cost is that the first view in a
+  kernel appears a fraction of a second after its cell returns.
+  **The hand-over has to be a widget-state change.**  The first cut
+  used an `ipywidgets.Output` and `display()` from the task; the kernel
+  sent the view, the cell stayed white.  Once a cell has returned, the
+  frontend drops `display_data` addressed to it, while a widget's
+  state (`children`) travels over the comm channel and renders
+  whenever it arrives — the repro shows the late `comm_open HTMLModel`
+  and `comm_msg children = 1` under the plot cells.  Two cells that
+  both plot before the server is up each take this path and each is
+  filled.
   Rejected: documenting `await launch_server().ready` as a cell the
   user has to run first — it works, and it puts the library's problem
   on the notebook.  `nest_asyncio2` is no longer on Magnelio's path;
