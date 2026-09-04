@@ -623,15 +623,21 @@ class Shape:
             ``'ruled'`` both run straight from one profile to the other
             and differ only in surface type, so the solid meets each face
             at whatever angle the straight connection happens to make.
-            ``'tangent'`` instead leaves both faces along their outward
-            normal and curves between them, which is what turns a crease
-            at the joint into a smooth bend.
+            ``'tangent'`` leaves both faces along their outward normal:
+            zero wall slope at each joint, so the transition meets both
+            solids without a crease.  Between two faces that look at each
+            other -- the two ends of a taper, coaxial or laterally offset
+            -- the cross-section eases out of one profile and into the
+            other along a straight run; between faces that point in
+            different directions the profile is swept along a curved
+            path that turns the corner.
         tension : float or tuple of float, optional
-            Only for ``blend='tangent'``: how stiffly the blend holds its
+            Only for ``blend='tangent'``: how far the blend holds its
             normal direction before turning, as a fraction of the
-            distance between the two face centres.  A single value
-            applies to both ends, a ``(start, end)`` pair to one each.
-            Defaults to ``1/3``; larger values reach further along the
+            distance between the two faces.  A single value applies to
+            both ends, a ``(start, end)`` pair to one each.  Defaults to
+            ``1/3``, at which a taper's cross-section is spaced linearly
+            along its axis; larger values reach further along the
             normals and eventually overshoot into a bulge.
 
         Returns
@@ -643,8 +649,9 @@ class Shape:
         ------
         ValueError
             If *blend* is not one of the three modes, if *tension* is
-            given for a mode that has no use for it, or if the two faces
-            share a centre point.
+            given for a mode that has no use for it, if the two faces
+            share a centre point, or if two parallel faces look away
+            from each other.
 
         Examples
         --------
@@ -654,6 +661,14 @@ class Shape:
             transition = electrode.lofted(
                 (0.0, 45.5e-3, 0.0), inner, (0.0, 48e-3, -10e-3),
                 material=pec, blend="tangent",
+            )
+
+        A rectangular waveguide easing into a round one, with no crease
+        at either flange::
+
+            taper = rect_guide.lofted(
+                (0.0, 0.0, 0.0), round_guide, (0.0, 0.0, 59e-3),
+                material="air", blend="tangent",
             )
         """
         from magnelio.geo.modifications import loft  # noqa: PLC0415

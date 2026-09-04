@@ -7,6 +7,29 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Added
+
+- A *Lofts* section in the geometry chapter of the user guide: the two
+  constructors (`Loft` from profiles, `lofted()` between faces of
+  existing bodies), the three blend modes, and what `tension` does.
+
+### Fixed
+
+- `lofted(..., blend="tangent")` between two faces that look straight at
+  each other — the two ends of a waveguide taper, such as a rectangular
+  guide opening into a round one — raised `OCC tangent blend
+  (MakePipeShell) operation failed` instead of building.  It now builds
+  the body the mode promises: the cross-section eases out of one profile
+  and into the other with zero wall slope at both joints, exactly and
+  without hand-made intermediate sections, and a lateral offset between
+  the two faces comes out as a smooth dog-leg.  On a WR-75 to Ø 15.9 mm
+  taper the eased wall takes the worst in-band |S11| from −13.9 dB
+  (straight loft) to −18.5 dB.  Two parallel faces that look *away* from
+  each other are refused with a message instead of producing a body that
+  runs through both parts.
+
 ## [0.5.2] - 2026-09-04
 
 ### Added
