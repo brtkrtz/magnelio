@@ -263,6 +263,13 @@ class ScatteringTDResult(ScatteringResultMixin):
         (``PortOperatorModal.dtbc_line_params``), as passed to the
         S-parameter de-stagger.  Backs the default time-domain power
         waves; channels missing here use the continuum factors.
+    port_source_used : str or None
+        ``"dispersive"`` when the ports launched a rank-r family.  The
+        decomposition then runs per frequency against the port records,
+        as it does for a band run: a dispersive source repairs the
+        launch error, and reading it through the frequency-flat split
+        would leave the two halves of the same defect mismatched — and
+        the reported number worse than with neither repaired.
     port_model_used : str or None
         Which port pipeline produced this result: ``"modal"`` (the
         per-spec modal port operators) or ``"band"``
@@ -292,6 +299,7 @@ class ScatteringTDResult(ScatteringResultMixin):
     port_normal_dx: dict | None = None
     port_line_params: dict | None = None
     port_model_used: str | None = None
+    port_source_used: str | None = None
     # Per-excitation reference waveforms (multi-excitation modal runs
     # auto-derive per-mode waveforms); backs the f_axis= recompute.
     reference_signals: dict | None = None
@@ -350,7 +358,7 @@ class ScatteringTDResult(ScatteringResultMixin):
         f_axis = np.asarray(f_axis, dtype=float)
         cols = []
         for excited, sigs in self.signals.items():
-            if self.port_model_used == "band":
+            if self.port_model_used == "band" or self.port_source_used == "dispersive":
                 s_dict, z_ref = compute_band_s_parameters(
                     sigs,
                     list((self.port_dispersion or {}).values()),
@@ -1176,6 +1184,7 @@ class AnalysisScatteringTD(AnalysisTD):
             port_normal_dx=first.port_normal_dx,
             port_line_params=first.port_line_params,
             port_model_used="modal",
+            port_source_used=self.port_source,
             reference_signals={chan: r.reference_signal for chan, r in zip(excited_list, runs)},
             port_dispersion=first.port_dispersion,
             port_reference_scale=first.port_reference_scale,
@@ -1258,28 +1267,46 @@ class AnalysisScatteringTD(AnalysisTD):
         reference_signal = _sampled_signal(prepared.reference_fn, n_actual, dt)
         _renormalize_freq_monitors(self.monitors, reference_signal)
 
-        s_dict, a_incident, z_ref = compute_s_parameters(
-            recorder_signals=signals,
-            port_modes=prepared.port_modes,
-            excited=excited_chan,
-            reference_signal=reference_signal,
-            f_axis=f_axis,
-            taper_signals=taper_signals,
-            port_normal_dx=prepared.port_normal_dx,
-            port_line_params=prepared.port_line_params,
-            return_incident=True,
-            return_reference=True,
-            port_reference_scale=prepared.port_reference_scale,
-        )
+        if self.port_source == "dispersive" and prepared.port_dispersion:
+            # DD-248: a dispersive source and the frequency-flat split
+            # are two halves of one defect and only pay together —
+            # repairing either alone destroys the near-cancellation
+            # between them and reads *worse* than repairing neither.
+            # So the launch repair carries the per-frequency
+            # decomposition with it, exactly as a band run does.
+            a_incident = None
+            s_dict, z_ref = compute_band_s_parameters(
+                signals,
+                list(prepared.port_dispersion.values()),
+                excited_chan,
+                f_axis,
+                return_reference=True,
+                port_reference_scale=prepared.port_reference_scale,
+            )
+        else:
+            s_dict, a_incident, z_ref = compute_s_parameters(
+                recorder_signals=signals,
+                port_modes=prepared.port_modes,
+                excited=excited_chan,
+                reference_signal=reference_signal,
+                f_axis=f_axis,
+                taper_signals=taper_signals,
+                port_normal_dx=prepared.port_normal_dx,
+                port_line_params=prepared.port_line_params,
+                return_incident=True,
+                return_reference=True,
+                port_reference_scale=prepared.port_reference_scale,
+            )
         s_params = SParameterResult.from_single_excitation(
             s_dict,
             excited_chan,
             f_axis,
             reference_impedances=z_ref,
         )
-        self._wire_incident_amplitude(
-            reference_signal, f_axis, a_incident, prepared.port_modes, excited_chan
-        )
+        if a_incident is not None:
+            self._wire_incident_amplitude(
+                reference_signal, f_axis, a_incident, prepared.port_modes, excited_chan
+            )
         self._wire_far_field_monitors(s_dict, f_axis)
         return _ChannelRun(
             s_params=s_params,

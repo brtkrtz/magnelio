@@ -11,6 +11,21 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- Waveguide ports can launch the mode the grid actually carries.  A port
+  imprints one mode profile held fixed across the band, which is exact
+  on a hollow guide but wrong on an inhomogeneous line — a microstrip's
+  mode changes shape with frequency, and the frozen profile launches a
+  field the line cannot support, returning as a reflection the structure
+  never produced.  `AnalysisScatteringTD(port_source="dispersive")`
+  launches a low-rank family solved along the band instead: on a
+  straight 50 Ω microstrip, whose true reflection is zero, the reported
+  worst reflection falls from about −32.9 dB to −38.9 dB, at roughly
+  1 % of the marching time.  The setting also selects the per-frequency
+  decomposition of the recorded waves, because the launched profile and
+  the frequency-flat reference are the same defect twice and repairing
+  either alone reads worse than repairing neither.  The default is
+  unchanged, and nothing about an existing run moves.
+
 - Progress reporting for every operation that takes real time.  The
   mesh build, the stability time step and each port's mode solve used
   to run silently — on a two-million-cell model, more than half a
