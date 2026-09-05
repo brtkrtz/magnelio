@@ -7,6 +7,22 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Fixed
+
+- A `ThinWire` drawn onto the top face of a thin metallisation (a bond
+  wire on a pad, a probe on a patch) now ends on the sheet's own grid
+  node: vertices inside the sheet's thickness collapse onto the sheet
+  plane, the metal's top face no longer re-enters the grid as a sliver
+  cell, and the endpoint-displacement warning stays silent.  The ring
+  faces of the wire's foot segment compose the thin-wire correction
+  with the sheet's sub-cell value instead of falling back to the bare
+  grid; the stencil warning no longer fires for that expected contact.
+  A monopole on a thin-sheet ground now matches the same monopole on a
+  solid ground to within 1 % in resonance.  The methods chapter on
+  conformal meshing gains a section on where a wire may end.
+
 ## [0.6.0] - 2026-09-05
 
 ### Added

@@ -35,6 +35,12 @@ floors regenerate from the `validation/` certificates their DDs name.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-256** (2026-09-05) — a thin wire lands on a thin sheet the way
+  it lands on a solid: vertices inside the sheet's thickness collapse
+  onto the sheet plane (no sliver, no spurious endpoint warning), the
+  foot ring composes ``m`` with the sub-cell value instead of yielding.
+  Monopole on a sheet vs. on a solid, one grid: **+0.6 % / −2.2 %**
+  (was +2.3 %).  Radius rule untouched — the Lange bonds stay bricks.
 * **DD-255** (2026-09-05) — a run is watched by polling the store, and one figure is what everyone watches.  `Project.watch(interval, on_change=, timeout=)` — a generator yielding the project at every change (signature: index stamp + per-run `(state, n_energy_samples)`) until `done`/`aborted`/`stale`; **polling on purpose** (no inotify: dependency, blind on network mounts and to half flushes).  `plot_energy()` on `TDResult`/`ScatteringTDResult`/`Run`/`Project`: dB below peak, criterion dashed, `plot_s` conventions — the same number as the progress line and the table.  `Project.monitor()`: `VBox(HTML, Image)` refreshed by a daemon thread that sets **widget state only** (DD-251's rule) and renders on its own Agg canvas, never pyplot.  `Run.n_steps` moves while marching (latest energy sample's step).  **Amendments from the first notebook session:** `Project.follow(interval, plot=, timeout=, stream=)` — the watch loop ready-made, its display *replacing itself* (notebook `clear_output`+`display`, terminal `ESC[nA`, log appended; a bare expression in a loop shows nothing, and the inline backend flushes figures only at cell end, so `plot=True`/`plot=callable(project, ax)` renders the picture per change as PNG), probed in a real ipykernel via `jupyter_client`; the energy axis runs from ten dB below the criterion to +5 dB (`floor_db=`), because the empty grid's first samples read −3000 dB.  How-to *Watching a simulation that is still running* (solver on a thread, real output), Tutorial 07's nine-statement energy block is `proj.plot_energy()`.  Gates `test_plot_energy.py`, `test_project_monitor.py`, `test_project_watch.py`.
 * **DD-254** (2026-09-05) — a run is an object, a project knows whether anyone is still writing it, and nothing prints its arrays.  **The 0.6.0 break:** `Project.runs` is a mapping of live `Run` views (`.state .n_steps .energy_db .energy_trace .elapsed .result() .monitors`; channel keys tuples; `docs/migration-0.6.md`).  `meta` follows `project.json` by `(mtime, inode, size)` until the stored status is terminal, so a live watcher needs no `refresh()`; `_load_run` keys its cache on `(n_steps, finished)`.  Status rule fixed (any aborted → **aborted**, was `running` forever); **`stale`** derived from the writer's pid on the same host (POSIX; elsewhere unknown → `running`).  Repr principle in `_repr.py` (what, how big, what state — never arrays): `Project` prints a summary plus run table and **cannot raise**, `CheckpointState` is a `Mapping` that prints sizes, `TDResult`/`ScatteringTDResult`/`SParameterResult`/`RunSettings` summarise, HTML tables in notebooks.  `check_api_surface.py` pin now lists DD-246's verbosity switch (had drifted).  Gates `TestRunObjects`, `TestProjectStatus`, `TestCheckpointState`, `test_repr.py`.
 * **DD-253** (2026-09-05) — every march is timed, and the time loop says what runs and how long it has run.  The clock lives in `FITTimeDomainSolver.run()` (a wrapper around the loop with a `finally`, so all five exits and exceptions are covered) and reaches the result objects (`started`/`finished`/`elapsed`, marching only, in the result contract) and the store (`_RunSink.close(elapsed=)`, `_finalize_run` **accumulates** over resumes, `reopen_run` stamps `resumed`; `pid`/`host` on every run entry and as `meta["writer"]`; `meta["analysis"]` for the whole call).  The line: `step 2900/∞ | 0.7 s | energy -58.4/-70 dB | 3.9k steps/s`, closing line in the same slots; **ETA only on a fixed step count** — the run-length estimate is a 25-transit scale, an ETA on it would overstate a TEM run several-fold, so the header states the *rule* (`stops at energy -70 dB or port signal -60 dB, cap 388480 steps`) instead of a number.  `run | finished in 2.6 s (2 runs)` per `run()`/`resume()`; seven bare prints now go through `Reporter.note` (multi-line aware).  Gates `TestDurations`, `TestMarchLines`, `TestRunTiming`.
@@ -373,15 +379,6 @@ flickers to ``"done"`` between sequential runs; the reader skips
   `benchmarks/bench_mesh_build.py` reads 16 Lange couplers 9.6 s at
   3.7 M cells, 240 posts 1.8 s, 16 × 16 patch array 6.4 s at 1.8 M.
   Deferred work, A/B switches, traps: DD-223.  Open against it: KB-043.
-* **Thin wire on a thin sheet — uncertified (DD-080 non-goal), a
-  post-v0.6.0 patch** (developer decision 2026-09-05).  Probed: the
-  junction holds topologically in every configuration tried, but by
-  coincidence (far-side plane drop + cell-centre rule), not by design;
-  the foot segment keeps the bare-grid inductance and the endpoint
-  warning fires spuriously for t > 0.3 Δ_min.  Plan: endpoint-to-sheet-
-  plane rule, gates monopole-on-sheet vs. T5 and wire bridge vs. resolved
-  bricks, docs.  Does not return `ThinWire` bonds to the Lange how-to
-  (radius rule).  Record: `investigations/thin-wire-sheet-junction/`.
 
 Closed construction sites are tombstoned where they were decided and
 are not repeated here.

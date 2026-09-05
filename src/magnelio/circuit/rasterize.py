@@ -115,7 +115,35 @@ def rasterize_curve(
         scale = choose_scale(*curve._analytic_bbox())
     min_cell = min(grid.dx_min, grid.dy_min, grid.dz_min)
     pts = sample_wire(curve._occ_shape(scale), min_cell / samples_per_cell, scale=scale)
+    return rasterize_points(pts, grid)
 
+
+def rasterize_points(pts, grid) -> EdgePath:
+    """Rasterise an ordered point sequence onto the primary E-edges of *grid*.
+
+    The node walk behind :func:`rasterize_curve`, exposed for callers
+    that sample (and possibly adjust) the points themselves — the
+    thin-wire pass moves samples inside a thin sheet's thickness band
+    onto the sheet's grid plane before rasterising.  Consecutive samples
+    must not skip a grid node (spacing <= half the smallest cell).
+
+    Parameters
+    ----------
+    pts : array-like, shape (N, 3)
+        Ordered sample points [m].
+    grid : GridLines
+        The simulation grid.
+
+    Returns
+    -------
+    EdgePath
+        The ordered, directed edge chain the points occupy.
+
+    Raises
+    ------
+    ValueError
+        If the points rasterise to a single node.
+    """
     nodes: list[tuple[int, int, int]] = []
     for p in pts:
         nd = _nearest_node(p, grid)
