@@ -1,6 +1,6 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-09-04.*  **Released v0.5.2** (2026-09-04; a patch
+*Last updated: 2026-09-05.*  **Released v0.5.2** (2026-09-04; a patch
 under the Cargo reading — nothing in it breaks a 0.5.0 script).  In it:
 **DD-245** (partitioned boundary convolution), **DD-246** (progress
 output), the *Numerical precision* chapter `docs/methods/precision.md`
@@ -23,14 +23,18 @@ Unreleased on feature branches: **DD-249/DD-250** — `lofted(blend=
 on the plain loft's poles, exact zero wall slope at both joints);
 **DD-251** — in-place progress in notebooks, the viewer survives *Run
 All*, tile-skip line gone; **DD-252** — `refine_port_modes` converges
-the cut-off of a TE/TM mode; **DD-253** (branch `feat/run-timing`) —
-every march is timed: `started`/`finished`/`elapsed` on results and per
-run in the store, a running clock and step rate on the FIT-TD line, two
-header lines before the first step, `run | finished in …` after every
-analysis call, and every solver notice through the reporter.  First of
-the usability series DD-253 → DD-254 (run objects, reprs, stale
-detection; the 0.6.0 break of `Project.runs`) → DD-255 (`plot_energy`,
-`watch`, `monitor`).
+the cut-off of a TE/TM mode; and the **usability series DD-253 →
+DD-254 → DD-255** on three stacked branches (`feat/run-timing` →
+`feat/run-objects` → `feat/watch-and-plot-energy`, merge in that
+order, each `--no-ff`): every march is timed and the FIT-TD line
+carries a clock, a rate and — on a fixed step count — an ETA;
+`Project.runs` hands out live `Run` objects (**the 0.6.0 break**,
+`docs/migration-0.6.md`), the project follows its file without
+`refresh()`, an aborted run aborts the project, a dead writer reads
+`stale`, and every result prints a summary instead of its arrays;
+`plot_energy()`, `Project.watch()` and `Project.monitor()` plus the
+how-to *Watching a simulation that is still running* and the chapter
+*Projects and runs*.  Release **0.6.0** once merged — not tagged.
 
 Open: KB-023, KB-038, KB-043 and KB-046.  Unit and integration: 3339 passed /
 10 skipped (2026-09-04, `CUPY_ACCELERATORS=""`).  Channels: GitHub, PyPI,
