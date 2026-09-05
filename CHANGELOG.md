@@ -7,7 +7,7 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
-## [Unreleased]
+## [0.6.0] - 2026-09-05
 
 ### Added
 
@@ -56,34 +56,12 @@ major version is 0, minor releases may change the public API.
   constructors (`Loft` from profiles, `lofted()` between faces of
   existing bodies), the three blend modes, and what `tension` does.
 
-### Changed
-
-- **Breaking:** `Project.runs` hands out `Run` objects instead of the
-  raw dictionaries of `project.json`: `proj.runs[name]["n_steps"]`
-  becomes `proj.runs[name].n_steps`, and channel keys are tuples.
-  Iteration, `len` and `in` are unchanged.  See *Upgrading from 0.5.x*.
-- `Project.status` may read `aborted` or `stale` besides `created`,
-  `running` and `done`.
-
-- The time loop's progress line reads `step 2900/∞ | 0.7 s | energy
-  -58.4/-70 dB | 3.9k steps/s`, and its closing line names the
-  criterion in the same slots.  Every notice the solver and the
-  analyses print goes through the progress reporter and obeys
-  `verbose` / `set_verbosity` — the checkpoint confirmation, the resume
-  line and the band-pipeline notices included.
-- `AnalysisTD.run()` and `AnalysisScatteringTD.run()` say what they
-  return: the in-RAM result, or the `Project` reader when `project=` is
-  given.
-
 ### Fixed
 
 - A project whose run was aborted (Ctrl-C, or an error) stayed
   `running` forever; it now reads `aborted`.
 - `repr(project)` on a store written by another release raised at the
   prompt; it now prints the problem instead.
-
-### Fixed
-
 - In a Jupyter notebook, *Run All* aborted at the first `plot()` with
   `RuntimeError: cannot enter context ... is already entered` and left
   the remaining cells unexecuted, while running the cells one by one
@@ -115,6 +93,24 @@ major version is 0, minor releases may change the public API.
   (straight loft) to −18.5 dB.  Two parallel faces that look *away* from
   each other are refused with a message instead of producing a body that
   runs through both parts.
+
+### Changed
+
+- **Breaking:** `Project.runs` hands out `Run` objects instead of the
+  raw dictionaries of `project.json`: `proj.runs[name]["n_steps"]`
+  becomes `proj.runs[name].n_steps`, and channel keys are tuples.
+  Iteration, `len` and `in` are unchanged.  See *Upgrading from 0.5.x*.
+- `Project.status` may read `aborted` or `stale` besides `created`,
+  `running` and `done`.
+- The time loop's progress line reads `step 2900/∞ | 0.7 s | energy
+  -58.4/-70 dB | 3.9k steps/s`, and its closing line names the
+  criterion in the same slots.  Every notice the solver and the
+  analyses print goes through the progress reporter and obeys
+  `verbose` / `set_verbosity` — the checkpoint confirmation, the resume
+  line and the band-pipeline notices included.
+- `AnalysisTD.run()` and `AnalysisScatteringTD.run()` say what they
+  return: the in-RAM result, or the `Project` reader when `project=` is
+  given.
 
 ## [0.5.2] - 2026-09-04
 
