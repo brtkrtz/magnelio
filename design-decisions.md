@@ -20427,3 +20427,177 @@ detector's slope fit would give one; a resonator makes it grow during
 the run, which reads as a fault) — deferred until asked for; a levelled
 verbosity; suppressing the `warnings` line that still cuts through a
 running `\r` line ([[DD-246]]'s known cosmetic defect).
+
+---
+
+## DD-254 — a run is an object, a project knows whether anyone is still writing it, and nothing prints its arrays
+
+**Date:** 2026-09-05 (branch `feat/run-objects`; the 0.6.0 break).
+**Status:** Implemented and gated
+(`tests/unit/test_project_store.py::TestRunObjects`, `::TestProjectStatus`,
+`::TestCheckpointState`; `tests/unit/test_repr.py`;
+`tests/integration/test_project_checkpoint.py::test_streamed_graceful_abort_via_sigint`,
+`tests/integration/test_result_contract.py::TestContractShape::test_repr_is_short_and_array_free`).
+**Files:** `src/magnelio/_repr.py` (new), `src/magnelio/post/_energy.py` (new),
+`src/magnelio/io/project.py`, `src/magnelio/io/__init__.py`,
+`src/magnelio/analysis/time_domain.py`, `src/magnelio/analysis/scattering_td.py`,
+`src/magnelio/analysis/result_interface.py`, `src/magnelio/post/sparameter_result.py`,
+`src/magnelio/solver/eigenmode_result.py`, `docs/methods/projects-and-runs.md` (new),
+`docs/migration-0.6.md` (new), `validation/tools/check_api_surface.py`.
+**Builds on:** [[DD-253]] (the stamps and the writer identity it reads).
+**Amends:** [[DD-070]] (the run index), [[DD-117]] (the API-surface pin now
+lists the verbosity switch of [[DD-246]], which had drifted past it).
+
+**Problem.**  Three things a user meets at the prompt were wrong in
+the same way: they showed the store's bookkeeping instead of the
+run.  `project.runs` returned the raw dictionaries of `project.json`
+(channel keys as lists, no clock, no energy, nothing the JSON did not
+hold); `repr(project)` was one line without a run in it and *raised*
+on a store from another release, so typing the name at a REPL gave a
+traceback; and two result classes had no `__repr__` at all, so a
+`ScatteringTDResult` printed its 201 × n × k complex matrix and every
+port signal.  Two states were wrong outright: an aborted run left the
+project `running` forever (`_finalize_run` only knew "all done or
+not"), and a run whose kernel had died stayed `running` with no way
+to tell it from one still marching.  And a reader of a live project
+had to call `refresh()` before every look, which no page showed.
+
+**Decision.**
+
+1. *`Project.runs` is a mapping of `Run` objects* — the one breaking
+   change of 0.6.0 (`["n_steps"]` → `.n_steps`, `excited` a tuple;
+   iteration, `len`, `in` unchanged; `docs/migration-0.6.md`).  A `Run`
+   is a live view: every attribute reads the project's current index,
+   `energy_trace` reads the SWMR file's energy streams alone
+   (`_read_energy_trace`, split out of `_read_run_results`),
+   `n_energy_samples` reads one dataset shape, `elapsed` adds the time
+   since the current march started while the run is `running`.
+   `result()`, `monitors`, `checkpoint_state()` delegate to the
+   project.  Internal callers use `_run_index()` / `_run_info(name)`;
+   the raw dict stays reachable as `meta["runs"][name]`.
+2. *The index follows the file until the project is finished.*  `meta`
+   compares `(mtime_ns, inode, size)` of `project.json` on every access
+   while the stored status is not terminal and re-parses on a change,
+   clearing the derived S-matrix cache; `_load_run` keys its cache on
+   `(n_steps, finished)` so a run resumed by another process is
+   re-read.  `refresh()` stays for finished projects.  One `stat` per
+   access; the writer replaces the file atomically, so a half-written
+   index is never seen.
+3. *Status rules.*  `_finalize_run`: all done → `done`; else any
+   aborted → `aborted` (the interrupt propagates out of the analysis
+   call, so pending siblings never start in it); else `running`.
+   `stale` is derived, never stored: a `running` entry whose `pid` no
+   longer exists on the recording `host` ([[DD-253]] books both), or a
+   project between runs whose `writer` is gone.  POSIX only
+   (`os.kill(pid, 0)`); elsewhere the question is left open and the
+   run reads `running` — a wrong `stale` would be worse than a late
+   one.  Limits, documented: same host only, a zombie reads alive, a
+   reused pid after a reboot reads alive.
+4. *The repr principle*, in `_repr.py`: a repr says what an object is,
+   how big it is and what state it is in — never what it holds.  Text
+   as aligned key/value lines or a table with a rule; HTML as one
+   `<table>` with no colours of its own, so it reads on either
+   notebook theme.  Applied to `Project` (summary + run table, wrapped
+   so it *cannot* raise — a foreign schema prints the problem),
+   `_RunIndex`, `Run`, `CheckpointState` (a `Mapping` around the
+   checkpoint dict: index access unchanged, printing shows the step
+   and the array sizes), `TDResult`, `ScatteringTDResult`,
+   `SParameterResult`, `RunSettings` (recorded fields only) and
+   `EigenmodeResult` (HTML table).  The energy figure every summary
+   quotes, dB below the peak of the trace, lives in
+   `post/_energy.py` — the same number the FIT-TD line shows.
+
+**Measured** (WR-90 two-port, two excitations, this branch): `repr(project)`
+is a six-line head plus a two-row table; `CheckpointState` prints
+`e  float32[10060]` where the dict printed ten thousand floats.  A
+`running` entry with the pid of a finished subprocess reads `stale`
+on this host, `running` with a foreign host name.
+
+**Non-goals.**  A cross-project listing (a directory scan) — asked and
+declined for now; Windows liveness via `OpenProcess`; a levelled
+verbosity; `field(repr=False)` cosmetics on dataclasses that define
+their own `__repr__`.
+
+---
+
+## DD-255 — a run is watched by polling the store, and one figure is what everyone watches
+
+**Date:** 2026-09-05 (branch `feat/watch-and-plot-energy`).
+**Status:** Implemented and gated
+(`tests/unit/test_plot_energy.py`, `tests/unit/test_project_monitor.py`,
+`tests/integration/test_project_watch.py`; how-to
+`examples/howto/plot_watch_running_simulation.py`).
+**Files:** `src/magnelio/post/_plot_energy.py` (new), `src/magnelio/io/project.py`,
+`src/magnelio/analysis/time_domain.py`, `src/magnelio/analysis/scattering_td.py`,
+`docs/methods/projects-and-runs.md`, `examples/tutorials/plot_07_project_store.py`.
+**Builds on:** [[DD-253]], [[DD-254]].  Closes the usability series.
+
+**Problem.**  The store had been built for a second reader since
+[[DD-070]] — SWMR streams, an atomically replaced index — and the
+docstring of `Project.refresh` said *"a live watcher may poll
+project.refresh().status"*, but no page showed the loop, `.refresh(`
+appeared nowhere in `docs/` or `examples/`, and the one watch loop in
+the tree was inside an integration test.  Tutorial 07 promised live
+following twice in prose and spent nine statements on the energy
+plot, where `plot_s` is one call; the ring-down how-to hand-rolled the
+same plot in different units.  The developer's ask was to be spared
+that loop, and to see the energy trace scaled the way the progress
+line reports it.
+
+**Decision.**
+
+1. *Polling, packaged.*  `Project.watch(interval, on_change=,
+   timeout=)` is a generator that yields the project at every change
+   and returns when the status is terminal (`done`, `aborted`,
+   `stale`) or the timeout passes; with `on_change` the loop runs
+   inside and the project is returned.  A change is a change of the
+   signature `(modified, status, ((name, state, n_energy_samples),
+   …))` — the index stamp plus one dataset shape per run, so a poll
+   costs a `stat` and a handful of SWMR opens.  The first and the last
+   state are always delivered; an `OSError` during a poll (the writer
+   is replacing a file) counts as "no change".  File-system
+   notifications were rejected on purpose: a dependency, unreliable on
+   network and cloud-synced mounts, and blind to whether an HDF5 flush
+   is whole.
+2. *One figure.*  `post/_plot_energy.py::plot_energy_traces` draws
+   traces as `10·log10(E/peak)`, the rising edge below zero too, with
+   the energy criterion as a dashed line; `x` is time in ns or the
+   step.  `plot_energy()` on `TDResult`, `ScatteringTDResult` (its
+   [[DD-253]] `energy_traces`, one curve per excited channel), `Run`
+   and `Project` (one curve per started run, the criterion when every
+   run shares one) delegate to it with `plot_s`'s conventions
+   (`(fig, ax)`, `ax=`).  Same number as the progress line, the run
+   table and `Run.energy_db`.
+3. *The notebook panel.*  `Project.monitor(interval, x=)` returns an
+   `ipywidgets.VBox` of an `HTML` (the project summary and run table)
+   and an `Image` (the energy plot as PNG), refreshed by a daemon
+   thread over its own `Project` instance and `_watch_iter`.  The
+   thread sets widget *state* only — the [[DD-251]] lesson: output
+   written after the cell returned is dropped, widget state renders.
+   The PNG is drawn on a `Figure` + `FigureCanvasAgg` the thread owns,
+   never through pyplot (`plot_energy_traces` imports pyplot only
+   when it has to make a figure), so no GUI backend is started off the
+   main thread.  Missing `ipywidgets` raises naming the `jupyter`
+   extra.
+4. *A running run counts its steps.*  The index books `n_steps` only
+   when a march ends, so a live `Run` read `0`; `Run.n_steps` now
+   reads the latest energy sample's step while the run is `running`.
+5. *Docs.*  A how-to that runs the solver on a thread and watches it
+   from the main thread (real output on the page: `running  step
+   1801  -52.0 dB below peak` …), Tutorial 07's energy block reduced
+   to `proj.plot_energy()`, the projects chapter's section *Watching
+   from another process*, a cross-link from the progress chapter.
+
+**Measured** (WR-90, 37 k cells, NumPy single, this branch): the
+how-to's `watch(interval=0.25)` reports seven times over a 1.3 s march
+plus setup — steps 801 → 5101, −0.9 → −70.1 dB — and ends on `done`;
+a finished project reports once; a `stale` entry ends the watch
+before its first sleep; `timeout=0.3` on a live entry returns in
+0.3 s.
+
+**Non-goals.**  A live plot inside the process that runs the solver
+(the kernel is busy marching; the text line is what fits there —
+possible later through the same widget-state rule from the solver's
+check cadence); a cross-project listing; the ring-down how-to keeps
+its own plot (its y-axis is relative to the start, a deliberate
+choice for a Q fit).

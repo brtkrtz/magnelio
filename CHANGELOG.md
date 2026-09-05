@@ -34,8 +34,18 @@ major version is 0, minor releases may change the public API.
   as short summaries — what they are, how large, in what state, never
   their arrays — and as tables in a notebook.  `checkpoint_state()`
   returns a `CheckpointState` mapping (indexed as the dict was).
-- A *Projects and runs* chapter in the technical description, and an
-  upgrade page for 0.6.
+- `plot_energy()` on results, runs and projects: the stored energy in
+  dB below its peak — the figure the progress line reports — over the
+  whole run, one curve per run, with the energy criterion as a dashed
+  line.
+- `Project.watch()`: follow a project another process is writing —
+  a generator that yields the project at every change until it is
+  finished, or a loop that calls `on_change(project)`; and
+  `Project.monitor()`: a notebook panel (run table above the energy
+  plot) a background thread keeps current.
+- A how-to, *Watching a simulation that is still running*; a *Projects
+  and runs* chapter in the technical description; an upgrade page
+  for 0.6.  Tutorial 07 reads the energy trace with `plot_energy()`.
 - A *Lofts* section in the geometry chapter of the user guide: the two
   constructors (`Loft` from profiles, `lofted()` between faces of
   existing bodies), the three blend modes, and what `tension` does.

@@ -503,6 +503,20 @@ class TDResult:
             ax.legend()
         return fig, ax
 
+    def plot_energy(self, *, x: str = "time", ax=None):
+        """Plot the stored energy in dB below its peak over the run.
+
+        The figure the progress line reports, over the whole run, with
+        the energy criterion as a dashed line when the run had one.
+        ``x`` is ``"time"`` (nanoseconds) or ``"step"``; ``ax`` draws
+        into existing axes.  Returns ``(fig, ax)``.
+        """
+        from magnelio.post._plot_energy import plot_energy_traces  # noqa: PLC0415
+
+        stop = self.settings.energy_stop_db if self.settings is not None else None
+        trace = self.energy_trace if self.energy_trace is not None else np.empty(0)
+        return plot_energy_traces({self.name or "run": trace}, energy_stop_db=stop, x=x, ax=ax)
+
     # ── how a result introduces itself (DD-254) ───────────────────────
 
     def _summary_rows(self) -> list[tuple[str, object]]:

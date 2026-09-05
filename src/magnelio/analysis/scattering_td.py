@@ -340,6 +340,20 @@ class ScatteringTDResult(ScatteringResultMixin):
         """Observed ``(port_name, mode_idx)`` pairs, in S-matrix order."""
         return self.s_params.channels
 
+    def plot_energy(self, *, x: str = "time", ax=None):
+        """Plot every excitation's stored energy in dB below its peak.
+
+        One curve per excited channel, labelled ``port:mode``, with the
+        energy criterion as a dashed line when the runs had one.  ``x``
+        is ``"time"`` (nanoseconds) or ``"step"``; ``ax`` draws into
+        existing axes.  Returns ``(fig, ax)``.
+        """
+        from magnelio.post._plot_energy import plot_energy_traces  # noqa: PLC0415
+
+        traces = {f"{p}:{m}": t for (p, m), t in (self.energy_traces or {}).items()}
+        stop = self.settings.energy_stop_db if self.settings is not None else None
+        return plot_energy_traces(traces, energy_stop_db=stop, x=x, ax=ax)
+
     # ── how a result introduces itself (DD-254) ───────────────────────
 
     def _summary_rows(self) -> list[tuple[str, object]]:

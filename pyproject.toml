@@ -116,6 +116,7 @@ ignore = [
 "tests/integration/test_conformal_convergence.py" = ["E402"]
 "tests/unit/test_plot_geometry.py" = ["E402"]
 "tests/unit/test_plot_pattern.py" = ["E402"]
+"tests/unit/test_plot_energy.py" = ["E402"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["magnelio"]

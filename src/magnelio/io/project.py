@@ -44,6 +44,7 @@ import html
 import json
 import os
 import socket
+import time
 from collections.abc import Mapping
 from dataclasses import fields as dc_fields
 from pathlib import Path
@@ -1864,6 +1865,21 @@ def _count_energy_samples(run_dir: Path) -> int:
         return 0
 
 
+def _last_energy_step(run_dir: Path) -> int | None:
+    """The step of the latest energy sample a run has flushed, or ``None``."""
+    import h5py  # noqa: PLC0415
+
+    path = run_dir / "results.h5"
+    if not path.exists():
+        return None
+    try:
+        with h5py.File(path, "r", swmr=True) as f:
+            steps = f["energy"]["step"]
+            return int(steps[-1]) if steps.shape[0] else None
+    except (OSError, KeyError, IndexError):
+        return None
+
+
 def _read_run_results(run_dir: Path) -> dict:
     """Read a run written by :class:`_RunResultWriter` into a plain dict.
 
@@ -3443,8 +3459,18 @@ class Run:
 
     @property
     def n_steps(self) -> int:
-        """Leapfrog steps committed to disk so far."""
-        return int(self._info.get("n_steps", 0) or 0)
+        """Leapfrog steps committed to disk so far.
+
+        The index books the count when a march ends; while a run
+        marches, the step of its latest flushed energy sample stands
+        in, so the count moves with the solver.
+        """
+        info = self._info
+        if info.get("state") == "running":
+            last = _last_energy_step(self.path)
+            if last is not None:
+                return last + 1
+        return int(info.get("n_steps", 0) or 0)
 
     @property
     def dt(self) -> float | None:
@@ -3571,6 +3597,23 @@ class Run:
         """The run's resume checkpoint (see :meth:`Project.checkpoint_state`)."""
         return self._project.checkpoint_state(self.name)
 
+    def plot_energy(self, *, x: str = "time", ax=None):
+        """Plot the run's stored energy in dB below its peak.
+
+        The figure the progress line reports, over the whole run, with
+        the run's energy criterion as a dashed line.  ``x`` is
+        ``"time"`` (nanoseconds) or ``"step"``; ``ax`` draws into
+        existing axes.  Returns ``(fig, ax)``.
+        """
+        from magnelio.post._plot_energy import plot_energy_traces  # noqa: PLC0415
+
+        return plot_energy_traces(
+            {self.name: self.energy_trace},
+            energy_stop_db=self.energy_stop_db,
+            x=x,
+            ax=ax,
+        )
+
     # ── how a run introduces itself ─────────────────────────────────
 
     def _criteria(self) -> str:
@@ -3626,6 +3669,71 @@ class Run:
 
 _RUN_COLUMNS = ("run", "excited", "state", "steps", "energy", "elapsed", "stop reason")
 _RUN_ALIGN = "lllrrrl"
+
+
+# ═════════════════════════════════════════════════════════════════════
+# The live notebook panel (DD-255)
+# ═════════════════════════════════════════════════════════════════════
+#
+# Only widget *state* is set from the refresh thread — the HTML string
+# and the PNG bytes.  A notebook renders state changes of a displayed
+# widget whenever they arrive; output written with ``display()`` after
+# the cell returned is dropped, which is why the panel is not an
+# ``Output`` widget and never prints.  The picture is rendered without
+# pyplot, on an Agg canvas the thread owns, so no GUI backend and no
+# global figure registry are touched off the main thread.
+
+
+def _energy_png(project: "Project", x: str) -> bytes:
+    """The project's energy plot as PNG bytes, rendered off the main thread."""
+    from io import BytesIO  # noqa: PLC0415
+
+    from matplotlib.backends.backend_agg import FigureCanvasAgg  # noqa: PLC0415
+    from matplotlib.figure import Figure  # noqa: PLC0415
+
+    from magnelio.post._plot_energy import plot_energy_traces  # noqa: PLC0415
+
+    fig = Figure(figsize=(6.4, 3.2), dpi=100)
+    FigureCanvasAgg(fig)
+    ax = fig.add_subplot()
+    traces = project._energy_traces()
+    if traces:
+        plot_energy_traces(traces, energy_stop_db=project._common_energy_stop(), x=x, ax=ax)
+    else:
+        ax.text(0.5, 0.5, "no energy samples yet", ha="center", va="center", transform=ax.transAxes)
+        ax.set_axis_off()
+    fig.tight_layout()
+    buf = BytesIO()
+    fig.savefig(buf, format="png")
+    return buf.getvalue()
+
+
+def _build_monitor_panel(path: Path, interval: float, x: str, ipywidgets):
+    """Assemble the panel and start its refresh thread."""
+    import threading  # noqa: PLC0415
+
+    project = Project(path)
+    table = ipywidgets.HTML(value=project._repr_html_())
+    picture = ipywidgets.Image(value=_energy_png(project, x), format="png")
+    panel = ipywidgets.VBox([table, picture])
+    stop = threading.Event()
+
+    def _refresh() -> None:
+        # Its own reader: no h5 handles or caches shared with the main
+        # thread.  The generator yields the terminal snapshot last, so
+        # the panel always ends on the final state.
+        own = Project(path)
+        for _ in own._watch_iter(interval, None):
+            if stop.is_set():
+                return
+            table.value = own._repr_html_()
+            picture.value = _energy_png(own, x)
+
+    worker = threading.Thread(target=_refresh, name="magnelio-monitor", daemon=True)
+    panel.stop = stop.set
+    panel._magnelio_thread = worker
+    worker.start()
+    return panel
 
 
 class _RunIndex(Mapping):
@@ -4115,6 +4223,146 @@ class Project(ScatteringResultMixin):
         one-run project.
         """
         return self._run_object(self._run_name_for_excited(excited)).energy_trace
+
+    def _energy_traces(self) -> dict:
+        """The non-empty energy traces of every started run, by run name."""
+        out = {}
+        for name in self._started_runs():
+            trace = self._run_object(name).energy_trace
+            if trace.size:
+                out[name] = trace
+        return out
+
+    def _common_energy_stop(self) -> float | None:
+        """The energy criterion shared by every started run, or ``None``."""
+        levels = {self._run_object(n).energy_stop_db for n in self._started_runs()}
+        levels.discard(None)
+        return float(next(iter(levels))) if len(levels) == 1 else None
+
+    def plot_energy(self, *, x: str = "time", ax=None):
+        """Plot every run's stored energy in dB below its peak, one curve per run.
+
+        The figure the progress line reports, for the whole project:
+        the legend names the runs, and the energy criterion is a dashed
+        line when every run shares one.  ``x`` is ``"time"``
+        (nanoseconds) or ``"step"``; ``ax`` draws into existing axes.
+        Returns ``(fig, ax)``.
+        """
+        from magnelio.post._plot_energy import plot_energy_traces  # noqa: PLC0415
+
+        return plot_energy_traces(
+            self._energy_traces(),
+            energy_stop_db=self._common_energy_stop(),
+            x=x,
+            ax=ax,
+        )
+
+    # ── following a project someone else is writing (DD-255) ────────
+
+    def _watch_signature(self) -> tuple:
+        """What changes when the writer does: the index, and each run's sample count."""
+        meta = self.meta
+        runs = tuple((name, run.state, run.n_energy_samples) for name, run in self.runs.items())
+        return (meta.get("modified"), meta.get("status"), runs)
+
+    def _is_terminal(self) -> bool:
+        return self.status in (*_TERMINAL_STATUS, "stale")
+
+    def _watch_iter(self, interval: float, timeout: float | None):
+        deadline = None if timeout is None else time.monotonic() + float(timeout)
+        last = None
+        while True:
+            try:
+                signature = self._watch_signature()
+            except OSError:
+                # The writer is replacing a file this instant; look again.
+                signature = last
+            if signature != last:
+                last = signature
+                yield self
+                if self._is_terminal():
+                    return
+            if deadline is not None and time.monotonic() >= deadline:
+                return
+            time.sleep(interval)
+
+    def watch(self, interval: float = 2.0, *, on_change=None, timeout: float | None = None):
+        """Follow this project while another process writes it.
+
+        Polls the store every ``interval`` seconds and reports each
+        change — a run starting or ending, a new energy sample, a
+        status change — until the project is finished (``done``,
+        ``aborted`` or ``stale``) or ``timeout`` seconds have passed.
+        The first report comes at once, so the current state is always
+        delivered, and so is the final one.
+
+        Without ``on_change`` this is a generator yielding the project
+        itself at every change::
+
+            for proj in mio.open_project("magic_tee").watch():
+                print(proj)                     # the run table, as it moves
+
+        With ``on_change`` the loop runs here: the callable is called
+        with the project at every change, and the project is returned
+        when the loop ends::
+
+            mio.open_project("magic_tee").watch(on_change=lambda p: p.plot_energy())
+
+        Parameters
+        ----------
+        interval : float, default 2.0
+            Seconds between two looks at the store.
+        on_change : callable, optional
+            ``on_change(project)`` at every change, instead of yielding.
+        timeout : float, optional
+            Give up after this many seconds; the generator (or the
+            call) then ends with the project in whatever state it is —
+            check ``status`` to tell a finished project from one still
+            marching.
+
+        Returns
+        -------
+        generator, or Project
+            The generator form without ``on_change``; the project
+            itself with it.
+        """
+        if not interval > 0.0:
+            raise ValueError(f"interval must be positive; got {interval!r}")
+        if on_change is None:
+            return self._watch_iter(float(interval), timeout)
+        for _ in self._watch_iter(float(interval), timeout):
+            on_change(self)
+        return self
+
+    def monitor(self, interval: float = 2.0, *, x: str = "time"):
+        """A live panel for a notebook: the run table above the energy plot.
+
+        Returns an ``ipywidgets`` box that a background thread refreshes
+        every ``interval`` seconds — the project summary with its run
+        table as HTML, and every run's stored energy in dB below the
+        peak as a picture — until the project is finished.  Leave it
+        as the last expression of a cell; the cell returns at once and
+        the panel keeps moving.  ``panel.stop()`` ends the refresh
+        early.  Needs the ``jupyter`` extra (``pip install
+        'magnelio[jupyter]'``).
+
+        Parameters
+        ----------
+        interval : float, default 2.0
+            Seconds between refreshes.
+        x : {"time", "step"}, default "time"
+            Horizontal axis of the energy plot.
+        """
+        try:
+            import ipywidgets  # noqa: PLC0415
+        except ImportError as exc:
+            raise ImportError(
+                "Project.monitor() needs ipywidgets; install the notebook extra: "
+                "pip install 'magnelio[jupyter]'",
+            ) from exc
+        if not interval > 0.0:
+            raise ValueError(f"interval must be positive; got {interval!r}")
+        return _build_monitor_panel(self.path, float(interval), x, ipywidgets)
 
     def monitors_for(
         self,

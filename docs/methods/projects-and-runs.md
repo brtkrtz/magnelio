@@ -127,7 +127,52 @@ was resumed elsewhere after you opened the project.
 
 A `running` run's `elapsed` counts the time since its current march
 started on top of what earlier marches booked, so the clock in the
-table keeps moving while the solver does.
+table keeps moving while the solver does, and its `n_steps` is the
+step of the latest energy sample on disk until the march books its
+final count.
+
+### Watching from another process
+
+Three tools turn "look again" into something a script or a notebook
+does on its own; the how-to *Watching a simulation that is still
+running* shows all three on one run.
+
+`watch()` polls the store every `interval` seconds and reports every
+change — a run starting or ending, a new energy sample, a status
+change — until the project is finished (`done`, `aborted` or
+`stale`), or until `timeout` seconds have passed.  As a generator it
+yields the project itself at every change; the first report comes at
+once and the final state is always delivered:
+
+```python
+for proj in mio.open_project("magic_tee").watch(interval=5):
+    print(proj)                          # the run table, as it moves
+```
+
+With `on_change=` the loop runs inside `watch`, which calls the
+callable with the project at every change and returns the project
+when the run is finished — the place for "redraw the figure", "append
+to a log", "send a message".
+
+`plot_energy()` draws every run's stored energy in dB below its peak,
+one curve per run, with the energy criterion as a dashed line when the
+runs share one.  It is the same figure the progress line reports and
+the table lists, and the same method exists on a single run and on
+the in-RAM results.
+
+`monitor()` returns a notebook widget — the run table above the
+energy plot — that a background thread refreshes every few seconds
+until the project is finished.  Left as the last expression of a
+cell, the cell returns at once and the panel keeps moving while other
+cells run; `panel.stop()` ends it early.  It needs the `jupyter`
+extra.
+
+Polling is the deliberate choice.  The store is written by another
+process, often on another file system; a subscription to file-system
+events would need a dependency, would miss events on network mounts,
+and could not tell a half-flushed HDF5 write from a whole one.  A poll
+every few seconds sees everything, because every energy sample is
+flushed as it is taken and the index is replaced atomically.
 
 
 ## Time

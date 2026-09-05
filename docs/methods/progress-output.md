@@ -111,7 +111,9 @@ how many runs it made.  The same clock is kept on what comes back:
 every result carries `started`, `finished` and `elapsed` (the wall time
 of the marching), and a project store books them per run, resumes
 summed.  A checkpoint written on request and a resumed run each get a
-line of their own under these labels.
+line of their own under these labels.  All of this is the output of
+the process that computes; to follow a run from *another* process —
+a second notebook, a laptop — see *Projects and runs*.
 
 ```
   eigen | factorising at sigma=2.012e+21 (7.14 GHz) | done (14.0 s)
