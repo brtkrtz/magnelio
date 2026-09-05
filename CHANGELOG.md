@@ -11,9 +11,31 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- Every run is timed.  Results carry `started`, `finished` and `elapsed`
+  (the wall clock of the marching), a project store books them per run
+  and for the analysis call, and the time loop reports a running clock,
+  the step rate and — on a run with a fixed step count — the time to
+  the end.  Every analysis call closes with a `finished in …` line.
+- Two lines before the first time step say what runs (cells, time step,
+  precision, device, memory) and what will end it (the stop criteria
+  and the runtime cap).
+- `ScatteringTDResult` keeps the stored-energy trace of every
+  excitation (`energy_traces`).
 - A *Lofts* section in the geometry chapter of the user guide: the two
   constructors (`Loft` from profiles, `lofted()` between faces of
   existing bodies), the three blend modes, and what `tension` does.
+
+### Changed
+
+- The time loop's progress line reads `step 2900/∞ | 0.7 s | energy
+  -58.4/-70 dB | 3.9k steps/s`, and its closing line names the
+  criterion in the same slots.  Every notice the solver and the
+  analyses print goes through the progress reporter and obeys
+  `verbose` / `set_verbosity` — the checkpoint confirmation, the resume
+  line and the band-pipeline notices included.
+- `AnalysisTD.run()` and `AnalysisScatteringTD.run()` say what they
+  return: the in-RAM result, or the `Project` reader when `project=` is
+  given.
 
 ### Fixed
 

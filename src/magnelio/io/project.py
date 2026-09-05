@@ -40,14 +40,15 @@ See ``PROJECT_STORE_PLAN.md`` for the full plan.
 
 from __future__ import annotations
 
-import datetime
 import json
 import os
+import socket
 from dataclasses import fields as dc_fields
 from pathlib import Path
 
 import numpy as np
 
+from magnelio._progress import current_reporter, parse_utc, utc_now
 from magnelio.analysis.result_interface import RunSettings, ScatteringResultMixin
 from magnelio.io._schema import (
     SCHEMA_VERSION,
@@ -706,12 +707,27 @@ def _write_json_atomic(path: Path, data: dict) -> None:
     os.replace(tmp, path)
 
 
+def _utc_now_iso() -> str:
+    """The current UTC time as the ISO-8601 string every stamp in the store uses."""
+    return utc_now().isoformat(timespec="seconds")
+
+
+def _writer_identity() -> dict:
+    """Who is writing: the process id and host of the running solver.
+
+    A reader on the same host can ask the operating system whether that
+    process still exists — the difference between a run that is
+    marching and one whose kernel died with ``running`` on disk.
+    """
+    return {"pid": int(os.getpid()), "host": socket.gethostname()}
+
+
 def _update_meta(path: Path, fn) -> None:
     """Read ``project.json``, apply ``fn`` in place, write it back atomically."""
     with open(path / "project.json", encoding="utf-8") as fh:
         meta = json.load(fh)
     fn(meta)
-    meta["modified"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    meta["modified"] = _utc_now_iso()
     _write_json_atomic(path / "project.json", meta)
 
 
@@ -1659,13 +1675,17 @@ class _RunSink:
             self.write_checkpoint(step)
             if forced:
                 self._checkpoint_requested = False
-                # Leading newline so the confirmation survives the live
-                # "\r…" status line; ``step + 1`` == the checkpoint's
-                # n_completed (the flush ran after _resume_step advanced).
-                print(
-                    f"\n  [checkpoint] on-demand snapshot written at step "
-                    f"{step + 1} ({self._checkpoint_path})",
-                )
+                # The solver's reporter is current during a flush; its
+                # note replaces the live status line cleanly and stays
+                # silent when the run is.  ``step + 1`` == the
+                # checkpoint's n_completed (the flush ran after
+                # _resume_step advanced).
+                rep = current_reporter()
+                if rep is not None:
+                    rep.note(
+                        f"checkpoint written on request at step {step + 1} "
+                        f"({self._checkpoint_path})",
+                    )
 
     def write_checkpoint(self, step: int | None = None) -> None:
         """Force-write the current solver state to ``checkpoint.h5``.
@@ -1717,6 +1737,7 @@ class _RunSink:
         state: str = "done",
         stop_reason: str | None = None,
         final_port_signal_db: float | None = None,
+        elapsed: float | None = None,
     ) -> None:
         """Drain the final tail, close the file, finalise ``project.json``.
 
@@ -1725,7 +1746,8 @@ class _RunSink:
         not — the graceful-abort checkpoint was already written at the
         consistent break point by the solver.  ``stop_reason`` /
         ``final_port_signal_db`` book why the run ended (and the |V|
-        envelope level below peak it reached) into the run index.
+        envelope level below peak it reached) into the run index;
+        ``elapsed`` books the march's wall time.
         """
         self.flush()
         if state == "done":
@@ -1739,6 +1761,7 @@ class _RunSink:
             state,
             stop_reason=stop_reason,
             final_port_signal_db=final_port_signal_db,
+            elapsed=elapsed,
         )
         self._export_paraview()
 
@@ -2909,7 +2932,7 @@ class ProjectStore:
 
         from magnelio._version import __version__  # noqa: PLC0415
 
-        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        now = _utc_now_iso()
         _write_json_atomic(
             path / "project.json",
             {
@@ -2998,6 +3021,31 @@ class ProjectStore:
                     {**dict(entry), "state": "pending"},
                 )
             meta["status"] = "running"
+            meta["writer"] = _writer_identity()
+
+        _update_meta(self.path, _upd)
+
+    def mark_analysis_started(self) -> None:
+        """Stamp the start of an analysis call (``run()`` or ``resume()``).
+
+        The per-run stamps cover the marches; this one covers the whole
+        call, setup included, which is what the ``finished in`` line
+        reports and what a reader wants to see at the top of a project.
+        """
+
+        def _upd(meta: dict) -> None:
+            meta["analysis"] = {"started": _utc_now_iso(), "finished": None, "elapsed": None}
+            meta["writer"] = _writer_identity()
+
+        _update_meta(self.path, _upd)
+
+    def mark_analysis_finished(self, elapsed: float) -> None:
+        """Close the analysis stamp opened by :meth:`mark_analysis_started`."""
+
+        def _upd(meta: dict) -> None:
+            entry = meta.setdefault("analysis", {})
+            entry["finished"] = _utc_now_iso()
+            entry["elapsed"] = float(elapsed)
 
         _update_meta(self.path, _upd)
 
@@ -3080,8 +3128,17 @@ class ProjectStore:
                 "total_time_steps": total_time_steps,
                 "taper_signals": bool(taper_signals),
                 "state": "running",
+                # Wall clock of the run (DD-253): ``elapsed`` sums the
+                # marches of a resumed run; ``pid``/``host`` say who
+                # is writing, so a reader can tell a live run from a
+                # dead one.
+                "started": _utc_now_iso(),
+                "finished": None,
+                "elapsed": 0.0,
+                **_writer_identity(),
             }
             meta["status"] = "running"
+            meta["writer"] = _writer_identity()
 
         _update_meta(self.path, _upd)
         return _RunSink(
@@ -3136,7 +3193,16 @@ class ProjectStore:
             run = meta.setdefault("runs", {}).setdefault(safe, {})
             run["state"] = "running"
             run["n_steps"] = int(n_keep)
+            # A resumed march keeps ``started`` and the accumulated
+            # ``elapsed``; the new segment is stamped separately and the
+            # writer identity is refreshed — it is a new process.
+            run.setdefault("started", _utc_now_iso())
+            run["resumed"] = _utc_now_iso()
+            run["finished"] = None
+            run.setdefault("elapsed", 0.0)
+            run.update(_writer_identity())
             meta["status"] = "running"
+            meta["writer"] = _writer_identity()
 
         _update_meta(self.path, _upd)
         return _RunSink(
@@ -3163,6 +3229,7 @@ class ProjectStore:
         state: str,
         stop_reason: str | None = None,
         final_port_signal_db: float | None = None,
+        elapsed: float | None = None,
     ) -> None:
         """Flip a streamed run to its terminal ``state`` in project.json.
 
@@ -3170,6 +3237,8 @@ class ProjectStore:
         "port_signal", "port_signal_stall", "runtime_cap", "steps",
         "aborted"), ``final_port_signal_db`` the |V|-envelope level below
         peak at the stop — schema-additive, absent on older projects.
+        ``elapsed`` is the wall time of the march that just ended; it is
+        added to what earlier marches of the same run accumulated.
         """
 
         def _upd(meta: dict) -> None:
@@ -3180,6 +3249,9 @@ class ProjectStore:
                 run["stop_reason"] = str(stop_reason)
             if final_port_signal_db is not None:
                 run["final_port_signal_db"] = float(final_port_signal_db)
+            run["finished"] = _utc_now_iso()
+            if elapsed is not None:
+                run["elapsed"] = float(run.get("elapsed") or 0.0) + float(elapsed)
             states = [r.get("state") for r in meta["runs"].values()]
             meta["status"] = "done" if all(s == "done" for s in states) else "running"
 
@@ -3290,6 +3362,36 @@ class Project(ScatteringResultMixin):
         self._run_cache.clear()
         self._s_cache.clear()
         return self
+
+    # ── wall clock (DD-253) ─────────────────────────────────────────
+    #
+    # The project's own clock is the marching of its runs: the first
+    # start, the last finish, the summed wall time — the same three
+    # numbers an in-RAM result carries, so a script reads them off
+    # either.  The analysis call that produced the runs, setup
+    # included, is the ``analysis`` entry of ``meta``.
+
+    @property
+    def started(self):
+        """Wall-clock start (UTC datetime) of the first march, or ``None``."""
+        stamps = [parse_utc(r.get("started")) for r in self._started_runs().values()]
+        stamps = [s for s in stamps if s is not None]
+        return min(stamps) if stamps else None
+
+    @property
+    def finished(self):
+        """Wall-clock end (UTC datetime) of the last march; ``None`` while one marches."""
+        runs = list(self._started_runs().values())
+        if not runs or any(not r.get("finished") for r in runs):
+            return None
+        return max(parse_utc(r["finished"]) for r in runs)
+
+    @property
+    def elapsed(self) -> float | None:
+        """Wall time of the marching [s], summed over the runs and their resumes."""
+        values = [r.get("elapsed") for r in self._started_runs().values()]
+        values = [float(v) for v in values if v is not None]
+        return sum(values) if values else None
 
     @property
     def mesh(self):
@@ -3475,6 +3577,9 @@ class Project(ScatteringResultMixin):
             port_line_params=d["port_line_params"],
             settings=settings,
             name=run_name,
+            started=parse_utc(info.get("started")),
+            finished=parse_utc(info.get("finished")),
+            elapsed=info.get("elapsed"),
         )
 
     def _first_started_run(self) -> str:

@@ -10,6 +10,7 @@ whole ones, and that a worker process stays quiet.
 from __future__ import annotations
 
 import io
+import re
 import time
 
 import pytest
@@ -387,3 +388,103 @@ class TestLabels:
         from magnelio.analysis.time_domain import _port_stage
 
         assert _port_stage("p1", 1, 2) == "port 'p1' (1/2)"
+
+
+class TestDurations:
+    """Two spellings of a duration — a stopwatch and a sentence — and the rate."""
+
+    def test_clock_reads_like_a_stopwatch(self):
+        from magnelio._progress import format_clock
+
+        assert format_clock(27.44) == "27.4 s"
+        assert format_clock(133) == "2:13"
+        assert format_clock(3733) == "1:02:13"
+
+    def test_seconds_read_like_a_sentence(self):
+        from magnelio._progress import format_seconds
+
+        assert format_seconds(None) == "—"
+        assert format_seconds(27.44) == "27.4 s"
+        assert format_seconds(72) == "1 min 12 s"
+        assert format_seconds(7500) == "2 h 05 min"
+
+    def test_rate_scales_its_unit(self):
+        from magnelio._progress import format_rate
+
+        assert format_rate(980) == "980 steps/s"
+        assert format_rate(12400) == "12.4k steps/s"
+        assert format_rate(0.45) == "0.45 steps/s"
+
+    def test_stamps_round_trip_through_the_store_spelling(self):
+        from magnelio._progress import parse_utc, utc_now
+
+        now = utc_now()
+        back = parse_utc(now.isoformat(timespec="seconds"))
+        assert back.tzinfo is not None
+        assert abs((now - back).total_seconds()) < 1.0
+        assert parse_utc(None) is None
+
+
+class TestMultilineNote:
+    def test_continuation_lines_sit_under_the_label(self):
+        s = io.StringIO()
+        rep = Reporter("setup", True, stream=s)
+        rep.note("first\nsecond")
+        rep.close()
+        lines = s.getvalue().splitlines()
+        assert lines[0] == "  setup | first"
+        assert lines[1] == "  " + " " * len("setup | ") + "second"
+
+
+class TestMarchLines:
+    """The time loop says what runs, how long it has run, and why it stopped."""
+
+    @pytest.fixture
+    def mesh(self):
+        model, b = _waveguide_model()
+        return mio.Mesh.from_geometry(
+            model, mio.MeshControl(max_cell_size=b / 4), f_max=12e9, verbose=False
+        )
+
+    def test_open_ended_run_has_a_clock_and_a_rate_but_no_eta(self, mesh, capsys, monkeypatch):
+        monkeypatch.setattr("magnelio._progress._LOG_INTERVAL", 0.0)
+        result = mio.AnalysisScatteringTD(mesh=mesh, f_min=8e9, verbose=True).run(
+            excited=["p1"], energy_stop_db=40
+        )
+        out = capsys.readouterr().out
+        assert re.search(
+            r"FIT-TD \| \d+ cells \| dt [\d.]+ [fpnµm]?s \| (single|double) on .* "
+            r"\| ≈ [\d.]+ [kMG]?B",
+            out,
+        )
+        assert "FIT-TD | stops at energy -40 dB" in out
+        assert re.search(
+            r"FIT-TD \| step \d+/∞ \| [\d.]+ s \| energy .* \| [\d.]+k? steps/s\n", out
+        )
+        assert "ETA" not in out
+        assert re.search(
+            r"FIT-TD \| step \d+/∞ \| [\d.]+ s \| energy -\d+\.\d/-40 dB "
+            r"\| done \(energy criterion\)",
+            out,
+        )
+        assert re.search(r"run \| finished in [\d.]+ s\n", out)
+        assert result.elapsed > 0.0
+        assert result.started <= result.finished
+        assert ("p1", 0) in result.energy_traces
+
+    def test_fixed_step_count_carries_an_eta(self, mesh, capsys, monkeypatch):
+        monkeypatch.setattr("magnelio._progress._LOG_INTERVAL", 0.0)
+        mio.AnalysisScatteringTD(mesh=mesh, f_min=8e9, verbose=True).run(
+            excited=["p1"], total_time_steps=300
+        )
+        out = capsys.readouterr().out
+        assert "or step 300" in out
+        assert re.search(r"step \d+/300 \| [\d.]+ s \| .*steps/s, ETA ", out)
+        assert "step 300/300" in out
+        assert "done (step limit)" in out
+
+    def test_silent_when_told_to_be(self, mesh, capsys):
+        mio.AnalysisScatteringTD(mesh=mesh, f_min=8e9, verbose=False).run(
+            excited=["p1"], total_time_steps=100
+        )
+        assert capsys.readouterr().out == ""

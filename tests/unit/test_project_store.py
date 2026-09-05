@@ -8,6 +8,8 @@ material library, pec mask, conformal sub-cell data) and geometry
 
 from __future__ import annotations
 
+import os
+import socket
 from dataclasses import fields as dc_fields
 
 import numpy as np
@@ -265,3 +267,44 @@ class TestPlannedRunProtocol:
         with pytest.raises(ValueError, match="no started runs"):
             _ = p.s_params
         assert p.signals == {}
+
+
+class TestRunTiming:
+    """Every run and every analysis call carries its wall clock."""
+
+    def _store(self, tmp_path) -> ProjectStore:
+        grid = GridLines(
+            x=np.linspace(0, 6e-3, 7),
+            y=np.linspace(0, 4e-3, 5),
+            z=np.linspace(0, 4e-3, 5),
+        )
+        return ProjectStore.create(tmp_path / "proj", Mesh.from_grid(grid))
+
+    def test_finalize_stamps_the_end_and_accumulates_elapsed(self, tmp_path):
+        store = self._store(tmp_path)
+        store.register_planned_runs([("port1_mode0", {"excited": ["port1", 0]})])
+        store._finalize_run("port1_mode0", 100, "aborted", elapsed=1.5)
+        info = open_project(store.path).runs["port1_mode0"]
+        assert info["elapsed"] == pytest.approx(1.5)
+        assert info["finished"] is not None
+        # A resumed march adds its own wall time to the run's total.
+        store._finalize_run("port1_mode0", 200, "done", elapsed=2.0)
+        assert open_project(store.path).runs["port1_mode0"]["elapsed"] == pytest.approx(3.5)
+
+    def test_planned_runs_name_their_writer(self, tmp_path):
+        store = self._store(tmp_path)
+        store.register_planned_runs([("port1_mode0", {"excited": ["port1", 0]})])
+        meta = open_project(store.path).meta
+        assert meta["writer"]["pid"] == os.getpid()
+        assert meta["writer"]["host"] == socket.gethostname()
+
+    def test_analysis_stamp_opens_and_closes(self, tmp_path):
+        store = self._store(tmp_path)
+        store.mark_analysis_started()
+        stamp = open_project(store.path).meta["analysis"]
+        assert stamp["finished"] is None
+        assert stamp["elapsed"] is None
+        store.mark_analysis_finished(12.5)
+        stamp = open_project(store.path).meta["analysis"]
+        assert stamp["elapsed"] == pytest.approx(12.5)
+        assert stamp["finished"] >= stamp["started"]

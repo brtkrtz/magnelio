@@ -102,12 +102,13 @@ from __future__ import annotations
 import math
 import warnings
 from dataclasses import dataclass
-from typing import Iterable, Union
+from typing import TYPE_CHECKING, Iterable, Union
 
 import numpy as np
 from scipy.special import erfcinv
 
 from magnelio._operators.material_matrices import build_M_eps, build_M_mu
+from magnelio._progress import Reporter
 from magnelio.analysis._recipe import excitation_to_dict
 from magnelio.analysis.excitation import Excitation
 from magnelio.analysis.result_interface import RunSettings, ScatteringResultMixin
@@ -139,6 +140,9 @@ from magnelio.signals.signal_1d import Signal1D
 from magnelio.signals.waveforms import Waveform
 from magnelio.solver.fit_td import FITTimeDomainSolver
 from magnelio.solver.stability import spectral_dt
+
+if TYPE_CHECKING:
+    from magnelio.io.project import Project
 
 ExcitedSpec = Union[str, tuple[str, int]]
 
@@ -277,6 +281,15 @@ class ScatteringTDResult(ScatteringResultMixin):
     settings : RunSettings or None
         The settings this run was produced with — frequency range,
         time step, why the marching stopped, precision and backend.
+    started, finished : datetime or None
+        Wall-clock stamps (UTC): the start of the first march and the
+        end of the last one.
+    elapsed : float or None
+        Wall time of the marches [s], summed over the excitations.
+    energy_traces : dict or None
+        The stored-energy trace of every excitation's march, keyed by
+        the excited ``(port_name, mode_idx)`` pair — the same structured
+        array :attr:`~magnelio.analysis.TDResult.energy_trace` holds.
 
     Notes
     -----
@@ -311,6 +324,11 @@ class ScatteringTDResult(ScatteringResultMixin):
     # reference impedances and the f_axis= recompute.
     port_dispersion: dict | None = None
     port_reference_scale: dict | None = None
+    # Wall clock and per-excitation energy traces (DD-253).
+    started: object | None = None
+    finished: object | None = None
+    elapsed: float | None = None
+    energy_traces: dict | None = None
 
     @property
     def f_axis(self) -> np.ndarray:
@@ -631,6 +649,22 @@ class ScatteringTDResult(ScatteringResultMixin):
         return key
 
 
+def _march_timing(marches) -> dict:
+    """Fold per-march ``(started, finished, elapsed)`` triples into result fields.
+
+    The first start, the last finish, the summed wall time — what a
+    multi-excitation result reports as its own timing.
+    """
+    marches = [m for m in marches if m[0] is not None]
+    if not marches:
+        return {"started": None, "finished": None, "elapsed": None}
+    return {
+        "started": min(m[0] for m in marches),
+        "finished": max(m[1] for m in marches if m[1] is not None),
+        "elapsed": float(sum(m[2] or 0.0 for m in marches)),
+    }
+
+
 @dataclass
 class _ChannelRun:
     """One finished channel march, before the columns are merged."""
@@ -647,6 +681,10 @@ class _ChannelRun:
     final_port_signal_db: float | None
     port_dispersion: dict | None = None
     port_reference_scale: dict | None = None
+    # Wall clock of the march (DD-253).
+    started: object | None = None
+    finished: object | None = None
+    elapsed: float | None = None
 
 
 @dataclass
@@ -941,7 +979,7 @@ class AnalysisScatteringTD(AnalysisTD):
         port_signal_stop_db: float | str | None = "auto",
         max_time_steps: int | str | None = "auto",
         excitations=None,
-    ) -> ScatteringTDResult:
+    ) -> "ScatteringTDResult | Project":
         """Run one FIT-TD simulation per excited (port, mode) and merge.
 
         ``excitations=`` is not accepted here: a scattering analysis
@@ -1049,13 +1087,16 @@ class AnalysisScatteringTD(AnalysisTD):
 
         Returns
         -------
-        ScatteringTDResult
+        ScatteringTDResult or Project
             Wrapper carrying the merged S-matrix (``.s_params``,
             single-column for one excited pair, K-column for K), the
             per-excitation V/I time series (``.signals``), and the
             sampled reference waveform (``.reference_signal``).  Use
             ``result.S("p_out", "p_in")`` for direct S-parameter
-            access.
+            access.  With ``project=`` the store's
+            :class:`~magnelio.io.project.Project` reader instead — the
+            same object :func:`~magnelio.open_project` returns, which
+            implements the same S-parameter accessors.
 
         Notes
         -----
@@ -1093,8 +1134,8 @@ class AnalysisScatteringTD(AnalysisTD):
 
         bc_objects = self._resolve_bc()
 
-        from magnelio._progress import Reporter  # noqa: PLC0415
-
+        # The whole call is timed, setup included (DD-253).
+        self._start_run_clock()
         # The setup ahead of the time-domain loop is not free: the
         # CFL eigenvalue is a Lanczos iteration over the whole update
         # operator, and each port is a 2D mode solve.  Name them, or
@@ -1174,7 +1215,7 @@ class AnalysisScatteringTD(AnalysisTD):
             # signal as representative only for the longest run.
             representative = max(runs, key=lambda r: r.n_actual)
 
-        return ScatteringTDResult(
+        result = ScatteringTDResult(
             s_params=s_params,
             signals={chan: r.signals for chan, r in zip(excited_list, runs)},
             reference_signal=representative.reference_signal,
@@ -1200,7 +1241,15 @@ class AnalysisScatteringTD(AnalysisTD):
                 final_port_signal_db=representative.final_port_signal_db,
                 excitations=tuple(excited_list),
             ),
+            energy_traces={
+                chan: r.energy_trace
+                for chan, r in zip(excited_list, runs)
+                if r.energy_trace is not None
+            },
+            **_march_timing((r.started, r.finished, r.elapsed) for r in runs),
         )
+        self._report_finished(len(runs))
+        return result
 
     def _run_settings(self, **kwargs) -> RunSettings:
         """Assemble the result-contract settings for this run."""
@@ -1321,6 +1370,9 @@ class AnalysisScatteringTD(AnalysisTD):
             final_port_signal_db=solver._final_signal_db,
             port_dispersion=prepared.port_dispersion,
             port_reference_scale=prepared.port_reference_scale,
+            started=solver._started,
+            finished=solver._finished,
+            elapsed=solver._elapsed,
         )
 
     def _store_setup(self, dt: float) -> dict:
@@ -1361,6 +1413,7 @@ class AnalysisScatteringTD(AnalysisTD):
         from magnelio.io.project import open_project  # noqa: PLC0415
 
         store, path = self._open_store(dt)
+        store.mark_analysis_started()
 
         # Pre-register every planned excitation as ``pending`` so the
         # project status cannot flicker to "done" in the gap between
@@ -1429,10 +1482,8 @@ class AnalysisScatteringTD(AnalysisTD):
                 ),
             )
 
-        if self._verbose:
-            print(
-                f"[AnalysisScatteringTD] streamed {len(excited_list)} run(s) to project {path}",
-            )
+        self._note("run", f"streamed {len(excited_list)} run(s) to project {path}")
+        store.mark_analysis_finished(self._report_finished(len(excited_list)))
         return open_project(path)
 
     def _resolve_port_model(
@@ -1494,10 +1545,11 @@ class AnalysisScatteringTD(AnalysisTD):
                 f"(−30 dB-class |S11| floor) on those channels.",
             )
         if self._verbose:
-            print(
-                f"[AnalysisScatteringTD] channels {mur_channels} are "
-                f"not DTBC-certifiable (inhomogeneous cross-section); "
-                f"using the band-subspace DTBC pipeline (DD-057)",
+            self._note(
+                "setup",
+                f"channels {mur_channels} are not DTBC-certifiable "
+                f"(inhomogeneous cross-section); using the band-subspace "
+                f"DTBC pipeline",
             )
         return "band"
 
@@ -1716,16 +1768,15 @@ class AnalysisScatteringTD(AnalysisTD):
         cfg = self._band_setup(f_axis, dt, total_time_steps)
 
         if self._verbose:
-            print(
-                f"[AnalysisScatteringTD] building "
-                f"{len(self.ports)} band ports: band "
+            self._note(
+                "setup",
+                f"building {len(self.ports)} band ports: band "
                 f"{cfg['f_band'][0] / 1e9:.3g}-"
                 f"{cfg['f_band'][1] / 1e9:.3g} GHz, "
                 f"n_grid = {cfg['n_grid']}, n_kernel = "
                 f"{cfg['n_kernel_init']} (mode-family tracking + "
                 f"contour-QZ ghost kernels, single-threaded — this "
                 f"is the expensive phase before the TD run)",
-                flush=True,
             )
         operators = [
             build_band_dtbc_port(
@@ -1746,9 +1797,9 @@ class AnalysisScatteringTD(AnalysisTD):
         label_to_op = {op.name: op for op in operators}
         if self._verbose:
             op0 = operators[0]
-            print(
-                f"[AnalysisScatteringTD] band ports built: "
-                f"subspace rank p = {op0.subspace_rank}, "
+            self._note(
+                "setup",
+                f"band ports built: subspace rank p = {op0.subspace_rank}, "
                 f"n_syn = {cfg['n_syn']}, run = {cfg['n_steps']} steps",
             )
 
@@ -1767,6 +1818,7 @@ class AnalysisScatteringTD(AnalysisTD):
             )
 
         per_excitation = []
+        marches = []
         band_records = [BandDecomposition.from_operator(op) for op in operators]
         reference_scale = self._reference_scales(operators)
         for excited_chan in excited_list:
@@ -1801,6 +1853,7 @@ class AnalysisScatteringTD(AnalysisTD):
                 sibc=self._sibc_spec(),
             )
             solver.run()
+            marches.append((solver._started, solver._finished, solver._elapsed))
             signals = recorder.finalize(n_steps_actual=n_steps)
 
             _warn_on_truncated_band_record(signals, excited_chan)
@@ -1831,13 +1884,13 @@ class AnalysisScatteringTD(AnalysisTD):
             )
             _renormalize_freq_monitors(self.monitors, reference_signal)
             per_excitation.append(
-                (s_params, signals, reference_signal, n_steps),
+                (s_params, signals, reference_signal, n_steps, solver._energy_trace),
             )
 
         port_modes = {op.name: self._modes_for_operator(op) for op in operators}
         port_normal_dx = {op.name: op.plane.normal_dx for op in operators}
         if len(per_excitation) == 1:
-            s_params, signals, ref_sig, n_actual = per_excitation[0]
+            s_params, signals, ref_sig, n_actual, _ = per_excitation[0]
             signals_by_excitation = {excited_list[0]: signals}
         else:
             s_params = SParameterResult.merge(
@@ -1847,9 +1900,9 @@ class AnalysisScatteringTD(AnalysisTD):
                 excited_list[k]: per_excitation[k][1] for k in range(len(per_excitation))
             }
             longest = max(per_excitation, key=lambda it: it[3])
-            _, _, ref_sig, n_actual = longest
+            _, _, ref_sig, n_actual, _ = longest
 
-        return ScatteringTDResult(
+        result = ScatteringTDResult(
             s_params=s_params,
             signals=signals_by_excitation,
             reference_signal=ref_sig,
@@ -1866,7 +1919,15 @@ class AnalysisScatteringTD(AnalysisTD):
             ),
             port_dispersion={rec.name: rec for rec in band_records},
             port_reference_scale=reference_scale,
+            energy_traces={
+                chan: item[4]
+                for chan, item in zip(excited_list, per_excitation)
+                if item[4] is not None
+            },
+            **_march_timing(marches),
         )
+        self._report_finished(len(per_excitation))
+        return result
 
     def _run_band_streamed(
         self,
@@ -1900,6 +1961,7 @@ class AnalysisScatteringTD(AnalysisTD):
         from magnelio.io.project import open_project  # noqa: PLC0415
 
         store, path = self._open_store(dt)
+        store.mark_analysis_started()
         store.register_planned_runs(
             (_scattering_run_name(chan), {"excited": [chan[0], int(chan[1])]})
             for chan in excited_list
@@ -1995,11 +2057,8 @@ class AnalysisScatteringTD(AnalysisTD):
                 ),
             )
 
-        if self._verbose:
-            print(
-                f"[AnalysisScatteringTD] streamed {len(excited_list)} "
-                f"band run(s) to project {path}",
-            )
+        self._note("run", f"streamed {len(excited_list)} band run(s) to project {path}")
+        store.mark_analysis_finished(self._report_finished(len(excited_list)))
         return open_project(path)
 
     def _prepare_band_run(
@@ -2260,13 +2319,16 @@ def _resume_scattering(
     int is an absolute step bound, ``None`` removes cap and stall
     watchdog); it is not inherited — each segment gets its own.
     """
-    from magnelio.io.project import open_project  # noqa: PLC0415
+    from magnelio.io.project import ProjectStore, open_project  # noqa: PLC0415
 
     run_name = proj._run_name_for_excited(excited)
     run_meta = proj.runs[run_name]
     excited_chan = (run_meta["excited"][0], int(run_meta["excited"][1]))
 
     analysis = AnalysisScatteringTD.from_project(proj, verbose=verbose)
+    analysis._start_run_clock()
+    store = ProjectStore(proj.path)
+    store.mark_analysis_started()
     excitation = Excitation(excited_chan[0], mode=excited_chan[1], waveform=analysis.waveform)
     prepare = None
     if run_meta.get("port_model") == "band":
@@ -2307,6 +2369,7 @@ def _resume_scattering(
             prepared.reference_fn, solver._actual_steps or prepared.n_steps_estimate, dt
         ),
     )
+    store.mark_analysis_finished(analysis._report_finished())
     return open_project(proj.path)
 
 

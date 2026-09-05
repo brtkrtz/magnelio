@@ -20328,3 +20328,102 @@ solved modes raises with the count instead of an `IndexError`.
 constant at a frequency (the ladder converges cross-section
 parameters, and the cut-off carries the TE/TM cross-section
 completely); a per-mode target list.
+
+---
+
+## DD-253 — every march is timed, and the time loop says what runs and how long it has run
+
+**Date:** 2026-09-05 (branch `feat/run-timing`).
+**Status:** Implemented and gated
+(`tests/unit/test_progress_reporting.py::TestDurations`, `::TestMultilineNote`,
+`::TestMarchLines`; `tests/unit/test_project_store.py::TestRunTiming`;
+`tests/integration/test_project_scattering.py::test_stop_reason_booked_in_index_and_settings`,
+`tests/integration/test_resume_api.py::test_resume_bounded_bit_exact`,
+`tests/integration/test_result_contract.py::TestContractShape::test_timing_populated`).
+**Files:** `src/magnelio/_progress.py`, `src/magnelio/solver/fit_td.py`,
+`src/magnelio/io/project.py`, `src/magnelio/analysis/time_domain.py`,
+`src/magnelio/analysis/scattering_td.py`, `src/magnelio/analysis/result_interface.py`,
+`docs/methods/progress-output.md`.
+**Amends:** [[DD-246]], [[DD-251]].  First of the usability series
+[[DD-254]] (run objects, reprs) and [[DD-255]] (`plot_energy`, `watch`, `monitor`).
+
+**Problem.**  Nothing in Magnelio knew what time it was.  The store held
+`created` and `modified` on the project and nothing per run; a result
+object carried no wall clock at all; the FIT-TD line reported the step
+and the criterion but neither how long the march had run nor how fast
+it was going, and its closing line — unlike the `mesh` and `setup`
+closers — omitted the total on purpose.  A user watching a run from
+another notebook could not say whether it had been marching for a
+minute or an hour, and a user reading a result a week later could not
+say when it was made.  Around the reporter, seven notices still went
+out as bare `print`s (the backend banner, the on-demand checkpoint
+confirmation, the resume line, the not-streamed-monitor notice, three
+band-pipeline notices), so `set_verbosity(False)` was not silence.
+
+**Decision.**
+
+1. *The clock lives in the march.*  `FITTimeDomainSolver.run()` is a
+   thin wrapper around `_run_loop()`: it stamps `_started` (UTC), starts
+   `perf_counter`, and in a `finally` sets `_elapsed` and `_finished` —
+   one place that covers the five exits and any exception.  The
+   analysis hands the three values to the result object
+   (`TDResult`/`ScatteringTDResult.started/finished/elapsed`; a
+   multi-excitation result folds its marches to first start, last
+   finish, summed time) and to the store through
+   `_RunSink.close(elapsed=)`.  `_finalize_run` *accumulates* `elapsed`,
+   so a resumed run's total is the sum of its marches; `reopen_run`
+   keeps `started`, stamps `resumed`, and refreshes the writer identity.
+   `Project.started/finished/elapsed` aggregate the runs the same way
+   and join the result contract (`ScatteringResult`), so a script reads
+   the clock off either implementation.
+2. *Two clocks, two names.*  `elapsed` on every result is the marching
+   only.  The analysis call, setup included, is the `finished in` line
+   of the new `run` reporter — one per `run()` or `resume()`, `(N runs)`
+   appended when N > 1 — and the `analysis` entry of `project.json`
+   (`started`, `finished`, `elapsed`), written by
+   `ProjectStore.mark_analysis_started/finished`.  The two differ by the
+   setup time, which is what the phase lines above the march account
+   for.
+3. *Who is writing.*  `open_run`, `reopen_run` and
+   `register_planned_runs` book `pid` and `host` on the run entry and as
+   `meta["writer"]`; [[DD-254]] turns a dead pid on the same host into
+   the reader's `stale` state.
+4. *The line.*  One composer, `_status_line`, builds both the running
+   and the closing line in the same slots: `step n/N | clock | status |
+   rate, ETA` while marching, `step n/N | clock | status | done (why)`
+   on the way out.  The clock is a stopwatch (`27.4 s`, `2:13`,
+   `1:02:13`; `format_clock`), totals read as a sentence (`1 min 12 s`;
+   `format_seconds`), the rate scales its unit (`3.9k steps/s`;
+   `format_rate`).  The ETA appears only when the step count is fixed:
+   an open-ended run ends on a criterion, and the run-length estimate
+   the analysis carries is a deliberately generous scale (25 diagonal
+   transits; a TEM line is done after three or four), so an ETA built
+   on it would overstate every ordinary run several-fold.  The status
+   vocabulary is shortened to fit the extra slots at 80 columns
+   (`energy -58.4/-70 dB`, `port signal -41.0/-60 dB`).
+5. *Two header lines* before the first step, via `Reporter.note`:
+   `37 k cells | dt 1.32 ps | single on NumPy (CPU) | ≈ 4 MB` (the
+   memory is the sum of the solver's own arrays, hence ≈) and `stops at
+   energy -70 dB or port signal -60 dB, cap 388480 steps` — what runs,
+   and what ends it.  The plan had foreseen an `≈ N steps` figure here;
+   for the reason in (4) the *rule* is stated instead of the number.
+6. *Everything through the reporter.*  The seven bare prints become
+   `Reporter.note` calls on a `setup` or `run` label; `note` accepts
+   multi-line text (the Mur balance sheet) and indents continuation
+   lines under the label.  The reporters nest: `run` is created before
+   `setup`, so `setup` and `FIT-TD` stand down onto it, and
+   `_start_run_clock` closes a reporter an earlier call left open when
+   it raised.
+
+**Measured** (WR-90 section, 37 k cells, NumPy single, this branch):
+`step 6001/∞ | 1.5 s | energy -70.2/-70 dB | done (energy criterion)`,
+`run | finished in 2.6 s` — the difference is the CFL eigenvalue and
+the two port solves.  The `store` path books `elapsed` 0.15 s per
+run against `analysis.elapsed` 0.43 s on the 2907-cell smoke model;
+the rebuilt `TDResult` carries the run's own figure.
+
+**Non-goals.**  A decay-trend ETA for open-ended runs (the stall
+detector's slope fit would give one; a resonator makes it grow during
+the run, which reads as a fault) — deferred until asked for; a levelled
+verbosity; suppressing the `warnings` line that still cuts through a
+running `\r` line ([[DD-246]]'s known cosmetic defect).
