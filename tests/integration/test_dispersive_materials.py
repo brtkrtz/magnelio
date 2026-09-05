@@ -341,10 +341,10 @@ def test_resume_dispersive_bit_exact(tmp_path):
         total_time_steps=n1,
         checkpoint_interval=40,
     )
-    assert open_project(p).runs["port1_mode0"]["n_steps"] == n1
+    assert open_project(p).runs["port1_mode0"].n_steps == n1
 
     proj = resume(p, excited=("port1", 0), total_time_steps=n_total, verbose=False)
-    assert proj.runs["port1_mode0"]["n_steps"] == n_total
+    assert proj.runs["port1_mode0"].n_steps == n_total
     for chan, (rv, ri) in ref_vi.items():
         gv, gi = proj.signals[("port1", 0)][chan]
         np.testing.assert_array_equal(rv, gv.values)

@@ -59,6 +59,17 @@ class RunSettings:
     # drives of a general time-domain run.
     excitations: tuple | None = None
 
+    def __repr__(self) -> str:
+        # Only what was recorded: eighteen ``None`` entries say nothing.
+        from dataclasses import fields  # noqa: PLC0415
+
+        parts = [
+            f"{f.name}={getattr(self, f.name)!r}"
+            for f in fields(self)
+            if getattr(self, f.name) is not None
+        ]
+        return f"RunSettings({', '.join(parts)})"
+
 
 class ScatteringResultMixin(SDerivedAccessors):
     """Accessors derived purely from ``S(...)`` — shared verbatim.

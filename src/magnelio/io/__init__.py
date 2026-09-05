@@ -13,9 +13,11 @@ board from the fabrication data its layout tool writes.
 from magnelio.io.cad import import_brep, import_step
 from magnelio.io.pcb import import_pcb
 from magnelio.io.project import (
+    CheckpointState,
     LoadedGeometry,
     Project,
     ProjectStore,
+    Run,
     open_project,
     read_brep,
     write_brep,
@@ -24,6 +26,8 @@ from magnelio.io.project import (
 __all__ = [
     "ProjectStore",
     "Project",
+    "Run",
+    "CheckpointState",
     "LoadedGeometry",
     "read_brep",
     "write_brep",

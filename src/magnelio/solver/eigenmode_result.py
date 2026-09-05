@@ -64,6 +64,18 @@ class EigenmodeResult:
         f_max = self.frequencies[-1] / 1e9
         return f"EigenmodeResult(n_modes={n}, f=[{f_min:.4f}, {f_max:.4f}] GHz)"
 
+    def _repr_html_(self) -> str:
+        """A notebook cell shows the modes as a table: index and frequency."""
+        from magnelio._repr import html_table  # noqa: PLC0415
+
+        rows = [[i, f"{f / 1e9:.6g}"] for i, f in enumerate(self.frequencies)]
+        return html_table(
+            ["mode", "f [GHz]"],
+            rows,
+            caption=f"EigenmodeResult ({self.n_modes} modes)",
+            align="rr",
+        )
+
     def field(self, mode: int = 0):
         """The mode's field pattern as a :class:`~magnelio.fields.FieldState`.
 

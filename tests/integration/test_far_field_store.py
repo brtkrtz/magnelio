@@ -89,7 +89,7 @@ def test_resume_bit_exact(tmp_path):
         checkpoint_interval=60,
     )
     proj = resume(p, excited=("feed", 0), total_time_steps=n_total, verbose=False)
-    assert proj.runs["feed_mode0"]["n_steps"] == n_total
+    assert proj.runs["feed_mode0"].n_steps == n_total
     resumed = proj.monitors["pattern"].result(F0, **_ANGLES)
     # The reference-signal storage round trip costs a few ulp on the
     # divisor; the accumulators themselves resume bit-exactly.

@@ -115,10 +115,10 @@ def test_resume_bit_exact(tmp_path):
         total_time_steps=n1,
         checkpoint_interval=40,
     )
-    assert open_project(p).runs["port1_mode0"]["n_steps"] == n1
+    assert open_project(p).runs["port1_mode0"].n_steps == n1
 
     proj = resume(p, excited=("port1", 0), total_time_steps=n_total, verbose=False)
-    assert proj.runs["port1_mode0"]["n_steps"] == n_total
+    assert proj.runs["port1_mode0"].n_steps == n_total
     _assert_same_fraction(proj.monitors["walls"].dissipated_fraction, ref_frac)
 
 

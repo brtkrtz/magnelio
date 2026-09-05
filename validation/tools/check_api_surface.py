@@ -31,10 +31,13 @@ import magnelio
 # The DD-117 thin core: the model container and run vocabulary, the
 # problem classes, and the project-store entry points.  Growing this
 # set is an API decision — record it in a DD before editing
-# (``Excitation``, ``AnalysisTD``: DD-224).
+# (``Excitation``, ``AnalysisTD``: DD-224; the verbosity switch:
+# DD-246).
 EXPECTED_CORE = frozenset(
     {
         "__version__",
+        "set_verbosity",
+        "get_verbosity",
         "GeometryModel",
         "Material",
         "Mesh",

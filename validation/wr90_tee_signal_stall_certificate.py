@@ -77,8 +77,8 @@ with warnings.catch_warnings(record=True) as caught:
 t_cert = time.perf_counter() - t0
 
 info = proj.runs["port4_mode0"]
-n_stall = info["n_steps"]
-level = info.get("final_port_signal_db")
+n_stall = info.n_steps
+level = info.final_port_signal_db
 print(
     f"defaults: {n_stall} steps, stop_reason={info.get('stop_reason')!r}, "
     f"plateau at {level:.1f} dB  [{t_cert:.1f} s]"
@@ -92,7 +92,7 @@ for out in ("port1", "port2", "port3", "port4"):
     d_s = max(d_s, float(d))
     print(f"|dS({out},port4)| = {d:.2e}")
 
-assert info.get("stop_reason") == "port_signal_stall", info.get("stop_reason")
+assert info.stop_reason == "port_signal_stall", info.stop_reason
 assert len(stall_warnings) == 1
 assert -60.0 < level < -40.0, level
 # Well before the auto cap (40x the step estimate >> the stall step):

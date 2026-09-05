@@ -334,6 +334,31 @@ class SParameterResult(SDerivedAccessors):
             )
 
     # ------------------------------------------------------------------
+    # How the matrix introduces itself (DD-254): size and labels, never
+    # the 201 × n × k complex numbers behind them.
+    # ------------------------------------------------------------------
+
+    def _summary_rows(self) -> list[tuple[str, object]]:
+        f = np.asarray(self.f_axis)
+        return [
+            ("channels", list(self.channels)),
+            ("excitations", list(self.excitations)),
+            ("frequency", f"{f[0] / 1e9:.4g}–{f[-1] / 1e9:.4g} GHz ({f.size} points)"),
+            ("matrix", np.asarray(self.matrix)),
+            ("reference impedances", self.reference_impedances is not None),
+        ]
+
+    def __repr__(self) -> str:
+        from magnelio._repr import kv_block  # noqa: PLC0415
+
+        return kv_block("SParameterResult", self._summary_rows())
+
+    def _repr_html_(self) -> str:
+        from magnelio._repr import html_kv  # noqa: PLC0415
+
+        return html_kv("SParameterResult", self._summary_rows())
+
+    # ------------------------------------------------------------------
     # Shape / introspection
     # ------------------------------------------------------------------
 

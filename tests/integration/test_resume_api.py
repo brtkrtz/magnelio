@@ -132,18 +132,20 @@ def test_resume_bounded_bit_exact(tmp_path):
         checkpoint_interval=40,
     )
     first = open_project(p).runs["port1_mode0"]
-    assert first["n_steps"] == n1
+    assert first.n_steps == n1
+    # A Run is a live view; keep the first march's clock before it moves.
+    first_started, first_finished, first_elapsed = first.started, first.finished, first.elapsed
 
     proj = resume(p, excited=("port1", 0), total_time_steps=n_total, verbose=False)
-    assert proj.runs["port1_mode0"]["state"] == "done"
-    assert proj.runs["port1_mode0"]["n_steps"] == n_total
+    assert proj.runs["port1_mode0"].state == "done"
+    assert proj.runs["port1_mode0"].n_steps == n_total
     _assert_bit_exact(ref_vi, _vi(proj.signals[("port1", 0)]), "bounded-resume")
     # The resumed march keeps the run's start, stamps its own start,
     # and adds its wall time to the run's total.
     info = proj.runs["port1_mode0"]
-    assert info["started"] == first["started"]
-    assert info["resumed"] >= first["finished"]
-    assert info["elapsed"] > first["elapsed"] > 0.0
+    assert info.started == first_started
+    assert info.resumed >= first_finished
+    assert info.elapsed > first_elapsed > 0.0
     # S-parameters derived on read match the uninterrupted run exactly.
     assert np.array_equal(ref.S("port1", "port1"), proj.S("port1", "port1"))
     assert np.array_equal(ref.S("port2", "port1"), proj.S("port2", "port1"))
@@ -160,15 +162,15 @@ def test_resume_port_signal_gated(tmp_path):
         total_time_steps=n1,
         checkpoint_interval=40,
     )
-    assert open_project(p).runs["port1_mode0"]["n_steps"] == n1
+    assert open_project(p).runs["port1_mode0"].n_steps == n1
 
     # Continue on the port-signal criterion alone: the DTBC line drains
     # its pulse quickly, so the envelope reaches -45 dB soon after the
     # arming guard and the run flips to done past the bounded stop.
     proj = resume(p, excited=("port1", 0), port_signal_stop_db=45.0, verbose=False)
     meta = proj.runs["port1_mode0"]
-    assert meta["state"] == "done"
-    assert meta["n_steps"] > n1
+    assert meta.state == "done"
+    assert meta.n_steps > n1
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -199,7 +201,7 @@ def test_resume_energy_gated_bit_exact(tmp_path):
     )
     proj = resume(p, excited=("port1", 0), energy_stop_db=60.0, verbose=False)
 
-    assert proj.runs["port1_mode0"]["n_steps"] == ref.n_actual_steps
+    assert proj.runs["port1_mode0"].n_steps == ref.n_actual_steps
     _assert_bit_exact(ref_vi, _vi(proj.signals[("port1", 0)]), "energy-resume")
 
 
@@ -233,14 +235,14 @@ def test_resume_after_graceful_abort(tmp_path):
         )
 
     aborted = open_project(p)
-    assert aborted.runs["port1_mode0"]["state"] == "aborted"
-    n_ab = aborted.runs["port1_mode0"]["n_steps"]
+    assert aborted.runs["port1_mode0"].state == "aborted"
+    n_ab = aborted.runs["port1_mode0"].n_steps
     assert 0 < n_ab < n_total
 
     # A bare resume() finishes the aborted run to its original target.
     proj = resume(p, excited=("port1", 0), verbose=False)
-    assert proj.runs["port1_mode0"]["state"] == "done"
-    assert proj.runs["port1_mode0"]["n_steps"] == n_total
+    assert proj.runs["port1_mode0"].state == "done"
+    assert proj.runs["port1_mode0"].n_steps == n_total
     _assert_bit_exact(ref_vi, _vi(proj.signals[("port1", 0)]), "abort-resume")
 
 
@@ -271,8 +273,8 @@ def test_resume_fill_in_leaves_sibling_untouched(tmp_path):
 
     proj = resume(p, excited=("port1", 0), total_time_steps=n_total, verbose=False)
     # port1 grew to full length; port2 is byte-for-byte the same.
-    assert proj.runs["port1_mode0"]["n_steps"] == n_total
-    assert proj.runs["port2_mode0"]["n_steps"] == n_total
+    assert proj.runs["port1_mode0"].n_steps == n_total
+    assert proj.runs["port2_mode0"].n_steps == n_total
     _assert_bit_exact(before, _vi(proj.signals[("port2", 0)]), "fill-in-sibling")
     # Both columns present ⇒ the 2×2 S-matrix is fully populated.
     assert proj.S("port1", "port1").shape == proj.f_axis.shape
@@ -384,8 +386,8 @@ def test_sigusr1_checkpoints_without_stopping(tmp_path):
     )
 
     proj = open_project(p)
-    assert proj.runs["port1_mode0"]["state"] == "done"
-    assert proj.runs["port1_mode0"]["n_steps"] == n_total
+    assert proj.runs["port1_mode0"].state == "done"
+    assert proj.runs["port1_mode0"].n_steps == n_total
     # A done run always leaves a (final) checkpoint; the mid-run write is
     # proven separately below.
     assert (p / "runs" / "port1_mode0" / "checkpoint.h5").exists()

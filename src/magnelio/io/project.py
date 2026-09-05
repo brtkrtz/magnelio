@@ -40,20 +40,24 @@ See ``PROJECT_STORE_PLAN.md`` for the full plan.
 
 from __future__ import annotations
 
+import html
 import json
 import os
 import socket
+from collections.abc import Mapping
 from dataclasses import fields as dc_fields
 from pathlib import Path
 
 import numpy as np
 
-from magnelio._progress import current_reporter, parse_utc, utc_now
+from magnelio._progress import current_reporter, format_clock, format_seconds, parse_utc, utc_now
+from magnelio._repr import fmt_array, fmt_db, fmt_value, html_kv, html_table, kv_block, text_table
 from magnelio.analysis.result_interface import RunSettings, ScatteringResultMixin
 from magnelio.io._schema import (
     SCHEMA_VERSION,
     validate_schema,
 )
+from magnelio.post._energy import db_below_peak
 
 # ═════════════════════════════════════════════════════════════════════
 # Material  <->  JSON
@@ -1808,6 +1812,58 @@ class _RunSink:
         write_run_xdmf(run_dir / "fields.xdmf", "results.h5", specs)
 
 
+_ENERGY_DTYPE = [("step", int), ("time", float), ("energy", float)]
+
+
+def _read_energy_group(eg) -> np.ndarray:
+    """The ``energy/{step,time,energy}`` streams as one structured array.
+
+    Same common-prefix rule as the signals: the three sub-streams
+    advance in lockstep but a live reader may see them flushed to
+    different lengths, so they are sliced to their minimum.
+    """
+    m = min(int(eg["step"].shape[0]), int(eg["time"].shape[0]), int(eg["energy"].shape[0]))
+    trace = np.empty(m, dtype=_ENERGY_DTYPE)
+    if m > 0:
+        trace["step"] = eg["step"][:m]
+        trace["time"] = eg["time"][:m]
+        trace["energy"] = eg["energy"][:m]
+    return trace
+
+
+def _read_energy_trace(run_dir: Path) -> np.ndarray:
+    """A run's energy trace alone — the light read a live table wants.
+
+    Opens ``results.h5`` in SWMR mode and touches only the three energy
+    streams.  A run without a results file yet, or one the writer is
+    still creating, reads as an empty trace rather than an error.
+    """
+    import h5py  # noqa: PLC0415
+
+    path = run_dir / "results.h5"
+    if not path.exists():
+        return np.empty(0, dtype=_ENERGY_DTYPE)
+    try:
+        with h5py.File(path, "r", swmr=True) as f:
+            return _read_energy_group(f["energy"])
+    except (OSError, KeyError):
+        return np.empty(0, dtype=_ENERGY_DTYPE)
+
+
+def _count_energy_samples(run_dir: Path) -> int:
+    """How many energy samples a run has flushed — one dataset shape, no data."""
+    import h5py  # noqa: PLC0415
+
+    path = run_dir / "results.h5"
+    if not path.exists():
+        return 0
+    try:
+        with h5py.File(path, "r", swmr=True) as f:
+            return int(f["energy"]["step"].shape[0])
+    except (OSError, KeyError):
+        return 0
+
+
 def _read_run_results(run_dir: Path) -> dict:
     """Read a run written by :class:`_RunResultWriter` into a plain dict.
 
@@ -1880,23 +1936,7 @@ def _read_run_results(run_dir: Path) -> dict:
             for key, ds in exc_items
         }
 
-        eg = f["energy"]
-        # Same common-prefix rule as the signals: the three energy
-        # sub-streams advance in lockstep but a live reader may see them
-        # flushed to different lengths, so slice to their minimum.
-        m = min(int(eg["step"].shape[0]), int(eg["time"].shape[0]), int(eg["energy"].shape[0]))
-        energy_trace = np.empty(
-            m,
-            dtype=[
-                ("step", int),
-                ("time", float),
-                ("energy", float),
-            ],
-        )
-        if m > 0:
-            energy_trace["step"] = eg["step"][:m]
-            energy_trace["time"] = eg["time"][:m]
-            energy_trace["energy"] = eg["energy"][:m]
+        energy_trace = _read_energy_group(f["energy"])
 
         port_modes = {}
         port_normal_dx = {}
@@ -3252,8 +3292,17 @@ class ProjectStore:
             run["finished"] = _utc_now_iso()
             if elapsed is not None:
                 run["elapsed"] = float(run.get("elapsed") or 0.0) + float(elapsed)
+            # Every planned run done → done.  An aborted run ends the
+            # analysis call (the interrupt propagates), so its pending
+            # siblings never start in that call: the project is aborted,
+            # not running.  Anything else is still on its way.
             states = [r.get("state") for r in meta["runs"].values()]
-            meta["status"] = "done" if all(s == "done" for s in states) else "running"
+            if all(s == "done" for s in states):
+                meta["status"] = "done"
+            elif any(s == "aborted" for s in states):
+                meta["status"] = "aborted"
+            else:
+                meta["status"] = "running"
 
         _update_meta(self.path, _upd)
 
@@ -3295,6 +3344,379 @@ class ProjectStore:
             )
 
 
+# ═════════════════════════════════════════════════════════════════════
+# Runs as objects, and whether their writer is still alive (DD-254)
+# ═════════════════════════════════════════════════════════════════════
+
+# Stored statuses after which the metadata no longer changes on its own.
+_TERMINAL_STATUS = ("done", "aborted")
+
+
+def _file_stamp(path: Path):
+    """What identifies a version of a file the writer replaces atomically."""
+    try:
+        st = os.stat(path)
+    except OSError:
+        return None
+    return (st.st_mtime_ns, st.st_ino, st.st_size)
+
+
+def _pid_alive(pid) -> bool | None:
+    """Whether a process exists on this host; ``None`` when it cannot be known.
+
+    POSIX answers signal 0.  Elsewhere the question is left open on
+    purpose — a wrong ``False`` would call a marching run stale.
+    """
+    if pid is None or os.name != "posix":
+        return None
+    try:
+        os.kill(int(pid), 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except (OverflowError, ValueError, OSError):
+        return None
+    return True
+
+
+def _writer_gone(identity: dict) -> bool:
+    """True when the recorded writer ran on this host and no longer exists."""
+    if not identity or identity.get("host") != socket.gethostname():
+        return False
+    return _pid_alive(identity.get("pid")) is False
+
+
+def _writer_state(entry: dict) -> str:
+    """A run entry's live state: ``stale`` for a ``running`` one nobody writes."""
+    state = entry.get("state", "done")
+    if state == "running" and _writer_gone(entry):
+        return "stale"
+    return state
+
+
+class Run:
+    """One run of a project: its index entry, its files, its result.
+
+    Handed out by ``project.runs[name]``.  A live view — every attribute
+    reads the project's current metadata, so a run that is marching in
+    another process shows its growing step count and energy without
+    any call on your side.  ``pending`` runs have no directory yet and
+    read as empty.
+    """
+
+    def __init__(self, project: "Project", name: str) -> None:
+        self._project = project
+        self.name = name
+
+    # ── the index entry ─────────────────────────────────────────────
+
+    @property
+    def _info(self) -> dict:
+        return self._project._run_info(self.name)
+
+    @property
+    def path(self) -> Path:
+        """The run's directory (``runs/<name>``), whether it exists yet or not."""
+        return self._project.path / "runs" / self.name
+
+    @property
+    def state(self) -> str:
+        """``pending``, ``running``, ``done``, ``aborted`` — or ``stale``.
+
+        ``stale`` is ``running`` on disk with the recorded solver process
+        gone from this host: the kernel died, or the machine rebooted.
+        Resume the run, or run the analysis again.
+        """
+        return _writer_state(self._info)
+
+    @property
+    def excited(self) -> tuple | None:
+        """The excited ``(port, mode)`` of a scattering run; ``None`` on a general run."""
+        excited = self._info.get("excited")
+        return None if excited is None else (excited[0], int(excited[1]))
+
+    @property
+    def excitations(self) -> tuple:
+        """Every ``(source, mode)`` that drove the run."""
+        return tuple((e[0], int(e[1])) for e in self._info.get("excitations", ()))
+
+    @property
+    def n_steps(self) -> int:
+        """Leapfrog steps committed to disk so far."""
+        return int(self._info.get("n_steps", 0) or 0)
+
+    @property
+    def dt(self) -> float | None:
+        """Solver time step [s]."""
+        value = self._info.get("dt")
+        return None if value is None else float(value)
+
+    @property
+    def total_time_steps(self) -> int | None:
+        """The fixed step count the run was given, or ``None`` for an open-ended run."""
+        return self._info.get("total_time_steps")
+
+    @property
+    def port_model(self) -> str | None:
+        """``"modal"`` or ``"band"`` — the port pipeline that wrote the run."""
+        return self._info.get("port_model")
+
+    @property
+    def energy_stop_db(self) -> float | None:
+        """The energy criterion [dB below peak] the run stops at, if any."""
+        return self._info.get("energy_stop_db")
+
+    @property
+    def port_signal_stop_db(self) -> float | None:
+        """The port-signal criterion [dB below peak] the run stops at, if any."""
+        return self._info.get("port_signal_stop_db")
+
+    @property
+    def taper_signals(self) -> bool | None:
+        return self._info.get("taper_signals")
+
+    @property
+    def stop_reason(self) -> str | None:
+        """Why the marching ended: ``energy``, ``port_signal``, ``steps``, …"""
+        return self._info.get("stop_reason")
+
+    @property
+    def final_port_signal_db(self) -> float | None:
+        return self._info.get("final_port_signal_db")
+
+    @property
+    def pid(self) -> int | None:
+        """Process id of the solver that wrote (or writes) the run."""
+        return self._info.get("pid")
+
+    @property
+    def host(self) -> str | None:
+        """Host name of the solver that wrote (or writes) the run."""
+        return self._info.get("host")
+
+    # ── the wall clock ──────────────────────────────────────────────
+
+    @property
+    def started(self):
+        """UTC datetime the first march started, or ``None``."""
+        return parse_utc(self._info.get("started"))
+
+    @property
+    def resumed(self):
+        """UTC datetime the latest resumed march started, or ``None``."""
+        return parse_utc(self._info.get("resumed"))
+
+    @property
+    def finished(self):
+        """UTC datetime the latest march ended; ``None`` while marching."""
+        return parse_utc(self._info.get("finished"))
+
+    @property
+    def elapsed(self) -> float | None:
+        """Wall time of the marching [s], resumes summed.
+
+        On a run that is still marching, the time since its current
+        march started is added to what earlier marches booked.
+        """
+        info = self._info
+        stored = info.get("elapsed")
+        if info.get("state") != "running":
+            return None if stored is None else float(stored)
+        since = parse_utc(info.get("resumed") or info.get("started"))
+        live = (utc_now() - since).total_seconds() if since is not None else 0.0
+        return float(stored or 0.0) + max(0.0, live)
+
+    # ── the data ────────────────────────────────────────────────────
+
+    @property
+    def energy_trace(self) -> np.ndarray:
+        """Stored energy at the solver's check cadence — a structured array.
+
+        Fields ``step``, ``time`` [s] and ``energy`` [J]; read afresh on
+        every access while the run marches, so it grows as the solver
+        flushes.  Empty on a pending run.
+        """
+        if self._info.get("state") == "pending":
+            return np.empty(0, dtype=_ENERGY_DTYPE)
+        return _read_energy_trace(self.path)
+
+    @property
+    def energy_db(self) -> float | None:
+        """The latest stored energy in dB below the run's peak — the progress figure."""
+        return db_below_peak(self.energy_trace)
+
+    @property
+    def n_energy_samples(self) -> int:
+        """How many energy samples the run has flushed — the cheapest sign of life."""
+        if self._info.get("state") == "pending":
+            return 0
+        return _count_energy_samples(self.path)
+
+    @property
+    def has_checkpoint(self) -> bool:
+        """Whether a resume checkpoint exists on disk."""
+        return (self.path / "checkpoint.h5").exists()
+
+    def result(self):
+        """The run as a :class:`~magnelio.analysis.TDResult` (see :meth:`Project.result`)."""
+        return self._project.result(self.name)
+
+    @property
+    def monitors(self) -> dict:
+        """The run's monitor readers by name (see :meth:`Project.monitors_for`)."""
+        return self._project.monitors_for(self.name)
+
+    def checkpoint_state(self):
+        """The run's resume checkpoint (see :meth:`Project.checkpoint_state`)."""
+        return self._project.checkpoint_state(self.name)
+
+    # ── how a run introduces itself ─────────────────────────────────
+
+    def _criteria(self) -> str:
+        parts = []
+        if self.energy_stop_db is not None:
+            parts.append(f"energy {-float(self.energy_stop_db):.0f} dB")
+        if self.port_signal_stop_db is not None:
+            parts.append(f"port signal {-float(self.port_signal_stop_db):.0f} dB")
+        if self.total_time_steps is not None:
+            parts.append(f"step {int(self.total_time_steps)}")
+        return " or ".join(parts) if parts else "—"
+
+    def _summary_rows(self) -> list[tuple[str, object]]:
+        state = self.state
+        steps = f"{self.n_steps}"
+        if self.total_time_steps:
+            steps += f" of {int(self.total_time_steps)}"
+        rows: list[tuple[str, object]] = [("state", state)]
+        if self.excited is not None:
+            rows.append(("excited", self.excited))
+        elif self.excitations:
+            rows.append(("excitations", list(self.excitations)))
+        rows += [
+            ("steps", steps),
+            ("stops at", self._criteria()),
+            ("energy", f"{fmt_db(self.energy_db)} below peak"),
+            ("stop reason", self.stop_reason),
+            ("started", self.started),
+            ("finished", self.finished),
+            ("elapsed", format_seconds(self.elapsed)),
+            ("dt", self.dt),
+            ("checkpoint", self.has_checkpoint),
+        ]
+        return rows
+
+    def _table_row(self) -> list[object]:
+        return [
+            self.name,
+            self.excited if self.excited is not None else list(self.excitations),
+            self.state,
+            self.n_steps,
+            fmt_db(self.energy_db),
+            format_seconds(self.elapsed),
+            self.stop_reason,
+        ]
+
+    def __repr__(self) -> str:
+        return kv_block(f"Run {self.name!r}", self._summary_rows())
+
+    def _repr_html_(self) -> str:
+        return html_kv(f"Run {self.name!r}", self._summary_rows())
+
+
+_RUN_COLUMNS = ("run", "excited", "state", "steps", "energy", "elapsed", "stop reason")
+_RUN_ALIGN = "lllrrrl"
+
+
+class _RunIndex(Mapping):
+    """``project.runs``: the runs by name, printing as a table of their states."""
+
+    def __init__(self, project: "Project") -> None:
+        self._project = project
+
+    def __getitem__(self, name: str) -> Run:
+        if name not in self._project._run_index():
+            raise KeyError(
+                f"no run {name!r} in project {self._project.path}; "
+                f"runs: {list(self._project._run_index())}",
+            )
+        return self._project._run_object(name)
+
+    def __iter__(self):
+        return iter(list(self._project._run_index()))
+
+    def __len__(self) -> int:
+        return len(self._project._run_index())
+
+    def _rows(self) -> list[list[object]]:
+        return [self[name]._table_row() for name in self]
+
+    def _table_text(self) -> str:
+        if len(self) == 0:
+            return ""
+        return text_table(_RUN_COLUMNS, self._rows(), align=_RUN_ALIGN)
+
+    def _table_html(self) -> str:
+        if len(self) == 0:
+            return ""
+        return html_table(_RUN_COLUMNS, self._rows(), align=_RUN_ALIGN)
+
+    def __repr__(self) -> str:
+        return self._table_text() or f"no runs in project {self._project.path}"
+
+    def _repr_html_(self) -> str:
+        return self._table_html() or html.escape(f"no runs in project {self._project.path}")
+
+
+class CheckpointState(Mapping):
+    """A run's resume checkpoint, as the solver's ``state_dict`` reads back.
+
+    A read-only mapping with the nested shape ``FITTimeDomainSolver``
+    wrote — ``n_completed``, the peak energy and port signal, the flat
+    ``e`` and ``h`` field vectors, and a group per boundary, port and
+    monitor — so ``state["e"]`` and ``"dispersion" in state`` work as on
+    the plain dict, while printing the object shows its size and step
+    rather than its field vectors.
+    """
+
+    def __init__(self, data: dict, *, run: str | None = None, path=None) -> None:
+        self._data = dict(data)
+        self.run = run
+        self.path = None if path is None else Path(path)
+
+    def __getitem__(self, key):
+        return self._data[key]
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self) -> int:
+        return len(self._data)
+
+    def _summary_rows(self) -> list[tuple[str, object]]:
+        rows: list[tuple[str, object]] = []
+        for key in ("n_completed", "peak_energy", "peak_signal"):
+            if key in self._data:
+                rows.append((key, self._data[key]))
+        for key in ("e", "h"):
+            if key in self._data:
+                rows.append((key, fmt_array(self._data[key])))
+        groups = [k for k, v in self._data.items() if isinstance(v, dict)]
+        if groups:
+            rows.append(("groups", ", ".join(groups)))
+        if self.path is not None:
+            rows.append(("file", str(self.path)))
+        return rows
+
+    def __repr__(self) -> str:
+        title = f"CheckpointState of run {self.run!r}" if self.run else "CheckpointState"
+        return kv_block(title, self._summary_rows())
+
+    def _repr_html_(self) -> str:
+        title = f"CheckpointState of run {self.run!r}" if self.run else "CheckpointState"
+        return html_kv(title, self._summary_rows())
+
+
 class Project(ScatteringResultMixin):
     """Read-only view over a project directory.
 
@@ -3315,22 +3737,40 @@ class Project(ScatteringResultMixin):
                 f"not a project directory (no project.json): {self.path}",
             )
         self._meta = None
+        self._meta_stamp = None
         self._mesh = None
         self._geometry = None
         self._run_cache: dict = {}
         self._s_cache: dict = {}
+        self._run_objects: dict = {}
 
     @property
     def meta(self) -> dict:
-        """The parsed ``project.json`` contents."""
-        if self._meta is None:
+        """The parsed ``project.json`` contents.
+
+        Re-read from disk whenever the file changed, for as long as the
+        project is not finished — so a project opened while a solver
+        writes it shows the current state without :meth:`refresh`.
+        The file is small and replaced atomically by the writer, so the
+        check is one ``stat`` per access and a parse only on a change.
+        Once the stored status is terminal the parsed copy is kept.
+        """
+        if self._meta is not None and self._meta.get("status") in _TERMINAL_STATUS:
+            return self._meta
+        stamp = _file_stamp(self.path / "project.json")
+        if self._meta is None or stamp != self._meta_stamp:
             with open(self.path / "project.json", encoding="utf-8") as fh:
                 meta = json.load(fh)
             validate_schema(
                 meta.get("schema_version"),
                 f"{self.path}/project.json",
             )
+            if self._meta is not None:
+                # The index changed under a live reader: derived data
+                # (S-matrix, cached runs) was computed from the old one.
+                self._s_cache.clear()
             self._meta = meta
+            self._meta_stamp = stamp
         return self._meta
 
     @property
@@ -3340,25 +3780,44 @@ class Project(ScatteringResultMixin):
 
     @property
     def status(self) -> str:
-        """Project status: ``created`` → ``running`` → ``done``.
+        """Project status: ``created`` → ``running`` → ``done`` / ``aborted`` / ``stale``.
 
         ``done`` means *every planned run* is done: the analysis
         pre-registers its runs as ``pending``, so the status holds at
-        ``running`` in the gaps between sequential runs — a live watcher
-        may poll ``project.refresh().status`` without racing the writer.
+        ``running`` in the gaps between sequential runs.  ``aborted``
+        means a run ended on a graceful stop or an error and the
+        analysis went with it — resume it, or run the analysis again.
+        ``stale`` is not stored: it is ``running`` on disk with nobody
+        writing — the solver process recorded on the project is gone
+        from this host.  A project written on another host cannot be
+        told stale and reads ``running`` until its writer finishes.
         """
-        return self.meta.get("status", "unknown")
+        stored = self.meta.get("status", "unknown")
+        if stored != "running":
+            return stored
+        index = self._run_index()
+        if any(_writer_state(info) == "stale" for info in index.values()):
+            return "stale"
+        if not any(info.get("state") == "running" for info in index.values()):
+            # Between runs, or planned runs only: the analysis process
+            # itself is the writer to ask after.
+            writer = self.meta.get("writer") or {}
+            if _writer_gone(writer):
+                return "stale"
+        return stored
 
     def refresh(self) -> "Project":
         """Re-read the metadata and drop cached run / S-parameter data.
 
-        Call this on a *live* project to pick up newly appended steps, a
-        newly added run, or a status change written by a concurrent
-        solver.  The immutable model (mesh, geometry) is
-        kept.  Returns ``self`` for chaining
+        A project that is not finished re-reads its metadata on its own
+        whenever the file changes; call this to force a re-read on a
+        finished project (a run resumed elsewhere), or to drop the
+        cached run and S-parameter data.  The immutable model (mesh,
+        geometry) is kept.  Returns ``self`` for chaining
         (``project.refresh().s_params``).
         """
         self._meta = None
+        self._meta_stamp = None
         self._run_cache.clear()
         self._s_cache.clear()
         return self
@@ -3465,25 +3924,49 @@ class Project(ScatteringResultMixin):
     # -- time-domain runs ------------------------------------------------
 
     @property
-    def runs(self) -> dict:
-        """The run index from ``project.json`` (name → excited/state/…).
+    def runs(self) -> "_RunIndex":
+        """The project's runs by name, each a :class:`Run`.
 
-        Run states: ``pending`` (planned by the analysis, not started —
-        no run directory on disk yet) → ``running`` → ``done`` /
-        ``aborted``.  Live watchers iterating this index should skip
-        ``pending`` entries; per-run readers raise on them.
+        A read-only mapping: ``project.runs["port1_mode0"]`` is the run
+        object, ``list(project.runs)`` the names, and the mapping
+        itself prints as a table of every run's state.  Run states:
+        ``pending`` (planned by the analysis, not started — no run
+        directory on disk yet) → ``running`` → ``done`` / ``aborted``;
+        a ``running`` run whose writer process no longer exists reads
+        as ``stale``.
         """
+        return _RunIndex(self)
+
+    def _run_index(self) -> dict:
+        """The raw run index of ``project.json`` (name → entry dict)."""
         return self.meta.get("runs", {})
+
+    def _run_info(self, name: str) -> dict:
+        """One raw run entry; ``KeyError`` names the runs that exist."""
+        index = self._run_index()
+        try:
+            return index[name]
+        except KeyError:
+            raise KeyError(f"no run {name!r} in project {self.path}; runs: {list(index)}") from None
+
+    def _run_object(self, name: str) -> "Run":
+        """The :class:`Run` handle of *name*, one per project and name."""
+        run = self._run_objects.get(name)
+        if run is None:
+            run = self._run_objects[name] = Run(self, name)
+        return run
 
     def _started_runs(self) -> dict:
         """Run-index entries whose run has started on disk (not pending)."""
         return {
-            name: info for name, info in self.runs.items() if info.get("state", "done") != "pending"
+            name: info
+            for name, info in self._run_index().items()
+            if info.get("state", "done") != "pending"
         }
 
     def _require_started(self, name: str) -> str:
         """Return ``name``, raising if the run is still pending."""
-        if self.runs.get(name, {}).get("state", "done") == "pending":
+        if self._run_index().get(name, {}).get("state", "done") == "pending":
             raise ValueError(
                 f"run {name!r} is pending (planned but not started yet); "
                 f"started runs: {sorted(self._started_runs())}",
@@ -3493,12 +3976,18 @@ class Project(ScatteringResultMixin):
     def _load_run(self, name: str) -> dict:
         # Only a finished run is safe to cache: a still-running run grows
         # on disk, so re-read it (SWMR) on every access until it is done.
-        state = self.runs.get(name, {}).get("state", "done")
-        if state == "done" and name in self._run_cache:
-            return self._run_cache[name]
+        # The cache is keyed by what the index says about the run, so a
+        # run resumed by another process (done → running → done, more
+        # steps) is re-read rather than served from before the resume.
+        info = self._run_index().get(name, {})
+        state = info.get("state", "done")
+        key = (info.get("n_steps"), info.get("finished"))
+        cached = self._run_cache.get(name)
+        if state == "done" and cached is not None and cached[0] == key:
+            return cached[1]
         data = _read_run_results(self.path / "runs" / name)
         if state == "done":
-            self._run_cache[name] = data
+            self._run_cache[name] = (key, data)
         return data
 
     def _all_runs(self) -> dict:
@@ -3511,7 +4000,8 @@ class Project(ScatteringResultMixin):
         excited: str | tuple[str, int] | None,
     ) -> str:
         """Resolve a run: by name, or by its excited ``(port, mode)`` pair."""
-        names = list(self.runs)
+        index = self._run_index()
+        names = list(index)
         if not names:
             raise ValueError(f"project {self.path} has no runs")
         if excited is None:
@@ -3521,10 +4011,10 @@ class Project(ScatteringResultMixin):
                 f"project holds {len(names)} runs {names}; pass the run name "
                 f"(or a scattering run's excited pair) to select one",
             )
-        if isinstance(excited, str) and excited in self.runs:
+        if isinstance(excited, str) and excited in index:
             return self._require_started(excited)
         key = [excited, 0] if isinstance(excited, str) else [excited[0], excited[1]]
-        for name, info in self.runs.items():
+        for name, info in index.items():
             if info.get("excited") is not None and list(info["excited"]) == key:
                 return self._require_started(name)
         raise KeyError(
@@ -3551,7 +4041,7 @@ class Project(ScatteringResultMixin):
 
         run_name = self._run_name_for_excited(name)
         d = self._load_run(run_name)
-        info = self.runs.get(run_name, {})
+        info = self._run_info(run_name)
         settings = RunSettings(
             **{
                 **self.settings.__dict__,
@@ -3586,7 +4076,8 @@ class Project(ScatteringResultMixin):
         started = self._started_runs()
         if not started:
             raise ValueError(
-                f"project {self.path} has no started runs yet (pending: {sorted(self.runs)})",
+                f"project {self.path} has no started runs yet "
+                f"(pending: {sorted(self._run_index())})",
             )
         return next(iter(started))
 
@@ -3617,8 +4108,13 @@ class Project(ScatteringResultMixin):
         return longest["reference"]
 
     def energy_trace(self, excited: str | tuple[str, int] | None = None):
-        """Stored ``(step, time, energy)`` trace of a run [structured array]."""
-        return self._load_run(self._run_name_for_excited(excited))["energy_trace"]
+        """Stored ``(step, time, energy)`` trace of a run [structured array].
+
+        The same as ``project.runs[name].energy_trace``; this form takes
+        a scattering run's excited pair and may omit the selector on a
+        one-run project.
+        """
+        return self._run_object(self._run_name_for_excited(excited)).energy_trace
 
     def monitors_for(
         self,
@@ -3642,7 +4138,7 @@ class Project(ScatteringResultMixin):
         # with the channel's reference waveform; a general time-domain
         # run keeps them raw (several drives, no single reference —
         # ``TDResult.renormalize`` is the user's call).
-        scattering = self.runs.get(run_name, {}).get("excited") is not None
+        scattering = self._run_info(run_name).get("excited") is not None
         out: dict = {
             name: _LoadedFieldMonitor(run_dir, name, grid=self.grid)
             for name in _list_run_monitors(run_dir)
@@ -3698,7 +4194,7 @@ class Project(ScatteringResultMixin):
             excited=d["excited"],
             reference_signal=d["reference"],
             f_axis=f_axis,
-            taper_signals=bool(self.runs.get(run_name, {}).get("taper_signals", False)),
+            taper_signals=bool(self._run_info(run_name).get("taper_signals", False)),
             port_normal_dx=d["port_normal_dx"],
             port_line_params=d["port_line_params"],
             return_incident=True,
@@ -3724,7 +4220,7 @@ class Project(ScatteringResultMixin):
         than one run the monitor name alone is ambiguous — use
         :meth:`monitors_for` with the excited pair.
         """
-        names = list(self.runs)
+        names = list(self._run_index())
         if len(names) > 1:
             raise ValueError(
                 f"project holds {len(names)} runs; monitor names are "
@@ -3832,22 +4328,24 @@ class Project(ScatteringResultMixin):
     def checkpoint_state(
         self,
         excited: str | tuple[str, int] | None = None,
-    ) -> dict | None:
+    ) -> "CheckpointState | None":
         """Load a run's resume checkpoint (``state_dict``), or ``None``.
 
-        Returns the nested-dict solver state persisted at the last
-        periodic / final / graceful-abort checkpoint, or
-        ``None`` if the run wrote no checkpoint (streaming without resume,
-        or aborted before the first interval).  ``resume()`` feeds
-        this straight into ``FITTimeDomainSolver.load_state_dict``; the
-        ``n_completed`` entry is the step the checkpoint corresponds to.
+        Returns the solver state persisted at the last periodic / final
+        / graceful-abort checkpoint as a :class:`CheckpointState` — a
+        read-only mapping with the nested-dict shape of the solver's
+        ``state_dict`` — or ``None`` if the run wrote no checkpoint
+        (streaming without resume, or aborted before the first
+        interval).  ``resume()`` feeds this straight into
+        ``FITTimeDomainSolver.load_state_dict``; the ``n_completed``
+        entry is the step the checkpoint corresponds to.
         """
         # Design: WP-S8 (resume from checkpoint).
         name = self._run_name_for_excited(excited)
         ckpt = self.path / "runs" / name / "checkpoint.h5"
         if not ckpt.exists():
             return None
-        return _read_state_dict_h5(ckpt)
+        return CheckpointState(_read_state_dict_h5(ckpt), run=name, path=ckpt)
 
     def _band_mesh_operators(self) -> tuple:
         """``(M_eps, M_mu, C)`` of the stored mesh, for a band read (DD-230).
@@ -3888,13 +4386,13 @@ class Project(ScatteringResultMixin):
             )
         # Cache the derived S-matrix only once every run is finished — a
         # partial (live) run yields a converging-but-not-final S.
-        all_done = all(info.get("state", "done") == "done" for info in self.runs.values())
+        run_index = self._run_index()
+        all_done = all(info.get("state", "done") == "done" for info in run_index.values())
         use_cache = f_axis is None and all_done
         if use_cache and "default" in self._s_cache:
             return self._s_cache["default"]
         if f_axis is None:
             f_axis = next(iter(runs.values()))["f_axis"]
-        run_index = self.runs
         band_ops = None
         cols = []
         for name, d in runs.items():
@@ -3983,7 +4481,7 @@ class Project(ScatteringResultMixin):
         except Exception:  # noqa: BLE001 — no started run yet
             pass
         run_info = next(
-            (info for info in self.runs.values() if info.get("state") != "pending"),
+            (info for info in self._run_index().values() if info.get("state") != "pending"),
             {},
         )
         return RunSettings(
@@ -4066,7 +4564,7 @@ class Project(ScatteringResultMixin):
         # incident/outgoing split is defined per frequency, so a scalar
         # (V ∓ Z·I)/2 has no calibrated Z here either.  A stored run must
         # refuse it as loudly as an in-memory one (DD-230).
-        if any(info.get("port_model") == "band" for info in self.runs.values()):
+        if any(info.get("port_model") == "band" for info in self._run_index().values()):
             raise ValueError(
                 "time-domain power waves are not available on band-"
                 "DTBC results: the band port's recorded V/I channels "
@@ -4126,8 +4624,50 @@ class Project(ScatteringResultMixin):
             label=f"{name}({port},{mode})",
         )
 
+    # ── how a project introduces itself (DD-254) ────────────────────
+
+    def _summary_rows(self) -> list[tuple[str, object]]:
+        """The key/value lines above the run table."""
+        meta = self.meta
+        rows: list[tuple[str, object]] = [
+            ("analysis", meta.get("setup", {}).get("analysis") or "—"),
+            ("status", self.status),
+        ]
+        stamp = meta.get("analysis") or {}
+        started = parse_utc(stamp.get("started"))
+        if started is not None:
+            if stamp.get("finished"):
+                rows.append(
+                    (
+                        "last call",
+                        f"finished {fmt_value(parse_utc(stamp['finished']))} "
+                        f"in {format_seconds(stamp.get('elapsed'))}",
+                    )
+                )
+            else:
+                since = (utc_now() - started).total_seconds()
+                rows.append(
+                    ("last call", f"started {fmt_value(started)}, {format_clock(since)} ago")
+                )
+        rows.append(("created", parse_utc(meta.get("created"))))
+        rows.append(("runs", len(self._run_index())))
+        return rows
+
     def __repr__(self) -> str:
-        return f"Project(path={str(self.path)!r}, status={self.status!r}, runs={len(self.runs)})"
+        try:
+            head = kv_block(f"Project {self.path}", self._summary_rows())
+            table = self.runs._table_text()
+        except Exception as exc:  # noqa: BLE001 — a repr must never raise
+            return f"Project({str(self.path)!r}) — cannot read project.json: {exc}"
+        return f"{head}\n{table}" if table else head
+
+    def _repr_html_(self) -> str:
+        try:
+            head = html_kv(f"Project {self.path}", self._summary_rows())
+            table = self.runs._table_html()
+        except Exception as exc:  # noqa: BLE001
+            return html.escape(f"Project({str(self.path)!r}) — cannot read project.json: {exc}")
+        return head + table
 
 
 def open_project(path: str | Path) -> Project:
