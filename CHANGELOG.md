@@ -37,7 +37,9 @@ major version is 0, minor releases may change the public API.
 - `plot_energy()` on results, runs and projects: the stored energy in
   dB below its peak — the figure the progress line reports — over the
   whole run, one curve per run, with the energy criterion as a dashed
-  line.
+  line.  The axis runs from ten dB below the criterion to +5 dB
+  (`floor_db=` pins it), so the empty grid's first samples do not drag
+  it to −3000 dB.
 - `Project.watch()`: follow a project another process is writing —
   a generator that yields the project at every change until it is
   finished, or a loop that calls `on_change(project)`;

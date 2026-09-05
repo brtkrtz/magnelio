@@ -20631,3 +20631,13 @@ axes for a picture of one's own.  On a terminal with a window-capable
 backend it is one window redrawn in place; headless, only the table.
 Probed in the kernel again: table as ``text/html``, picture as
 ``image/png``.  Gates ``::TestFollowPlot``.
+
+The same session's plot started at −3000 dB: the first energy sample
+is the empty grid (exactly zero), the next few are 1e-33 J, and in dB
+that is a plunge the axis followed.  ``plot_energy_traces`` now sets
+the axis from a floor to +5 dB — ten dB below the energy criterion,
+lower only where a run actually ended deeper, −100 dB without a
+criterion — and every ``plot_energy`` takes ``floor_db=`` to pin it,
+the counterpart of ``plot_s(floor_db=)``.  The samples themselves are
+untouched; the plunge is clipped by the frame, which is the honest
+picture of an energy that was zero.  Gates ``TestAxisFloor``.

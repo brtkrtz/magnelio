@@ -18,15 +18,33 @@ import numpy as np
 __all__ = ["plot_energy_traces"]
 
 
+# Where the axis ends when no criterion says otherwise: deep enough for
+# any run that is going somewhere, shallow enough that the decay is
+# the picture rather than a line at the top of an empty plot.
+_DEFAULT_FLOOR_DB = -100.0
+# Above the criterion, below the axis floor: the margin that keeps the
+# dashed line and the curve's end off the frame.
+_MARGIN_DB = 10.0
+
+
 def plot_energy_traces(
     traces: Mapping[str, np.ndarray],
     *,
     energy_stop_db: float | None = None,
+    floor_db: float | None = None,
     x: str = "time",
     ax=None,
     title: str | None = None,
 ):
     """Plot stored-energy traces in dB below their peak.
+
+    The first samples of a run are the empty grid — an energy of zero,
+    then a few numbers around 1e-30 J while the pulse enters — which
+    in dB is a plunge to −3000 that would squash the decay into a line
+    along the top.  The axis therefore runs from a floor to +5 dB, the
+    floor being ten dB below the energy criterion when the run has one
+    (and lower only where a run actually got deeper), or −100 dB
+    otherwise; ``floor_db`` pins it by hand.
 
     Parameters
     ----------
@@ -37,7 +55,9 @@ def plot_energy_traces(
         skipped with a warning.
     energy_stop_db : float, optional
         The energy criterion of the run [dB below peak]; drawn as a
-        dashed line when given.
+        dashed line when given, and the anchor of the axis floor.
+    floor_db : float, optional
+        Lower end of the axis [dB below peak]; overrides the rule above.
     x : {"time", "step"}, default "time"
         Time in nanoseconds, or the leapfrog step.
     ax : matplotlib.axes.Axes, optional
@@ -63,6 +83,7 @@ def plot_energy_traces(
         fig = ax.figure
     tiny = np.finfo(float).tiny
     drawn = 0
+    last_levels = []
     for label, trace in traces.items():
         trace = np.asarray(trace)
         if trace.size == 0:
@@ -78,6 +99,7 @@ def plot_energy_traces(
         level = 10.0 * np.log10(np.maximum(energy, tiny) / peak)
         xs = np.asarray(trace["time"], dtype=float) * 1e9 if x == "time" else trace["step"]
         ax.plot(xs, level, label=str(label))
+        last_levels.append(float(level[-1]))
         drawn += 1
     if energy_stop_db is not None:
         ax.axhline(
@@ -87,6 +109,17 @@ def plot_energy_traces(
             linewidth=1.0,
             label=f"stop criterion: −{float(energy_stop_db):.0f} dB",
         )
+    if floor_db is None:
+        floor = (
+            -(float(energy_stop_db) + _MARGIN_DB)
+            if energy_stop_db is not None
+            else _DEFAULT_FLOOR_DB
+        )
+        if last_levels:
+            floor = min(floor, min(last_levels) - _MARGIN_DB)
+    else:
+        floor = float(floor_db)
+    ax.set_ylim(floor, 5.0)
     ax.set_xlabel("t / ns" if x == "time" else "time step")
     ax.set_ylabel("stored energy / dB below peak")
     ax.grid(True, alpha=0.3)

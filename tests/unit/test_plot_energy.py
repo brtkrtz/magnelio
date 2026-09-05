@@ -106,3 +106,25 @@ class TestPlotEnergyMethods:
         labels = [line.get_label() for line in ax.get_lines()]
         assert labels == ["p1:0", "p2:0"]
         plt.close(fig)
+
+
+class TestAxisFloor:
+    """The empty grid's first samples must not drag the axis to −3000 dB."""
+
+    def test_floor_sits_ten_db_below_the_criterion(self):
+        fig, ax = plot_energy_traces({"a": _trace([0.0, 1e-33, 1.0, 1e-4])}, energy_stop_db=40)
+        assert ax.get_ylim() == (-50.0, 5.0)
+        plt.close(fig)
+
+    def test_floor_follows_a_run_that_got_deeper(self):
+        fig, ax = plot_energy_traces({"a": _trace([1.0, 1e-9])}, energy_stop_db=40)
+        assert ax.get_ylim() == pytest.approx((-100.0, 5.0))
+        plt.close(fig)
+
+    def test_default_floor_without_a_criterion_and_explicit_floor(self):
+        fig, ax = plot_energy_traces({"a": _trace([0.0, 1.0, 0.1])})
+        assert ax.get_ylim() == (-100.0, 5.0)
+        plt.close(fig)
+        fig, ax = plot_energy_traces({"a": _trace([0.0, 1.0, 0.1])}, floor_db=-30)
+        assert ax.get_ylim() == (-30.0, 5.0)
+        plt.close(fig)

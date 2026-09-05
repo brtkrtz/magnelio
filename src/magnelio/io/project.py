@@ -3605,19 +3605,21 @@ class Run:
         """The run's resume checkpoint (see :meth:`Project.checkpoint_state`)."""
         return self._project.checkpoint_state(self.name)
 
-    def plot_energy(self, *, x: str = "time", ax=None):
+    def plot_energy(self, *, x: str = "time", floor_db: float | None = None, ax=None):
         """Plot the run's stored energy in dB below its peak.
 
         The figure the progress line reports, over the whole run, with
         the run's energy criterion as a dashed line.  ``x`` is
-        ``"time"`` (nanoseconds) or ``"step"``; ``ax`` draws into
-        existing axes.  Returns ``(fig, ax)``.
+        ``"time"`` (nanoseconds) or ``"step"``; the axis runs from ten
+        dB below the criterion (``floor_db`` pins it) to +5 dB; ``ax``
+        draws into existing axes.  Returns ``(fig, ax)``.
         """
         from magnelio.post._plot_energy import plot_energy_traces  # noqa: PLC0415
 
         return plot_energy_traces(
             {self.name: self.energy_trace},
             energy_stop_db=self.energy_stop_db,
+            floor_db=floor_db,
             x=x,
             ax=ax,
         )
@@ -4334,20 +4336,22 @@ class Project(ScatteringResultMixin):
         levels.discard(None)
         return float(next(iter(levels))) if len(levels) == 1 else None
 
-    def plot_energy(self, *, x: str = "time", ax=None):
+    def plot_energy(self, *, x: str = "time", floor_db: float | None = None, ax=None):
         """Plot every run's stored energy in dB below its peak, one curve per run.
 
         The figure the progress line reports, for the whole project:
         the legend names the runs, and the energy criterion is a dashed
         line when every run shares one.  ``x`` is ``"time"``
-        (nanoseconds) or ``"step"``; ``ax`` draws into existing axes.
-        Returns ``(fig, ax)``.
+        (nanoseconds) or ``"step"``; the axis runs from ten dB below
+        the criterion (``floor_db`` pins it) to +5 dB; ``ax`` draws
+        into existing axes.  Returns ``(fig, ax)``.
         """
         from magnelio.post._plot_energy import plot_energy_traces  # noqa: PLC0415
 
         return plot_energy_traces(
             self._energy_traces(),
             energy_stop_db=self._common_energy_stop(),
+            floor_db=floor_db,
             x=x,
             ax=ax,
         )
