@@ -36,9 +36,12 @@ carries a clock, a rate and — on a fixed step count — an ETA;
 how-to *Watching a simulation that is still running* and the chapter
 *Projects and runs*.  Release **0.6.0** once merged — not tagged.
 
-Open: KB-023, KB-038, KB-043 and KB-046.  Unit and integration: 3339 passed /
-10 skipped (2026-09-04, `CUPY_ACCELERATORS=""`).  Channels: GitHub, PyPI,
-conda-forge and the two docs channels below.
+Open: KB-023, KB-038, KB-043 and KB-046.  Unit and integration on the
+DD-255 branch: 3395 passed / 10 skipped in the last full run, plus the
+six that failed there re-run green after their fixes (2026-09-05; the
+four GPU tests need `CUPY_ACCELERATORS=""` outside the sandbox, where
+`cuda_fp8.hpp` fails to compile).  Channels: GitHub, PyPI, conda-forge
+and the two docs channels below.
 
 This file states what *is*.  Chronology: `git log --first-parent main`;
 reasoning: `design-decisions.md`; open bugs: `known-bugs.md`.  Measured
