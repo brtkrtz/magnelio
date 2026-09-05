@@ -306,31 +306,22 @@ flickers to ``"done"`` between sequential runs; the reader skips
   DD-231's default stands (its blockers were the axis refusal and the
   missing `a()`/`b()`, not the cost).  **On a 201-point axis no item
   dominates any more** (DD-247): postprocessing 32.8 %, kernels 30.1 %,
-  build mode tracking 24.9 %, field 5.9 %, convolution 4.4 % —
-  314.9 s → 81.2 s, and the two behind the postprocessing are *port
-  build*, together 55 %.  The **arc-fan lead is void**: DD-244's
-  continuation runs the full fan at 4 of 402 axis points, so the cut is
-  ~5 % of the axis, not 3.12x of the largest item, and DD-235's `k`
-  gate need not be earned.  Left: postprocessing is `eigs` + `splu` at
-  96.6 % over a per-frequency LU that cannot be amortised (shift *and*
-  matrix move with frequency); unpriced beside it, one factorisation
-  **per channel** per frequency and `k = 4` where one mode is consumed
-  — both bite on multi-conductor cross-sections, not on this
-  one-channel fixture.  The like-for-like default-axis run (22610 steps
-  under the DC anchor) remains unmeasured.
+  mode tracking 24.9 %, field 5.9 %, convolution 4.4 % — 314.9 s →
+  81.2 s.  The arc-fan lead is void (the fan runs at 4 of 402 axis
+  points, DD-244).  Left: postprocessing is `eigs` + `splu` at
+  96.6 % over a per-frequency LU that cannot be amortised; unpriced
+  beside it, one factorisation per channel per frequency and `k = 4`
+  where one mode is consumed (multi-conductor cross-sections).  The
+  like-for-like default-axis run remains unmeasured.
 * **Band port floor (KB-038)** — wordlength question answered, defect
-  not fixed.  The convolution state was **already double**, so the probe
-  the register proposed was a no-op; the single-precision contact is the
-  per-step round trip through the field array in `update_e`, which alone
-  reproduces the length law and covers 84-92 % of the double-to-single
-  gap (the two sides partly cancel — quantising one is worse than both).
-  What is left is a *solver* decision (port plane and first interior
-  period in double, bulk single), not a port-side one; not priced.  The
-  law is **not band-specific**: the ordinary modal port erodes at the
-  same rate but saturates at the float32 floor (−112.6 dB) where the
-  band port runs past it, and the band-median does not move at all — now
-  documented for users in `docs/methods/precision.md`.  Full register
-  entry and dossier `investigations/kb038-wordlength/`.
+  not fixed.  The convolution state was **already double**; the
+  single-precision contact is the per-step round trip through the field
+  array in `update_e` (84-92 % of the double-to-single gap; quantising
+  one side is worse than both).  What is left is a *solver* decision
+  (port plane and first interior period in double, bulk single); not
+  priced.  The law is **not band-specific** (the modal port erodes at
+  the same rate but saturates at the float32 floor, −112.6 dB) — users:
+  `docs/methods/precision.md`; dossier `investigations/kb038-wordlength/`.
 * **Ports on the GPU** — only `TestBandDTBCOnGPU` (KB-045) exercises a
   port on a device; `tests/conftest.py` pins the suite to NumPy.
 * **The launch pair (DD-239 → DD-244 → DD-248) — closed.**
@@ -382,6 +373,15 @@ flickers to ``"done"`` between sequential runs; the reader skips
   `benchmarks/bench_mesh_build.py` reads 16 Lange couplers 9.6 s at
   3.7 M cells, 240 posts 1.8 s, 16 × 16 patch array 6.4 s at 1.8 M.
   Deferred work, A/B switches, traps: DD-223.  Open against it: KB-043.
+* **Thin wire on a thin sheet — uncertified (DD-080 non-goal), a
+  post-v0.6.0 patch** (developer decision 2026-09-05).  Probed: the
+  junction holds topologically in every configuration tried, but by
+  coincidence (far-side plane drop + cell-centre rule), not by design;
+  the foot segment keeps the bare-grid inductance and the endpoint
+  warning fires spuriously for t > 0.3 Δ_min.  Plan: endpoint-to-sheet-
+  plane rule, gates monopole-on-sheet vs. T5 and wire bridge vs. resolved
+  bricks, docs.  Does not return `ThinWire` bonds to the Lange how-to
+  (radius rule).  Record: `investigations/thin-wire-sheet-junction/`.
 
 Closed construction sites are tombstoned where they were decided and
 are not repeated here.
