@@ -1,49 +1,31 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-09-05.*  **Released v0.5.2** (2026-09-04; a patch
-under the Cargo reading — nothing in it breaks a 0.5.0 script).  In it:
-**DD-245** (partitioned boundary convolution), **DD-246** (progress
-output), the *Numerical precision* chapter `docs/methods/precision.md`
-(its single-precision length law recorded in KB-038), **DD-247** (the
-201-point axis re-measured: no dominant item left, the arc-fan lead
-void) and **DD-248** (`port_source="dispersive"`).
+*Last updated: 2026-09-05.*  **Released v0.6.0** (2026-09-05; a minor
+under the Cargo reading — `Project.runs` hands out `Run` objects
+instead of dictionaries, `docs/migration-0.6.md`).  In it: the
+usability series **DD-253** (every march timed; the FIT-TD line with a
+clock, a rate and — on a fixed step count — an ETA), **DD-254** (live
+`Run` objects, a project that follows its file without `refresh()`,
+`aborted`/`stale`, reprs that never print arrays) and **DD-255**
+(`plot_energy`, `watch`, `follow`, `monitor`; the chapter *Projects and
+runs*, the how-to *Watching a simulation that is still running*); plus
+**DD-249/DD-250** (`lofted(blend="tangent")` between facing faces builds
+the eased taper), **DD-251** (in-place progress in notebooks, the viewer
+survives *Run All*) and **DD-252** (`refine_port_modes` converges the
+cut-off of a TE/TM mode).
 
-Before it, v0.5.1 (2026-09-03) carried DD-242/DD-243 (the section-engine
-reach repair; KB-041/042/044 closed), DD-244 (the reference impedance a
-published quantity, `renormalize`, `report.dispersion`,
-`refine_port_modes`; KB-027 closed) and the band-DTBC port on the GPU
-(KB-045); v0.5.0 (2026-09-02) carried DD-224…DD-241 — the API grammar
-and its Phases A–D, the pair-product gate as a reflection budget
-(DD-228/229, closes KB-022), the content gate on the public remote
-(DD-241), ten breaking changes and `docs/migration-0.5.md`.  The
-band/QTEM track **DD-230…DD-239 is closed** and opened KB-038.
+Before it, v0.5.2 (2026-09-04) carried DD-245…DD-248 and the precision
+chapter; v0.5.1 (2026-09-03) DD-242/DD-243 (the section-engine reach
+repair; KB-041/042/044 closed), DD-244 (reference impedances,
+`renormalize`, `refine_port_modes`; KB-027 closed) and the band-DTBC
+port on the GPU (KB-045); v0.5.0 (2026-09-02) DD-224…DD-241 — the API
+grammar and its Phases A–D, the content gate on the public remote and
+`docs/migration-0.5.md`; the band/QTEM track DD-230…DD-239 is closed.
 
-Unreleased on feature branches: **DD-249/DD-250** — `lofted(blend=
-"tangent")` between facing faces builds the eased taper (a Hermite loft
-on the plain loft's poles, exact zero wall slope at both joints);
-**DD-251** — in-place progress in notebooks, the viewer survives *Run
-All*, tile-skip line gone; **DD-252** — `refine_port_modes` converges
-the cut-off of a TE/TM mode; and the **usability series DD-253 →
-DD-254 → DD-255** on three stacked branches (`feat/run-timing` →
-`feat/run-objects` → `feat/watch-and-plot-energy`, merge in that
-order, each `--no-ff`): every march is timed and the FIT-TD line
-carries a clock, a rate and — on a fixed step count — an ETA;
-`Project.runs` hands out live `Run` objects (**the 0.6.0 break**,
-`docs/migration-0.6.md`), the project follows its file without
-`refresh()`, an aborted run aborts the project, a dead writer reads
-`stale`, and every result prints a summary instead of its arrays;
-`plot_energy()` (axis from ten dB below the criterion to +5 dB),
-`Project.watch()`, `Project.follow(plot=)` and `Project.monitor()` plus
-the how-to *Watching a simulation that is still running* and the
-chapter *Projects and runs*.  Release **0.6.0** once merged — not
-tagged.
-
-Open: KB-023, KB-038, KB-043 and KB-046.  Unit and integration on the
-DD-255 branch: 3395 passed / 10 skipped in the last full run, plus the
-six that failed there re-run green after their fixes (2026-09-05; the
-four GPU tests need `CUPY_ACCELERATORS=""` outside the sandbox, where
-`cuda_fp8.hpp` fails to compile).  Channels: GitHub, PyPI, conda-forge
-and the two docs channels below.
+Open: KB-023, KB-038, KB-043 and KB-046.  Unit and integration: 3401
+passed / 10 skipped (2026-09-05; the four GPU tests with
+`CUPY_ACCELERATORS=""` outside the sandbox).  Channels: GitHub, PyPI,
+conda-forge and the two docs channels below.
 
 This file states what *is*.  Chronology: `git log --first-parent main`;
 reasoning: `design-decisions.md`; open bugs: `known-bugs.md`.  Measured
