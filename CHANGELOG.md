@@ -9,6 +9,20 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+### Added
+
+- Fields in the 3D viewer.  `monitor.show()` on a time or frequency
+  field monitor — live or read back from a project — and
+  `field.show()` on a `FieldState` (an eigenmode, say) open the model
+  along a cutting plane with the field laid on the cut: the exposed
+  cell layer as a coloured sheet (`|E|`, `|H|` or one signed
+  component) with arrows for a field group.  The position slider walks
+  the layer through the recorded volume, a frame slider runs over time
+  or frequency, a phase slider over a complex pattern, and a selector
+  switches the component; with `mesh=` the cells inside metal are cut
+  out so the solids show through.  Also available as
+  `magnelio.plots.show_field`.
+
 ### Changed
 
 - The CPU time step is about 1.2× faster on both x86 and Apple Silicon

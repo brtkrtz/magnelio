@@ -23,8 +23,10 @@ grammar and its Phases A–D, the content gate on the public remote and
 `docs/migration-0.5.md`; the band/QTEM track DD-230…DD-239 is closed.
 
 Open: KB-023, KB-038, KB-043 and KB-046.  Unit and integration: 3422
-passed / 10 skipped (2026-09-05; the four GPU tests with
-`CUPY_ACCELERATORS=""` outside the sandbox).  Channels: GitHub, PyPI,
+passed / 10 skipped (2026-09-05, at the v0.6.0 release; the four GPU
+tests with `CUPY_ACCELERATORS=""` outside the sandbox); the unit suite
+alone 2984 passed / 5 skipped after DD-259 step 0 (same day, later).
+Channels: GitHub, PyPI,
 conda-forge and the two docs channels below.
 
 This file states what *is*.  Chronology: `git log --first-parent main`;
@@ -35,6 +37,8 @@ floors regenerate from the `validation/` certificates their DDs name.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-259** (2026-09-05, *Proposed*; step 0 on branch `feat/field-viewer-3d`, awaiting the developer's browser review) — field monitors will keep the grid quantities and derive every view at access time.  The cell-centre averaging at record time is DD-014's ParaView layout (2026-03-11, before the first monitor existed), a filter that cannot be undone: conductor faces smeared, no energy/flux from a recording, no replay as an initial field, H labelled half a step early.  Five steps for 0.7.0 after v0.6.0 and the DD-256 patch: containers (`FieldRecording`/`FieldSpectrum`), raw recording + store schema bump (old stores refused), hard break of `.data`/`.region`, ParaView as VTR export, replay.  **Step 0 shipped:** the 3D viewer lays a field on its cutting plane (`monitor.show()`, `field.show()`, `plots.show_field`) — the exposed cell layer as a coloured sheet (|E|/|H| or one signed component), arrows on an even lattice, frame/phase sliders and a component selector in the toolbar, PEC cells cut out with `mesh=`; the frame source is a protocol (`_FieldFrames`), so step 1 swaps the storage underneath.  Gates `test_field_3d.py` (23; the controls driven through trame's state), tutorials 07/20, chapter *3D viewer → Fields on the cut*.
+* **DD-258** (2026-09-05, merged `c006d39`) — the solver's field container is `FieldArrays`; `FieldState` names the public one only (the double name hid the grid-quantity vs. field distinction DD-085 exists to keep visible).  Rename only, no user-visible change.
 * **DD-257** (2026-09-05, branch `perf/fit-td-step-overhead`, patch
   after v0.6.0) — the CPU kernel sweeps plane by plane (Ex, Ey, Ez on
   each x plane; every field array streams once per half-step), the
@@ -52,12 +56,7 @@ Newest first, one line each; the full record is the DD entry.
   `~/magnelio-dev`, editable; two `TestSectionBatch` bit-for-bit tests
   fail there by 1 ULP — FMA contraction, not a defect, not yet
   loosened).
-* **DD-256** (2026-09-05) — a thin wire lands on a thin sheet the way
-  it lands on a solid: vertices inside the sheet's thickness collapse
-  onto the sheet plane (no sliver, no spurious endpoint warning), the
-  foot ring composes ``m`` with the sub-cell value instead of yielding.
-  Monopole on a sheet vs. on a solid, one grid: **+0.6 % / −2.2 %**
-  (was +2.3 %).  Radius rule untouched — the Lange bonds stay bricks.
+* **DD-256** (2026-09-05) — a thin wire lands on a thin sheet the way it lands on a solid: vertices inside the sheet's thickness collapse onto the sheet plane (no sliver, no spurious endpoint warning), the foot ring composes ``m`` with the sub-cell value instead of yielding.  Monopole on a sheet vs. on a solid, one grid: **+0.6 % / −2.2 %** (was +2.3 %).  Radius rule untouched — the Lange bonds stay bricks.
 * **DD-255** (2026-09-05) — a run is watched by polling the store, and one figure is what everyone watches.  `Project.watch(interval, on_change=, timeout=)` — a generator yielding the project at every change (signature: index stamp + per-run `(state, n_energy_samples)`) until `done`/`aborted`/`stale`; **polling on purpose** (no inotify: dependency, blind on network mounts and to half flushes).  `plot_energy()` on `TDResult`/`ScatteringTDResult`/`Run`/`Project`: dB below peak, criterion dashed, `plot_s` conventions — the same number as the progress line and the table.  `Project.monitor()`: `VBox(HTML, Image)` refreshed by a daemon thread that sets **widget state only** (DD-251's rule) and renders on its own Agg canvas, never pyplot.  `Run.n_steps` moves while marching (latest energy sample's step).  **Amendments from the first notebook session:** `Project.follow(interval, plot=, timeout=, stream=)` — the watch loop ready-made, its display *replacing itself* (notebook `clear_output`+`display`, terminal `ESC[nA`, log appended; a bare expression in a loop shows nothing, and the inline backend flushes figures only at cell end, so `plot=True`/`plot=callable(project, ax)` renders the picture per change as PNG), probed in a real ipykernel via `jupyter_client`; the energy axis runs from ten dB below the criterion to +5 dB (`floor_db=`), because the empty grid's first samples read −3000 dB.  How-to *Watching a simulation that is still running* (solver on a thread, real output), Tutorial 07's nine-statement energy block is `proj.plot_energy()`.  Gates `test_plot_energy.py`, `test_project_monitor.py`, `test_project_watch.py`.
 * **DD-254** (2026-09-05) — a run is an object, a project knows whether anyone is still writing it, and nothing prints its arrays.  **The 0.6.0 break:** `Project.runs` is a mapping of live `Run` views (`.state .n_steps .energy_db .energy_trace .elapsed .result() .monitors`; channel keys tuples; `docs/migration-0.6.md`).  `meta` follows `project.json` by `(mtime, inode, size)` until the stored status is terminal, so a live watcher needs no `refresh()`; `_load_run` keys its cache on `(n_steps, finished)`.  Status rule fixed (any aborted → **aborted**, was `running` forever); **`stale`** derived from the writer's pid on the same host (POSIX; elsewhere unknown → `running`).  Repr principle in `_repr.py` (what, how big, what state — never arrays): `Project` prints a summary plus run table and **cannot raise**, `CheckpointState` is a `Mapping` that prints sizes, `TDResult`/`ScatteringTDResult`/`SParameterResult`/`RunSettings` summarise, HTML tables in notebooks.  `check_api_surface.py` pin now lists DD-246's verbosity switch (had drifted).  Gates `TestRunObjects`, `TestProjectStatus`, `TestCheckpointState`, `test_repr.py`.
 * **DD-253** (2026-09-05) — every march is timed, and the time loop says what runs and how long it has run.  The clock lives in `FITTimeDomainSolver.run()` (a wrapper around the loop with a `finally`, so all five exits and exceptions are covered) and reaches the result objects (`started`/`finished`/`elapsed`, marching only, in the result contract) and the store (`_RunSink.close(elapsed=)`, `_finalize_run` **accumulates** over resumes, `reopen_run` stamps `resumed`; `pid`/`host` on every run entry and as `meta["writer"]`; `meta["analysis"]` for the whole call).  The line: `step 2900/∞ | 0.7 s | energy -58.4/-70 dB | 3.9k steps/s`, closing line in the same slots; **ETA only on a fixed step count** — the run-length estimate is a 25-transit scale, an ETA on it would overstate a TEM run several-fold, so the header states the *rule* (`stops at energy -70 dB or port signal -60 dB, cap 388480 steps`) instead of a number.  `run | finished in 2.6 s (2 runs)` per `run()`/`resume()`; seven bare prints now go through `Reporter.note` (multi-line aware).  Gates `TestDurations`, `TestMarchLines`, `TestRunTiming`.
@@ -321,6 +320,7 @@ flickers to ``"done"`` between sequential runs; the reader skips
 
 ## Open construction sites
 
+* **Raw field monitors (DD-259, steps 1–5)** — for 0.7.0 once the developer has reviewed the 3D field view in the browser (step 0, branch `feat/field-viewer-3d`).  Order: `fields` takes over the interpolation and gains `FieldRecording`/`FieldSpectrum`; `record()` copies six staggered sub-arrays, H keeps its own time base; `results.h5`/`fields_freq.h5` schema bump, old stores refused; `.data`/`.region` removed (tutorial 13, stripline how-to, upgrade page 0.7); time monitors as VTR series, XDMF descriptor dropped; `SourceFieldInitial.from_recording`.  Gate to add: a ring-down frame replayed as an initial field hits the eigenfrequency within DD-224's tolerance.
 * **Band-pipeline runtime** — convolution (DD-245) and axis ranking
   (DD-247) closed: 314.9 s → 81.2 s on a 201-point axis, no item
   dominates.  Left: postprocessing is `eigs` + `splu` at 96.6 % over a

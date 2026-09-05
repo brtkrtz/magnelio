@@ -20880,3 +20880,116 @@ container.
 `io/{project,paraview}.py`, `circuit/rasterize.py`, the unit and
 integration tests that build raw states, `validation/*.py`; internal
 record `investigations/patch-array/kb035_synthetic.py`.
+
+## DD-259 — Field monitors keep the grid quantities; every view is derived at access time
+
+**Date:** 2026-09-05
+**Status:** Proposed (developer consensus on the strategy 2026-09-05).
+**Step 0 implemented 2026-09-05** on `feat/field-viewer-3d`
+(`src/magnelio/post/field_3d.py`, `tests/unit/test_field_3d.py`,
+`docs/methods/viewer.md`, tutorials 07 and 20); awaiting the developer's
+browser review.  Steps 1–5 are scheduled for 0.7.0 after the v0.6.0
+release and the [[DD-256]] patch.
+
+*Step 0 findings.*  (a) PyVista 0.48 feeds a mesh added under an
+existing actor name through a small pipeline whose output stays empty
+until it executes — `mapper.dataset` reports zero cells, and a reader
+that does not render first (the browser serialiser, a test) sees no
+sheet; the view calls `mapper.Update()` after every rebuild.  (b) The
+colour ceiling must ignore cells buried in PEC: with a mesh they are cut
+out of the sheet, and a field that is nonzero there (a synthetic one, a
+stale frame) would otherwise flatten the visible ring to one colour.
+(c) The notebook controls are exercised without a browser by driving
+trame's state (`TestControls`), and a kernel-level "Run all" check lives
+in `investigations/viewer3d/field_view_kernel.py` (internal record) —
+the Chrome tooling was not available for a widget round.
+
+**Problem.**  A field monitor averages the six staggered components onto
+cell centres *at record time* and hands back `dict[str, ndarray]` plus a
+`region` of cell-centre coordinates.  The layout is [[DD-014]]'s (2026-03-11,
+`(n, nz, ny, nx)` so that ParaView reads `results.h5` through XDMF without
+a conversion), decided three weeks before the first monitor existed;
+[[DD-085]] made the values physical but kept the averaging.  The averaging
+is a four-point low-pass filter that discards the half-cell stagger, so
+(i) tangential E on a conductor face and normal E across a dielectric
+interface are smeared into the neighbouring cell centres, (ii) energy,
+Poynting flux and curl — FIT identities on the grid quantities, the very
+reason `MonitorFluxTime` reads the raw states — cannot be recovered from a
+recorded field, and (iii) a recorded frame cannot be replayed as an initial
+field ([[DD-224]] Phase C needs Yee-offset data).  A time monitor also
+records H at `t + Δt/2` and labels it `t`; `SurfaceRecording` ([[DD-226]])
+already carries both time bases.  Finally, the monitor vocabulary
+(`.data["Ez"]`, `.region.zc`) differs from the field container's
+(`component`, `positions`, `at`, `plot`), so a monitor frame has to be
+repacked by hand to reach `SourceFieldInitial`.  Commercial suites keep
+the solver's raw field results and interpolate when plotting or exporting.
+
+**Decision (strategy).**  Record the raw grid quantities; derive every
+view at access time.  In order, each step merge-able on its own:
+
+0. **3D field view in the notebook viewer** — the developer's condition
+   for giving up the live ParaView view over the SWMR store.  The
+   [[DD-190]] viewer lays the field on its cutting plane: the exposed cell
+   layer as a coloured sheet (|E|, |H| or one signed component) plus
+   arrows on an even lattice for a field group; frame slider (time or
+   frequency), phase slider for complex data, component selector.  Values
+   are the cell-centred fields of *that layer only*, computed when the cut
+   moves, so the slider walks through a volume monitor at the cost of one
+   layer.  Entry points `FieldState.show`, `MonitorFieldTime.show`,
+   `MonitorFieldFrequency.show`, the store readers, and
+   `plots.show_field`.  Cells buried in PEC are cut out of the sheet when
+   a mesh is given, so the solids' caps show through.  Symmetry planes are
+   not mirrored (the 3D view shows the modelled half, as the geometry view
+   does).  The frame source is an internal protocol (`_FieldFrames`:
+   region nodes, frame labels, a layer loader), so step 1 swaps the
+   storage underneath without touching the view.
+1. **Containers** — `_interp_to_cell_centres` moves from `monitors.base`
+   to `fields` (the public container imports from the monitor module
+   today, the wrong direction).  `fields.FieldRecording` (time series:
+   E time base and the half-step-shifted H base, `frame(i)` → `FieldState`,
+   `component`, `cell_centred`, `plot`, `show`) and `fields.FieldSpectrum`
+   (complex, frequency axis, `frame(f)`, phase).  A monitor region becomes
+   a sub-grid with its own `GridLines`; a plane monitor stores one cell
+   layer — the normal component on one node plane, the tangential ones on
+   two — which is [[DD-175]] taken literally.  Mirroring ([[DD-154]]) is
+   implemented once on `FieldState` (component signs, index reversal) and
+   shared by plots and export.
+2. **Recording and store** — `record()` copies six staggered sub-arrays
+   (device slice + transfer on the GPU); H keeps its own time; the
+   frequency monitor runs six staggered accumulators and drops its
+   per-step interpolation.  `results.h5` monitors carry six datasets of
+   staggered shape and a layout attribute; the schema version is bumped
+   and older stores are refused with a message (developer decision: no
+   compatibility with cell-centred stores).  `fields_freq.h5` follows;
+   the checkpoint is unchanged.
+3. **Access, plots, docs** — `.data` and `.region` go (hard break, no
+   deprecation layer); `MonitorFieldTime.recording` /
+   `MonitorFieldFrequency.spectrum` return the containers, `plot`,
+   `interact` and `show` delegate to them and interpolate the requested
+   layer only; the store readers hydrate lazily, one frame per HDF5 read.
+   Tutorial 13, the stripline how-to, `docs/methods/sources-monitors.md`
+   and an upgrade page for 0.7.
+4. **ParaView as an export step** — time monitors are written as VTR
+   series with cell data, as the frequency path already is; the XDMF
+   descriptor over `results.h5` goes.  The SWMR store stays for `watch`
+   and `follow`.
+5. **Reuse** — `SourceFieldInitial.from_recording(rec, t)` with the
+   existing resampling; energy and flux from a recording via the FIT
+   identities become possible (own DD).
+
+**Gates.**  The [[DD-085]] grid-independence tests run through
+`cell_centred` and stay bit-identical on uniform grids (same arithmetic,
+later); the 1 W-CW frequency-monitor gate stays green; new: a frame of a
+ring-down monitor replayed as an initial field hits the eigenfrequency
+within [[DD-224]]'s tolerance; a GPU test for the region slice; the
+[[DD-190]] polydata guard covers the field sheet.
+
+**Cost.**  Staggered storage needs one more node plane per axis than cell
+blocks — a few percent on 3D monitors.  Recording gets cheaper per step,
+markedly so for the frequency monitor; interpolation is paid per displayed
+layer.
+
+**Consequences.**  0.x MINOR (0.7.0).  Surface monitors and the far-field
+box ([[DD-226]]) are a transport format for tangential fields and stay as
+they are.  Live viewing in ParaView during a run ends with step 4; the
+notebook viewer (step 0) and [[DD-255]]'s `watch`/`follow` replace it.

@@ -774,6 +774,20 @@ class MonitorFieldTime:
         display(widgets.VBox([slider, out]))
         _render(0)
 
+    def show(self, component: str = "E", **kwargs):
+        """Interactive 3D view of the recorded field on a cutting plane.
+
+        The geometry viewer with the field laid on its cut, a time slider
+        over the recorded frames, and the position slider walking through
+        the region.  See :func:`magnelio.plots.show_field` for the
+        arguments — the frame (``t=`` or ``frame=``), the plane
+        (``normal``, ``position``), ``geometry`` and ``mesh`` overlays,
+        and the rendering ``mode``.
+        """
+        from magnelio.post.field_3d import show_field  # noqa: PLC0415
+
+        return show_field(self, component, **kwargs)
+
     def __repr__(self) -> str:
         shape = "unattached"
         if self._region is not None:

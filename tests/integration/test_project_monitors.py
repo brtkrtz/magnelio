@@ -225,3 +225,16 @@ def test_multi_run_monitor_selection(tmp_path):
     m1 = proj.monitors_for(("port1", 0))["Eplane"]
     m2 = proj.monitors_for(("port2", 0))["Eplane"]
     assert m1.t.size > 0 and m2.t.size > 0
+
+    # The store reader opens in the 3D viewer, one frame read from disk
+    # at a time (DD-259 step 0).
+    pv = pytest.importorskip("pyvista")
+    pv.OFF_SCREEN = True
+    pl = m1.show(mode="none", size=(200, 150), t=m1.t[-1])
+    sheet = pl.renderer.actors["field_cut"].mapper.dataset
+    assert sheet.n_cells > 0
+    np.testing.assert_allclose(
+        sheet.cell_data["field"].max(),
+        np.sqrt(sum(m1.component(c)[-1] ** 2 for c in m1.components)).max(),
+    )
+    pl.close()

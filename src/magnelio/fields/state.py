@@ -531,6 +531,21 @@ class FieldState:
             geometry=overlay,
         )
 
+    def show(self, component: str = "E", **kwargs):
+        """Interactive 3D view of the field on a cutting plane.
+
+        The geometry viewer with the field laid on its cut: the exposed
+        cell layer as a coloured sheet (``"E"``/``"H"`` magnitude, or one
+        signed component such as ``"Ez"``) with arrows for a field
+        group, walked through the volume by the position slider.  See
+        :func:`magnelio.plots.show_field` for the arguments — the plane
+        (``normal``, ``position``), ``geometry`` and ``mesh`` overlays,
+        ``phase`` for a complex field, and the rendering ``mode``.
+        """
+        from magnelio.post.field_3d import show_field  # noqa: PLC0415
+
+        return show_field(self, component, **kwargs)
+
     def __repr__(self) -> str:
         g = self._grid
         kind = "complex" if self.is_complex else "real"
