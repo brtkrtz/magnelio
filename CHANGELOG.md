@@ -40,7 +40,9 @@ major version is 0, minor releases may change the public API.
   line.
 - `Project.watch()`: follow a project another process is writing —
   a generator that yields the project at every change until it is
-  finished, or a loop that calls `on_change(project)`; and
+  finished, or a loop that calls `on_change(project)`;
+  `Project.follow()`: the same loop ready-made, showing the run table
+  at every change in place of the previous one; and
   `Project.monitor()`: a notebook panel (run table above the energy
   plot) a background thread keeps current.
 - A how-to, *Watching a simulation that is still running*; a *Projects

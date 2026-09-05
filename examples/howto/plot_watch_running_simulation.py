@@ -89,11 +89,16 @@ for snapshot in proj.watch(interval=0.25):
 job.join()
 
 # %%
-# Once the loop ends the project is finished, and the same object now
-# prints its final state: what ran, how long it took, and why each run
-# stopped.
+# The loop body *prints* what it wants seen — inside a loop a bare
+# expression such as ``run.energy_db`` shows nothing, in a notebook as
+# anywhere else.  When the whole table is what you want, ``follow()``
+# is that loop ready-made: it shows the summary at every change and
+# replaces it in place instead of scrolling — in a notebook the cell
+# output is cleared and redrawn, on a terminal the table is redrawn
+# over its own lines.  On a finished project it shows the final state
+# once: what ran, how long it took, and why each run stopped.
 
-print(proj)
+proj.follow(interval=0.25)
 
 # %%
 # The picture behind the line

@@ -44,6 +44,7 @@ import html
 import json
 import os
 import socket
+import sys
 import time
 from collections.abc import Mapping
 from dataclasses import fields as dc_fields
@@ -51,7 +52,14 @@ from pathlib import Path
 
 import numpy as np
 
-from magnelio._progress import current_reporter, format_clock, format_seconds, parse_utc, utc_now
+from magnelio._progress import (
+    _is_notebook_stream,
+    current_reporter,
+    format_clock,
+    format_seconds,
+    parse_utc,
+    utc_now,
+)
 from magnelio._repr import fmt_array, fmt_db, fmt_value, html_kv, html_table, kv_block, text_table
 from magnelio.analysis.result_interface import RunSettings, ScatteringResultMixin
 from magnelio.io._schema import (
@@ -3708,6 +3716,48 @@ def _energy_png(project: "Project", x: str) -> bytes:
     return buf.getvalue()
 
 
+class _InPlacePainter:
+    """Show a project's summary where the last one was — replaced, not appended.
+
+    Three surfaces, told apart the way the progress reporter tells its
+    streams apart: a notebook cell, where IPython's ``clear_output``
+    and ``display`` let the HTML table replace itself; a terminal,
+    where the text table is redrawn over its previous lines with
+    cursor movement; and anything else — a log, a pipe — where whole
+    tables are appended, because there is nothing to overwrite.
+    """
+
+    def __init__(self, stream=None) -> None:
+        self._stream = stream if stream is not None else sys.stdout
+        try:
+            self._tty = bool(self._stream.isatty())
+        except (AttributeError, ValueError):
+            self._tty = False
+        self._notebook = not self._tty and _is_notebook_stream(self._stream)
+        self._lines = 0
+
+    def paint(self, project: "Project") -> None:
+        if self._notebook:
+            try:
+                from IPython.display import clear_output, display  # noqa: PLC0415
+            except ImportError:
+                self._notebook = False
+            else:
+                clear_output(wait=True)
+                display(project)
+                return
+        text = repr(project)
+        if self._tty and self._lines:
+            # Up over the previous table, clear from there to the end
+            # of the screen, then draw the new one in its place.
+            self._stream.write(f"\x1b[{self._lines}A\x1b[J")
+        self._stream.write(text + "\n")
+        if not self._tty:
+            self._stream.write("\n")
+        self._stream.flush()
+        self._lines = text.count("\n") + 1
+
+
 def _build_monitor_panel(path: Path, interval: float, x: str, ipywidgets):
     """Assemble the panel and start its refresh thread."""
     import threading  # noqa: PLC0415
@@ -4302,6 +4352,14 @@ class Project(ScatteringResultMixin):
             for proj in mio.open_project("magic_tee").watch():
                 print(proj)                     # the run table, as it moves
 
+        Print (or plot) what you want to see: inside a loop a bare
+        expression such as ``proj.runs["port1_mode0"].energy_db``
+        displays nothing, in a notebook as anywhere else — only the
+        last expression of a cell is shown.  For the ready-made
+        display that replaces itself at every change, see
+        :meth:`follow`; for a panel that keeps moving while other
+        cells run, :meth:`monitor`.
+
         With ``on_change`` the loop runs here: the callable is called
         with the project at every change, and the project is returned
         when the loop ends::
@@ -4332,6 +4390,39 @@ class Project(ScatteringResultMixin):
             return self._watch_iter(float(interval), timeout)
         for _ in self._watch_iter(float(interval), timeout):
             on_change(self)
+        return self
+
+    def follow(self, interval: float = 2.0, *, timeout: float | None = None, stream=None):
+        """Watch this project and show its state in place until it is finished.
+
+        The zero-code form of :meth:`watch`: at every change the
+        project's summary and run table are shown again, *replacing*
+        the previous one rather than scrolling below it.  In a notebook
+        the cell's output is cleared and the table redrawn; on a
+        terminal the table is redrawn over its own lines; in a log
+        file each table is appended.  Blocks until the project is
+        finished (``done``, ``aborted`` or ``stale``) or ``timeout``
+        seconds have passed, and returns the project.  Interrupting the
+        kernel (Ctrl-C) ends it early.
+
+        For a panel that keeps moving while you work in other cells,
+        see :meth:`monitor`.
+
+        Parameters
+        ----------
+        interval : float, default 2.0
+            Seconds between two looks at the store.
+        timeout : float, optional
+            Give up after this many seconds.
+        stream : file-like, optional
+            Where the text form goes; defaults to ``sys.stdout``.  A
+            notebook is recognised on its own.
+        """
+        if not interval > 0.0:
+            raise ValueError(f"interval must be positive; got {interval!r}")
+        painter = _InPlacePainter(stream)
+        for _ in self._watch_iter(float(interval), timeout):
+            painter.paint(self)
         return self
 
     def monitor(self, interval: float = 2.0, *, x: str = "time"):

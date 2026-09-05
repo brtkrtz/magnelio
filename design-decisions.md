@@ -20601,3 +20601,23 @@ possible later through the same widget-state rule from the solver's
 check cadence); a cross-project listing; the ring-down how-to keeps
 its own plot (its y-axis is relative to the start, a deliberate
 choice for a Q fit).
+
+**Amendment (same day).**  The first notebook session wrote
+``for snapshot in proj.watch(): run = snapshot.runs[...]; run.energy_db``
+and saw nothing: a bare expression inside a loop displays nothing, in
+a notebook as anywhere else — and ``print(snapshot)`` scrolled a table
+per change.  ``Project.follow(interval, timeout=, stream=)`` is the
+loop ready-made, with the display *replacing itself*: an
+``_InPlacePainter`` tells the surface apart the way the reporter does
+— a notebook cell gets ``clear_output(wait=True)`` + ``display``
+(the HTML table), a terminal gets the text table redrawn over its own
+lines (``ESC[nA ESC[J``), a log gets whole tables appended.  The
+``watch`` docstring and the projects chapter now say that the loop
+body has to print.  Measured in a real ipykernel through
+``jupyter_client`` (internal record
+``investigations/usability-monitoring/follow_kernel_probe.py``): the
+cell's stdout is ``ipykernel.iostream``, and ``follow()`` on a finished
+project emits one ``clear_output(wait=True)`` followed by one
+``display_data`` carrying ``text/html`` — what a front-end renders in
+place.  Gates ``tests/unit/test_project_monitor.py::TestFollow`` (log,
+terminal escape sequence, notebook stub).

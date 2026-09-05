@@ -51,3 +51,62 @@ def test_names_the_extra_when_ipywidgets_is_missing(tmp_path, monkeypatch):
     monkeypatch.setitem(sys.modules, "ipywidgets", None)
     with pytest.raises(ImportError, match=r"magnelio\[jupyter\]"):
         _finished_project(tmp_path).monitor()
+
+
+class TestFollow:
+    """``follow()`` redraws the summary in place — on each of its three surfaces."""
+
+    def test_a_log_gets_whole_tables_and_the_project_back(self, tmp_path):
+        import io
+
+        proj = _finished_project(tmp_path)
+        out = io.StringIO()
+        assert proj.follow(interval=0.05, stream=out) is proj
+        text = out.getvalue()
+        assert text.count("Project ") == 1
+        assert "port1_mode0" in text
+        assert "\x1b[" not in text
+
+    def test_a_terminal_redraws_over_its_own_lines(self, tmp_path):
+        import io
+
+        from magnelio.io.project import _InPlacePainter
+
+        class Tty(io.StringIO):
+            def isatty(self):
+                return True
+
+        stream = Tty()
+        painter = _InPlacePainter(stream)
+        proj = _finished_project(tmp_path)
+        painter.paint(proj)
+        first = stream.getvalue()
+        painter.paint(proj)
+        second = stream.getvalue()[len(first) :]
+        assert second.startswith(f"\x1b[{first.count(chr(10))}A\x1b[J")
+
+    def test_a_notebook_clears_the_cell_and_displays(self, tmp_path, monkeypatch):
+        import io
+        import types
+
+        from magnelio.io.project import _InPlacePainter
+
+        calls = []
+        stub = types.SimpleNamespace(
+            clear_output=lambda wait=False: calls.append(("clear", wait)),
+            display=lambda obj: calls.append(("display", obj)),
+        )
+        monkeypatch.setitem(sys.modules, "IPython.display", stub)
+
+        class OutStream(io.StringIO):
+            pass
+
+        OutStream.__module__ = "ipykernel.iostream"
+        proj = _finished_project(tmp_path)
+        painter = _InPlacePainter(OutStream())
+        painter.paint(proj)
+        assert calls == [("clear", True), ("display", proj)]
+
+    def test_rejects_a_bad_interval(self, tmp_path):
+        with pytest.raises(ValueError, match="interval"):
+            _finished_project(tmp_path).follow(interval=-1)

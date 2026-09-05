@@ -152,7 +152,20 @@ for proj in mio.open_project("magic_tee").watch(interval=5):
 With `on_change=` the loop runs inside `watch`, which calls the
 callable with the project at every change and returns the project
 when the run is finished — the place for "redraw the figure", "append
-to a log", "send a message".
+to a log", "send a message".  Whatever the loop body does, it has to
+*print* or *plot* what it wants seen: a bare expression inside a loop
+displays nothing, in a notebook as anywhere else.
+
+`follow()` is the zero-code form of the same loop: it shows the
+project's summary and run table at every change and *replaces* the
+previous one instead of scrolling below it — in a notebook the cell
+output is cleared and redrawn, on a terminal the table is redrawn
+over its own lines.  It blocks until the project is finished and
+returns it:
+
+```python
+proj = mio.open_project("magic_tee").follow(interval=5)
+```
 
 `plot_energy()` draws every run's stored energy in dB below its peak,
 one curve per run, with the energy criterion as a dashed line when the
