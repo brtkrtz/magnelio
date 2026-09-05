@@ -226,8 +226,11 @@ fig, ax = plots.plot_cross_section(
 # Where the two ends are faces of solids that already exist, the
 # :meth:`~magnelio.geo.Shape.lofted` verb takes those instead, and adds a
 # third mode: ``blend="tangent"`` leaves each face along its own normal,
-# so a bend between two parts that face different directions comes out
-# smooth rather than creased.
+# so the transition meets both parts without a crease.  Between two
+# faces that look at each other -- the two ends of a waveguide taper --
+# the cross-section eases out of one profile and into the other, with
+# zero wall slope at both flanges; between faces that point in different
+# directions the profile is swept round a curved path instead.
 
 
 def square(half, z):

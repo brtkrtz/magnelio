@@ -68,6 +68,7 @@ methods/index
 :maxdepth: 1
 :caption: Upgrading
 
+migration-0.6
 migration-0.5
 ```
 

@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=8e576371"></script>
+    <script src="../_static/documentation_options.js?v=8fa8b3e9"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -177,18 +177,35 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.5.html">
+  <a class="nav-link nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
   </a>
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../bibliography.html">
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../bibliography.html">
     Bibliography
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -339,6 +356,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
   </a>
 </li>
 
@@ -746,19 +770,19 @@ permittivity.</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (0.9 s)
+  mesh | materials | done (1.8 s)
   mesh | conformal cells
-  mesh | conformal cells | done (3.5 s)
+  mesh | conformal cells | done (7.5 s)
   mesh | PEC masks
-  mesh | 28 x 28 x 9 cells (4.3 s total)
+  mesh | 28 x 28 x 9 cells (9.3 s total)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (1.1 s)
+  mesh | materials | done (2.4 s)
   mesh | conformal cells
-  mesh | conformal cells | done (4.8 s)
+  mesh | conformal cells | done (10.4 s)
   mesh | PEC masks
-  mesh | 35 x 35 x 12 cells (5.9 s total)
+  mesh | 35 x 35 x 12 cells (12.8 s total)
 coarse (  7056 cells):  f0 = 2.7275 GHz
 fine   ( 14700 cells):  f0 = 2.7262 GHz
 next mode is at 4.85 GHz — the band is clear
@@ -862,35 +886,35 @@ much.</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (2.8 s)
+  mesh | materials | done (5.9 s)
   mesh | conformal cells
-  mesh | conformal cells | done (9.3 s)
+  mesh | conformal cells | done (19.7 s)
   mesh | PEC masks
-  mesh | 78 x 28 x 9 cells (12.1 s total)
+  mesh | 78 x 28 x 9 cells (25.7 s total)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (2.8 s)
+  mesh | materials | done (6.0 s)
   mesh | conformal cells
-  mesh | conformal cells | done (11.9 s)
+  mesh | conformal cells | done (25.3 s)
   mesh | PEC masks
-  mesh | 78 x 44 x 9 cells (14.8 s total)
+  mesh | 78 x 44 x 9 cells (31.4 s total)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (2.8 s)
+  mesh | materials | done (6.0 s)
   mesh | conformal cells
-  mesh | conformal cells | done (9.4 s)
+  mesh | conformal cells | done (19.7 s)
   mesh | PEC masks
-  mesh | 78 x 28 x 9 cells (12.3 s total)
+  mesh | 78 x 28 x 9 cells (25.7 s total)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (2.9 s)
+  mesh | materials | done (6.0 s)
   mesh | conformal cells
-  mesh | conformal cells | done (11.3 s)
+  mesh | conformal cells | done (23.9 s)
   mesh | PEC masks
-  mesh | 78 x 46 x 9 cells (14.2 s total)
+  mesh | 78 x 46 x 9 cells (29.9 s total)
 window  4.0 mm -&gt;  k = 0.00801,  centre 3.0285 GHz
 window  6.0 mm -&gt;  k = 0.03102,  centre 2.9615 GHz
 window  8.0 mm -&gt;  k = 0.06525,  centre 2.8893 GHz
@@ -931,11 +955,12 @@ the pair’s frequency is a fraction of the passband.</p>
 <img src="../_images/sphx_glr_plot_13_dielectric_filter_003.png" srcset="../_images/sphx_glr_plot_13_dielectric_filter_003.png" alt="Coupling is set by the window" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (3.4 s)
+  mesh | materials | done (7.3 s)
   mesh | conformal cells
-  mesh | conformal cells | done (14.6 s)
+  mesh | conformal cells | 441 sections
+  mesh | conformal cells | done (31.1 s)
   mesh | PEC masks
-  mesh | 96 x 52 x 12 cells (18.1 s total)
+  mesh | 96 x 52 x 12 cells (38.5 s total)
 window 6.0 mm, coarse grid:  k = 0.03102, f = 2.9615 GHz
 window 6.0 mm, fine grid:    k = 0.03125, f = 2.9609 GHz
 k moves 0.7 %, f moves 0.0 %
@@ -1058,29 +1083,29 @@ either number alone.</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (1.2 s)
+  mesh | materials | done (2.6 s)
   mesh | conformal cells
-  mesh | conformal cells | done (6.1 s)
+  mesh | conformal cells | done (12.9 s)
   mesh | PEC masks
-  mesh | 56 x 40 x 13 cells (7.4 s total)
+  mesh | 56 x 40 x 13 cells (15.6 s total)
 probe at 6.0 mm:  f0 = 3.1092 GHz,  Qe = 14.3 (group delay) / 14.0 (ring-down)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (1.3 s)
+  mesh | materials | done (2.6 s)
   mesh | conformal cells
-  mesh | conformal cells | done (6.1 s)
+  mesh | conformal cells | done (12.9 s)
   mesh | PEC masks
-  mesh | 57 x 40 x 13 cells (7.4 s total)
+  mesh | 57 x 40 x 13 cells (15.6 s total)
 probe at 7.0 mm:  f0 = 3.0515 GHz,  Qe = 22.4 (group delay) / 21.9 (ring-down)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (1.3 s)
+  mesh | materials | done (2.6 s)
   mesh | conformal cells
-  mesh | conformal cells | done (6.1 s)
+  mesh | conformal cells | done (12.9 s)
   mesh | PEC masks
-  mesh | 59 x 40 x 13 cells (7.5 s total)
+  mesh | 59 x 40 x 13 cells (15.5 s total)
 probe at 8.0 mm:  f0 = 3.0137 GHz,  Qe = 36.2 (group delay) / 35.4 (ring-down)
 </pre></div>
 </div>
@@ -1192,11 +1217,11 @@ full run and add nothing.</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (2.6 s)
+  mesh | materials | done (5.3 s)
   mesh | conformal cells
-  mesh | conformal cells | done (12.1 s)
+  mesh | conformal cells | done (25.4 s)
   mesh | PEC masks
-  mesh | 90 x 40 x 13 cells (14.7 s total)
+  mesh | 90 x 40 x 13 cells (30.7 s total)
 grid: 90 x 40 x 13 = 46800 cells
 </pre></div>
 </div>
@@ -1364,7 +1389,7 @@ halved the runtime and left the answer where it was.</p></li>
 <p>Extending to a higher order changes nothing structural: synthesise
 more prototype elements, extract one <span class="math notranslate nohighlight">\(k\)</span> per adjacent pair,
 and mirror one more chamber into the housing.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (5 minutes 59.265 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (8 minutes 22.050 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-13-dielectric-filter-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/95600003609aa4cead576ecb61ae602f/plot_13_dielectric_filter.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_13_dielectric_filter.ipynb</span></code></a></p>

@@ -617,8 +617,9 @@ on top.
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
+      mesh | conformal cells | done (0.6 s)
       mesh | PEC masks
-      mesh | 119 x 57 x 33 cells (0.6 s total)
+      mesh | 119 x 57 x 33 cells (0.8 s total)
     grid: 119 x 57 x 33 = 0.22 M cells
 
     (-0.25, 0.25)
@@ -763,7 +764,7 @@ the lead-to-finger joint is not one.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (2 minutes 39.440 seconds)
+   **Total running time of the script:** (2 minutes 55.981 seconds)
 
 
 .. _sphx_glr_download_howto_plot_lange_coupler.py:

@@ -521,7 +521,7 @@ coupled section is solved on the grid it was dimensioned on.
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (0.5 s)
+      mesh | conformal cells | done (0.6 s)
       mesh | PEC masks
       mesh | 138 x 104 x 34 cells (0.8 s total)
     grid: 138 x 104 x 34 cells
@@ -655,7 +655,7 @@ chapter of the methods section.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 26.859 seconds)
+   **Total running time of the script:** (1 minutes 31.941 seconds)
 
 
 .. _sphx_glr_download_howto_plot_coupled_line_coupler.py:

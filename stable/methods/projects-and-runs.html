@@ -1,0 +1,892 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Projects and runs &#8212; Magnelio Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+
+    <script src="../_static/documentation_options.js?v=8fa8b3e9"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'methods/projects-and-runs';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'stable';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            false;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/stable/methods/projects-and-runs.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Far-field computation" href="far-field.html" />
+    <link rel="prev" title="Sources, monitors and post-processing" href="sources-monitors.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">Magnelio Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio/discussions" title="Discussions" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-regular fa-comments fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discussions</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../howto/index.html">
+    How-to guides
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.5.html">
+    Upgrading from 0.4.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../bibliography.html">
+    Bibliography
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/brtkrtz/magnelio/discussions" title="Discussions" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-regular fa-comments fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discussions</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="fit-discretization.html">Spatial discretisation and time integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="geometry.html">Geometry construction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cad-import.html">CAD import</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pcb-import.html">Board import</a></li>
+<li class="toctree-l1"><a class="reference internal" href="meshing-conformal.html">Mesh generation and conformal geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="boundaries.html">Boundary conditions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ports.html">Waveguide ports and S-parameter extraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lumped-elements.html">Discrete ports and lumped circuit elements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dispersive-materials.html">Dispersive and lossy materials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conductor-losses.html">Conductor losses</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Projects and runs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a></li>
+<li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Numerical methods</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Projects and runs</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="projects-and-runs">
+<h1>Projects and runs<a class="headerlink" href="#projects-and-runs" title="Link to this heading">#</a></h1>
+<p>A simulation that finishes in a minute can live in memory.  One that
+takes an afternoon should not: the process may be a notebook kernel
+that gets restarted, the results are wanted in another session or on
+another machine, and someone will want to look at the run while it is
+still marching.  Magnelio’s answer is the <strong>project</strong>: a directory the
+analysis writes into as it goes, readable by any other process at any
+time, and resumable from its last checkpoint.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">proj</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisScatteringTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">project</span><span class="o">=</span><span class="s2">"magic_tee"</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">excited</span><span class="o">=</span><span class="p">[</span><span class="s2">"port3"</span><span class="p">,</span> <span class="s2">"port4"</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Given a <code class="docutils literal notranslate"><span class="pre">project=</span></code> directory, <code class="docutils literal notranslate"><span class="pre">run()</span></code> streams everything into it and
+returns the reader of that directory — the same object
+<a class="reference internal" href="../api/core.html#magnelio.open_project" title="magnelio.open_project"><code class="xref py py-func docutils literal notranslate"><span class="pre">open_project()</span></code></a> returns, so a post-processing script
+and the return value of <code class="docutils literal notranslate"><span class="pre">run()</span></code> are one and the same thing:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">proj</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">open_project</span><span class="p">(</span><span class="s2">"magic_tee"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This chapter is the vocabulary of that directory: what a project and a
+run are, the states they pass through, what the clock on them means,
+and how to read one that is still being written.</p>
+<section id="vocabulary">
+<h2>Vocabulary<a class="headerlink" href="#vocabulary" title="Link to this heading">#</a></h2>
+<p><strong>Project.</strong>  A directory holding <code class="docutils literal notranslate"><span class="pre">project.json</span></code> (the index: setup,
+status, the run table), the mesh, the geometry when one was given, and
+one sub-directory per run.  The handle is a
+<a class="reference internal" href="../api/io.html#magnelio.io.Project" title="magnelio.io.Project"><code class="xref py py-class docutils literal notranslate"><span class="pre">Project</span></code></a>.  It is also a scattering result — <code class="docutils literal notranslate"><span class="pre">S</span></code>,
+<code class="docutils literal notranslate"><span class="pre">db</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_s</span></code>, the Touchstone export — so a script written for the
+in-RAM result runs unchanged against it.</p>
+<p><strong>Run.</strong>  One march of the time-domain solver.  A scattering analysis
+makes one run per excited channel, named after it (<code class="docutils literal notranslate"><span class="pre">port3_mode0</span></code>); the
+general time-domain analysis names its runs <code class="docutils literal notranslate"><span class="pre">run_1</span></code>, <code class="docutils literal notranslate"><span class="pre">run_2</span></code>, … or
+whatever <code class="docutils literal notranslate"><span class="pre">name=</span></code> it was given.  The handle is a
+<a class="reference internal" href="../api/io.html#magnelio.io.Run" title="magnelio.io.Run"><code class="xref py py-class docutils literal notranslate"><span class="pre">Run</span></code></a>, handed out by <code class="docutils literal notranslate"><span class="pre">proj.runs[name]</span></code>; it carries
+the run’s state, its step count, the stop criteria and the reason the
+marching ended, its clock, its energy trace, and gives access to the
+run’s result and monitors.</p>
+<p><strong>Run states.</strong>  A run is <code class="docutils literal notranslate"><span class="pre">pending</span></code> from the moment the analysis plans
+it (no directory on disk yet), <code class="docutils literal notranslate"><span class="pre">running</span></code> while the solver marches, and
+ends <code class="docutils literal notranslate"><span class="pre">done</span></code> or <code class="docutils literal notranslate"><span class="pre">aborted</span></code>.  A fifth reading, <code class="docutils literal notranslate"><span class="pre">stale</span></code>, is not stored: it
+is <code class="docutils literal notranslate"><span class="pre">running</span></code> on disk with nobody writing — the solver process the run
+names no longer exists on this host, because the kernel died or the
+machine was rebooted.  Resume the run, or run the analysis again.</p>
+<p><strong>Project status.</strong>  <code class="docutils literal notranslate"><span class="pre">created</span></code> before the first run, <code class="docutils literal notranslate"><span class="pre">running</span></code> while
+any run is planned or marching, then <code class="docutils literal notranslate"><span class="pre">done</span></code> when every planned run is
+done, <code class="docutils literal notranslate"><span class="pre">aborted</span></code> when one ended on a graceful stop or an error (the
+analysis call goes with it, so its planned siblings never start), and
+<code class="docutils literal notranslate"><span class="pre">stale</span></code> under the same rule as for a run.</p>
+</section>
+<section id="reading-a-project">
+<h2>Reading a project<a class="headerlink" href="#reading-a-project" title="Link to this heading">#</a></h2>
+<p>Typing the project’s name at a prompt, or leaving it as the last
+expression of a notebook cell, prints its state and a table of its
+runs:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Project wr90_demo
+  analysis   AnalysisScatteringTD
+  status     done
+  last call  finished 2026-09-05 08:55:15 in 0.5 s
+  created    2026-09-05 08:55:15
+  runs       2
+run       excited  state  steps    energy  elapsed  stop reason
+────────  ───────  ─────  ─────  ────────  ───────  ───────────
+p1_mode0  p1:0     done     701  -47.0 dB    0.2 s  energy
+p2_mode0  p2:0     done     701  -47.0 dB    0.2 s  energy
+</pre></div>
+</div>
+<p>(A WR-90 section with two ports, excited from each side in turn and
+stopped 40 dB below the energy peak — a small run, so the clocks are
+short.)  <code class="docutils literal notranslate"><span class="pre">proj.runs</span></code> is a read-only mapping of run names to run
+objects; each run prints as a summary of its own, and its attributes
+are the columns of the table and more:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">runs</span><span class="p">[</span><span class="s2">"p1_mode0"</span><span class="p">]</span>
+<span class="n">run</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">run</span><span class="o">.</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">run</span><span class="o">.</span><span class="n">stop_reason</span>      <span class="c1"># 'done', 701, 'energy'</span>
+<span class="n">run</span><span class="o">.</span><span class="n">energy_db</span>                                <span class="c1"># the last energy sample, dB below the peak</span>
+<span class="n">run</span><span class="o">.</span><span class="n">energy_trace</span>                             <span class="c1"># the whole trace: step, time, energy</span>
+<span class="n">run</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>                                 <span class="c1"># the run as a TDResult</span>
+<span class="n">run</span><span class="o">.</span><span class="n">monitors</span>                                 <span class="c1"># the run's monitors by name</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Run</span> <span class="s1">'p1_mode0'</span>
+  <span class="n">state</span>        <span class="n">done</span>
+  <span class="n">excited</span>      <span class="n">p1</span><span class="p">:</span><span class="mi">0</span>
+  <span class="n">steps</span>        <span class="mi">701</span>
+  <span class="n">stops</span> <span class="n">at</span>     <span class="n">energy</span> <span class="o">-</span><span class="mi">40</span> <span class="n">dB</span> <span class="ow">or</span> <span class="n">port</span> <span class="n">signal</span> <span class="o">-</span><span class="mi">60</span> <span class="n">dB</span>
+  <span class="n">energy</span>       <span class="o">-</span><span class="mf">47.0</span> <span class="n">dB</span> <span class="n">below</span> <span class="n">peak</span>
+  <span class="n">stop</span> <span class="n">reason</span>  <span class="n">energy</span>
+  <span class="n">started</span>      <span class="mi">2026</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">05</span> <span class="mi">08</span><span class="p">:</span><span class="mi">55</span><span class="p">:</span><span class="mi">15</span>
+  <span class="n">finished</span>     <span class="mi">2026</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">05</span> <span class="mi">08</span><span class="p">:</span><span class="mi">55</span><span class="p">:</span><span class="mi">15</span>
+  <span class="n">elapsed</span>      <span class="mf">0.2</span> <span class="n">s</span>
+  <span class="n">dt</span>           <span class="mf">2.154e-12</span>
+  <span class="n">checkpoint</span>   <span class="n">yes</span>
+</pre></div>
+</div>
+<p>The S-parameters of a scattering project come off the project itself,
+derived from the stored port signals: <code class="docutils literal notranslate"><span class="pre">proj.S(&quot;port1&quot;,</span> <span class="pre">&quot;port3&quot;)</span></code>,
+<code class="docutils literal notranslate"><span class="pre">proj.plot_s(...)</span></code>.  The general time-domain analysis has no S-matrix;
+its runs are read through <code class="docutils literal notranslate"><span class="pre">run.result()</span></code>.</p>
+</section>
+<section id="a-project-that-is-still-being-written">
+<h2>A project that is still being written<a class="headerlink" href="#a-project-that-is-still-being-written" title="Link to this heading">#</a></h2>
+<p>Every energy sample the solver takes goes to disk at once, and the run
+index is replaced atomically whenever a run starts or ends, so a
+second process may open the project while the solver marches and see
+its current state.  Until the project is finished, the reader re-reads
+the index whenever the file changed — typing <code class="docutils literal notranslate"><span class="pre">proj</span></code> again shows the
+current step count, energy and elapsed time without any call on your
+side.  Once the project is <code class="docutils literal notranslate"><span class="pre">done</span></code> or <code class="docutils literal notranslate"><span class="pre">aborted</span></code> the parsed index is
+kept; <a class="reference internal" href="../api/io.html#magnelio.io.Project.refresh" title="magnelio.io.Project.refresh"><code class="xref py py-meth docutils literal notranslate"><span class="pre">refresh()</span></code></a> re-reads it, for a run that
+was resumed elsewhere after you opened the project.</p>
+<p>A <code class="docutils literal notranslate"><span class="pre">running</span></code> run’s <code class="docutils literal notranslate"><span class="pre">elapsed</span></code> counts the time since its current march
+started on top of what earlier marches booked, so the clock in the
+table keeps moving while the solver does, and its <code class="docutils literal notranslate"><span class="pre">n_steps</span></code> is the
+step of the latest energy sample on disk until the march books its
+final count.</p>
+<section id="watching-from-another-process">
+<h3>Watching from another process<a class="headerlink" href="#watching-from-another-process" title="Link to this heading">#</a></h3>
+<p>Three tools turn “look again” into something a script or a notebook
+does on its own; the how-to <em>Watching a simulation that is still
+running</em> shows all three on one run.</p>
+<p><code class="docutils literal notranslate"><span class="pre">watch()</span></code> polls the store every <code class="docutils literal notranslate"><span class="pre">interval</span></code> seconds and reports every
+change — a run starting or ending, a new energy sample, a status
+change — until the project is finished (<code class="docutils literal notranslate"><span class="pre">done</span></code>, <code class="docutils literal notranslate"><span class="pre">aborted</span></code> or
+<code class="docutils literal notranslate"><span class="pre">stale</span></code>), or until <code class="docutils literal notranslate"><span class="pre">timeout</span></code> seconds have passed.  As a generator it
+yields the project itself at every change; the first report comes at
+once and the final state is always delivered:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">proj</span> <span class="ow">in</span> <span class="n">mio</span><span class="o">.</span><span class="n">open_project</span><span class="p">(</span><span class="s2">"magic_tee"</span><span class="p">)</span><span class="o">.</span><span class="n">watch</span><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">proj</span><span class="p">)</span>                          <span class="c1"># the run table, as it moves</span>
+</pre></div>
+</div>
+<p>With <code class="docutils literal notranslate"><span class="pre">on_change=</span></code> the loop runs inside <code class="docutils literal notranslate"><span class="pre">watch</span></code>, which calls the
+callable with the project at every change and returns the project
+when the run is finished — the place for “redraw the figure”, “append
+to a log”, “send a message”.  Whatever the loop body does, it has to
+<em>print</em> or <em>plot</em> what it wants seen: a bare expression inside a loop
+displays nothing, in a notebook as anywhere else.</p>
+<p><code class="docutils literal notranslate"><span class="pre">follow()</span></code> is the zero-code form of the same loop: it shows the
+project’s summary and run table at every change and <em>replaces</em> the
+previous one instead of scrolling below it — in a notebook the cell
+output is cleared and redrawn, on a terminal the table is redrawn
+over its own lines.  It blocks until the project is finished and
+returns it:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">proj</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">open_project</span><span class="p">(</span><span class="s2">"magic_tee"</span><span class="p">)</span><span class="o">.</span><span class="n">follow</span><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">follow(plot=True)</span></code> adds the energy plot below the table, redrawn
+with it.  A figure drawn inside a loop of your own would not show
+until the cell ends — the notebook’s inline backend flushes a cell’s
+figures when the cell is over — so <code class="docutils literal notranslate"><span class="pre">follow</span></code> renders the picture at
+every change and replaces it with the table.  A callable
+<code class="docutils literal notranslate"><span class="pre">plot(project,</span> <span class="pre">ax)</span></code> draws a picture of your own into the fresh axes
+it is given, the place for your own limits or an extra curve:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="n">proj</span><span class="p">,</span> <span class="n">ax</span><span class="p">):</span>
+    <span class="n">proj</span><span class="o">.</span><span class="n">plot_energy</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">80</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="n">proj</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">open_project</span><span class="p">(</span><span class="s2">"magic_tee"</span><span class="p">)</span><span class="o">.</span><span class="n">follow</span><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="n">draw</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">plot_energy()</span></code> draws every run’s stored energy in dB below its peak,
+one curve per run, with the energy criterion as a dashed line when the
+runs share one.  It is the same figure the progress line reports and
+the table lists, and the same method exists on a single run and on
+the in-RAM results.  The axis runs from ten dB below the criterion
+to +5 dB — lower only where a run ended deeper, −100 dB when there is
+no criterion — because the first samples of a run are the empty grid,
+which in dB is a plunge to −3000 that would squash the decay into a
+line along the top; <code class="docutils literal notranslate"><span class="pre">floor_db=</span></code> pins the lower end by hand.</p>
+<p><code class="docutils literal notranslate"><span class="pre">monitor()</span></code> returns a notebook widget — the run table above the
+energy plot — that a background thread refreshes every few seconds
+until the project is finished.  Left as the last expression of a
+cell, the cell returns at once and the panel keeps moving while other
+cells run; <code class="docutils literal notranslate"><span class="pre">panel.stop()</span></code> ends it early.  It needs the <code class="docutils literal notranslate"><span class="pre">jupyter</span></code>
+extra.</p>
+<p>Polling is the deliberate choice.  The store is written by another
+process, often on another file system; a subscription to file-system
+events would need a dependency, would miss events on network mounts,
+and could not tell a half-flushed HDF5 write from a whole one.  A poll
+every few seconds sees everything, because every energy sample is
+flushed as it is taken and the index is replaced atomically.</p>
+</section>
+</section>
+<section id="time">
+<h2>Time<a class="headerlink" href="#time" title="Link to this heading">#</a></h2>
+<p>Every run carries its wall clock: <code class="docutils literal notranslate"><span class="pre">started</span></code> and <code class="docutils literal notranslate"><span class="pre">finished</span></code> (UTC), and
+<code class="docutils literal notranslate"><span class="pre">elapsed</span></code>, the wall time of the <em>marching</em> — summed over the marches
+of a resumed run.  The same three numbers are on every result object
+and on the project, where they span its runs.  The analysis call that
+produced the runs, setup included, is a separate figure: the
+<code class="docutils literal notranslate"><span class="pre">finished</span> <span class="pre">in</span></code> line the call prints, and the <em>last call</em> entry at the
+top of the project’s summary.  The two differ by the setup — the
+stability time step and the port mode solves — which the progress
+output accounts for phase by phase.</p>
+</section>
+<section id="checkpoints-and-resume">
+<h2>Checkpoints and resume<a class="headerlink" href="#checkpoints-and-resume" title="Link to this heading">#</a></h2>
+<p>A streamed run writes a resume checkpoint about eight times over its
+expected length, once more when it finishes, and once on a graceful
+stop (Ctrl-C).  <a class="reference internal" href="../api/core.html#magnelio.resume" title="magnelio.resume"><code class="xref py py-func docutils literal notranslate"><span class="pre">resume()</span></code></a> continues a run from its last
+checkpoint — to finish an aborted one, or to march a finished one
+further under a deeper stop criterion — and appends to the same
+streams, bit-exact with an uninterrupted run of the same length.</p>
+<p><code class="docutils literal notranslate"><span class="pre">proj.checkpoint_state(name)</span></code> (or <code class="docutils literal notranslate"><span class="pre">run.checkpoint_state()</span></code>) reads the
+checkpoint back as a <a class="reference internal" href="../api/io.html#magnelio.io.CheckpointState" title="magnelio.io.CheckpointState"><code class="xref py py-class docutils literal notranslate"><span class="pre">CheckpointState</span></code></a>: a
+read-only mapping with the solver’s own state layout — the completed
+step, the peak energy and port signal, the field vectors, and a group
+per boundary, port and monitor.  Printing it shows the step and the
+sizes, not the field vectors.</p>
+</section>
+<section id="what-prints">
+<h2>What prints<a class="headerlink" href="#what-prints" title="Link to this heading">#</a></h2>
+<p>A result, a run, a project or a checkpoint answers a bare name at the
+prompt with what it is, how large it is and what state it is in — never
+with its arrays.  In a notebook the same summaries render as tables.
+The arrays are one attribute away (<code class="docutils literal notranslate"><span class="pre">result.energy_trace</span></code>,
+<code class="docutils literal notranslate"><span class="pre">s_params.matrix</span></code>); the summary is the part meant to be read.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="sources-monitors.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Sources, monitors and post-processing</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="far-field.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Far-field computation</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#vocabulary">Vocabulary</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reading-a-project">Reading a project</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#a-project-that-is-still-being-written">A project that is still being written</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#watching-from-another-process">Watching from another process</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#time">Time</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#checkpoints-and-resume">Checkpoints and resume</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-prints">What prints</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/methods/projects-and-runs.md.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Bernd Breitkreutz.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

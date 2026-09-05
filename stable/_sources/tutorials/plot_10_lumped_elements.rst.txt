@@ -227,7 +227,7 @@ lossless PEC anyway.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 95 x 17 x 58 cells (0.6 s total)
+      mesh | 95 x 17 x 58 cells (0.8 s total)
     grid: 95 x 17 x 58 cells
 
 
@@ -440,7 +440,7 @@ next tutorial's subject.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 10.030 seconds)
+   **Total running time of the script:** (1 minutes 25.819 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_10_lumped_elements.py:

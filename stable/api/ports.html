@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=8e576371"></script>
+    <script src="../_static/documentation_options.js?v=8fa8b3e9"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -175,18 +175,35 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.5.html">
+  <a class="nav-link nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
   </a>
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../bibliography.html">
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../bibliography.html">
     Bibliography
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -337,6 +354,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
   </a>
 </li>
 
@@ -1165,7 +1189,8 @@ in series (<code class="docutils literal notranslate"><span class="pre">z_full</
 <dt class="sig sig-object py" id="magnelio.ports.PortRefinementReport.target">
 <span class="sig-name descname"><span class="pre">target</span></span><a class="headerlink" href="#magnelio.ports.PortRefinementReport.target" title="Link to this definition">#</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">&quot;z_line&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;epsilon_eff&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;f_cutoff&quot;</span></code> of mode
-<code class="docutils literal notranslate"><span class="pre">mode</span></code>.</p>
+<code class="docutils literal notranslate"><span class="pre">mode</span></code> – the resolved quantity, also when <code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code> was
+asked for.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
@@ -1744,7 +1769,7 @@ conductor.  Mirrors the validation in
 
 <dl class="py function">
 <dt class="sig sig-object py" id="magnelio.ports.refine_port_modes">
-<span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">refine_port_modes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">control</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'z_line'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slab_cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.refine_port_modes" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">refine_port_modes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">control</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slab_cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.refine_port_modes" title="Link to this definition">#</a></dt>
 <dd><p>Converge a port mode’s parameter by refining the port plane alone.</p>
 <p>Builds a slab of the model behind the port face — the model’s
 shapes, materials and lateral closure, cut <code class="docutils literal notranslate"><span class="pre">slab_cells</span></code> of the
@@ -1764,7 +1789,10 @@ it and sets its <code class="docutils literal notranslate"><span class="pre">sub
 port declaration).</p></li>
 <li><p><strong>port</strong> (<em>str</em>) – Name of a declared waveguide port.</p></li>
 <li><p><strong>levels</strong> (<em>int</em><em>, </em><em>default 3</em>) – Number of ladder rungs including level 0 (at most).</p></li>
-<li><p><strong>target</strong> (<em>{&quot;z_line&quot;</em><em>, </em><em>&quot;epsilon_eff&quot;</em><em>, </em><em>&quot;f_cutoff&quot;}</em>) – Quantity to converge.</p></li>
+<li><p><strong>target</strong> (<em>{&quot;auto&quot;</em><em>, </em><em>&quot;z_line&quot;</em><em>, </em><em>&quot;epsilon_eff&quot;</em><em>, </em><em>&quot;f_cutoff&quot;}</em>) – Quantity to converge.  <code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code> (default) follows the mode
+family: the line impedance of a TEM or quasi-TEM mode, the
+cut-off frequency of a TE or TM mode, which has no line
+impedance.  The report names the quantity it converged.</p></li>
 <li><p><strong>mode</strong> (<em>int</em><em>, </em><em>default 0</em>) – Mode index on the port.</p></li>
 <li><p><strong>tol</strong> (<em>float</em><em>, </em><em>default 1e-3</em>) – Stop once the relative change between rungs falls below it.</p></li>
 <li><p><strong>slab_cells</strong> (<em>int</em><em>, </em><em>default 6</em>) – Depth of the slab in cells of the user’s mesh behind the port
