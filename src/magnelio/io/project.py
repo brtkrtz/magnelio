@@ -3735,16 +3735,25 @@ class _InPlacePainter:
             self._tty = False
         self._notebook = not self._tty and _is_notebook_stream(self._stream)
         self._lines = 0
+        self._figure = None
+        self._axes = None
 
-    def paint(self, project: "Project") -> None:
+    def paint(self, project: "Project", draw=None) -> None:
+        """Show *project*; with *draw*, a figure drawn by ``draw(project, ax)`` too."""
         if self._notebook:
             try:
-                from IPython.display import clear_output, display  # noqa: PLC0415
+                from IPython.display import Image, clear_output, display  # noqa: PLC0415
             except ImportError:
                 self._notebook = False
             else:
+                # The inline backend shows a cell's figures when the cell
+                # ends; a figure rendered here as PNG shows now, and
+                # goes with the next clear_output.
+                png = _draw_png(project, draw) if draw is not None else None
                 clear_output(wait=True)
                 display(project)
+                if png is not None:
+                    display(Image(data=png, format="png"))
                 return
         text = repr(project)
         if self._tty and self._lines:
@@ -3756,6 +3765,42 @@ class _InPlacePainter:
             self._stream.write("\n")
         self._stream.flush()
         self._lines = text.count("\n") + 1
+        if draw is not None and self._tty:
+            self._redraw_window(project, draw)
+
+    def _redraw_window(self, project: "Project", draw) -> None:
+        """On a terminal with a GUI backend: one window, redrawn in place."""
+        import matplotlib  # noqa: PLC0415
+
+        backend = matplotlib.get_backend().lower()
+        if backend.endswith("agg") or backend in ("pdf", "ps", "svg", "template"):
+            return  # nothing to show a window on
+        import matplotlib.pyplot as plt  # noqa: PLC0415
+
+        if self._figure is None:
+            self._figure, self._axes = plt.subplots()
+            plt.show(block=False)
+        self._axes.cla()
+        draw(project, self._axes)
+        self._figure.canvas.draw_idle()
+        plt.pause(0.001)
+
+
+def _draw_png(project: "Project", draw) -> bytes:
+    """``draw(project, ax)`` on a fresh Agg figure, returned as PNG bytes."""
+    from io import BytesIO  # noqa: PLC0415
+
+    from matplotlib.backends.backend_agg import FigureCanvasAgg  # noqa: PLC0415
+    from matplotlib.figure import Figure  # noqa: PLC0415
+
+    fig = Figure(figsize=(6.4, 3.2), dpi=100)
+    FigureCanvasAgg(fig)
+    ax = fig.add_subplot()
+    draw(project, ax)
+    fig.tight_layout()
+    buf = BytesIO()
+    fig.savefig(buf, format="png")
+    return buf.getvalue()
 
 
 def _build_monitor_panel(path: Path, interval: float, x: str, ipywidgets):
@@ -4392,7 +4437,14 @@ class Project(ScatteringResultMixin):
             on_change(self)
         return self
 
-    def follow(self, interval: float = 2.0, *, timeout: float | None = None, stream=None):
+    def follow(
+        self,
+        interval: float = 2.0,
+        *,
+        plot=False,
+        timeout: float | None = None,
+        stream=None,
+    ):
         """Watch this project and show its state in place until it is finished.
 
         The zero-code form of :meth:`watch`: at every change the
@@ -4405,6 +4457,24 @@ class Project(ScatteringResultMixin):
         seconds have passed, and returns the project.  Interrupting the
         kernel (Ctrl-C) ends it early.
 
+        ``plot=True`` adds the energy plot (:meth:`plot_energy`) below
+        the table, redrawn with it.  A figure drawn inside a loop of
+        your own would not show until the cell ends — the notebook's
+        inline backend flushes figures per cell — so the figure is
+        rendered here at every change and replaced with the table.  To
+        draw your own picture, pass a callable ``plot(project, ax)``
+        that draws into the fresh axes it is given::
+
+            def draw(proj, ax):
+                proj.plot_energy(ax=ax)
+                ax.set_ylim(-80, 0)
+
+            proj.follow(interval=5, plot=draw)
+
+        On a terminal with a window-capable matplotlib backend the
+        picture is one window redrawn in place; without one (a log, a
+        headless run) only the table is shown.
+
         For a panel that keeps moving while you work in other cells,
         see :meth:`monitor`.
 
@@ -4412,6 +4482,9 @@ class Project(ScatteringResultMixin):
         ----------
         interval : float, default 2.0
             Seconds between two looks at the store.
+        plot : bool or callable, default False
+            ``True`` for the energy plot; a callable ``plot(project,
+            ax)`` for a picture of your own.
         timeout : float, optional
             Give up after this many seconds.
         stream : file-like, optional
@@ -4420,9 +4493,22 @@ class Project(ScatteringResultMixin):
         """
         if not interval > 0.0:
             raise ValueError(f"interval must be positive; got {interval!r}")
+        if plot is True:
+
+            def draw(project, ax):
+                project.plot_energy(ax=ax)
+
+        elif plot is False or plot is None:
+            draw = None
+        elif callable(plot):
+            draw = plot
+        else:
+            raise TypeError(
+                f"plot must be True, False or a callable plot(project, ax); got {plot!r}"
+            )
         painter = _InPlacePainter(stream)
         for _ in self._watch_iter(float(interval), timeout):
-            painter.paint(self)
+            painter.paint(self, draw)
         return self
 
     def monitor(self, interval: float = 2.0, *, x: str = "time"):

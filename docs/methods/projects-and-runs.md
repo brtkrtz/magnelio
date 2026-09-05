@@ -167,6 +167,22 @@ returns it:
 proj = mio.open_project("magic_tee").follow(interval=5)
 ```
 
+`follow(plot=True)` adds the energy plot below the table, redrawn
+with it.  A figure drawn inside a loop of your own would not show
+until the cell ends — the notebook's inline backend flushes a cell's
+figures when the cell is over — so `follow` renders the picture at
+every change and replaces it with the table.  A callable
+`plot(project, ax)` draws a picture of your own into the fresh axes
+it is given, the place for your own limits or an extra curve:
+
+```python
+def draw(proj, ax):
+    proj.plot_energy(ax=ax)
+    ax.set_ylim(-80, 0)
+
+proj = mio.open_project("magic_tee").follow(interval=5, plot=draw)
+```
+
 `plot_energy()` draws every run's stored energy in dB below its peak,
 one curve per run, with the energy criterion as a dashed line when the
 runs share one.  It is the same figure the progress line reports and

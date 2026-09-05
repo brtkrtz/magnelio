@@ -20620,4 +20620,14 @@ cell's stdout is ``ipykernel.iostream``, and ``follow()`` on a finished
 project emits one ``clear_output(wait=True)`` followed by one
 ``display_data`` carrying ``text/html`` — what a front-end renders in
 place.  Gates ``tests/unit/test_project_monitor.py::TestFollow`` (log,
-terminal escape sequence, notebook stub).
+terminal escape sequence, notebook stub).  The second notebook session
+drew ``plt.subplots(); proj.plot_energy(ax=ax)`` inside the loop and
+saw nothing until the run ended: the inline backend flushes a cell's
+figures when the cell is over.  ``follow(plot=True)`` renders the
+energy plot per change on an Agg figure of its own and shows it as a
+PNG under the table (``display(Image)``, gone with the next
+``clear_output``); ``plot=callable(project, ax)`` draws into fresh
+axes for a picture of one's own.  On a terminal with a window-capable
+backend it is one window redrawn in place; headless, only the table.
+Probed in the kernel again: table as ``text/html``, picture as
+``image/png``.  Gates ``::TestFollowPlot``.

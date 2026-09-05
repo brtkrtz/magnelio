@@ -42,7 +42,9 @@ major version is 0, minor releases may change the public API.
   a generator that yields the project at every change until it is
   finished, or a loop that calls `on_change(project)`;
   `Project.follow()`: the same loop ready-made, showing the run table
-  at every change in place of the previous one; and
+  at every change in place of the previous one, with `plot=True` for
+  the energy plot below it or a callable `plot(project, ax)` for a
+  picture of your own; and
   `Project.monitor()`: a notebook panel (run table above the energy
   plot) a background thread keeps current.
 - A how-to, *Watching a simulation that is still running*; a *Projects

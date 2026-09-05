@@ -93,6 +93,7 @@ class TestFollow:
 
         calls = []
         stub = types.SimpleNamespace(
+            Image=type("Image", (), {}),
             clear_output=lambda wait=False: calls.append(("clear", wait)),
             display=lambda obj: calls.append(("display", obj)),
         )
@@ -110,3 +111,76 @@ class TestFollow:
     def test_rejects_a_bad_interval(self, tmp_path):
         with pytest.raises(ValueError, match="interval"):
             _finished_project(tmp_path).follow(interval=-1)
+
+
+class TestFollowPlot:
+    """``follow(plot=…)`` renders the picture per change, where a picture can show."""
+
+    def _notebook_painter(self, monkeypatch, calls):
+        import io
+        import types
+
+        from magnelio.io.project import _InPlacePainter
+
+        class Image:
+            def __init__(self, data, format):
+                self.data, self.format = data, format
+
+        stub = types.SimpleNamespace(
+            Image=Image,
+            clear_output=lambda wait=False: calls.append(("clear", wait)),
+            display=lambda obj: calls.append(("display", obj)),
+        )
+        monkeypatch.setitem(sys.modules, "IPython.display", stub)
+
+        class OutStream(io.StringIO):
+            pass
+
+        OutStream.__module__ = "ipykernel.iostream"
+        return _InPlacePainter(OutStream()), Image
+
+    def test_notebook_shows_table_then_picture(self, tmp_path, monkeypatch):
+        calls = []
+        painter, Image = self._notebook_painter(monkeypatch, calls)
+        proj = _finished_project(tmp_path)
+        seen = []
+
+        def draw(project, ax):
+            seen.append(project)
+            ax.plot([0, 1], [0, -40])
+            ax.set_ylim(-80, 0)
+
+        painter.paint(proj, draw)
+        assert seen == [proj]
+        assert calls[0] == ("clear", True)
+        assert calls[1] == ("display", proj)
+        picture = calls[2][1]
+        assert isinstance(picture, Image)
+        assert picture.data[:8] == b"\x89PNG\r\n\x1a\n"
+
+    def test_follow_plot_true_draws_the_energy(self, tmp_path, monkeypatch):
+        calls = []
+        painter, Image = self._notebook_painter(monkeypatch, calls)
+        monkeypatch.setattr("magnelio.io.project._InPlacePainter", lambda stream=None: painter)
+        proj = _finished_project(tmp_path)
+        assert proj.follow(interval=0.05, plot=True) is proj
+        assert any(isinstance(c[1], Image) for c in calls if c[0] == "display")
+
+    def test_headless_terminal_keeps_only_the_table(self, tmp_path):
+        import io
+
+        from magnelio.io.project import _InPlacePainter
+
+        class Tty(io.StringIO):
+            def isatty(self):
+                return True
+
+        stream = Tty()
+        painter = _InPlacePainter(stream)
+        painter.paint(_finished_project(tmp_path), lambda p, ax: ax.plot([0, 1]))
+        assert painter._figure is None  # Agg cannot show a window; no error either
+        assert "port1_mode0" in stream.getvalue()
+
+    def test_rejects_a_plot_that_is_neither_flag_nor_callable(self, tmp_path):
+        with pytest.raises(TypeError, match="plot must be"):
+            _finished_project(tmp_path).follow(plot="energy")
