@@ -187,7 +187,11 @@ proj = mio.open_project("magic_tee").follow(interval=5, plot=draw)
 one curve per run, with the energy criterion as a dashed line when the
 runs share one.  It is the same figure the progress line reports and
 the table lists, and the same method exists on a single run and on
-the in-RAM results.
+the in-RAM results.  The axis runs from ten dB below the criterion
+to +5 dB — lower only where a run ended deeper, −100 dB when there is
+no criterion — because the first samples of a run are the empty grid,
+which in dB is a plunge to −3000 that would squash the decay into a
+line along the top; `floor_db=` pins the lower end by hand.
 
 `monitor()` returns a notebook widget — the run table above the
 energy plot — that a background thread refreshes every few seconds

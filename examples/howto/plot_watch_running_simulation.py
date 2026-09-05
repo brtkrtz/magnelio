@@ -97,6 +97,13 @@ job.join()
 # output is cleared and redrawn, on a terminal the table is redrawn
 # over its own lines.  On a finished project it shows the final state
 # once: what ran, how long it took, and why each run stopped.
+#
+# ``follow(plot=True)`` adds the energy plot below the table, redrawn
+# with it — a figure drawn inside a loop of your own would not show
+# until the cell ends, because the notebook's inline backend flushes a
+# cell's figures when the cell is over.  ``plot=`` also takes a
+# callable ``draw(project, ax)`` for a picture of your own, with your
+# own axis limits.
 
 proj.follow(interval=0.25)
 
