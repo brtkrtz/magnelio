@@ -7,7 +7,7 @@ import math
 import numpy as np
 import pytest
 
-from magnelio._fields.field_arrays import FieldState
+from magnelio._fields.field_arrays import FieldArrays
 from magnelio._operators.material_matrices import (
     EPS0 as EPS0_MM,
 )
@@ -253,7 +253,7 @@ class TestModalProjections:
 class TestMurAbsorption:
     def test_zero_field_stays_zero(self):
         mesh, _, op, _ = _wr90_setup()
-        fields = FieldState.zeros(mesh.Nx, mesh.Ny, mesh.Nz)
+        fields = FieldArrays.zeros(mesh.Nx, mesh.Ny, mesh.Nz)
         e_before = fields.e_flat.copy()
         op.update_e(fields, t=op._dt, dt=op._dt)
         np.testing.assert_array_equal(fields.e_flat, e_before)
@@ -261,7 +261,7 @@ class TestMurAbsorption:
     def test_step_zero_with_field_only_at_port_yields_correction(self):
         """At step 0, V_*_prev = 0; correction is r·V_int_naive − V_port_naive."""
         mesh, plane, op, discrete = _wr90_setup()
-        fields = FieldState.zeros(mesh.Nx, mesh.Ny, mesh.Nz)
+        fields = FieldArrays.zeros(mesh.Nx, mesh.Ny, mesh.Nz)
         e = fields.e_flat
         # Place mode-0 profile at port edges only (interior stays zero)
         e[plane.e_u_indices] = discrete[0].e_u_profile
@@ -276,7 +276,7 @@ class TestMurAbsorption:
     def test_multi_step_state_persists(self):
         """V_port_prev / V_interior_prev are saved across update_e calls."""
         mesh, plane, op, discrete = _wr90_setup()
-        fields = FieldState.zeros(mesh.Nx, mesh.Ny, mesh.Nz)
+        fields = FieldArrays.zeros(mesh.Nx, mesh.Ny, mesh.Nz)
         e = fields.e_flat
         # Plant a mode-0 profile at the interior plane.  After step 0,
         # the operator's _V_interior_prev should record that.

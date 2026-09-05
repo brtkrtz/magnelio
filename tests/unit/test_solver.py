@@ -52,12 +52,12 @@ class TestEstimateTotalSteps:
         assert n >= 1
 
 
-class TestFieldState:
+class TestFieldArrays:
     def test_zeros_shapes(self):
-        from magnelio._fields.field_arrays import FieldState
+        from magnelio._fields.field_arrays import FieldArrays
 
         Nx, Ny, Nz = 4, 5, 6
-        f = FieldState.zeros(Nx, Ny, Nz)
+        f = FieldArrays.zeros(Nx, Ny, Nz)
         assert f.Ex.shape == (Nx, Ny + 1, Nz + 1)
         assert f.Ey.shape == (Nx + 1, Ny, Nz + 1)
         assert f.Ez.shape == (Nx + 1, Ny + 1, Nz)
@@ -66,9 +66,9 @@ class TestFieldState:
         assert f.Hz.shape == (Nx, Ny, Nz + 1)
 
     def test_all_zeros_initially(self):
-        from magnelio._fields.field_arrays import FieldState
+        from magnelio._fields.field_arrays import FieldArrays
 
-        f = FieldState.zeros(3, 3, 3)
+        f = FieldArrays.zeros(3, 3, 3)
         for comp in ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz"):
             assert np.all(getattr(f, comp) == 0.0)
 

@@ -1,7 +1,7 @@
 """Integration tests for the AnalysisEigenmode high-level API.
 
 Verifies that AnalysisEigenmode.run() returns an EigenmodeResult with correct
-frequencies and FieldState mode shapes for a rectangular PEC cavity, and the
+frequencies and FieldArrays mode shapes for a rectangular PEC cavity, and the
 KB-011 behaviour on a sparsely filled high-contrast cavity (auto-shift
 escalation, loud under-delivery).
 
@@ -15,7 +15,7 @@ import warnings
 import numpy as np
 import pytest
 
-from magnelio._fields.field_arrays import FieldState
+from magnelio._fields.field_arrays import FieldArrays
 from magnelio.analysis.eigenmode import AnalysisEigenmode
 from magnelio.materials.material import Material
 from magnelio.mesh.grid import GridLines
@@ -76,7 +76,7 @@ class TestEigenAnalysis:
         result = AnalysisEigenmode(mesh=mesh, n_modes=3, verbose=False).run()
 
         for i, mode in enumerate(result.modes):
-            assert isinstance(mode, FieldState), f"Mode {i} is not FieldState"
+            assert isinstance(mode, FieldArrays), f"Mode {i} is not FieldArrays"
             # E-field should be non-zero
             assert np.linalg.norm(mode.e_flat) > 0, f"Mode {i}: E=0"
             # H-field should be non-zero

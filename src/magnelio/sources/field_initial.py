@@ -324,7 +324,7 @@ class SourceFieldInitial(Source):
 
     @classmethod
     def _from_store_payload(cls, d: dict, payload: dict) -> SourceFieldInitial:
-        from magnelio._fields.field_arrays import FieldState as _Raw  # noqa: PLC0415
+        from magnelio._fields.field_arrays import FieldArrays as _Raw  # noqa: PLC0415
 
         grid = GridLines(x=payload["x"], y=payload["y"], z=payload["z"])
         raw = _Raw(**{c: np.asarray(payload[c]) for c in ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz")})

@@ -17,7 +17,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from magnelio._fields.field_arrays import FieldState
+from magnelio._fields.field_arrays import FieldArrays
 from magnelio.circuit import EdgePath, integrate_E, rasterize_curve
 from magnelio.geo import Curve
 from magnelio.mesh.grid import GridLines
@@ -34,7 +34,7 @@ def _graded_axis(lo: float, hi: float, n: int, growth: float = 1.18) -> np.ndarr
     return lo + np.concatenate([[0.0], np.cumsum(d)])
 
 
-def _set_uniform(field: FieldState, E0) -> None:
+def _set_uniform(field: FieldArrays, E0) -> None:
     field.Ex[:] = E0[0]
     field.Ey[:] = E0[1]
     field.Ez[:] = E0[2]
@@ -43,7 +43,7 @@ def _set_uniform(field: FieldState, E0) -> None:
 def test_uniform_field_diagonal_polyline():
     """∫E·dl of a uniform field over a diagonal polyline = E·(B − A)."""
     grid = _uniform_grid()
-    field = FieldState.zeros(grid.Nx, grid.Ny, grid.Nz)
+    field = FieldArrays.zeros(grid.Nx, grid.Ny, grid.Nz)
     E0 = (3.0, -2.0, 5.0)
     _set_uniform(field, E0)
 
@@ -62,7 +62,7 @@ def test_uniform_field_helix_is_path_independent():
     property every downstream consumer relies on.
     """
     grid = _uniform_grid()
-    field = FieldState.zeros(grid.Nx, grid.Ny, grid.Nz)
+    field = FieldArrays.zeros(grid.Nx, grid.Ny, grid.Nz)
     E0 = (3.0, -2.0, 5.0)
     _set_uniform(field, E0)
 
@@ -100,7 +100,7 @@ def test_quadratic_potential_exact(graded):
     else:
         grid = _uniform_grid()
 
-    field = FieldState.zeros(grid.Nx, grid.Ny, grid.Nz)
+    field = FieldArrays.zeros(grid.Nx, grid.Ny, grid.Nz)
     xm = 0.5 * (grid.x[:-1] + grid.x[1:])  # x-edge midpoints
     field.Ex[:] = (-2.0 * xm)[:, None, None]  # E_x = −2x
 
@@ -131,7 +131,7 @@ def test_axis_aligned_segment_edges():
 def test_reversing_curve_flips_signs():
     """Reversing endpoints negates every sign and hence the integral."""
     grid = _uniform_grid()
-    field = FieldState.zeros(grid.Nx, grid.Ny, grid.Nz)
+    field = FieldArrays.zeros(grid.Nx, grid.Ny, grid.Nz)
     _set_uniform(field, (1.0, 2.0, -3.0))
 
     A = (grid.x[3], grid.y[4], grid.z[2])
@@ -144,7 +144,7 @@ def test_reversing_curve_flips_signs():
 def test_flat_indices_match_field_layout():
     """Integrating via flat_indices equals integrating via field arrays."""
     grid = _uniform_grid()
-    field = FieldState.zeros(grid.Nx, grid.Ny, grid.Nz)
+    field = FieldArrays.zeros(grid.Nx, grid.Ny, grid.Nz)
     rng = np.random.default_rng(0)
     field.e_flat[:] = rng.standard_normal(field.e_flat.shape)
 

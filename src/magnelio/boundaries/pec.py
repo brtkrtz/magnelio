@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from magnelio._fields.field_arrays import FieldState
+    from magnelio._fields.field_arrays import FieldArrays
 
 
 class PECBoundary:
@@ -48,13 +48,13 @@ class PECBoundary:
         self.wall_mu = wall_mu
         self.wall_roughness = wall_roughness
 
-    def apply(self, E: "FieldState") -> None:
+    def apply(self, E: "FieldArrays") -> None:
         """Zero tangential E-field on this PEC face.
 
         Parameters
         ----------
-        E : FieldState
-            :class:`~magnelio._fields.field_arrays.FieldState` to
+        E : FieldArrays
+            :class:`~magnelio._fields.field_arrays.FieldArrays` to
             modify in place.
         """
         face = self.face
@@ -83,10 +83,10 @@ class PECBoundary:
     # is the dispatching alias used by the FIT-TD inner loop; ``apply_H``
     # is a no-op so the solver can call both unconditionally on every
     # boundary type and let each type opt in to the appropriate stage.
-    def apply_E(self, fields: "FieldState") -> None:
+    def apply_E(self, fields: "FieldArrays") -> None:
         self.apply(fields)
 
-    def apply_H(self, fields: "FieldState") -> None:
+    def apply_H(self, fields: "FieldArrays") -> None:
         return
 
     def __repr__(self) -> str:

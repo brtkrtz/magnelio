@@ -797,10 +797,10 @@ def _eigenmode_fields(mode_arrays: dict, grid):
     the only thing lost, and writing them into the file keeps the
     normalisation reversible.
     """
-    from magnelio._fields.field_arrays import FieldState  # noqa: PLC0415
+    from magnelio._fields.field_arrays import FieldArrays  # noqa: PLC0415
     from magnelio.monitors.base import _interp_to_cell_centres  # noqa: PLC0415
 
-    state = FieldState(**mode_arrays)
+    state = FieldArrays(**mode_arrays)
     cells = _interp_to_cell_centres(
         state,
         ["Ex", "Ey", "Ez", "Hx", "Hy", "Hz"],

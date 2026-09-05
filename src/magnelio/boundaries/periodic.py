@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 from magnelio.mesh.grid import GridLines
 
 if TYPE_CHECKING:
-    from magnelio._fields.field_arrays import FieldState
+    from magnelio._fields.field_arrays import FieldArrays
 
 
 class PeriodicBoundary:
@@ -32,7 +32,7 @@ class PeriodicBoundary:
         self.axis = axis
         self.grid = grid
 
-    def apply_E(self, E: "FieldState") -> None:
+    def apply_E(self, E: "FieldArrays") -> None:
         """Apply periodic BC to E field (copy from opposite face)."""
         if self.axis == "x":
             E.Ey[0, :, :] = E.Ey[-2, :, :]
@@ -44,7 +44,7 @@ class PeriodicBoundary:
             E.Ex[:, :, 0] = E.Ex[:, :, -2]
             E.Ey[:, :, 0] = E.Ey[:, :, -2]
 
-    def apply_H(self, H: "FieldState") -> None:
+    def apply_H(self, H: "FieldArrays") -> None:
         """Apply periodic BC to H field (copy from opposite face)."""
         if self.axis == "x":
             H.Hy[-1, :, :] = H.Hy[1, :, :]

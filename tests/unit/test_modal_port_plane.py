@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from magnelio._fields.field_arrays import FieldState
+from magnelio._fields.field_arrays import FieldArrays
 from magnelio.mesh.grid import GridLines
 from magnelio.mesh.mesher import Mesh
 from magnelio.ports._modal.port_plane import BoxFace, PortPlane
@@ -130,7 +130,7 @@ class TestPortPlaneIndexing:
         Nx, Ny, Nz = 4, 3, 2
         mesh = _small_mesh(Nx, Ny, Nz)
         plane = PortPlane.from_mesh(BoxFace.X_MIN, mesh)
-        fields = FieldState.zeros(Nx, Ny, Nz)
+        fields = FieldArrays.zeros(Nx, Ny, Nz)
         # Set every Ey[0, j, k] to a unique tag; everything else stays 0.
         for j in range(Ny):
             for k in range(Nz + 1):
@@ -149,7 +149,7 @@ class TestPortPlaneIndexing:
         Nx, Ny, Nz = 4, 3, 2
         mesh = _small_mesh(Nx, Ny, Nz)
         plane = PortPlane.from_mesh(BoxFace.X_MIN, mesh)
-        fields = FieldState.zeros(Nx, Ny, Nz)
+        fields = FieldArrays.zeros(Nx, Ny, Nz)
         for j in range(Ny):
             for k in range(Nz + 1):
                 fields.Hz[0, j, k] = 1.0 + 100 * j + k
@@ -164,7 +164,7 @@ class TestPortPlaneIndexing:
         Nx, Ny, Nz = 4, 3, 2
         mesh = _small_mesh(Nx, Ny, Nz)
         plane = PortPlane.from_mesh(BoxFace.X_MAX, mesh)
-        fields = FieldState.zeros(Nx, Ny, Nz)
+        fields = FieldArrays.zeros(Nx, Ny, Nz)
         # u_axis = 2 (z), so E_u = E_z. Ez shape: (Nx+1, Ny+1, Nz).
         for j in range(Ny + 1):
             for k in range(Nz):
@@ -183,7 +183,7 @@ class TestPortPlaneIndexing:
         Nx, Ny, Nz = 4, 3, 2
         mesh = _small_mesh(Nx, Ny, Nz)
         plane = PortPlane.from_mesh(BoxFace.X_MAX, mesh)
-        fields = FieldState.zeros(Nx, Ny, Nz)
+        fields = FieldArrays.zeros(Nx, Ny, Nz)
         # u=z, v=y. H_v = H_y. Hy shape: (Nx, Ny+1, Nz). Use Hy[Nx-1, :, :].
         # H_v co-located with E_u (v-edges below).
         # Actually the test should be: u-edges' co-located H_v is Hy.
@@ -355,7 +355,7 @@ class TestPortPlaneInterior:
         Nx, Ny, Nz = 4, 3, 2
         mesh = _small_mesh(Nx, Ny, Nz)
         plane = PortPlane.from_mesh(BoxFace.X_MIN, mesh)
-        fields = FieldState.zeros(Nx, Ny, Nz)
+        fields = FieldArrays.zeros(Nx, Ny, Nz)
         for j in range(Ny):
             for k in range(Nz + 1):
                 fields.Ey[1, j, k] = 5000 + 10 * j + k
@@ -456,7 +456,7 @@ class TestSubFaceGeometry:
             mesh,
             window=((y_n[1], z_n[0]), (y_n[3], z_n[1])),
         )
-        fields = FieldState.zeros(Nx, Ny, Nz)
+        fields = FieldArrays.zeros(Nx, Ny, Nz)
         for j in range(Ny):
             for k in range(Nz + 1):
                 fields.Ey[0, j, k] = 1000 * j + k

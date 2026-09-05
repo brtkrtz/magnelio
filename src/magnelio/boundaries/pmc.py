@@ -29,7 +29,7 @@ from typing import TYPE_CHECKING
 from magnelio.mesh.grid import GridLines
 
 if TYPE_CHECKING:
-    from magnelio._fields.field_arrays import FieldState
+    from magnelio._fields.field_arrays import FieldArrays
 
 
 class PMCBoundary:
@@ -58,10 +58,10 @@ class PMCBoundary:
         self.face = face
         self.grid = grid
 
-    def apply_E(self, fields: "FieldState") -> None:
+    def apply_E(self, fields: "FieldArrays") -> None:
         return
 
-    def apply_H(self, fields: "FieldState") -> None:
+    def apply_H(self, fields: "FieldArrays") -> None:
         return
 
     def __repr__(self) -> str:

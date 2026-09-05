@@ -43,7 +43,7 @@ class PortPlane:
       dual edges hold ``H_u``.
 
     All ``*_indices`` arrays index the flat E or H vectors of
-    ``FieldState``.  Coordinates are in metres.
+    ``FieldArrays``.  Coordinates are in metres.
 
     Attributes
     ----------
@@ -166,7 +166,7 @@ class PortPlane:
         z_c = 0.5 * (z_n[:-1] + z_n[1:])
         dx, dy, dz = mesh.grid.dx, mesh.grid.dy, mesh.grid.dz
 
-        # Flat-vector offsets (must match FieldState layout)
+        # Flat-vector offsets (must match FieldArrays layout)
         n_Ex = Nx * (Ny + 1) * (Nz + 1)
         n_Ey = (Nx + 1) * Ny * (Nz + 1)
         E_OFF = {0: 0, 1: n_Ex, 2: n_Ex + n_Ey}

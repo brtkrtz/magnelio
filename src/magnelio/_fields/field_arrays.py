@@ -1,5 +1,5 @@
 """
-FieldState: Structure-of-Arrays storage for Yee-staggered E and H fields.
+FieldArrays: Structure-of-Arrays storage for Yee-staggered E and H fields.
 
 E fields are on primary grid edges; H fields are on dual grid face centers.
 See spec.md for field layout and design-decisions.md DD-002.
@@ -39,7 +39,7 @@ def _array_module(arr):
     return np
 
 
-class FieldState:
+class FieldArrays:
     """Yee-staggered electromagnetic field arrays with flat backing store.
 
     All component attributes (Ex, Ey, …) are views into the contiguous
@@ -89,7 +89,7 @@ class FieldState:
         self._n_Hz = Hz.size
 
         # Build contiguous flat storage on same device as inputs.  The flat
-        # store follows the component dtype, so FieldState is precision-
+        # store follows the component dtype, so FieldArrays is precision-
         # transparent: float32 components -> float32 backing store (plan WP1).
         xp = _array_module(Ex)
         self._xp = xp
@@ -172,8 +172,8 @@ class FieldState:
     # -- Factory ------------------------------------------------------------
 
     @classmethod
-    def zeros(cls, Nx: int, Ny: int, Nz: int, xp=None, dtype=float) -> "FieldState":
-        """Allocate a zero-initialized FieldState for a grid of size Nx×Ny×Nz.
+    def zeros(cls, Nx: int, Ny: int, Nz: int, xp=None, dtype=float) -> "FieldArrays":
+        """Allocate a zero-initialized FieldArrays for a grid of size Nx×Ny×Nz.
 
         Args:
             Nx, Ny, Nz: Number of cells in each direction.
@@ -207,7 +207,7 @@ class FieldState:
 
     def __repr__(self) -> str:
         return (
-            f"FieldState("
+            f"FieldArrays("
             f"Ex{self._shape_Ex}, Ey{self._shape_Ey}, Ez{self._shape_Ez}, "
             f"Hx{self._shape_Hx}, Hy{self._shape_Hy}, Hz{self._shape_Hz})"
         )

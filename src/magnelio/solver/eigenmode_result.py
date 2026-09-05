@@ -1,6 +1,6 @@
 """Result container for 3D cavity eigenmode analysis.
 
-Stores resonant frequencies and E/H field patterns as FieldState objects
+Stores resonant frequencies and E/H field patterns as FieldArrays objects
 (one per mode), together with the reference mesh and solver metadata.
 """
 
@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from magnelio._fields.field_arrays import FieldState
+from magnelio._fields.field_arrays import FieldArrays
 
 
 def _real_snapshot(data: dict) -> dict:
@@ -37,8 +37,8 @@ class EigenmodeResult:
     ----------
     frequencies : np.ndarray
         Resonant frequencies [Hz], shape ``(n_modes,)``, ascending.
-    modes : list[FieldState]
-        One FieldState per mode with E and H fields on the Yee grid.
+    modes : list[FieldArrays]
+        One FieldArrays per mode with E and H fields on the Yee grid.
         Field amplitudes are normalised so that ``e^T M_eps e = 1``.
     mesh : Mesh
         Reference mesh (grid, material library).
@@ -47,7 +47,7 @@ class EigenmodeResult:
     """
 
     frequencies: np.ndarray
-    modes: list[FieldState]
+    modes: list[FieldArrays]
     mesh: object
     solver_info: dict = field(default_factory=dict)
 
@@ -209,8 +209,8 @@ class EigenmodeResult:
         Nx: int,
         Ny: int,
         Nz: int,
-    ) -> list[FieldState]:
-        """Build FieldState list from flat E/H mode matrices.
+    ) -> list[FieldArrays]:
+        """Build FieldArrays list from flat E/H mode matrices.
 
         Parameters
         ----------
@@ -223,7 +223,7 @@ class EigenmodeResult:
 
         Returns
         -------
-        list[FieldState]
+        list[FieldArrays]
         """
         n_Ex = Nx * (Ny + 1) * (Nz + 1)
         n_Ey = (Nx + 1) * Ny * (Nz + 1)
@@ -235,7 +235,7 @@ class EigenmodeResult:
         for m in range(n_modes):
             e = E_modes[:, m]
             h = H_modes[:, m]
-            fs = FieldState(
+            fs = FieldArrays(
                 Ex=e[:n_Ex].reshape(Nx, Ny + 1, Nz + 1),
                 Ey=e[n_Ex : n_Ex + n_Ey].reshape(Nx + 1, Ny, Nz + 1),
                 Ez=e[n_Ex + n_Ey :].reshape(Nx + 1, Ny + 1, Nz),

@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 from magnelio._backend.array_api import resolve_precision
-from magnelio._fields.field_arrays import FieldState
+from magnelio._fields.field_arrays import FieldArrays
 
 
 class TestResolvePrecision:
@@ -42,28 +42,28 @@ class TestResolvePrecision:
             resolve_precision("fp8")
 
 
-class TestFieldStatePrecision:
+class TestFieldArraysPrecision:
     def test_zeros_dtype_propagates(self):
-        fs = FieldState.zeros(4, 4, 4, dtype=np.float32)
+        fs = FieldArrays.zeros(4, 4, 4, dtype=np.float32)
         assert fs.e_flat.dtype == np.float32
         assert fs.h_flat.dtype == np.float32
         assert fs.Ex.dtype == np.float32  # views inherit the store dtype
 
     def test_default_is_double(self):
-        # FieldState itself keeps its float64 default; the solver drives the
+        # FieldArrays itself keeps its float64 default; the solver drives the
         # single default through the dtype= argument (precision knob).
-        fs = FieldState.zeros(4, 4, 4)
+        fs = FieldArrays.zeros(4, 4, 4)
         assert fs.e_flat.dtype == np.float64
 
     def test_setter_downcasts_into_single_store(self):
-        fs = FieldState.zeros(3, 3, 3, dtype=np.float32)
+        fs = FieldArrays.zeros(3, 3, 3, dtype=np.float32)
         fs.Ex = np.ones(fs.Ex.shape, dtype=np.float64)
         assert fs.Ex.dtype == np.float32
         assert fs.Ex.flat[0] == pytest.approx(1.0)
 
     def test_from_components_follows_component_dtype(self):
-        shp = FieldState.zeros(2, 2, 2, dtype=np.float32)
-        # A FieldState built from float32 components has a float32 store.
+        shp = FieldArrays.zeros(2, 2, 2, dtype=np.float32)
+        # A FieldArrays built from float32 components has a float32 store.
         assert shp.e_flat.dtype == np.float32
 
 

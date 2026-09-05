@@ -28,7 +28,7 @@ from magnelio._backend.array_api import (
     resolve_backend,
     resolve_precision,
 )
-from magnelio._fields.field_arrays import FieldState
+from magnelio._fields.field_arrays import FieldArrays
 from magnelio._operators.material_matrices import (
     build_M_eps,
     build_M_mu,
@@ -264,7 +264,7 @@ class FITTimeDomainSolver:
     sibc: object | None = None  # SIBCSpec | None
 
     # Internal — set by setup()
-    _fields: FieldState | None = field(default=None, repr=False, init=False)
+    _fields: FieldArrays | None = field(default=None, repr=False, init=False)
     _curl_bufs: tuple | None = field(default=None, repr=False, init=False)
     # Dead-tile skip (TILE_SKIP_PLAN): per-component packed live-tile
     # id device arrays for the fused CUDA kernels, one-time zeroing
@@ -365,7 +365,7 @@ class FITTimeDomainSolver:
         real_dtype, complex_dtype = resolve_precision(self.precision)
         self._real_dtype = real_dtype
         self._complex_dtype = complex_dtype
-        self._fields = FieldState.zeros(Nx, Ny, Nz, xp=xp, dtype=real_dtype)
+        self._fields = FieldArrays.zeros(Nx, Ny, Nz, xp=xp, dtype=real_dtype)
 
         # Curl buffers: only needed for stencil fallback path.
         # Fused paths (CUDA GPU / Numba CPU) need no temporaries.
@@ -781,7 +781,7 @@ class FITTimeDomainSolver:
             stacklevel=3,
         )
 
-    def run(self) -> FieldState:
+    def run(self) -> FieldArrays:
         """Execute the leapfrog time-stepping loop."""
         if self._fields is None:
             self.setup()
@@ -822,7 +822,7 @@ class FITTimeDomainSolver:
             return bool(mx[:, :, -1].all() and my[:, :, -1].all())
         return False
 
-    def _run_loop(self) -> FieldState:
+    def _run_loop(self) -> FieldArrays:
         """The march itself; :meth:`run` wraps it in the wall clock."""
         fields = self._fields
         pec_idx = self._pec_idx_E
