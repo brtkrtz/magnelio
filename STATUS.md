@@ -1,6 +1,6 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-09-04.*  **Released v0.5.2** (2026-09-04; a patch
+*Last updated: 2026-09-05.*  **Released v0.5.2** (2026-09-04; a patch
 under the Cargo reading — nothing in it breaks a 0.5.0 script).  In it:
 **DD-245** (partitioned boundary convolution), **DD-246** (progress
 output), the *Numerical precision* chapter `docs/methods/precision.md`
@@ -23,18 +23,27 @@ Unreleased on feature branches: **DD-249/DD-250** — `lofted(blend=
 on the plain loft's poles, exact zero wall slope at both joints);
 **DD-251** — in-place progress in notebooks, the viewer survives *Run
 All*, tile-skip line gone; **DD-252** — `refine_port_modes` converges
-the cut-off of a TE/TM mode; **DD-253** (branch `feat/run-timing`) —
-every march is timed: `started`/`finished`/`elapsed` on results and per
-run in the store, a running clock and step rate on the FIT-TD line, two
-header lines before the first step, `run | finished in …` after every
-analysis call, and every solver notice through the reporter.  First of
-the usability series DD-253 → DD-254 (run objects, reprs, stale
-detection; the 0.6.0 break of `Project.runs`) → DD-255 (`plot_energy`,
-`watch`, `monitor`).
+the cut-off of a TE/TM mode; and the **usability series DD-253 →
+DD-254 → DD-255** on three stacked branches (`feat/run-timing` →
+`feat/run-objects` → `feat/watch-and-plot-energy`, merge in that
+order, each `--no-ff`): every march is timed and the FIT-TD line
+carries a clock, a rate and — on a fixed step count — an ETA;
+`Project.runs` hands out live `Run` objects (**the 0.6.0 break**,
+`docs/migration-0.6.md`), the project follows its file without
+`refresh()`, an aborted run aborts the project, a dead writer reads
+`stale`, and every result prints a summary instead of its arrays;
+`plot_energy()` (axis from ten dB below the criterion to +5 dB),
+`Project.watch()`, `Project.follow(plot=)` and `Project.monitor()` plus
+the how-to *Watching a simulation that is still running* and the
+chapter *Projects and runs*.  Release **0.6.0** once merged — not
+tagged.
 
-Open: KB-023, KB-038, KB-043 and KB-046.  Unit and integration: 3339 passed /
-10 skipped (2026-09-04, `CUPY_ACCELERATORS=""`).  Channels: GitHub, PyPI,
-conda-forge and the two docs channels below.
+Open: KB-023, KB-038, KB-043 and KB-046.  Unit and integration on the
+DD-255 branch: 3395 passed / 10 skipped in the last full run, plus the
+six that failed there re-run green after their fixes (2026-09-05; the
+four GPU tests need `CUPY_ACCELERATORS=""` outside the sandbox, where
+`cuda_fp8.hpp` fails to compile).  Channels: GitHub, PyPI, conda-forge
+and the two docs channels below.
 
 This file states what *is*.  Chronology: `git log --first-parent main`;
 reasoning: `design-decisions.md`; open bugs: `known-bugs.md`.  Measured
@@ -44,6 +53,7 @@ floors regenerate from the `validation/` certificates their DDs name.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-255** (2026-09-05) — a run is watched by polling the store, and one figure is what everyone watches.  `Project.watch(interval, on_change=, timeout=)` — a generator yielding the project at every change (signature: index stamp + per-run `(state, n_energy_samples)`) until `done`/`aborted`/`stale`; **polling on purpose** (no inotify: dependency, blind on network mounts and to half flushes).  `plot_energy()` on `TDResult`/`ScatteringTDResult`/`Run`/`Project`: dB below peak, criterion dashed, `plot_s` conventions — the same number as the progress line and the table.  `Project.monitor()`: `VBox(HTML, Image)` refreshed by a daemon thread that sets **widget state only** (DD-251's rule) and renders on its own Agg canvas, never pyplot.  `Run.n_steps` moves while marching (latest energy sample's step).  **Amendments from the first notebook session:** `Project.follow(interval, plot=, timeout=, stream=)` — the watch loop ready-made, its display *replacing itself* (notebook `clear_output`+`display`, terminal `ESC[nA`, log appended; a bare expression in a loop shows nothing, and the inline backend flushes figures only at cell end, so `plot=True`/`plot=callable(project, ax)` renders the picture per change as PNG), probed in a real ipykernel via `jupyter_client`; the energy axis runs from ten dB below the criterion to +5 dB (`floor_db=`), because the empty grid's first samples read −3000 dB.  How-to *Watching a simulation that is still running* (solver on a thread, real output), Tutorial 07's nine-statement energy block is `proj.plot_energy()`.  Gates `test_plot_energy.py`, `test_project_monitor.py`, `test_project_watch.py`.
 * **DD-254** (2026-09-05) — a run is an object, a project knows whether anyone is still writing it, and nothing prints its arrays.  **The 0.6.0 break:** `Project.runs` is a mapping of live `Run` views (`.state .n_steps .energy_db .energy_trace .elapsed .result() .monitors`; channel keys tuples; `docs/migration-0.6.md`).  `meta` follows `project.json` by `(mtime, inode, size)` until the stored status is terminal, so a live watcher needs no `refresh()`; `_load_run` keys its cache on `(n_steps, finished)`.  Status rule fixed (any aborted → **aborted**, was `running` forever); **`stale`** derived from the writer's pid on the same host (POSIX; elsewhere unknown → `running`).  Repr principle in `_repr.py` (what, how big, what state — never arrays): `Project` prints a summary plus run table and **cannot raise**, `CheckpointState` is a `Mapping` that prints sizes, `TDResult`/`ScatteringTDResult`/`SParameterResult`/`RunSettings` summarise, HTML tables in notebooks.  `check_api_surface.py` pin now lists DD-246's verbosity switch (had drifted).  Gates `TestRunObjects`, `TestProjectStatus`, `TestCheckpointState`, `test_repr.py`.
 * **DD-253** (2026-09-05) — every march is timed, and the time loop says what runs and how long it has run.  The clock lives in `FITTimeDomainSolver.run()` (a wrapper around the loop with a `finally`, so all five exits and exceptions are covered) and reaches the result objects (`started`/`finished`/`elapsed`, marching only, in the result contract) and the store (`_RunSink.close(elapsed=)`, `_finalize_run` **accumulates** over resumes, `reopen_run` stamps `resumed`; `pid`/`host` on every run entry and as `meta["writer"]`; `meta["analysis"]` for the whole call).  The line: `step 2900/∞ | 0.7 s | energy -58.4/-70 dB | 3.9k steps/s`, closing line in the same slots; **ETA only on a fixed step count** — the run-length estimate is a 25-transit scale, an ETA on it would overstate a TEM run several-fold, so the header states the *rule* (`stops at energy -70 dB or port signal -60 dB, cap 388480 steps`) instead of a number.  `run | finished in 2.6 s (2 runs)` per `run()`/`resume()`; seven bare prints now go through `Reporter.note` (multi-line aware).  Gates `TestDurations`, `TestMarchLines`, `TestRunTiming`.
 * **DD-252** (2026-09-04) — `refine_port_modes` converges what the mode family defines.  The DD-244 ladder defaulted to `z_line`, and the round port of a rectangular-to-circular taper — whose cut-off the grid reads **0.33 % low**, which β amplifies to 2 % at 11.9 GHz — answered `has no line impedance`.  `target="auto"` (default) resolves from the level-0 report: line impedance for TEM/quasi-TEM, cut-off for TE/TM, written into the report; an explicit `z_line` on a TE mode names the way out.  Gates in `test_modal_refinement.py`.

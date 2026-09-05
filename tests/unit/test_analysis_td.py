@@ -261,7 +261,11 @@ class TestTDResult:
             r.excitation_signal("q")
         with pytest.raises(ValueError, match="'V' or 'I'"):
             r.signal("p", kind="P")
-        assert "TDResult(" in repr(r)
+        # A repr says what it is and what state it is in — never its arrays.
+        text = repr(r)
+        assert text.startswith("TDResult")
+        assert "steps" in text
+        assert "array(" not in text
 
     def test_power_waves_need_port_modes(self):
         with pytest.raises(ValueError, match="no port_modes"):

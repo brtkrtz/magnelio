@@ -138,7 +138,7 @@ for root, _dirs, files in sorted(os.walk(proj_dir)):
 # signals, with the accessors you already know:
 
 proj = mio.open_project(proj_dir)
-print(proj.status, "| runs:", list(proj.runs))
+print(proj)
 
 fig, ax = proj.plot_s(("port1", "port3"), ("port1", "port4"), ("port4", "port3"))
 ax.set_title("Read back from the project store")
@@ -149,31 +149,26 @@ ax.set_title("Read back from the project store")
 #
 # Alongside the port signals the store keeps the total field energy
 # in the grid, sampled whenever the solver checks its stopping
-# criterion.  Reading it back is one call, and the curve is the
-# clearest single picture of what a time-domain run does: the
-# excitation pumps energy in, the ports carry it out, and the run
-# ends when what remains has fallen far enough below the peak.
+# criterion.  ``plot_energy`` draws it for every run, in dB below the
+# run's peak — the number the progress line reports and the stop
+# criterion watches — with that criterion as a dashed line.  The curve
+# is the clearest single picture of what a time-domain run does: the
+# excitation pumps energy in, the ports carry it out, and the run ends
+# when what remains has fallen far enough below the peak.
 #
 # This is also the trace to watch while a long simulation is still
 # running.  Each sample is flushed to disk as it is taken, so a second
 # process — another shell, a notebook on your laptop — can
 # :func:`~magnelio.open_project` the very same directory and follow
-# the progress live, without touching the job that is computing.
+# the run live, without touching the job that is computing; the
+# how-to *Watching a simulation that is still running* shows the
+# loop, and the live panel for a notebook.
 
-trace = proj.energy_trace("port3")
+fig, ax = proj.plot_energy()
+ax.set_title("Energy in the grid during the two runs")
 
-fig, ax = plt.subplots()
-ax.semilogy(trace["time"] * 1e9, trace["energy"])
-ax.set_xlabel("time [ns]")
-ax.set_ylabel("stored field energy [J]")
-ax.set_title("Energy in the grid during the H-arm run")
-# clamp the y-axis to the decades that carry the decay
-peak = trace["energy"].max()
-ax.set_ylim(peak * 1e-6, peak * 3)
-ax.grid(True, alpha=0.3)
-
-print(f"energy samples stored: {len(trace)}")
-print(f"peak {trace['energy'].max():.3e} J -> final {trace['energy'][-1]:.3e} J")
+trace = proj.runs["port3_mode0"].energy_trace
+print(f"energy samples stored for the H-arm run: {len(trace)}")
 
 # %%
 # The monitor data of *every* run is preserved — where the previous
@@ -265,7 +260,8 @@ for name in sorted(os.listdir(run_dir)):
 # seam, and a generated ParaView session per run.  What we did *not*
 # need: keeping the Python session alive, or re-running anything.
 # A second process can even open the project *while* the solver
-# marches and watch the energy and S-parameters converge live.
+# marches and watch the energy and S-parameters converge live — the
+# how-to *Watching a simulation that is still running* is that recipe.
 #
 # The tee is now exhausted as a teaching device for closed structures.
 # The next tutorial opens the domain: absorbing boundaries, and with

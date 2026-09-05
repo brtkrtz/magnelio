@@ -45,3 +45,7 @@ is still alive — and prints as a summary rather than a dump.  See
   (`energy_traces`).
 * Results, runs, projects, S-parameter matrices and checkpoints print
   as short summaries, and as tables in a notebook.
+* `plot_energy()` on results, runs and projects; `Project.watch()`,
+  `Project.follow()` and `Project.monitor()` to follow a project
+  another process is writing — see *Projects and runs* and the how-to
+  *Watching a simulation that is still running*.
