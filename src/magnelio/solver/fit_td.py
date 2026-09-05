@@ -46,6 +46,7 @@ from magnelio._operators.numba_kernels import (
     update_H_fused,
     update_H_fused_cuda,
     update_H_stencil,
+    weighted_dot,
 )
 from magnelio._progress import Reporter, format_clock, format_rate, format_seconds, utc_now
 from magnelio.boundaries.cpml import CPMLBoundary
@@ -284,6 +285,9 @@ class FITTimeDomainSolver:
     # factor (periodic / unknown types) — keeps one per-step
     # e[pec_idx] = 0 re-enforcement alive; set in setup().
     _pec_reenforce_after_bc: bool = field(default=False, repr=False, init=False)
+    # PEC bbox faces whose tangential edges the mask already freezes
+    # (alpha_E = beta_E = 0): their per-step ``apply_E`` is skipped.
+    _pec_faces_frozen: frozenset = field(default=frozenset(), repr=False, init=False)
     # ADE pole-current operator for dispersive materials (DD-084);
     # None on meshes without a dispersive material.
     _dispersion: object | None = field(default=None, repr=False, init=False)
@@ -553,6 +557,19 @@ class FITTimeDomainSolver:
             self._alpha_E[self._pec_idx_E] = 0.0
             self._beta_E[self._pec_idx_E] = 0.0
 
+        # A PEC bbox face whose tangential edges are all in the mask
+        # is held at +0.0 by the kernel for the same reason, so its
+        # per-step ``apply_E`` (twelve strided slice writes per step
+        # with six faces, 8 % of a step on Apple Silicon) is dead work.
+        # Every mesh factory consolidates its PEC closure into the mask
+        # (``Mesh.with_pec_boundaries``); a mesh whose mask lacks a face
+        # keeps the per-step write for it.
+        self._pec_faces_frozen = frozenset(
+            face
+            for face, bc in self.boundary_conditions.items()
+            if isinstance(bc, PECBoundary) and self._face_edges_all_pec(face, Nx, Ny, Nz)
+        )
+
         # One per-step re-enforcement remains ONLY for BC types that
         # write E directly without a beta_E factor: PeriodicBoundary
         # copies whole E slices (and unknown/user BC types are treated
@@ -782,11 +799,35 @@ class FITTimeDomainSolver:
             self._elapsed = time.perf_counter() - self._t_wall0
             self._finished = utc_now()
 
+    def _face_edges_all_pec(self, face: str, Nx: int, Ny: int, Nz: int) -> bool:
+        """True when every tangential E-edge on bbox *face* is a PEC edge."""
+        mask = self._pec_mask_E
+        if mask is None:
+            return False
+        n_Ex, n_Ey = self._n_Ex, self._n_Ey
+        mx = mask[:n_Ex].reshape(Nx, Ny + 1, Nz + 1)
+        my = mask[n_Ex : n_Ex + n_Ey].reshape(Nx + 1, Ny, Nz + 1)
+        mz = mask[n_Ex + n_Ey :].reshape(Nx + 1, Ny + 1, Nz)
+        if face == "xmin":
+            return bool(my[0].all() and mz[0].all())
+        if face == "xmax":
+            return bool(my[-1].all() and mz[-1].all())
+        if face == "ymin":
+            return bool(mx[:, 0].all() and mz[:, 0].all())
+        if face == "ymax":
+            return bool(mx[:, -1].all() and mz[:, -1].all())
+        if face == "zmin":
+            return bool(mx[:, :, 0].all() and my[:, :, 0].all())
+        if face == "zmax":
+            return bool(mx[:, :, -1].all() and my[:, :, -1].all())
+        return False
+
     def _run_loop(self) -> FieldState:
         """The march itself; :meth:`run` wraps it in the wall clock."""
         fields = self._fields
         pec_idx = self._pec_idx_E
         pec_reenforce = self._pec_reenforce_after_bc
+        pec_frozen = self._pec_faces_frozen
         Nx, Ny, Nz = self.mesh.Nx, self.mesh.Ny, self.mesh.Nz
         n_steps = self.total_time_steps
         if n_steps is None and self.energy_stop_db is None and self.port_signal_stop_db is None:
@@ -977,8 +1018,11 @@ class FITTimeDomainSolver:
             # PMC is an H-constraint and runs after the H-update below;
             # ``apply_E`` is a no-op on PMC, ``apply_H`` is a no-op on
             # PEC.
+            # Faces in ``pec_frozen`` are held at +0.0 by the kernel
+            # (alpha_E = beta_E = 0 on their edges, see setup) and skip
+            # the slice writes.
             for face, bc in self.boundary_conditions.items():
-                if face in port_faces and hasattr(bc, "apply_E"):
+                if face in port_faces or face in pec_frozen:
                     pass
                 elif hasattr(bc, "apply_E"):
                     bc.apply_E(fields)
@@ -986,7 +1030,7 @@ class FITTimeDomainSolver:
                     bc.update_E(fields, beta_E)
             # Re-enforce PEC after all CPML E-corrections
             for face, bc in self.boundary_conditions.items():
-                if face in port_faces:
+                if face in port_faces or face in pec_frozen:
                     continue
                 if hasattr(bc, "apply_E"):
                     bc.apply_E(fields)
@@ -1143,13 +1187,21 @@ class FITTimeDomainSolver:
                 # it non-positive (the pairing is positive definite only
                 # under the CFL limit), the naive form stands in, so the
                 # decay stop always sees a usable number.
-                energy_E = float(self._xp.sum(M_eps_diag * e * e, dtype=np.float64))
-                energy_H = float(self._xp.sum(M_mu_diag * h_prev * h, dtype=np.float64))
+                if use_numba:
+                    # Temporaries-free reduction (the array form
+                    # allocates two full-size temporaries per term).
+                    energy_E = weighted_dot(M_eps_diag, e, e)
+                    energy_H = weighted_dot(M_mu_diag, h_prev, h)
+                else:
+                    energy_E = float(self._xp.sum(M_eps_diag * e * e, dtype=np.float64))
+                    energy_H = float(self._xp.sum(M_mu_diag * h_prev * h, dtype=np.float64))
                 current_energy = 0.5 * (energy_E + energy_H)
                 if not current_energy > 0.0:
-                    current_energy = 0.5 * (
-                        energy_E + float(self._xp.sum(M_mu_diag * h * h, dtype=np.float64))
-                    )
+                    if use_numba:
+                        energy_HH = weighted_dot(M_mu_diag, h, h)
+                    else:
+                        energy_HH = float(self._xp.sum(M_mu_diag * h * h, dtype=np.float64))
+                    current_energy = 0.5 * (energy_E + energy_HH)
                 energy_trace.append((n, current_energy))
 
                 # Stream the newly recorded V/I tail + this energy sample

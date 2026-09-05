@@ -8,8 +8,10 @@ Three tiers of dispatch (fastest first):
    grid point, single-pass curl + material multiply.  GPU only.
 
 2. **Numba CPU** (``update_E_fused`` / ``update_H_fused``):
-   Fused curl + material multiply in a single pass per component.
-   ``parallel=True`` for multi-threaded execution.
+   Fused curl + material multiply, all three components in one sweep
+   (guard-free interior, guarded shell).  ``parallel=True`` for
+   multi-threaded execution; ``weighted_dot`` is the matching
+   temporaries-free energy reduction.
 
 3. **Array stencil** (``update_E_stencil`` / ``update_H_stencil``):
    Uses only slice ops (``+=``, ``-=``, ``[:] =``) that work on both
@@ -23,6 +25,8 @@ uses these to pick the fastest path automatically.
 
 from __future__ import annotations
 
+import numpy as np
+
 try:
     from numba import njit, prange
 
@@ -32,103 +36,184 @@ except ImportError:
 
 
 if HAS_NUMBA:
+    # ── Per-edge E updates with neighbour guards ─────────────────────
+    #
+    # The dual curl on a boundary E-edge sums fewer than four H faces.
+    # These helpers keep the original guard-and-accumulate form (double
+    # accumulator, same operation order) and are inlined into the shell
+    # loops of ``update_E_fused``; the interior loop below spells the
+    # same four terms without guards, so the two agree bit for bit.
+
+    @njit(inline="always")
+    def _ex_edge(i, j, k, Ex, Hy, Hz, aEx, bEx, nj, nk):
+        curl = 0.0
+        if j < nj - 1:
+            curl += Hz[i, j, k]
+        if j > 0:
+            curl -= Hz[i, j - 1, k]
+        if k < nk - 1:
+            curl -= Hy[i, j, k]
+        if k > 0:
+            curl += Hy[i, j, k - 1]
+        Ex[i, j, k] = aEx[i, j, k] * Ex[i, j, k] + bEx[i, j, k] * curl
+
+    @njit(inline="always")
+    def _ey_edge(i, j, k, Ey, Hx, Hz, aEy, bEy, ni, nk):
+        curl = 0.0
+        if k < nk - 1:
+            curl += Hx[i, j, k]
+        if k > 0:
+            curl -= Hx[i, j, k - 1]
+        if i < ni - 1:
+            curl -= Hz[i, j, k]
+        if i > 0:
+            curl += Hz[i - 1, j, k]
+        Ey[i, j, k] = aEy[i, j, k] * Ey[i, j, k] + bEy[i, j, k] * curl
+
+    @njit(inline="always")
+    def _ez_edge(i, j, k, Ez, Hx, Hy, aEz, bEz, ni, nj):
+        curl = 0.0
+        if i < ni - 1:
+            curl += Hy[i, j, k]
+        if i > 0:
+            curl -= Hy[i - 1, j, k]
+        if j < nj - 1:
+            curl -= Hx[i, j, k]
+        if j > 0:
+            curl += Hx[i, j - 1, k]
+        Ez[i, j, k] = aEz[i, j, k] * Ez[i, j, k] + bEz[i, j, k] * curl
 
     @njit(parallel=True, cache=True)
     def update_E_fused(Ex, Ey, Ez, Hx, Hy, Hz, aEx, bEx, aEy, bEy, aEz, bEz):
         """Fused dual-curl + material E-update: E = alpha*E + beta*curl_H.
 
-        Boundary E-edges with fewer than four H-face neighbours are
-        handled via conditional accumulation (same result as the
-        zero+accumulate numpy stencil, but in one pass).
+        One parallel sweep over the x planes updates all three
+        components plane by plane: on plane ``i`` first Ex, then Ey,
+        then Ez.  The three consecutive plane passes share the H planes
+        ``i`` and ``i-1``, which stay in cache between them, so each H
+        array streams from memory once per step instead of twice as it
+        did with three separate whole-grid sweeps.  Finer interleaving
+        (per row) trains the hardware prefetcher anew every row and
+        loses on Apple Silicon; per plane every array is one long
+        sequential stream.
+
+        Within a plane the interior rows run guard-free (every
+        neighbour present) and the shell — outer planes, outer rows,
+        column ends — runs the guarded per-edge form.  Both keep the
+        double accumulator and the operation order of the earlier
+        per-component sweeps, so results are bit-identical to them.
+
+        Shapes: Ex (Nx, Ny+1, Nz+1), Ey (Nx+1, Ny, Nz+1),
+        Ez (Nx+1, Ny+1, Nz); Hx (Nx+1, Ny, Nz), Hy (Nx, Ny+1, Nz),
+        Hz (Nx, Ny, Nz+1).
         """
-        # --- Ex: shape (Nx, Ny+1, Nz+1) ---
-        # curl_H component: dHz/dy - dHy/dz
-        ni, nj, nk = Ex.shape
-        for i in prange(ni):
-            for j in range(nj):
-                for k in range(nk):
-                    curl = 0.0
-                    if j < nj - 1:
-                        curl += Hz[i, j, k]
-                    if j > 0:
-                        curl -= Hz[i, j - 1, k]
-                    if k < nk - 1:
-                        curl -= Hy[i, j, k]
-                    if k > 0:
-                        curl += Hy[i, j, k - 1]
-                    Ex[i, j, k] = aEx[i, j, k] * Ex[i, j, k] + bEx[i, j, k] * curl
+        Nx = Ex.shape[0]
+        Ny = Ey.shape[1]
+        Nz = Ez.shape[2]
+        nix, njx, nkx = Ex.shape
+        niy, njy, nky = Ey.shape
+        niz, njz, nkz = Ez.shape
 
-        # --- Ey: shape (Nx+1, Ny, Nz+1) ---
-        # curl_H component: dHx/dz - dHz/dx
-        ni, nj, nk = Ey.shape
-        for i in prange(ni):
-            for j in range(nj):
-                for k in range(nk):
-                    curl = 0.0
-                    if k < nk - 1:
+        for i in prange(Nx + 1):
+            outer_x = i == 0 or i == Nx
+
+            # ── Ex plane i (no plane Nx) ─────────────────────────────
+            if i < nix:
+                for j in range(njx):
+                    if j == 0 or j == Ny:
+                        for k in range(nkx):
+                            _ex_edge(i, j, k, Ex, Hy, Hz, aEx, bEx, njx, nkx)
+                    else:
+                        _ex_edge(i, j, 0, Ex, Hy, Hz, aEx, bEx, njx, nkx)
+                        for k in range(1, Nz):
+                            curl = 0.0
+                            curl += Hz[i, j, k]
+                            curl -= Hz[i, j - 1, k]
+                            curl -= Hy[i, j, k]
+                            curl += Hy[i, j, k - 1]
+                            Ex[i, j, k] = aEx[i, j, k] * Ex[i, j, k] + bEx[i, j, k] * curl
+                        _ex_edge(i, j, Nz, Ex, Hy, Hz, aEx, bEx, njx, nkx)
+
+            # ── Ey plane i ───────────────────────────────────────────
+            for j in range(njy):
+                if outer_x:
+                    for k in range(nky):
+                        _ey_edge(i, j, k, Ey, Hx, Hz, aEy, bEy, niy, nky)
+                else:
+                    _ey_edge(i, j, 0, Ey, Hx, Hz, aEy, bEy, niy, nky)
+                    for k in range(1, Nz):
+                        curl = 0.0
                         curl += Hx[i, j, k]
-                    if k > 0:
                         curl -= Hx[i, j, k - 1]
-                    if i < ni - 1:
                         curl -= Hz[i, j, k]
-                    if i > 0:
                         curl += Hz[i - 1, j, k]
-                    Ey[i, j, k] = aEy[i, j, k] * Ey[i, j, k] + bEy[i, j, k] * curl
+                        Ey[i, j, k] = aEy[i, j, k] * Ey[i, j, k] + bEy[i, j, k] * curl
+                    _ey_edge(i, j, Nz, Ey, Hx, Hz, aEy, bEy, niy, nky)
 
-        # --- Ez: shape (Nx+1, Ny+1, Nz) ---
-        # curl_H component: dHy/dx - dHx/dy
-        ni, nj, nk = Ez.shape
-        for i in prange(ni):
-            for j in range(nj):
-                for k in range(nk):
-                    curl = 0.0
-                    if i < ni - 1:
+            # ── Ez plane i ───────────────────────────────────────────
+            for j in range(njz):
+                if outer_x or j == 0 or j == Ny:
+                    for k in range(nkz):
+                        _ez_edge(i, j, k, Ez, Hx, Hy, aEz, bEz, niz, njz)
+                else:
+                    for k in range(nkz):
+                        curl = 0.0
                         curl += Hy[i, j, k]
-                    if i > 0:
                         curl -= Hy[i - 1, j, k]
-                    if j < nj - 1:
                         curl -= Hx[i, j, k]
-                    if j > 0:
                         curl += Hx[i, j - 1, k]
-                    Ez[i, j, k] = aEz[i, j, k] * Ez[i, j, k] + bEz[i, j, k] * curl
+                        Ez[i, j, k] = aEz[i, j, k] * Ez[i, j, k] + bEz[i, j, k] * curl
 
     @njit(parallel=True, cache=True)
     def update_H_fused(Ex, Ey, Ez, Hx, Hy, Hz, aHx, bHx, aHy, bHy, aHz, bHz):
         """Fused primal-curl + material H-update: H = alpha*H - beta*curl_E.
 
         The primal curl has no boundary issues — all face indices are
-        guaranteed in-bounds, so no conditionals are needed.
+        guaranteed in-bounds, so no conditionals are needed.  Same
+        plane-by-plane organisation as :func:`update_E_fused`: on
+        plane ``i`` first Hx, then Hy, then Hz, sharing the E planes
+        ``i`` and ``i+1`` through the cache.  Bit-identical to the
+        earlier per-component sweeps.
         """
-        # --- Hx: shape (Nx+1, Ny, Nz) ---
-        # curl_E component: dEz/dy - dEy/dz
-        ni, nj, nk = Hx.shape
-        for i in prange(ni):
-            for j in range(nj):
-                for k in range(nk):
+        Nx = Hy.shape[0]
+        nix, njx, nkx = Hx.shape
+        niy, njy, nky = Hy.shape
+        niz, njz, nkz = Hz.shape
+
+        for i in prange(Nx + 1):
+            for j in range(njx):
+                for k in range(nkx):
                     curl = Ez[i, j + 1, k] - Ez[i, j, k] - Ey[i, j, k + 1] + Ey[i, j, k]
                     Hx[i, j, k] = aHx[i, j, k] * Hx[i, j, k] - bHx[i, j, k] * curl
+            if i < niy:
+                for j in range(njy):
+                    for k in range(nky):
+                        curl = Ex[i, j, k + 1] - Ex[i, j, k] - Ez[i + 1, j, k] + Ez[i, j, k]
+                        Hy[i, j, k] = aHy[i, j, k] * Hy[i, j, k] - bHy[i, j, k] * curl
+            if i < niz:
+                for j in range(njz):
+                    for k in range(nkz):
+                        curl = Ey[i + 1, j, k] - Ey[i, j, k] - Ex[i, j + 1, k] + Ex[i, j, k]
+                        Hz[i, j, k] = aHz[i, j, k] * Hz[i, j, k] - bHz[i, j, k] * curl
 
-        # --- Hy: shape (Nx, Ny+1, Nz) ---
-        # curl_E component: dEx/dz - dEz/dx
-        ni, nj, nk = Hy.shape
-        for i in prange(ni):
-            for j in range(nj):
-                for k in range(nk):
-                    curl = Ex[i, j, k + 1] - Ex[i, j, k] - Ez[i + 1, j, k] + Ez[i, j, k]
-                    Hy[i, j, k] = aHy[i, j, k] * Hy[i, j, k] - bHy[i, j, k] * curl
+    @njit(parallel=True, cache=True)
+    def weighted_dot(w, a, b):
+        """``sum(w * a * b)`` accumulated in double, without temporaries.
 
-        # --- Hz: shape (Nx, Ny, Nz+1) ---
-        # curl_E component: dEy/dx - dEx/dy
-        ni, nj, nk = Hz.shape
-        for i in prange(ni):
-            for j in range(nj):
-                for k in range(nk):
-                    curl = Ey[i + 1, j, k] - Ey[i, j, k] - Ex[i, j + 1, k] + Ex[i, j, k]
-                    Hz[i, j, k] = aHz[i, j, k] * Hz[i, j, k] - bHz[i, j, k] * curl
+        The stored-energy check of the time loop evaluates two of these
+        per sample over the whole state; the array form allocates two
+        full-size temporaries per term and walks them, which at a
+        16-Mcell grid costs as much as several time steps.
+        """
+        s = 0.0
+        for i in prange(a.size):
+            s += np.float64(w[i]) * np.float64(a[i]) * np.float64(b[i])
+        return s
 
 else:
     update_E_fused = None
     update_H_fused = None
+    weighted_dot = None
 
 
 # ── Array-stencil kernels (NumPy / CuPy compatible) ─────────────────────

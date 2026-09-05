@@ -13,6 +13,11 @@ CUDA kernels via CuPy {cite}`cupy2017` with
 (device-resident recorder staging, fused port-plane transfers, CUDA
 graph capture of the device phases, DD-092) is performance
 engineering.  S-parameters on GPU are gated bit-exact against CPU.
+The CPU kernels sweep the grid plane by plane, updating all three
+field components per plane so every field array streams from memory
+once per half-step; at production mesh sizes they move about 85 % of
+the bandwidth a STREAM triad reaches from Numba on the same CPU
+(DD-257), which is the practical ceiling short of temporal blocking.
 
 ## Precision
 
