@@ -9,6 +9,19 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+### Changed
+
+- The CPU time step is about 1.2× faster on both x86 and Apple Silicon
+  at production mesh sizes (16 Mcells: 40.6 → 50.0 GB/s on a Ryzen
+  7800X3D, 91 → 111 GB/s on an M1 Pro).  The Numba field-update
+  kernels sweep the grid once per half-step for all three components
+  instead of once per component, their interior loops carry no
+  boundary guards any more, the PEC closure of a mesh is no longer
+  re-written every step (the coefficients already hold it), and the
+  stored-energy check runs without full-size temporaries.  Results are
+  bit-identical to the previous kernels; only the energy samples
+  differ, in the last digits, by summation order.
+
 ### Fixed
 
 - A `ThinWire` drawn onto the top face of a thin metallisation (a bond

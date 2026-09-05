@@ -1,6 +1,6 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-09-05.*  **Released v0.6.0** (2026-09-05; a minor
+*Last updated: 2026-09-05 (evening).*  **Released v0.6.0** (2026-09-05; a minor
 under the Cargo reading — `Project.runs` hands out `Run` objects
 instead of dictionaries, `docs/migration-0.6.md`).  In it: the
 usability series **DD-253** (every march timed; the FIT-TD line with a
@@ -22,7 +22,7 @@ port on the GPU (KB-045); v0.5.0 (2026-09-02) DD-224…DD-241 — the API
 grammar and its Phases A–D, the content gate on the public remote and
 `docs/migration-0.5.md`; the band/QTEM track DD-230…DD-239 is closed.
 
-Open: KB-023, KB-038, KB-043 and KB-046.  Unit and integration: 3401
+Open: KB-023, KB-038, KB-043 and KB-046.  Unit and integration: 3422
 passed / 10 skipped (2026-09-05; the four GPU tests with
 `CUPY_ACCELERATORS=""` outside the sandbox).  Channels: GitHub, PyPI,
 conda-forge and the two docs channels below.
@@ -35,6 +35,23 @@ floors regenerate from the `validation/` certificates their DDs name.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-257** (2026-09-05, branch `perf/fit-td-step-overhead`, patch
+  after v0.6.0) — the CPU kernel sweeps plane by plane (Ex, Ey, Ez on
+  each x plane; every field array streams once per half-step), the
+  interior rows carry no boundary guards, a PEC bbox face the mask
+  already freezes is not re-written every step, and the energy check
+  reduces without temporaries.  Bit-identical fields.  Solver step at
+  16.8 Mcells, eight threads: **M1 Pro 91 → 111 GB/s, 7800X3D 40.6 →
+  50.0 GB/s** (1.22×/1.23×).  DD-180's "prefetch wall" is retracted: a
+  Numba STREAM triad on the M1 reads 133 GB/s and the solver-shaped
+  stencil with the worst strides 125 GB/s, so stride-blocking has ≤ 5 %
+  to give.  Finer fusion (per row, or one loop over all three
+  components) *loses* on Apple Silicon.  Gate `test_numba_kernels.py`;
+  record `investigations/fit-td-bandwidth/MEASUREMENTS.md`.  The M1 Pro
+  MacBook is reachable as an arm64 test device (`ssh macbook`,
+  `~/magnelio-dev`, editable; two `TestSectionBatch` bit-for-bit tests
+  fail there by 1 ULP — FMA contraction, not a defect, not yet
+  loosened).
 * **DD-256** (2026-09-05) — a thin wire lands on a thin sheet the way
   it lands on a solid: vertices inside the sheet's thickness collapse
   onto the sheet plane (no sliver, no spurious endpoint warning), the
@@ -304,21 +321,12 @@ flickers to ``"done"`` between sequential runs; the reader skips
 
 ## Open construction sites
 
-* **Band-pipeline runtime** — the convolution lead is **done**
-  (DD-245): partitioned history fold, O(N²p²) → O(N log²N p²), 51.7x on
-  the fold, 4.5x on the production 3D run, band-against-modal
-  **1453x → 45.6x** on DD-231's fixture, every certificate |S11|
-  unchanged to the digit, floor 9 dB *better* than DD-231 recorded.
-  DD-231's default stands (its blockers were the axis refusal and the
-  missing `a()`/`b()`, not the cost).  **On a 201-point axis no item
-  dominates any more** (DD-247): postprocessing 32.8 %, kernels 30.1 %,
-  mode tracking 24.9 %, field 5.9 %, convolution 4.4 % — 314.9 s →
-  81.2 s.  The arc-fan lead is void (the fan runs at 4 of 402 axis
-  points, DD-244).  Left: postprocessing is `eigs` + `splu` at
-  96.6 % over a per-frequency LU that cannot be amortised; unpriced
-  beside it, one factorisation per channel per frequency and `k = 4`
-  where one mode is consumed (multi-conductor cross-sections).  The
-  like-for-like default-axis run remains unmeasured.
+* **Band-pipeline runtime** — convolution (DD-245) and axis ranking
+  (DD-247) closed: 314.9 s → 81.2 s on a 201-point axis, no item
+  dominates.  Left: postprocessing is `eigs` + `splu` at 96.6 % over a
+  per-frequency LU that cannot be amortised; one factorisation per
+  channel per frequency and `k = 4` where one mode is consumed are
+  unpriced; the like-for-like default-axis run remains unmeasured.
 * **Band port floor (KB-038)** — wordlength question answered, defect
   not fixed.  The convolution state was **already double**; the
   single-precision contact is the per-step round trip through the field
@@ -330,15 +338,10 @@ flickers to ``"done"`` between sequential runs; the reader skips
   `docs/methods/precision.md`; dossier `investigations/kb038-wordlength/`.
 * **Ports on the GPU** — only `TestBandDTBCOnGPU` (KB-045) exercises a
   port on a device; `tests/conftest.py` pins the suite to NumPy.
-* **The launch pair (DD-239 → DD-244 → DD-248) — closed.**
-  `port_source="dispersive"` launches a rank-2/3 family and carries the
-  per-frequency split with it; tutorial 09 reads **−32.88 → −38.90 dB**,
-  the endpoint being DD-239's far-port floor to 0.07 dB.  Default
-  unchanged.  Left behind it: the decomposition **overshoots unity
-  transmission** (|S21| 1.0030 frozen, 1.0078 dispersive, rank-
-  independent, growing with f) — DD-244's to own; and the far-port
-  floor is now the *only* term left, so the band DTBC's decibels reach
-  the user again.
+* **The launch pair (DD-239 → DD-244 → DD-248) — closed.**  Left
+  behind it: the decomposition **overshoots unity transmission**
+  (|S21| 1.0030 frozen, 1.0078 dispersive, rank-independent, growing
+  with f) — DD-244's to own.
 * **Facet section engine (KB-043)** — the reach campaign is closed
   (DD-240/242/243 close KB-039, KB-041, KB-042 and KB-044).  Open:
   **KB-043**, pre-existing and two-sided — within ~1e-7 m of a
@@ -351,10 +354,8 @@ flickers to ``"done"`` between sequential runs; the reader skips
   every fixture tested and its origin is undocumented, so the corrected
   sagitta exponent is largely latent and the measured facet/exact
   bit-identity is a consequence of that cap, not a structural
-  guarantee; and `_FACET_REFINE_FRACTION = 0.1` leaves the facet path a
-  3.16x finer sagitta budget than the exact one.  One guard test
-  (`TestConicRunSurvivesAnUnbuildableArc`) flaked 4/4 in a tree-copy
-  window and has passed 13/13 since — unreproduced.
+  guarantee; `_FACET_REFINE_FRACTION = 0.1` leaves the facet path a
+  3.16x finer sagitta budget than the exact one.
 * **API blueprint (DD-224) — Phases A–D complete** (listed above);
   Phase E ff. is a reserved-name roadmap, not scheduled work, each
   entry earning its own DD.  Field-source limits: the recording lives
@@ -372,13 +373,11 @@ flickers to ``"done"`` between sequential runs; the reader skips
   min/max faces are not mirror images (KB-023) — full-vs-half parity of
   resonant open structures floors at ~1e-2.
 * **Ports with several signal conductors** report the channel's own
-  reference in `dispersion()` rather than a modal power–current
-  impedance (no single Ampère loop; DD-244); `TDResult` carries neither
-  reference impedances nor dispersion records.
-* **Mesh build** — speed campaign closed 2026-08-29 (DD-201…DD-223):
-  `benchmarks/bench_mesh_build.py` reads 16 Lange couplers 9.6 s at
-  3.7 M cells, 240 posts 1.8 s, 16 × 16 patch array 6.4 s at 1.8 M.
-  Deferred work, A/B switches, traps: DD-223.  Open against it: KB-043.
+  reference in `dispersion()`, not a modal power–current impedance
+  (DD-244); `TDResult` carries no reference impedances.
+* **Mesh build** — speed campaign closed 2026-08-29 (DD-201…DD-223;
+  deferred work, A/B switches and traps in DD-223).  Open against it:
+  KB-043.
 
 Closed construction sites are tombstoned where they were decided and
 are not repeated here.
@@ -390,6 +389,10 @@ are not repeated here.
 * **A third compute backend** — assessed, nothing built (DD-180);
   blocker is `xp is not np` as the capability test.  Metal rejected (no
   FP64), CuPy on ROCm is the candidate.
+* **Temporal blocking of the CPU kernel** — the only route above the
+  STREAM triad (DD-257); incompatible with the per-step hooks (ports,
+  CPML, sources, recorder).  Not pursued.  A float32 curl accumulator
+  on the E side would buy 3 % on Apple Silicon and is a numerics change.
 * **Residual GPU small-grid floor** (~0.41 ms/step at 10k cells, port
   round trips — DD-092); **tensor (gyrotropic) μ** (DD-089's ADE is
   scalar per axis); **off-Yee field-monitor interpolation** (must

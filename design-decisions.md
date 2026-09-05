@@ -12368,6 +12368,18 @@ benefits every CPU.
 
 **Files:** none — nothing was implemented.
 
+**Addendum 2026-09-05 (DD-257).**  The "prefetch wall" reading of the
+41 % figure was wrong.  A STREAM triad from Numba on the same M1 Pro
+reaches 133–139 GB/s (copy 150–167), and a solver-shaped six-stream
+stencil with the worst neighbour strides (i and j) reaches 125–132 GB/s
+— the strides cost at most 5 %.  The kernel therefore stood at 60 % of
+what Numba can draw from that CPU, not at a hardware wall, and the gap
+was code: three separate whole-grid sweeps per half-step reading every
+H (E) array twice, guarded inner loops on the E side, a redundant PEC
+face write and an energy check with full-size temporaries.  Cache
+blocking across the strides is dead as an idea; DD-257 closes the gap
+by other means.
+
 ## DD-181 — An elliptical arc is a profile segment, not a spline
 
 **Date:** 2026-08-21.
@@ -20731,3 +20743,100 @@ model's own inductance against a differently shaped conductor.
 ``src/magnelio/circuit/rasterize.py``, ``docs/methods/meshing-conformal.md``
 (section *Where a wire ends*), ``tests/unit/test_thin_wire.py``,
 ``tests/integration/test_thin_wire_sheet_junction.py``.
+
+## DD-257 — The CPU kernel sweeps plane by plane, and the time loop stops paying for what the mask already holds
+
+**Date:** 2026-09-05.
+**Status:** Accepted — implemented + gated
+(``tests/unit/test_numba_kernels.py``).
+
+**Problem.**  DD-180 left the Numba kernel at 82.9 GB/s on an M1 Pro
+and 48 GB/s on the 7800X3D and called the M1 figure a prefetch wall.
+Measuring what Numba can actually draw from either CPU (a STREAM
+triad, then a solver-shaped six-stream stencil with the solver's own
+neighbour strides; internal record ``investigations/fit-td-bandwidth/
+MEASUREMENTS.md``, scripts ``streambench.py``, ``kernelsplit.py``,
+``stepprofile.py``) showed the wall was not there: the stencil reaches
+125–132 GB/s on the M1 against a 133 GB/s triad, strides cost ≤ 5 %.
+The time step was losing to four things in the code, all of them
+measured at 16.8 Mcells, eight threads:
+
+1. *Six whole-grid sweeps per step* — one per component and
+   half-step — so every H array streams from memory twice in the
+   E-update and every E array twice in the H-update: 36 nominal
+   streams per cell and step where the accounting (and the minimum)
+   is 30.
+2. *Guarded inner loops* on the E side: four ``if`` per edge for the
+   missing dual faces at the boundary.  10 % of the E-kernel on Apple
+   Silicon, nothing on x86, which is DRAM-bound there anyway.
+3. *``PECBoundary.apply_E`` twice per step and face*, twelve strided
+   slice writes (``Ex[:, :, 0] = 0`` touches one cache line per
+   element): 1.85 ms = 8 % of a step on the M1, 4 % on the desktop.
+   Dead work on every mesh from the factories, whose PEC closure is
+   consolidated into ``pec_mask_edges`` (``Mesh.with_pec_boundaries``)
+   and whose face edges the kernel therefore already holds at +0.0
+   through alpha_E = beta_E = 0 — the mechanism the interior PEC
+   edges have relied on since the ``e[pec_idx] = 0`` scatter went.
+4. *The stored-energy check* evaluates ``sum(M * e * e)`` in NumPy:
+   two full-size temporaries per term, three terms, plus the
+   ``h_prev`` copy.  One evaluation cost 150 ms on the M1 — seven time
+   steps — which at the default cadence of 100 is 7 % of a long run.
+
+**Decision.**  Four changes, none of them touching the numerics:
+
+- ``update_E_fused`` / ``update_H_fused`` become one parallel sweep
+  over x planes that updates the three components *plane by plane*:
+  on plane ``i`` first Ex, then Ey, then Ez.  The three passes share
+  the H planes ``i`` and ``i−1`` through the cache, so each H array
+  streams once per step.  The granularity matters: a single inner loop
+  over all three components loses (LLVM gives up vectorising on the
+  fifteen-array alias check), and per-row interleaving loses on Apple
+  Silicon (the hardware prefetcher re-trains every 1 KB row; the H
+  kernel went 15 % *slower*).  Per plane every array is one long
+  sequential stream, and both machines win.
+- Interior rows run guard-free; the shell (outer planes, outer rows,
+  column ends) runs the guarded per-edge form through inlined helpers.
+  The double accumulator and the operation order are kept, so the new
+  kernels are **bit-identical** to the old ones (checked on six
+  extents down to 1×1×1, both precisions).  A float32 accumulator
+  would buy another 3 % on the M1 and was not taken.
+- The time loop skips ``apply_E`` for a PEC bbox face whose tangential
+  edges are all in the PEC mask (``_pec_faces_frozen``, decided once in
+  ``setup``).  A bare ``Mesh`` whose mask lacks a face keeps the write.
+  Gated: the march with the skip is bit-identical to the march with
+  the write forced back on, and the face stays at exact zero.
+- ``weighted_dot`` — a Numba reduction accumulating
+  ``w·a·b`` in double without temporaries — replaces the NumPy
+  expression on the CPU path; the CuPy path keeps the array form.  The
+  result differs from the old one only by summation order, and is the
+  more accurate of the two.
+
+**Measured** (solver step, 256³ = 16.8 Mcells, eight threads,
+``stepprofile.py``):
+
+| | before | after | |
+|---|---|---|---|
+| M1 Pro (macOS) | 22.07 ms = 91.2 GB/s | 18.08 ms = 111.3 GB/s | 1.22× |
+| 7800X3D | 49.61 ms = 40.6 GB/s | 40.23 ms = 50.0 GB/s | 1.23× |
+
+(fitbench convention, 120 B per cell and step.)  The M1 kernel pair
+now moves 111 GB/s nominal against its 133 GB/s triad; the H kernel
+alone reads 141 GB/s nominal, above the triad, because its E reads are
+genuinely served from cache now.  The desktop sits at its DRAM limit
+(triad 39–44, stencil 50–52).  Cache blocking across the neighbour
+strides is off the table (≤ 5 % available); temporal blocking — several
+steps per cache pass — is the only route above the triad and is
+incompatible with the per-step hooks (ports, CPML, sources, recorder).
+Not pursued.
+
+**Not done.**  The CUDA kernels are untouched (one thread per point,
+own tiling, DD-100).  The GPU energy check keeps the array form.  The
+M1's remaining 3 % from a single-precision curl accumulator on the E
+side is a numerics change and was left.
+
+**Files:** ``src/magnelio/_operators/numba_kernels.py``,
+``src/magnelio/solver/fit_td.py``, ``tests/unit/test_numba_kernels.py``,
+``docs/methods/implementation.md``; internal record
+``investigations/fit-td-bandwidth/`` (``MEASUREMENTS.md``,
+``streambench.py``, ``kernelsplit.py``, ``stepprofile.py``,
+``streambench_*.json``).
