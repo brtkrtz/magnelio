@@ -25,13 +25,15 @@ from __future__ import annotations
 
 import dataclasses
 import math
+import time
 import warnings
 from dataclasses import dataclass, field
-from typing import Iterable, Sequence, Union
+from typing import TYPE_CHECKING, Iterable, Sequence, Union
 
 import numpy as np
 
 from magnelio._operators.material_matrices import build_M_eps, build_M_mu
+from magnelio._progress import Reporter, format_clock, format_seconds
 from magnelio.analysis._base import _AnalysisBase
 from magnelio.analysis._recipe import build_recipe, excitation_to_dict, recipe_kwargs
 from magnelio.analysis.excitation import Excitation
@@ -72,6 +74,9 @@ from magnelio.signals.waveforms import (
 from magnelio.solver.fit_td import FITTimeDomainSolver
 from magnelio.solver.stability import spectral_dt
 from magnelio.sources.base import Source
+
+if TYPE_CHECKING:
+    from magnelio.io.project import Project
 
 PortSpec = Union[
     PortSpecCoax,
@@ -350,6 +355,11 @@ class TDResult:
         marching stopped.
     name : str or None
         The run's name in a project store; ``None`` for an in-RAM run.
+    started, finished : datetime or None
+        Wall-clock stamps (UTC) of the march's start and end.
+    elapsed : float or None
+        Wall time of the march [s]; for a run read back from a project
+        store the sum over every march of the run, resumes included.
     """
 
     excitations: tuple
@@ -364,6 +374,9 @@ class TDResult:
     port_line_params: dict | None = None
     settings: RunSettings | None = None
     name: str | None = None
+    started: object | None = None
+    finished: object | None = None
+    elapsed: float | None = None
 
     @property
     def t(self) -> np.ndarray:
@@ -799,8 +812,6 @@ class AnalysisTD(_AnalysisBase):
         dict[str, PortReport]
             Keyed by port name, in ``ports`` order.
         """
-        from magnelio._progress import Reporter  # noqa: PLC0415
-
         rep = Reporter("setup", self._verbose)
         rep.stage("material matrices")
         m_eps = build_M_eps(self.mesh)
@@ -861,7 +872,7 @@ class AnalysisTD(_AnalysisBase):
         port_signal_stop_db: float | str | None = "auto",
         max_time_steps: int | str | None = "auto",
         checkpoint_interval: int | None = None,
-    ) -> TDResult:
+    ) -> "TDResult | Project":
         """March once with every excitation applied simultaneously.
 
         Parameters
@@ -901,10 +912,11 @@ class AnalysisTD(_AnalysisBase):
 
         Returns
         -------
-        TDResult
-            In RAM; with ``project=`` the store's
-            :class:`~magnelio.io.project.Project` reader instead, whose
-            ``result(name)`` rebuilds the same object.
+        TDResult or Project
+            The in-RAM result; with ``project=`` the store's
+            :class:`~magnelio.io.project.Project` reader instead — the
+            same object :func:`~magnelio.open_project` returns, whose
+            ``result(name)`` rebuilds the :class:`TDResult`.
         """
         if self.port_model != "modal":
             raise NotImplementedError(
@@ -924,8 +936,9 @@ class AnalysisTD(_AnalysisBase):
         self._wire_far_field_ports()
         bc_objects = self._resolve_bc()
 
-        from magnelio._progress import Reporter  # noqa: PLC0415
-
+        # The whole call is timed, setup included — that is the number
+        # a user waits for (DD-253).
+        self._start_run_clock()
         # The setup ahead of the time-domain loop is not free: the
         # CFL eigenvalue is a Lanczos iteration over the whole update
         # operator, and each port is a 2D mode solve.  Name them, or
@@ -952,9 +965,11 @@ class AnalysisTD(_AnalysisBase):
             monitors = list(self.monitors)
             solver = self._build_solver(prepared, bc_objects, dt, monitors=monitors, **stops)
             solver.run()
-            return self._collect_result(
+            result = self._collect_result(
                 prepared, solver, dt, monitors, accuracy=accuracy, t_end=t_end, **stops
             )
+            self._report_finished()
+            return result
         return self._run_to_store(
             prepared,
             bc_objects,
@@ -1220,7 +1235,7 @@ class AnalysisTD(_AnalysisBase):
             # DD-231: the balance sheet, once per analysis.
             notice = self._mur_fallback_notice(operators, dt)
             if notice:
-                print(notice)
+                self._note("setup", notice)
             self._mur_notice_printed = True
 
         label_to_op = {op.name: op for op in operators}
@@ -1609,6 +1624,9 @@ class AnalysisTD(_AnalysisBase):
             signals=signals,
             excitation_signals=excitation_signals,
             energy_trace=getattr(solver, "_energy_trace", None),
+            started=solver._started,
+            finished=solver._finished,
+            elapsed=solver._elapsed,
             monitors={m.name: m for m in monitors if getattr(m, "name", None)},
             port_modes=prepared.port_modes,
             port_normal_dx=prepared.port_normal_dx,
@@ -1710,11 +1728,11 @@ class AnalysisTD(_AnalysisBase):
             }
         )
         if not_streamed and self._verbose:
-            print(
-                f"[{type(self).__name__}] monitor type(s) {not_streamed} are "
-                f"not yet streamed to the project store (DD-070); they run in "
-                f"RAM on this pass but are absent from the reader and from a "
-                f"resume.",
+            self._note(
+                "run",
+                f"monitor type(s) {not_streamed} are not streamed to the "
+                f"project store; they run in RAM on this pass but are absent "
+                f"from the reader and from a resume.",
             )
 
     @staticmethod
@@ -1751,6 +1769,7 @@ class AnalysisTD(_AnalysisBase):
 
         del t_end
         store, path = self._open_store(dt)
+        store.mark_analysis_started()
         run_name = self._next_run_name(open_project(path).runs, name)
         excitation_dicts = [excitation_to_dict(e) for e in prepared.excitations]
         ckpt_interval = (
@@ -1796,9 +1815,44 @@ class AnalysisTD(_AnalysisBase):
         )
         sink.enable_checkpoints(solver.state_dict, ckpt_interval)
         self._drive_streamed_solver(solver, sink, run_name, path)
-        if self._verbose:
-            print(f"[{type(self).__name__}] streamed run {run_name!r} to project {path}")
+        self._note("run", f"streamed run {run_name!r} to project {path}")
+        store.mark_analysis_finished(self._report_finished())
         return open_project(path)
+
+    # ── the run clock and the lines around a run (DD-253) ─────────────
+
+    def _note(self, label: str, text: str) -> None:
+        """One standalone line under *label*, obeying the verbosity setting."""
+        rep = Reporter(label, self._verbose)
+        rep.note(text)
+        rep.close()
+
+    def _start_run_clock(self) -> None:
+        """Open the ``run`` reporter and start the wall clock of this call.
+
+        Created before the setup reporter so the nested reporters
+        stand down onto it; a reporter left open by an earlier call
+        that raised is closed first.
+        """
+        self._close_run_clock()
+        self._run_reporter = Reporter("run", self._verbose)
+        self._run_t0 = time.perf_counter()
+
+    def _close_run_clock(self) -> None:
+        rep = getattr(self, "_run_reporter", None)
+        if rep is not None:
+            rep.close()
+            self._run_reporter = None
+
+    def _report_finished(self, n_runs: int = 1) -> float:
+        """Print ``finished in …`` and return the elapsed wall time [s]."""
+        elapsed = time.perf_counter() - getattr(self, "_run_t0", time.perf_counter())
+        rep = getattr(self, "_run_reporter", None)
+        if rep is not None:
+            runs = f" ({n_runs} runs)" if n_runs > 1 else ""
+            rep.note(f"finished in {format_seconds(elapsed)}{runs}")
+        self._close_run_clock()
+        return elapsed
 
     def _drive_streamed_solver(self, solver, sink, run_label: str, path) -> None:
         """Run a sink-attached solver under a cooperative Ctrl-C trap (WP-S7).
@@ -1841,7 +1895,8 @@ class AnalysisTD(_AnalysisBase):
         except BaseException:
             # Any *other* failure: leave the run non-done, the partial
             # record + last checkpoint (periodic or on-demand) stay on disk.
-            sink.close(state="aborted")
+            sink.close(state="aborted", elapsed=solver._elapsed)
+            self._close_run_clock()
             raise
         finally:
             if trap:
@@ -1850,12 +1905,13 @@ class AnalysisTD(_AnalysisBase):
                     signal.signal(signal.SIGUSR1, prev_usr1)
 
         if solver._aborted:
-            sink.close(state="aborted", stop_reason="aborted")
-            print(
-                f"\n[{type(self).__name__}] run {run_label} aborted at "
-                f"step {solver._resume_step}; resume checkpoint saved "
-                f"to {path}",
+            sink.close(state="aborted", stop_reason="aborted", elapsed=solver._elapsed)
+            self._note(
+                "run",
+                f"run {run_label!r} aborted at step {solver._resume_step} after "
+                f"{format_clock(solver._elapsed or 0.0)}; resume checkpoint saved to {path}",
             )
+            self._close_run_clock()
             raise KeyboardInterrupt(
                 f"run {run_label} aborted at step {solver._resume_step}; resume from {path}",
             )
@@ -1866,6 +1922,7 @@ class AnalysisTD(_AnalysisBase):
             state="done",
             stop_reason=solver._stop_reason,
             final_port_signal_db=solver._final_signal_db,
+            elapsed=solver._elapsed,
         )
 
     @classmethod
@@ -2463,14 +2520,12 @@ def _resume_transient(
     _load_far_field_accumulators(proj.path, run_name, run_monitors, n_completed)
     sink.enable_checkpoints(solver.state_dict, ckpt_interval)
 
-    if verbose:
-        target = "∞" if total_time_steps is None else str(total_time_steps)
-        print(
-            f"[{type(analysis).__name__}] resuming run {run_name} from step "
-            f"{n_completed} to {target} "
-            f"(energy_stop_db={energy_stop_db}, "
-            f"port_signal_stop_db={port_signal_stop_db})",
-        )
+    target = "∞" if total_time_steps is None else str(total_time_steps)
+    analysis._note(
+        "run",
+        f"resuming run {run_name!r} from step {n_completed} to {target} "
+        f"(energy_stop_db={energy_stop_db}, port_signal_stop_db={port_signal_stop_db})",
+    )
     analysis._drive_streamed_solver(solver, sink, run_name, proj.path)
     return solver, prepared, run_monitors
 
@@ -2488,11 +2543,14 @@ def _resume_td(
 ):
     """Back :func:`magnelio.resume` for ``setup['analysis'] == "AnalysisTD"``."""
     from magnelio.analysis._recipe import excitation_from_dict  # noqa: PLC0415
-    from magnelio.io.project import open_project  # noqa: PLC0415
+    from magnelio.io.project import ProjectStore, open_project  # noqa: PLC0415
 
     run_name = proj._run_name_for_excited(name)
     analysis = AnalysisTD.from_project(proj, verbose=verbose)
     excitations = [excitation_from_dict(d) for d in proj._run_excitations(run_name)]
+    analysis._start_run_clock()
+    store = ProjectStore(proj.path)
+    store.mark_analysis_started()
     _resume_transient(
         analysis,
         proj,
@@ -2505,6 +2563,7 @@ def _resume_td(
         checkpoint_interval=checkpoint_interval,
         verbose=verbose,
     )
+    store.mark_analysis_finished(analysis._report_finished())
     return open_project(proj.path)
 
 

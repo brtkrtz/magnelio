@@ -310,6 +310,8 @@ class ScatteringResult(Protocol):
     - :attr:`channels` / :attr:`excitations` — the observed and excited
       ``(port, mode)`` pairs
     - :attr:`settings` — the run's :class:`RunSettings`
+    - :attr:`started`, :attr:`finished`, :attr:`elapsed` — the wall
+      clock of the marching that produced the result
     - :meth:`S`, :meth:`db`, :meth:`phase` — one S-parameter over
       frequency, as a complex number, in dB, or as a phase
     - :meth:`a`, :meth:`b` — incident and outgoing power waves in time
@@ -338,6 +340,21 @@ class ScatteringResult(Protocol):
     @property
     def settings(self) -> RunSettings:
         """The :class:`RunSettings` this result was produced with."""
+        ...
+
+    @property
+    def started(self):
+        """Wall-clock start (UTC datetime) of the first march, or ``None``."""
+        ...
+
+    @property
+    def finished(self):
+        """Wall-clock end (UTC datetime) of the last march, or ``None``."""
+        ...
+
+    @property
+    def elapsed(self) -> float | None:
+        """Wall time of the marching [s] — setup excluded, resumes summed."""
         ...
 
     def S(self, out_port, in_port, *, mode_out=0, mode_in=0, f_axis=None) -> np.ndarray:

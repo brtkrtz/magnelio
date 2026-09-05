@@ -31,13 +31,24 @@ Policy
 
 from __future__ import annotations
 
+import datetime
 import sys
 import time
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import TextIO
 
-__all__ = ["Reporter", "current_reporter", "get_verbosity", "set_verbosity"]
+__all__ = [
+    "Reporter",
+    "current_reporter",
+    "format_clock",
+    "format_rate",
+    "format_seconds",
+    "get_verbosity",
+    "parse_utc",
+    "set_verbosity",
+    "utc_now",
+]
 
 # Minimum seconds between two refreshes of a progress line.  A terminal
 # can take a few per second without flicker; a log file wants one line
@@ -109,6 +120,77 @@ def get_verbosity() -> bool:
     bool
     """
     return _verbosity
+
+
+# ── wall-clock stamps and their spellings ───────────────────────────
+#
+# Every reporter and the project store stamp the same clock, so a run's
+# ``started`` in project.json and the ``finished in`` line of the
+# analysis agree to the second.  Two spellings of a duration, for two
+# places: a *running* clock in a progress line reads like a stopwatch
+# (``2:13``), a *total* in a closing line reads like a sentence
+# (``1 min 12 s``).
+
+
+def utc_now() -> datetime.datetime:
+    """The current time as a timezone-aware UTC datetime."""
+    return datetime.datetime.now(datetime.timezone.utc)
+
+
+def parse_utc(stamp: str | None) -> datetime.datetime | None:
+    """The datetime behind an ISO-8601 stamp from the store; ``None`` stays ``None``."""
+    if not stamp:
+        return None
+    parsed = datetime.datetime.fromisoformat(str(stamp))
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=datetime.timezone.utc)
+    return parsed
+
+
+def format_clock(seconds: float) -> str:
+    """A running wall clock: ``27.4 s``, then ``2:13``, then ``1:02:13``.
+
+    Sub-minute durations keep a decimal so a short run's clock is seen
+    to move; beyond a minute the stopwatch form is the one every user
+    reads at a glance.
+    """
+    seconds = max(0.0, float(seconds))
+    if seconds < 60.0:
+        return f"{seconds:.1f} s"
+    whole = int(seconds)
+    h, rem = divmod(whole, 3600)
+    m, s = divmod(rem, 60)
+    if h:
+        return f"{h}:{m:02d}:{s:02d}"
+    return f"{m}:{s:02d}"
+
+
+def format_seconds(seconds: float | None) -> str:
+    """A duration in words: ``27.4 s``, ``1 min 12 s``, ``2 h 05 min``.
+
+    ``None`` — a run that has not finished — prints as ``—``.
+    """
+    if seconds is None:
+        return "—"
+    seconds = max(0.0, float(seconds))
+    if seconds < 60.0:
+        return f"{seconds:.1f} s"
+    whole = int(round(seconds))
+    h, rem = divmod(whole, 3600)
+    m, s = divmod(rem, 60)
+    if h:
+        return f"{h} h {m:02d} min"
+    return f"{m} min {s:02d} s"
+
+
+def format_rate(steps_per_second: float) -> str:
+    """A step rate: ``980 steps/s``, ``12.4k steps/s``, ``0.45 steps/s``."""
+    rate = float(steps_per_second)
+    if rate >= 1000.0:
+        return f"{rate / 1000.0:.1f}k steps/s"
+    if rate >= 10.0:
+        return f"{rate:.0f} steps/s"
+    return f"{rate:.2f} steps/s"
 
 
 def _is_notebook_stream(stream) -> bool:
@@ -219,10 +301,19 @@ class Reporter:
     # ── public surface ──────────────────────────────────────────────
 
     def note(self, text: str) -> None:
-        """Print one standalone line, never overwritten."""
+        """Print one standalone line, never overwritten.
+
+        A multi-line *text* keeps its shape: the first line carries the
+        label, the following lines are indented to its width, so a
+        balance sheet or a table stays readable under the label.
+        """
         if not self.enabled:
             return
-        self._write(f"{self.label} | {text}", overwrite=False)
+        first, *rest = str(text).split("\n")
+        self._write(f"{self.label} | {first}", overwrite=False)
+        indent = " " * (len(self.label) + 3)
+        for line in rest:
+            self._write(f"{indent}{line}", overwrite=False)
 
     @contextmanager
     def phase(self, name: str):
@@ -248,7 +339,7 @@ class Reporter:
             raise
         dt = time.perf_counter() - self._phase_t0
         if dt >= _MIN_REPORTED:
-            self._write(f"{self.label} | {name} | done ({dt:.1f} s)", overwrite=False)
+            self._write(f"{self.label} | {name} | done ({format_seconds(dt)})", overwrite=False)
         else:
             self._erase_line()
         self._phase = None
@@ -275,7 +366,9 @@ class Reporter:
             return
         dt = time.perf_counter() - self._phase_t0
         if dt >= _MIN_REPORTED:
-            self._write(f"{self.label} | {self._phase} | done ({dt:.1f} s)", overwrite=False)
+            self._write(
+                f"{self.label} | {self._phase} | done ({format_seconds(dt)})", overwrite=False
+            )
         else:
             # On a terminal the announcement disappears with the phase;
             # in a log it has already been written and stands as the
@@ -296,7 +389,7 @@ class Reporter:
         if text:
             total = time.perf_counter() - self._t0
             if total >= _MIN_REPORTED:
-                text = f"{text} ({total:.1f} s total)"
+                text = f"{text} ({format_seconds(total)} total)"
             self._write(f"{self.label} | {text}", overwrite=False)
         self._end_line()
         self._deactivate()

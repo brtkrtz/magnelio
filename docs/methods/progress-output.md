@@ -84,13 +84,34 @@ result = analysis.run(f_axis=f_axis)      # does not pay it again
 ```
 
 ```
-  FIT-TD | time step 2701/∞ | stored energy [dB] -70.0/-70 | done (energy criterion)
+  FIT-TD | 37 k cells | dt 1.32 ps | single on NumPy (CPU) | ≈ 4 MB
+  FIT-TD | stops at energy -70 dB or port signal -60 dB, cap 388480 steps
+  FIT-TD | step 2900/∞ | 0.7 s | energy -58.4/-70 dB | 3.9k steps/s
+  FIT-TD | step 6001/∞ | 1.5 s | energy -70.2/-70 dB | done (energy criterion)
+  run | finished in 2.6 s
 ```
 
-`FIT-TD` is the time loop.  While it marches, the line reports the step
-count and the quantity the active stop criterion watches — stored
-energy in dB below the run peak, or the port-signal envelope — so the
-distance to the finish is visible even on an open-ended run.
+`FIT-TD` is the time loop.  Two lines before the first step say what is
+about to run and what will end it: the cell count, the time step, the
+precision and the device, and the memory the solver's own arrays take
+(ports, monitors and the absorbing boundary come on top, hence the ≈);
+then the stop criteria the run watches and the runtime cap behind them.
+While it marches, the line reports the step, a running wall clock, the
+quantity the active stop criterion watches — stored energy in dB below
+the run peak, or the port-signal envelope — and the step rate.  A run
+with a fixed step count also shows the estimated time to the end
+(`ETA`); an open-ended run does not, because it ends on a criterion, and
+the distance to that is exactly what the dB figure shows.  The closing
+line keeps the same slots and names the criterion that fired, so it
+reads as the last state of the running line.
+
+`run` closes the analysis call itself.  `finished in` counts from the
+start of the call, setup included, and a multi-excitation analysis says
+how many runs it made.  The same clock is kept on what comes back:
+every result carries `started`, `finished` and `elapsed` (the wall time
+of the marching), and a project store books them per run, resumes
+summed.  A checkpoint written on request and a resumed run each get a
+line of their own under these labels.
 
 ```
   eigen | factorising at sigma=2.012e+21 (7.14 GHz) | done (14.0 s)

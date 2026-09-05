@@ -131,12 +131,19 @@ def test_resume_bounded_bit_exact(tmp_path):
         total_time_steps=n1,
         checkpoint_interval=40,
     )
-    assert open_project(p).runs["port1_mode0"]["n_steps"] == n1
+    first = open_project(p).runs["port1_mode0"]
+    assert first["n_steps"] == n1
 
     proj = resume(p, excited=("port1", 0), total_time_steps=n_total, verbose=False)
     assert proj.runs["port1_mode0"]["state"] == "done"
     assert proj.runs["port1_mode0"]["n_steps"] == n_total
     _assert_bit_exact(ref_vi, _vi(proj.signals[("port1", 0)]), "bounded-resume")
+    # The resumed march keeps the run's start, stamps its own start,
+    # and adds its wall time to the run's total.
+    info = proj.runs["port1_mode0"]
+    assert info["started"] == first["started"]
+    assert info["resumed"] >= first["finished"]
+    assert info["elapsed"] > first["elapsed"] > 0.0
     # S-parameters derived on read match the uninterrupted run exactly.
     assert np.array_equal(ref.S("port1", "port1"), proj.S("port1", "port1"))
     assert np.array_equal(ref.S("port2", "port1"), proj.S("port2", "port1"))

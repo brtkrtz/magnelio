@@ -9,6 +9,7 @@ multi-excitation fill-in flow.
 
 from __future__ import annotations
 
+import os
 import threading
 import time
 
@@ -320,6 +321,14 @@ def test_stop_reason_booked_in_index_and_settings(tmp_path):
         # envelope ever samples below its running peak.
         assert info["final_port_signal_db"] <= 0.0
         assert proj.settings.final_port_signal_db == info["final_port_signal_db"]
+    # The run's wall clock, and the analysis call that contained it.
+    assert info["elapsed"] > 0.0
+    assert info["started"] <= info["finished"]
+    assert info["pid"] == os.getpid()
+    assert proj.meta["analysis"]["elapsed"] >= info["elapsed"]
+    td = proj.result("port1_mode0")
+    assert td.elapsed == pytest.approx(info["elapsed"])
+    assert td.started <= td.finished
 
 
 def test_runtime_cap_truncates_books_and_resumes(tmp_path):

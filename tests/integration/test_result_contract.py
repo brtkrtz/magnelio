@@ -81,6 +81,10 @@ class TestContractShape:
         assert s.n_actual_steps is not None and s.n_actual_steps > 0
         assert s.port_model_used == "modal"
 
+    def test_timing_populated(self, result):
+        assert result.elapsed > 0.0
+        assert result.started <= result.finished
+
     def test_phase_matches_s(self, result):
         s = result.S("p2", "p1")
         ph = result.phase("p2", "p1", deg=False, unwrap=False)

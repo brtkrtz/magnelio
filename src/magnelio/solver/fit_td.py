@@ -15,6 +15,7 @@ See spec.md for the FIT update equations.
 from __future__ import annotations
 
 import itertools
+import time
 import warnings
 from dataclasses import dataclass, field, replace
 
@@ -46,6 +47,7 @@ from magnelio._operators.numba_kernels import (
     update_H_fused_cuda,
     update_H_stencil,
 )
+from magnelio._progress import Reporter, format_clock, format_rate, format_seconds, utc_now
 from magnelio.boundaries.cpml import CPMLBoundary
 from magnelio.boundaries.pec import PECBoundary
 from magnelio.boundaries.pmc import PMCBoundary
@@ -71,6 +73,33 @@ _STALL_MIN_WINDOW_CHECKS = 10
 # repeating the line for every excitation run of an S-parameter analysis
 # would be noise.
 _AUTO_BANNER_SHOWN = False
+
+
+def _format_count(n: int) -> str:
+    """``2.08 M``, ``131 k``, ``4200`` — a cell count at a glance."""
+    if n >= 1_000_000:
+        return f"{n / 1e6:.2f} M"
+    if n >= 10_000:
+        return f"{n / 1e3:.0f} k"
+    return str(int(n))
+
+
+def _format_si(value: float, unit: str) -> str:
+    """A small quantity with its SI prefix: ``1.23 ps``, ``4.5 ns``."""
+    value = float(value)
+    for scale, prefix in ((1.0, ""), (1e-3, "m"), (1e-6, "µ"), (1e-9, "n"), (1e-12, "p")):
+        if abs(value) >= scale:
+            return f"{value / scale:.3g} {prefix}{unit}"
+    return f"{value / 1e-15:.3g} f{unit}"
+
+
+def _format_bytes(n_bytes: int) -> str:
+    """``210 MB``, ``3.3 GB`` — decimal units, the way memory is quoted."""
+    if n_bytes >= 1e9:
+        return f"{n_bytes / 1e9:.1f} GB"
+    if n_bytes >= 1e6:
+        return f"{n_bytes / 1e6:.0f} MB"
+    return f"{n_bytes / 1e3:.0f} kB"
 
 
 class _SignalStallDetector:
@@ -296,6 +325,16 @@ class FITTimeDomainSolver:
     _stop_requested: bool = field(default=False, repr=False, init=False)
     _aborted: bool = field(default=False, repr=False, init=False)
     _energy_trace: np.ndarray | None = field(default=None, repr=False, init=False)
+    # Wall clock of the last run() (DD-253): UTC stamps of the march's
+    # start and end and its duration in seconds — this march only; a
+    # resumed run accumulates its marches in the project store.  The
+    # step the march started at anchors the step rate of the progress
+    # line, which must not count the steps a checkpoint already holds.
+    _started: object | None = field(default=None, repr=False, init=False)
+    _finished: object | None = field(default=None, repr=False, init=False)
+    _elapsed: float | None = field(default=None, repr=False, init=False)
+    _t_wall0: float = field(default=0.0, repr=False, init=False)
+    _march_start_step: int = field(default=0, repr=False, init=False)
     # Faces that host a modal port (PEC skipped on these faces, DD-021)
     _port_faces: set = field(default_factory=set, repr=False, init=False)
 
@@ -315,7 +354,9 @@ class FITTimeDomainSolver:
             if not _AUTO_BANNER_SHOWN:
                 reason = auto_fallback_reason() if not self._use_gpu else None
                 suffix = f" — no usable GPU ({reason})" if reason else ""
-                print(f"  FIT-TD | backend 'auto': {backend_summary(xp)}{suffix}")
+                banner = Reporter("FIT-TD", self.verbose)
+                banner.note(f"backend 'auto': {backend_summary(xp)}{suffix}")
+                banner.close()
                 _AUTO_BANNER_SHOWN = True
         real_dtype, complex_dtype = resolve_precision(self.precision)
         self._real_dtype = real_dtype
@@ -727,7 +768,22 @@ class FITTimeDomainSolver:
         """Execute the leapfrog time-stepping loop."""
         if self._fields is None:
             self.setup()
+        # The wall clock of this march (DD-253): started before the
+        # first step and closed on every exit — a stop criterion, the
+        # step limit, a graceful stop, or an exception on the way.
+        self._t_wall0 = time.perf_counter()
+        self._march_start_step = self._resume_step
+        self._started = utc_now()
+        self._finished = None
+        self._elapsed = None
+        try:
+            return self._run_loop()
+        finally:
+            self._elapsed = time.perf_counter() - self._t_wall0
+            self._finished = utc_now()
 
+    def _run_loop(self) -> FieldState:
+        """The march itself; :meth:`run` wraps it in the wall clock."""
         fields = self._fields
         pec_idx = self._pec_idx_E
         pec_reenforce = self._pec_reenforce_after_bc
@@ -750,9 +806,14 @@ class FITTimeDomainSolver:
                 f"(absolute step count) or None to march uncapped",
             )
         total_str = "∞" if unbounded else str(n_steps)
-        from magnelio._progress import Reporter  # noqa: PLC0415
 
         rep = Reporter("FIT-TD", self.verbose)
+        if self.verbose:
+            # What is about to run, and what will end it — said once,
+            # before the first step, so the size of the job is known
+            # before the clock starts (DD-253).
+            for text in self._header_lines(n_steps, cap_steps):
+                rep.note(text)
         self._stop_reason = None
         self._final_signal_db = None
         dt = self.dt
@@ -1121,10 +1182,13 @@ class FITTimeDomainSolver:
                         if self.verbose:
                             energy_db = 10 * np.log10(max(current_energy, 1e-300) / peak_energy)
                             rep.final(
-                                f"time step {n + 1}/{total_str} "
-                                f"| stored energy [dB] {energy_db:.1f}/"
-                                f"{-energy_stop:.0f} "
-                                f"| done (energy criterion)"
+                                self._status_line(
+                                    n + 1,
+                                    total_str,
+                                    n_steps,
+                                    f"energy {energy_db:.1f}/{-energy_stop:.0f} dB",
+                                    done="energy criterion",
+                                )
                             )
                         for mon in self.monitors:
                             if hasattr(mon, "finalize"):
@@ -1161,10 +1225,13 @@ class FITTimeDomainSolver:
                             )
                             if self.verbose:
                                 rep.final(
-                                    f"time step {n + 1}/{total_str} "
-                                    f"| port signal [dB] {sig_db:.1f}/"
-                                    f"{-signal_stop:.0f} "
-                                    f"| done (port-signal criterion)"
+                                    self._status_line(
+                                        n + 1,
+                                        total_str,
+                                        n_steps,
+                                        f"port signal {sig_db:.1f}/{-signal_stop:.0f} dB",
+                                        done="port-signal criterion",
+                                    )
                                 )
                             for mon in self.monitors:
                                 if hasattr(mon, "finalize"):
@@ -1213,10 +1280,13 @@ class FITTimeDomainSolver:
                             )
                             if self.verbose:
                                 rep.final(
-                                    f"time step {n + 1}/{total_str} "
-                                    f"| port signal [dB] {sig_db:.1f}/"
-                                    f"{-signal_stop:.0f} "
-                                    f"| done (port signal stalled)"
+                                    self._status_line(
+                                        n + 1,
+                                        total_str,
+                                        n_steps,
+                                        f"port signal {sig_db:.1f}/{-signal_stop:.0f} dB",
+                                        done="port signal stalled",
+                                    )
                                 )
                             for mon in self.monitors:
                                 if hasattr(mon, "finalize"):
@@ -1227,17 +1297,17 @@ class FITTimeDomainSolver:
 
                 # Status display: absolute stored energy while the system
                 # is still filling, decay in dB below the run peak once
-                # the energy has passed its maximum.
-                if self.verbose and energy_stop is not None:
-                    if energy_falling and peak_energy > 0 and current_energy > 0:
+                # the energy has passed its maximum; the wall clock and
+                # the step rate ride along (DD-253).
+                if self.verbose:
+                    if energy_stop is None:
+                        status = ""
+                    elif energy_falling and peak_energy > 0 and current_energy > 0:
                         energy_db = 10 * np.log10(max(current_energy, 1e-300) / peak_energy)
-                        status = f"stored energy [dB] {energy_db:.1f}/{-energy_stop:.0f}"
+                        status = f"energy {energy_db:.1f}/{-energy_stop:.0f} dB"
                     else:
-                        status = f"stored energy {current_energy:.3e} J"
-                    rep.line(f"time step {n}/{total_str} | {status}")
-                elif self.verbose:
-                    pct = 100.0 * n / n_steps
-                    rep.line(f"{pct:5.1f}% ({n}/{n_steps})")
+                        status = f"energy {current_energy:.3e} J"
+                    rep.line(self._status_line(n, total_str, n_steps, status))
 
         # Graceful stop (top-of-loop break): the state is consistent at
         # _resume_step, so drain the V/I tail and persist a resume
@@ -1254,7 +1324,9 @@ class FITTimeDomainSolver:
                 if hasattr(mon, "finalize"):
                     mon.finalize()
             if self.verbose:
-                rep.final(f"graceful stop at step {self._resume_step}/{total_str}")
+                rep.final(
+                    self._status_line(self._resume_step, total_str, n_steps, done="graceful stop")
+                )
             if self.sink is not None:
                 self.sink.flush()
                 self.sink.write_checkpoint()
@@ -1289,11 +1361,11 @@ class FITTimeDomainSolver:
                 stacklevel=2,
             )
             if self.verbose:
-                rep.final(f"time step {end_step}/{total_str} | done (runtime cap)")
+                rep.final(self._status_line(end_step, total_str, n_steps, done="runtime cap"))
         else:
             self._stop_reason = "steps"
             if self.verbose:
-                rep.final(f"time step {n_steps}/{n_steps} | done (n_periods limit)")
+                rep.final(self._status_line(n_steps, total_str, n_steps, done="step limit"))
 
         for mon in self.monitors:
             if hasattr(mon, "finalize"):
@@ -1302,6 +1374,90 @@ class FITTimeDomainSolver:
             self.sink.flush()  # final V/I tail past the last check interval
 
         return fields
+
+    # ------------------------------------------------------------------
+    # Progress lines (DD-246, DD-253)
+    # ------------------------------------------------------------------
+
+    def _header_lines(self, n_steps: int | None, cap_steps: int | None) -> list[str]:
+        """The two lines printed before the first step.
+
+        The first says what runs — cells, time step, precision and
+        device, and the memory the solver's own arrays take (ports,
+        monitors and the absorbing boundary come on top, hence ≈).
+        The second says what will end it: the criteria the run stops
+        at, and the runtime cap behind them.
+        """
+        mesh = self.mesh
+        n_cells = int(mesh.Nx) * int(mesh.Ny) * int(mesh.Nz)
+        precision = "double" if np.dtype(self._real_dtype) == np.dtype(np.float64) else "single"
+        first = (
+            f"{_format_count(n_cells)} cells | dt {_format_si(self.dt, 's')} | "
+            f"{precision} on {backend_summary(self._xp)} | "
+            f"≈ {_format_bytes(self._approx_memory_bytes())}"
+        )
+        rules = []
+        if self.energy_stop_db is not None:
+            rules.append(f"energy {-self.energy_stop_db:.0f} dB")
+        if self.port_signal_stop_db is not None:
+            rules.append(f"port signal {-self.port_signal_stop_db:.0f} dB")
+        if n_steps is not None:
+            rules.append(f"step {n_steps}")
+        second = "stops at " + " or ".join(rules)
+        if cap_steps is not None:
+            second += f", cap {cap_steps} steps"
+        return [first, second]
+
+    def _approx_memory_bytes(self) -> int:
+        """Bytes held by the solver's field, coefficient and energy arrays."""
+        arrays = [
+            getattr(self._fields, "e_flat", None),
+            getattr(self._fields, "h_flat", None),
+            self._alpha_E,
+            self._beta_E,
+            self._alpha_H,
+            self._beta_H,
+            self._M_eps_diag,
+            self._M_mu_diag,
+        ]
+        if self._curl_bufs:
+            arrays.extend(self._curl_bufs)
+        return int(sum(int(getattr(a, "nbytes", 0)) for a in arrays if a is not None))
+
+    def _status_line(
+        self,
+        n: int,
+        total_str: str,
+        n_total: int | None,
+        status: str = "",
+        *,
+        done: str | None = None,
+    ) -> str:
+        """Compose one FIT-TD progress line.
+
+        ``step n/N | clock | status | rate, ETA`` while marching, and
+        ``step n/N | clock | status | done (why)`` on the way out — the
+        same slots, so the closing line reads as the last state of the
+        running one.  The ETA appears only when the step count is fixed;
+        an open-ended run ends on a criterion, and how far away that is
+        nobody knows.
+        """
+        elapsed = time.perf_counter() - self._t_wall0
+        parts = [f"step {n}/{total_str}", format_clock(elapsed)]
+        if status:
+            parts.append(status)
+        if done is not None:
+            parts.append(f"done ({done})")
+        else:
+            marched = n - self._march_start_step
+            if marched > 0 and elapsed > 0.0:
+                rate = marched / elapsed
+                tail = format_rate(rate)
+                if n_total is not None and n_total > n:
+                    remaining = (n_total - n) / rate
+                    tail += ", ETA " + ("< 1 s" if remaining < 1.0 else format_seconds(remaining))
+                parts.append(tail)
+        return " | ".join(parts)
 
     # ------------------------------------------------------------------
     # Checkpoint / resume (DD-070, WP-S6/WP-S7)
