@@ -70,6 +70,93 @@ _MIN_LOG_DEN = 0.1
 _ANISO_WARN_RATIO = 1.5
 
 
+def snap_to_sheet_planes(pts, sheets):
+    """Move coordinates inside a thin sheet's thickness band onto its plane.
+
+    A detected thin sheet (DD-059) is one grid plane at its substrate-side
+    face; the metal's far face is dropped from the grid and its thickness
+    lives in the sub-cell classifier.  A wire vertex drawn on the metal's
+    top face — the natural way to land a bond — would otherwise re-enter
+    that dropped plane (a sliver cell below the floor) or be snapped by
+    the rasteriser to whichever node happens to be nearer.  Collapsing
+    every coordinate within the band ``[position, far_position]`` onto
+    ``position`` makes the junction deterministic: the wire's end node is
+    the sheet plane's node, whose in-plane edges the sheet masks, and
+    current continuity is topological as it is on a PEC solid.  The
+    displacement is below the sheet thickness, itself below the cell
+    floor.  Sheets without a known far face are left alone.
+
+    Parameters
+    ----------
+    pts : array-like, shape (N, 3)
+        Points [m]; returned as a new float array.
+    sheets : iterable of ThinSheetSpec
+        Detected sheets (``mesher``'s ``_thin_sheets``).
+
+    Returns
+    -------
+    ndarray, shape (N, 3)
+    """
+    out = np.array(pts, dtype=float, copy=True)
+    if out.ndim != 2 or out.shape[0] == 0:
+        return out
+    for spec in sheets:
+        far = getattr(spec, "far_position", None)
+        if far is None:
+            continue
+        ax = "xyz".index(spec.axis)
+        lo, hi = sorted((float(spec.position), float(far)))
+        tol = 1e-6 * (hi - lo)
+        sel = (out[:, ax] >= lo - tol) & (out[:, ax] <= hi + tol)
+        out[sel, ax] = float(spec.position)
+    return out
+
+
+def sheet_layer_faces(grid, sheets) -> np.ndarray | None:
+    """Boolean mask over all H faces that cross a thin sheet's metal layer.
+
+    For a sheet with normal ``axis`` the metal occupies the one cell
+    layer between the sheet plane and the dropped far face; every H face
+    whose normal is transverse to ``axis`` and whose extent along
+    ``axis`` is that layer contains metal, is classified cat-2 by the
+    sub-cell pass, and is claimed before the wire correction runs.  A
+    wire landing on the sheet finds the ring faces of its foot segment
+    among them — the expected O(1-cell) end, not a conformal solid the
+    user should hear about.  ``None`` when no sheet has a far face.
+    """
+    Nx, Ny, Nz = grid.Nx, grid.Ny, grid.Nz
+    n_Hx = (Nx + 1) * Ny * Nz
+    n_Hy = Nx * (Ny + 1) * Nz
+    n_Hz = Nx * Ny * (Nz + 1)
+    mask = None
+    nodes = {"x": grid.x, "y": grid.y, "z": grid.z}
+    for spec in sheets:
+        far = getattr(spec, "far_position", None)
+        if far is None:
+            continue
+        if mask is None:
+            mask = np.zeros(n_Hx + n_Hy + n_Hz, dtype=bool)
+        axis_nodes = nodes[spec.axis]
+        k_s = int(np.argmin(np.abs(axis_nodes - spec.position)))
+        layer = k_s if far > spec.position else k_s - 1
+        n_cells = {"x": Nx, "y": Ny, "z": Nz}[spec.axis]
+        if not 0 <= layer < n_cells:
+            continue
+        hx = mask[:n_Hx].reshape(Nx + 1, Ny, Nz)
+        hy = mask[n_Hx : n_Hx + n_Hy].reshape(Nx, Ny + 1, Nz)
+        hz = mask[n_Hx + n_Hy :].reshape(Nx, Ny, Nz + 1)
+        if spec.axis == "z":
+            hx[:, :, layer] = True
+            hy[:, :, layer] = True
+        elif spec.axis == "y":
+            hx[:, layer, :] = True
+            hz[:, layer, :] = True
+        else:
+            hy[layer, :, :] = True
+            hz[layer, :, :] = True
+    return mask
+
+
 def _ring_stencil(axis, ijk, grid):
     """The <=4 encircling H-faces of one wire segment, with partners.
 
@@ -299,7 +386,7 @@ def _ensure_edge_material(mesh):
     return mesh.edge_material
 
 
-def _write_corrections(mesh, face_m, edge_m, name=None) -> None:
+def _write_corrections(mesh, face_m, edge_m, name=None, *, expected_claimed=None) -> None:
     """Encode collapsed (face -> m) / (edge -> m) into the mesh channels.
 
     Faces become category 2 with the equivalent ``A_face_free`` carrying
@@ -307,7 +394,10 @@ def _write_corrections(mesh, face_m, edge_m, name=None) -> None:
     composes multiplicatively); edges become category 1 with
     ``eps_avg = eps_eff/m`` of their current effective permittivity.
     Objects already claimed by a conformal solid (cat-2 faces,
-    cat-2/cat-3/PEC-masked edges) are skipped — the solid wins.
+    cat-2/cat-3/PEC-masked edges) are skipped — the solid wins.  Faces
+    flagged in *expected_claimed* (a thin sheet's metal layer, see
+    :func:`sheet_layer_faces`) compose instead: their ``A_face_free``
+    is scaled by ``m`` on top of the sub-cell value.
     """
     from magnelio._operators.material_matrices import (  # noqa: PLC0415
         EPS0,
@@ -351,6 +441,13 @@ def _write_corrections(mesh, face_m, edge_m, name=None) -> None:
     n_face_skip = 0
     for face, m in face_m.items():
         if fm.category[face] == 2:
+            if expected_claimed is not None and expected_claimed[face]:
+                # A thin sheet's metal layer: the sub-cell value already
+                # carries the geometry (the free part of the face), the
+                # wire's log field lives in that free part — compose
+                # multiplicatively, as with a cat-1 dielectric.
+                fm.A_face_free[face] *= m
+                continue
             n_face_skip += 1  # conformal solid / DD-053 pair value wins
             continue
         fm.category[face] = 2
@@ -401,7 +498,7 @@ def apply_thin_wire_path(mesh, path, radius, *, name=None) -> None:
     _write_corrections(mesh, face_m, edge_m, name=name)
 
 
-def mask_thin_wires(mesh, wires, *, samples_per_cell: int = 4, scale: float = 1.0):
+def mask_thin_wires(mesh, wires, *, samples_per_cell: int = 4, scale: float = 1.0, sheets=()):
     """Rasterise *wires* and mask their E-edge chains PEC (in place).
 
     Runs before ``couple_face_material_pairs`` so the DD-053 pass never
@@ -411,9 +508,13 @@ def mask_thin_wires(mesh, wires, *, samples_per_cell: int = 4, scale: float = 1.
     curve lies entirely in the half-space a symmetry declaration
     removed is skipped with a ``None`` placeholder — like a solid
     there, it is represented by its mirror image and never meshed.
+    Samples inside a detected thin sheet's thickness band (*sheets*)
+    are collapsed onto the sheet plane first
+    (:func:`snap_to_sheet_planes`), so a wire landing on a sheet ends on
+    the sheet's own node.
     """
     from magnelio.boundaries.boundary_conditions import symmetry_entries  # noqa: PLC0415
-    from magnelio.circuit.rasterize import rasterize_curve  # noqa: PLC0415
+    from magnelio.circuit.rasterize import rasterize_points  # noqa: PLC0415
     from magnelio.geo._occ_backend import sample_wire  # noqa: PLC0415
 
     grid = mesh.grid
@@ -433,6 +534,8 @@ def mask_thin_wires(mesh, wires, *, samples_per_cell: int = 4, scale: float = 1.
         pts = np.asarray(
             sample_wire(wire.curve._occ_shape(scale), min_cell / samples_per_cell, scale=scale)
         )
+        if sheets:
+            pts = snap_to_sheet_planes(pts, sheets)
         discarded = False
         for axis, at_low, wall in clip_planes:
             inward = pts[:, axis] - wall if at_low else wall - pts[:, axis]
@@ -442,7 +545,7 @@ def mask_thin_wires(mesh, wires, *, samples_per_cell: int = 4, scale: float = 1.
         if discarded:
             paths.append(None)
             continue
-        path = rasterize_curve(wire.curve, grid, samples_per_cell=samples_per_cell, scale=scale)
+        path = rasterize_points(pts, grid)
         _validate_radius(
             radius=wire.radius, d_min=_min_transverse_extent(path, grid), name=wire.name
         )
@@ -486,7 +589,7 @@ def mask_thin_wires(mesh, wires, *, samples_per_cell: int = 4, scale: float = 1.
     return paths
 
 
-def correct_thin_wire_materials(mesh, wires, paths) -> None:
+def correct_thin_wire_materials(mesh, wires, paths, *, sheets=()) -> None:
     """Apply the DD-080 (m, 1/m) correction for all *wires* at once.
 
     Requests from all wires are collapsed first (minimum m per face /
@@ -525,4 +628,5 @@ def correct_thin_wire_materials(mesh, wires, paths) -> None:
     name = None
     if len(wires) == 1:
         name = wires[0].name
-    _write_corrections(mesh, face_m, edge_m, name=name)
+    expected = sheet_layer_faces(mesh.grid, sheets) if sheets else None
+    _write_corrections(mesh, face_m, edge_m, name=name, expected_claimed=expected)

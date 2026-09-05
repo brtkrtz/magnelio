@@ -355,6 +355,40 @@ $\kappa_0 = e^{-\gamma}/2^{3/2} \approx 0.1985$ comes from the
 square-lattice Green's function, as given in the thin-wire literature
 {cite}`nodayokoyama2002`.
 
+### Where a wire ends
+
+A wire's end is a grid node, and what it connects to is decided by
+that node's other edges:
+
+- **On a PEC solid** the shared node joins the wire's masked edge chain
+  to the solid's masked edges; current continuity is topological.  The
+  solid's conformal faces keep their values in the last ring, so the
+  foot segment carries the bare-grid inductance — an error of one cell
+  at each such end.
+- **On a thin sheet** (the thin-metallisation path above) the sheet is
+  one grid plane at its substrate-side face, and its far face is not in
+  the grid.  A wire vertex anywhere inside the metal's thickness — the
+  natural way to draw a bond is on the metal's top face — collapses
+  onto the sheet plane, so the wire ends on the sheet's own node and
+  the junction is the same topological contact as on a solid.  The
+  ring faces of the foot segment cross the metal layer; there the
+  wire's factor $m$ composes with the sub-cell value of the face, as it
+  does with a dielectric, so the free part of the segment keeps the
+  wire's inductance.  Gated against the same monopole on a solid built
+  on one grid: resonance within 1 %, feed resistance within 3 % for a
+  sheet of a fifth of a cell.  The comparison is in-house.
+- **Open** ends and ends on a **PMC** wall are the ideal open; a **PEC
+  wall** is the electric mirror (a monopole).
+- A **lumped port** drives exactly one edge between two wires (or a
+  chain with a skipped edge); the port edge must not be part of a
+  wire.
+
+A wire that lands *beside* the metal, or crosses a sheet, follows the
+same rule: only coordinates inside a sheet's thickness band move, by
+less than the sheet thickness, itself below the cell floor.  Wire–wire
+junctions away from a conductor, oblique in-cell segments and
+insulated wires are outside the model.
+
 ## Mesh quality safeguards
 
 Hard minimum cell size with floor-aware refits and a longitudinal

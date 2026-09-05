@@ -503,3 +503,137 @@ def test_project_store_roundtrip(_occ_model, tmp_path):
     with pytest.warns(UserWarning, match="thin wires"):
         g = proj.geometry
     assert len(g.shapes) == 1  # the wire is metadata-only in v1
+
+
+# ---------------------------------------------------------------------------
+# Junction with a thin sheet (DD-256)
+# ---------------------------------------------------------------------------
+
+
+def test_snap_to_sheet_planes_collapses_the_band_only():
+    from magnelio.mesh._conformal import ThinSheetSpec
+    from magnelio.mesh._thin_wire import snap_to_sheet_planes
+
+    z = np.array([0.9e-3, 0.98e-3, 1.0e-3, 1.02e-3, 1.035e-3, 1.1e-3])
+    pts = np.column_stack([np.zeros_like(z), np.zeros_like(z), z])
+    up = ThinSheetSpec(axis="z", position=1.0e-3, rect=None, far_position=1.035e-3)
+    out = snap_to_sheet_planes(pts, [up])
+    assert out is not pts
+    np.testing.assert_allclose(out[:, 2], [0.9e-3, 0.98e-3, 1.0e-3, 1.0e-3, 1.0e-3, 1.1e-3])
+    np.testing.assert_array_equal(out[:, :2], 0.0)
+    down = ThinSheetSpec(axis="z", position=1.0e-3, rect=None, far_position=0.965e-3)
+    out = snap_to_sheet_planes(pts, [down])
+    np.testing.assert_allclose(out[:, 2], [0.9e-3, 1.0e-3, 1.0e-3, 1.02e-3, 1.035e-3, 1.1e-3])
+    inert = ThinSheetSpec(axis="z", position=1.0e-3, rect=None)
+    np.testing.assert_array_equal(snap_to_sheet_planes(pts, [inert]), pts)
+    # Other axes are untouched by a z-sheet, and an x-sheet acts on x.
+    x_sheet = ThinSheetSpec(axis="x", position=0.0, rect=None, far_position=0.01e-3)
+    pts2 = np.array([[0.005e-3, 1.0, 2.0], [0.02e-3, 1.0, 2.0]])
+    out = snap_to_sheet_planes(pts2, [x_sheet])
+    np.testing.assert_allclose(out, [[0.0, 1.0, 2.0], [0.02e-3, 1.0, 2.0]])
+
+
+def test_sheet_layer_faces_marks_the_metal_layer():
+    from magnelio.mesh._conformal import ThinSheetSpec
+    from magnelio.mesh._thin_wire import sheet_layer_faces
+    from magnelio.mesh.indexing import face_index_Hx, face_index_Hy, face_index_Hz
+
+    grid = _uniform_grid()  # 8 cells of 1 mm
+    Nx, Ny, Nz = grid.Nx, grid.Ny, grid.Nz
+    n_Hx = (Nx + 1) * Ny * Nz
+    n_Hy = Nx * (Ny + 1) * Nz
+    assert sheet_layer_faces(grid, []) is None
+    assert sheet_layer_faces(grid, [ThinSheetSpec(axis="z", position=3e-3, rect=None)]) is None
+
+    up = ThinSheetSpec(axis="z", position=3e-3, rect=None, far_position=3.3e-3)
+    mask = sheet_layer_faces(grid, [up])
+    assert mask.sum() == (Nx + 1) * Ny + Nx * (Ny + 1)
+    assert mask[face_index_Hx(2, 5, 3, Nx, Ny, Nz)]
+    assert mask[n_Hx + face_index_Hy(7, 0, 3, Nx, Ny, Nz)]
+    assert not mask[face_index_Hx(2, 5, 2, Nx, Ny, Nz)]
+    assert not mask[n_Hx + n_Hy + face_index_Hz(2, 5, 3, Nx, Ny, Nz)]
+
+    down = ThinSheetSpec(axis="z", position=3e-3, rect=None, far_position=2.7e-3)
+    mask = sheet_layer_faces(grid, [down])
+    assert mask[face_index_Hx(2, 5, 2, Nx, Ny, Nz)]
+    assert not mask[face_index_Hx(2, 5, 3, Nx, Ny, Nz)]
+
+    y_sheet = ThinSheetSpec(axis="y", position=4e-3, rect=None, far_position=4.2e-3)
+    mask = sheet_layer_faces(grid, [y_sheet])
+    assert mask[face_index_Hx(2, 4, 5, Nx, Ny, Nz)]
+    assert mask[n_Hx + n_Hy + face_index_Hz(2, 4, 5, Nx, Ny, Nz)]
+    assert not mask[n_Hx + face_index_Hy(2, 4, 5, Nx, Ny, Nz)]
+
+
+def _sheet_junction_model(z_foot, *, h=0.635e-3, t=35e-6):
+    """A thin strip on a substrate with a vertical wire post starting at *z_foot*."""
+    pytest.importorskip("OCC.Core.BRepPrimAPI")
+    import magnelio as em
+    from magnelio.geo import Brick, Curve, Difference, GeometryModel
+    from magnelio.geo import ThinWire as _ThinWire
+
+    L, W, H = 2.0e-3, 2.0e-3, 1.5e-3
+    model = GeometryModel(background="pec")
+    sub = em.Material.from_isotropic("sub", epsilon=4.3)
+    model.add(Brick(origin=(0.0, -W / 2, 0.0), size=(L, W, h), material=sub))
+    strip = Brick(origin=(0.3e-3, -0.4e-3, h), size=(1.4e-3, 0.8e-3, t), material="pec")
+    air = Brick(origin=(0.0, -W / 2, h), size=(L, W, H - h), material="air")
+    model.add(Difference(air, strip))
+    model.add(strip)
+    model.add(
+        _ThinWire(
+            Curve.polyline([(1.0e-3, 0.0, z_foot), (1.0e-3, 0.0, z_foot + 0.5e-3)]),
+            radius=5e-6,
+            name="post",
+        )
+    )
+    return model, h, t
+
+
+@pytest.mark.parametrize(
+    ("where", "floor"),
+    [
+        ("top", 100e-6),  # sheet regime, t/cell ~ 0.35, foot on the metal top
+        ("mid", 100e-6),
+        ("bottom", 100e-6),
+        ("top", 50e-6),  # t/cell = 0.7: the layer above the plane is a PEC cell
+    ],
+)
+def test_wire_ends_on_the_sheet_plane(where, floor):
+    """A wire landing anywhere in a thin sheet's thickness ends on the sheet's node.
+
+    No plane is re-introduced inside the band (the sliver the DD-059 far-
+    face drop exists to avoid), the wire's masked chain starts at the
+    sheet plane whose in-plane edges the sheet masks (shared node =
+    topological continuity), and neither the endpoint-displacement nor the
+    claimed-stencil warning fires — the foot ring inside the metal layer
+    is the documented end, not a surprise.
+    """
+    from magnelio.mesh.mesher import Mesh as M
+    from magnelio.mesh.mesher import MeshControl
+
+    h, t = 0.635e-3, 35e-6
+    z_foot = {"top": h + t, "mid": h + 0.5 * t, "bottom": h}[where]
+    model, h, t = _sheet_junction_model(z_foot, h=h, t=t)
+    control = MeshControl(min_nodes_per_wavelength=20, max_cell_size=0.25e-3, min_cell_size=floor)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        mesh = M.from_geometry(model, control, f_max=10e9)
+    g = mesh.grid
+    # One plane at the substrate-side face, nothing inside the band.
+    k_s = int(np.argmin(np.abs(g.z - h)))
+    assert abs(g.z[k_s] - h) < 1e-12
+    assert not np.any((g.z > h + 1e-12) & (g.z <= h + t + 1e-12))
+    # The wire's top vertex still anchors a plane.
+    assert np.any(np.isclose(g.z, z_foot + 0.5e-3 if where != "top" else h + 0.5e-3, atol=t))
+    i0 = int(np.argmin(np.abs(g.x - 1.0e-3)))
+    j0 = int(np.argmin(np.abs(g.y - 0.0)))
+    Nx, Ny, Nz = g.Nx, g.Ny, g.Nz
+    masked_k = [
+        k for k in range(Nz) if mesh.pec_mask_edges[2, edge_index_Ez(i0, j0, k, Nx, Ny, Nz)]
+    ]
+    assert masked_k, "no masked Ez in the wire column"
+    assert masked_k[0] == k_s, f"wire chain starts at k={masked_k[0]}, sheet plane at k={k_s}"
+    assert masked_k == list(range(masked_k[0], masked_k[-1] + 1)), "wire chain has a hole"
+    assert mesh.pec_mask_edges[0, edge_index_Ex(i0, j0, k_s, Nx, Ny, Nz)]
+    assert mesh.pec_mask_edges[1, edge_index_Ey(i0, j0, k_s, Nx, Ny, Nz)]

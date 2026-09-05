@@ -20641,3 +20641,93 @@ criterion — and every ``plot_energy`` takes ``floor_db=`` to pin it,
 the counterpart of ``plot_s(floor_db=)``.  The samples themselves are
 untouched; the plunge is clipped by the frame, which is the honest
 picture of an energy that was zero.  Gates ``TestAxisFloor``.
+
+---
+
+## DD-256 — A thin wire lands on a thin sheet the way it lands on a solid
+
+**Date:** 2026-09-05 (first patch after v0.6.0; developer decision to
+do it after the tag).
+**Status:** Accepted — implemented + gated
+(``tests/unit/test_thin_wire.py`` junction block,
+``tests/integration/test_thin_wire_sheet_junction.py``).
+**Problem.**  DD-080 listed wire–sheet junctions as a v1 non-goal, and
+the Lange-coupler how-to (DD-201) modelled its ribbon bonds as three
+bricks partly for that reason: at a −30 dB isolation target a junction
+defect would read as a coupler asymmetry indistinguishable from a
+layout error.  Probes on the DD-059 path (internal record
+``investigations/thin-wire-sheet-junction/MEASUREMENTS.md``, seven
+configurations at the 100 µm and the Lange 6 µm scale) showed the
+junction *holding* in every case — but by coincidence, not by design:
+a vertex drawn on the metal's top face loses its anchor plane to the
+far-face filter (``mesher.py``, the ``_not_far`` drop) and is snapped
+by the rasteriser to whichever node is nearer; below t = Δ/2 that is
+the sheet plane, above it the cell-centre rule has already made the
+layer a PEC cell.  Two side effects were real: the endpoint warning
+fired for t > 0.3 Δ_min although the foot landed where it should, and
+the foot segment's ring faces, cat-2 from the sheet's metal in the
+sub-cell classifier, made the correction yield ("solid wins") — the
+bare-grid inductance on the first cell of every bond.
+**Decision.**
+- **Band collapse.**  ``snap_to_sheet_planes(pts, sheets)`` moves every
+  coordinate inside a detected sheet's thickness band
+  ``[position, far_position]`` onto ``position``.  The mesher applies it
+  to the wire's vertex planes and bbox extents (no sliver plane at the
+  metal top even when t exceeds the feature gap) and
+  ``mask_thin_wires`` to the sampled curve before rasterising — the
+  rasteriser's node walk is now ``rasterize_points`` (``circuit/rasterize.py``),
+  with ``rasterize_curve`` a thin wrapper.  No transverse test: a vertex
+  beside the metal at that height moves by less than t < floor, which
+  the sub-cell machinery absorbs anyway (the far-face drop already
+  applies the same reasoning to planes).  The displacement check uses
+  the collapsed points, so the spurious warning is gone.
+- **Foot ring composes.**  ``sheet_layer_faces(grid, sheets)`` flags
+  the H faces crossing a sheet's metal layer (normal transverse to the
+  sheet axis, extent = the layer cell).  In ``_write_corrections`` a
+  cat-2 face carrying that flag has its ``A_face_free`` scaled by
+  ``m`` instead of being skipped: the sub-cell value is the geometry
+  (the free part of the face), the wire's log field lives in that free
+  part — the same multiplicative composition DD-080 already used for
+  cat-1 dielectrics.  Conformal solids keep "solid wins" (unchanged,
+  DD-080), and the claimed-stencil warning counts only those.
+**Measured** (``probe_monopole_gate.py`` = the integration gate: a
+15 mm monopole, a = 0.05 mm, on a plate spanning the box into the CPML,
+1 mm grid, stub–gap–arm feed two cells above the plate; the three
+plates mesh onto ONE grid, wire nodes and feed edge identical):
+
+| plate | f_res [GHz] | R_in [Ω] |
+|---|---|---|
+| solid, 3 mm block, wire on its top (DD-080 (a)) | 4.601 | 40.6 |
+| sheet t/Δ = 0.2, wire on the metal top, foot ring yields | 4.707 | 41.2 |
+| sheet t/Δ = 0.2, foot ring composes (this DD) | 4.628 | 39.7 |
+| sheet t/Δ = 0.7 (layer classifies as metal), composes | 4.721 | 43.0 |
+
+The composing sheet sits +0.6 % / −2.2 % from the solid; the physical
+wire is 0.2 mm shorter there (+1.35 % expected), so the residual is
+inside the one-cell end error both variants share.  The yielding ring
+had put it at +2.3 %.  The thick regime carries the sub-cell
+representation's own thickness error (DD-059), not a junction defect,
+and is pinned at 4 % / 10 %.  Gate windows: sheet 1.5 % / 6 %, thick
+4 % / 10 %, plus the T4/T5 textbook window on the reference.
+**Unit gates:** the band collapse on both sheet orientations and a
+sheet without far face (inert); the layer-face mask per axis; OCC
+end-to-end on a 35 µm strip for foot on top / mid / bottom at
+t/Δ ≈ 0.35 and on top at t/Δ = 0.7 — no plane inside the band, the
+masked Ez chain starts at the sheet plane whose in-plane edges the
+sheet masks, warnings-as-errors clean.
+**What this does not change.**  The DD-080 radius rule.  On the Lange
+grid (6 µm cells at the fingers) a real 25 µm bond is four cells thick
+and stays resolved metal; the how-to's bricks are the right model
+there.  The certified junction serves bonds on pads with cells of at
+least 3.3 radii, pin feeds of patches, wires over foils.  A wire
+running within one cell *above* a sheet now composes on its lower ring
+faces too — an approximation either way (the log field is not the
+field over a PEC plane at that distance), and the DD-080 min rule
+still applies.  Not measured: a transmission-type certificate (wire
+bridge over a gap in a sheet strip against resolved bricks); the
+monopole gate isolates the junction, a bridge would add the wire
+model's own inductance against a differently shaped conductor.
+**Files:** ``src/magnelio/mesh/_thin_wire.py``, ``src/magnelio/mesh/mesher.py``,
+``src/magnelio/circuit/rasterize.py``, ``docs/methods/meshing-conformal.md``
+(section *Where a wire ends*), ``tests/unit/test_thin_wire.py``,
+``tests/integration/test_thin_wire_sheet_junction.py``.

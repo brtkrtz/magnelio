@@ -740,12 +740,20 @@ class Mesh:
         # transverse position is a vertex coordinate on both transverse
         # axes.  Arcs/splines/helices are covered by the rasteriser's
         # snap-displacement warning instead.
+        # A vertex inside a thin sheet's thickness band (a bond drawn
+        # on the metal's top face) collapses onto the sheet plane: the
+        # far face is dropped from the grid below, and the wire has to
+        # end on the sheet's own node (DD-256).
         if wires:
             from magnelio.geo._occ_backend import wire_vertex_points  # noqa: PLC0415
+            from magnelio.mesh._thin_wire import snap_to_sheet_planes  # noqa: PLC0415
 
             for w in wires:
                 (w_min, w_max) = w.bounding_box(geo_scale)
                 w_pts = wire_vertex_points(w.curve._occ_shape(geo_scale), scale=geo_scale)
+                if _thin_sheets:
+                    w_pts = snap_to_sheet_planes(w_pts, _thin_sheets)
+                    w_min, w_max = snap_to_sheet_planes([w_min, w_max], _thin_sheets)
                 for ax_i, axis in enumerate(("x", "y", "z")):
                     critical_raw[axis].extend((float(v), True) for v in w_pts[:, ax_i])
                     critical_raw[axis].extend(((w_min[ax_i], False), (w_max[ax_i], False)))
@@ -1605,7 +1613,7 @@ class Mesh:
         if wires:
             from magnelio.mesh._thin_wire import mask_thin_wires  # noqa: PLC0415
 
-            _wire_paths = mask_thin_wires(mesh, wires, scale=geo_scale)
+            _wire_paths = mask_thin_wires(mesh, wires, scale=geo_scale, sheets=_thin_sheets)
 
         if edge_material_data is not None and face_material_data is not None:
             from magnelio._operators.material_matrices import (  # noqa: PLC0415
@@ -1630,7 +1638,7 @@ class Mesh:
         if wires:
             from magnelio.mesh._thin_wire import correct_thin_wire_materials  # noqa: PLC0415
 
-            correct_thin_wire_materials(mesh, wires, _wire_paths)
+            correct_thin_wire_materials(mesh, wires, _wire_paths, sheets=_thin_sheets)
 
         # Store PML cell counts (consumed by callers wiring CPML behind pml_faces)
         mesh._pml_cells = _pml_cells
