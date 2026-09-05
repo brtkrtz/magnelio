@@ -13,7 +13,7 @@ from math import inf
 
 import numpy as np
 
-from magnelio._fields.field_arrays import FieldState
+from magnelio._fields.field_arrays import FieldArrays
 from magnelio.mesh.grid import GridLines
 
 # MirrorSpec / mirror_sign / mirror_extend are re-exported for the
@@ -49,7 +49,7 @@ def _solver_dual_widths(d: np.ndarray) -> np.ndarray:
 
 
 def _interp_to_cell_centres(
-    fields: FieldState, components: list[str], ix: slice, iy: slice, iz: slice, grid: GridLines
+    fields: FieldArrays, components: list[str], ix: slice, iy: slice, iz: slice, grid: GridLines
 ) -> dict[str, np.ndarray]:
     """Physical fields at cell centres within *ix, iy, iz* (DD-085).
 
@@ -62,7 +62,7 @@ def _interp_to_cell_centres(
 
     Parameters
     ----------
-    fields : FieldState
+    fields : FieldArrays
         Current field snapshot (grid-quantity states).
     components : list[str]
         Subset of ``["Ex", "Ey", "Ez", "Hx", "Hy", "Hz"]``.

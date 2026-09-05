@@ -17,7 +17,7 @@ import numpy as np
 import pytest
 
 from magnelio import AnalysisScatteringTD, Mesh
-from magnelio._fields.field_arrays import FieldState
+from magnelio._fields.field_arrays import FieldArrays
 from magnelio.analysis._recipe import build_scattering_recipe, recipe_kwargs
 from magnelio.materials.material import Material
 from magnelio.materials.roughness import Hammerstad
@@ -230,7 +230,7 @@ class TestMonitorSIBCAccounting:
             sibc=spec,
         )
         mon.attach(mesh)
-        fields = FieldState.zeros(mesh.Nx, mesh.Ny, mesh.Nz, xp=np)
+        fields = FieldArrays.zeros(mesh.Nx, mesh.Ny, mesh.Nz, xp=np)
         rng = np.random.default_rng(4)
         fields.Hx[...] = rng.standard_normal(fields.Hx.shape)
         fields.Hz[...] = rng.standard_normal(fields.Hz.shape)
@@ -261,7 +261,7 @@ class TestMonitorSIBCAccounting:
             sibc=spec,
         )
         mon.attach(mesh)
-        fields = FieldState.zeros(mesh.Nx, mesh.Ny, mesh.Nz, xp=np)
+        fields = FieldArrays.zeros(mesh.Nx, mesh.Ny, mesh.Nz, xp=np)
         fields.Hx[...] = 1.0
         fields.Ex[...] = 1.0
         mon.record(fields, 0, 0.0, 1e-12)

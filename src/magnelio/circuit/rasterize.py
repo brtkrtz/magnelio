@@ -42,7 +42,7 @@ class EdgePath:
     ``'z'``, ``ijk[k]`` is the edge's **lower-index** base node, ``signs[k]``
     is ``+1`` if the curve runs along ``+axis`` there (else ``-1``),
     ``dls[k]`` is the edge length [m], and ``flat_indices[k]`` indexes the
-    flat E layout (``Ex|Ey|Ez`` concatenated — the ``FieldState`` / ``M_eps``
+    flat E layout (``Ex|Ey|Ez`` concatenated — the ``FieldArrays`` / ``M_eps``
     ordering), so the same path serves both field-array and flat-vector
     consumers.
     """
@@ -210,7 +210,7 @@ def integrate_E(field, curve, grid, *, samples_per_cell: int = 4) -> float:
 
     Parameters
     ----------
-    field : FieldState
+    field : FieldArrays
         The E field to integrate (``field.Ex/Ey/Ez``).
     curve : Curve
         The path of integration.

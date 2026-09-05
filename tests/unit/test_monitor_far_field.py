@@ -12,7 +12,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from magnelio._fields.field_arrays import FieldState
+from magnelio._fields.field_arrays import FieldArrays
 from magnelio.boundaries.boundary_conditions import BoundaryConditions
 from magnelio.mesh.grid import GridLines
 from magnelio.mesh.mesher import Mesh
@@ -104,7 +104,7 @@ def _cw_state(grid, E0, H0, t, dt, omega):
     dxa = _solver_dual_widths(grid.dx)
     dya = _solver_dual_widths(grid.dy)
     dza = _solver_dual_widths(grid.dz)
-    return FieldState(
+    return FieldArrays(
         Ex=np.full((Nx, Ny + 1, Nz + 1), 0.0) + E0 * ce * grid.dx[:, None, None],
         Ey=np.full((Nx + 1, Ny, Nz + 1), 0.0) + E0 * ce * grid.dy[None, :, None],
         Ez=np.full((Nx + 1, Ny + 1, Nz), 0.0) + E0 * ce * grid.dz[None, None, :],

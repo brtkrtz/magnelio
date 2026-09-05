@@ -85,7 +85,7 @@ def _examine(label: str, model, conformal: bool) -> None:
     Nx, Ny, Nz = mesh.Nx, mesh.Ny, mesh.Nz
     m_eps = build_M_eps(mesh)
 
-    # Layout offsets (must match FieldState).
+    # Layout offsets (must match FieldArrays).
     n_Ex = Nx * (Ny + 1) * (Nz + 1)
     Ex = m_eps[:n_Ex].reshape((Nx, Ny + 1, Nz + 1))
 

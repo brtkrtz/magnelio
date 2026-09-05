@@ -196,7 +196,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from magnelio._backend.array_api import array_module_of, gather_host
-from magnelio._fields.field_arrays import FieldState
+from magnelio._fields.field_arrays import FieldArrays
 from magnelio.constants import C0, EPS0, MU0
 from magnelio.ports._modal.discrete import DiscreteMode
 from magnelio.ports._modal.dtbc import DTBCTermination
@@ -1559,7 +1559,7 @@ class PortOperatorModal:
     # FIT-solver hook
     # ------------------------------------------------------------------
 
-    def update_e(self, fields: FieldState, t: float, dt: float) -> None:
+    def update_e(self, fields: FieldArrays, t: float, dt: float) -> None:
         """Apply the per-mode boundary termination (and optional source).
 
         DTBC modes take one exact chain step (ghost-relation

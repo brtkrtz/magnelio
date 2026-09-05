@@ -2,7 +2,7 @@
 
 The solver keeps its fields as FIT grid quantities (``e = E·l`` on the
 primal edges, ``h = H·l_dual`` on the dual edges through the primal
-faces); that layout is the internal ``_fields.FieldState`` and carries
+faces); that layout is the internal ``_fields.FieldArrays`` and carries
 no grid.  This class adds the grid lines and the Yee offset
 convention, so a user sees physical fields with known positions:
 
@@ -30,7 +30,7 @@ from collections.abc import Callable
 
 import numpy as np
 
-from magnelio._fields.field_arrays import FieldState as _RawFieldState
+from magnelio._fields.field_arrays import FieldArrays
 from magnelio.mesh.grid import GridLines
 
 _COMPONENTS = ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz")
@@ -106,12 +106,12 @@ class FieldState:
         dtype = np.result_type(*(a.dtype for a in arrays.values()), np.float64)
         lengths = self._lengths()
         raw = {name: arrays[name].astype(dtype) * lengths[name] for name in _COMPONENTS}
-        self._raw = _RawFieldState(**raw)
+        self._raw = FieldArrays(**raw)
 
     # ── construction ─────────────────────────────────────────────────────
 
     @classmethod
-    def _from_raw(cls, grid: GridLines, raw: _RawFieldState) -> FieldState:
+    def _from_raw(cls, grid: GridLines, raw: FieldArrays) -> FieldState:
         """Wrap solver grid quantities without conversion (internal)."""
         self = cls.__new__(cls)
         self._grid = grid
@@ -122,7 +122,7 @@ class FieldState:
     def zeros(cls, grid: GridLines, dtype=float) -> FieldState:
         """A zero field on *grid*."""
         cls._check_grid(grid)
-        raw = _RawFieldState.zeros(grid.Nx, grid.Ny, grid.Nz, dtype=dtype)
+        raw = FieldArrays.zeros(grid.Nx, grid.Ny, grid.Nz, dtype=dtype)
         return cls._from_raw(grid, raw)
 
     @classmethod
@@ -158,7 +158,7 @@ class FieldState:
                 value = np.asarray(fn(X, Y, Z)[k])
                 sample = np.broadcast_to(value, X.shape)
                 if np.iscomplexobj(sample) and not np.iscomplexobj(self._raw.e_flat):
-                    self._raw = _RawFieldState(
+                    self._raw = FieldArrays(
                         **{c: getattr(self._raw, c).astype(complex) for c in _COMPONENTS},
                     )
                 setattr(self._raw, name, sample * lengths[name])
@@ -345,14 +345,14 @@ class FieldState:
 
     def scaled(self, factor) -> FieldState:
         """A copy multiplied by a (possibly complex) scalar."""
-        raw = _RawFieldState(**{c: getattr(self._raw, c) * factor for c in _COMPONENTS})
+        raw = FieldArrays(**{c: getattr(self._raw, c) * factor for c in _COMPONENTS})
         return type(self)._from_raw(self._grid, raw)
 
     def real(self) -> FieldState:
         """The real part (the field of a complex mode at its zero-phase instant)."""
         if not self.is_complex:
             return self
-        raw = _RawFieldState(**{c: np.real(getattr(self._raw, c)) for c in _COMPONENTS})
+        raw = FieldArrays(**{c: np.real(getattr(self._raw, c)) for c in _COMPONENTS})
         return type(self)._from_raw(self._grid, raw)
 
     # ── plotting ─────────────────────────────────────────────────────────

@@ -126,7 +126,7 @@ class TestFusedWriteBack:
         h0 = rng.standard_normal(n_h)
 
         # ``update_e`` touches only ``fields.e_flat`` — a namespace
-        # stand-in keeps the gate free of FieldState plumbing.
+        # stand-in keeps the gate free of FieldArrays plumbing.
         e_fused = _as_fake(e0.copy())
         op_fused.update_e(
             SimpleNamespace(e_flat=e_fused, h_flat=_as_fake(h0.copy())),

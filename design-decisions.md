@@ -20840,3 +20840,43 @@ side is a numerics change and was left.
 ``investigations/fit-td-bandwidth/`` (``MEASUREMENTS.md``,
 ``streambench.py``, ``kernelsplit.py``, ``stepprofile.py``,
 ``streambench_*.json``).
+
+## DD-258 — The solver's field container is `FieldArrays`; `FieldState` names the public one only
+
+**Date:** 2026-09-05
+**Status:** Accepted — shipped on `refactor/field-arrays-rename`.
+
+**Problem.**  Since [[DD-224]] Phase C two classes carried the name
+`FieldState`: `magnelio._fields.field_arrays.FieldState`, the flat
+structure-of-arrays store of FIT grid quantities (`e = E·l` [V],
+`h = H·l_dual` [A], no grid), and `magnelio.fields.FieldState`, the
+public container of physical fields with grid lines and Yee offsets.
+Ports, boundaries, monitors and the solver annotated the former,
+`SourceFieldInitial` and `EigenmodeResult.field` the latter; the
+public wrapper imported the raw class under an alias to keep both
+readable in one file.  A traceback line, a docstring or a type
+annotation no longer said which of the two — a grid quantity or a
+field strength — it meant, and that distinction is exactly what
+[[DD-085]] exists to keep visible.
+
+**Decision.**  The private class is renamed to `FieldArrays`, after
+its module.  The public `magnelio.fields.FieldState` keeps its name
+and API.  No user-visible change: `magnelio._fields` is private and
+the public container's `_from_raw` / `_raw` plumbing is unchanged.
+Every internal import, annotation, test and validation script follows
+the rename; docstrings that cite the raw layout say `FieldArrays`.
+
+**Consequences.**  Open, noted for a separate decision: field monitors
+still hand back cell-centred `dict[str, ndarray]` rather than a
+`FieldState`, because their samples are averaged to cell centres at
+record time ([[DD-014]], [[DD-085]]) and so do not fit the Yee-offset
+container.
+
+**Files:** `src/magnelio/_fields/field_arrays.py`, `_fields/__init__.py`,
+`fields/state.py`, `boundaries/{pec,pmc,periodic}.py`, `ports/base.py`,
+`ports/_modal/{operator,band_dtbc,port_plane}.py`,
+`ports/_lumped/operator.py`, `monitors/base.py`, `solver/fit_td.py`,
+`solver/eigenmode_result.py`, `sources/field_initial.py`,
+`io/{project,paraview}.py`, `circuit/rasterize.py`, the unit and
+integration tests that build raw states, `validation/*.py`; internal
+record `investigations/patch-array/kb035_synthetic.py`.

@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from magnelio._fields.field_arrays import FieldState
+from magnelio._fields.field_arrays import FieldArrays
 from magnelio.mesh.grid import GridLines
 
 
@@ -16,7 +16,7 @@ def _grid(Nx=5, Ny=5, Nz=5):
 
 
 def _fields(Nx=5, Ny=5, Nz=5):
-    f = FieldState.zeros(Nx, Ny, Nz)
+    f = FieldArrays.zeros(Nx, Ny, Nz)
     f.Ex[:] = 1.0
     f.Ey[:] = 1.0
     f.Ez[:] = 1.0

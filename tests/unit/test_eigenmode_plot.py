@@ -1,6 +1,6 @@
 """Unit tests for EigenmodeResult.plot() slice rendering.
 
-Uses a synthetic single-mode result on a uniform grid: the FieldState
+Uses a synthetic single-mode result on a uniform grid: the FieldArrays
 carries FIT grid quantities (e = E·l), so a uniform physical field maps
 to Ex = E0·dx on every x-edge and the cell-centre interpolation must
 recover E0 exactly.
@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
-from magnelio._fields.field_arrays import FieldState
+from magnelio._fields.field_arrays import FieldArrays
 from magnelio.mesh.grid import GridLines
 from magnelio.solver.eigenmode_result import EigenmodeResult
 
@@ -38,7 +38,7 @@ def uniform_result():
         z=np.linspace(0, 0.03, Nz + 1),
     )
     dx = grid.x[1] - grid.x[0]
-    mode = FieldState(
+    mode = FieldArrays(
         Ex=np.full((Nx, Ny + 1, Nz + 1), E0 * dx),
         Ey=np.zeros((Nx + 1, Ny, Nz + 1)),
         Ez=np.zeros((Nx + 1, Ny + 1, Nz)),

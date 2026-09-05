@@ -8,7 +8,7 @@ from math import inf
 import numpy as np
 import pytest
 
-from magnelio._fields.field_arrays import FieldState
+from magnelio._fields.field_arrays import FieldArrays
 from magnelio.mesh.grid import GridLines
 from magnelio.monitors._dft import DFTAccumulator
 from magnelio.monitors.base import (
@@ -41,7 +41,7 @@ def _make_grid(Nx=4, Ny=5, Nz=6):
 def _make_fields(grid):
     Nx, Ny, Nz = grid.Nx, grid.Ny, grid.Nz
     rng = np.random.default_rng(42)
-    return FieldState(
+    return FieldArrays(
         Ex=rng.standard_normal((Nx, Ny + 1, Nz + 1)),
         Ey=rng.standard_normal((Nx + 1, Ny, Nz + 1)),
         Ez=rng.standard_normal((Nx + 1, Ny + 1, Nz)),
@@ -397,7 +397,7 @@ class TestMonitorFieldFrequency:
         for n in range(n_steps):
             t = n * dt
             # Create fields with a uniform sinusoidal Ez
-            fields = FieldState.zeros(Nx, Ny, Nz)
+            fields = FieldArrays.zeros(Nx, Ny, Nz)
             fields.Ez[:] = np.sin(omega * t)
             mon.record(fields, n, t, dt)
 
@@ -483,7 +483,7 @@ class TestFreqMonitorInterval:
         Nx, Ny, Nz = grid.Nx, grid.Ny, grid.Nz
         for n in range(n_steps):
             t = n * dt
-            fields = FieldState.zeros(Nx, Ny, Nz)
+            fields = FieldArrays.zeros(Nx, Ny, Nz)
             fields.Ez[:] = np.sin(omega * t)
             mon.record(fields, n, t, dt)
         return mon
@@ -546,7 +546,7 @@ class TestFreqMonitorInterval:
         mon.attach(_FakeMesh(grid))
         seen = []
         for n in range(200, 260):
-            fields = FieldState.zeros(2, 2, 2)
+            fields = FieldArrays.zeros(2, 2, 2)
             fields.Ez[:] = 1.0
             before = complex(np.asarray(mon.data_raw["Ez"]).ravel()[0])
             mon.record(fields, n, n * 1e-12, 1e-12)
@@ -626,7 +626,7 @@ class TestFreqMonitorRenormalize:
         for n in range(n_steps):
             t = n * dt
             src_values[n] = src_amp * np.sin(omega * t)
-            fields = FieldState.zeros(Nx, Ny, Nz)
+            fields = FieldArrays.zeros(Nx, Ny, Nz)
             # states are grid quantities e = E·l (DD-085): a uniform
             # physical Ez of (transfer·src) is the edge voltage E·dz
             fields.Ez[:] = transfer * src_amp * np.sin(omega * t) * float(grid.dz[0])

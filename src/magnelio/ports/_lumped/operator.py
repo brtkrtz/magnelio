@@ -48,7 +48,7 @@ from typing import Callable
 
 import numpy as np
 
-from magnelio._fields.field_arrays import FieldState
+from magnelio._fields.field_arrays import FieldArrays
 from magnelio.circuit.companion import ParallelRLC, SeriesRLC
 
 _COMPONENT_OF_DIRECTION = {"x": 0, "y": 1, "z": 2}
@@ -131,7 +131,7 @@ class LumpedElementOperator:
         del h
         return np.array([self._last_I], dtype=float)
 
-    def update_e(self, fields: FieldState, t: float, dt: float) -> None:
+    def update_e(self, fields: FieldArrays, t: float, dt: float) -> None:
         comps = (fields.Ex, fields.Ey, fields.Ez)
 
         # DD-085 grid-quantity form: edge states are voltages, so the

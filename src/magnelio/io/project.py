@@ -2888,7 +2888,7 @@ def _load_eigenmodes(path: Path, mesh=None):
     """Reconstruct an :class:`EigenmodeResult` from ``eigenmodes.h5``."""
     import h5py  # noqa: PLC0415
 
-    from magnelio._fields.field_arrays import FieldState  # noqa: PLC0415
+    from magnelio._fields.field_arrays import FieldArrays  # noqa: PLC0415
     from magnelio.solver.eigenmode_result import EigenmodeResult  # noqa: PLC0415
 
     with h5py.File(path / "eigenmodes.h5", "r") as f:
@@ -2898,7 +2898,7 @@ def _load_eigenmodes(path: Path, mesh=None):
         for i in range(len(frequencies)):
             mg = f[f"mode_{i:03d}"]
             modes.append(
-                FieldState(
+                FieldArrays(
                     Ex=mg["Ex"][()],
                     Ey=mg["Ey"][()],
                     Ez=mg["Ez"][()],

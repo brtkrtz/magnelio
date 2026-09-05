@@ -28,7 +28,7 @@ import math
 import numpy as np
 import pytest
 
-from magnelio._fields.field_arrays import FieldState
+from magnelio._fields.field_arrays import FieldArrays
 from magnelio._operators.material_matrices import build_M_eps, build_M_mu
 from magnelio.boundaries.pec import PECBoundary
 from magnelio.boundaries.pmc import PMCBoundary
@@ -70,7 +70,7 @@ def _initial_te10_packet(
     direction: str = "forward",
     amplitude: float = 1.0,
     dt: float = 0.0,
-) -> FieldState:
+) -> FieldArrays:
     """Build a forward-propagating TE10 wave packet IC.
 
     Constructs ``Ez`` AND a matched ``Hy`` so the IC is a pure forward
@@ -113,7 +113,7 @@ def _initial_te10_packet(
 
     sign = +1.0 if direction == "forward" else -1.0
 
-    fields = FieldState.zeros(mesh.Nx, mesh.Ny, mesh.Nz)
+    fields = FieldArrays.zeros(mesh.Nx, mesh.Ny, mesh.Nz)
 
     y_rel = y_n - y_n[0]
     pattern_y_node = np.sin(np.pi * y_rel / a)  # at y-nodes (for Ez)

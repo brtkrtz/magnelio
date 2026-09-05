@@ -314,7 +314,7 @@ def rim_energy_fraction(mesh: Mesh, mode, h_t: float) -> tuple[float, float]:
 
 
 def lowest_modes(mesh: Mesh, n: int):
-    """Return the n lowest physical eigenfrequencies + their FieldStates."""
+    """Return the n lowest physical eigenfrequencies + their FieldArrays."""
     result = AnalysisEigenmode(mesh=mesh, n_modes=n + 3, verbose=False).run()
     phys = np.nonzero(result.frequencies > 1e6)[0]
     order = phys[np.argsort(result.frequencies[phys])][:n]

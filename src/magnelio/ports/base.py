@@ -26,7 +26,7 @@ from typing import Callable, Protocol, runtime_checkable
 
 import numpy as np
 
-from magnelio._fields.field_arrays import FieldState
+from magnelio._fields.field_arrays import FieldArrays
 
 
 @runtime_checkable
@@ -76,7 +76,7 @@ class Port(Protocol):
         """
         ...
 
-    def update_e(self, fields: FieldState, t: float, dt: float) -> None:
+    def update_e(self, fields: FieldArrays, t: float, dt: float) -> None:
         """E-side hook, called after PEC / CPML / source corrections.
 
         Lumped ports run the semi-implicit Thévenin update on their

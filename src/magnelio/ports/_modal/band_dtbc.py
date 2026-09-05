@@ -78,7 +78,7 @@ from scipy.interpolate import CubicSpline
 from scipy.special import erfc, erfcinv
 
 from magnelio._backend.array_api import array_module_of, gather_host
-from magnelio._fields.field_arrays import FieldState
+from magnelio._fields.field_arrays import FieldArrays
 from magnelio.mesh.mesher import Mesh  # noqa: F401  (type reference)
 from magnelio.ports._modal.discrete import DiscreteMode
 from magnelio.ports._modal.port_plane import PortPlane
@@ -1827,7 +1827,7 @@ class PortOperatorBandDTBC:
     # FIT-solver hook
     # ------------------------------------------------------------------
 
-    def update_e(self, fields: FieldState, t: float, dt: float) -> None:
+    def update_e(self, fields: FieldArrays, t: float, dt: float) -> None:
         """One projected-boundary leapfrog step; write the port plane.
 
         Called as the last E-side step (``fields.e_flat`` at
