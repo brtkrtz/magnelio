@@ -503,12 +503,38 @@ class TDResult:
             ax.legend()
         return fig, ax
 
-    def __repr__(self) -> str:
+    # ── how a result introduces itself (DD-254) ───────────────────────
+
+    def _summary_rows(self) -> list[tuple[str, object]]:
+        from magnelio._repr import fmt_db  # noqa: PLC0415
+        from magnelio.post._energy import db_below_peak  # noqa: PLC0415
+
         keys = [f"{n}:{m}" if m else n for n, m in self.excitation_signals]
-        return (
-            f"TDResult(excitations={keys}, n_steps={self.n_steps}, "
-            f"channels={sorted(self.signals)}, stop_reason={self.stop_reason!r})"
-        )
+        duration = self.n_steps * self.dt * 1e9
+        return [
+            ("excitations", ", ".join(keys) or "—"),
+            ("channels", ", ".join(f"{p}:{m}" for p, m in sorted(self.signals)) or "—"),
+            ("steps", f"{self.n_steps} ({duration:.3g} ns)"),
+            ("dt", self.dt),
+            ("stop reason", self.stop_reason),
+            ("energy", f"{fmt_db(db_below_peak(self.energy_trace))} below peak"),
+            ("elapsed", format_seconds(self.elapsed)),
+            ("started", self.started),
+            ("monitors", ", ".join(sorted(self.monitors)) or "—"),
+        ]
+
+    def _title(self) -> str:
+        return f"TDResult {self.name!r}" if self.name else "TDResult"
+
+    def __repr__(self) -> str:
+        from magnelio._repr import kv_block  # noqa: PLC0415
+
+        return kv_block(self._title(), self._summary_rows())
+
+    def _repr_html_(self) -> str:
+        from magnelio._repr import html_kv  # noqa: PLC0415
+
+        return html_kv(self._title(), self._summary_rows())
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -2379,7 +2405,7 @@ def _resume_transient(
     """
     from magnelio.io.project import ProjectStore  # noqa: PLC0415
 
-    run_meta = proj.runs[run_name]
+    run_meta = proj._run_info(run_name)
     ckpt = proj.checkpoint_state(run_name)
     if ckpt is None:
         raise ValueError(

@@ -181,9 +181,9 @@ class TestProjectStore:
         ).run(excitations=excs, total_time_steps=240, name="both")
         assert proj.setup["analysis"] == "AnalysisTD"
         assert list(proj.runs) == ["both"]
-        assert proj.runs["both"]["excited"] is None
-        assert proj.runs["both"]["excitations"] == [["p1", 0], ["p2", 0]]
-        assert proj.runs["both"]["state"] == "done"
+        assert proj.runs["both"].excited is None
+        assert proj.runs["both"].excitations == (("p1", 0), ("p2", 0))
+        assert proj.runs["both"].state == "done"
 
         stored = proj.result("both")
         assert isinstance(stored, TDResult) and stored.name == "both"
@@ -237,8 +237,8 @@ class TestProjectStore:
         proj = mio.AnalysisScatteringTD(
             mesh=mesh, f_max=F_MAX, verbose=False, backend="numpy", project=str(tmp_path / "s")
         ).run(excited=["p1"], energy_stop_db=40.0)
-        assert proj.runs["p1_mode0"]["excited"] == ["p1", 0]
-        assert proj.runs["p1_mode0"]["excitations"] == [["p1", 0]]
+        assert proj.runs["p1_mode0"].excited == ("p1", 0)
+        assert proj.runs["p1_mode0"].excitations == (("p1", 0),)
         td = proj.result(("p1", 0))
         assert td.name == "p1_mode0"
         np.testing.assert_array_equal(

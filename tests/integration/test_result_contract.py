@@ -85,6 +85,13 @@ class TestContractShape:
         assert result.elapsed > 0.0
         assert result.started <= result.finished
 
+    def test_repr_is_short_and_array_free(self, result):
+        text = repr(result)
+        assert len(text) < 800
+        assert "array(" not in text
+        assert "[[" not in text
+        assert "<table" in result._repr_html_()
+
     def test_phase_matches_s(self, result):
         s = result.S("p2", "p1")
         ph = result.phase("p2", "p1", deg=False, unwrap=False)

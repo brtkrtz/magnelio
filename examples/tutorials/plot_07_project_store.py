@@ -211,7 +211,7 @@ fig.tight_layout()
 # Here we ask the third one, extending the H-arm run by 2000 steps:
 
 s13_before = proj.S("port1", "port3")
-n_before = proj.runs["port3_mode0"]["n_steps"]
+n_before = proj.runs["port3_mode0"].n_steps
 
 proj = mio.resume(proj_dir, excited="port3", total_time_steps=n_before + 2000, verbose=False)
 

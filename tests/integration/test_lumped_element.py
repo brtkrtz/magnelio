@@ -235,10 +235,10 @@ def test_rlc_source_resume_bit_exact(tmp_path):
         total_time_steps=n1,
         checkpoint_interval=40,
     )
-    assert open_project(p).runs["feed_mode0"]["n_steps"] == n1
+    assert open_project(p).runs["feed_mode0"].n_steps == n1
 
     proj = resume(p, excited=("feed", 0), total_time_steps=n_total, verbose=False)
-    assert proj.runs["feed_mode0"]["n_steps"] == n_total
+    assert proj.runs["feed_mode0"].n_steps == n_total
     for chan, (rv, ri) in ref_vi.items():
         gv, gi = proj.signals[("feed", 0)][chan]
         assert np.array_equal(rv, gv.values), (

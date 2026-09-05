@@ -340,6 +340,45 @@ class ScatteringTDResult(ScatteringResultMixin):
         """Observed ``(port_name, mode_idx)`` pairs, in S-matrix order."""
         return self.s_params.channels
 
+    # ── how a result introduces itself (DD-254) ───────────────────────
+
+    def _summary_rows(self) -> list[tuple[str, object]]:
+        from magnelio._progress import format_seconds  # noqa: PLC0415
+        from magnelio._repr import fmt_db  # noqa: PLC0415
+        from magnelio.post._energy import db_below_peak  # noqa: PLC0415
+
+        f = self.f_axis
+        settings = self.settings
+        traces = self.energy_traces or {}
+        levels = [db_below_peak(t) for t in traces.values()]
+        levels = [v for v in levels if v is not None]
+        rows: list[tuple[str, object]] = [
+            ("excitations", list(self.excitations)),
+            ("channels", list(self.channels)),
+            ("frequency", f"{f[0] / 1e9:.4g}–{f[-1] / 1e9:.4g} GHz ({f.size} points)"),
+            ("steps", f"{self.n_actual_steps} ({self.n_actual_steps * self.dt * 1e9:.3g} ns)"),
+            ("dt", self.dt),
+            ("port model", self.port_model_used),
+            ("stop reason", settings.stop_reason if settings is not None else None),
+        ]
+        if levels:
+            rows.append(("energy", f"{fmt_db(max(levels))} below peak (worst run)"))
+        rows += [
+            ("elapsed", format_seconds(self.elapsed)),
+            ("started", self.started),
+        ]
+        return rows
+
+    def __repr__(self) -> str:
+        from magnelio._repr import kv_block  # noqa: PLC0415
+
+        return kv_block("ScatteringTDResult", self._summary_rows())
+
+    def _repr_html_(self) -> str:
+        from magnelio._repr import html_kv  # noqa: PLC0415
+
+        return html_kv("ScatteringTDResult", self._summary_rows())
+
     @property
     def excitations(self) -> tuple:
         """Excited ``(port_name, mode_idx)`` pairs — the S-matrix columns present."""
@@ -2322,7 +2361,7 @@ def _resume_scattering(
     from magnelio.io.project import ProjectStore, open_project  # noqa: PLC0415
 
     run_name = proj._run_name_for_excited(excited)
-    run_meta = proj.runs[run_name]
+    run_meta = proj._run_info(run_name)
     excited_chan = (run_meta["excited"][0], int(run_meta["excited"][1]))
 
     analysis = AnalysisScatteringTD.from_project(proj, verbose=verbose)

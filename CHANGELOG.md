@@ -21,11 +21,33 @@ major version is 0, minor releases may change the public API.
   and the runtime cap).
 - `ScatteringTDResult` keeps the stored-energy trace of every
   excitation (`energy_traces`).
+- `Run` objects: `project.runs[name]` is a live view of one run — its
+  state, step count, stop criteria and stop reason, its clock (still
+  moving while it marches), its energy trace and the latest energy
+  level below the peak, its result and monitors.  A `running` run
+  whose solver process no longer exists on this host reads as `stale`,
+  and so does its project.
+- A project that is not finished re-reads its index whenever the file
+  changes, so a project opened while a solver writes it shows the
+  current state without `refresh()`.
+- Results, runs, projects, S-parameter matrices and checkpoints print
+  as short summaries — what they are, how large, in what state, never
+  their arrays — and as tables in a notebook.  `checkpoint_state()`
+  returns a `CheckpointState` mapping (indexed as the dict was).
+- A *Projects and runs* chapter in the technical description, and an
+  upgrade page for 0.6.
 - A *Lofts* section in the geometry chapter of the user guide: the two
   constructors (`Loft` from profiles, `lofted()` between faces of
   existing bodies), the three blend modes, and what `tension` does.
 
 ### Changed
+
+- **Breaking:** `Project.runs` hands out `Run` objects instead of the
+  raw dictionaries of `project.json`: `proj.runs[name]["n_steps"]`
+  becomes `proj.runs[name].n_steps`, and channel keys are tuples.
+  Iteration, `len` and `in` are unchanged.  See *Upgrading from 0.5.x*.
+- `Project.status` may read `aborted` or `stale` besides `created`,
+  `running` and `done`.
 
 - The time loop's progress line reads `step 2900/∞ | 0.7 s | energy
   -58.4/-70 dB | 3.9k steps/s`, and its closing line names the
@@ -36,6 +58,13 @@ major version is 0, minor releases may change the public API.
 - `AnalysisTD.run()` and `AnalysisScatteringTD.run()` say what they
   return: the in-RAM result, or the `Project` reader when `project=` is
   given.
+
+### Fixed
+
+- A project whose run was aborted (Ctrl-C, or an error) stayed
+  `running` forever; it now reads `aborted`.
+- `repr(project)` on a store written by another release raised at the
+  prompt; it now prints the problem instead.
 
 ### Fixed
 

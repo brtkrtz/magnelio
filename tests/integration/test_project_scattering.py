@@ -136,7 +136,7 @@ def test_project_taper_signals_matches_in_ram(tmp_path):
     ).run(excited=[("port1", 0)], taper_signals=True)
 
     # the flag is recorded per run and surfaces in the settings contract
-    assert proj.runs["port1_mode0"]["taper_signals"] is True
+    assert proj.runs["port1_mode0"].taper_signals is True
     assert proj.settings.taper_signals is True
 
     # the reader applies the same Tukey window when deriving S
@@ -234,7 +234,7 @@ def test_live_streaming_concurrent_read(tmp_path):
                 seen_running = True
             # watcher idiom: the run index now lists planned runs as
             # ``pending`` before they start — skip those
-            started = {name for name, info in proj.runs.items() if info.get("state") != "pending"}
+            started = {name for name, run in proj.runs.items() if run.state != "pending"}
             if started:
                 n = int(proj.energy_trace(("port1", 0)).size)
                 if not seen_lengths or n != seen_lengths[-1]:
@@ -265,7 +265,7 @@ def test_live_streaming_concurrent_read(tmp_path):
     # completion + exact parity with the in-RAM reference
     final = open_project(p)
     assert final.status == "done"
-    assert final.runs["port1_mode0"]["state"] == "done"
+    assert final.runs["port1_mode0"].state == "done"
     for out in ("port1", "port2"):
         np.testing.assert_allclose(
             final.S(out, "port1"),
@@ -284,7 +284,7 @@ def test_multi_excitation_single_call_status(tmp_path):
     )
     assert proj.status == "done"
     assert len(proj.runs) == 2
-    assert all(i["state"] == "done" for i in proj.runs.values())
+    assert all(run.state == "done" for run in proj.runs.values())
 
 
 def test_pending_second_run_reader_state(tmp_path):
@@ -297,7 +297,7 @@ def test_pending_second_run_reader_state(tmp_path):
     ProjectStore(p).register_planned_runs([("port2_mode0", {"excited": ["port2", 0]})])
     proj = open_project(p)
     assert proj.status == "running"  # not "done": run 2 planned
-    assert proj.runs["port2_mode0"]["state"] == "pending"
+    assert proj.runs["port2_mode0"].state == "pending"
     assert proj.f_axis.size > 0
     assert proj.energy_trace(("port1", 0)).size > 0
     assert ("port1", 0) in proj.signals
@@ -314,20 +314,20 @@ def test_stop_reason_booked_in_index_and_settings(tmp_path):
     )
     info = proj.runs["port1_mode0"]
     # Well-absorbed TEM line: one of the two criteria fired normally.
-    assert info["stop_reason"] in ("energy", "port_signal")
-    assert proj.settings.stop_reason == info["stop_reason"]
-    if info.get("final_port_signal_db") is not None:
+    assert info.stop_reason in ("energy", "port_signal")
+    assert proj.settings.stop_reason == info.stop_reason
+    if info.final_port_signal_db is not None:
         # 0.0 is legal: the energy criterion can fire before the port
         # envelope ever samples below its running peak.
-        assert info["final_port_signal_db"] <= 0.0
-        assert proj.settings.final_port_signal_db == info["final_port_signal_db"]
+        assert info.final_port_signal_db <= 0.0
+        assert proj.settings.final_port_signal_db == info.final_port_signal_db
     # The run's wall clock, and the analysis call that contained it.
-    assert info["elapsed"] > 0.0
-    assert info["started"] <= info["finished"]
-    assert info["pid"] == os.getpid()
-    assert proj.meta["analysis"]["elapsed"] >= info["elapsed"]
+    assert info.elapsed > 0.0
+    assert info.started <= info.finished
+    assert info.pid == os.getpid()
+    assert proj.meta["analysis"]["elapsed"] >= info.elapsed
     td = proj.result("port1_mode0")
-    assert td.elapsed == pytest.approx(info["elapsed"])
+    assert td.elapsed == pytest.approx(info.elapsed)
     assert td.started <= td.finished
 
 
@@ -343,16 +343,16 @@ def test_runtime_cap_truncates_books_and_resumes(tmp_path):
             max_time_steps=120,
         )
     info = proj.runs["port1_mode0"]
-    assert info["state"] == "done"
-    assert info["stop_reason"] == "runtime_cap"
-    assert info["n_steps"] == 120
+    assert info.state == "done"
+    assert info.stop_reason == "runtime_cap"
+    assert info.n_steps == 120
 
     # The cap-truncated run resumes on its inherited launch criterion
     # (a fresh auto cap budget) and now ends on a real criterion.
     proj2 = mio.resume(tmp_path / "pp", excited="port1", verbose=False)
     info2 = proj2.runs["port1_mode0"]
-    assert info2["stop_reason"] in ("energy", "port_signal")
-    assert info2["n_steps"] > 120
+    assert info2.stop_reason in ("energy", "port_signal")
+    assert info2.n_steps > 120
 
 
 def test_lumped_element_streams_and_resumes(tmp_path):
@@ -390,7 +390,7 @@ def test_lumped_element_streams_and_resumes(tmp_path):
         )
     proj = mio.resume(tmp_path / "pp", excited="port1", verbose=False)
     info = proj.runs["port1_mode0"]
-    assert info["stop_reason"] in ("energy", "port_signal")
+    assert info.stop_reason in ("energy", "port_signal")
     s11_proj = np.abs(proj.S("port1", "port1"))
     assert np.allclose(s11_proj, s11_ram, atol=5e-3)
     assert all("shunt" not in str(c) for c in proj.channels)

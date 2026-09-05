@@ -309,7 +309,7 @@ def test_streamed_run_writes_final_checkpoint(tmp_path):
 
     state = proj.checkpoint_state(("port1", 0))
     assert state is not None
-    n_recorded = proj.runs["port1_mode0"]["n_steps"]
+    n_recorded = proj.runs["port1_mode0"].n_steps
     assert int(state["n_completed"]) == n_recorded == 400
     # the field state is really there (not just metadata); E-edge and
     # H-face counts differ on the Yee grid, so only the ranks match.
@@ -341,8 +341,10 @@ def test_streamed_graceful_abort_via_sigint(tmp_path):
 
     # the aborted run left a resumable project on disk
     proj = open_project(p)
-    assert proj.runs["port1_mode0"]["state"] == "aborted"
-    n_aborted = proj.runs["port1_mode0"]["n_steps"]
+    assert proj.runs["port1_mode0"].state == "aborted"
+    # ... and the project says so, rather than "running" forever.
+    assert proj.status == "aborted"
+    n_aborted = proj.runs["port1_mode0"].n_steps
     assert 0 < n_aborted < 3000, f"did not abort early: {n_aborted}"
 
     ckpt = p / "runs" / "port1_mode0" / "checkpoint.h5"

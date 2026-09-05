@@ -228,8 +228,8 @@ class TestPlannedRunProtocol:
         )
         p = open_project(store.path)
         assert p.status == "running"
-        assert p.runs["port1_mode0"]["state"] == "pending"
-        assert p.runs["port2_mode0"]["excited"] == ["port2", 0]
+        assert p.runs["port1_mode0"].state == "pending"
+        assert p.runs["port2_mode0"].excited == ("port2", 0)
         store._finalize_run("port1_mode0", 100, "done")
         assert open_project(store.path).status == "running"
         store._finalize_run("port2_mode0", 100, "done")
@@ -246,9 +246,9 @@ class TestPlannedRunProtocol:
             ]
         )
         p = open_project(store.path)
-        assert p.runs["port1_mode0"]["state"] == "done"
-        assert p.runs["port1_mode0"]["n_steps"] == 42
-        assert p.runs["port2_mode0"]["state"] == "pending"
+        assert p.runs["port1_mode0"].state == "done"
+        assert p.runs["port1_mode0"].n_steps == 42
+        assert p.runs["port2_mode0"].state == "pending"
         assert p.status == "running"
 
     def test_reader_guards_on_pending(self, tmp_path):
@@ -285,11 +285,11 @@ class TestRunTiming:
         store.register_planned_runs([("port1_mode0", {"excited": ["port1", 0]})])
         store._finalize_run("port1_mode0", 100, "aborted", elapsed=1.5)
         info = open_project(store.path).runs["port1_mode0"]
-        assert info["elapsed"] == pytest.approx(1.5)
-        assert info["finished"] is not None
+        assert info.elapsed == pytest.approx(1.5)
+        assert info.finished is not None
         # A resumed march adds its own wall time to the run's total.
         store._finalize_run("port1_mode0", 200, "done", elapsed=2.0)
-        assert open_project(store.path).runs["port1_mode0"]["elapsed"] == pytest.approx(3.5)
+        assert open_project(store.path).runs["port1_mode0"].elapsed == pytest.approx(3.5)
 
     def test_planned_runs_name_their_writer(self, tmp_path):
         store = self._store(tmp_path)
@@ -308,3 +308,202 @@ class TestRunTiming:
         stamp = open_project(store.path).meta["analysis"]
         assert stamp["elapsed"] == pytest.approx(12.5)
         assert stamp["finished"] >= stamp["started"]
+
+
+class TestRunObjects:
+    """``project.runs`` hands out live run objects, not index dicts."""
+
+    def _store(self, tmp_path) -> ProjectStore:
+        grid = GridLines(
+            x=np.linspace(0, 6e-3, 7),
+            y=np.linspace(0, 4e-3, 5),
+            z=np.linspace(0, 4e-3, 5),
+        )
+        return ProjectStore.create(tmp_path / "proj", Mesh.from_grid(grid))
+
+    def test_index_is_a_mapping_of_runs(self, tmp_path):
+        from collections.abc import Mapping
+
+        from magnelio.io import Run
+
+        store = self._store(tmp_path)
+        store.register_planned_runs(
+            [
+                ("port1_mode0", {"excited": ["port1", 0]}),
+                ("port2_mode0", {"excited": ["port2", 0]}),
+            ]
+        )
+        p = open_project(store.path)
+        assert isinstance(p.runs, Mapping)
+        assert not isinstance(p.runs, dict)
+        assert list(p.runs) == ["port1_mode0", "port2_mode0"]
+        run = p.runs["port1_mode0"]
+        assert isinstance(run, Run)
+        assert p.runs["port1_mode0"] is run
+        assert run.excited == ("port1", 0)
+        assert run.state == "pending"
+        assert run.energy_trace.size == 0
+        assert run.n_energy_samples == 0
+        assert run.elapsed is None
+        with pytest.raises(KeyError, match="port1_mode0"):
+            p.runs["nope"]
+        with pytest.raises(TypeError):
+            run["n_steps"]
+
+    def test_run_is_a_live_view(self, tmp_path):
+        store = self._store(tmp_path)
+        store.register_planned_runs([("port1_mode0", {"excited": ["port1", 0]})])
+        run = open_project(store.path).runs["port1_mode0"]
+        assert run.state == "pending"
+        store._finalize_run("port1_mode0", 42, "done", stop_reason="energy", elapsed=0.5)
+        assert run.state == "done"
+        assert run.n_steps == 42
+        assert run.stop_reason == "energy"
+        assert run.elapsed == pytest.approx(0.5)
+        assert "Run 'port1_mode0'" in repr(run)
+        assert "<table" in run._repr_html_()
+
+    def test_tables_print_every_run(self, tmp_path):
+        store = self._store(tmp_path)
+        store.register_planned_runs(
+            [
+                ("port1_mode0", {"excited": ["port1", 0]}),
+                ("port2_mode0", {"excited": ["port2", 0]}),
+            ]
+        )
+        store._finalize_run("port1_mode0", 7, "done", stop_reason="energy", elapsed=1.0)
+        p = open_project(store.path)
+        text = repr(p)
+        assert text.startswith(f"Project {p.path}")
+        assert "status" in text
+        for name in ("port1_mode0", "port2_mode0", "pending", "done", "energy"):
+            assert name in text
+        assert "<table" in p._repr_html_()
+        assert "port2_mode0" in repr(p.runs)
+
+
+class TestProjectStatus:
+    def _store(self, tmp_path) -> ProjectStore:
+        grid = GridLines(
+            x=np.linspace(0, 6e-3, 7),
+            y=np.linspace(0, 4e-3, 5),
+            z=np.linspace(0, 4e-3, 5),
+        )
+        return ProjectStore.create(tmp_path / "proj", Mesh.from_grid(grid))
+
+    def test_an_aborted_run_aborts_the_project_even_with_pending_siblings(self, tmp_path):
+        store = self._store(tmp_path)
+        store.register_planned_runs(
+            [
+                ("port1_mode0", {"excited": ["port1", 0]}),
+                ("port2_mode0", {"excited": ["port2", 0]}),
+            ]
+        )
+        store._finalize_run("port1_mode0", 100, "aborted", stop_reason="aborted")
+        assert open_project(store.path).status == "aborted"
+        # Resumed to completion, the sibling still planned: on its way again.
+        store._finalize_run("port1_mode0", 200, "done", stop_reason="energy")
+        assert open_project(store.path).status == "running"
+        store._finalize_run("port2_mode0", 200, "done", stop_reason="energy")
+        assert open_project(store.path).status == "done"
+
+    def test_a_dead_writer_reads_stale(self, tmp_path):
+        import subprocess
+        import sys
+
+        from magnelio.io.project import _update_meta
+
+        store = self._store(tmp_path)
+        store.register_planned_runs([("port1_mode0", {"excited": ["port1", 0]})])
+        proc = subprocess.Popen([sys.executable, "-c", "pass"])
+        proc.wait()
+        dead_pid = proc.pid
+
+        def _running(meta, pid, host):
+            meta["runs"]["port1_mode0"].update({"state": "running", "pid": pid, "host": host})
+            meta["writer"] = {"pid": pid, "host": host}
+
+        _update_meta(store.path, lambda m: _running(m, dead_pid, socket.gethostname()))
+        p = open_project(store.path)
+        assert p.runs["port1_mode0"].state == "stale"
+        assert p.status == "stale"
+
+        _update_meta(store.path, lambda m: _running(m, os.getpid(), socket.gethostname()))
+        assert p.runs["port1_mode0"].state == "running"
+        assert p.status == "running"
+
+        _update_meta(store.path, lambda m: _running(m, dead_pid, "some-other-host"))
+        assert p.runs["port1_mode0"].state == "running"
+        assert p.status == "running"
+
+    def test_metadata_follows_the_file_until_the_project_is_finished(self, tmp_path):
+        from magnelio.io.project import _update_meta
+
+        store = self._store(tmp_path)
+        store.register_planned_runs([("port1_mode0", {"excited": ["port1", 0]})])
+        p = open_project(store.path)
+        assert p.status == "running"
+        store._finalize_run("port1_mode0", 5, "done")
+        # No refresh(): the reader noticed the writer's change on its own.
+        assert p.status == "done"
+        assert p.runs["port1_mode0"].n_steps == 5
+
+        def _note(meta):
+            meta["setup"]["note"] = "later"
+
+        _update_meta(store.path, _note)
+        # Finished projects keep their parsed copy until asked.
+        assert "note" not in p.setup
+        assert p.refresh().setup["note"] == "later"
+
+    def test_repr_never_raises_on_a_foreign_schema(self, tmp_path):
+        import json
+
+        store = self._store(tmp_path)
+        meta = json.loads((store.path / "project.json").read_text())
+        meta["schema_version"] = "1.0"
+        (store.path / "project.json").write_text(json.dumps(meta))
+        p = open_project(store.path)
+        text = repr(p)
+        assert "cannot read project.json" in text
+        assert "schema" in text.lower()
+        assert "cannot read project.json" in p._repr_html_()
+
+
+class TestCheckpointState:
+    def test_mapping_access_and_summary(self, tmp_path):
+        from magnelio.io import CheckpointState
+        from magnelio.io.project import _write_state_dict_h5
+
+        grid = GridLines(
+            x=np.linspace(0, 6e-3, 7),
+            y=np.linspace(0, 4e-3, 5),
+            z=np.linspace(0, 4e-3, 5),
+        )
+        store = ProjectStore.create(tmp_path / "proj", Mesh.from_grid(grid))
+        store.register_planned_runs([("port1_mode0", {"excited": ["port1", 0]})])
+        store._finalize_run("port1_mode0", 400, "done")
+        run_dir = store.path / "runs" / "port1_mode0"
+        run_dir.mkdir(parents=True)
+        state = {
+            "n_completed": 400,
+            "peak_energy": 1.5e-9,
+            "peak_signal": 2.0,
+            "e": np.zeros(12345, dtype=np.float32),
+            "h": np.zeros(11111, dtype=np.float32),
+            "boundaries": {"zmin": {"psi": np.zeros(3)}},
+        }
+        _write_state_dict_h5(run_dir / "checkpoint.h5", state)
+        ckpt = open_project(store.path).checkpoint_state("port1_mode0")
+        assert isinstance(ckpt, CheckpointState)
+        assert int(ckpt["n_completed"]) == 400
+        assert "boundaries" in ckpt
+        assert ckpt.get("monitors", {}) == {}
+        assert ckpt["e"].shape == (12345,)
+        text = repr(ckpt)
+        assert "n_completed" in text
+        assert "float32[12345]" in text
+        assert "boundaries" in text
+        assert "0." not in text.split("file")[0].replace("0.0", "")  # no field content
+        assert len(text) < 600
+        assert "<table" in ckpt._repr_html_()

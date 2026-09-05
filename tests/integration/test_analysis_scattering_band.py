@@ -338,7 +338,7 @@ def band_project(tmp_path_factory):
 def test_band_run_streams_to_project(band_project):
     """A band run reaches the store at all — DD-063 refused it outright."""
     assert set(band_project.runs) == {"port1_mode0", "port2_mode0"}
-    assert all(info["port_model"] == "band" for info in band_project.runs.values())
+    assert all(run.port_model == "band" for run in band_project.runs.values())
     assert band_project.settings.port_model_used == "band"
 
 
@@ -571,12 +571,12 @@ def test_band_run_resumes_bit_exactly(tmp_path):
         from magnelio import resume
         from magnelio.io.project import open_project
 
-        assert open_project(path).runs["port1_mode0"]["n_steps"] == n1
+        assert open_project(path).runs["port1_mode0"].n_steps == n1
         proj = resume(path, excited=("port1", 0), total_time_steps=n_total, verbose=False)
 
     ref = open_project(ref_path)
-    assert proj.runs["port1_mode0"]["state"] == "done"
-    assert proj.runs["port1_mode0"]["n_steps"] == n_total
+    assert proj.runs["port1_mode0"].state == "done"
+    assert proj.runs["port1_mode0"].n_steps == n_total
 
     # The recorded waves first: the boundary convolves over the whole
     # record, so memory lost at the seam shows up here before it reaches
