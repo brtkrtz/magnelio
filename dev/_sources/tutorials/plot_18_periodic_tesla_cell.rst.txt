@@ -284,9 +284,9 @@ is the magnetic one (tutorial 09).
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (3.0 s)
+      mesh | conformal cells | done (2.7 s)
       mesh | PEC masks
-      mesh | 26 x 26 x 30 cells (3.4 s total)
+      mesh | 26 x 26 x 30 cells (3.0 s total)
     grid: 26 x 26 x 30 cells
 
 
@@ -337,17 +337,17 @@ nothing periodic about them:
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (2.5 s)
+      mesh | conformal cells | done (2.3 s)
       mesh | PEC masks
-      mesh | 26 x 26 x 30 cells (2.8 s total)
+      mesh | 26 x 26 x 30 cells (2.5 s total)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | materials | done (0.6 s)
       mesh | conformal cells
-      mesh | conformal cells | done (2.9 s)
+      mesh | conformal cells | done (2.7 s)
       mesh | PEC masks
-      mesh | 26 x 26 x 30 cells (3.6 s total)
+      mesh | 26 x 26 x 30 cells (3.3 s total)
     electric walls on the iris planes (0-mode):  1.2774 GHz
     magnetic walls on the iris planes (pi-mode): 1.3016 GHz
 
@@ -557,7 +557,7 @@ surfaces at normal incidence.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (4 minutes 0.675 seconds)
+   **Total running time of the script:** (4 minutes 44.768 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_18_periodic_tesla_cell.py:

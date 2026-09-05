@@ -50,6 +50,51 @@ strips costs seconds rather than the minutes a single fuse of all of
 them takes.  The point set is the same either way; the face count is
 what the mesher sees.
 
+## Lofts: between profiles, and between faces
+
+Two constructors build a body that changes cross-section along its
+length.  `Loft(*sections)` takes the profiles themselves — planar
+sheets or closed curves, as many as the shape needs, in the order the
+body passes through them — and is the way to draw a horn or a
+multi-step matching section from sketches.  `a.lofted(near_a, b,
+near_b)` takes one face of an existing body and one face of another,
+and bridges them; the profiles are read off the two faces, so the
+transition fits both parts exactly and follows them when a dimension
+changes.
+
+Both accept `blend="spline"` (one smooth surface through all profiles)
+and `blend="ruled"` (straight surfaces between neighbours, a stack of
+frusta).  With only two profiles the two are the same surface: a
+straight run from one outline to the other, which meets each end at
+whatever angle the straight connection makes — a crease at both joints
+of a waveguide taper.
+
+The face-to-face verb adds `blend="tangent"`, which leaves each face
+along its outward normal, so the wall slope at both joints is zero and
+the transition meets both parts without a crease.  It has two regimes,
+chosen from the two normals:
+
+- **Faces that look at each other** (antiparallel normals: the two ends
+  of a taper, coaxial or laterally offset) get a loft whose
+  cross-section eases out of one profile and into the other along a
+  straight axis — the same family of intermediate sections the plain
+  loft carries, redistributed under a law whose derivative vanishes at
+  both ends.  The end tangency is exact by construction, not fitted, and
+  the axial position stays linear in the surface parameter at the
+  default `tension=1/3`.  A lateral offset between the two faces comes
+  out as a smooth dog-leg with the sections still parallel to the faces.
+- **Faces that point in different directions** (an electrode ending on
+  a *z*-face, the pin it feeds beginning on a *y*-face) get a sweep of
+  one profile into the other along a curved spine that leaves both faces
+  along their normals, with the profiles held perpendicular to the path.
+
+`tension` sets how far the blend holds its normal direction before
+turning, as a fraction of the distance between the faces; a `(start,
+end)` pair sets each end on its own.  Values well past `2/3` overshoot
+into a bulge.  Two parallel faces that look *away* from each other are
+refused: a transition leaving both along their normals would have to
+pass through both bodies.
+
 ## From a map to a reflector: parametric surfaces
 
 `Surface.parametric(fn, u=(u0, u1), v=(v0, v1), samples=(nu, nv))`

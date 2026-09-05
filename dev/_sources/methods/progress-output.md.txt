@@ -84,13 +84,36 @@ result = analysis.run(f_axis=f_axis)      # does not pay it again
 ```
 
 ```
-  FIT-TD | time step 2701/∞ | stored energy [dB] -70.0/-70 | done (energy criterion)
+  FIT-TD | 37 k cells | dt 1.32 ps | single on NumPy (CPU) | ≈ 4 MB
+  FIT-TD | stops at energy -70 dB or port signal -60 dB, cap 388480 steps
+  FIT-TD | step 2900/∞ | 0.7 s | energy -58.4/-70 dB | 3.9k steps/s
+  FIT-TD | step 6001/∞ | 1.5 s | energy -70.2/-70 dB | done (energy criterion)
+  run | finished in 2.6 s
 ```
 
-`FIT-TD` is the time loop.  While it marches, the line reports the step
-count and the quantity the active stop criterion watches — stored
-energy in dB below the run peak, or the port-signal envelope — so the
-distance to the finish is visible even on an open-ended run.
+`FIT-TD` is the time loop.  Two lines before the first step say what is
+about to run and what will end it: the cell count, the time step, the
+precision and the device, and the memory the solver's own arrays take
+(ports, monitors and the absorbing boundary come on top, hence the ≈);
+then the stop criteria the run watches and the runtime cap behind them.
+While it marches, the line reports the step, a running wall clock, the
+quantity the active stop criterion watches — stored energy in dB below
+the run peak, or the port-signal envelope — and the step rate.  A run
+with a fixed step count also shows the estimated time to the end
+(`ETA`); an open-ended run does not, because it ends on a criterion, and
+the distance to that is exactly what the dB figure shows.  The closing
+line keeps the same slots and names the criterion that fired, so it
+reads as the last state of the running line.
+
+`run` closes the analysis call itself.  `finished in` counts from the
+start of the call, setup included, and a multi-excitation analysis says
+how many runs it made.  The same clock is kept on what comes back:
+every result carries `started`, `finished` and `elapsed` (the wall time
+of the marching), and a project store books them per run, resumes
+summed.  A checkpoint written on request and a resumed run each get a
+line of their own under these labels.  All of this is the output of
+the process that computes; to follow a run from *another* process —
+a second notebook, a laptop — see *Projects and runs*.
 
 ```
   eigen | factorising at sigma=2.012e+21 (7.14 GHz) | done (14.0 s)
@@ -133,21 +156,20 @@ The closing line of an operation carries its total wall time whenever
 that total is itself worth reporting, so a build with several long
 phases needs no addition in your head.
 
-## Terminals, logs and notebooks
+## Terminals, notebooks and logs
 
-On a terminal, progress is one line that updates in place.  Everywhere
-else — a log file, a CI job, a captured pipe, a Jupyter notebook —
-Magnelio writes whole lines at a slow cadence instead, because
-overwriting depends on carriage returns that a log file records
+On a terminal, progress is one line that updates in place a few times a
+second.  A notebook cell redraws such a line the same way, so there the
+line updates in place too, about twice a second — every refresh is a
+message to the browser, and that cadence keeps the line live without
+flooding the connection.  Everywhere else — a log file, a CI job, a
+captured pipe — Magnelio writes whole lines at a slow cadence instead,
+because overwriting depends on carriage returns that a log file records
 literally and concatenates into one unreadable row.  You do not
 configure this; it follows from where the output is going.
 
-Two consequences worth knowing:
-
-* Redirecting a run to a file gives you a readable record, not a
-  transcript of every refresh.
-* In a notebook you see a phase announced when it begins and again when
-  it ends, rather than a single updating line.
+One consequence worth knowing: redirecting a run to a file gives you a
+readable record, not a transcript of every refresh.
 
 Work running inside worker processes stays silent.  Mesh sectioning and
 the band port kernel are computed by process pools, and every worker

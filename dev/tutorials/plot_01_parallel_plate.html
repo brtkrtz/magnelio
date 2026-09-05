@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=e03c1a07"></script>
+    <script src="../_static/documentation_options.js?v=f1622b98"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -177,18 +177,35 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.5.html">
+  <a class="nav-link nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
   </a>
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../bibliography.html">
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../bibliography.html">
     Bibliography
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -339,6 +356,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
   </a>
 </li>
 
@@ -657,11 +681,11 @@ cap the cell size at 1/16 of the plate spacing.</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (21.2 s)
+  mesh | materials | done (16.6 s)
   mesh | conformal cells
-  mesh | conformal cells | done (8.3 s)
+  mesh | conformal cells | done (6.0 s)
   mesh | PEC masks
-  mesh | 32 x 16 x 64 cells (29.6 s total)
+  mesh | 32 x 16 x 64 cells (22.8 s total)
 grid: 32 x 16 x 64 cells
 </pre></div>
 </div>
@@ -716,7 +740,7 @@ textbook formula.</p>
   [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 188.37 Ω  ε_eff = 1.000  termination = dtbc (chain floor &lt;= -329 dB)
 Z_L (port solver):  188.3652 Ohm
 Z_L (eta0 * b/a) :  188.3652 Ohm
-relative deviation: 1.11e-16
+relative deviation: 2.22e-16
 </pre></div>
 </div>
 <p>The two agree to machine precision: the uniform TEM field of this
@@ -755,7 +779,7 @@ run stops on its own once the port signals have decayed.</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"max |S11| in band: </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s11_db</span></a><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">6.1f</span><span class="si">}</span><span class="s2"> dB"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_01_parallel_plate_004.png" srcset="../_images/sphx_glr_plot_01_parallel_plate_004.png" alt="Parallel-plate line, 20 mm" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S11| in band: -125.3 dB
+<img src="../_images/sphx_glr_plot_01_parallel_plate_004.png" srcset="../_images/sphx_glr_plot_01_parallel_plate_004.png" alt="Parallel-plate line, 20 mm" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S11| in band: -124.8 dB
 </pre></div>
 </div>
 <p>A matched, lossless, uniform line transmits everything: <code class="docutils literal notranslate"><span class="pre">|S21|</span></code>
@@ -794,7 +818,7 @@ before the run, and validate against known results where they
 exist.  The next tutorial builds a real three-dimensional structure
 (a coaxial line) from solids and boolean operations, with a port
 spec matched to its cross-section.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 42.669 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 42.307 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-01-parallel-plate-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/669effd58f485a0c27678f09024dad99/plot_01_parallel_plate.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_01_parallel_plate.ipynb</span></code></a></p>

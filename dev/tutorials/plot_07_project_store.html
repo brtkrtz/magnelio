@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=e03c1a07"></script>
+    <script src="../_static/documentation_options.js?v=f1622b98"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -175,18 +175,35 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.5.html">
+  <a class="nav-link nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
   </a>
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../bibliography.html">
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../bibliography.html">
     Bibliography
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -337,6 +354,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
   </a>
 </li>
 
@@ -654,20 +678,20 @@ everything went (sizes in kB):</p>
 geometry.json                                                    0.8
 geometry.vtm                                                     0.3
 mesh.h5                                                      11880.4
-project.json                                                     3.2
+project.json                                                     3.8
 geometry/geometry_0.vtp                                          3.5
 runs/port3_mode0/checkpoint.h5                                1523.7
 runs/port3_mode0/fields_freq.h5                               3553.3
 runs/port3_mode0/paraview_open.py                               18.9
 runs/port3_mode0/results.h5                                    699.6
 runs/port3_mode0/paraview/volume_pattern.pvd                     0.2
-runs/port3_mode0/paraview/volume_pattern/f_0000.vtr           1317.3
+runs/port3_mode0/paraview/volume_pattern/f_0000.vtr           1316.2
 runs/port4_mode0/checkpoint.h5                                1523.7
 runs/port4_mode0/fields_freq.h5                               3553.3
 runs/port4_mode0/paraview_open.py                               18.9
 runs/port4_mode0/results.h5                                    699.6
 runs/port4_mode0/paraview/volume_pattern.pvd                     0.2
-runs/port4_mode0/paraview/volume_pattern/f_0000.vtr           1312.6
+runs/port4_mode0/paraview/volume_pattern/f_0000.vtr           1314.7
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">project.json</span></code> carries the run registry and the reconstruction
@@ -686,13 +710,22 @@ separation the store exists for: a cluster job computes, your
 laptop evaluates.  S-parameters are derived on read from the stored
 signals, with the accessors you already know:</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">proj</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">open_project</span><span class="p">(</span><span class="n">proj_dir</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">proj</span><span class="o">.</span><span class="n">status</span><span class="p">,</span> <span class="s2">"| runs:"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">proj</span><span class="o">.</span><span class="n">runs</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">proj</span><span class="p">)</span>
 
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">plot_s</span><span class="p">((</span><span class="s2">"port1"</span><span class="p">,</span> <span class="s2">"port3"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"port1"</span><span class="p">,</span> <span class="s2">"port4"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"port4"</span><span class="p">,</span> <span class="s2">"port3"</span><span class="p">))</span>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">"Read back from the project store"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_07_project_store_001.png" srcset="../_images/sphx_glr_plot_07_project_store_001.png" alt="Read back from the project store" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>done | runs: ['port3_mode0', 'port4_mode0']
+<img src="../_images/sphx_glr_plot_07_project_store_001.png" srcset="../_images/sphx_glr_plot_07_project_store_001.png" alt="Read back from the project store" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Project /tmp/tmp72o1kr9u/magic_tee
+  analysis   AnalysisScatteringTD
+  status     done
+  last call  finished 2026-09-05 13:19:05 in 24.0 s
+  created    2026-09-05 13:18:42
+  runs       2
+run          excited  state  steps    energy  elapsed  stop reason
+───────────  ───────  ─────  ─────  ────────  ───────  ───────────
+port3_mode0  port3:0  done    6401  -45.3 dB   10.7 s  port_signal
+port4_mode0  port4:0  done    6401  -49.0 dB   10.6 s  port_signal
 
 Text(0.5, 1.0, 'Read back from the project store')
 </pre></div>
@@ -702,33 +735,27 @@ Text(0.5, 1.0, 'Read back from the project store')
 <h2>Watching a run: the energy trace<a class="headerlink" href="#watching-a-run-the-energy-trace" title="Link to this heading">#</a></h2>
 <p>Alongside the port signals the store keeps the total field energy
 in the grid, sampled whenever the solver checks its stopping
-criterion.  Reading it back is one call, and the curve is the
-clearest single picture of what a time-domain run does: the
-excitation pumps energy in, the ports carry it out, and the run
-ends when what remains has fallen far enough below the peak.</p>
+criterion.  <code class="docutils literal notranslate"><span class="pre">plot_energy</span></code> draws it for every run, in dB below the
+run’s peak — the number the progress line reports and the stop
+criterion watches — with that criterion as a dashed line.  The curve
+is the clearest single picture of what a time-domain run does: the
+excitation pumps energy in, the ports carry it out, and the run ends
+when what remains has fallen far enough below the peak.</p>
 <p>This is also the trace to watch while a long simulation is still
 running.  Each sample is flushed to disk as it is taken, so a second
 process — another shell, a notebook on your laptop — can
 <a class="reference internal" href="../api/core.html#magnelio.open_project" title="magnelio.open_project"><code class="xref py py-func docutils literal notranslate"><span class="pre">open_project()</span></code></a> the very same directory and follow
-the progress live, without touching the job that is computing.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">energy_trace</span><span class="p">(</span><span class="s2">"port3"</span><span class="p">)</span>
+the run live, without touching the job that is computing; the
+how-to <em>Watching a simulation that is still running</em> shows the
+loop, and the live panel for a notebook.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">plot_energy</span><span class="p">()</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">"Energy in the grid during the two runs"</span><span class="p">)</span>
 
-<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">()</span>
-<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.semilogy.html#matplotlib.axes.Axes.semilogy" title="matplotlib.axes.Axes.semilogy" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">semilogy</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a><span class="p">[</span><span class="s2">"time"</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1e9</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a><span class="p">[</span><span class="s2">"energy"</span><span class="p">])</span>
-<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_xlabel.html#matplotlib.axes.Axes.set_xlabel" title="matplotlib.axes.Axes.set_xlabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span></a><span class="p">(</span><span class="s2">"time [ns]"</span><span class="p">)</span>
-<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_ylabel.html#matplotlib.axes.Axes.set_ylabel" title="matplotlib.axes.Axes.set_ylabel" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span></a><span class="p">(</span><span class="s2">"stored field energy [J]"</span><span class="p">)</span>
-<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">"Energy in the grid during the H-arm run"</span><span class="p">)</span>
-<span class="c1"># clamp the y-axis to the decades that carry the decay</span>
-<a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">peak</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a><span class="p">[</span><span class="s2">"energy"</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
-<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_ylim.html#matplotlib.axes.Axes.set_ylim" title="matplotlib.axes.Axes.set_ylim" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">peak</span></a> <span class="o">*</span> <span class="mf">1e-6</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">peak</span></a> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span>
-<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.grid.html#matplotlib.axes.Axes.grid" title="matplotlib.axes.Axes.grid" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">grid</span></a><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"energy samples stored: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"peak </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a><span class="p">[</span><span class="s1">'energy'</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.3e</span><span class="si">}</span><span class="s2"> J -&gt; final </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a><span class="p">[</span><span class="s1">'energy'</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.3e</span><span class="si">}</span><span class="s2"> J"</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">runs</span><span class="p">[</span><span class="s2">"port3_mode0"</span><span class="p">]</span><span class="o">.</span><span class="n">energy_trace</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"energy samples stored for the H-arm run: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_07_project_store_002.png" srcset="../_images/sphx_glr_plot_07_project_store_002.png" alt="Energy in the grid during the H-arm run" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>energy samples stored: 65
-peak 7.508e-11 J -&gt; final 2.213e-15 J
+<img src="../_images/sphx_glr_plot_07_project_store_002.png" srcset="../_images/sphx_glr_plot_07_project_store_002.png" alt="Energy in the grid during the two runs" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>energy samples stored for the H-arm run: 65
 </pre></div>
 </div>
 <p>The monitor data of <em>every</em> run is preserved — where the previous
@@ -764,7 +791,7 @@ interrupted job, a stop criterion chosen too shallow, and the
 convergence question “would more ring-down change my S-parameters?”.
 Here we ask the third one, extending the H-arm run by 2000 steps:</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s13_before</span></a> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s2">"port1"</span><span class="p">,</span> <span class="s2">"port3"</span><span class="p">)</span>
-<span class="n">n_before</span> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">runs</span><span class="p">[</span><span class="s2">"port3_mode0"</span><span class="p">][</span><span class="s2">"n_steps"</span><span class="p">]</span>
+<span class="n">n_before</span> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">runs</span><span class="p">[</span><span class="s2">"port3_mode0"</span><span class="p">]</span><span class="o">.</span><span class="n">n_steps</span>
 
 <span class="n">proj</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">resume</span><span class="p">(</span><span class="n">proj_dir</span><span class="p">,</span> <span class="n">excited</span><span class="o">=</span><span class="s2">"port3"</span><span class="p">,</span> <span class="n">total_time_steps</span><span class="o">=</span><span class="n">n_before</span> <span class="o">+</span> <span class="mi">2000</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
@@ -820,11 +847,12 @@ from computation, <code class="docutils literal notranslate"><span class="pre">r
 seam, and a generated ParaView session per run.  What we did <em>not</em>
 need: keeping the Python session alive, or re-running anything.
 A second process can even open the project <em>while</em> the solver
-marches and watch the energy and S-parameters converge live.</p>
+marches and watch the energy and S-parameters converge live — the
+how-to <em>Watching a simulation that is still running</em> is that recipe.</p>
 <p>The tee is now exhausted as a teaching device for closed structures.
 The next tutorial opens the domain: absorbing boundaries, and with
 them the first antenna.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 28.771 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 32.767 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-07-project-store-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/8ffbd898ad191daf250f8485ee8f3138/plot_07_project_store.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_07_project_store.ipynb</span></code></a></p>

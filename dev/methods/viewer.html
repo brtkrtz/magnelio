@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=e03c1a07"></script>
+    <script src="../_static/documentation_options.js?v=f1622b98"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -175,18 +175,35 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.5.html">
+  <a class="nav-link nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
   </a>
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../bibliography.html">
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../bibliography.html">
     Bibliography
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -342,6 +359,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
   </a>
@@ -454,6 +478,7 @@
 <li class="toctree-l1"><a class="reference internal" href="dispersive-materials.html">Dispersive and lossy materials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="conductor-losses.html">Conductor losses</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="projects-and-runs.html">Projects and runs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
@@ -656,6 +681,14 @@ conda<span class="w"> </span>install<span class="w"> </span>trame<span class="w"
 widget talks to the kernel over its own websocket on <code class="docutils literal notranslate"><span class="pre">localhost</span></code>; on a
 remote JupyterHub set <code class="docutils literal notranslate"><span class="pre">PYVISTA_TRAME_JUPYTER_MODE</span></code> as described in the
 PyVista documentation.</p>
+<p>The first <code class="docutils literal notranslate"><span class="pre">plot()</span></code> in a kernel starts that websocket server on the
+kernel’s own event loop and fills the cell’s output the moment the
+server is up — a fraction of a second after the cell returns when you
+run cells by hand.  Under <em>Run All</em> the cells queued behind it hold the
+loop, so the view appears once they have run.  Nothing is nested into
+the running loop, so <em>Run All</em> works like running the cells one by one;
+<code class="docutils literal notranslate"><span class="pre">nest-asyncio2</span></code> is what PyVista’s own first-call path uses and is not
+needed for Magnelio’s viewer.</p>
 </section>
 <section id="limitations">
 <h2>Limitations<a class="headerlink" href="#limitations" title="Link to this heading">#</a></h2>

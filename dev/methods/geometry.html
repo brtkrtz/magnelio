@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=e03c1a07"></script>
+    <script src="../_static/documentation_options.js?v=f1622b98"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -177,18 +177,35 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.5.html">
+  <a class="nav-link nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
   </a>
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../bibliography.html">
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../bibliography.html">
     Bibliography
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -344,6 +361,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
   </a>
@@ -456,6 +480,7 @@
 <li class="toctree-l1"><a class="reference internal" href="dispersive-materials.html">Dispersive and lossy materials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="conductor-losses.html">Conductor losses</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="projects-and-runs.html">Projects and runs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
@@ -572,6 +597,47 @@ strips costs seconds rather than the minutes a single fuse of all of
 them takes.  The point set is the same either way; the face count is
 what the mesher sees.</p>
 </section>
+<section id="lofts-between-profiles-and-between-faces">
+<h2>Lofts: between profiles, and between faces<a class="headerlink" href="#lofts-between-profiles-and-between-faces" title="Link to this heading">#</a></h2>
+<p>Two constructors build a body that changes cross-section along its
+length.  <code class="docutils literal notranslate"><span class="pre">Loft(*sections)</span></code> takes the profiles themselves — planar
+sheets or closed curves, as many as the shape needs, in the order the
+body passes through them — and is the way to draw a horn or a
+multi-step matching section from sketches.  <code class="docutils literal notranslate"><span class="pre">a.lofted(near_a,</span> <span class="pre">b,</span> <span class="pre">near_b)</span></code> takes one face of an existing body and one face of another,
+and bridges them; the profiles are read off the two faces, so the
+transition fits both parts exactly and follows them when a dimension
+changes.</p>
+<p>Both accept <code class="docutils literal notranslate"><span class="pre">blend=&quot;spline&quot;</span></code> (one smooth surface through all profiles)
+and <code class="docutils literal notranslate"><span class="pre">blend=&quot;ruled&quot;</span></code> (straight surfaces between neighbours, a stack of
+frusta).  With only two profiles the two are the same surface: a
+straight run from one outline to the other, which meets each end at
+whatever angle the straight connection makes — a crease at both joints
+of a waveguide taper.</p>
+<p>The face-to-face verb adds <code class="docutils literal notranslate"><span class="pre">blend=&quot;tangent&quot;</span></code>, which leaves each face
+along its outward normal, so the wall slope at both joints is zero and
+the transition meets both parts without a crease.  It has two regimes,
+chosen from the two normals:</p>
+<ul class="simple">
+<li><p><strong>Faces that look at each other</strong> (antiparallel normals: the two ends
+of a taper, coaxial or laterally offset) get a loft whose
+cross-section eases out of one profile and into the other along a
+straight axis — the same family of intermediate sections the plain
+loft carries, redistributed under a law whose derivative vanishes at
+both ends.  The end tangency is exact by construction, not fitted, and
+the axial position stays linear in the surface parameter at the
+default <code class="docutils literal notranslate"><span class="pre">tension=1/3</span></code>.  A lateral offset between the two faces comes
+out as a smooth dog-leg with the sections still parallel to the faces.</p></li>
+<li><p><strong>Faces that point in different directions</strong> (an electrode ending on
+a <em>z</em>-face, the pin it feeds beginning on a <em>y</em>-face) get a sweep of
+one profile into the other along a curved spine that leaves both faces
+along their normals, with the profiles held perpendicular to the path.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">tension</span></code> sets how far the blend holds its normal direction before
+turning, as a fraction of the distance between the faces; a <code class="docutils literal notranslate"><span class="pre">(start,</span> <span class="pre">end)</span></code> pair sets each end on its own.  Values well past <code class="docutils literal notranslate"><span class="pre">2/3</span></code> overshoot
+into a bulge.  Two parallel faces that look <em>away</em> from each other are
+refused: a transition leaving both along their normals would have to
+pass through both bodies.</p>
+</section>
 <section id="from-a-map-to-a-reflector-parametric-surfaces">
 <h2>From a map to a reflector: parametric surfaces<a class="headerlink" href="#from-a-map-to-a-reflector-parametric-surfaces" title="Link to this heading">#</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">Surface.parametric(fn,</span> <span class="pre">u=(u0,</span> <span class="pre">u1),</span> <span class="pre">v=(v0,</span> <span class="pre">v1),</span> <span class="pre">samples=(nu,</span> <span class="pre">nv))</span></code>
@@ -677,6 +743,7 @@ more so that the conformal classifier resolves the metal on both faces
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#bodies-sheets-and-curves">Bodies, sheets and curves</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#lofts-between-profiles-and-between-faces">Lofts: between profiles, and between faces</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#from-a-map-to-a-reflector-parametric-surfaces">From a map to a reflector: parametric surfaces</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-the-mesher-sees">What the mesher sees</a></li>
 </ul>

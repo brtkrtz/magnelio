@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=e03c1a07"></script>
+    <script src="../_static/documentation_options.js?v=f1622b98"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -177,18 +177,35 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.5.html">
+  <a class="nav-link nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
   </a>
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../bibliography.html">
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../bibliography.html">
     Bibliography
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -344,6 +361,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
   </a>
@@ -457,6 +481,7 @@
 <li class="toctree-l1"><a class="reference internal" href="plot_mesh_convergence.html">Mesh convergence: a ladder around your simulation</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Patch array: a 2 × 2 corporate-fed microstrip array from element to pattern</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_stripline_pickup_kicker.html">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_watch_running_simulation.html">Watching a simulation that is still running</a></li>
 </ul>
 </div>
 </nav></div>
@@ -1061,9 +1086,9 @@ trims the length only.</p>
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
-  mesh | conformal cells | done (0.7 s)
+  mesh | conformal cells | done (0.9 s)
   mesh | PEC masks
-  mesh | 134 x 123 x 39 cells (1.1 s total)
+  mesh | 134 x 123 x 39 cells (1.4 s total)
 grid: 134 x 123 x 39 = 0.64 M cells
 --- array, element length ---
 |S11| at f0      :  -14.3 dB
@@ -1075,9 +1100,9 @@ realized gain    :  12.81 dBi
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
-  mesh | conformal cells | done (0.7 s)
+  mesh | conformal cells | done (0.9 s)
   mesh | PEC masks
-  mesh | 134 x 123 x 39 cells (1.2 s total)
+  mesh | 134 x 123 x 39 cells (1.6 s total)
 --- array, trimmed (L = 9.28 mm) ---
 |S11| at f0      :  -14.4 dB
 dip              :  -14.4 dB at 10.00 GHz
@@ -1147,7 +1172,7 @@ the network needs — the crossbar wants a few substrate heights of
 clearance from the fed edges — and a row pitch below the quarter-
 wave offset’s reach asks for a meandered arm instead of the
 straight one used here.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (15 minutes 18.805 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (16 minutes 59.333 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-patch-array-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/aa1574a624d08bd2fd272ebe92860f60/plot_patch_array.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_patch_array.ipynb</span></code></a></p>

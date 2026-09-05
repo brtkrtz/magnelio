@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=e03c1a07"></script>
+    <script src="../_static/documentation_options.js?v=f1622b98"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -175,18 +175,35 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.5.html">
+  <a class="nav-link nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
   </a>
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../bibliography.html">
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../bibliography.html">
     Bibliography
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -337,6 +354,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
   </a>
 </li>
 
@@ -1708,14 +1732,20 @@ material.</p></li>
 <code class="docutils literal notranslate"><span class="pre">'ruled'</span></code> both run straight from one profile to the other
 and differ only in surface type, so the solid meets each face
 at whatever angle the straight connection happens to make.
-<code class="docutils literal notranslate"><span class="pre">'tangent'</span></code> instead leaves both faces along their outward
-normal and curves between them, which is what turns a crease
-at the joint into a smooth bend.</p></li>
-<li><p><strong>tension</strong> (<em>float</em><em> or </em><em>tuple</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – Only for <code class="docutils literal notranslate"><span class="pre">blend='tangent'</span></code>: how stiffly the blend holds its
+<code class="docutils literal notranslate"><span class="pre">'tangent'</span></code> leaves both faces along their outward normal:
+zero wall slope at each joint, so the transition meets both
+solids without a crease.  Between two faces that look at each
+other – the two ends of a taper, coaxial or laterally offset
+– the cross-section eases out of one profile and into the
+other along a straight run; between faces that point in
+different directions the profile is swept along a curved
+path that turns the corner.</p></li>
+<li><p><strong>tension</strong> (<em>float</em><em> or </em><em>tuple</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – Only for <code class="docutils literal notranslate"><span class="pre">blend='tangent'</span></code>: how far the blend holds its
 normal direction before turning, as a fraction of the
-distance between the two face centres.  A single value
-applies to both ends, a <code class="docutils literal notranslate"><span class="pre">(start,</span> <span class="pre">end)</span></code> pair to one each.
-Defaults to <code class="docutils literal notranslate"><span class="pre">1/3</span></code>; larger values reach further along the
+distance between the two faces.  A single value applies to
+both ends, a <code class="docutils literal notranslate"><span class="pre">(start,</span> <span class="pre">end)</span></code> pair to one each.  Defaults to
+<code class="docutils literal notranslate"><span class="pre">1/3</span></code>, at which a taper’s cross-section is spaced linearly
+along its axis; larger values reach further along the
 normals and eventually overshoot into a bulge.</p></li>
 </ul>
 </dd>
@@ -1727,8 +1757,9 @@ normals and eventually overshoot into a bulge.</p></li>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>ValueError</strong> – If <em>blend</em> is not one of the three modes, if <em>tension</em> is
-    given for a mode that has no use for it, or if the two faces
-    share a centre point.</p>
+    given for a mode that has no use for it, if the two faces
+    share a centre point, or if two parallel faces look away
+    from each other.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
@@ -1737,6 +1768,14 @@ meeting both at a right angle:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">transition</span> <span class="o">=</span> <span class="n">electrode</span><span class="o">.</span><span class="n">lofted</span><span class="p">(</span>
     <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">45.5e-3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">inner</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">48e-3</span><span class="p">,</span> <span class="o">-</span><span class="mf">10e-3</span><span class="p">),</span>
     <span class="n">material</span><span class="o">=</span><span class="n">pec</span><span class="p">,</span> <span class="n">blend</span><span class="o">=</span><span class="s2">"tangent"</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>A rectangular waveguide easing into a round one, with no crease
+at either flange:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">taper</span> <span class="o">=</span> <span class="n">rect_guide</span><span class="o">.</span><span class="n">lofted</span><span class="p">(</span>
+    <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">round_guide</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">59e-3</span><span class="p">),</span>
+    <span class="n">material</span><span class="o">=</span><span class="s2">"air"</span><span class="p">,</span> <span class="n">blend</span><span class="o">=</span><span class="s2">"tangent"</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>

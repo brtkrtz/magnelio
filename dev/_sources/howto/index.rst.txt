@@ -226,6 +226,23 @@ the tutorials instead.
     </div>
 
 
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="A run that takes an hour raises one question every few minutes: what is it doing?  The progress line in the terminal that started it answers for that terminal; a colleague&#x27;s notebook, a laptop at home, or the same notebook after the kernel was restarted all need another way in.">
+
+.. only:: html
+
+  .. image:: /howto/images/thumb/sphx_glr_plot_watch_running_simulation_thumb.png
+    :alt:
+
+  :doc:`/howto/plot_watch_running_simulation`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Watching a simulation that is still running</div>
+    </div>
+
+
 .. thumbnail-parent-div-close
 
 .. raw:: html
@@ -248,6 +265,7 @@ the tutorials instead.
    /howto/plot_mesh_convergence
    /howto/plot_patch_array
    /howto/plot_stripline_pickup_kicker
+   /howto/plot_watch_running_simulation
 
 
 

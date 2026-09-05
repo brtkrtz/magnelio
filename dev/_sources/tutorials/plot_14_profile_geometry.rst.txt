@@ -351,7 +351,7 @@ which is what a fabricated track does too.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 214-231
+.. GENERATED FROM PYTHON SOURCE LINES 214-234
 
 Tapers between two cross-sections
 ---------------------------------
@@ -368,10 +368,13 @@ surface through all of them, for a flared horn.
 Where the two ends are faces of solids that already exist, the
 :meth:`~magnelio.geo.Shape.lofted` verb takes those instead, and adds a
 third mode: ``blend="tangent"`` leaves each face along its own normal,
-so a bend between two parts that face different directions comes out
-smooth rather than creased.
+so the transition meets both parts without a crease.  Between two
+faces that look at each other -- the two ends of a waveguide taper --
+the cross-section eases out of one profile and into the other, with
+zero wall slope at both flanges; between faces that point in different
+directions the profile is swept round a curved path instead.
 
-.. GENERATED FROM PYTHON SOURCE LINES 231-246
+.. GENERATED FROM PYTHON SOURCE LINES 234-249
 
 .. code-block:: Python
 
@@ -402,7 +405,7 @@ smooth rather than creased.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 247-272
+.. GENERATED FROM PYTHON SOURCE LINES 250-275
 
 What to take away
 -----------------
@@ -433,7 +436,7 @@ verbs that turn it into a solid ask for the material explicitly.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.493 seconds)
+   **Total running time of the script:** (0 minutes 0.432 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_14_profile_geometry.py:

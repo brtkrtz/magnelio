@@ -162,7 +162,7 @@ scales to structures with many more sections than three.
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 25 x 25 x 102 cells
+      mesh | 25 x 25 x 102 cells (0.5 s total)
     grid: 25 x 25 x 102 cells
 
 
@@ -265,8 +265,8 @@ numerical precision:
 
  .. code-block:: none
 
-    max |S12 - S21| (reciprocity): 3.66e-07
-    max |S11 - S22| (symmetry)   : 1.92e-07
+    max |S12 - S21| (reciprocity): 1.12e-06
+    max |S11 - S22| (symmetry)   : 3.75e-07
 
 
 
@@ -405,7 +405,7 @@ top of the port indices.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 9.171 seconds)
+   **Total running time of the script:** (0 minutes 10.601 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_03_coax_smatrix.py:

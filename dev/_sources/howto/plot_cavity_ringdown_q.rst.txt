@@ -497,7 +497,7 @@ What the number sees
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 34.669 seconds)
+   **Total running time of the script:** (0 minutes 40.092 seconds)
 
 
 .. _sphx_glr_download_howto_plot_cavity_ringdown_q.py:
