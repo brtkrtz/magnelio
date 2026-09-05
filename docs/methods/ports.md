@@ -38,7 +38,7 @@ theory as found in the microwave-engineering literature
 {cite}`pozar2012,collin1991` (the specific
 formulation is textbook material; no single originating paper is
 claimed).  The line-impedance definition used for TEM modes is the
-power–current impedance $Z_{\pi}$ (DD-025); the coexistence of
+power–current impedance $Z_{PI}$ (DD-025); the coexistence of
 $Z_{PI}$, $Z_{PV}$, $Z_{VI}$ definitions is classical waveguide
 theory {cite}`marcuvitz1951,pozar2012`.  Analytical
 reference modes for coaxial and rectangular-waveguide ports are
