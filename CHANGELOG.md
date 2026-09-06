@@ -17,11 +17,11 @@ major version is 0, minor releases may change the public API.
   along a cutting plane with the field laid on the cut: the exposed
   cell layer as a coloured sheet (`|E|`, `|H|` or one signed
   component) with arrows for a field group.  The position slider walks
-  the layer through the recorded volume, a frame slider runs over time
-  or frequency, a phase slider over a complex pattern, and a selector
-  switches the component; with `mesh=` the cells inside metal are cut
-  out so the solids show through.  Also available as
-  `magnelio.plots.show_field`.
+  the layer through the recorded volume, a frame slider with a play
+  button runs over time or frequency, a phase slider over a complex
+  pattern, and a selector switches the component; with `mesh=` the
+  cells inside metal are cut out so the solids show through.  Also
+  available as `magnelio.plots.show_field`.
 
 ### Changed
 

@@ -405,7 +405,15 @@ class TestControls:
             state[f"{key}_show"] = [g for g, _ in _GROUPS if g not in ("field", "arrows")]
         assert not pl.renderer.actors["field_cut"].GetVisibility()
 
-        # The toolbar builder runs (frame slider, field selector).
+        # Play: without an event loop the button springs back; the frame
+        # advance itself wraps around.
+        with state:
+            state[f"{key}_play"] = True
+        assert state[f"{key}_play"] is False
+        view.frame = 2
+        assert view.next_frame() == 0
+
+        # The toolbar builder runs (play button, frame slider, field selector).
         from trame.ui.vuetify3 import SinglePageLayout  # noqa: PLC0415
 
         with SinglePageLayout(server) as layout, layout.toolbar:

@@ -349,7 +349,9 @@ class _FieldView:
     threshold: float
     opacity: float
     arrow_color: str
+    fps: float = 4.0
     nodes_display: tuple[np.ndarray, np.ndarray, np.ndarray] = field(init=False)
+    _play_task: Any = field(default=None, repr=False)
     sheet_actor: Any = None
     arrow_actor: Any = None
     _layer_cache: dict = field(default_factory=dict, repr=False)
@@ -593,18 +595,25 @@ class _FieldView:
 
     # ── notebook controls ────────────────────────────────────────────────
 
+    def next_frame(self) -> int:
+        """The frame after the current one, wrapping around."""
+        return (self.frame + 1) % max(self.frames.n_frames, 1)
+
     def attach_controls(self, server, key: str, refresh) -> Callable[[], None]:
-        """Register the frame / phase / component handlers; return the widget builder."""
+        """Register the frame / phase / component / play handlers; return the widget builder."""
+        import asyncio  # noqa: PLC0415
+
         from trame.widgets import html  # noqa: PLC0415
         from trame.widgets import vuetify3 as vuetify  # noqa: PLC0415
 
         state = server.state
         k_frame, k_phase, k_comp = f"{key}_frame", f"{key}_phase", f"{key}_comp"
-        k_label = f"{key}_frame_label"
+        k_label, k_play = f"{key}_frame_label", f"{key}_play"
         state[k_frame] = int(self.frame)
         state[k_phase] = float(self.phase)
         state[k_comp] = self.component
         state[k_label] = self.frame_label()
+        state[k_play] = False
         state[f"{key}_comps"] = _available_components(self.frames.components)
         n_frames = self.frames.n_frames
 
@@ -617,6 +626,35 @@ class _FieldView:
             with state:
                 state[k_label] = self.frame_label()
             refresh()
+
+        async def _play() -> None:
+            # Advance the frame slider on the server's loop; each step goes
+            # through the slider's own handler, so the picture follows.
+            period = 1.0 / max(float(self.fps), 0.1)
+            try:
+                while True:
+                    await asyncio.sleep(period)
+                    with state:
+                        state[k_frame] = self.next_frame()
+            except asyncio.CancelledError:  # pragma: no cover - stop button
+                pass
+
+        @state.change(k_play)
+        def _on_play(**kwargs):
+            playing = bool(kwargs[k_play])
+            if playing and self._play_task is None:
+                try:
+                    loop = asyncio.get_running_loop()
+                except RuntimeError:
+                    # No event loop (a script, a test): nothing can drive the
+                    # frames; put the button back.
+                    with state:
+                        state[k_play] = False
+                    return
+                self._play_task = loop.create_task(_play())
+            elif not playing and self._play_task is not None:
+                self._play_task.cancel()
+                self._play_task = None
 
         @state.change(k_phase)
         def _on_phase(**kwargs):
@@ -636,6 +674,16 @@ class _FieldView:
 
         def items() -> None:
             if n_frames > 1:
+                with vuetify.VBtn(
+                    icon=(f"{k_play} ? 'mdi-pause' : 'mdi-play'",),
+                    size="small",
+                    variant="text",
+                    click=f"{k_play} = !{k_play}",
+                    style="margin-left: 8px;",
+                ):
+                    vuetify.VTooltip(
+                        "Play / pause the frames", activator="parent", location="bottom"
+                    )
                 vuetify.VSlider(
                     v_model=(k_frame, state[k_frame]),
                     min=0,
@@ -643,7 +691,7 @@ class _FieldView:
                     step=1,
                     hide_details=True,
                     density="compact",
-                    style="width: 160px; margin-left: 12px;",
+                    style="width: 160px; margin-left: 4px;",
                 )
                 html.Span(f"{{{{ {k_label} }}}}", style="margin-left: 6px; white-space: nowrap;")
             if self.frames.is_complex:
@@ -723,6 +771,7 @@ def show_field(
     threshold: float = 0.02,
     opacity: float = 1.0,
     arrow_color: str = "#303030",
+    fps: float = 4.0,
     geometry=None,
     mesh=None,
     show_ports: bool = True,
@@ -791,6 +840,10 @@ def show_field(
         Opacity of the field sheet.
     arrow_color : str
         Colour of the arrows.
+    fps : float, default 4.0
+        Frames per second of the toolbar's play button (notebook widget);
+        the effective rate is bounded by how fast the browser receives a
+        frame.
     geometry : GeometryModel, optional
         Draw the model's solids and features with the field.
     mesh : Mesh, optional
@@ -855,6 +908,7 @@ def show_field(
         threshold=float(threshold),
         opacity=float(opacity),
         arrow_color=arrow_color,
+        fps=float(fps),
     )
     extent = []
     for nodes in view.nodes_display:

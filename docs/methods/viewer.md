@@ -84,12 +84,15 @@ eigen.field(0).show("H", geometry=model)         # an eigenmode
 | Arrows | For `E` or `H`: arrows on an even lattice over the layer, all three components, the longest spanning one lattice spacing; arrows below 2 % of the ceiling are left out.  `plot_type="color"` drops them. |
 | Metal | With `mesh=`, cells buried in a perfect conductor are cut out of the sheet, so the solids' cut faces show through where no field is defined. |
 
-The toolbar gains a **frame slider** (time or frequency, with the
-value beside it), a **phase slider** for complex data (a frequency
-monitor's pattern at `Re(F·e^{jφ})`), and a **Field** selector that
-switches between the recorded components; *Field on cut* and *Field
-arrows* join the *Show* menu.  In a script or a documentation build the
-initial frame is chosen with `t=`, `f=` or `frame=`.
+The toolbar gains a **play button** and a **frame slider** (time or
+frequency, with the value beside it), a **phase slider** for complex
+data (a frequency monitor's pattern at `Re(F·e^{jφ})`), and a
+**Field** selector that switches between the recorded components;
+*Field on cut* and *Field arrows* join the *Show* menu.  Play runs the
+frames in a loop at `fps=` (default 4) — each frame is one layer
+computed and sent to the browser, so the rate is bounded by the size
+of the layer.  In a script or a documentation build the initial frame
+is chosen with `t=`, `f=` or `frame=`.
 
 Two things the picture is not.  It is not a plane: every value is the
 cell-centre average of the staggered components in one layer of cells,
