@@ -1205,8 +1205,9 @@ class _RunResultWriter:
 
         # Field-monitor write-through (WP-S9): declare each MonitorFieldTime's
         # resizable streams up front (before SWMR), so a large monitor spills
-        # to disk during the run instead of filling RAM.  Stored row-major
-        # (n_steps, nz, ny, nx) for a direct ParaView/XDMF reference.
+        # to disk during the run instead of filling RAM.  One dataset per
+        # staggered component in the monitor's native (x, y, z) order
+        # (DD-259); the ParaView export converts on its own.
         self._mon: dict = {}
         # Flux monitors stream a tiny per-step scalar time series (like the
         # V/I channels) into an append-only flux/<name>/ group; declared up
@@ -1222,6 +1223,8 @@ class _RunResultWriter:
 
     def _declare_monitors(self, f, monitors, grid) -> None:
         """Create the ``monitors/<name>/`` group tree (WP-S9)."""
+        from magnelio.fields._interp import _region_dual  # noqa: PLC0415
+        from magnelio.fields.state import _yee_shapes  # noqa: PLC0415
         from magnelio.monitors.base import (  # noqa: PLC0415
             _corners_array,
             mirrors_to_jsonable,
@@ -1252,9 +1255,16 @@ class _RunResultWriter:
             mg.attrs["nx"] = nx
             mg.attrs["ny"] = ny
             mg.attrs["nz"] = nz
+            # The frames are the grid quantities on the region's Yee
+            # positions (DD-259): one dataset per component in its own
+            # staggered shape, plus the region's grid lines and the dual
+            # widths its h samples were formed with.
+            mg.attrs["layout"] = "yee"
             mg.create_dataset("grid_x", data=grid.x[region.ix.start : region.ix.stop + 1])
             mg.create_dataset("grid_y", data=grid.y[region.iy.start : region.iy.stop + 1])
             mg.create_dataset("grid_z", data=grid.z[region.iz.start : region.iz.stop + 1])
+            for axis, d in zip("xyz", _region_dual(grid, region.ix, region.iy, region.iz)):
+                mg.create_dataset(f"dual_{axis}", data=np.asarray(d, dtype=float))
             times_ds = mg.create_dataset(
                 "times",
                 shape=(0,),
@@ -1262,14 +1272,16 @@ class _RunResultWriter:
                 dtype="f8",
                 chunks=(256,),
             )
+            shapes = _yee_shapes(nx, ny, nz)
             comp_ds = {}
             for comp in components:
+                shp = shapes[comp]
                 comp_ds[comp] = mg.create_dataset(
                     comp,
-                    shape=(0, nz, ny, nx),
-                    maxshape=(None, nz, ny, nx),
+                    shape=(0, *shp),
+                    maxshape=(None, *shp),
                     dtype="f8",
-                    chunks=(1, nz, ny, nx),
+                    chunks=(1, *shp),
                 )
             self._mon[mon.name] = {
                 "nx": nx,
@@ -1336,43 +1348,26 @@ class _RunResultWriter:
     def append_monitor(self, name: str, times, comp_data: dict) -> None:
         """Append a batch of field-monitor snapshots (WP-S9).
 
-        ``comp_data[comp]`` is ``(k, *squeezed_region)`` in the monitor's
-        native (x, y, z) index order; it is reshaped to the full region
-        ``(k, nx, ny, nz)`` and transposed to the row-major
-        ``(k, nz, ny, nx)`` XDMF layout before the append.
+        ``comp_data[comp]`` is ``(k, *Yee shape)`` — the grid quantities on
+        the region's staggered positions, in the monitor's native
+        (x, y, z) index order (DD-259).
         """
         m = self._mon.get(name)
         if m is None or not times:
             return
         k = len(times)
-        nx, ny, nz = m["nx"], m["ny"], m["nz"]
         n0, n1 = m["n"], m["n"] + k
         for comp, ds in m["comps"].items():
             if comp not in comp_data:
                 continue
-            full = np.asarray(comp_data[comp], dtype=float).reshape(k, nx, ny, nz)
-            ds.resize((n1, nz, ny, nx))
-            ds[n0:n1] = full.transpose(0, 3, 2, 1)
+            shp = tuple(ds.shape[1:])
+            ds.resize((n1, *shp))
+            ds[n0:n1] = np.asarray(comp_data[comp], dtype=float).reshape(k, *shp)
         t_ds = m["times"]
         t_ds.resize((n1,))
         t_ds[n0:n1] = np.asarray(times, dtype=float)
         m["n"] = n1
         self._f.flush()
-
-    @property
-    def monitor_meta(self) -> list:
-        """Per-monitor ``{name, n, nx, ny, nz, components}`` for the XDMF."""
-        return [
-            {
-                "name": name,
-                "n": m["n"],
-                "nx": m["nx"],
-                "ny": m["ny"],
-                "nz": m["nz"],
-                "components": list(m["comps"].keys()),
-            }
-            for name, m in self._mon.items()
-        ]
 
     @property
     def n_written(self) -> int:
@@ -1487,7 +1482,7 @@ class _RunResultWriter:
                 comp_ds = {}
                 for comp in json.loads(mg.attrs["components"]):
                     ds = mg[comp]
-                    ds.resize((mk, nz, ny, nx))
+                    ds.resize((mk, *ds.shape[1:]))
                     comp_ds[comp] = ds
                 mg["times"].resize((mk,))
                 self._mon[name] = {
@@ -1765,7 +1760,6 @@ class _RunSink:
         self.flush()
         if state == "done":
             self.write_checkpoint()
-        self._write_xdmf()
         n_written = self._writer.n_written
         self._writer.close()
         self._store._finalize_run(
@@ -1798,27 +1792,6 @@ class _RunSink:
                 UserWarning,
                 stacklevel=2,
             )
-
-    def _write_xdmf(self) -> None:
-        """Write ``fields.xdmf`` for the run's field monitors (WP-S9).
-
-        Written once at close, when the recorded snapshot count is final
-        (an early energy stop or an abort records fewer than the requested
-        times).  A no-op when the run carries no field monitors.
-        """
-        meta = self._writer.monitor_meta
-        specs = []
-        for m in meta:
-            if m["n"] == 0:
-                continue
-            times = np.asarray(self._writer._mon[m["name"]]["times"][: m["n"]], dtype=float)
-            specs.append({**m, "times": times})
-        if not specs:
-            return
-        from magnelio.io.xdmf import write_run_xdmf  # noqa: PLC0415
-
-        run_dir = self._store.path / "runs" / self._run_name
-        write_run_xdmf(run_dir / "fields.xdmf", "results.h5", specs)
 
 
 _ENERGY_DTYPE = [("step", int), ("time", float), ("energy", float)]
@@ -2098,71 +2071,142 @@ def _list_run_freq(run_dir: Path) -> list[str]:
 
 
 class _LoadedFieldMonitor:
-    """Lazy reader over one streamed ``MonitorFieldTime`` (DD-070, WP-S9).
+    """Lazy reader over one streamed ``MonitorFieldTime`` (DD-070, DD-259).
 
-    The monitor's snapshots live in the run's ``results.h5`` (row-major
-    ``(n_steps, nz, ny, nx)``); this reader loads the small time axis and
-    metadata eagerly and each component array **on demand**, transposing
-    back to the monitor's native ``(n_steps, nx, ny, nz)`` order and
-    squeezing singleton spatial axes — so ``.data`` / ``.component`` match
-    an in-RAM monitor's exactly, without holding the whole record.
-    ``.plot(...)`` hydrates a real :class:`MonitorFieldTime` to reuse the
-    full plotting machinery.
+    The frames live in the run's ``results.h5`` as the grid quantities on
+    the Yee positions of the monitor's region — one dataset per
+    staggered component — beside the region's grid lines and the dual
+    widths of its ``h`` samples.  Metadata and the time axis load
+    eagerly; ``frame(i)`` reads one frame, :attr:`recording` all of them
+    as a :class:`~magnelio.fields.FieldRecording`.  ``.data`` /
+    ``.component`` are the cell-centred views an in-RAM monitor reports,
+    derived on access.  ``.plot(...)`` hydrates a real
+    :class:`MonitorFieldTime` to reuse the plotting machinery.
     """
 
     def __init__(self, run_dir: Path, name: str, grid=None) -> None:
         import h5py  # noqa: PLC0415
 
-        from magnelio.monitors.base import _corners_from_array  # noqa: PLC0415
+        from magnelio.io._schema import ProjectSchemaError  # noqa: PLC0415
+        from magnelio.mesh.grid import GridLines  # noqa: PLC0415
+        from magnelio.monitors.base import (  # noqa: PLC0415
+            _corners_from_array,
+            mirrors_from_jsonable,
+        )
 
         self._run_dir = Path(run_dir)
         self.name = name
-        self._grid = grid
+        self._grid = grid  # the run's full grid, for the plot overlays
         with h5py.File(self._run_dir / "results.h5", "r", swmr=True) as f:
             mg = f["monitors"][name]
+            if mg.attrs.get("layout") != "yee":
+                raise ProjectSchemaError(
+                    f"{self._run_dir / 'results.h5'}: monitor {name!r} was recorded on "
+                    "cell centres by an earlier magnelio release; since 0.7.0 the frames "
+                    "are the staggered grid quantities — re-run the simulation."
+                )
             self.corners = _corners_from_array(mg.attrs["corners"])
             self.fields = json.loads(mg.attrs["fields"])
             self._components = json.loads(mg.attrs["components"])
-            self._nx = int(mg.attrs["nx"])
-            self._ny = int(mg.attrs["ny"])
-            self._nz = int(mg.attrs["nz"])
-            self._t = mg["times"][()]
+            self._t = np.asarray(mg["times"][()], dtype=float)
+            self._subgrid = GridLines(
+                x=np.asarray(mg["grid_x"][()], dtype=float),
+                y=np.asarray(mg["grid_y"][()], dtype=float),
+                z=np.asarray(mg["grid_z"][()], dtype=float),
+            )
+            self._dual = tuple(np.asarray(mg[f"dual_{a}"][()], dtype=float) for a in "xyz")
+            self._dt = float(f.attrs["dt"]) if "dt" in f.attrs else None
             sym_attr = mg.attrs.get("symmetry")
-        from magnelio.monitors.base import mirrors_from_jsonable  # noqa: PLC0415
-
         self._mirrors = mirrors_from_jsonable(
             json.loads(sym_attr) if sym_attr is not None else None,
         )
         self._n = int(self._t.shape[0])
+        self._frame_cache: tuple | None = None
+
+    # ── vocabulary ───────────────────────────────────────────────────────
 
     @property
     def t(self) -> np.ndarray:
-        """Recorded time points [s]."""
-        return np.asarray(self._t, dtype=float)
+        """Recorded instants [s] of the electric field."""
+        return self._t
 
     @property
     def components(self) -> list[str]:
         return list(self._components)
 
-    def component(self, comp: str) -> np.ndarray:
-        """Recorded data for one component, shape ``(n_times, <spatial>)``."""
+    @property
+    def grid(self):
+        """The region's own grid lines (a :class:`~magnelio.mesh.GridLines`)."""
+        return self._subgrid
+
+    @property
+    def n_frames(self) -> int:
+        return self._n
+
+    # ── frames ───────────────────────────────────────────────────────────
+
+    def _read(self, comp: str, index: int | None = None) -> np.ndarray:
         import h5py  # noqa: PLC0415
 
+        with h5py.File(self._run_dir / "results.h5", "r", swmr=True) as f:
+            ds = f["monitors"][self.name][comp]
+            return np.asarray(ds[: self._n] if index is None else ds[index])
+
+    def frame(self, i: int):
+        """Frame *i* as a :class:`~magnelio.fields.FieldState` (one HDF5 read)."""
+        from magnelio._fields.field_arrays import FieldArrays  # noqa: PLC0415
+        from magnelio.fields.state import FieldState, _yee_shapes  # noqa: PLC0415
+
+        i = int(i)
+        if not (-self._n <= i < self._n):
+            raise IndexError(f"frame {i} out of range for {self._n} frames")
+        i %= max(self._n, 1)
+        if self._frame_cache is not None and self._frame_cache[0] == i:
+            return self._frame_cache[1]
+        g = self._subgrid
+        shapes = _yee_shapes(g.Nx, g.Ny, g.Nz)
+        arrays = {
+            c: (self._read(c, i) if c in self._components else np.zeros(shapes[c]))
+            for c in ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz")
+        }
+        fs = FieldState._from_raw(g, FieldArrays(**arrays), dual=self._dual)
+        self._frame_cache = (i, fs)
+        return fs
+
+    @property
+    def recording(self):
+        """Every frame as a :class:`~magnelio.fields.FieldRecording` (reads the whole record)."""
+        from magnelio.fields.series import FieldRecording  # noqa: PLC0415
+
+        raw = {c: self._read(c) for c in self._components}
+        return FieldRecording._from_raw(self._subgrid, self._t, raw, dual=self._dual, dt=self._dt)
+
+    @staticmethod
+    def _squeeze_spatial(arr: np.ndarray) -> np.ndarray:
+        squeeze = tuple(ax for ax in range(1, arr.ndim) if arr.shape[ax] == 1)
+        return np.squeeze(arr, axis=squeeze) if squeeze else arr
+
+    def component(self, comp: str) -> np.ndarray:
+        """One component averaged onto cell centres, shape ``(n_times, <spatial>)``."""
         if comp not in self._components:
             raise KeyError(
                 f"component {comp!r} not recorded; available: {self._components}",
             )
-        with h5py.File(self._run_dir / "results.h5", "r", swmr=True) as f:
-            arr = f["monitors"][self.name][comp][: self._n]  # (n,nz,ny,nx)
-        return np.squeeze(np.transpose(arr, (0, 3, 2, 1)))  # ->(n,nx,ny,nz)
+        rec = self.recording
+        return self._squeeze_spatial(rec.cell_centred([comp])[comp])
 
     @property
     def data(self) -> dict[str, np.ndarray]:
-        """All recorded components stacked along a leading time axis."""
-        return {c: self.component(c) for c in self._components}
+        """All recorded components on cell centres, stacked along time."""
+        if self._n == 0:
+            return {}
+        rec = self.recording
+        cc = rec.cell_centred(list(rec.components))
+        return {c: self._squeeze_spatial(cc[c]) for c in rec.components}
 
     def _hydrate(self):
         """Build an in-RAM :class:`MonitorFieldTime` for plotting reuse."""
+        from magnelio.fields._interp import _region_slices  # noqa: PLC0415
         from magnelio.monitors.base import resolve_region  # noqa: PLC0415
         from magnelio.monitors.field_time import MonitorFieldTime  # noqa: PLC0415
 
@@ -2173,15 +2217,24 @@ class _LoadedFieldMonitor:
             fields=list(self.fields),
             name=self.name,
         )
-        data = {c: self.component(c) for c in self._components}
+        raw = {c: self._read(c) for c in self._components}
         mon._recorded_times = [float(x) for x in self._t]
         mon._next_idx = self._n
+        mon._n_recorded = self._n
         mon._snapshots = [
-            {c: np.asarray(data[c][ti]) for c in self._components} for ti in range(self._n)
+            {c: np.asarray(raw[c][ti]) for c in self._components} for ti in range(self._n)
         ]
+        mon._subgrid = self._subgrid
+        mon._dual = self._dual
+        mon._dt = self._dt or 0.0
         if self._grid is not None:
             mon._region = resolve_region(self.corners, self._grid)
             mon._grid = self._grid
+        else:
+            mon._region = resolve_region(None, self._subgrid)
+            mon._grid = self._subgrid
+        r = mon._region
+        mon._slices = {c: _region_slices(r.ix, r.iy, r.iz, c) for c in self._components}
         mon._mirrors = self._mirrors
         return mon
 
@@ -2204,9 +2257,10 @@ class _LoadedFieldMonitor:
         return show_field(self, component, **kwargs)
 
     def __repr__(self) -> str:
+        g = self._subgrid
         return (
             f"_LoadedFieldMonitor(name={self.name!r}, n_times={self._n}, "
-            f"region=({self._nx}, {self._ny}, {self._nz}))"
+            f"region=({g.Nx}, {g.Ny}, {g.Nz}))"
         )
 
 
@@ -2308,9 +2362,20 @@ class _LoadedFreqMonitor:
             self.interval = float(g.attrs["interval"]) if "interval" in g.attrs else None
             self.freqs = g["freqs"][()]
             self.corners = _corners_from_array(g["corners"][()])
+            if "dual_x" not in g:
+                from magnelio.io._schema import ProjectSchemaError  # noqa: PLC0415
+
+                raise ProjectSchemaError(
+                    f"{self._run_dir / 'fields_freq.h5'}: monitor {name!r} was accumulated "
+                    "on cell centres by an earlier magnelio release; since 0.7.0 the bins "
+                    "are the staggered grid quantities — re-run the simulation."
+                )
+            # The region's grid lines (nodes) and the dual widths of its
+            # h samples (DD-259).
             self._grid_x = g["grid_x"][()]
             self._grid_y = g["grid_y"][()]
             self._grid_z = g["grid_z"][()]
+            self._dual = tuple(np.asarray(g[f"dual_{a}"][()], dtype=float) for a in "xyz")
             sym_attr = g.attrs.get("symmetry")
         from magnelio.monitors.base import mirrors_from_jsonable  # noqa: PLC0415
 
@@ -2356,22 +2421,31 @@ class _LoadedFreqMonitor:
         with h5py.File(self._run_dir / "fields_freq.h5", "r") as f:
             return f[self.name]["bins"][comp][()]
 
-    def component(self, comp: str) -> np.ndarray:
-        """One component per 1 W CW, shape ``(n_freqs, <spatial>)``."""
-        from magnelio.monitors._dft import divide_by_spectrum  # noqa: PLC0415
+    @property
+    def spectrum(self):
+        """The pattern as a :class:`~magnelio.fields.FieldSpectrum`, per 1 W CW."""
+        self._require_source()
+        return self._hydrate().spectrum
 
-        src = self._source_spectrum()
-        if src is None:
+    @property
+    def spectrum_raw(self):
+        """The raw transform as a :class:`~magnelio.fields.FieldSpectrum`."""
+        return self._hydrate().spectrum_raw
+
+    def _require_source(self) -> None:
+        if self._source_spectrum() is None:
             raise RuntimeError(
                 f"monitor {self.name!r}: this run stores no excitation "
                 f"reference, so its DFT bins cannot be expressed as fields "
                 f"per 1 W CW.  Read .data_raw for the raw bins."
             )
-        out = divide_by_spectrum(self._read_bins(comp), src)
-        ratio = self._incident_amplitude()
-        if ratio is not None:
-            out = out / np.asarray(ratio, dtype=float).reshape(-1, *([1] * (out.ndim - 1)))
-        return self._squeeze_spatial(out)
+
+    def component(self, comp: str) -> np.ndarray:
+        """One component per 1 W CW on cell centres, shape ``(n_freqs, <spatial>)``."""
+        if comp not in self._components:
+            raise KeyError(f"component {comp!r} not recorded; available: {self._components}")
+        self._require_source()
+        return self._hydrate().component(comp)
 
     def _incident_amplitude(self) -> np.ndarray | None:
         """|a(f)| / |W(f)| on the monitor frequencies (DD-198), or None.
@@ -2408,13 +2482,14 @@ class _LoadedFreqMonitor:
 
     @property
     def data(self) -> dict:
-        """Recorded fields per 1 W incident CW power (E in V/m, H in A/m)."""
-        return {c: self.component(c) for c in self._components}
+        """Recorded fields per 1 W incident CW power (E in V/m, H in A/m), on cell centres."""
+        self._require_source()
+        return self._hydrate().data
 
     @property
     def data_raw(self) -> dict:
-        """Raw DFT bins, in field units x seconds (undivided)."""
-        return {c: self._squeeze_spatial(self._read_bins(c)) for c in self._components}
+        """Raw DFT bins on cell centres, in field units x seconds (undivided)."""
+        return self._hydrate().data_raw
 
     def _hydrate(self):
         """Build an in-RAM :class:`MonitorFieldFrequency` for plotting reuse."""
@@ -2433,29 +2508,39 @@ class _LoadedFreqMonitor:
             interval=self.interval,
             name=self.name,
         )
-        nx, ny, nz = (len(self._grid_x), len(self._grid_y), len(self._grid_z))
-        ndim = sum(1 for n in (nx, ny, nz) if n > 1)
-        mon._region = MonitorRegion(
-            ix=slice(0, nx),
-            iy=slice(0, ny),
-            iz=slice(0, nz),
-            xc=np.asarray(self._grid_x),
-            yc=np.asarray(self._grid_y),
-            zc=np.asarray(self._grid_z),
-            ndim=ndim,
+        from magnelio.fields._interp import _region_slices  # noqa: PLC0415
+        from magnelio.mesh.grid import GridLines  # noqa: PLC0415
+
+        sub = GridLines(
+            x=np.asarray(self._grid_x, dtype=float),
+            y=np.asarray(self._grid_y, dtype=float),
+            z=np.asarray(self._grid_z, dtype=float),
         )
+        nx, ny, nz = sub.Nx, sub.Ny, sub.Nz
+        ndim = sum(1 for n in (nx, ny, nz) if n > 1)
+        xc, yc, zc = (0.5 * (a[:-1] + a[1:]) for a in (sub.x, sub.y, sub.z))
+        mon._region = MonitorRegion(
+            ix=slice(0, nx), iy=slice(0, ny), iz=slice(0, nz), xc=xc, yc=yc, zc=zc, ndim=ndim
+        )
+        mon._subgrid = sub
+        mon._dual = self._dual
+        r = mon._region
+        mon._slices = {c: _region_slices(r.ix, r.iy, r.iz, c) for c in self._components}
         mon._accumulators = {}
         incident = None
         with h5py.File(self._run_dir / "fields_freq.h5", "r") as f:
             bg = f[self.name]["bins"]
             for comp in self._components:
-                acc = DFTAccumulator(self.freqs, (nx, ny, nz))
-                acc._bins[...] = bg[comp][()]
+                bins = bg[comp][()]
+                acc = DFTAccumulator(self.freqs, tuple(bins.shape[1:]))
+                acc._bins[...] = bins
                 mon._accumulators[comp] = acc
             if "incident_amplitude" in f[self.name]:
                 incident = np.asarray(f[self.name]["incident_amplitude"][()], dtype=float)
         mon._mirrors = self._mirrors
-        mon._grid = self._grid
+        # The full grid serves the plot overlays; the sub-grid does when
+        # the project was opened without one.
+        mon._grid = self._grid if self._grid is not None else sub
         # Carry the run's reference across, or the hydrated monitor would
         # refuse to hand out data it cannot put a unit on.
         mon._source_spectrum = self._source_spectrum()
@@ -2602,6 +2687,10 @@ def _write_freq_result_h5(path, dumps: dict, n_completed: int) -> None:
             if dump.get("symmetry"):
                 g.attrs["symmetry"] = json.dumps(dump["symmetry"])
             for key in ("freqs", "corners", "grid_x", "grid_y", "grid_z"):
+                g.create_dataset(key, data=np.asarray(dump[key]))
+            # The dual widths of the region's h samples (DD-259); the
+            # grid_* datasets are the region's grid lines (nodes).
+            for key in ("dual_x", "dual_y", "dual_z"):
                 g.create_dataset(key, data=np.asarray(dump[key]))
             # Schema-additive (DD-198): the launched incident wave per
             # unit excitation waveform; absent means 1 (lumped/TEM feed).

@@ -33,6 +33,25 @@ major version is 0, minor releases may change the public API.
 
 ### Changed
 
+- Field monitors record the solver's own samples.  `MonitorFieldTime`
+  and `MonitorFieldFrequency` now keep the grid quantities on the Yee
+  positions of their region and hand them out as `monitor.recording`
+  (a `FieldRecording`) and `monitor.spectrum` (a `FieldSpectrum`);
+  `.data` is derived from those on access and reads as before.  A
+  time monitor's `t` is the instant of the electric field it holds,
+  `t + dt` for the frame taken after step *n* — one time step later
+  than the label used to say — and the recording states the magnetic
+  field's instants separately, half a step later still.  A schedule
+  finer than the time step yields one frame per step instead of the
+  same snapshot under several labels.  The frequency monitor's
+  per-step cost drops to a copy.
+- Project stores are schema 3.0: monitor frames are stored staggered,
+  one dataset per component, with the region's grid lines and dual
+  widths beside them.  A store written by an earlier release is
+  refused with a message; re-run the simulation.
+- ParaView: a time monitor is exported as one `.vtr` per frame under
+  a `.pvd` collection, like the frequency monitors; the `fields.xdmf`
+  descriptor over `results.h5` is no longer written.
 - The CPU time step is about 1.2× faster on both x86 and Apple Silicon
   at production mesh sizes (16 Mcells: 40.6 → 50.0 GB/s on a Ryzen
   7800X3D, 91 → 111 GB/s on an M1 Pro).  The Numba field-update

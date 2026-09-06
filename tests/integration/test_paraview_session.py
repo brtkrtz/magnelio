@@ -2,7 +2,7 @@
 
 A project-backed TEM run with a plane time monitor, a volume time
 monitor and a frequency monitor must leave a ready-to-open session in
-the run directory: per-monitor XDMF descriptors, the frequency DFT as a
+the run directory: per-monitor VTK series over time, the frequency DFT as a
 ``.vtr``-per-frequency series (values and cell ordering gated against
 ``fields_freq.h5``), the per-solid ``geometry.vtm``, and the generated
 ``paraview_open.py`` whose embedded config carries slice planes and a
@@ -122,13 +122,15 @@ def test_session_artifacts_written(session_project):
     assert not (session_project / "geometry.stl").exists()
     assert (run_dir / "paraview_open.py").exists()
     pv = run_dir / "paraview"
-    assert (pv / "Eplane.xdmf").exists()
-    assert (pv / "Evol.xdmf").exists()
+    assert (pv / "Eplane.pvd").exists()
+    assert (pv / "Evol.pvd").exists()
     assert (pv / "Efreq.pvd").exists()
     vtrs = sorted((pv / "Efreq").glob("f_*.vtr"))
     assert len(vtrs) == len(FREQS)
-    # Per-monitor descriptors reference the run's results.h5 one level up.
-    assert "../results.h5:/monitors/Eplane/" in (pv / "Eplane.xdmf").read_text()
+    # One frame per recorded instant for the time monitors (DD-259).
+    reader = open_project(session_project).monitors_for(("port1", 0))["Eplane"]
+    assert len(sorted((pv / "Eplane").glob("t_*.vtr"))) == reader.t.size > 0
+    assert not (run_dir / "fields.xdmf").exists()
 
 
 def test_script_config(session_project):

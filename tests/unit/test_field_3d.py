@@ -54,10 +54,12 @@ def _time_monitor(grid, corners=((None, None, LZ / 2), (None, None, LZ / 2))):
     """Three frames of a uniform Ez growing 1, 2, 3 (grid quantities 1e-3·k)."""
     mon = MonitorFieldTime(corners=corners, times=[0.0, 1e-12, 2e-12], fields=["E"], name="m")
     mon.attach(_FakeMesh(grid))
+    # The solver calls record() after step n with e at t + dt (DD-259):
+    # feed it so that the electric instant lands on each requested time.
     for i, t in enumerate(mon.times):
         f = FieldArrays.zeros(grid.Nx, grid.Ny, grid.Nz)
         f.Ez[:] = (i + 1) * 1e-3
-        mon.record(f, i, float(t), 1e-12)
+        mon.record(f, i, float(t) - 1e-12, 1e-12)
     return mon
 
 
@@ -73,9 +75,11 @@ def _freq_monitor(grid):
     mon.finalize()
     mon.renormalize(Signal1D(t=np.array([0.0]), values=np.array([1.0 / dt]), dt=dt))
     # Overwrite the bins with a known pattern: real at f0, imaginary at f1.
+    # The bins are grid quantities (E·dz), so 0.4 V/m is 0.4·dz per bin.
+    dz = float(grid.z[1] - grid.z[0])
     acc = mon._accumulators["Ez"]
-    acc._bins[0] = 0.4
-    acc._bins[1] = 0.4j
+    acc._bins[0] = 0.4 * dz
+    acc._bins[1] = 0.4j * dz
     for comp in ("Ex", "Ey"):
         mon._accumulators[comp]._bins[...] = 0.0
     return mon
@@ -336,7 +340,7 @@ class TestControls:
             f = FieldArrays.zeros(grid.Nx, grid.Ny, grid.Nz)
             f.Ez[:] = (i + 1) * 1e-3
             f.Hx[:] = 0.5 * (i + 1) * 1e-3
-            mon.record(f, i, float(t), 1e-12)
+            mon.record(f, i, float(t) - 1e-12, 1e-12)
         frames = field_3d._frames_of(mon, None)
         view = field_3d._FieldView(
             frames=frames,

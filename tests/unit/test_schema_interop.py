@@ -11,8 +11,9 @@ from magnelio.post import SParameterResult
 
 
 class TestSchemaValidation:
-    def test_current_version_is_two_dot_zero(self):
-        assert SCHEMA_VERSION == "2.0"
+    def test_current_version_is_three_dot_zero(self):
+        # 3.0: field monitors stored as staggered grid quantities (DD-259).
+        assert SCHEMA_VERSION == "3.0"
 
     def test_old_project_json_raises(self, tmp_path):
         (tmp_path / "project.json").write_text(

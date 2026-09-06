@@ -166,7 +166,9 @@ def _frames_from_series(series, mesh) -> _FieldFrames:
     def layer(frame, axis, k, comps):
         slabs = list(full)
         slabs[axis] = slice(k, k + 1)
-        data = _interp_to_cell_centres(series._frame_arrays(frame), list(comps), *slabs, grid)
+        data = _interp_to_cell_centres(
+            series._frame_arrays(frame), list(comps), *slabs, grid, dual=series._dual
+        )
         return {c: np.squeeze(np.asarray(a), axis=axis) for c, a in data.items()}
 
     region = _region_in(mesh.grid, nodes) if mesh is not None else None
@@ -212,96 +214,41 @@ def _frames_from_field(fs, mesh) -> _FieldFrames:
 
 
 def _frames_from_time_monitor(mon, mesh) -> _FieldFrames:
-    region = mon._region
-    if region is None or mon._grid is None:
-        raise RuntimeError(f"monitor {mon.name!r} is not attached to a mesh")
-    if not mon._snapshots:
-        raise RuntimeError(
-            f"monitor {mon.name!r} holds no snapshots — on a project run they stream "
-            "to the store; open the project and use its monitors instead"
-        )
-    nx, ny, nz = (s.stop - s.start for s in (region.ix, region.iy, region.iz))
-    nodes = _region_nodes(mon._grid, region)
-    snapshots = mon._snapshots
-
-    def layer(frame, axis, k, comps):
-        snap = snapshots[frame]
-        return {c: np.take(np.asarray(snap[c]).reshape(nx, ny, nz), k, axis=axis) for c in comps}
-
-    return _FieldFrames(
-        nodes=nodes,
-        components=tuple(mon._components),
-        labels=np.asarray(mon.t, dtype=float),
-        kind="time",
-        is_complex=False,
-        layer=layer,
-        pec=_pec_cells(mesh, nodes, region),
-        name=mon.name,
-    )
+    frames = _frames_from_series(mon.recording, mesh)
+    frames.name = mon.name
+    return frames
 
 
 def _frames_from_freq_monitor(mon, mesh) -> _FieldFrames:
-    region = mon._region
-    if region is None or mon._grid is None:
-        raise RuntimeError(f"monitor {mon.name!r} is not attached to a mesh")
-    nx, ny, nz = (s.stop - s.start for s in (region.ix, region.iy, region.iz))
-    nodes = _region_nodes(mon._grid, region)
-    freqs = np.asarray(mon.f, dtype=float)
-    data = {c: np.asarray(a).reshape(freqs.size, nx, ny, nz) for c, a in mon.data.items()}
-
-    def layer(frame, axis, k, comps):
-        return {c: np.take(data[c][frame], k, axis=axis) for c in comps}
-
-    return _FieldFrames(
-        nodes=nodes,
-        components=tuple(data),
-        labels=freqs,
-        kind="frequency",
-        is_complex=True,
-        layer=layer,
-        pec=_pec_cells(mesh, nodes, region),
-        name=mon.name,
-    )
+    frames = _frames_from_series(mon.spectrum, mesh)
+    frames.name = mon.name
+    return frames
 
 
 def _frames_from_loaded_time(reader, mesh) -> _FieldFrames:
     """Frames over a store reader; one frame is read from HDF5 at a time."""
-    import h5py  # noqa: PLC0415
+    from magnelio.fields._interp import _interp_to_cell_centres  # noqa: PLC0415
 
-    path = reader._run_dir / "results.h5"
-    with h5py.File(path, "r", swmr=True) as f:
-        mg = f["monitors"][reader.name]
-        nodes = tuple(np.asarray(mg[f"grid_{a}"][()], dtype=float) for a in _AXES)
-    n = int(reader._n)
-    cache: dict = {}
-
-    def frame_arrays(frame: int, comps) -> dict[str, np.ndarray]:
-        key = frame
-        held = cache.get(key)
-        if held is not None and all(c in held for c in comps):
-            return held
-        with h5py.File(path, "r", swmr=True) as f:
-            mg = f["monitors"][reader.name]
-            arrays = {
-                c: np.transpose(np.asarray(mg[c][frame]), (2, 1, 0)) for c in comps
-            }  # (nz, ny, nx) -> (nx, ny, nz)
-        cache.clear()
-        cache[key] = arrays
-        return arrays
+    grid = reader.grid
+    nodes = (
+        np.asarray(grid.x, dtype=float),
+        np.asarray(grid.y, dtype=float),
+        np.asarray(grid.z, dtype=float),
+    )
+    full = [slice(0, grid.Nx), slice(0, grid.Ny), slice(0, grid.Nz)]
 
     def layer(frame, axis, k, comps):
-        arrays = frame_arrays(frame, comps)
-        return {c: np.take(arrays[c], k, axis=axis) for c in comps}
+        fs = reader.frame(frame)  # the reader keeps the last frame
+        slabs = list(full)
+        slabs[axis] = slice(k, k + 1)
+        data = _interp_to_cell_centres(fs._raw, list(comps), *slabs, grid, dual=fs._dual)
+        return {c: np.squeeze(np.asarray(a), axis=axis) for c, a in data.items()}
 
-    region = None
-    if mesh is not None:
-        from magnelio.monitors.base import resolve_region  # noqa: PLC0415
-
-        region = resolve_region(reader.corners, mesh.grid)
+    region = _region_in(mesh.grid, nodes) if mesh is not None else None
     return _FieldFrames(
-        nodes=nodes,  # type: ignore[arg-type]
-        components=tuple(reader._components),
-        labels=np.asarray(reader.t, dtype=float)[:n],
+        nodes=nodes,
+        components=tuple(reader.components),
+        labels=np.asarray(reader.t, dtype=float),
         kind="time",
         is_complex=False,
         layer=layer,
@@ -328,7 +275,9 @@ def _frames_of(source, mesh) -> _FieldFrames:
     if kind == "_LoadedFieldMonitor":
         return _frames_from_loaded_time(source, mesh)
     if kind == "_LoadedFreqMonitor":
-        return _frames_from_freq_monitor(source._hydrate(), mesh)
+        frames = _frames_from_series(source._hydrate().spectrum, mesh)
+        frames.name = source.name
+        return frames
     raise TypeError(
         "show_field needs a FieldState, a MonitorFieldTime, a MonitorFieldFrequency "
         f"or a project's monitor reader; got {kind}"

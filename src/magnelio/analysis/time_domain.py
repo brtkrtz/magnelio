@@ -2522,6 +2522,13 @@ def _resume_transient(
         for name, msd in ckpt.get("monitors", {}).items()
         if "next_idx" in msd
     }
+    # A field monitor's stream holds its *frames*, which can be fewer than
+    # the targets it consumed (a schedule finer than the step, DD-259).
+    frame_keep = {
+        name: int(msd.get("n_recorded", msd["next_idx"]))
+        for name, msd in ckpt.get("monitors", {}).items()
+        if "next_idx" in msd
+    }
     store = ProjectStore(proj.path)
     sink = store.reopen_run(
         run_name,
@@ -2532,7 +2539,7 @@ def _resume_transient(
         step_offset=n_completed,
         monitors=run_monitors,
         grid=mesh.grid,
-        monitor_keep=stream_keep,
+        monitor_keep=frame_keep,
         flux_keep=stream_keep,
     )
     solver = analysis._build_solver(

@@ -11,7 +11,8 @@ Three layers:
 2. Frequency-monitor export — the ``fields_freq.h5`` DFT bins as one
    rectilinear ``.vtr`` file per frequency plus a ``.pvd`` collection
    (frequency plays the role of the ParaView time axis).  Time monitors
-   stay on the XDMF-over-``results.h5`` path — no data duplication.
+   are written the same way, one ``.vtr`` per frame, converted from the
+   staggered frames the store holds (DD-259).
    Eigenmodes take the same ``.vtr``/``.pvd`` shape one directory up
    (they belong to the project, not to a run), with the *mode index*
    on the ParaView axis — see :func:`export_eigenmode_visualization`.
@@ -315,7 +316,7 @@ def export_vtm(
 
 
 # ═════════════════════════════════════════════════════════════════════
-# Monitors: caps, per-monitor XDMF, frequency .vtr series
+# Monitors: caps, per-monitor .vtr series over time and frequency
 # ═════════════════════════════════════════════════════════════════════
 
 
@@ -548,57 +549,101 @@ def _volume_step(extents) -> float | None:
     return float((live[0] * live[1] * live[2] / _RESAMPLE_VOLUME_POINTS) ** (1.0 / 3.0))
 
 
+def _vector_triples(components) -> list[tuple[str, list[str]]]:
+    """Every complete field triple among *components*, E first."""
+    comps = set(components)
+    out = []
+    for field in ("E", "H"):
+        triple = [f"{field}{ax}" for ax in "xyz"]
+        if all(c in comps for c in triple):
+            out.append((field, triple))
+    return out
+
+
+def _write_pvd(pv_dir: Path, safe: str, entries) -> None:
+    lines = [
+        '<?xml version="1.0"?>',
+        '<VTKFile type="Collection" version="0.1">',
+        "  <Collection>",
+    ]
+    lines += [
+        f'    <DataSet timestep="{value:.9e}" part="0" file="{rel}"/>' for value, rel in entries
+    ]
+    lines += ["  </Collection>", "</VTKFile>", ""]
+    (pv_dir / f"{safe}.pvd").write_text("\n".join(lines), encoding="utf-8")
+
+
 def _export_time_monitor(run_dir: Path, pv_dir: Path, name: str, percentile: float):
-    """Per-monitor XDMF (over ``results.h5``) + pipeline spec, or ``None``."""
-    import h5py  # noqa: PLC0415
+    """``.vtr``-per-frame series + ``.pvd`` collection + pipeline spec, or ``None``.
 
-    from magnelio.io.xdmf import _vector_groups, write_run_xdmf  # noqa: PLC0415
+    The store holds the frames as grid quantities on the region's Yee
+    positions (DD-259); each frame is averaged onto the cell centres
+    here, at export time, and written as cell data — the same quantity
+    the monitor's own ``.data`` reports.
+    """
+    import vtk  # noqa: PLC0415
+    from vtk.util import numpy_support as ns  # noqa: PLC0415
 
-    with h5py.File(run_dir / "results.h5", "r", swmr=True) as f:
-        mg = f["monitors"][name]
-        components = json.loads(mg.attrs["components"])
-        times = mg["times"][()]
-        n = int(times.shape[0])
-        if n == 0:
-            return None
-        gx, gy, gz = mg["grid_x"][()], mg["grid_y"][()], mg["grid_z"][()]
-        vec = _pick_vector(components)
-        cap, exponent = 0.0, 1.0
-        if vec is not None:
-            sl = _spatial_stride(mg[vec[1][0]].shape[1:])
+    from magnelio.io.project import _LoadedFieldMonitor  # noqa: PLC0415
 
-            def steps():
-                for ti in _sample_steps(n):
-                    yield [mg[c][ti][sl] for c in vec[1]]
+    reader = _LoadedFieldMonitor(run_dir, name)
+    times = np.asarray(reader.t, dtype=float)
+    n = int(times.size)
+    components = list(reader.components)
+    if n == 0 or not components:
+        return None
+    g = reader.grid
+    node_x, node_y, node_z = (np.asarray(a, dtype=float) for a in (g.x, g.y, g.z))
+    triples = _vector_triples(components)
+    vec = _pick_vector(components)
 
-            cap, exponent = _magnitude_stats(steps(), percentile)
+    cap, exponent = 0.0, 1.0
+    if vec is not None:
+        sl = _spatial_stride((g.Nx, g.Ny, g.Nz))
+
+        def steps():
+            for ti in _sample_steps(n):
+                cc = reader.frame(ti).cell_centred(vec[1])
+                yield [cc[c][sl] for c in vec[1]]
+
+        cap, exponent = _magnitude_stats(steps(), percentile)
 
     safe = _sanitize(name)
-    write_run_xdmf(
-        pv_dir / f"{safe}.xdmf",
-        "../results.h5",
-        [
-            {
-                "name": name,
-                "n": n,
-                "nx": len(gx) - 1,
-                "ny": len(gy) - 1,
-                "nz": len(gz) - 1,
-                "components": components,
-                "times": times,
-            }
-        ],
-    )
+    mon_dir = pv_dir / safe
+    mon_dir.mkdir(parents=True, exist_ok=True)
+    entries = []
+    for ti in range(n):
+        cc = reader.frame(ti).cell_centred(components)
+        rg = _freq_vtr_grid(node_x, node_y, node_z)
+        cd = rg.GetCellData()
 
-    spec = _monitor_geometry(gx, gy, gz)
+        def add(name_, data):
+            arr = ns.numpy_to_vtk(np.ascontiguousarray(data, dtype=np.float64), deep=True)
+            arr.SetName(name_)
+            cd.AddArray(arr)
+
+        for c in components:
+            add(c, _flat_cells(cc[c]))
+        for field, triple in triples:
+            add(field, np.stack([_flat_cells(cc[c]) for c in triple], axis=-1))
+
+        writer = vtk.vtkXMLRectilinearGridWriter()
+        rel = f"{safe}/t_{ti:04d}.vtr"
+        writer.SetFileName(str(pv_dir / rel))
+        writer.SetInputData(rg)
+        writer.Write()
+        entries.append((float(times[ti]), rel))
+    _write_pvd(pv_dir, safe, entries)
+
+    spec = _monitor_geometry(node_x, node_y, node_z)
     spec.update(
         {
             "name": name,
             "kind": "time",
-            "data": f"paraview/{safe}.xdmf",
-            "reader": "xdmf",
+            "data": f"paraview/{safe}.pvd",
+            "reader": "pvd",
             "glyph": None,
-            "field_arrays": list(components) + [n for n, _ds in _vector_groups(components)],
+            "field_arrays": list(components) + [field for field, _ in triples],
         }
     )
     if vec is not None and cap > 0.0:
@@ -610,23 +655,6 @@ def _export_time_monitor(run_dir: Path, pv_dir: Path, name: str, percentile: flo
             "threshold": cap * _VOLUME_THRESHOLD_FRACTION,
         }
     return spec
-
-
-def _freq_region_nodes(corners_arr, grid):
-    """Node coordinates for a frequency monitor's stored region.
-
-    ``fields_freq.h5`` stores cell-centre axes; the ``.vtr`` cells need
-    node coordinates, recovered exactly by re-resolving the stored
-    corners against the stored mesh grid (deterministic, DD-104).
-    """
-    from magnelio.monitors.base import _corners_from_array, resolve_region  # noqa: PLC0415
-
-    region = resolve_region(_corners_from_array(corners_arr), grid)
-    return (
-        grid.x[region.ix.start : region.ix.stop + 1],
-        grid.y[region.iy.start : region.iy.stop + 1],
-        grid.z[region.iz.start : region.iz.stop + 1],
-    )
 
 
 def _freq_vtr_grid(node_x, node_y, node_z):
@@ -671,33 +699,33 @@ def _run_source_spectrum(run_dir: Path, freqs: np.ndarray):
 
 
 def _export_freq_monitor(run_dir: Path, pv_dir: Path, name: str, grid, percentile: float):
-    """``.vtr``-per-frequency series + ``.pvd`` collection + pipeline spec."""
-    import h5py  # noqa: PLC0415
+    """``.vtr``-per-frequency series + ``.pvd`` collection + pipeline spec.
+
+    The store holds the bins as grid quantities on the region's Yee
+    positions (DD-259); each frequency is averaged onto the cell centres
+    here, at export time.
+    """
     import vtk  # noqa: PLC0415
     from vtk.util import numpy_support as ns  # noqa: PLC0415
 
-    from magnelio.monitors._dft import divide_by_spectrum  # noqa: PLC0415
+    from magnelio.io.project import _LoadedFreqMonitor  # noqa: PLC0415
 
-    with h5py.File(run_dir / "fields_freq.h5", "r") as f:
-        g = f[name]
-        components = json.loads(g.attrs["components"])
-        freqs = np.asarray(g["freqs"][()], dtype=float)
-        corners = g["corners"][()]
-        bins = {c: g["bins"][c][()] for c in components}
+    reader = _LoadedFreqMonitor(run_dir, name, grid=grid)
+    components = list(reader.components)
+    freqs = np.asarray(reader.f, dtype=float)
     if freqs.size == 0 or not components:
         return None
     # Ship the same quantity the monitor's own ``.data`` reports — fields
     # per 1 W CW — so a value read off the renderer means what a value
     # read in Python means.  A run without a stored excitation (none in
     # practice) exports the raw bins rather than nothing.
+    mon = reader._hydrate()
     spectrum = _run_source_spectrum(run_dir, freqs)
     if spectrum is not None:
-        bins = {c: divide_by_spectrum(v, spectrum) for c, v in bins.items()}
-
-    node_x, node_y, node_z = _freq_region_nodes(corners, grid)
-    first = bins[components[0]]
-    if first.shape[1:] != (len(node_x) - 1, len(node_y) - 1, len(node_z) - 1):
-        return None  # stored grid no longer matches the bins; skip quietly
+        mon._source_spectrum = spectrum
+    spec_series = mon._spectrum(spectrum is not None)
+    g = spec_series.grid
+    node_x, node_y, node_z = (np.asarray(a, dtype=float) for a in (g.x, g.y, g.z))
 
     safe = _sanitize(name)
     mon_dir = pv_dir / safe
@@ -706,6 +734,7 @@ def _export_freq_monitor(run_dir: Path, pv_dir: Path, name: str, grid, percentil
     vec = _pick_vector(components)
     entries = []
     for fi, f_val in enumerate(freqs):
+        bins = spec_series.cell_centred(components, frame=fi)
         rg = _freq_vtr_grid(node_x, node_y, node_z)
         cd = rg.GetCellData()
 
@@ -715,13 +744,13 @@ def _export_freq_monitor(run_dir: Path, pv_dir: Path, name: str, grid, percentil
             cd.AddArray(arr)
 
         for c in components:
-            a = bins[c][fi]
+            a = bins[c]
             add(f"{c}_re", _flat_cells(a.real))
             add(f"{c}_im", _flat_cells(a.imag))
         if vec is not None:
             field, triple = vec
-            re = np.stack([_flat_cells(bins[c][fi].real) for c in triple], axis=-1)
-            im = np.stack([_flat_cells(bins[c][fi].imag) for c in triple], axis=-1)
+            re = np.stack([_flat_cells(bins[c].real) for c in triple], axis=-1)
+            im = np.stack([_flat_cells(bins[c].imag) for c in triple], axis=-1)
             add(f"{field}_re", re)
             add(f"{field}_im", im)
             add(f"|{field}|", np.sqrt(np.sum(re * re + im * im, axis=-1)))
@@ -733,16 +762,7 @@ def _export_freq_monitor(run_dir: Path, pv_dir: Path, name: str, grid, percentil
         writer.Write()
         entries.append((f_val, rel))
 
-    pvd_lines = [
-        '<?xml version="1.0"?>',
-        '<VTKFile type="Collection" version="0.1">',
-        "  <Collection>",
-    ]
-    pvd_lines += [
-        f'    <DataSet timestep="{f_val:.9e}" part="0" file="{rel}"/>' for f_val, rel in entries
-    ]
-    pvd_lines += ["  </Collection>", "</VTKFile>", ""]
-    (pv_dir / f"{safe}.pvd").write_text("\n".join(pvd_lines), encoding="utf-8")
+    _write_pvd(pv_dir, safe, entries)
 
     field_arrays = [f"{c}_{part}" for c in components for part in ("re", "im")]
     if vec is not None:
@@ -760,11 +780,12 @@ def _export_freq_monitor(run_dir: Path, pv_dir: Path, name: str, grid, percentil
     )
     if vec is not None:
         field, triple = vec
-        sl = _spatial_stride(first.shape[1:])
+        sl = _spatial_stride(spec_series.shape)
 
         def steps():
             for fi in _sample_steps(len(freqs)):
-                yield [bins[c][fi][sl] for c in triple]
+                cc = spec_series.cell_centred(triple, frame=fi)
+                yield [cc[c][sl] for c in triple]
 
         cap, exponent = _magnitude_stats(steps(), percentile)
         if cap > 0.0:
@@ -1530,8 +1551,9 @@ def export_run_visualization(
 
     Writes, under ``runs/<run_name>/``:
 
-    * ``paraview/<monitor>.xdmf`` — one descriptor per field-time monitor
-      (referencing ``results.h5``, no data duplication),
+    * ``paraview/<monitor>.pvd`` + ``paraview/<monitor>/t_*.vtr`` — a
+      field-time monitor's frames as a time series, averaged onto the
+      cell centres from the staggered frames the store holds,
     * ``paraview/<monitor>.pvd`` + ``paraview/<monitor>/f_*.vtr`` — the
       frequency-monitor DFT as a frequency series,
     * ``paraview_open.py`` — the ``paraview.simple`` pipeline script,

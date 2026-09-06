@@ -20,13 +20,16 @@ from magnelio.monitors.base import (
     PlaneView,
     _corners_array,
     _expand_field_list,
-    _interp_to_cell_centres,
+    _region_dual,
+    _region_slices,
     _resolve_component,
+    _take_raw,
     component_mirror_key,
     mirror_extend,
     mirror_plane_arrays,
     mirror_sign,
     plane_slab_halfwidth,
+    region_grid,
     resolve_mirrors,
     resolve_plane_view,
     resolve_region,
@@ -136,6 +139,12 @@ class MonitorFieldFrequency:
     # Symmetry planes the region touches (DD-154) — plots mirror the
     # recorded half across them on read.
     _mirrors: tuple = field(default=(), repr=False, init=False)
+    # The region as its own grid, the dual widths of its h samples and
+    # the per-component slices of the solver arrays (DD-259): the bins
+    # accumulate the grid quantities on the Yee positions.
+    _subgrid: object = field(default=None, repr=False, init=False)
+    _dual: tuple | None = field(default=None, repr=False, init=False)
+    _slices: dict = field(default_factory=dict, repr=False, init=False)
 
     @classmethod
     def from_ranges(
@@ -237,19 +246,20 @@ class MonitorFieldFrequency:
     # ------------------------------------------------------------------
 
     def attach(self, mesh) -> None:
-        """Snap to grid and allocate DFT accumulators."""
+        """Snap to grid and allocate one DFT accumulator per staggered component."""
+        from magnelio.fields.state import _yee_shapes  # noqa: PLC0415
+
         self._region = resolve_region(self.corners, mesh.grid)
         self._grid = mesh.grid  # per-edge lengths for the physical fields
         self._mirrors = resolve_mirrors(self._region, mesh)
         r = self._region
-        spatial_shape = (
-            r.ix.stop - r.ix.start,
-            r.iy.stop - r.iy.start,
-            r.iz.stop - r.iz.start,
-        )
+        self._subgrid = region_grid(mesh.grid, r)
+        self._dual = _region_dual(mesh.grid, r.ix, r.iy, r.iz)
+        self._slices = {c: _region_slices(r.ix, r.iy, r.iz, c) for c in self._components}
+        shapes = _yee_shapes(self._subgrid.Nx, self._subgrid.Ny, self._subgrid.Nz)
         self._accumulators = {}
         for comp in self._components:
-            self._accumulators[comp] = DFTAccumulator(self.freqs, spatial_shape)
+            self._accumulators[comp] = DFTAccumulator(self.freqs, shapes[comp])
 
     def record(self, fields, n: int, t: float, dt: float) -> None:
         """Accumulate DFT contribution from the current time step.
@@ -259,11 +269,18 @@ class MonitorFieldFrequency:
         DFT accumulator for each component so that the Leapfrog
         staggering is handled automatically.
 
+        The bins accumulate the grid quantities on the region's Yee
+        positions; nothing is averaged until the spectrum is read.  The
+        time stamps are the ones the port recorder uses for the same
+        step (``t`` for the sample of ``e`` taken after step *n*), so a
+        renormalised pattern is phase-consistent with the run's
+        S-parameters.
+
         With an ``interval``, steps off the stride return before the
-        cell-centre interpolation — which is where a whole-volume
-        monitor spends its time, so the saving is proportional.  The
-        stride is keyed on the absolute step index, so a resumed run
-        samples the same instants as an uninterrupted one.
+        copy — which is where a whole-volume monitor spends its time, so
+        the saving is proportional.  The stride is keyed on the absolute
+        step index, so a resumed run samples the same instants as an
+        uninterrupted one.
         """
         if self._region is None:
             raise RuntimeError("Monitor not attached. Call attach() first.")
@@ -279,24 +296,14 @@ class MonitorFieldFrequency:
         # H physically sits, not a property of the sampling.
         dt_weight = stride * dt
 
-        r = self._region
-
+        raw = _take_raw(fields, self._components, self._slices)
         # E-field components at time t_E = t (= n * dt)
-        if self._e_components:
-            e_data = _interp_to_cell_centres(
-                fields, self._e_components, r.ix, r.iy, r.iz, self._grid
-            )
-            for comp, arr in e_data.items():
-                self._accumulators[comp].accumulate(arr, t, dt_weight)
-
+        for comp in self._e_components:
+            self._accumulators[comp].accumulate(raw[comp], t, dt_weight)
         # H-field components at time t_H = t + dt/2 (= (n + 0.5) * dt)
-        if self._h_components:
-            h_data = _interp_to_cell_centres(
-                fields, self._h_components, r.ix, r.iy, r.iz, self._grid
-            )
-            t_h = t + 0.5 * dt
-            for comp, arr in h_data.items():
-                self._accumulators[comp].accumulate(arr, t_h, dt_weight)
+        t_h = t + 0.5 * dt
+        for comp in self._h_components:
+            self._accumulators[comp].accumulate(raw[comp], t_h, dt_weight)
 
     def finalize(self) -> None:
         """Called after the simulation completes (no-op for DFT monitors)."""
@@ -321,7 +328,8 @@ class MonitorFieldFrequency:
             raise RuntimeError("monitor not attached; nothing to dump")
         from magnelio.monitors.base import mirrors_to_jsonable  # noqa: PLC0415
 
-        r = self._region
+        g = self._subgrid
+        dual = self._dual
         return {
             "components": list(self._components),
             "fields": list(self.fields),
@@ -329,9 +337,14 @@ class MonitorFieldFrequency:
             "symmetry": mirrors_to_jsonable(self._mirrors),
             "freqs": np.asarray(self.freqs, dtype=float),
             "corners": _corners_array(self.corners),
-            "grid_x": np.asarray(r.xc, dtype=float),
-            "grid_y": np.asarray(r.yc, dtype=float),
-            "grid_z": np.asarray(r.zc, dtype=float),
+            # The region's own grid lines (nodes) and the dual widths of
+            # its h samples — what rebuilds the FieldSpectrum (DD-259).
+            "grid_x": np.asarray(g.x, dtype=float),
+            "grid_y": np.asarray(g.y, dtype=float),
+            "grid_z": np.asarray(g.z, dtype=float),
+            "dual_x": np.asarray(dual[0], dtype=float),
+            "dual_y": np.asarray(dual[1], dtype=float),
+            "dual_z": np.asarray(dual[2], dtype=float),
             "bins": {comp: self._accumulators[comp].result for comp in self._components},
             "incident_amplitude": (
                 np.ones(len(self.freqs))
@@ -453,14 +466,44 @@ class MonitorFieldFrequency:
                 f"the raw bins themselves."
             )
 
+    def _spectrum(self, renormalised: bool):
+        from magnelio.fields.series import FieldSpectrum  # noqa: PLC0415
+
+        if self._region is None or self._subgrid is None:
+            raise RuntimeError(f"monitor {self.name!r} is not attached to a mesh")
+        raw = {
+            comp: (self._apply_renorm(acc.result) if renormalised else acc.result)
+            for comp, acc in self._accumulators.items()
+        }
+        return FieldSpectrum._from_raw(
+            self._subgrid, np.asarray(self.freqs, dtype=float), raw, dual=self._dual
+        )
+
+    @property
+    def spectrum(self):
+        """The pattern as a :class:`~magnelio.fields.FieldSpectrum`, per 1 W CW.
+
+        Every frame keeps the Yee staggering of the region.  Raises
+        without a source reference (see :meth:`renormalize`);
+        :attr:`spectrum_raw` is the undivided transform.
+        """
+        self._require_source()
+        return self._spectrum(True)
+
+    @property
+    def spectrum_raw(self):
+        """The raw transform as a :class:`~magnelio.fields.FieldSpectrum`."""
+        return self._spectrum(False)
+
     @property
     def data(self) -> dict[str, np.ndarray]:
-        """Recorded fields per 1 W incident CW power.
+        """Recorded fields per 1 W incident CW power, averaged onto cell centres.
 
         Each bin is divided by the spectrum of the run's excitation, so
         E is in V/m and H in A/m, both per √W of incident power.  Raises
         if no source reference is available (see :meth:`renormalize`);
-        :attr:`data_raw` returns the undivided bins instead.
+        :attr:`data_raw` returns the undivided bins instead.  Derived
+        from :attr:`spectrum` on every access.
 
         Returns
         -------
@@ -471,13 +514,9 @@ class MonitorFieldFrequency:
             giving shape ``(n_freqs,)``.
         """
         self._require_source()
-        out = {}
-        for comp in self._components:
-            acc = self._accumulators.get(comp)
-            if acc is not None:
-                arr = self._apply_renorm(acc.result)  # shape (Nf, nx, ny, nz)
-                out[comp] = self._squeeze_spatial(arr)
-        return out
+        spec = self._spectrum(True)
+        cc = spec.cell_centred(list(spec.components))
+        return {c: self._squeeze_spatial(cc[c]) for c in spec.components}
 
     @property
     def data_raw(self) -> dict[str, np.ndarray]:
@@ -493,13 +532,9 @@ class MonitorFieldFrequency:
         dict[str, np.ndarray]
             Same layout as :attr:`data`.
         """
-        out = {}
-        for comp in self._components:
-            acc = self._accumulators.get(comp)
-            if acc is not None:
-                arr = self._squeeze_spatial(acc.result)
-                out[comp] = arr
-        return out
+        spec = self._spectrum(False)
+        cc = spec.cell_centred(list(spec.components))
+        return {c: self._squeeze_spatial(cc[c]) for c in spec.components}
 
     def component(self, name: str) -> np.ndarray:
         """Return DFT data for a single component.

@@ -63,19 +63,30 @@ class _FieldSeries:
         self._grid = grid
         self._labels = labels
         self._raw = raw
+        self._dual = None
         self._frame_cache: tuple[int, FieldArrays] | None = None
 
     @classmethod
-    def _from_raw(cls, grid: GridLines, labels, raw: dict[str, np.ndarray], **kwargs):
-        """Wrap stacked grid quantities without conversion (internal)."""
+    def _from_raw(cls, grid: GridLines, labels, raw: dict[str, np.ndarray], dual=None, **kwargs):
+        """Wrap stacked grid quantities without conversion (internal).
+
+        *dual*: the dual widths of the ``h`` samples when the grid is a
+        region cut from a larger one (see :meth:`FieldState._from_raw`).
+        """
         self = cls.__new__(cls)
         self._grid = grid
         self._labels = np.atleast_1d(np.asarray(labels, dtype=float))
         self._raw = {name: np.asarray(a) for name, a in raw.items()}
+        self._dual = dual
         self._frame_cache = None
         for key, value in kwargs.items():
             setattr(self, key, value)
         return self
+
+    def _lengths(self) -> dict[str, np.ndarray]:
+        probe = FieldState.zeros(self._grid)
+        probe._dual = self._dual
+        return probe._lengths()
 
     # ── vocabulary ───────────────────────────────────────────────────────
 
@@ -147,7 +158,7 @@ class _FieldSeries:
         Components that were not recorded are zero in the frame; see
         :attr:`components`.
         """
-        return FieldState._from_raw(self._grid, self._frame_arrays(i))
+        return FieldState._from_raw(self._grid, self._frame_arrays(i), dual=self._dual)
 
     def component(self, name: str) -> np.ndarray:
         """The physical samples of one recorded component, ``(n_frames, *Yee shape)``."""
@@ -155,8 +166,7 @@ class _FieldSeries:
             raise KeyError(
                 f"component {name!r} was not recorded; recorded: {list(self.components)}"
             )
-        lengths = FieldState.zeros(self._grid)._lengths()
-        return np.asarray(self._raw[name]) / lengths[name][None]
+        return np.asarray(self._raw[name]) / self._lengths()[name][None]
 
     def cell_centred(self, components=None, corners=None, frame: int | None = None) -> dict:
         """Components averaged onto the cell centres, per frame.
