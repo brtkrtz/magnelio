@@ -604,6 +604,7 @@ class FieldState:
         threshold: float = 0.02,
         title: str | None = None,
         unit: str | None = None,
+        colorbar: bool = True,
     ):
         """Plot the field on a slice plane.
 
@@ -644,6 +645,8 @@ class FieldState:
             Plot title; default names the component and the plane.
         unit : str, optional
             Colour-bar unit label; default ``"V/m"`` / ``"A/m"``.
+        colorbar : bool, default True
+            Draw the colour bar; ``False`` for a panel of a shared figure.
 
         Returns
         -------
@@ -726,6 +729,7 @@ class FieldState:
                 threshold=threshold,
                 flip=flip,
                 geometry=overlay,
+                colorbar=colorbar,
             )
 
         vals = _resolve_component(data, field_group if is_magnitude else component)
@@ -756,6 +760,7 @@ class FieldState:
             plot_type=plot_type,
             flip=flip,
             geometry=overlay,
+            colorbar=colorbar,
         )
 
     def show(self, component: str = "E", **kwargs):

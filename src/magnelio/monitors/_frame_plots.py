@@ -205,6 +205,7 @@ def plot_frame(
     normalize_arrows: bool = False,
     threshold: float = 0.02,
     quiver_scale: float | None = None,
+    colorbar: bool = True,
 ):
     """Draw one frame of *view*: a trace (point), a line, or a plane.
 
@@ -292,6 +293,7 @@ def plot_frame(
             quiver_scale=quiver_scale,
             flip=flip,
             geometry=overlay,
+            colorbar=colorbar,
         )
 
     comps = view._comps(component)
@@ -334,6 +336,7 @@ def plot_frame(
         plot_type=plot_type,
         flip=flip,
         geometry=overlay,
+        colorbar=colorbar,
     )
 
 

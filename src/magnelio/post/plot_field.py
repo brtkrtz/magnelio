@@ -180,6 +180,7 @@ def plot_field_scalar(
     contour_levels: int = 16,
     flip: bool = False,
     geometry: GeometryOverlay = None,
+    colorbar: bool = True,
 ) -> tuple["matplotlib.figure.Figure", "matplotlib.axes.Axes"]:
     """Scalar 2D field plot (pcolormesh or contourf).
 
@@ -246,7 +247,8 @@ def plot_field_scalar(
         if vmax is not None:
             mesh_kw["vmax"] = vmax
         pcm = ax.pcolormesh(X, Y, values, **mesh_kw)
-        fig.colorbar(pcm, ax=ax, label=clabel)
+        if colorbar:
+            fig.colorbar(pcm, ax=ax, label=clabel)
 
     elif plot_type == "contour":
         X, Y = np.meshgrid(xc * sc, yc * sc, indexing="ij")
@@ -255,7 +257,8 @@ def plot_field_scalar(
             kw["levels"] = np.linspace(vmin, vmax, contour_levels)
         cf = ax.contourf(X, Y, values, **kw)
         ax.contour(X, Y, values, levels=cf.levels, colors="k", linewidths=0.3, alpha=0.35)
-        fig.colorbar(cf, ax=ax, label=clabel)
+        if colorbar:
+            fig.colorbar(cf, ax=ax, label=clabel)
 
     else:
         raise ValueError(f"plot_type must be 'color' or 'contour'; got {plot_type!r}")
@@ -427,6 +430,7 @@ def plot_field_vector(
     quiver_scale: float | None = None,
     flip: bool = False,
     geometry: GeometryOverlay = None,
+    colorbar: bool = True,
 ) -> tuple["matplotlib.figure.Figure", "matplotlib.axes.Axes"]:
     """Quiver plot for a 2D slice of a vector field.
 
@@ -600,7 +604,8 @@ def plot_field_vector(
     Q = ax.quiver(X, Y, us, vs, mag, **quiver_kw)
     if clabel is None:
         clabel = "Field magnitude" if w is not None else "In-plane field magnitude"
-    fig.colorbar(Q, ax=ax, label=clabel, fraction=0.046, pad=0.04)
+    if colorbar:
+        fig.colorbar(Q, ax=ax, label=clabel, fraction=0.046, pad=0.04)
 
     if dot_mask is not None and np.any(dot_mask):
         _draw_normal_markers(ax, X, Y, ws, mag, dot_mask, cmap=cmap, norm=norm, wlabel=wlabel)

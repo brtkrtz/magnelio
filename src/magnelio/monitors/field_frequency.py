@@ -545,6 +545,7 @@ class MonitorFieldFrequency:
         normalize_arrows: bool = False,
         threshold: float = 0.02,
         quiver_scale: float | None = None,
+        colorbar: bool = True,
     ):
         """Plot the pattern at one frequency.
 
@@ -593,6 +594,8 @@ class MonitorFieldFrequency:
             Suppress arrows below this fraction of peak.
         quiver_scale : float or None
             Fixed quiver scale override.
+        colorbar : bool, default True
+            Draw the colour bar; ``False`` for a panel of a shared figure.
 
         Returns
         -------
@@ -621,6 +624,7 @@ class MonitorFieldFrequency:
             normalize_arrows=normalize_arrows,
             threshold=threshold,
             quiver_scale=quiver_scale,
+            colorbar=colorbar,
         )
 
     def interact(

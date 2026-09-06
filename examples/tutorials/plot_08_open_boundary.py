@@ -224,10 +224,11 @@ fig.tight_layout()
 # resonances of the box instead of showing one clean antenna dip.
 
 # The saturation level is taken from the data rather than written out
-# as a number: ``data`` is in V/m per √W of incident power, and a scale
-# tied to the pattern's own peak keeps this plot honest no matter what
-# the drive level or the structure is.
-e_peak = np.sqrt(sum(np.abs(v) ** 2 for v in nearfield.data.values())).max()
+# as a number: the spectrum is in V/m per √W of incident power, and a
+# scale tied to the pattern's own peak keeps this plot honest no matter
+# what the drive level or the structure is.
+pattern = nearfield.spectrum.cell_centred()
+e_peak = np.sqrt(sum(np.abs(v) ** 2 for v in pattern.values())).max()
 
 fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.6))
 nearfield.plot(
