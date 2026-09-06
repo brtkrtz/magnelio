@@ -394,7 +394,15 @@ class TestControls:
         assert sheet_max() == pytest.approx(1.5e-3 / (0.5 * dz), rel=1e-6) or sheet_max() > 0
         lo, hi = pl.renderer.actors["field_cut"].mapper.scalar_range
         assert lo == -hi
-        assert "field_arrows" not in pl.renderer.actors
+        # The arrow actor stays (one identity for the browser) but is hidden.
+        assert not pl.renderer.actors["field_arrows"].GetVisibility()
+        assert "Hx (A/m)" in pl.scalar_bars and "|E| (V/m)" not in pl.scalar_bars
+        # The sheet actor is the same object frame after frame.
+        sheet_actor = pl.renderer.actors["field_cut"]
+        with state:
+            state[f"{key}_comp"] = "E"
+        assert pl.renderer.actors["field_cut"] is sheet_actor
+        assert pl.renderer.actors["field_arrows"].GetVisibility()
         with state:
             state[f"{key}_pos"] = 10.0 * LZ * 1e3  # far outside the region
         assert not pl.renderer.actors["field_cut"].GetVisibility()

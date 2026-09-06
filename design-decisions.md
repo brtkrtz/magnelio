@@ -20901,8 +20901,24 @@ out of the sheet, and a field that is nonzero there (a synthetic one, a
 stale frame) would otherwise flatten the visible ring to one colour.
 (c) The notebook controls are exercised without a browser by driving
 trame's state (`TestControls`), and a kernel-level "Run all" check lives
-in `investigations/viewer3d/field_view_kernel.py` (internal record) —
-the Chrome tooling was not available for a widget round.
+in `investigations/viewer3d/field_view_kernel.py` (internal record).
+(d) **Browser round 2026-09-06** (developer, then Claude in Chrome on
+the same notebook): the first cut re-created the sheet and arrow actors
+on every frame — DD-190's own remedy for a swapped dataset the browser
+had dropped — and the vtk.js view **froze after about 75 frames** of a
+50-frame movie while the toolbar's frame label kept running: the client
+keeps every object it is sent, and a fresh actor, mapper and polydata
+per frame pile up until the render window stalls.  The sheet and the
+arrows now live in two persistent polydata that every frame and every
+cut change is written *into* (`copy_from`), one actor and one mapper
+each, one scalar bar swapped only when the component changes.  The
+client accepts a changed object when it is newer than the one it
+holds, which a modified polydata always is — the swapped-in one of
+DD-190 was not, which is what that round had actually hit.  Verified
+in the browser: three loops, camera live throughout.  The play loop is
+paced on the clock (a slow frame shortens the pause instead of queueing
+behind the websocket); the developer's browser ran the 50-frame movie
+at roughly two frames per second.
 
 **Problem.**  A field monitor averages the six staggered components onto
 cell centres *at record time* and hands back `dict[str, ndarray]` plus a

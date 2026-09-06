@@ -354,6 +354,12 @@ class _FieldView:
     _play_task: Any = field(default=None, repr=False)
     sheet_actor: Any = None
     arrow_actor: Any = None
+    # The polydata behind the two actors live as long as the view: every
+    # frame and every cut change is written *into* them (DD-259 step 0
+    # finding d), never swapped or re-created.
+    _sheet_pd: Any = field(default=None, repr=False)
+    _arrow_pd: Any = field(default=None, repr=False)
+    _bar_title: str = field(default="", repr=False)
     _layer_cache: dict = field(default_factory=dict, repr=False)
     _vmax_cache: dict = field(default_factory=dict, repr=False)
 
@@ -472,75 +478,97 @@ class _FieldView:
         keep = None if self.frames.pec is None else ~np.take(self.frames.pec, k, axis=axis)
         scalar, vectors = self.values(axis, k)
         vmax = self.vmax()
-        self._draw_sheet(scene, axis, k, cut.position + _SHEET_HAIRS * hair, keep, scalar, vmax)
-        if self.sheet_actor is not None:
-            self.sheet_actor.SetVisibility("field" in shown)
+        if not self._draw_sheet(
+            scene, axis, k, cut.position + _SHEET_HAIRS * hair, keep, scalar, vmax
+        ):
+            self._hide()
+            return
+        self.sheet_actor.SetVisibility("field" in shown)
+        drawn = False
         if self.has_arrows and vectors is not None:
-            self._draw_arrows(
+            drawn = self._draw_arrows(
                 scene, axis, k, cut.position + _ARROW_HAIRS * hair, keep, vectors, vmax
             )
-            if self.arrow_actor is not None:
-                self.arrow_actor.SetVisibility("arrows" in shown)
-        elif self.arrow_actor is not None:
-            scene.plotter.remove_actor(self.arrow_actor, reset_camera=False, render=False)
-            self.arrow_actor = None
+        if self.arrow_actor is not None:
+            self.arrow_actor.SetVisibility(drawn and "arrows" in shown)
 
-    def _draw_sheet(self, scene, axis, k, position, keep, scalar, vmax) -> None:
+    _BAR_KWARGS = {
+        "vertical": True,
+        "n_labels": 5,
+        "fmt": "%.3g",
+        # Leave room for the labels: the default bar sits so far right
+        # that "2.74e+03" runs off the window edge.
+        "position_x": 0.84,
+        "position_y": 0.08,
+        "width": 0.05,
+        "height": 0.45,
+    }
+
+    def _draw_sheet(self, scene, axis, k, position, keep, scalar, vmax) -> bool:
+        """Write the layer into the sheet; ``False`` when no cell is left to show.
+
+        The actor, its mapper and its polydata are created once and then
+        updated in place.  The browser renderer keys every object by its
+        identity and takes a changed object only when it is newer than
+        the one it holds — a modified polydata always is, a swapped-in
+        one need not be — and it keeps what it was sent, so a fresh actor
+        per frame piles up until the page stalls (measured: a 50-frame
+        movie froze after about 75 frames).
+        """
         pl = scene.plotter
         sheet = _layer_sheet(self.nodes_display, axis, k, position, keep)
         if sheet is None:
-            self._hide()
-            return
+            return False
         values = np.asarray(scalar, dtype=float).ravel(order="F")
         if keep is not None:
             values = values[np.asarray(keep, dtype=bool).ravel(order="F")]
         sheet.cell_data["field"] = values
         clim = (0.0, vmax) if self.is_group else (-vmax, vmax)
         cmap = self.cmap or ("viridis" if self.is_group else "RdBu_r")
-        # Rebuilt rather than swapped, for the browser renderer's sake
-        # (DD-190): a fresh actor carries fresh identities.
-        self.sheet_actor = pl.add_mesh(
-            sheet,
-            scalars="field",
-            cmap=cmap,
-            clim=clim,
-            opacity=self.opacity,
-            lighting=False,
-            show_edges=False,
-            name="field_cut",
-            reset_camera=False,
-            render=False,
-            scalar_bar_args={
-                "title": self.bar_title,
-                "vertical": True,
-                "n_labels": 5,
-                "fmt": "%.3g",
-                # Leave room for the labels: the default bar sits so far
-                # right that "2.74e+03" runs off the window edge.
-                "position_x": 0.84,
-                "position_y": 0.08,
-                "width": 0.05,
-                "height": 0.45,
-            },
-        )
+        if self.sheet_actor is None:
+            self._sheet_pd = sheet
+            self.sheet_actor = pl.add_mesh(
+                self._sheet_pd,
+                scalars="field",
+                cmap=cmap,
+                clim=clim,
+                opacity=self.opacity,
+                lighting=False,
+                show_edges=False,
+                name="field_cut",
+                reset_camera=False,
+                render=False,
+                scalar_bar_args={"title": self.bar_title, **self._BAR_KWARGS},
+            )
+            self._bar_title = self.bar_title
+        else:
+            self._sheet_pd.copy_from(sheet)
+            self._sheet_pd.cell_data.active_scalars_name = "field"
         mapper = self.sheet_actor.mapper
+        if self._bar_title != self.bar_title:
+            # The component changed: new colours, new range, new title.
+            mapper.lookup_table.cmap = cmap
+            mapper.scalar_range = clim
+            mapper.lookup_table.scalar_range = clim
+            pl.remove_scalar_bar(self._bar_title, render=False)
+            pl.add_scalar_bar(title=self.bar_title, mapper=mapper, render=False, **self._BAR_KWARGS)
+            self._bar_title = self.bar_title
         mapper.SetScalarModeToUseCellFieldData()
         mapper.SelectColorArray("field")
-        # A replaced actor's mapper is fed through a small pipeline whose
-        # output stays empty until it executes; run it now so that any
-        # reader of the mapper's input — the browser serialiser, a test —
-        # sees the sheet without a render in between.
+        # The mapper is fed through a small pipeline whose output stays
+        # stale until it executes; run it now so that any reader of the
+        # mapper's input — the browser serialiser, a test — sees the
+        # current sheet without a render in between.
         mapper.Update()
+        return True
 
-    def _draw_arrows(self, scene, axis, k, position, keep, vectors, vmax) -> None:
+    def _draw_arrows(self, scene, axis, k, position, keep, vectors, vmax) -> bool:
+        """Write the layer's arrows into the glyph polydata; ``False`` when none."""
         import pyvista as pv  # noqa: PLC0415
 
         from magnelio.post.plot_field import _arrow_grid, _resample  # noqa: PLC0415
 
         pl = scene.plotter
-        if self.arrow_actor is not None:
-            pl.remove_actor(self.arrow_actor, reset_camera=False, render=False)
-            self.arrow_actor = None
         u_axis, v_axis = (a for a in range(3) if a != axis)
         u, v = self.nodes_display[u_axis], self.nodes_display[v_axis]
         uc, vc = 0.5 * (u[:-1] + u[1:]), 0.5 * (v[:-1] + v[1:])
@@ -551,7 +579,7 @@ class _FieldView:
         mag = np.sqrt(au**2 + av**2 + aw**2)
         mask = live & np.isfinite(mag) & (mag >= self.threshold * vmax)
         if not np.any(mask):
-            return
+            return False
         uu, vv = np.meshgrid(us_grid, vs_grid, indexing="ij")
         points = np.empty((int(mask.sum()), 3), dtype=float)
         points[:, u_axis] = uu[mask]
@@ -583,15 +611,20 @@ class _FieldView:
             ),
         )
         if glyphs.n_cells == 0:
-            return
-        self.arrow_actor = pl.add_mesh(
-            glyphs,
-            color=self.arrow_color,
-            name="field_arrows",
-            reset_camera=False,
-            render=False,
-        )
+            return False
+        if self.arrow_actor is None:
+            self._arrow_pd = glyphs
+            self.arrow_actor = pl.add_mesh(
+                self._arrow_pd,
+                color=self.arrow_color,
+                name="field_arrows",
+                reset_camera=False,
+                render=False,
+            )
+        else:
+            self._arrow_pd.copy_from(glyphs)
         self.arrow_actor.mapper.Update()
+        return True
 
     # ── notebook controls ────────────────────────────────────────────────
 
@@ -630,12 +663,16 @@ class _FieldView:
         async def _play() -> None:
             # Advance the frame slider on the server's loop; each step goes
             # through the slider's own handler, so the picture follows.
+            # Paced on the clock, so a slow frame shortens the pause
+            # instead of piling up behind the websocket.
             period = 1.0 / max(float(self.fps), 0.1)
+            loop = asyncio.get_running_loop()
             try:
                 while True:
-                    await asyncio.sleep(period)
+                    t0 = loop.time()
                     with state:
                         state[k_frame] = self.next_frame()
+                    await asyncio.sleep(max(period - (loop.time() - t0), 0.02))
             except asyncio.CancelledError:  # pragma: no cover - stop button
                 pass
 
@@ -675,12 +712,14 @@ class _FieldView:
         def items() -> None:
             if n_frames > 1:
                 with vuetify.VBtn(
-                    icon=(f"{k_play} ? 'mdi-pause' : 'mdi-play'",),
+                    icon=True,
                     size="small",
                     variant="text",
                     click=f"{k_play} = !{k_play}",
                     style="margin-left: 8px;",
                 ):
+                    vuetify.VIcon("mdi-play", v_if=(f"!{k_play}",))
+                    vuetify.VIcon("mdi-pause", v_else=True)
                     vuetify.VTooltip(
                         "Play / pause the frames", activator="parent", location="bottom"
                     )
