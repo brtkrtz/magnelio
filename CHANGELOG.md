@@ -9,6 +9,10 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-06
+
+A minor release under the pre-1.0 reading: the field monitors' dictionary API is gone, `docs/migration-0.7.md` lists every renamed spelling.
+
 ### Added
 
 - Fields in the 3D viewer.  `monitor.show()` on a time or frequency
@@ -28,8 +32,7 @@ major version is 0, minor releases may change the public API.
   phase), each frame a `FieldState`, with `component`, `cell_centred`,
   `plot` and `show`.  `FieldState.mirrored` continues a field across
   the model's symmetry planes on the extended grid, keeping the
-  staggering.  The monitors will record into these containers in
-  0.7.0.
+  staggering.  The monitors record into these containers.
 - `SourceFieldInitial.from_recording(recording, name=…, t=…)`: a
   frame of a `FieldRecording` — a time monitor's, live or read back
   from a project — as the start of a run.  The frame holds the
@@ -63,26 +66,33 @@ major version is 0, minor releases may change the public API.
   material operators of its region for this, live and in a project
   store; two adjoining regions add up to their union, and a model
   solved behind symmetry planes reports the whole model.
+- `colorbar=False` on every field plot — a monitor's, a recording's,
+  a `FieldState`'s — leaves the colour bar out, for the panels of a
+  shared figure.
 
-### Removed
+### Fixed
 
-- `MonitorFieldTime.data`, `.component`, `.region` and
-  `MonitorFieldFrequency.data`, `.data_raw`, `.component`, `.region`,
-  together with the same names on a project's monitor readers.  The
-  recording is `monitor.recording` (a `FieldRecording`), the pattern
-  `monitor.spectrum` / `.spectrum_raw` (a `FieldSpectrum`); the
-  cell-centred arrays the old attributes returned are
-  `recording.cell_centred(..., squeeze=True)`, the coordinates
-  `recording.cell_centres`.  See `docs/migration-0.7.md`.
-- `fields.xdmf` in a run directory, and the XDMF descriptor module.
+- A project-backed run without ports — a ring-down from an initial
+  field — crashed at its first flush; it now streams its monitors and
+  energy trace like any other run.
+- A `ThinWire` drawn onto the top face of a thin metallisation (a bond
+  wire on a pad, a probe on a patch) now ends on the sheet's own grid
+  node: vertices inside the sheet's thickness collapse onto the sheet
+  plane, the metal's top face no longer re-enters the grid as a sliver
+  cell, and the endpoint-displacement warning stays silent.  The ring
+  faces of the wire's foot segment compose the thin-wire correction
+  with the sheet's sub-cell value instead of falling back to the bare
+  grid; the stencil warning no longer fires for that expected contact.
+  A monopole on a thin-sheet ground now matches the same monopole on a
+  solid ground to within 1 % in resonance.  The methods chapter on
+  conformal meshing gains a section on where a wire may end.
 
 ### Changed
 
 - Field monitors record the solver's own samples.  `MonitorFieldTime`
   and `MonitorFieldFrequency` now keep the grid quantities on the Yee
   positions of their region and hand them out as `monitor.recording`
-  (a `FieldRecording`) and `monitor.spectrum` (a `FieldSpectrum`);
-  `.data` is derived from those on access and reads as before.  A
+  (a `FieldRecording`) and `monitor.spectrum` (a `FieldSpectrum`).  A
   time monitor's `t` is the instant of the electric field it holds,
   `t + dt` for the frame taken after step *n* — one time step later
   than the label used to say — and the recording states the magnetic
@@ -108,22 +118,17 @@ major version is 0, minor releases may change the public API.
   bit-identical to the previous kernels; only the energy samples
   differ, in the last digits, by summation order.
 
-### Fixed
+### Removed
 
-- A project-backed run without ports — a ring-down from an initial
-  field — crashed at its first flush; it now streams its monitors and
-  energy trace like any other run.
-- A `ThinWire` drawn onto the top face of a thin metallisation (a bond
-  wire on a pad, a probe on a patch) now ends on the sheet's own grid
-  node: vertices inside the sheet's thickness collapse onto the sheet
-  plane, the metal's top face no longer re-enters the grid as a sliver
-  cell, and the endpoint-displacement warning stays silent.  The ring
-  faces of the wire's foot segment compose the thin-wire correction
-  with the sheet's sub-cell value instead of falling back to the bare
-  grid; the stencil warning no longer fires for that expected contact.
-  A monopole on a thin-sheet ground now matches the same monopole on a
-  solid ground to within 1 % in resonance.  The methods chapter on
-  conformal meshing gains a section on where a wire may end.
+- `MonitorFieldTime.data`, `.component`, `.region` and
+  `MonitorFieldFrequency.data`, `.data_raw`, `.component`, `.region`,
+  together with the same names on a project's monitor readers.  The
+  recording is `monitor.recording` (a `FieldRecording`), the pattern
+  `monitor.spectrum` / `.spectrum_raw` (a `FieldSpectrum`); the
+  cell-centred arrays the old attributes returned are
+  `recording.cell_centred(..., squeeze=True)`, the coordinates
+  `recording.cell_centres`.  See `docs/migration-0.7.md`.
+- `fields.xdmf` in a run directory, and the XDMF descriptor module.
 
 ## [0.6.0] - 2026-09-05
 

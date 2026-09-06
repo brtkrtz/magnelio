@@ -1,6 +1,8 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-09-06.*  **On `main`, unreleased (for 0.7.0):**
+*Last updated: 2026-09-06.*  **Released v0.7.0** (2026-09-06; a minor
+under the Cargo reading — the field monitors' dictionary API is gone,
+`docs/migration-0.7.md`).  In it:
 **DD-261** — fields in the volume of the 3D viewer (lattice arrows,
 isosurfaces, coloured arrows, a second toolbar row; browser review
 open); **DD-260** — energy and flux from a recording (`recording.energy()`,
@@ -19,12 +21,10 @@ objects, `aborted`/`stale`, reprs without arrays; `plot_energy`,
 Before it: v0.5.0–v0.5.2 (2026-09-02…04) DD-224…DD-248 — the API
 grammar and its phases, the content gate, `docs/migration-0.5.md`.
 
-Open: KB-023, KB-038, KB-043 and KB-046.  Unit and integration: 3522
-passed / 10 skipped (2026-09-06, after DD-260; the unit suite alone
-3050 passed / 5 skipped after DD-261, which touched the viewer only; NumPy backend; the
+Open: KB-023, KB-038, KB-043 and KB-046.  Unit and integration: 3532
+passed / 10 skipped (2026-09-06, the v0.7.0 release gate, NumPy backend; the
 four GPU tests need `CUPY_ACCELERATORS=""` outside the sandbox).
-Channels: GitHub, PyPI,
-conda-forge and the two docs channels below.
+Channels: GitHub, PyPI, conda-forge and the two docs channels below.
 
 This file states what *is*.  Chronology: `git log --first-parent main`;
 reasoning: `design-decisions.md`; open bugs: `known-bugs.md`.  Measured
@@ -320,7 +320,6 @@ flickers to ``"done"`` between sequential runs; the reader skips
 ## Open construction sites
 
 * **3D viewer, browser review (DD-261)** — the second toolbar row and the volume representations are gated through trame's state and were seen once in Chrome; the developer's earlier notes (a different arrow style, the overflowing menu) are addressed by DD-261 and await his look.
-* **0.7.0 release** — DD-256, DD-257, DD-259, DD-260 and DD-261 are on `main`; the release needs the developer's go (`docs/migration-0.7.md` is written).
 * **Band-pipeline runtime** — convolution (DD-245) and axis ranking
   (DD-247) closed: 314.9 s → 81.2 s on a 201-point axis, no item
   dominates.  Left: postprocessing is `eigs` + `splu` at 96.6 % over a
