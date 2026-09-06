@@ -246,6 +246,13 @@ for name in sorted(os.listdir(run_dir)):
         print(name)
 
 # %%
+# The data went to ``paraview/`` when the run closed: one ``.vtr``
+# file per monitor frequency, collected by a ``.pvd`` whose axis is
+# the frequency (for a time monitor, the instant).  They hold cell
+# data — the staggered frames of ``fields_freq.h5`` averaged onto the
+# cell centres at export time, the same numbers
+# ``spectrum.cell_centred()`` returns — so ParaView reads plain VTK
+# files and never opens the store itself.
 # ``paraview.pvsm`` is a double-clickable state file: geometry as
 # translucent solids, slice and clip widgets through the field
 # volume, arrow glyphs on an even lattice with sensible lengths, and

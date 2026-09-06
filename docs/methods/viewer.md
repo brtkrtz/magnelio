@@ -168,5 +168,5 @@ needed for Magnelio's viewer.
   names face the initial camera; both scale with the model.
 - The cutting plane is axis-aligned by design (see above).
 - Fields are shown on the cutting plane only — one layer at a time, not
-  as a volume rendering or an iso-surface; the ParaView export
-  ({doc}`sources-monitors`) covers those.
+  as a volume rendering or an iso-surface; the
+  {ref}`ParaView export <paraview-export>` covers those.

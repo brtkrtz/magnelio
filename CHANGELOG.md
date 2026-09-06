@@ -30,6 +30,15 @@ major version is 0, minor releases may change the public API.
   the model's symmetry planes on the extended grid, keeping the
   staggering.  The monitors will record into these containers in
   0.7.0.
+- `SourceFieldInitial.from_recording(recording, name=…, t=…)`: a
+  frame of a `FieldRecording` — a time monitor's, live or read back
+  from a project — as the start of a run.  The frame holds the
+  march's own leapfrog pair, E at the frame's instant and H half a
+  step later, and the source takes it as it is: on the same grid with
+  the same time step the new run continues the recorded one bit for
+  bit from that frame, so a ring-down cut short resumes from its last
+  frame.  `h_lead` on the source states that lead for any field
+  (zero for an eigenmode or a formula, as before).
 
 ### Removed
 

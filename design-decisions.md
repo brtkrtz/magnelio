@@ -20884,7 +20884,9 @@ record `investigations/patch-array/kb035_synthetic.py`.
 ## DD-259 — Field monitors keep the grid quantities; every view is derived at access time
 
 **Date:** 2026-09-05
-**Status:** Proposed (developer consensus on the strategy 2026-09-05).
+**Status:** Accepted — all five steps shipped 2026-09-06 (developer
+consensus on the strategy 2026-09-05); the energy/flux identities on
+a recording are left to their own DD (step 5 note).
 **Step 0 implemented 2026-09-05** on `feat/field-viewer-3d`
 (`src/magnelio/post/field_3d.py`, `tests/unit/test_field_3d.py`,
 `docs/methods/viewer.md`, tutorials 07 and 20), reviewed by the
@@ -20905,7 +20907,52 @@ reader hands out a lazy `FieldRecording` that reads one frame per
 HDF5 access, tutorial 13, the stripline and field-source how-tos and
 the chapter moved to the containers, `docs/migration-0.7.md` lists
 every renamed spelling.  `cell_centred(squeeze=True)` reproduces the
-old dictionaries' shapes for anyone who wants them.  Steps 4–5 follow.
+old dictionaries' shapes for anyone who wants them, merged `fa4bde8`.
+**Step 4 documented 2026-09-06** (the code came forward with step 2):
+chapter section *ParaView export* in `sources-monitors.md`, tutorial
+07's *Into ParaView*, the viewer chapter's limitation pointing at it.
+**Step 5 implemented 2026-09-06** on `feat/initial-field-from-recording`:
+`SourceFieldInitial.from_recording(recording, name=, t=|frame=)` and
+the `h_lead` field on the source; gate
+`test_recorded_frame_continues_the_march` (bit-identical continuation
+and the eigenfrequency), `TestFromRecording` in the unit tests; the
+internal record's probe scripts moved off the dictionary API.
+
+*Step 5 decisions.*  (a) **A recorded frame is a leapfrog pair, not a
+field at one instant.**  The source's start is `h(+dt/2)`, and Phase
+C derived it from a field at one instant by a half discrete Faraday
+step, `h(dt/2) = h(0) − ½·β_H·(C e(0))`.  A monitor's frame holds
+`E^{n+1}` and `H^{n+3/2}` — H already half a step ahead — and fed
+through that formula its H would land a full step ahead: still the
+same frequency for a single mode (a phase between E and H only
+re-weights the ±ω solutions), which is why the eigenfrequency gate
+alone could not have caught it, but not the recorded state, so no
+continuation.  The source therefore carries `h_lead`, the lead of its
+magnetic samples over its electric ones, and `attach` takes the
+Faraday step of the *difference*: `h(dt/2) = h(h_lead) − (½ −
+h_lead/dt)·β_H·(C e(0))` — the Phase C formula at `h_lead = 0`, no
+step at all at `h_lead = dt/2`, first-order consistent between (a
+recording replayed under another time step).  `from_recording` sets
+`h_lead = dt/2` from the recording's `dt`, zero for a recording
+assembled without one; the store carries the field with the recipe.
+Measured on the WR-90 ring-down (12×6×16 cells): the run resumed from
+the 2 ns frame reproduces the probe of the uninterrupted run
+**bit for bit** over 2 365 frames (max |ΔE_y| = 0 against 3.5·10⁸
+V/m), and rings at the eigenfrequency.  (b) **Default frame** is the
+last one — resuming where a recording stopped is the case without a
+number.  (c) **Energy and flux from a recording are not built here.**
+The flux identity `P = Σ e·h` is grid arithmetic the frame holds, but
+a recording knows neither the boundary conditions its region touched
+(a PMC face weights the boundary `h` fully, a PEC face by half, and a
+symmetry plane in the cross-section doubles the aperture) nor, at
+the two edge nodes of a sub-region, how much of the dual patch lies
+inside the region (the region's dual widths are the full grid's
+half-cell sums; only the inner half is the region's flux patch); the
+energy needs the material operators of the mesh restricted to the
+region, and the leapfrog-conserved energy of [[DD-225]] pairs
+`h(n−½)` with `h(n+½)`, which a recording has only when it holds
+every step.  Four design questions, one DD of their own, with the
+mesh as an argument.
 
 *Step 2 decisions and findings.*  (a) **The frames' instant.**  The
 solver calls the monitors after the H update of step *n* with the
@@ -21078,9 +21125,10 @@ view at access time.  In order, each step merge-able on its own:
 **Gates.**  The [[DD-085]] grid-independence tests run through
 `cell_centred` and stay bit-identical on uniform grids (same arithmetic,
 later); the 1 W-CW frequency-monitor gate stays green; new: a frame of a
-ring-down monitor replayed as an initial field hits the eigenfrequency
-within [[DD-224]]'s tolerance; a GPU test for the region slice; the
-[[DD-190]] polydata guard covers the field sheet.
+ring-down monitor replayed as an initial field continues the recorded
+run bit for bit and hits the eigenfrequency within [[DD-224]]'s
+tolerance (`test_recorded_frame_continues_the_march`); a GPU test for
+the region slice; the [[DD-190]] polydata guard covers the field sheet.
 
 **Cost.**  Staggered storage needs one more node plane per axis than cell
 blocks — a few percent on 3D monitors.  Recording gets cheaper per step,

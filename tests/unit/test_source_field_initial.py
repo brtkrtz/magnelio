@@ -137,6 +137,99 @@ class TestAttach:
         np.testing.assert_allclose(field.Ey, 2 * Y, rtol=1e-10, atol=1e-12)
 
 
+class TestFromRecording:
+    """DD-259 step 5: a recorded frame is the march's own leapfrog pair."""
+
+    @staticmethod
+    def _recording(g, dt, n=3):
+        from magnelio.fields import FieldRecording
+
+        L = g.x[-1]
+        e = _te101(g)
+        h = FieldState.from_function(
+            g, H=lambda x, y, z: (np.cos(np.pi * z / L), 0 * y, -np.cos(np.pi * x / L))
+        )
+        comps = {}
+        for c in ("Ex", "Ey", "Ez"):
+            comps[c] = np.stack([(k + 1) * e.component(c) for k in range(n)])
+        for c in ("Hx", "Hy", "Hz"):
+            comps[c] = np.stack([(k + 1) * h.component(c) for k in range(n)])
+        return FieldRecording(g, dt * np.arange(1, n + 1), dt=dt, **comps)
+
+    def test_frame_selection_and_lead(self):
+        g = _grid()
+        dt = 2e-12
+        rec = self._recording(g, dt)
+        last = SourceFieldInitial.from_recording(rec, name="f0")
+        assert last.h_lead == 0.5 * dt
+        np.testing.assert_array_equal(last.field.Ey, rec.frame(-1).Ey)
+        by_t = SourceFieldInitial.from_recording(rec, name="f0", t=2.1 * dt)
+        np.testing.assert_array_equal(by_t.field.Ey, rec.frame(1).Ey)
+        by_i = SourceFieldInitial.from_recording(rec, name="f0", frame=0)
+        np.testing.assert_array_equal(by_i.field.Ey, rec.frame(0).Ey)
+        assert "h_lead" in repr(last)
+        with pytest.raises(ValueError, match="not both"):
+            SourceFieldInitial.from_recording(rec, name="f0", t=0.0, frame=0)
+        with pytest.raises(TypeError, match="FieldRecording"):
+            SourceFieldInitial.from_recording(rec.frame(0), name="f0")
+
+    def test_recording_without_dt_is_a_field_at_one_instant(self):
+        from magnelio.fields import FieldRecording
+
+        g = _grid()
+        f = _te101(g)
+        rec = FieldRecording(g, [0.0], **{c: f.component(c)[None] for c in _SIX})
+        assert SourceFieldInitial.from_recording(rec, name="f0").h_lead == 0.0
+
+    def test_lead_checked(self):
+        g = _grid()
+        with pytest.raises(TypeError, match="h_lead"):
+            SourceFieldInitial(name="f0", field=_te101(g), h_lead="soon")
+        with pytest.raises(ValueError, match="finite"):
+            SourceFieldInitial(name="f0", field=_te101(g), h_lead=np.inf)
+
+    def test_march_state_is_written_as_it_is(self):
+        """h_lead = dt/2: no Faraday step — the recorded h is the start."""
+        g = _grid()
+        mesh = Mesh.from_grid(g)
+        dt = courant_dt(g, accuracy="normal")
+        rec = self._recording(g, dt)
+        src = SourceFieldInitial.from_recording(rec, name="f0", frame=1)
+        solver = _solver(mesh, sources=[src])
+        assert solver.dt == dt
+        solver.setup()
+        frame = rec.frame(1)
+        expected_e = np.asarray(frame._raw.e_flat, dtype=float)
+        expected_e[np.asarray(solver._pec_mask_E).astype(bool)] = 0.0
+        np.testing.assert_array_equal(np.asarray(solver._fields.e_flat), expected_e)
+        np.testing.assert_array_equal(
+            np.asarray(solver._fields.h_flat), np.asarray(frame._raw.h_flat, dtype=float)
+        )
+
+    def test_partial_lead_takes_the_remaining_faraday_step(self):
+        """h(dt/2) = h(h_lead) − (½ − h_lead/dt)·β_H·(C e)."""
+        from magnelio._operators.curl import build_curl_matrix
+
+        g = _grid()
+        mesh = Mesh.from_grid(g)
+        dt = courant_dt(g, accuracy="normal")
+        rec = self._recording(g, dt)
+        frame = rec.frame(0)
+        src = SourceFieldInitial(name="f0", field=frame, h_lead=0.25 * dt)
+        solver = _solver(mesh, sources=[src])
+        solver.setup()
+        e = np.asarray(solver._fields.e_flat)
+        h = np.asarray(solver._fields.h_flat)
+        C = build_curl_matrix(g)
+        expected = np.asarray(frame._raw.h_flat, dtype=float) - 0.25 * np.asarray(
+            solver._beta_H
+        ) * (C @ e)
+        np.testing.assert_allclose(h, expected, rtol=1e-10, atol=1e-18)
+
+
+_SIX = ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz")
+
+
 class TestNoModelGate:
     """No part of the model is refused: absorbers, ADE, SIBC and ports all start."""
 
@@ -208,6 +301,22 @@ class TestStoreRoundTrip:
         assert rebuilt.name == "f0"
         np.testing.assert_array_equal(rebuilt.field.Ey, src.field.Ey)
         np.testing.assert_array_equal(rebuilt.field.grid.x, g.x)
+        assert rebuilt.h_lead == 0.0
+
+    def test_mesh_h5_carries_the_lead(self, tmp_path):
+        import h5py
+
+        from magnelio.io.project import _load_mesh, _save_mesh
+
+        g = _grid()
+        src = SourceFieldInitial(name="f0", field=_te101(g), h_lead=1.5e-12)
+        mesh = Mesh.from_grid(g).with_sources([src])
+        with h5py.File(tmp_path / "mesh.h5", "w") as f:
+            _save_mesh(f, mesh)
+        with h5py.File(tmp_path / "mesh.h5", "r") as f:
+            back = _load_mesh(f)
+        (rebuilt,) = back.sources
+        assert rebuilt.h_lead == 1.5e-12
 
 
 class TestSuperposition:

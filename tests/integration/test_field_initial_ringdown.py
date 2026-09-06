@@ -108,6 +108,63 @@ def test_amplitude_scales_and_energy_is_conserved():
     assert single.excitation_signals[("mode0", 0)].values[0] == 1.0
 
 
+def test_recorded_frame_continues_the_march():
+    """A whole-domain frame replayed on the same grid and step continues the run.
+
+    DD-259 step 5: the frame holds E at its instant and H half a step
+    later — the march's own leapfrog pair — and ``from_recording``
+    writes both as they are, so the second run reproduces the first
+    from the frame on, and rings at the eigenfrequency.
+    """
+    from magnelio.solver.stability import spectral_dt
+
+    mesh = _mesh()
+    eig = mio.AnalysisEigenmode(mesh=mesh, n_modes=1, verbose=False).run()
+    f_eigen = float(eig.frequencies[0])
+    dt = spectral_dt(mesh, "normal")
+    t_cut = 2e-9
+    probe = monitors.MonitorFieldTime(
+        name="probe",
+        corners=((A / 2, B / 2, D / 2), (A / 2, B / 2, D / 2)),
+        fields=["Ey"],
+        times=np.arange(0.0, 10e-9, dt),
+    )
+    volume = monitors.MonitorFieldTime(
+        name="volume", corners=((0, 0, 0), (A, B, D)), fields=["E", "H"], times=[t_cut]
+    )
+    mode = sources.SourceFieldInitial(name="mode0", field=eig.field(0))
+    first = mio.AnalysisTD(
+        mesh=mesh.with_sources([mode]),
+        monitors=[probe, volume],
+        f_max=F_MAX,
+        verbose=False,
+        backend="numpy",
+    ).run(excitations=["mode0"], t_end=10e-9, energy_stop_db=None)
+
+    rec = first.monitors["volume"].recording
+    assert rec.n_frames == 1 and rec.dt == first.dt
+    resume = sources.SourceFieldInitial.from_recording(rec, name="frame", t=t_cut)
+    assert resume.h_lead == 0.5 * first.dt
+    second = _run_ringdown(mesh, resume, t_end=8e-9)
+    assert second.dt == first.dt
+
+    p1 = first.monitors["probe"].recording
+    p2 = second.monitors["probe"].recording
+    ey1 = p1.cell_centred(["Ey"], squeeze=True)["Ey"]
+    ey2 = p2.cell_centred(["Ey"], squeeze=True)["Ey"]
+    t0 = float(rec.times[0])
+    idx = np.array([p1.index_of(t0 + t) for t in p2.times])
+    np.testing.assert_allclose(p1.times[idx], t0 + p2.times, rtol=0.0, atol=1e-3 * dt)
+    scale = float(np.abs(ey1).max())
+    np.testing.assert_allclose(ey2, ey1[idx], rtol=0.0, atol=1e-12 * scale)
+
+    f_td = _ringdown_frequency(second)
+    rel = abs(f_td / f_eigen - 1.0)
+    assert rel < 5e-3, (
+        f"resumed ring-down {f_td / 1e9:.4f} GHz vs eigen {f_eigen / 1e9:.4f} GHz ({rel:.2%})"
+    )
+
+
 # ── coupled resonator: an initial field next to a waveguide port ────────────
 
 W_IRIS, T_IRIS, L_WG = 12e-3, 2e-3, 30e-3

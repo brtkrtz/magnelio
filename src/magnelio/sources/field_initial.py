@@ -2,11 +2,14 @@
 
 An initial field turns a time-domain march into an initial-value
 problem: the cavity rings down from an eigenmode, a field recorded
-elsewhere continues in a new geometry.  The source carries a
-:class:`~magnelio.fields.FieldState` and writes it into the solver's
-state once, in :meth:`attach`; the leapfrog half-step of H is derived
-from the discrete Faraday law so that a mode of the discrete operator
-starts as exactly that mode.
+elsewhere continues in a new geometry, a march resumes from a frame
+it recorded.  The source carries a :class:`~magnelio.fields.FieldState`
+and writes it into the solver's state once, in :meth:`attach`.  The
+march holds H half a leapfrog step ahead of E; a field given at one
+instant is moved there by a half Faraday step, so that a mode of the
+discrete operator starts as exactly that mode, and a recorded frame —
+whose H already leads its E by that half step — is written as it is,
+so that the run continues the recorded one (DD-259 step 5).
 
 Nothing about the model restricts this.  Where the run carries state
 besides the fields — an absorber's convolutions, the pole currents of
@@ -21,7 +24,8 @@ load is the one you meant is your call; the field the source is fed is
 exactly the field it marches.
 """
 
-# Design: DD-224 (sources on the model, Phase C).
+# Design: DD-224 (sources on the model, Phase C); DD-259 step 5 (a recorded
+# frame as the start, ``h_lead``).
 
 from __future__ import annotations
 
@@ -56,7 +60,8 @@ class SourceFieldInitial(Source):
     (or passed as ``sources=`` to the analysis) and named by an
     :class:`~magnelio.Excitation` whose ``amplitude`` scales the field
     (unit ``"1"``); it has no waveform, delay or phase.  Build one with
-    :meth:`from_project`, :meth:`from_function` or :meth:`from_arrays`.
+    :meth:`from_project`, :meth:`from_recording`, :meth:`from_function`
+    or :meth:`from_arrays`.
 
     Parameters
     ----------
@@ -68,16 +73,29 @@ class SourceFieldInitial(Source):
         by trilinear interpolation per component (which does not
         preserve the discrete divergence exactly — prefer the run's
         own grid).
+    h_lead : float, default 0.0
+        Lead [s] of the magnetic samples over the electric ones.  A
+        field given at one instant — an eigenmode, a formula — has
+        none; the state of a leapfrog march holds H half a time step
+        after E, which :meth:`from_recording` states from the
+        recording's ``dt``.  The run starts from H half *its* step
+        ahead, and the field is moved there by a Faraday step of the
+        difference — none at all when the lead is the run's own half
+        step, so a recorded march state is taken as it is.
 
     Examples
     --------
     >>> ring = sources.SourceFieldInitial.from_project("cavity_modes", name="mode0", mode=0)
     >>> mesh = mio.Mesh.from_geometry(model, f_max=f_max).with_sources([ring])
     >>> result = mio.AnalysisTD(mesh=mesh).run(excitations=["mode0"], t_end=50e-9)
+    >>> again = sources.SourceFieldInitial.from_recording(
+    ...     result.monitors["volume"].recording, name="resume"
+    ... )
     """
 
     name: str
     field: FieldState
+    h_lead: float = 0.0
 
     amplitude_unit = "1"
     has_waveform = False
@@ -99,6 +117,12 @@ class SourceFieldInitial(Source):
                 "other than 0 or 180 degrees has no real time-domain start "
                 "(take .real() for its zero-phase snapshot if that is what you want)",
             )
+        try:
+            self.h_lead = float(self.h_lead)
+        except (TypeError, ValueError):
+            raise TypeError(f"h_lead must be a number [s]; got {self.h_lead!r}") from None
+        if not math.isfinite(self.h_lead):
+            raise ValueError(f"h_lead must be finite [s]; got {self.h_lead!r}")
 
     # ── constructors ─────────────────────────────────────────────────────
 
@@ -157,6 +181,58 @@ class SourceFieldInitial(Source):
                 Hz=pattern.Hz * s,
             ),
         )
+
+    @classmethod
+    def from_recording(
+        cls,
+        recording,
+        *,
+        name: str,
+        t: float | None = None,
+        frame: int | None = None,
+    ) -> SourceFieldInitial:
+        """One frame of a :class:`~magnelio.fields.FieldRecording` as the start of a run.
+
+        A time monitor's recording holds the march's own state: E at
+        the frame's instant and H half a time step later, the leapfrog
+        pair the solver marched with.  The source takes both as they
+        are (``h_lead = dt/2``), so a run on the same grid with the
+        same time step continues the recorded one from that frame — a
+        ring-down cut short resumes from its last frame, a state
+        reached under one excitation is handed to another model.  The
+        recording of a monitor covering the whole domain is on the
+        run's grid; any other frame is resampled onto it, as any
+        initial field is.  A recording assembled without ``dt`` is
+        taken as a field at one instant.
+
+        Parameters
+        ----------
+        recording : FieldRecording
+            The frames — a monitor's ``recording``, live or read back
+            from a project.
+        name : str
+            Source name.
+        t : float, optional
+            Instant [s]; the nearest frame is taken.
+        frame : int, optional
+            Frame index (exclusive with *t*).  Default: the last frame.
+
+        Returns
+        -------
+        SourceFieldInitial
+        """
+        from magnelio.fields.series import FieldRecording  # noqa: PLC0415
+
+        if not isinstance(recording, FieldRecording):
+            raise TypeError(
+                "recording must be a magnelio.fields.FieldRecording; "
+                f"got {type(recording).__name__}"
+            )
+        if t is not None and frame is not None:
+            raise ValueError("give t or frame, not both")
+        i = recording.index_of(t) if t is not None else (-1 if frame is None else int(frame))
+        h_lead = 0.5 * recording.dt if recording.dt else 0.0
+        return cls(name=name, field=recording.frame(i), h_lead=h_lead)
 
     @classmethod
     def from_function(cls, grid: GridLines, *, name: str, E=None, H=None) -> SourceFieldInitial:
@@ -257,11 +333,16 @@ class SourceFieldInitial(Source):
 
         ``e(0)`` is the field on the primal edges (PEC edges zeroed).
         The march holds H half a step *ahead* of E when it enters its
-        first E update, so the start is ``h(+dt/2)``, half a discrete
-        Faraday step from ``h(0)``: ``h(dt/2) = h(0) − ½·β_H·(C e(0))``.
-        For an eigenmode of the discrete operator started at its E
-        maximum (``h(0) = 0``) this is the exact leapfrog state of that
-        mode, so the run is a pure oscillation of it.
+        first E update, so the start is ``h(+dt/2)``.  The field's own
+        H samples lead its E by ``h_lead``, and the difference is a
+        discrete Faraday step of that length:
+        ``h(dt/2) = h(h_lead) − (½ − h_lead/dt)·β_H·(C e(0))``.  For an
+        eigenmode of the discrete operator started at its E maximum
+        (``h_lead = 0``, ``h(0) = 0``) this is the exact leapfrog state
+        of that mode, so the run is a pure oscillation of it; for a
+        frame recorded by a march with this time step
+        (``h_lead = dt/2``) it is the recorded state itself, so the run
+        continues the recorded one.
 
         The contribution is *added* to the solver's state, which the
         solver allocated as zeros: two initial fields excited in the
@@ -280,23 +361,27 @@ class SourceFieldInitial(Source):
         if pec is not None:
             e0[_to_host(pec).astype(bool)] = 0.0
 
-        Nx, Ny, Nz = grid.Nx, grid.Ny, grid.Nz
-        n_Ex = Nx * (Ny + 1) * (Nz + 1)
-        n_Ey = (Nx + 1) * Ny * (Nz + 1)
-        cx = np.empty((Nx + 1, Ny, Nz))
-        cy = np.empty((Nx, Ny + 1, Nz))
-        cz = np.empty((Nx, Ny, Nz + 1))
-        curl_e_stencil(
-            e0[:n_Ex].reshape(Nx, Ny + 1, Nz + 1),
-            e0[n_Ex : n_Ex + n_Ey].reshape(Nx + 1, Ny, Nz + 1),
-            e0[n_Ex + n_Ey :].reshape(Nx + 1, Ny + 1, Nz),
-            cx,
-            cy,
-            cz,
-        )
-        curl = np.concatenate([cx.ravel(), cy.ravel(), cz.ravel()])
-        beta_H = np.asarray(_to_host(solver._beta_H), dtype=np.float64)
-        h_half = h0 - 0.5 * beta_H * curl
+        factor = 0.5 - self.h_lead / float(solver.dt)
+        if factor == 0.0:
+            h_half = h0
+        else:
+            Nx, Ny, Nz = grid.Nx, grid.Ny, grid.Nz
+            n_Ex = Nx * (Ny + 1) * (Nz + 1)
+            n_Ey = (Nx + 1) * Ny * (Nz + 1)
+            cx = np.empty((Nx + 1, Ny, Nz))
+            cy = np.empty((Nx, Ny + 1, Nz))
+            cz = np.empty((Nx, Ny, Nz + 1))
+            curl_e_stencil(
+                e0[:n_Ex].reshape(Nx, Ny + 1, Nz + 1),
+                e0[n_Ex : n_Ex + n_Ey].reshape(Nx + 1, Ny, Nz + 1),
+                e0[n_Ex + n_Ey :].reshape(Nx + 1, Ny + 1, Nz),
+                cx,
+                cy,
+                cz,
+            )
+            curl = np.concatenate([cx.ravel(), cy.ravel(), cz.ravel()])
+            beta_H = np.asarray(_to_host(solver._beta_H), dtype=np.float64)
+            h_half = h0 - factor * beta_H * curl
 
         xp = solver._xp
         dtype = solver._real_dtype
@@ -328,10 +413,15 @@ class SourceFieldInitial(Source):
 
         grid = GridLines(x=payload["x"], y=payload["y"], z=payload["z"])
         raw = _Raw(**{c: np.asarray(payload[c]) for c in ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz")})
-        return cls(name=d["name"], field=FieldState._from_raw(grid, raw))
+        return cls(
+            name=d["name"],
+            field=FieldState._from_raw(grid, raw),
+            h_lead=float(d.get("h_lead", 0.0)),
+        )
 
     def __repr__(self) -> str:
-        return f"SourceFieldInitial(name={self.name!r}, field={self.field!r})"
+        lead = f", h_lead={self.h_lead:.4g}" if self.h_lead else ""
+        return f"SourceFieldInitial(name={self.name!r}, field={self.field!r}{lead})"
 
 
 __all__ = ["SourceFieldInitial"]

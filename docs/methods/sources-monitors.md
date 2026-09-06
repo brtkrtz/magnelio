@@ -134,17 +134,27 @@ A transient run can also start *from* a field instead of being driven
 into one.  `SourceFieldInitial(name, field)` carries a
 `magnelio.fields.FieldState` that becomes the state at `t = 0`;
 `SourceFieldInitial.from_project(project, name=…, mode=…)` takes it
-from the eigenmodes of a stored project, `from_function` and
+from the eigenmodes of a stored project, `from_recording(recording,
+name=…, t=…)` from a frame of a time monitor's `FieldRecording` —
+live or read back from a project — and `from_function` and
 `from_arrays` from a formula or from data.  Its excitation has no
 waveform — the amplitude alone scales the field (`amplitude_unit` is
 `"1"`) — and the run then rings down freely, which is how a Q is
 measured (how-to *Ring-down*).
 
-The electric field is written on the primal edges and the magnetic
-field half a leapfrog step ahead, following the discrete Faraday law,
-so a mode of the discrete operator starts as exactly that mode and
-oscillates without a transient.  Several initial fields in one run
-superpose.
+The march holds the magnetic field half a leapfrog step ahead of the
+electric one.  A field given at one instant — an eigenmode, a formula
+— is moved there by a half discrete Faraday step, so a mode of the
+discrete operator starts as exactly that mode and oscillates without
+a transient.  A recorded frame already *is* such a pair: its E stands
+at the frame's instant, its H half a time step later (`times_h`), and
+the source takes both as they are (`h_lead`, the lead of the magnetic
+samples, is the recording's half step).  A frame of a monitor covering
+the whole domain, replayed on the same grid with the same time step,
+therefore continues the recorded run bit for bit from that frame — a
+ring-down cut short resumes from its last frame, a state reached under
+one excitation is handed to another model.  Several initial fields in
+one run superpose.
 
 Nothing about the model restricts an initial field.  Where the run
 carries state besides the fields — an absorber's convolutions, the
@@ -312,7 +322,8 @@ averaged until a picture asks for it:
 - **`FieldRecording`** — frames of a transient field on one grid:
   `times` for the electric field and `times_h`, half a leapfrog step
   later, for the magnetic one; `frame(i)` and `at_time(t)` are
-  `FieldState`s, `component(name)` the whole stack.
+  `FieldState`s, `component(name)` the whole stack; a frame becomes
+  the start of a new run (`SourceFieldInitial.from_recording`).
 - **`FieldSpectrum`** — complex frames, one per frequency:
   `at_frequency(f)` is the complex pattern, `snapshot(f, phase=…)` its
   real field at an instant.
@@ -400,3 +411,32 @@ store (SWMR single-writer/multi-reader), with periodic checkpoints
 and bit-exact resume (DD-070).  File formats: HDF5 for the store, VTK
 series for field visualisation.  This is engineering infrastructure,
 not a research method; the formats are community standards.
+
+(paraview-export)=
+## ParaView export
+
+A field monitor's frames leave the store as VTK files when a project
+run closes: under `runs/<run>/paraview/`, one rectilinear `.vtr` per
+frame of a time monitor (`<monitor>/t_0000.vtr`, …) or per frequency
+of a frequency monitor (`f_0000.vtr`, …), collected by a
+`<monitor>.pvd` whose axis is the frame's electric instant, or its
+frequency.  The files hold *cell data*: the recorded components
+averaged onto the cell centres at export time — the numbers
+`recording.cell_centred()` returns — and the vectors `E` and `H`
+where a group was recorded whole.  ParaView reads plain VTK and never
+touches the staggered frames in `results.h5` or `fields_freq.h5`.
+Beside the data, `paraview_open.py` builds a `paraview.simple`
+pipeline (translucent geometry, a slice through each monitor, glyphs
+scaled to the field, the model's symmetry planes mirrored in the
+pipeline rather than in the files) and, when `pvpython` is on the
+path, `paraview.pvsm` is baked from it as a double-clickable state.
+`Project.export_paraview()` regenerates the set with other options or
+after a skipped export; eigenmodes take the same shape one directory
+up, one `.vtr` per mode (`export_paraview_eigenmodes`).  Tutorial 07
+opens such a session.
+
+The export is a step *after* the run, not a live view: the files are
+written when the run closes, and a resumed run rewrites them.
+Watching a run while it marches is what `watch`, `follow` and the
+notebook viewer are for ([Projects and runs](projects-and-runs.md),
+the how-to *Watching a simulation that is still running*).
