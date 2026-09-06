@@ -101,13 +101,13 @@ def _ref_monitor_data():
     an = _tem_analysis()
     an.run(excited=[("port1", 0)], energy_stop_db=None, total_time_steps=N_TOTAL)
     mon = an.monitors[0]
-    return {c: v.copy() for c, v in mon.data.items()}, mon.t.copy()
+    return {c: v.copy() for c, v in mon.recording.cell_centred(squeeze=True).items()}, mon.t.copy()
 
 
 def _assert_monitor_matches(reader_mon, ref_data, tag):
     assert set(reader_mon.components) == set(ref_data), f"{tag}: comps differ"
     for comp, ref in ref_data.items():
-        got = reader_mon.component(comp)
+        got = reader_mon.recording.cell_centred([comp], squeeze=True)[comp]
         assert got.shape == ref.shape, f"{tag} {comp}: shape {got.shape} != {ref.shape}"
         assert np.array_equal(got, ref), (
             f"{tag} {comp}: not bit-exact, max|Δ|={float(np.max(np.abs(got - ref))):.3e}"
@@ -236,6 +236,6 @@ def test_multi_run_monitor_selection(tmp_path):
     assert sheet.n_cells > 0
     np.testing.assert_allclose(
         sheet.cell_data["field"].max(),
-        np.sqrt(sum(m1.component(c)[-1] ** 2 for c in m1.components)).max(),
+        np.sqrt(sum(a[-1] ** 2 for a in m1.recording.cell_centred(squeeze=True).values())).max(),
     )
     pl.close()

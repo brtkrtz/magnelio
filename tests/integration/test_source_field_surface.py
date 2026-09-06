@@ -88,8 +88,8 @@ def recorded():
     )
     return (
         surface.recording(),
-        _flat(result.monitors["out"].data["Ex"]),
-        _flat(result.monitors["in"].data["Ex"]),
+        _flat(result.monitors["out"].recording.cell_centred(["Ex"], squeeze=True)["Ex"]),
+        _flat(result.monitors["in"].recording.cell_centred(["Ex"], squeeze=True)["Ex"]),
     )
 
 
@@ -112,8 +112,8 @@ def _replay(recording, **source_kwargs):
         energy_stop_db=None,
     )
     return (
-        _flat(result.monitors["out"].data["Ex"]),
-        _flat(result.monitors["in"].data["Ex"]),
+        _flat(result.monitors["out"].recording.cell_centred(["Ex"], squeeze=True)["Ex"]),
+        _flat(result.monitors["in"].recording.cell_centred(["Ex"], squeeze=True)["Ex"]),
     )
 
 
@@ -162,7 +162,7 @@ def test_amplitude_scales_the_replay(recorded):
         t_end=T_END,
         energy_stop_db=None,
     )
-    half = _flat(result.monitors["out"].data["Ex"])
+    half = _flat(result.monitors["out"].recording.cell_centred(["Ex"], squeeze=True)["Ex"])
     full, _inside = _replay(recording)
     assert np.abs(half).max() == pytest.approx(0.5 * np.abs(full).max(), rel=2e-3)
 

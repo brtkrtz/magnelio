@@ -81,9 +81,9 @@ def probes():
     ]
 
 
-def trace(monitor_data):
+def trace(monitor):
     """One scalar time trace out of a small probe box."""
-    values = np.asarray(monitor_data["Ex"])
+    values = monitor.recording.cell_centred(["Ex"])["Ex"]
     return values.reshape(values.shape[0], -1).mean(axis=1)
 
 
@@ -137,9 +137,9 @@ replayed = mio.AnalysisTD(mesh=mesh_of(replay_model), monitors=probes(), verbose
 # The two numbers
 # ---------------
 
-out_ref = trace(recorded.monitors["out"].data)
-out_new = trace(replayed.monitors["out"].data)
-inside = trace(replayed.monitors["in"].data)
+out_ref = trace(recorded.monitors["out"])
+out_new = trace(replayed.monitors["out"])
+inside = trace(replayed.monitors["in"])
 
 peak = np.abs(out_ref).max()
 ratio = np.abs(out_new).max() / peak

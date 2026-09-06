@@ -545,7 +545,7 @@ class TestMirrorRules:
         )
         mon = MonitorFieldTime(times=[0.0], fields=["E"], name="m")
         mon.attach(mesh)
-        r = mon.region
+        r = mon._region
         shape = (
             r.ix.stop - r.ix.start,
             r.iy.stop - r.iy.start,
@@ -671,7 +671,7 @@ class TestOverlayMirroring:
         mesh = Mesh.from_geometry(model, CONTROL, F_MAX)
         mon = MonitorFieldTime(times=[0.0], fields=["E"], name="m")
         mon.attach(mesh)
-        r = mon.region
+        r = mon._region
         shape = (
             r.ix.stop - r.ix.start,
             r.iy.stop - r.iy.start,

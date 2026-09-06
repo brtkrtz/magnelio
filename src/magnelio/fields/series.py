@@ -168,7 +168,14 @@ class _FieldSeries:
             )
         return np.asarray(self._raw[name]) / self._lengths()[name][None]
 
-    def cell_centred(self, components=None, corners=None, frame: int | None = None) -> dict:
+    def cell_centred(
+        self,
+        components=None,
+        corners=None,
+        frame: int | None = None,
+        *,
+        squeeze: bool = False,
+    ) -> dict:
         """Components averaged onto the cell centres, per frame.
 
         Parameters
@@ -179,6 +186,10 @@ class _FieldSeries:
             Two opposite corners [m] of a sub-box; default the whole grid.
         frame : int, optional
             One frame; default all, stacked along a leading axis.
+        squeeze : bool, default False
+            Drop the spatial axes of length one — a plane region then
+            reads ``(n_frames, nu, nv)``, a line ``(n_frames, n)``, a
+            point ``(n_frames,)``.
 
         Returns
         -------
@@ -188,9 +199,54 @@ class _FieldSeries:
         """
         names = list(self.components if components is None else components)
         if frame is not None:
-            return self.frame(frame).cell_centred(names, corners)
-        per_frame = [self.frame(i).cell_centred(names, corners) for i in range(self.n_frames)]
-        return {c: np.stack([d[c] for d in per_frame], axis=0) for c in names}
+            out = self.frame(frame).cell_centred(names, corners)
+            first_spatial = 0
+        else:
+            per_frame = [self.frame(i).cell_centred(names, corners) for i in range(self.n_frames)]
+            out = {c: np.stack([d[c] for d in per_frame], axis=0) for c in names}
+            first_spatial = 1
+        if squeeze:
+            out = {
+                c: np.squeeze(
+                    a,
+                    axis=tuple(ax for ax in range(first_spatial, a.ndim) if a.shape[ax] == 1),
+                )
+                for c, a in out.items()
+            }
+        return out
+
+    def cell_centred_layer(self, frame: int, axis: int, k: int, components=None) -> dict:
+        """One cell layer of one frame, averaged onto the cell centres.
+
+        Only that layer is computed — a picture of a volume recording
+        costs one plane, not the volume.
+
+        Parameters
+        ----------
+        frame : int
+        axis : int
+            Normal axis of the layer (0, 1, 2).
+        k : int
+            Cell index of the layer along *axis*.
+        components : sequence of str, optional
+            Default the recorded ones.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            ``{name: array}`` shaped over the two in-plane axes in
+            ascending order.
+        """
+        from magnelio.fields._interp import _interp_to_cell_centres  # noqa: PLC0415
+
+        names = list(self.components if components is None else components)
+        g = self._grid
+        slabs = [slice(0, g.Nx), slice(0, g.Ny), slice(0, g.Nz)]
+        if not (0 <= k < self.shape[axis]):
+            raise IndexError(f"layer {k} out of range along axis {axis}")
+        slabs[axis] = slice(k, k + 1)
+        data = _interp_to_cell_centres(self._frame_arrays(frame), names, *slabs, g, dual=self._dual)
+        return {c: np.squeeze(np.asarray(a), axis=axis) for c, a in data.items()}
 
     # ── pictures ─────────────────────────────────────────────────────────
 

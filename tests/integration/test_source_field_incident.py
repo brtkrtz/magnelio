@@ -59,7 +59,7 @@ def _run(source, probes):
         t_end=320e-12,
         energy_stop_db=None,
     )
-    return {name: result.monitors[name].data for name in probes}
+    return {name: result.monitors[name].recording.cell_centred(squeeze=True) for name in probes}
 
 
 def _plane_wave_field(x, y, z, t, drive):

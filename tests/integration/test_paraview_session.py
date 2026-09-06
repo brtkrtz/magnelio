@@ -181,7 +181,11 @@ def test_store_and_ram_monitor_agree(session_run):
 
     assert live.is_renormalized, "the streamed run must renormalise the caller's monitor"
     for comp in ("Ex", "Ey", "Ez"):
-        np.testing.assert_allclose(stored.component(comp), live.data[comp], rtol=1e-12)
+        np.testing.assert_allclose(
+            stored.spectrum.cell_centred([comp], squeeze=True)[comp],
+            live.spectrum.cell_centred([comp], squeeze=True)[comp],
+            rtol=1e-12,
+        )
 
 
 def test_freq_vtr_matches_the_monitor(session_project):
@@ -198,7 +202,7 @@ def test_freq_vtr_matches_the_monitor(session_project):
 
     run_dir = session_project / "runs" / "port1_mode0"
     mon = open_project(session_project).monitors["Efreq"]
-    bins = {c: mon.component(c) for c in ("Ex", "Ey", "Ez")}
+    bins = {c: mon.spectrum.cell_centred([c], squeeze=True)[c] for c in ("Ex", "Ey", "Ez")}
     assert np.asarray(mon.freqs) == pytest.approx(list(FREQS))
 
     # Cell ordering: monitor-native (nx, ny[, nz]) -> VTK x-fastest, which

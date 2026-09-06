@@ -31,6 +31,18 @@ major version is 0, minor releases may change the public API.
   staggering.  The monitors will record into these containers in
   0.7.0.
 
+### Removed
+
+- `MonitorFieldTime.data`, `.component`, `.region` and
+  `MonitorFieldFrequency.data`, `.data_raw`, `.component`, `.region`,
+  together with the same names on a project's monitor readers.  The
+  recording is `monitor.recording` (a `FieldRecording`), the pattern
+  `monitor.spectrum` / `.spectrum_raw` (a `FieldSpectrum`); the
+  cell-centred arrays the old attributes returned are
+  `recording.cell_centred(..., squeeze=True)`, the coordinates
+  `recording.cell_centres`.  See `docs/migration-0.7.md`.
+- `fields.xdmf` in a run directory, and the XDMF descriptor module.
+
 ### Changed
 
 - Field monitors record the solver's own samples.  `MonitorFieldTime`

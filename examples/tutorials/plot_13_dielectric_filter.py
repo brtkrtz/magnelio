@@ -698,11 +698,12 @@ fig.tight_layout()
 # can simply be read off it: sum :math:`E_z` over each half of the
 # housing and compare the phases.
 
-x_cells = pattern.region.xc
+spectrum = pattern.spectrum
+x_cells = spectrum.cell_centres[0]
 left, right = x_cells < 0.0, x_cells >= 0.0
 print("  f [GHz]   phase L    phase R   difference")
-for i, f in enumerate(pattern.f):
-    ez = pattern.data["Ez"][i]
+for i, f in enumerate(spectrum.frequencies):
+    ez = spectrum.cell_centred(["Ez"], frame=i, squeeze=True)["Ez"]
     phi_l = np.degrees(np.angle(ez[left].sum()))
     phi_r = np.degrees(np.angle(ez[right].sum()))
     delta = (phi_r - phi_l + 180.0) % 360.0 - 180.0

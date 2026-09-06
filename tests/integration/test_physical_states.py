@@ -82,8 +82,9 @@ def test_absolute_fields_per_1w_cw(grid_fn):
     res, zline = _run_plate(grid_fn(), [mon])
     mon.renormalize(res.reference_signal)
 
-    ey = float(np.abs(np.asarray(mon.data["Ey"]).reshape(-1)[0]))
-    hx = float(np.abs(np.asarray(mon.data["Hx"]).reshape(-1)[0]))
+    cc = mon.spectrum.cell_centred(["Ey", "Hx"])
+    ey = float(np.abs(np.asarray(cc["Ey"]).reshape(-1)[0]))
+    hx = float(np.abs(np.asarray(cc["Hx"]).reshape(-1)[0]))
     # The magnetic walls sit half an outer x-cell beyond the outermost
     # grid lines (from_grid keeps them in place): the simulated line is
     # w_eff = W + dx wide, and z_line reports exactly that line.
@@ -131,7 +132,7 @@ def test_grid_independence_absolute_values():
         mon.renormalize(res.reference_signal)
         a1 = res.a("p1")
         vals[tag] = (
-            float(np.abs(np.asarray(mon.data["Ey"]).reshape(-1)[0])),
+            float(np.abs(np.asarray(mon.spectrum.cell_centred(["Ey"])["Ey"]).reshape(-1)[0])),
             float(np.trapezoid(flux.power, flux.t)) / float(np.trapezoid(a1.values**2, a1.t)),
         )
 
@@ -264,5 +265,5 @@ def test_plane_wave_amplitude_is_physical():
     )
     solver.run()
 
-    peak = float(np.max(np.abs(mon.data["Ex"])))
+    peak = float(np.max(np.abs(mon.recording.cell_centred(["Ex"])["Ex"])))
     assert abs(peak - 1.0) < 0.05, f"plane-wave monitor peak {peak:.4f} V/m, want 1 V/m"
