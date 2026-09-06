@@ -551,7 +551,9 @@ class TestMirrorRules:
             r.iy.stop - r.iy.start,
             r.iz.stop - r.iz.start,
         )
-        mon._snapshots = [{"Ez": np.ones(shape)}]
+        # A snapshot holds the grid quantities on the Yee positions (DD-259):
+        # Ez sits on the nodes across its axis, on the cells along it.
+        mon._snapshots = [{"Ez": np.ones((shape[0] + 1, shape[1] + 1, shape[2]))}]
         mon._recorded_times = [0.0]
         _fig, ax = mon.plot(
             "Ez",
@@ -675,7 +677,9 @@ class TestOverlayMirroring:
             r.iy.stop - r.iy.start,
             r.iz.stop - r.iz.start,
         )
-        mon._snapshots = [{"Ez": np.ones(shape)}]
+        # A snapshot holds the grid quantities on the Yee positions (DD-259):
+        # Ez sits on the nodes across its axis, on the cells along it.
+        mon._snapshots = [{"Ez": np.ones((shape[0] + 1, shape[1] + 1, shape[2]))}]
         mon._recorded_times = [0.0]
         _fig, ax = mon.plot(
             "Ez",

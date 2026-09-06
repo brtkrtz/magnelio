@@ -38,8 +38,44 @@ def _solver_dual_widths(d: np.ndarray) -> np.ndarray:
     return out
 
 
+def _region_slices(ix: slice, iy: slice, iz: slice, comp: str) -> tuple[slice, slice, slice]:
+    """Index slices of a component's raw array covering the cells ``ix × iy × iz``.
+
+    Along its own axis an E component is sampled per cell, across it per
+    node (one more sample than cells); an H component the other way
+    round.  The slices cut exactly the samples the region's own grid
+    would hold.
+    """
+    group, axis = comp[0], "xyz".index(comp[1])
+    out = []
+    for a, s in enumerate((ix, iy, iz)):
+        on_nodes = (a != axis) if group == "E" else (a == axis)
+        out.append(slice(s.start, s.stop + 1) if on_nodes else slice(s.start, s.stop))
+    return tuple(out)  # type: ignore[return-value]
+
+
+def _region_dual(grid: GridLines, ix: slice, iy: slice, iz: slice):
+    """The solver's dual widths at the region's nodes, one array per axis.
+
+    A region cut from a grid keeps the dual lengths its ``h`` samples
+    were formed with — at the region's boundary nodes those are the
+    full grid's half-cell sums, not the "full end cell" the region's own
+    grid would imply.  A container built from a region carries these.
+    """
+    return tuple(
+        _solver_dual_widths(np.asarray(d, dtype=float))[s.start : s.stop + 1]
+        for d, s in ((grid.dx, ix), (grid.dy, iy), (grid.dz, iz))
+    )
+
+
 def _interp_to_cell_centres(
-    fields: FieldArrays, components: list[str], ix: slice, iy: slice, iz: slice, grid: GridLines
+    fields: FieldArrays,
+    components: list[str],
+    ix: slice,
+    iy: slice,
+    iz: slice,
+    grid: GridLines,
+    dual=None,
 ) -> dict[str, np.ndarray]:
     """Physical fields at cell centres within *ix, iy, iz* (DD-085).
 
@@ -60,6 +96,10 @@ def _interp_to_cell_centres(
         Cell-index slices (stop-exclusive) defining the sub-region.
     grid : GridLines
         Simulation grid providing the per-edge/per-face lengths.
+    dual : tuple of np.ndarray, optional
+        The dual widths of the grid's nodes per axis, when they differ
+        from the solver convention on *grid* itself (a region cut from a
+        larger grid, see :func:`_region_dual`).
 
     Returns
     -------
@@ -90,9 +130,11 @@ def _interp_to_cell_centres(
 
     need_h = any(c.startswith("H") for c in components)
     if need_h:
-        dxa = xp.asarray(_solver_dual_widths(dx_h))
-        dya = xp.asarray(_solver_dual_widths(dy_h))
-        dza = xp.asarray(_solver_dual_widths(dz_h))
+        if dual is None:
+            dxa_h, dya_h, dza_h = (_solver_dual_widths(d) for d in (dx_h, dy_h, dz_h))
+        else:
+            dxa_h, dya_h, dza_h = (np.asarray(d, dtype=float) for d in dual)
+        dxa, dya, dza = xp.asarray(dxa_h), xp.asarray(dya_h), xp.asarray(dza_h)
 
     for comp in components:
         arr = getattr(fields, comp)

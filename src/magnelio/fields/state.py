@@ -100,15 +100,22 @@ class FieldState:
         lengths = self._lengths()
         raw = {name: arrays[name].astype(dtype) * lengths[name] for name in _COMPONENTS}
         self._raw = FieldArrays(**raw)
+        self._dual = None
 
     # ── construction ─────────────────────────────────────────────────────
 
     @classmethod
-    def _from_raw(cls, grid: GridLines, raw: FieldArrays) -> FieldState:
-        """Wrap solver grid quantities without conversion (internal)."""
+    def _from_raw(cls, grid: GridLines, raw: FieldArrays, dual=None) -> FieldState:
+        """Wrap solver grid quantities without conversion (internal).
+
+        *dual* names the dual widths the ``h`` samples were formed with
+        when they differ from the solver convention on *grid* — a region
+        cut from a larger grid (:func:`~magnelio.fields._interp._region_dual`).
+        """
         self = cls.__new__(cls)
         self._grid = grid
         self._raw = raw
+        self._dual = dual
         return self
 
     @classmethod
@@ -206,7 +213,11 @@ class FieldState:
         """The edge lengths that turn a physical sample into a grid quantity."""
         g = self._grid
         dx, dy, dz = (np.asarray(d, dtype=float) for d in (g.dx, g.dy, g.dz))
-        dxa, dya, dza = _dual_widths(dx), _dual_widths(dy), _dual_widths(dz)
+        dual = getattr(self, "_dual", None)
+        if dual is None:
+            dxa, dya, dza = _dual_widths(dx), _dual_widths(dy), _dual_widths(dz)
+        else:
+            dxa, dya, dza = (np.asarray(d, dtype=float) for d in dual)
         return {
             "Ex": dx[:, None, None],
             "Ey": dy[None, :, None],
@@ -328,7 +339,7 @@ class FieldState:
             self._check_component(name)
         region = resolve_region(corners, self._grid)
         return _interp_to_cell_centres(
-            self._raw, names, region.ix, region.iy, region.iz, self._grid
+            self._raw, names, region.ix, region.iy, region.iz, self._grid, dual=self._dual
         )
 
     # ── arithmetic ───────────────────────────────────────────────────────
@@ -336,14 +347,14 @@ class FieldState:
     def scaled(self, factor) -> FieldState:
         """A copy multiplied by a (possibly complex) scalar."""
         raw = FieldArrays(**{c: getattr(self._raw, c) * factor for c in _COMPONENTS})
-        return type(self)._from_raw(self._grid, raw)
+        return type(self)._from_raw(self._grid, raw, dual=self._dual)
 
     def real(self) -> FieldState:
         """The real part (the field of a complex mode at its zero-phase instant)."""
         if not self.is_complex:
             return self
         raw = FieldArrays(**{c: np.real(getattr(self._raw, c)) for c in _COMPONENTS})
-        return type(self)._from_raw(self._grid, raw)
+        return type(self)._from_raw(self._grid, raw, dual=self._dual)
 
     # ── symmetry ─────────────────────────────────────────────────────────
 
@@ -519,7 +530,7 @@ class FieldState:
         if pv.slice_index is not None:
             base = slabs[pv.normal_idx].start
             slabs[pv.normal_idx] = slice(base + pv.slice_index, base + pv.slice_index + 1)
-        data = _interp_to_cell_centres(self._raw, comps, *slabs, grid)
+        data = _interp_to_cell_centres(self._raw, comps, *slabs, grid, dual=self._dual)
         data = {c: np.squeeze(a, axis=pv.normal_idx) for c, a in data.items()}
         data = _real_snapshot(data)
 

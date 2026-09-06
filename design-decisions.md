@@ -20892,8 +20892,53 @@ developer in the browser 2026-09-06 and merged (`7a59be1`).
 **Step 1 implemented 2026-09-06** on `feat/field-series`
 (`src/magnelio/fields/series.py`, `fields/_interp.py`,
 `FieldState.mirrored`, `tests/unit/test_field_series.py`,
-`TestMirrored`, chapter section *Field containers*).  Steps 2–5 are
-scheduled for 0.7.0 after the [[DD-256]] patch.
+`TestMirrored`, chapter section *Field containers*), merged `5b71c52`.
+**Step 2 implemented 2026-09-06** on `feat/raw-monitor-recording`
+(monitors, store schema 3.0, ParaView export); steps 3–5 follow.
+
+*Step 2 decisions and findings.*  (a) **The frames' instant.**  The
+solver calls the monitors after the H update of step *n* with the
+index time `t = n·dt`, where `e` already holds `E^{n+1}` and `h`
+`H^{n+3/2}`; the time monitor stamped that snapshot `t`, one step early,
+and its H a further half step late — DD-226's surface recording had
+already corrected this for its own frames.  A `FieldRecording`'s
+`times` are now the electric instants `t + dt`, `times_h = times + dt/2`,
+and the schedule is tested against the electric instant, so a target
+at 0 is served by the first frame the solver hands out (E¹ at dt; E⁰ is
+identically zero).  One frame per step: a schedule finer than the time
+step used to duplicate a snapshot under two labels (the ring-down gate
+divided by a zero interval the moment the labels became honest), now
+the further targets a step passes are consumed without a frame, and
+the checkpoint carries the frames recorded (`n_recorded`) beside the
+targets consumed (`next_idx`) — the store truncates on the former.  The
+frequency monitor **keeps** the index-time
+phase convention: the port recorder stamps `V` from the same `e` with
+the same `t`, so the renormalised pattern stays phase-consistent with
+the run's S-parameters, which a physical stamp would have shifted by
+`ω·dt`.  (b) **The dual widths of a region.**  `h = H·l_dual` with the
+*solver's* dual length; at the two boundary nodes of a region cut from
+the grid that length is the full grid's half-cell sum, not the "full
+end cell" the region's own grid implies.  A container built from a
+region therefore carries the region's dual widths (`FieldState._dual`,
+`FieldRecording`/`FieldSpectrum` likewise, `dual_x/y/z` in the store),
+and the cell-centre averaging takes them — without this a sub-region
+monitor's H at the region edge would have changed against 0.6.  With
+it the derived `.data` is bit-identical to the old record-time
+average (same arithmetic, later), which the parity gates confirm.
+(c) **Store schema 3.0.**  `results.h5` monitor groups carry
+`layout="yee"`, one dataset per component in its staggered shape,
+`grid_x/y/z` (nodes) and `dual_x/y/z`; `fields_freq.h5` dumps carry the
+same; a 2.x monitor is refused with a message naming the change.  The
+frequency monitor's bins accumulate the raw samples, so its per-step
+cost is a copy — the interpolation is paid when the spectrum is read.
+(d) **ParaView.**  The XDMF descriptor over `results.h5` cannot
+describe staggered datasets, so step 4's time-monitor part came
+forward: `_export_time_monitor` writes a `.vtr` per frame (cell data
+averaged at export time, the same quantity `.data` reports) and a
+`.pvd` over the electric instants; `fields.xdmf` and `io/xdmf.py` are
+gone.  What remains of step 4 is the documentation.  (e) `.data`,
+`.data_raw` and `.region` stay for this step, derived from
+`recording`/`spectrum` on access; step 3 removes them.
 
 *Step 1 decisions.*  `FieldRecording(grid, times, dt=, **components)`
 and `FieldSpectrum(grid, frequencies, **components)` share one base:

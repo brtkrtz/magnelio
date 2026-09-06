@@ -344,10 +344,18 @@ for fields you assemble or resample yourself.
 All monitors return physical SI units; the calibration (C = 1 pinned
 at the excitation source) is in-house bookkeeping (DD-085).
 
-A field monitor plots on a slice (`plot`, `interact`) and opens in the
-3D viewer (`show`), where the field lies on the viewer's cutting plane
-and the position slider walks it through the recorded volume — see
-[the viewer chapter](viewer.md).
+A field monitor records the *grid quantities on the Yee positions* of
+its region — a copy of the solver's own samples, nothing averaged — and
+hands them out as a `FieldRecording` (`monitor.recording`) or, for the
+running transform, a `FieldSpectrum` (`monitor.spectrum`); the
+cell-centred `data` is derived from those on access.  The recording's
+`times` are the instants of the electric field, `times_h` those of the
+magnetic one, half a step later.  A project store keeps the same
+staggered frames, one dataset per component, and the ParaView export
+converts them at export time.  A field monitor plots on a slice
+(`plot`, `interact`) and opens in the 3D viewer (`show`), where the
+field lies on the viewer's cutting plane and the position slider walks
+it through the recorded volume — see [the viewer chapter](viewer.md).
 
 A plotted field plane is one *layer* of cells, sampled at their
 centres, not a mathematical plane — the plane coordinate printed in the
@@ -386,6 +394,6 @@ for every feed type (DD-198).
 
 Runs stream results append-only into an HDF5-based on-disk project
 store (SWMR single-writer/multi-reader), with periodic checkpoints
-and bit-exact resume (DD-070).  File formats: HDF5, XDMF/VTK for
-field visualisation.  This is engineering infrastructure, not a
-research method; the formats are community standards.
+and bit-exact resume (DD-070).  File formats: HDF5 for the store, VTK
+series for field visualisation.  This is engineering infrastructure,
+not a research method; the formats are community standards.

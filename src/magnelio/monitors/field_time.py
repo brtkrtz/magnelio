@@ -17,13 +17,16 @@ from magnelio.monitors.base import (
     MonitorRegion,
     PlaneView,
     _expand_field_list,
-    _interp_to_cell_centres,
+    _region_dual,
+    _region_slices,
     _resolve_component,
+    _take_raw,
     component_mirror_key,
     mirror_extend,
     mirror_plane_arrays,
     mirror_sign,
     plane_slab_halfwidth,
+    region_grid,
     resolve_mirrors,
     resolve_plane_view,
     resolve_region,
@@ -105,10 +108,19 @@ class MonitorFieldTime:
     _snapshots: list[dict[str, np.ndarray]] = field(default_factory=list, repr=False, init=False)
     _recorded_times: list[float] = field(default_factory=list, repr=False, init=False)
     _next_idx: int = field(default=0, repr=False, init=False)
+    # Frames recorded so far, streamed ones included (the store's
+    # truncation point on resume; ``_next_idx`` counts consumed targets).
+    _n_recorded: int = field(default=0, repr=False, init=False)
     _dt: float = field(default=0.0, repr=False, init=False)
     # Symmetry planes the region touches (DD-154) — plots mirror the
     # recorded half across them on read.
     _mirrors: tuple = field(default=(), repr=False, init=False)
+    # The region as its own grid, the dual widths of its h samples and
+    # the per-component slices of the solver arrays (DD-259): a snapshot
+    # is the grid quantities on the Yee positions, nothing averaged.
+    _subgrid: object = field(default=None, repr=False, init=False)
+    _dual: tuple | None = field(default=None, repr=False, init=False)
+    _slices: dict = field(default_factory=dict, repr=False, init=False)
 
     @classmethod
     def from_ranges(
@@ -192,19 +204,30 @@ class MonitorFieldTime:
         self._region = resolve_region(self.corners, mesh.grid)
         self._grid = mesh.grid  # per-edge lengths for the physical fields
         self._mirrors = resolve_mirrors(self._region, mesh)
+        r = self._region
+        self._subgrid = region_grid(mesh.grid, r)
+        self._dual = _region_dual(mesh.grid, r.ix, r.iy, r.iz)
+        self._slices = {c: _region_slices(r.ix, r.iy, r.iz, c) for c in self._components}
         self._snapshots = []
         self._recorded_times = []
         self._next_idx = 0
+        self._n_recorded = 0
 
     def record(self, fields, n: int, t: float, dt: float) -> None:
-        """Record a snapshot if *t* matches a requested time point.
+        """Record a snapshot when the electric field's instant meets a target.
 
-        Called at every time step by the solver.
+        Called at every time step by the solver, after the H update of
+        step *n*: ``e`` then stands at ``t + dt`` and ``h`` half a step
+        later.  The snapshot is a copy of the grid quantities on the
+        region's Yee positions — no averaging — stamped with the
+        electric instant; the recording states the magnetic one as
+        ``times + dt/2``.
         """
         if self._region is None:
             raise RuntimeError("Monitor not attached. Call attach() first.")
 
         self._dt = dt
+        t_e = t + dt
 
         # Fast path: schedule exhausted (explicit-times form only — the
         # interval form has no last target)
@@ -212,25 +235,19 @@ class MonitorFieldTime:
         if t_target is None:
             return
 
-        # Check if current time matches the next requested recording time
-        if t + 0.5 * dt < t_target:
+        if t_e + 0.5 * dt < t_target:
             return  # not yet
 
-        # Record — may need to catch up if dt is large
-        while t_target is not None and t + 0.5 * dt >= t_target:
-            r = self._region
-            snap = _interp_to_cell_centres(
-                fields,
-                self._components,
-                r.ix,
-                r.iy,
-                r.iz,
-                self._grid,
-            )
-            # Squeeze singleton dimensions for lower-dimensional monitors
-            snap = {k: np.squeeze(v) for k, v in snap.items()}
-            self._snapshots.append(snap)
-            self._recorded_times.append(float(t))
+        # One frame per step.  A schedule finer than the time step has
+        # no more information to record, and two frames sharing an
+        # instant would leave a spectrum dividing by a zero interval; the
+        # further targets this step passes are consumed without a frame.
+        self._snapshots.append(_take_raw(fields, self._components, self._slices))
+        self._recorded_times.append(float(t_e))
+        self._n_recorded += 1
+        self._next_idx += 1
+        t_target = self._target(self._next_idx)
+        while t_target is not None and t_e + 0.5 * dt >= t_target:
             self._next_idx += 1
             t_target = self._target(self._next_idx)
 
@@ -246,10 +263,11 @@ class MonitorFieldTime:
         """Drain the snapshots recorded since the last call (streaming).
 
         Returns the pending recorded times and, per component, the pending
-        snapshots stacked along a leading time axis, then clears the in-RAM
-        snapshot buffer — so a project-backed run stays **memory-bounded**
-        (the run sink flushes each batch to disk instead of the monitor
-        holding every snapshot).  ``_next_idx`` (target-time progress) is
+        snapshots — grid quantities on the region's Yee positions, shape
+        ``(k, *Yee shape)`` — stacked along a leading time axis, then
+        clears the in-RAM snapshot buffer — so a project-backed run stays
+        **memory-bounded** (the run sink flushes each batch to disk
+        instead of the monitor holding every snapshot).  ``_next_idx`` (target-time progress) is
         *kept*, so recording continues at the right time point.  The in-RAM
         path never calls this, so its ``data``/``t`` accumulation is
         unchanged.
@@ -267,19 +285,21 @@ class MonitorFieldTime:
         return times, out
 
     def state_dict(self) -> dict:
-        """Checkpoint the target-time cursor for a bit-exact resume.
+        """Checkpoint the schedule cursor for a bit-exact resume.
 
-        Only ``_next_idx`` is state a continuation must restore — the
-        recorded snapshots themselves live in the run's ``results.h5``
-        (streamed), and the region is re-resolved on attach.  ``_next_idx``
-        equals the number of snapshots recorded so far, so it also drives
-        the monitor-stream truncation on resume.
+        Two counters: the targets consumed (``next_idx``) and the frames
+        recorded (``n_recorded``) — they differ when the schedule is
+        finer than the time step.  The frames themselves live in the
+        run's ``results.h5`` (streamed), and the region is re-resolved on
+        attach; ``n_recorded`` drives the monitor-stream truncation on
+        resume.
         """
-        return {"next_idx": int(self._next_idx)}
+        return {"next_idx": int(self._next_idx), "n_recorded": int(self._n_recorded)}
 
     def load_state_dict(self, sd: dict) -> None:
-        """Restore the target-time cursor (see :meth:`state_dict`)."""
+        """Restore the schedule cursor (see :meth:`state_dict`)."""
         self._next_idx = int(sd["next_idx"])
+        self._n_recorded = int(sd.get("n_recorded", sd["next_idx"]))
 
     # ------------------------------------------------------------------
     # Data access
@@ -287,12 +307,52 @@ class MonitorFieldTime:
 
     @property
     def t(self) -> np.ndarray:
-        """Actually recorded time points [s]."""
+        """Recorded instants [s] of the electric field."""
         return np.array(self._recorded_times)
 
     @property
+    def recording(self):
+        """The snapshots as a :class:`~magnelio.fields.FieldRecording`.
+
+        Every frame keeps the Yee staggering of the region; the magnetic
+        field's instants are ``recording.times_h``.  Raises when nothing
+        has been recorded — on a project-backed run the frames stream to
+        the store and are read back through the project's monitors.
+        """
+        from magnelio.fields.series import FieldRecording  # noqa: PLC0415
+
+        if self._region is None or self._subgrid is None:
+            raise RuntimeError(f"monitor {self.name!r} is not attached to a mesh")
+        if not self._snapshots:
+            raise RuntimeError(
+                f"monitor {self.name!r} holds no snapshots — on a project run they stream "
+                "to the store; open the project and use its monitors instead"
+            )
+        raw = {
+            c: np.stack([snap[c] for snap in self._snapshots], axis=0)
+            for c in self._components
+            if all(c in snap for snap in self._snapshots)
+        }
+        return FieldRecording._from_raw(
+            self._subgrid,
+            np.asarray(self._recorded_times, dtype=float),
+            raw,
+            dual=self._dual,
+            dt=float(self._dt) if self._dt else None,
+        )
+
+    @staticmethod
+    def _squeeze_spatial(arr: np.ndarray) -> np.ndarray:
+        """Squeeze length-1 spatial axes, keep the leading time axis."""
+        squeeze = tuple(ax for ax in range(1, arr.ndim) if arr.shape[ax] == 1)
+        return np.squeeze(arr, axis=squeeze) if squeeze else arr
+
+    @property
     def data(self) -> dict[str, np.ndarray]:
-        """All snapshots stacked along a leading time axis.
+        """The snapshots averaged onto cell centres, stacked along time.
+
+        Derived from :attr:`recording` on every access; the recording
+        itself keeps the staggered samples.
 
         Returns
         -------
@@ -303,12 +363,9 @@ class MonitorFieldTime:
         """
         if not self._snapshots:
             return {}
-        out = {}
-        for comp in self._components:
-            arrays = [s[comp] for s in self._snapshots if comp in s]
-            if arrays:
-                out[comp] = np.stack(arrays, axis=0)
-        return out
+        rec = self.recording
+        cc = rec.cell_centred(list(rec.components))
+        return {c: self._squeeze_spatial(cc[c]) for c in rec.components}
 
     def component(self, name: str) -> np.ndarray:
         """Return recorded data for a single component.

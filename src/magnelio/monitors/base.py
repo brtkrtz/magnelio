@@ -17,6 +17,8 @@ import numpy as np
 # (DD-259); the monitors and the store readers keep importing it from here.
 from magnelio.fields._interp import (  # noqa: F401
     _interp_to_cell_centres,
+    _region_dual,
+    _region_slices,
     _solver_dual_widths,
 )
 from magnelio.mesh.grid import GridLines
@@ -30,6 +32,38 @@ from magnelio.post._symmetry import (
     mirror_sign,
     mirror_spec_for_face,
 )
+
+# ---------------------------------------------------------------------------
+# Raw samples of a region (DD-259)
+# ---------------------------------------------------------------------------
+
+
+def _take_raw(fields, components, slices: dict) -> dict[str, np.ndarray]:
+    """Copies of the grid quantities of *components* within the region.
+
+    ``slices[comp]`` are the per-component index slices of the region
+    (:func:`~magnelio.fields._interp._region_slices`).  Device arrays
+    come back as host copies; host arrays are copied, never viewed —
+    the solver overwrites its state in place.
+    """
+    out = {}
+    for comp in components:
+        arr = getattr(fields, comp)[slices[comp]]
+        if type(arr).__module__.partition(".")[0] == "cupy":
+            out[comp] = arr.get()
+        else:
+            out[comp] = np.array(arr, dtype=arr.dtype, copy=True)
+    return out
+
+
+def region_grid(grid: GridLines, region) -> GridLines:
+    """The region's own grid lines, cut from *grid*."""
+    return GridLines(
+        x=np.asarray(grid.x, dtype=float)[region.ix.start : region.ix.stop + 1],
+        y=np.asarray(grid.y, dtype=float)[region.iy.start : region.iy.stop + 1],
+        z=np.asarray(grid.z, dtype=float)[region.iz.start : region.iz.stop + 1],
+    )
+
 
 # ---------------------------------------------------------------------------
 # MonitorRegion

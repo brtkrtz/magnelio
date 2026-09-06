@@ -4,7 +4,13 @@ Schema 1.0 was the first published store format; 2.0 (DD-224 Phase B)
 names runs by their excitations instead of one excited port channel,
 records the mesh's element type, keys the port checkpoints per excited
 mode, and retired the pre-DD-224 spellings the 1.0 readers still
-accepted.  Every artefact the store writes (``project.json``,
+accepted; 3.0 (DD-259) records the field monitors as the grid
+quantities on the Yee positions of their region — one dataset per
+staggered component, the region's grid lines and dual widths beside
+them — carries the same for the frequency monitors' bins, and writes
+no XDMF descriptor any more (the ParaView export converts on its own).
+A 2.x store's monitor data cannot be read by a 3.0 reader, and none is
+converted.  Every artefact the store writes (``project.json``,
 ``results.h5``, ``checkpoint.h5``, the setup recipe) is stamped with
 :data:`SCHEMA_VERSION` and every reader validates it via
 :func:`validate_schema` — an unknown or missing version fails loudly
@@ -14,7 +20,7 @@ moment the format is public.
 
 from __future__ import annotations
 
-SCHEMA_VERSION = "2.0"
+SCHEMA_VERSION = "3.0"
 
 
 class ProjectSchemaError(ValueError):

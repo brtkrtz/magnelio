@@ -13,8 +13,8 @@ pin the three properties that matter:
 * **Resume continuity** — a monitor recorded across a checkpoint/resume
   seam is bit-identical to one from an uninterrupted run.
 
-Plus: ``fields.xdmf`` is written for ParaView, and multi-run projects
-disambiguate the monitor name by excitation.
+Plus: the ParaView series is written from the staggered frames, and
+multi-run projects disambiguate the monitor name by excitation.
 """
 
 from __future__ import annotations
@@ -172,35 +172,36 @@ def test_monitor_bit_exact_across_resume(tmp_path):
 # ═════════════════════════════════════════════════════════════════════
 
 
-def test_fields_xdmf_written_and_valid(tmp_path):
+def test_paraview_series_written_from_the_staggered_frames(tmp_path):
+    """The store holds staggered frames; the ParaView export converts them (DD-259)."""
     pytest.importorskip("OCC.Core.BRepPrimAPI")
+    pytest.importorskip("vtk")
     p = tmp_path / "pp"
     _tem_analysis(project=p).run(
         excited=[("port1", 0)],
         energy_stop_db=None,
         total_time_steps=N_TOTAL,
     )
-    xdmf = p / "runs" / "port1_mode0" / "fields.xdmf"
-    assert xdmf.exists()
+    run_dir = p / "runs" / "port1_mode0"
+    assert not (run_dir / "fields.xdmf").exists()
+    pvd = run_dir / "paraview" / "Eplane.pvd"
+    assert pvd.exists()
+    root = ET.parse(pvd).getroot()
+    entries = root.findall(".//DataSet")
+    reader = open_project(p).monitors_for(("port1", 0))["Eplane"]
+    assert len(entries) == reader.t.size > 0
+    vtrs = sorted((run_dir / "paraview" / "Eplane").glob("t_*.vtr"))
+    assert len(vtrs) == len(entries)
+    # The store itself carries the staggered layout and the region's grid.
+    import h5py  # noqa: PLC0415
 
-    root = ET.parse(xdmf).getroot()
-    # One temporal collection for the monitor, one uniform grid per time.
-    colls = root.findall(".//{*}Grid[@GridType='Collection']")
-    assert len(colls) == 1
-    times = root.findall(".//{*}Time")
-    assert len(times) > 0
-    # Every data reference points into this run's results.h5.
-    refs = [
-        d.text.strip() for d in root.findall(".//{*}DataItem") if d.text and "results.h5" in d.text
-    ]
-    assert refs and all(r.startswith("results.h5:/monitors/Eplane/") for r in refs)
-    # Complete component triples are also exposed as a JOINed vector
-    # attribute so ParaView offers Glyph / streamline filters directly.
-    vecs = root.findall(".//{*}Attribute[@AttributeType='Vector']")
-    assert vecs
-    for vec in vecs:
-        join = vec.find("{*}DataItem[@ItemType='Function']")
-        assert join is not None and len(join.findall("{*}DataItem")) == 3
+    with h5py.File(run_dir / "results.h5", "r") as f:
+        mg = f["monitors"]["Eplane"]
+        assert mg.attrs["layout"] == "yee"
+        nx, ny = mg["grid_x"].shape[0] - 1, mg["grid_y"].shape[0] - 1
+        assert mg["Ez"].shape[1:] == (nx + 1, ny + 1, 1)
+        assert mg["Ex"].shape[1:] == (nx, ny + 1, 2)
+        assert mg["dual_z"].shape == (2,)
 
 
 # ═════════════════════════════════════════════════════════════════════

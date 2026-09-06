@@ -187,9 +187,11 @@ class TestMonitorFieldTime:
         mesh = _FakeMesh(grid)
         fields = _make_fields(grid)
 
+        # Targets on the electric instants the solver hands out (t + dt
+        # after step n, DD-259): one frame per step.
         mon = MonitorFieldTime(
             corners=((0.005, 0.01, 0.015), (0.005, 0.01, 0.015)),
-            times=np.array([0.0, 1e-12, 2e-12]),
+            times=np.array([1e-12, 2e-12, 3e-12]),
             fields=["Ez"],
             name="test_0d",
         )
@@ -211,9 +213,11 @@ class TestMonitorFieldTime:
         fields = _make_fields(grid)
 
         cz = 0.5 * (grid.z[3] + grid.z[4])
+        # Targets on the electric instants the solver hands out (t + dt
+        # after step n, DD-259): one frame per step.
         mon = MonitorFieldTime(
             corners=((None, None, cz), (None, None, cz)),
-            times=np.array([0.0, 1e-12]),
+            times=np.array([1e-12, 2e-12]),
             fields=["E"],
             name="test_2d",
         )
@@ -291,8 +295,11 @@ class TestMonitorFieldTimeInterval:
             ),
             n_steps=11,
         )
-        # t = 0, 2, 4, 6, 8, 10 ps within an 11-step (0…10 ps) run
-        np.testing.assert_allclose(mon.t, np.arange(6) * 2e-12, atol=1e-15)
+        # Targets 0, 2, 4, 6, 8, 10 ps within an 11-step run.  A frame is
+        # stamped with the electric field's own instant, t + dt (DD-259):
+        # the first available one, at 1 ps, serves the target at 0 — the
+        # solver never hands out E at t = 0, which is identically zero.
+        np.testing.assert_allclose(mon.t, [1e-12, 2e-12, 4e-12, 6e-12, 8e-12, 10e-12], atol=1e-15)
 
     def test_run_length_is_not_capped_by_the_schedule(self):
         """The whole point: a longer run simply yields more snapshots."""
