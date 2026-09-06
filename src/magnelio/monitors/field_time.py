@@ -13,22 +13,13 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from magnelio.monitors.base import (
-    _AXES,
     MonitorRegion,
-    PlaneView,
     _expand_field_list,
     _region_dual,
     _region_slices,
-    _resolve_component,
     _take_raw,
-    component_mirror_key,
-    mirror_extend,
-    mirror_plane_arrays,
-    mirror_sign,
-    plane_slab_halfwidth,
     region_grid,
     resolve_mirrors,
-    resolve_plane_view,
     resolve_region,
 )
 
@@ -341,92 +332,19 @@ class MonitorFieldTime:
             dt=float(self._dt) if self._dt else None,
         )
 
-    @staticmethod
-    def _squeeze_spatial(arr: np.ndarray) -> np.ndarray:
-        """Squeeze length-1 spatial axes, keep the leading time axis."""
-        squeeze = tuple(ax for ax in range(1, arr.ndim) if arr.shape[ax] == 1)
-        return np.squeeze(arr, axis=squeeze) if squeeze else arr
-
-    @property
-    def data(self) -> dict[str, np.ndarray]:
-        """The snapshots averaged onto cell centres, stacked along time.
-
-        Derived from :attr:`recording` on every access; the recording
-        itself keeps the staggered samples.
-
-        Returns
-        -------
-        dict[str, np.ndarray]
-            Keys are component names (e.g. ``"Ex"``).  Values have shape
-            ``(n_times, <spatial dims>)``.  For a 0D monitor the spatial
-            dims are empty, giving shape ``(n_times,)``.
-        """
-        if not self._snapshots:
-            return {}
-        rec = self.recording
-        cc = rec.cell_centred(list(rec.components))
-        return {c: self._squeeze_spatial(cc[c]) for c in rec.components}
-
-    def component(self, name: str) -> np.ndarray:
-        """Return recorded data for a single component.
-
-        Parameters
-        ----------
-        name : str
-            Component name, e.g. ``"Ez"``.
-
-        Returns
-        -------
-        np.ndarray
-            Shape ``(n_times, <spatial dims>)``.
-        """
-        d = self.data
-        if name not in d:
-            raise KeyError(f"Component '{name}' not recorded. Available: {list(d.keys())}")
-        return d[name]
-
-    @property
-    def region(self) -> MonitorRegion | None:
-        """Resolved grid region (available after :meth:`attach`)."""
-        return self._region
-
     # ------------------------------------------------------------------
-    # Plotting helpers
+    # Pictures — drawn from the recording (DD-259)
     # ------------------------------------------------------------------
 
-    def _make_overlay(self, geometry, pv: PlaneView):
-        """Build CrossSectionOverlay for the resolved plotting plane."""
-        if geometry is None:
-            return None
-        from magnelio.post.plot_field import (  # noqa: PLC0415
-            CrossSectionOverlay,
+    def _view(self):
+        from magnelio.monitors._frame_plots import SeriesView  # noqa: PLC0415
+
+        return SeriesView(
+            self.recording,
+            name=self.name,
+            mirrors=self._mirrors,
+            grid=getattr(self, "_grid", None),
         )
-
-        (i0, _), (i1, _) = pv.free
-        return CrossSectionOverlay(
-            geometry=geometry,
-            normal=_AXES[pv.normal_idx],
-            position=pv.normal_pos,
-            mirrors=tuple(
-                (0 if m.axis == i0 else 1, m.wall, m.at_low)
-                for m in self._mirrors
-                if m.axis in (i0, i1)
-            ),
-            slab=plane_slab_halfwidth(getattr(self, "_grid", None), pv.normal_idx, pv.normal_pos),
-        )
-
-    @staticmethod
-    def _slice_note(pv: PlaneView, scale_mm: bool) -> str:
-        """Title suffix naming the slice plane (3D monitors only)."""
-        if pv.slice_index is None:
-            return ""
-        if scale_mm:
-            return f", {_AXES[pv.normal_idx]}={pv.normal_pos * 1e3:.3g} mm"
-        return f", {_AXES[pv.normal_idx]}={pv.normal_pos:.3g} m"
-
-    # ------------------------------------------------------------------
-    # Plotting
-    # ------------------------------------------------------------------
 
     def plot(
         self,
@@ -448,41 +366,40 @@ class MonitorFieldTime:
         normalize_arrows: bool = False,
         threshold: float = 0.02,
         quiver_scale: float | None = None,
-        **kwargs,
     ):
-        """Plot recorded field data.
+        """Plot one frame of the recording.
 
-        For 0D monitors: line plot over time (ignores *t* / *t_index*).
-        For 1D monitors: line plot at a specific time.
-        For 2D monitors: colour-map, contour, or quiver plot at a time.
-        For 3D monitors: the same plane plots on a slice selected with
-        *normal* and *position*.
+        A point region draws its value over time (ignores *t* /
+        *t_index*); a line region the values along its axis at one
+        instant; a plane region the frame on its own plane; a volume
+        the plane selected with *normal* and *position*.  Only the
+        drawn layer is averaged onto cell centres.
 
         Parameters
         ----------
         component : str
-            ``"E"`` or ``"H"`` for vector magnitude or vector plot.
-            ``"Ex"``, ``"Hy"``, … for a single component (scalar only).
+            ``"E"`` or ``"H"`` for a vector plot or magnitude,
+            ``"Ex"``, ``"Hy"``, … for a single component.
         t : float, optional
-            Time point [s].  Nearest recorded time is used.
+            Instant [s]; the nearest frame is drawn.
         t_index : int, optional
-            Time index (overrides *t*).
+            Frame index (overrides *t*).
         normal : {"x", "y", "z"}, optional
-            Slice-plane normal for 3D monitors (required there).  For a
-            2D monitor it may be given for validation but is redundant.
+            Slice-plane normal for a volume (required there); for a
+            plane region it may name the plane's own normal.
         position : float
             Slice-plane position along *normal* [m]; snapped to the
-            nearest cell-centre plane (3D monitors only).
+            nearest cell-centre plane.
         plot_type : str
             ``"vector"``, ``"color"``, or ``"contour"``.
         ax : matplotlib.axes.Axes, optional
         scale_mm : bool
         cmap : str or None
             Colourmap (None = auto-select).
-        geometry : list, optional
-            Geometry objects for cross-section overlay (2D only).
+        geometry : GeometryModel, optional
+            Cross-section overlay of the plane.
         flip : bool
-            Swap horizontal and vertical axes (2D only).
+            Swap horizontal and vertical axes.
         vmin, vmax : float, optional
             Colour limits (scalar) or arrow clipping (vector).
         density : int
@@ -499,159 +416,27 @@ class MonitorFieldTime:
         fig : matplotlib.figure.Figure
         ax : matplotlib.axes.Axes
         """
-        r = self._region
-        if r is None:
-            raise RuntimeError("Monitor not attached / no data.")
+        from magnelio.monitors._frame_plots import plot_frame  # noqa: PLC0415
 
-        data = self.data
-        ndim = r.ndim
-        is_field_group = component in ("E", "H")
-
-        # --- 0D: line plot over time ---
-        if ndim == 0:
-            from magnelio.monitors.plotting import plot_time_0d  # noqa: PLC0415
-
-            arr = _resolve_component(data, component)
-            return plot_time_0d(self.t, arr, component, self.name, ax=ax)
-
-        # Resolve time index
-        if t_index is None:
-            if t is not None:
-                t_index = int(np.argmin(np.abs(self.t - t)))
-            else:
-                t_index = 0
-
-        # --- 1D: line plot ---
-        if ndim == 1:
-            from magnelio.monitors.plotting import plot_time_1d  # noqa: PLC0415
-
-            arr = _resolve_component(data, component)
-            vals = arr[t_index]
-            title = f"{self.name} — {component}, t={self.t[t_index]:.3e} s"
-            axes_labels = ["x", "y", "z"]
-            coords = [r.xc, r.yc, r.zc]
-            for i, c in enumerate(coords):
-                if len(c) > 1:
-                    fld, comp_axis = component_mirror_key(component)
-                    for spec in self._mirrors:
-                        if spec.axis != i:
-                            continue
-                        c, vals = mirror_extend(
-                            c,
-                            vals,
-                            spec,
-                            0,
-                            mirror_sign(fld, comp_axis, spec.axis, spec.kind),
-                        )
-                    return plot_time_1d(
-                        c,
-                        vals,
-                        component,
-                        axes_labels[i],
-                        title,
-                        ax=ax,
-                        scale_mm=scale_mm,
-                    )
-
-        # --- 2D / 3D: plane plot (3D via normal/position slice) ---
-        pv = resolve_plane_view(r, normal, position)
-        (i0, c0), (i1, c1) = pv.free
-        note = self._slice_note(pv, scale_mm)
-
-        from magnelio.post.plot_field import (  # noqa: PLC0415
-            plot_field_scalar,
-            plot_field_vector,
-        )
-
-        overlay = self._make_overlay(geometry, pv)
-
-        if plot_type == "vector":
-            # component must be field group
-            field_group = component if is_field_group else "E"
-            comp_u = f"{field_group}{_AXES[i0]}"
-            comp_v = f"{field_group}{_AXES[i1]}"
-            comp_w = f"{field_group}{_AXES[pv.normal_idx]}"
-            if comp_u not in data or comp_v not in data:
-                raise KeyError(
-                    f"Need both {comp_u} and {comp_v} recorded.  Available: {list(data.keys())}"
-                )
-            u_arr = pv.take2d(data[comp_u][t_index])
-            v_arr = pv.take2d(data[comp_v][t_index])
-            w_arr = pv.take2d(data[comp_w][t_index]) if comp_w in data else None
-            c0, c1, (u_arr, v_arr, w_arr) = mirror_plane_arrays(
-                pv,
-                self._mirrors,
-                c0,
-                c1,
-                [
-                    (u_arr, field_group, i0),
-                    (v_arr, field_group, i1),
-                    (w_arr, field_group, pv.normal_idx),
-                ],
-            )
-            title = f"{self.name} — {field_group}-field, t={self.t[t_index]:.3e} s{note}"
-            return plot_field_vector(
-                c0,
-                c1,
-                u_arr,
-                v_arr,
-                w=w_arr,
-                xlabel=_AXES[i0],
-                ylabel=_AXES[i1],
-                wlabel=_AXES[pv.normal_idx],
-                title=title,
-                ax=ax,
-                scale_mm=scale_mm,
-                cmap=cmap or "viridis",
-                density=density,
-                normalize_arrows=normalize_arrows,
-                vmax=vmax,
-                threshold=threshold,
-                quiver_scale=quiver_scale,
-                flip=flip,
-                geometry=overlay,
-            )
-
-        # Scalar plot (color / contour)
-        arr = _resolve_component(data, component)
-        is_amplitude = is_field_group
-        vals = pv.take2d(arr[t_index])
-        fld, comp_axis = component_mirror_key(component)
-        c0, c1, (vals,) = mirror_plane_arrays(
-            pv,
-            self._mirrors,
-            c0,
-            c1,
-            [(vals, fld, comp_axis)],
-        )
-        title = f"{self.name} — {component}, t={self.t[t_index]:.3e} s{note}"
-
-        if is_amplitude:
-            effective_cmap = cmap or "viridis"
-            sym = False
-            if vmin is None:
-                vmin = 0.0
-        else:
-            effective_cmap = cmap or "RdBu_r"
-            sym = True
-
-        return plot_field_scalar(
-            c0,
-            c1,
-            vals,
-            xlabel=_AXES[i0],
-            ylabel=_AXES[i1],
-            title=title,
-            clabel=component,
+        view = self._view()
+        return plot_frame(
+            view,
+            component,
+            view.index_of(t, t_index),
+            normal=normal,
+            position=position,
+            plot_type=plot_type,
             ax=ax,
             scale_mm=scale_mm,
-            cmap=effective_cmap,
+            cmap=cmap,
+            geometry=geometry,
+            flip=flip,
             vmin=vmin,
             vmax=vmax,
-            symmetric=sym,
-            plot_type=plot_type,
-            flip=flip,
-            geometry=overlay,
+            density=density,
+            normalize_arrows=normalize_arrows,
+            threshold=threshold,
+            quiver_scale=quiver_scale,
         )
 
     def interact(
@@ -670,166 +455,30 @@ class MonitorFieldTime:
         vmax: float | None = None,
         figsize: tuple[float, float] | None = None,
     ):
-        """Interactive time-step slider for field snapshots (Jupyter notebook).
+        """A notebook slider over the recorded frames (needs ipywidgets).
 
-        Requires ``ipywidgets``.  The colour range (scalar) or arrow
-        scale (vector) is fixed across all time steps for visual stability.
-
-        Parameters
-        ----------
-        component : str
-            ``"E"`` or ``"H"`` for vector / amplitude plots.
-            ``"Ex"``, ``"Ez"``, … for individual component scalar plots.
-        normal : {"x", "y", "z"}, optional
-            Slice-plane normal for 3D monitors (required there); the
-            slider then runs over time at a fixed slice plane.
-        position : float
-            Slice-plane position along *normal* [m] (3D monitors only).
-        plot_type : str
-            ``"vector"``, ``"color"``, or ``"contour"``.
-        scale_mm : bool
-            Use millimetres for spatial axes.
-        cmap : str or None
-            Colormap (None = auto-select).
-        geometry : list, optional
-            Geometry objects for cross-section overlay (2D only).
-        flip : bool
-            Swap horizontal and vertical axes (2D only).
-        density : int
-            Target arrows per axis (vector mode only).
-        threshold : float
-            Suppress arrows below this fraction of peak (vector mode only).
-        vmax : float or None
-            Clip arrow length at this magnitude (vector mode only).
-        figsize : (float, float) or None
-            Figure size in inches ``(width, height)``.
+        The colour range (scalar) or arrow scale (vector) is fixed over
+        every frame for visual stability.  The arguments are those of
+        :meth:`plot`; a volume needs its slice plane (*normal*,
+        *position*), and the slider then runs over time on it.
         """
-        import ipywidgets as widgets  # noqa: PLC0415
-        import matplotlib.pyplot as plt  # noqa: PLC0415
-        from IPython.display import clear_output, display  # noqa: PLC0415
+        from magnelio.monitors._frame_plots import interact as _interact  # noqa: PLC0415
 
-        r = self._region
-        data = self.data
-
-        if r is None:
-            raise RuntimeError("Monitor not attached / no data.")
-        if r.ndim == 0:
-            raise TypeError("0D monitors have no time axis to slide — use plot() instead.")
-
-        is_field_group = component in ("E", "H")
-
-        # Resolve the plotting plane once (validates normal/position for
-        # 3D monitors); slicing across the leading time axis needs the
-        # spatial slice axis shifted by one.
-        pv = resolve_plane_view(r, normal, position) if r.ndim >= 2 else None
-
-        def _all_times_2d(arr):
-            if pv is None or pv.slice_index is None:
-                return arr
-            return np.take(arr, pv.slice_index, axis=pv.normal_idx + 1)
-
-        if plot_type == "vector":
-            # --- Vector mode ---
-            if pv is None:
-                raise ValueError(
-                    "Vector interact requires a 2D monitor or a 3D monitor with a slice plane."
-                )
-
-            (i0, c0), (i1, _c1) = pv.free
-
-            field_group = component if is_field_group else "E"
-            comp_u = f"{field_group}{_AXES[i0]}"
-            comp_v = f"{field_group}{_AXES[i1]}"
-            comp_w = f"{field_group}{_AXES[pv.normal_idx]}"
-            if comp_u not in data or comp_v not in data:
-                raise KeyError(f"Need both {comp_u} and {comp_v} recorded.")
-
-            # Pre-compute fixed arrow scale across all time steps
-            # (matching plot_field_vector's auto-scale reference: full
-            # 3D magnitude when the normal component is recorded)
-            all_mag2 = _all_times_2d(data[comp_u]) ** 2 + _all_times_2d(data[comp_v]) ** 2
-            if comp_w in data:
-                all_mag2 = all_mag2 + _all_times_2d(data[comp_w]) ** 2
-            all_mag = np.sqrt(all_mag2)
-            global_max_mag = float(np.max(all_mag)) if np.any(all_mag > 0) else 1.0
-            effective_max = min(global_max_mag, vmax) if vmax is not None else global_max_mag
-            sc = 1e3 if scale_mm else 1.0
-            sx = max(1, len(c0) // density)
-            xs = c0[::sx]
-            dx = float(np.mean(np.diff(xs))) * sc if len(xs) > 1 else 1.0
-            fixed_scale = effective_max / dx if effective_max > 0 else 1.0
-
-            def _render(t_index):
-                with out:
-                    clear_output(wait=True)
-                    fig, ax = plt.subplots(figsize=figsize)
-                    self.plot(
-                        component=component,
-                        t_index=t_index,
-                        normal=normal,
-                        position=position,
-                        plot_type="vector",
-                        ax=ax,
-                        scale_mm=scale_mm,
-                        density=density,
-                        cmap=cmap,
-                        geometry=geometry,
-                        flip=flip,
-                        quiver_scale=fixed_scale,
-                        threshold=threshold,
-                        vmax=vmax,
-                    )
-                    plt.show()
-        else:
-            # --- Scalar mode ---
-            arr = _all_times_2d(_resolve_component(data, component))
-            is_amplitude = is_field_group
-
-            if is_amplitude:
-                effective_cmap = cmap or "viridis"
-            else:
-                effective_cmap = cmap or "RdBu_r"
-
-            global_vmax = float(np.max(np.abs(arr))) if np.any(arr != 0) else 1.0
-            fixed_vmin = 0.0 if is_amplitude else -global_vmax
-
-            def _render(t_index):
-                with out:
-                    clear_output(wait=True)
-                    fig, ax = plt.subplots(figsize=figsize)
-                    self.plot(
-                        component=component,
-                        t_index=t_index,
-                        normal=normal,
-                        position=position,
-                        plot_type=plot_type,
-                        ax=ax,
-                        scale_mm=scale_mm,
-                        cmap=effective_cmap,
-                        geometry=geometry,
-                        vmin=fixed_vmin,
-                        vmax=global_vmax,
-                        flip=flip,
-                    )
-                    plt.show()
-
-        # Slider with human-readable time labels
-        times_ns = self.t * 1e9
-        options = [(f"{t_ns:.3f} ns", i) for i, t_ns in enumerate(times_ns)]
-        slider = widgets.SelectionSlider(
-            options=options,
-            value=0,
-            description="Time:",
-            continuous_update=False,
-            style={"description_width": "initial"},
-            layout=widgets.Layout(width="60%"),
+        return _interact(
+            self._view(),
+            component,
+            normal=normal,
+            position=position,
+            plot_type=plot_type,
+            scale_mm=scale_mm,
+            cmap=cmap,
+            geometry=geometry,
+            flip=flip,
+            density=density,
+            threshold=threshold,
+            vmax=vmax,
+            figsize=figsize,
         )
-
-        out = widgets.Output()
-
-        slider.observe(lambda change: _render(change["new"]), names="value")
-        display(widgets.VBox([slider, out]))
-        _render(0)
 
     def show(self, component: str = "E", **kwargs):
         """Interactive 3D view of the recorded field on a cutting plane.

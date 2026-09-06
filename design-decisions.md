@@ -20894,7 +20894,18 @@ developer in the browser 2026-09-06 and merged (`7a59be1`).
 `FieldState.mirrored`, `tests/unit/test_field_series.py`,
 `TestMirrored`, chapter section *Field containers*), merged `5b71c52`.
 **Step 2 implemented 2026-09-06** on `feat/raw-monitor-recording`
-(monitors, store schema 3.0, ParaView export); steps 3–5 follow.
+(monitors, store schema 3.0, ParaView export), merged `ddd40e8`.
+**Step 3 implemented 2026-09-06** on `feat/monitor-container-api`:
+the dictionary API is gone (`data`, `data_raw`, `component`, `region`
+on both monitors and both store readers), the pictures are drawn
+through one shared layer (`monitors/_frame_plots.py`: `SeriesView`,
+`plot_frame`, `interact`) that averages only the drawn layer of the
+drawn frame (`_FieldSeries.cell_centred_layer`), the store's time
+reader hands out a lazy `FieldRecording` that reads one frame per
+HDF5 access, tutorial 13, the stripline and field-source how-tos and
+the chapter moved to the containers, `docs/migration-0.7.md` lists
+every renamed spelling.  `cell_centred(squeeze=True)` reproduces the
+old dictionaries' shapes for anyone who wants them.  Steps 4–5 follow.
 
 *Step 2 decisions and findings.*  (a) **The frames' instant.**  The
 solver calls the monitors after the H update of step *n* with the

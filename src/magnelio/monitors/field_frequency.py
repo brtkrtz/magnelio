@@ -15,23 +15,14 @@ import numpy as np
 
 from magnelio.monitors._dft import DFTAccumulator, divide_by_spectrum, source_spectrum
 from magnelio.monitors.base import (
-    _AXES,
     MonitorRegion,
-    PlaneView,
     _corners_array,
     _expand_field_list,
     _region_dual,
     _region_slices,
-    _resolve_component,
     _take_raw,
-    component_mirror_key,
-    mirror_extend,
-    mirror_plane_arrays,
-    mirror_sign,
-    plane_slab_halfwidth,
     region_grid,
     resolve_mirrors,
-    resolve_plane_view,
     resolve_region,
 )
 
@@ -418,16 +409,6 @@ class MonitorFieldFrequency:
     # Data access
     # ------------------------------------------------------------------
 
-    def _squeeze_spatial(self, arr: np.ndarray) -> np.ndarray:
-        """Squeeze length-1 spatial dimensions, keep frequency axis 0."""
-        spatial_squeeze = []
-        for ax in range(1, arr.ndim):
-            if arr.shape[ax] == 1:
-                spatial_squeeze.append(ax)
-        if spatial_squeeze:
-            arr = np.squeeze(arr, axis=tuple(spatial_squeeze))
-        return arr
-
     def _apply_renorm(self, arr: np.ndarray) -> np.ndarray:
         """Divide *arr* (freq axis 0) by the source spectrum.
 
@@ -456,14 +437,14 @@ class MonitorFieldFrequency:
         """Refuse to hand out raw bins under the name of physical fields."""
         if self._source_spectrum is None:
             raise RuntimeError(
-                f"monitor {self.name!r}: .data needs a source reference.  "
+                f"monitor {self.name!r}: .spectrum needs a source reference.  "
                 f"Without one the accumulated bins are the raw DFT of the "
                 f"transient — the field folded with the excitation spectrum, "
                 f"in field units x seconds — not fields per 1 W CW.  A monitor "
                 f"that took part in a scattering run is renormalised "
                 f"automatically; if this one was filled by hand, call "
-                f".renormalize(result.reference_signal).  Read .data_raw for "
-                f"the raw bins themselves."
+                f".renormalize(result.reference_signal).  Read .spectrum_raw for "
+                f"the raw transform itself."
             )
 
     def _spectrum(self, renormalised: bool):
@@ -495,114 +476,19 @@ class MonitorFieldFrequency:
         """The raw transform as a :class:`~magnelio.fields.FieldSpectrum`."""
         return self._spectrum(False)
 
-    @property
-    def data(self) -> dict[str, np.ndarray]:
-        """Recorded fields per 1 W incident CW power, averaged onto cell centres.
-
-        Each bin is divided by the spectrum of the run's excitation, so
-        E is in V/m and H in A/m, both per √W of incident power.  Raises
-        if no source reference is available (see :meth:`renormalize`);
-        :attr:`data_raw` returns the undivided bins instead.  Derived
-        from :attr:`spectrum` on every access.
-
-        Returns
-        -------
-        dict[str, np.ndarray]
-            Keys are component names.  Values have shape
-            ``(n_freqs, <spatial dims>)``, complex128.
-            For a 0D monitor the spatial dims are squeezed away,
-            giving shape ``(n_freqs,)``.
-        """
-        self._require_source()
-        spec = self._spectrum(True)
-        cc = spec.cell_centred(list(spec.components))
-        return {c: self._squeeze_spatial(cc[c]) for c in spec.components}
-
-    @property
-    def data_raw(self) -> dict[str, np.ndarray]:
-        """Raw DFT bins, in field units x seconds.
-
-        The running sum ``Σ field(t_n)·exp(+jω t_n)·dt`` as accumulated,
-        i.e. the field folded with the spectrum of the excitation
-        waveform.  Always returns these, whether or not a source
-        reference is set — :attr:`data` is the physical counterpart.
-
-        Returns
-        -------
-        dict[str, np.ndarray]
-            Same layout as :attr:`data`.
-        """
-        spec = self._spectrum(False)
-        cc = spec.cell_centred(list(spec.components))
-        return {c: self._squeeze_spatial(cc[c]) for c in spec.components}
-
-    def component(self, name: str) -> np.ndarray:
-        """Return DFT data for a single component.
-
-        Parameters
-        ----------
-        name : str
-            Component name, e.g. ``"Ez"``.
-
-        Returns
-        -------
-        np.ndarray
-            Shape ``(n_freqs, <spatial dims>)``, complex128.
-        """
-        d = self.data
-        if name not in d:
-            raise KeyError(f"Component '{name}' not recorded. Available: {list(d.keys())}")
-        return d[name]
-
-    @property
-    def region(self) -> MonitorRegion | None:
-        return self._region
-
     # ------------------------------------------------------------------
-    # Plotting helpers
+    # Pictures — drawn from the spectrum (DD-259)
     # ------------------------------------------------------------------
 
-    def _make_overlay(self, geometry, pv: PlaneView):
-        """Build CrossSectionOverlay for the resolved plotting plane."""
-        if geometry is None:
-            return None
-        from magnelio.post.plot_field import (  # noqa: PLC0415
-            CrossSectionOverlay,
+    def _view(self):
+        from magnelio.monitors._frame_plots import SeriesView  # noqa: PLC0415
+
+        return SeriesView(
+            self.spectrum,
+            name=self.name,
+            mirrors=self._mirrors,
+            grid=getattr(self, "_grid", None),
         )
-
-        (i0, _), (i1, _) = pv.free
-        return CrossSectionOverlay(
-            geometry=geometry,
-            normal=_AXES[pv.normal_idx],
-            position=pv.normal_pos,
-            mirrors=tuple(
-                (0 if m.axis == i0 else 1, m.wall, m.at_low)
-                for m in self._mirrors
-                if m.axis in (i0, i1)
-            ),
-            slab=plane_slab_halfwidth(getattr(self, "_grid", None), pv.normal_idx, pv.normal_pos),
-        )
-
-    @staticmethod
-    def _slice_note(pv: PlaneView, scale_mm: bool) -> str:
-        """Title suffix naming the slice plane (3D monitors only)."""
-        if pv.slice_index is None:
-            return ""
-        if scale_mm:
-            return f", {_AXES[pv.normal_idx]}={pv.normal_pos * 1e3:.3g} mm"
-        return f", {_AXES[pv.normal_idx]}={pv.normal_pos:.3g} m"
-
-    @staticmethod
-    def _apply_phase(arr_complex: np.ndarray, phase_deg: float) -> np.ndarray:
-        """Extract instantaneous value at *phase_deg* from complex phasor."""
-        if phase_deg == 0.0:
-            return arr_complex.real
-        phasor = np.exp(1j * np.deg2rad(phase_deg))
-        return (arr_complex * phasor).real
-
-    # ------------------------------------------------------------------
-    # Plotting
-    # ------------------------------------------------------------------
 
     def plot(
         self,
@@ -625,44 +511,44 @@ class MonitorFieldFrequency:
         normalize_arrows: bool = False,
         threshold: float = 0.02,
         quiver_scale: float | None = None,
-        **kwargs,
     ):
-        """Plot DFT field data.
+        """Plot the pattern at one frequency.
 
-        For 0D monitors: line plot over frequency (ignores *f* / *f_index*).
-        For 2D monitors: colour-map, contour, or quiver plot at a frequency.
-        For 3D monitors: the same plane plots on a slice selected with
-        *normal* and *position*.
+        A point region draws its magnitude over frequency (ignores *f*
+        / *f_index*); a line region the values along its axis; a plane
+        region the pattern on its own plane; a volume the plane selected
+        with *normal* and *position*.  Only the drawn layer is averaged
+        onto cell centres.  The pattern is per 1 W CW (see
+        :attr:`spectrum`).
 
         Parameters
         ----------
         component : str
-            ``"E"`` or ``"H"`` for vector / amplitude plots.
-            ``"Ex"``, ``"Hz"``, … for a single component (scalar only).
+            ``"E"`` or ``"H"`` for a vector plot or the envelope
+            magnitude, ``"Ex"``, ``"Hz"``, … for a single component.
         f : float, optional
-            Frequency [Hz].  Nearest is used.
+            Frequency [Hz]; the nearest frame is drawn.
         f_index : int, optional
-            Frequency index (overrides *f*).
+            Frame index (overrides *f*).
         normal : {"x", "y", "z"}, optional
-            Slice-plane normal for 3D monitors (required there).  For a
-            2D monitor it may be given for validation but is redundant.
+            Slice-plane normal for a volume (required there).
         position : float
             Slice-plane position along *normal* [m]; snapped to the
-            nearest cell-centre plane (3D monitors only).
+            nearest cell-centre plane.
         plot_type : str
             ``"vector"``, ``"color"``, or ``"contour"``.
         phase : float
-            Phase angle [degrees] for extracting the instantaneous field
-            from complex phasors: ``Re(F · exp(j·phase·π/180))``.
-            Ignored for amplitude plots (``component="E"``/``"H"``).
+            Instant of the complex pattern in degrees,
+            ``Re(F · exp(j·phase))``; a group magnitude is the envelope
+            and ignores it.
         ax : matplotlib.axes.Axes, optional
         scale_mm : bool
         cmap : str or None
             Colourmap (None = auto-select).
-        geometry : list, optional
-            Geometry objects for cross-section overlay (2D only).
+        geometry : GeometryModel, optional
+            Cross-section overlay of the plane.
         flip : bool
-            Swap horizontal and vertical axes (2D only).
+            Swap horizontal and vertical axes.
         vmin, vmax : float, optional
             Colour limits (scalar) or arrow clipping (vector).
         density : int
@@ -679,189 +565,28 @@ class MonitorFieldFrequency:
         fig : matplotlib.figure.Figure
         ax : matplotlib.axes.Axes
         """
-        r = self._region
-        if r is None:
-            raise RuntimeError("Monitor not attached / no data.")
+        from magnelio.monitors._frame_plots import plot_frame  # noqa: PLC0415
 
-        data = self.data
-        ndim = r.ndim
-        is_field_group = component in ("E", "H")
-
-        # --- 0D: line plot over frequency ---
-        if ndim == 0:
-            from magnelio.monitors.plotting import plot_freq_0d  # noqa: PLC0415
-
-            arr = _resolve_component(data, component)
-            # For 0D freq plots, show magnitude by default
-            what = "abs"
-            return plot_freq_0d(
-                self.freqs,
-                arr,
-                component,
-                self.name,
-                what=what,
-                ax=ax,
-            )
-
-        # Resolve frequency index
-        if f_index is None:
-            if f is not None:
-                f_index = int(np.argmin(np.abs(self.freqs - f)))
-            else:
-                f_index = 0
-
-        # --- 1D: line plot along the free axis ---
-        if ndim == 1:
-            from magnelio.monitors.plotting import plot_time_1d  # noqa: PLC0415
-
-            arr = _resolve_component(data, component)
-            if is_field_group:
-                vals = np.abs(arr[f_index]) if np.iscomplexobj(arr) else arr[f_index]
-                label = f"|{component}|"
-                title = f"{self.name} — |{component}|, f={self.freqs[f_index]:.4e} Hz"
-            else:
-                vals = self._apply_phase(arr[f_index], phase)
-                label = component
-                title = (
-                    f"{self.name} — {component}, f={self.freqs[f_index]:.4e} Hz, phase={phase:.0f}°"
-                )
-            axes_labels = ["x", "y", "z"]
-            for i, c in enumerate((r.xc, r.yc, r.zc)):
-                if len(c) > 1:
-                    fld, comp_axis = component_mirror_key(component)
-                    for spec in self._mirrors:
-                        if spec.axis != i:
-                            continue
-                        c, vals = mirror_extend(
-                            c,
-                            vals,
-                            spec,
-                            0,
-                            mirror_sign(fld, comp_axis, spec.axis, spec.kind),
-                        )
-                    return plot_time_1d(
-                        c,
-                        vals,
-                        label,
-                        axes_labels[i],
-                        title,
-                        ax=ax,
-                        scale_mm=scale_mm,
-                    )
-
-        # --- 2D / 3D: plane plot (3D via normal/position slice) ---
-        pv = resolve_plane_view(r, normal, position)
-        (i0, c0), (i1, c1) = pv.free
-        note = self._slice_note(pv, scale_mm)
-
-        from magnelio.post.plot_field import (  # noqa: PLC0415
-            plot_field_scalar,
-            plot_field_vector,
-        )
-
-        overlay = self._make_overlay(geometry, pv)
-
-        if plot_type == "vector":
-            field_group = component if is_field_group else "E"
-            comp_u = f"{field_group}{_AXES[i0]}"
-            comp_v = f"{field_group}{_AXES[i1]}"
-            comp_w = f"{field_group}{_AXES[pv.normal_idx]}"
-            if comp_u not in data or comp_v not in data:
-                raise KeyError(
-                    f"Need both {comp_u} and {comp_v} recorded.  Available: {list(data.keys())}"
-                )
-            u_arr = self._apply_phase(pv.take2d(data[comp_u][f_index]), phase)
-            v_arr = self._apply_phase(pv.take2d(data[comp_v][f_index]), phase)
-            w_arr = (
-                self._apply_phase(pv.take2d(data[comp_w][f_index]), phase)
-                if comp_w in data
-                else None
-            )
-            c0, c1, (u_arr, v_arr, w_arr) = mirror_plane_arrays(
-                pv,
-                self._mirrors,
-                c0,
-                c1,
-                [
-                    (u_arr, field_group, i0),
-                    (v_arr, field_group, i1),
-                    (w_arr, field_group, pv.normal_idx),
-                ],
-            )
-            title = (
-                f"{self.name} — {field_group}-field, "
-                f"f={self.freqs[f_index]:.4e} Hz, "
-                f"phase={phase:.0f}°{note}"
-            )
-            return plot_field_vector(
-                c0,
-                c1,
-                u_arr,
-                v_arr,
-                w=w_arr,
-                xlabel=_AXES[i0],
-                ylabel=_AXES[i1],
-                wlabel=_AXES[pv.normal_idx],
-                title=title,
-                ax=ax,
-                scale_mm=scale_mm,
-                cmap=cmap or "viridis",
-                density=density,
-                normalize_arrows=normalize_arrows,
-                vmax=vmax,
-                threshold=threshold,
-                quiver_scale=quiver_scale,
-                flip=flip,
-                geometry=overlay,
-            )
-
-        # Scalar plot (color / contour)
-        arr = _resolve_component(data, component)
-        is_amplitude = is_field_group
-
-        if is_amplitude:
-            # |E| is phase-independent and always real+non-negative
-            vals = np.abs(arr[f_index]) if np.iscomplexobj(arr) else arr[f_index]
-            effective_cmap = cmap or "viridis"
-            sym = False
-            if vmin is None:
-                vmin = 0.0
-            title = f"{self.name} — |{component}|, f={self.freqs[f_index]:.4e} Hz{note}"
-        else:
-            vals = self._apply_phase(arr[f_index], phase)
-            effective_cmap = cmap or "RdBu_r"
-            sym = True
-            title = (
-                f"{self.name} — {component}, "
-                f"f={self.freqs[f_index]:.4e} Hz, phase={phase:.0f}°{note}"
-            )
-        vals = pv.take2d(vals)
-        fld, comp_axis = component_mirror_key(component)
-        c0, c1, (vals,) = mirror_plane_arrays(
-            pv,
-            self._mirrors,
-            c0,
-            c1,
-            [(vals, fld, comp_axis)],
-        )
-
-        return plot_field_scalar(
-            c0,
-            c1,
-            vals,
-            xlabel=_AXES[i0],
-            ylabel=_AXES[i1],
-            title=title,
-            clabel=component,
+        view = self._view()
+        return plot_frame(
+            view,
+            component,
+            view.index_of(f, f_index),
+            phase=phase,
+            normal=normal,
+            position=position,
+            plot_type=plot_type,
             ax=ax,
             scale_mm=scale_mm,
-            cmap=effective_cmap,
+            cmap=cmap,
+            geometry=geometry,
+            flip=flip,
             vmin=vmin,
             vmax=vmax,
-            symmetric=sym,
-            plot_type=plot_type,
-            flip=flip,
-            geometry=overlay,
+            density=density,
+            normalize_arrows=normalize_arrows,
+            threshold=threshold,
+            quiver_scale=quiver_scale,
         )
 
     def interact(
@@ -881,175 +606,30 @@ class MonitorFieldFrequency:
         vmax: float | None = None,
         figsize: tuple[float, float] | None = None,
     ):
-        """Interactive frequency slider for DFT field snapshots (Jupyter notebook).
+        """A notebook slider over the frequencies (needs ipywidgets).
 
-        Requires ``ipywidgets``.  The colour range (scalar) or arrow
-        scale (vector) is fixed across all frequencies for visual stability.
-
-        Parameters
-        ----------
-        component : str
-            ``"E"`` or ``"H"`` for vector / amplitude plots.
-            ``"Ex"``, ``"Ez"``, … for individual component scalar plots.
-        normal : {"x", "y", "z"}, optional
-            Slice-plane normal for 3D monitors (required there); the
-            slider then runs over frequency at a fixed slice plane.
-        position : float
-            Slice-plane position along *normal* [m] (3D monitors only).
-        plot_type : str
-            ``"vector"``, ``"color"``, or ``"contour"``.
-        phase : float
-            Phase angle [degrees] for instantaneous field extraction.
-        scale_mm : bool
-            Use millimetres for spatial axes.
-        cmap : str or None
-            Colormap (None = auto-select).
-        geometry : list, optional
-            Geometry objects for cross-section overlay (2D only).
-        flip : bool
-            Swap horizontal and vertical axes (2D only).
-        density : int
-            Target arrows per axis (vector mode only).
-        threshold : float
-            Suppress arrows below this fraction of peak (vector mode only).
-        vmax : float or None
-            Clip arrow length at this magnitude (vector mode only).
-        figsize : (float, float) or None
-            Figure size in inches ``(width, height)``.
+        The colour range (scalar) or arrow scale (vector) is fixed over
+        every frequency for visual stability.  The arguments are those
+        of :meth:`plot`.
         """
-        import ipywidgets as widgets  # noqa: PLC0415
-        import matplotlib.pyplot as plt  # noqa: PLC0415
-        from IPython.display import clear_output, display  # noqa: PLC0415
+        from magnelio.monitors._frame_plots import interact as _interact  # noqa: PLC0415
 
-        r = self._region
-        data = self.data
-
-        if r is None:
-            raise RuntimeError("Monitor not attached / no data.")
-        if r.ndim == 0:
-            raise TypeError("0D monitors have no frequency axis to slide — use plot() instead.")
-
-        is_field_group = component in ("E", "H")
-
-        # Resolve the plotting plane once (validates normal/position for
-        # 3D monitors); slicing across the leading frequency axis needs
-        # the spatial slice axis shifted by one.
-        pv = resolve_plane_view(r, normal, position) if r.ndim >= 2 else None
-
-        def _all_freqs_2d(arr):
-            if pv is None or pv.slice_index is None:
-                return arr
-            return np.take(arr, pv.slice_index, axis=pv.normal_idx + 1)
-
-        if plot_type == "vector":
-            # --- Vector mode ---
-            if pv is None:
-                raise ValueError(
-                    "Vector interact requires a 2D monitor or a 3D monitor with a slice plane."
-                )
-
-            (i0, c0), (i1, _c1) = pv.free
-
-            field_group = component if is_field_group else "E"
-            comp_u = f"{field_group}{_AXES[i0]}"
-            comp_v = f"{field_group}{_AXES[i1]}"
-            comp_w = f"{field_group}{_AXES[pv.normal_idx]}"
-            if comp_u not in data or comp_v not in data:
-                raise KeyError(f"Need both {comp_u} and {comp_v} recorded.")
-
-            # Pre-compute fixed arrow scale (at given phase), matching
-            # plot_field_vector's auto-scale reference: full 3D
-            # magnitude when the normal component is recorded
-            all_u = self._apply_phase(_all_freqs_2d(data[comp_u]), phase)
-            all_v = self._apply_phase(_all_freqs_2d(data[comp_v]), phase)
-            all_mag2 = all_u**2 + all_v**2
-            if comp_w in data:
-                all_mag2 = all_mag2 + self._apply_phase(_all_freqs_2d(data[comp_w]), phase) ** 2
-            all_mag = np.sqrt(all_mag2)
-            global_max_mag = float(np.max(all_mag)) if np.any(all_mag > 0) else 1.0
-            effective_max = min(global_max_mag, vmax) if vmax is not None else global_max_mag
-            sc = 1e3 if scale_mm else 1.0
-            sx = max(1, len(c0) // density)
-            xs = c0[::sx]
-            dx = float(np.mean(np.diff(xs))) * sc if len(xs) > 1 else 1.0
-            fixed_scale = effective_max / dx if effective_max > 0 else 1.0
-
-            def _render(f_index):
-                with out:
-                    clear_output(wait=True)
-                    fig, ax = plt.subplots(figsize=figsize)
-                    self.plot(
-                        component=component,
-                        f_index=f_index,
-                        normal=normal,
-                        position=position,
-                        plot_type="vector",
-                        phase=phase,
-                        ax=ax,
-                        scale_mm=scale_mm,
-                        density=density,
-                        cmap=cmap,
-                        geometry=geometry,
-                        flip=flip,
-                        quiver_scale=fixed_scale,
-                        threshold=threshold,
-                        vmax=vmax,
-                    )
-                    plt.show()
-        else:
-            # --- Scalar mode ---
-            arr = _all_freqs_2d(_resolve_component(data, component))
-            is_amplitude = is_field_group
-
-            if is_amplitude:
-                derived = np.abs(arr) if np.iscomplexobj(arr) else arr
-                effective_cmap = cmap or "viridis"
-            else:
-                derived = self._apply_phase(arr, phase)
-                effective_cmap = cmap or "RdBu_r"
-
-            global_vmax = float(np.max(np.abs(derived))) if np.any(derived != 0) else 1.0
-            fixed_vmin = 0.0 if is_amplitude else -global_vmax
-            fixed_vmax = global_vmax
-
-            def _render(f_index):
-                with out:
-                    clear_output(wait=True)
-                    fig, ax = plt.subplots(figsize=figsize)
-                    self.plot(
-                        component=component,
-                        f_index=f_index,
-                        normal=normal,
-                        position=position,
-                        plot_type=plot_type,
-                        phase=phase,
-                        ax=ax,
-                        scale_mm=scale_mm,
-                        cmap=effective_cmap,
-                        geometry=geometry,
-                        vmin=fixed_vmin,
-                        vmax=fixed_vmax,
-                        flip=flip,
-                    )
-                    plt.show()
-
-        # Slider with human-readable frequency labels
-        freqs_ghz = self.freqs * 1e-9
-        options = [(f"{fg:.4g} GHz", i) for i, fg in enumerate(freqs_ghz)]
-        slider = widgets.SelectionSlider(
-            options=options,
-            value=0,
-            description="Freq:",
-            continuous_update=False,
-            style={"description_width": "initial"},
-            layout=widgets.Layout(width="60%"),
+        return _interact(
+            self._view(),
+            component,
+            normal=normal,
+            position=position,
+            plot_type=plot_type,
+            phase=phase,
+            scale_mm=scale_mm,
+            cmap=cmap,
+            geometry=geometry,
+            flip=flip,
+            density=density,
+            threshold=threshold,
+            vmax=vmax,
+            figsize=figsize,
         )
-
-        out = widgets.Output()
-
-        slider.observe(lambda change: _render(change["new"]), names="value")
-        display(widgets.VBox([slider, out]))
-        _render(0)
 
     def show(self, component: str = "E", **kwargs):
         """Interactive 3D view of the DFT field on a cutting plane.

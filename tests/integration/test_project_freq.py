@@ -87,14 +87,14 @@ def _ref_freq_data():
     an = _tem_analysis()
     an.run(excited=[("port1", 0)], energy_stop_db=None, total_time_steps=N_TOTAL)
     mon = an.monitors[0]
-    return {c: v.copy() for c, v in mon.data.items()}
+    return {c: v.copy() for c, v in mon.spectrum.cell_centred(squeeze=True).items()}
 
 
 def _assert_freq_matches(reader_mon, ref_data, tag):
     assert set(reader_mon.components) == set(ref_data), f"{tag}: comps differ"
     assert np.array_equal(reader_mon.f, FREQS), f"{tag}: freq axis differs"
     for comp, ref in ref_data.items():
-        got = reader_mon.component(comp)
+        got = reader_mon.spectrum.cell_centred([comp], squeeze=True)[comp]
         assert got.shape == ref.shape, f"{tag} {comp}: shape {got.shape} != {ref.shape}"
         assert np.array_equal(got, ref), (
             f"{tag} {comp}: not bit-exact, max|Δ|={float(np.max(np.abs(got - ref))):.3e}"
@@ -126,8 +126,10 @@ def test_streamed_freq_matches_in_ram(tmp_path):
     # accumulators — whose data still matches, so .plot() works off-store.
     hyd = rmon._hydrate()
     for comp, ref in ref_data.items():
-        assert np.array_equal(hyd.component(comp), ref), f"hydrate {comp}"
-    assert hyd.region is not None and hyd.region.ndim == 2
+        assert np.array_equal(hyd.spectrum.cell_centred([comp], squeeze=True)[comp], ref), (
+            f"hydrate {comp}"
+        )
+    assert hyd._region is not None and hyd._region.ndim == 2
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -148,7 +150,7 @@ def test_freq_partial_then_bit_exact_across_resume(tmp_path):
     )
     # A partial DFT is already readable — same shape, but not yet the full sum.
     partial = open_project(p).monitors["EHfreq"]
-    pz = partial.component("Ez")
+    pz = partial.spectrum.cell_centred(["Ez"], squeeze=True)["Ez"]
     assert pz.shape == ref_data["Ez"].shape
     assert not np.array_equal(pz, ref_data["Ez"]), "partial DFT should differ from the finished one"
 
@@ -204,7 +206,7 @@ def test_interval_survives_the_store_round_trip(tmp_path):
     # to the PEC plane the monitor sits on, so it holds only roundoff.
     ref = _ref_freq_data()
     comp = max(ref, key=lambda c: float(np.max(np.abs(ref[c]))))
-    got = mon.component(comp)
+    got = mon.spectrum.cell_centred([comp], squeeze=True)[comp]
     scale = float(np.max(np.abs(ref[comp])))
     assert not np.array_equal(got, ref[comp])
     assert float(np.max(np.abs(got - ref[comp]))) < 1e-2 * scale

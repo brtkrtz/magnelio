@@ -150,7 +150,7 @@ class TestSourceDrive:
         assert drive.values.max() == pytest.approx(2.0, rel=2e-3)
         assert isinstance(res.excitations[0].waveform, signals.WaveformGaussian)
         assert res.monitors["probe"] is probe
-        ex = np.asarray(probe.component("Ex"))
+        ex = np.asarray(probe.recording.cell_centred(["Ex"], squeeze=True)["Ex"])
         assert np.max(np.abs(ex)) > 1e-3
         assert res.energy_trace is not None
 

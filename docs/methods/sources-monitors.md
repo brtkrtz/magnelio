@@ -321,9 +321,10 @@ Both series may hold a subset of the six components (`components`);
 a frame fills the rest with zeros.  A recording's grid is whatever
 region was recorded — a plane monitor's is one cell thick, with the
 normal component on one node plane and the tangential ones on two,
-which is the layer a field picture stands for.  From 0.7.0 the field
-monitors record into these containers; today they are the vocabulary
-for fields you assemble or resample yourself.
+which is the layer a field picture stands for.  The field monitors
+record into these containers (`monitor.recording`, `monitor.spectrum`),
+and they are the vocabulary for fields you assemble or resample
+yourself.
 
 ## Field, flux and frequency monitors
 
@@ -347,8 +348,9 @@ at the excitation source) is in-house bookkeeping (DD-085).
 A field monitor records the *grid quantities on the Yee positions* of
 its region — a copy of the solver's own samples, nothing averaged — and
 hands them out as a `FieldRecording` (`monitor.recording`) or, for the
-running transform, a `FieldSpectrum` (`monitor.spectrum`); the
-cell-centred `data` is derived from those on access.  The recording's
+running transform, a `FieldSpectrum` (`monitor.spectrum`); a
+cell-centred array is one call away (`recording.cell_centred(...)`),
+but nothing is averaged until asked for.  The recording's
 `times` are the instants of the electric field, `times_h` those of the
 magnetic one, half a step later.  A project store keeps the same
 staggered frames, one dataset per component, and the ParaView export
@@ -382,8 +384,9 @@ waveform *is* the incident power-wave amplitude $a(t)$ in $\sqrt{\rm W}$
 (DD-078), dividing it out leaves the field of a **1 W CW excitation** at
 each monitor frequency — E in V/m, H in A/m, per $\sqrt{\rm W}$ of
 incident power.  A run performs that division on its own monitors, so
-`.data` is in those units from the moment the run returns; `.data_raw`
-exposes the undivided bins for callers who want the transient itself.
+`.spectrum` is in those units from the moment the run returns;
+`.spectrum_raw` exposes the undivided transform for callers who want
+the transient itself.
 For a TE/TM feed the waveform launches a frequency-dependent power —
 the mode's wave impedance varies across the band — and the run divides
 additionally by the ratio $|a(f)|/|W(f)|$ of the incident wave it

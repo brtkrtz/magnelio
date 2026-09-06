@@ -30,7 +30,7 @@ def _mesh():
 def _ringdown_frequency(result, monitor_name="probe"):
     """Peak of the probe spectrum [Hz], parabolically interpolated."""
     mon = result.monitors[monitor_name]
-    sig = mon.component("Ey").ravel()
+    sig = mon.recording.cell_centred(["Ey"], squeeze=True)["Ey"].ravel()
     t = mon.t
     spectrum = np.abs(np.fft.rfft(sig * np.hanning(sig.size)))
     df = 1.0 / (sig.size * (t[1] - t[0]))

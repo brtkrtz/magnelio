@@ -2070,6 +2070,47 @@ def _list_run_freq(run_dir: Path) -> list[str]:
         return [name for name in f if isinstance(f[name], h5py.Group)]
 
 
+class _LazyRecording:
+    """A :class:`~magnelio.fields.FieldRecording` over a store reader.
+
+    Frames are read from ``results.h5`` when asked for (one read per
+    frame, the last one kept), a component's stack when asked for; the
+    reader's grid, dual widths and time bases are its own.  Everything
+    else — ``cell_centred``, ``plot``, ``show`` — is the container's.
+    """
+
+    def __new__(cls, reader):
+        from magnelio.fields.series import FieldRecording  # noqa: PLC0415
+
+        class _Lazy(FieldRecording):
+            def _frame_arrays(self, i: int):
+                return reader.frame(i)._raw
+
+            def component(self, name: str) -> np.ndarray:
+                if name not in reader._components:
+                    raise KeyError(
+                        f"component {name!r} was not recorded; recorded: {reader.components}"
+                    )
+                return reader._read(name) / self._lengths()[name][None]
+
+            @property
+            def components(self) -> tuple[str, ...]:
+                return tuple(c for c in _YEE_ORDER if c in reader._components)
+
+            @property
+            def is_complex(self) -> bool:
+                return False
+
+        rec = FieldRecording._from_raw(
+            reader._subgrid, reader._t, {}, dual=reader._dual, dt=reader._dt
+        )
+        rec.__class__ = _Lazy
+        return rec
+
+
+_YEE_ORDER = ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz")
+
+
 class _LoadedFieldMonitor:
     """Lazy reader over one streamed ``MonitorFieldTime`` (DD-070, DD-259).
 
@@ -2175,76 +2216,30 @@ class _LoadedFieldMonitor:
 
     @property
     def recording(self):
-        """Every frame as a :class:`~magnelio.fields.FieldRecording` (reads the whole record)."""
-        from magnelio.fields.series import FieldRecording  # noqa: PLC0415
+        """The frames as a :class:`~magnelio.fields.FieldRecording`, read on demand.
 
-        raw = {c: self._read(c) for c in self._components}
-        return FieldRecording._from_raw(self._subgrid, self._t, raw, dual=self._dual, dt=self._dt)
+        ``frame(i)`` costs one HDF5 read; ``component(name)`` reads that
+        component's whole stack.  Nothing is loaded until asked for.
+        """
+        return _LazyRecording(self)
 
-    @staticmethod
-    def _squeeze_spatial(arr: np.ndarray) -> np.ndarray:
-        squeeze = tuple(ax for ax in range(1, arr.ndim) if arr.shape[ax] == 1)
-        return np.squeeze(arr, axis=squeeze) if squeeze else arr
+    def _view(self):
+        from magnelio.monitors._frame_plots import SeriesView  # noqa: PLC0415
 
-    def component(self, comp: str) -> np.ndarray:
-        """One component averaged onto cell centres, shape ``(n_times, <spatial>)``."""
-        if comp not in self._components:
-            raise KeyError(
-                f"component {comp!r} not recorded; available: {self._components}",
-            )
-        rec = self.recording
-        return self._squeeze_spatial(rec.cell_centred([comp])[comp])
+        return SeriesView(self.recording, name=self.name, mirrors=self._mirrors, grid=self._grid)
 
-    @property
-    def data(self) -> dict[str, np.ndarray]:
-        """All recorded components on cell centres, stacked along time."""
-        if self._n == 0:
-            return {}
-        rec = self.recording
-        cc = rec.cell_centred(list(rec.components))
-        return {c: self._squeeze_spatial(cc[c]) for c in rec.components}
+    def plot(self, component: str = "E", t=None, t_index=None, **kwargs):
+        """Plot one stored frame (see :meth:`MonitorFieldTime.plot`); one frame is read."""
+        from magnelio.monitors._frame_plots import plot_frame  # noqa: PLC0415
 
-    def _hydrate(self):
-        """Build an in-RAM :class:`MonitorFieldTime` for plotting reuse."""
-        from magnelio.fields._interp import _region_slices  # noqa: PLC0415
-        from magnelio.monitors.base import resolve_region  # noqa: PLC0415
-        from magnelio.monitors.field_time import MonitorFieldTime  # noqa: PLC0415
+        view = self._view()
+        return plot_frame(view, component, view.index_of(t, t_index), **kwargs)
 
-        times = self._t if self._n > 0 else np.array([0.0])
-        mon = MonitorFieldTime(
-            corners=self.corners,
-            times=times,
-            fields=list(self.fields),
-            name=self.name,
-        )
-        raw = {c: self._read(c) for c in self._components}
-        mon._recorded_times = [float(x) for x in self._t]
-        mon._next_idx = self._n
-        mon._n_recorded = self._n
-        mon._snapshots = [
-            {c: np.asarray(raw[c][ti]) for c in self._components} for ti in range(self._n)
-        ]
-        mon._subgrid = self._subgrid
-        mon._dual = self._dual
-        mon._dt = self._dt or 0.0
-        if self._grid is not None:
-            mon._region = resolve_region(self.corners, self._grid)
-            mon._grid = self._grid
-        else:
-            mon._region = resolve_region(None, self._subgrid)
-            mon._grid = self._subgrid
-        r = mon._region
-        mon._slices = {c: _region_slices(r.ix, r.iy, r.iz, c) for c in self._components}
-        mon._mirrors = self._mirrors
-        return mon
+    def interact(self, component: str = "E", **kwargs):
+        """A notebook slider over the stored frames (see :meth:`MonitorFieldTime.interact`)."""
+        from magnelio.monitors._frame_plots import interact as _interact  # noqa: PLC0415
 
-    def plot(self, *args, **kwargs):
-        """Plot the recorded field (delegates to :class:`MonitorFieldTime`)."""
-        return self._hydrate().plot(*args, **kwargs)
-
-    def interact(self, *args, **kwargs):
-        """Interactive time-step slider (delegates to :class:`MonitorFieldTime`)."""
-        return self._hydrate().interact(*args, **kwargs)
+        return _interact(self._view(), component, **kwargs)
 
     def show(self, component: str = "E", **kwargs):
         """Interactive 3D view of the stored field (see :func:`magnelio.plots.show_field`).
@@ -2329,11 +2324,11 @@ class _LoadedFreqMonitor:
     *partial* DFT, exactly like the streaming S-parameters).  Metadata loads
     eagerly, each component's complex bins on demand.
 
-    ``.data`` / ``.component`` divide by the spectrum of the run's stored
-    excitation and are therefore fields per 1 W CW, matching the in-RAM
-    monitor; ``.data_raw`` returns the undivided bins.  ``.plot()``
-    hydrates a real :class:`MonitorFieldFrequency`, reference included, to
-    reuse its plotting machinery.
+    ``.spectrum`` divides by the spectrum of the run's stored excitation
+    and is therefore the pattern per 1 W CW, matching the in-RAM monitor;
+    ``.spectrum_raw`` is the undivided transform.  ``.plot()`` hydrates a
+    real :class:`MonitorFieldFrequency`, reference included, to reuse its
+    plotting machinery.
     """
 
     def __init__(self, run_dir: Path, name: str, reference=None, grid=None, incident=None) -> None:
@@ -2392,7 +2387,6 @@ class _LoadedFreqMonitor:
     def components(self) -> list[str]:
         return list(self._components)
 
-    @staticmethod
     def _squeeze_spatial(arr: np.ndarray) -> np.ndarray:
         """Squeeze length-1 spatial axes, keep the frequency axis 0."""
         squeeze = tuple(ax for ax in range(1, arr.ndim) if arr.shape[ax] == 1)
@@ -2440,13 +2434,6 @@ class _LoadedFreqMonitor:
                 f"per 1 W CW.  Read .data_raw for the raw bins."
             )
 
-    def component(self, comp: str) -> np.ndarray:
-        """One component per 1 W CW on cell centres, shape ``(n_freqs, <spatial>)``."""
-        if comp not in self._components:
-            raise KeyError(f"component {comp!r} not recorded; available: {self._components}")
-        self._require_source()
-        return self._hydrate().component(comp)
-
     def _incident_amplitude(self) -> np.ndarray | None:
         """|a(f)| / |W(f)| on the monitor frequencies (DD-198), or None.
 
@@ -2479,17 +2466,6 @@ class _LoadedFreqMonitor:
         """Set (or replace) the excitation the bins are divided by."""
         self._reference = source_signal
         self._spectrum = None
-
-    @property
-    def data(self) -> dict:
-        """Recorded fields per 1 W incident CW power (E in V/m, H in A/m), on cell centres."""
-        self._require_source()
-        return self._hydrate().data
-
-    @property
-    def data_raw(self) -> dict:
-        """Raw DFT bins on cell centres, in field units x seconds (undivided)."""
-        return self._hydrate().data_raw
 
     def _hydrate(self):
         """Build an in-RAM :class:`MonitorFieldFrequency` for plotting reuse."""
