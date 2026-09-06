@@ -63,6 +63,47 @@ triangles that mean nothing — and a 3D handle competes with the camera
 for the mouse.  Axis-aligned, slider-driven cutting planes are also
 what users of commercial EM suites expect.
 
+## Fields on the cut
+
+The same viewer shows a field: a monitor's recording, or a
+{class}`~magnelio.fields.FieldState` such as an eigenmode.  The cell
+layer the cut exposes is laid over the cut as a coloured sheet, and the
+position slider walks that layer through the recorded volume.
+
+```python
+monitor.show()                                   # |E| with arrows, mid-plane of the region
+monitor.show("Ez", normal="y", position=0.0)     # one signed component, diverging colours
+monitor.show(geometry=model, mesh=mesh)          # with the solids; metal cut out of the sheet
+pattern.show(f=10e9, phase=90.0)                 # a frequency monitor at a phase
+eigen.field(0).show("H", geometry=model)         # an eigenmode
+```
+
+| Item | Appearance |
+|---|---|
+| Field sheet | The exposed layer of cells, each coloured by the magnitude of `E` or `H` (dark to bright) or by one signed component (`Ex`, `Hz`, …; blue–white–red about zero).  The colour ceiling is the peak over every frame and layer of the recording, so a wave keeps its colour while the frame slider runs; `vmax=` fixes it. |
+| Arrows | For `E` or `H`: arrows on an even lattice over the layer, all three components, the longest spanning one lattice spacing; arrows below 2 % of the ceiling are left out.  `plot_type="color"` drops them. |
+| Metal | With `mesh=`, cells buried in a perfect conductor are cut out of the sheet, so the solids' cut faces show through where no field is defined. |
+
+The toolbar gains a **play button** and a **frame slider** (time or
+frequency, with the value beside it), a **phase slider** for complex
+data (a frequency monitor's pattern at `Re(F·e^{jφ})`), and a
+**Field** selector that switches between the recorded components;
+*Field on cut* and *Field arrows* join the *Show* menu.  Play runs the
+frames in a loop at `fps=` (default 4) — each frame is one layer
+computed and sent to the browser, so the rate is bounded by the size
+of the layer.  In a script or a documentation build the initial frame
+is chosen with `t=`, `f=` or `frame=`.
+
+Two things the picture is not.  It is not a plane: every value is the
+cell-centre average of the staggered components in one layer of cells,
+the same convention as the 2D slice plots.  And it is not mirrored:
+a model with symmetry planes shows its modelled half here, as the
+geometry view does.
+
+A monitor read back from a project store (`project.monitors[...]`)
+shows the same way; its frames are read from disk one at a time as the
+slider moves, so a volume monitor of any size opens at once.
+
 ## Rendering modes
 
 ```{list-table}
@@ -126,5 +167,6 @@ needed for Magnelio's viewer.
   no screen-space labels): port names lie in the port plane, element
   names face the initial camera; both scale with the model.
 - The cutting plane is axis-aligned by design (see above).
-- Field monitors are not yet shown in 3D; use the ParaView export
-  ({doc}`sources-monitors`) or the 2D slice plots.
+- Fields are shown on the cutting plane only — one layer at a time, not
+  as a volume rendering or an iso-surface; the ParaView export
+  ({doc}`sources-monitors`) covers those.

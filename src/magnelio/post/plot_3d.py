@@ -68,6 +68,8 @@ _ANGULAR_DEFLECTION = 0.15
 _GROUPS = (
     ("solids", "Solids"),
     ("cut cells", "Grid on cut"),
+    ("field", "Field on cut"),
+    ("arrows", "Field arrows"),
     ("ports", "Ports"),
     ("elements", "Lumped elements"),
     ("wires", "Wires"),
@@ -263,6 +265,7 @@ class _Scene:
     grid: Any = None  # the FIT grid dataset (display units), or None
     grid_actor: Any = None  # the cut sheet
     domain_actor: Any = None
+    field_view: Any = None  # a post.field_3d._FieldView laid on the cut, or None
     overlays: list[_Overlay] = field(default_factory=list)
     hidden_groups: set[str] = field(default_factory=set)
     cut: _CutState = field(default_factory=_CutState)
@@ -276,6 +279,10 @@ class _Scene:
             present.add("cut cells")
         if self.domain_actor is not None:
             present.add("domain")
+        if self.field_view is not None:
+            present.add("field")
+            if self.field_view.has_arrows:
+                present.add("arrows")
         present.update(o.group for o in self.overlays)
         return [key for key, _ in _GROUPS if key in present]
 
@@ -372,13 +379,17 @@ def _grid_dataset(mesh: Mesh, *, unit_scale: float):
     return rg
 
 
-def _bounds_of(bodies: list[_Body], grid) -> tuple[float, ...]:
+def _bounds_of(bodies: list[_Body], grid, extent=None) -> tuple[float, ...]:
+    """Scene bounds: the grid's, else the union of the bodies and *extent*."""
     if grid is not None:
         return tuple(float(b) for b in grid.bounds)
-    if not bodies:
+    boxes = [tuple(b.polydata.bounds) for b in bodies]
+    if extent is not None:
+        boxes.append(tuple(float(v) for v in extent))
+    if not boxes:
         return (-1.0, 1.0, -1.0, 1.0, -1.0, 1.0)
-    lo = np.min([b.polydata.bounds[0::2] for b in bodies], axis=0)
-    hi = np.max([b.polydata.bounds[1::2] for b in bodies], axis=0)
+    lo = np.min([bx[0::2] for bx in boxes], axis=0)
+    hi = np.max([bx[1::2] for bx in boxes], axis=0)
     out = []
     for a, b in zip(lo, hi):
         out += [float(a), float(b)]
@@ -547,6 +558,8 @@ def _apply_cut(scene: _Scene) -> None:
             scene.grid_actor.SetVisibility("cut cells" in shown)
         elif scene.grid_actor is not None:
             scene.grid_actor.SetVisibility(False)
+    if scene.field_view is not None:
+        scene.field_view.apply(scene, shown)
 
 
 # ---------------------------------------------------------------------------
@@ -770,7 +783,7 @@ def _add_overlays(
     diag = _diag(bounds)
     radius = diag * 2.5e-3
     label_height = 0.035 * diag
-    shapes = list(geometry)
+    shapes = list(geometry) if geometry is not None else []
     wires = [s for s in shapes if isinstance(s, ThinWire)]
     if show_wires and wires:
         geo_scale = 1.0
@@ -861,6 +874,10 @@ def _attach_controls(scene: _Scene, server) -> Any:
                 get_viewer(scene.plotter).update()
             except Exception:  # pragma: no cover - viewer not shown yet
                 pass
+
+    field_items = None
+    if scene.field_view is not None:
+        field_items = scene.field_view.attach_controls(server, key, refresh)
 
     def push_state(new: _CutState, *, record: bool = True) -> None:
         if record and new != scene.cut:
@@ -975,6 +992,8 @@ def _attach_controls(scene: _Scene, server) -> Any:
             variant="plain",
             style="width: 150px; margin-left: 8px;",
         )
+        if field_items is not None:
+            field_items()
 
     return menu_items
 
@@ -1001,6 +1020,8 @@ def _build_scene(
     scale_mm,
     camera,
     off_screen,
+    field_view=None,
+    extent=None,
 ) -> _Scene:
     import pyvista as pv  # noqa: PLC0415
 
@@ -1008,10 +1029,10 @@ def _build_scene(
 
     unit_scale = 1e3 if scale_mm else 1.0
     unit = "mm" if scale_mm else "m"
-    shapes = [s for s in geometry if not isinstance(s, ThinWire)]
+    shapes = [s for s in geometry if not isinstance(s, ThinWire)] if geometry is not None else []
     bodies = _shape_bodies(shapes, unit_scale=unit_scale, quality=quality)
     grid = _grid_dataset(mesh, unit_scale=unit_scale) if mesh is not None else None
-    bounds = _bounds_of(bodies, grid)
+    bounds = _bounds_of(bodies, grid, extent)
 
     kwargs: dict[str, Any] = {"off_screen": off_screen}
     if size is not None:
@@ -1047,6 +1068,7 @@ def _build_scene(
         cut=cut_state,
         initial_cut=_CutState(cut_state.axis, cut_state.position, cut_state.flip),
         unit=unit,
+        field_view=field_view,
     )
 
     if grid is not None:
@@ -1084,6 +1106,59 @@ def _build_scene(
     pl.enable_anti_aliasing("ssaa") if off_screen else pl.enable_anti_aliasing("msaa")
     pl.reset_camera()
     return scene
+
+
+def _resolve_mode(mode: str | None) -> tuple[bool, str | None, bool]:
+    """Validate *mode*; return ``(notebook, mode, off_screen)`` for the scene build."""
+    import pyvista as pv  # noqa: PLC0415
+
+    _configure_pyvista()
+    if mode is not None and mode not in _MODES:
+        raise ValueError(f"mode must be one of {_MODES}; got {mode!r}")
+
+    notebook = _in_notebook()
+    gallery = bool(getattr(pv, "BUILDING_GALLERY", False))
+    off_screen = mode == "none" or gallery or bool(getattr(pv, "OFF_SCREEN", False))
+    if notebook and mode is None:
+        mode = "client"
+    return notebook, mode, off_screen
+
+
+def _display(scene: _Scene, mode: str | None, notebook: bool):
+    """Show a built scene the way *mode* and the environment ask for."""
+    import pyvista as pv  # noqa: PLC0415
+
+    pl = scene.plotter
+
+    if mode == "none":
+        return pl
+
+    if notebook and mode in ("client", "server", "trame"):
+        server = None
+        try:
+            from trame.app import get_server  # noqa: PLC0415
+
+            server = get_server(pv.global_theme.trame.jupyter_server_name, client_type="vue3")
+            menu_items = _attach_controls(scene, server)
+            jupyter_kwargs = {"add_menu_items": menu_items}
+        except ImportError:
+            jupyter_kwargs = {}
+        if server is not None and not server.running and _loop_is_running():
+            _show_when_server_ready(pl, mode, jupyter_kwargs)
+            return None
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="Suppress rendering")
+            pl.show(jupyter_backend=mode, jupyter_kwargs=jupyter_kwargs)
+        return None
+
+    if notebook:  # static
+        pl.show(jupyter_backend="static")
+        return None
+
+    # Script or documentation build: interactive window, or a screenshot
+    # collected by the gallery scraper.
+    pl.show()
+    return None
 
 
 def show_geometry(
@@ -1175,17 +1250,7 @@ def show_geometry(
     ``trame-vuetify``).  Without it the view falls back to a static
     image with a warning.
     """
-    import pyvista as pv  # noqa: PLC0415
-
-    _configure_pyvista()
-    if mode is not None and mode not in _MODES:
-        raise ValueError(f"mode must be one of {_MODES}; got {mode!r}")
-
-    notebook = _in_notebook()
-    gallery = bool(getattr(pv, "BUILDING_GALLERY", False))
-    off_screen = mode == "none" or gallery or bool(getattr(pv, "OFF_SCREEN", False))
-    if notebook and mode is None:
-        mode = "client"
+    notebook, mode, off_screen = _resolve_mode(mode)
 
     scene = _build_scene(
         geometry,
@@ -1204,34 +1269,4 @@ def show_geometry(
         camera=camera,
         off_screen=off_screen or (notebook and mode not in (None, "none")),
     )
-    pl = scene.plotter
-
-    if mode == "none":
-        return pl
-
-    if notebook and mode in ("client", "server", "trame"):
-        server = None
-        try:
-            from trame.app import get_server  # noqa: PLC0415
-
-            server = get_server(pv.global_theme.trame.jupyter_server_name, client_type="vue3")
-            menu_items = _attach_controls(scene, server)
-            jupyter_kwargs = {"add_menu_items": menu_items}
-        except ImportError:
-            jupyter_kwargs = {}
-        if server is not None and not server.running and _loop_is_running():
-            _show_when_server_ready(pl, mode, jupyter_kwargs)
-            return None
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", message="Suppress rendering")
-            pl.show(jupyter_backend=mode, jupyter_kwargs=jupyter_kwargs)
-        return None
-
-    if notebook:  # static
-        pl.show(jupyter_backend="static")
-        return None
-
-    # Script or documentation build: interactive window, or a screenshot
-    # collected by the gallery scraper.
-    pl.show()
-    return None
+    return _display(scene, mode, notebook)

@@ -2193,6 +2193,16 @@ class _LoadedFieldMonitor:
         """Interactive time-step slider (delegates to :class:`MonitorFieldTime`)."""
         return self._hydrate().interact(*args, **kwargs)
 
+    def show(self, component: str = "E", **kwargs):
+        """Interactive 3D view of the stored field (see :func:`magnelio.plots.show_field`).
+
+        Frames are read from the store one at a time as the time slider
+        moves, so a large volume monitor is never loaded whole.
+        """
+        from magnelio.post.field_3d import show_field  # noqa: PLC0415
+
+        return show_field(self, component, **kwargs)
+
     def __repr__(self) -> str:
         return (
             f"_LoadedFieldMonitor(name={self.name!r}, n_times={self._n}, "
@@ -2457,6 +2467,12 @@ class _LoadedFreqMonitor:
     def plot(self, *args, **kwargs):
         """Plot the DFT field (delegates to :class:`MonitorFieldFrequency`)."""
         return self._hydrate().plot(*args, **kwargs)
+
+    def show(self, component: str = "E", **kwargs):
+        """Interactive 3D view of the stored DFT field (see :func:`magnelio.plots.show_field`)."""
+        from magnelio.post.field_3d import show_field  # noqa: PLC0415
+
+        return show_field(self, component, **kwargs)
 
     def __repr__(self) -> str:
         return (

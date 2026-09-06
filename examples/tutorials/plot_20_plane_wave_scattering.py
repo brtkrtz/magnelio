@@ -140,6 +140,14 @@ for ax, t in zip(axes, movie.t):
 fig.tight_layout()
 
 # %%
+# The same recording in the 3D viewer: the sphere is cut along the
+# monitor plane and the last frame — the scattered wave leaving — is
+# laid on the cut, the cells inside the metal cut out of the sheet.
+# In a notebook a frame slider runs through the three instants.
+
+movie.show(component="E", t=movie.t[-1], geometry=model, mesh=mesh, flip=True)
+
+# %%
 # From the far field to the radar cross section
 # ---------------------------------------------
 #

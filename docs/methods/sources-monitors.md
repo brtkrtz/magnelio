@@ -316,6 +316,11 @@ is `sin θ` and the peak directivity 1.5 throughout.
 All monitors return physical SI units; the calibration (C = 1 pinned
 at the excitation source) is in-house bookkeeping (DD-085).
 
+A field monitor plots on a slice (`plot`, `interact`) and opens in the
+3D viewer (`show`), where the field lies on the viewer's cutting plane
+and the position slider walks it through the recorded volume — see
+[the viewer chapter](viewer.md).
+
 A plotted field plane is one *layer* of cells, sampled at their
 centres, not a mathematical plane — the plane coordinate printed in the
 title is the cell-centre coordinate the request snapped to.  Geometry

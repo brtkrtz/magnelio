@@ -6,6 +6,7 @@ The primary plotting path is the methods on the objects themselves
 home for direct use on objects you assembled yourself.
 """
 
+from magnelio.post.field_3d import show_field
 from magnelio.post.plot_3d import show_geometry
 from magnelio.post.plot_field import (
     plot_field_scalar,
@@ -22,6 +23,7 @@ __all__ = [
     "plot_cross_section",
     "plot_mesh_section",
     "show_geometry",
+    "show_field",
     "plot_field_scalar",
     "plot_field_vector",
     "plot_pattern_cut",
