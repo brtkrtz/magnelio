@@ -20,6 +20,74 @@ def _linear(x, y, z):
     return (1.0 + x, 2.0 * y, 3.0 * z)
 
 
+class TestMirrored:
+    """The continuation across symmetry planes (DD-154) on the staggered container."""
+
+    @staticmethod
+    def _spec(axis, wall, kind, at_low):
+        from magnelio.post._symmetry import MirrorSpec  # noqa: PLC0415
+
+        return MirrorSpec(axis=axis, wall=wall, kind=kind, at_low=at_low)
+
+    def test_pmc_plane_half_a_cell_outside_the_grid(self):
+        # PMC at x = 0: E normal (Ex) odd, E tangential even; H normal
+        # even, H tangential odd.  The half grid starts half a cell in.
+        half = GridLines(
+            x=np.linspace(1e-3, 11e-3, 6), y=np.linspace(0, 20e-3, 5), z=np.linspace(0, 30e-3, 4)
+        )
+
+        def E(x, y, z):
+            return (np.sin(x) * np.cos(y), np.cos(x) * y, np.cos(x) * np.cos(y) * z)
+
+        def H(x, y, z):
+            return (np.cos(x) * y, np.sin(x) * z, np.sin(x) * np.cos(y))
+
+        m = FieldState.from_function(half, E=E, H=H).mirrored(self._spec(0, 0.0, "PMC", True))
+        # The wall bisects a cell of the extended grid.
+        np.testing.assert_allclose(m.grid.x, np.linspace(-11e-3, 11e-3, 12))
+        full = FieldState.from_function(m.grid, E=E, H=H)
+        for c in ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz"):
+            np.testing.assert_allclose(m.component(c), full.component(c), atol=1e-15)
+
+    def test_pec_plane_on_the_grid_line(self, grid):
+        # PEC at y = 10 mm (the grid's end): E normal even, E tangential
+        # odd; H normal odd, H tangential even.  The wall's samples
+        # appear once.
+        y0 = 10e-3
+
+        def E(x, y, z):
+            return (np.cos(x) * (y - y0), np.cos(x) * np.cos(y - y0), (y - y0) * z)
+
+        def H(x, y, z):
+            return (np.cos(x) * np.cos(y - y0), np.sin(x) * (y - y0), np.cos(y - y0) * z)
+
+        m = FieldState.from_function(grid, E=E, H=H).mirrored(self._spec(1, y0, "PEC", False))
+        np.testing.assert_allclose(
+            m.grid.y, [0, 1e-3, 3e-3, 6e-3, 10e-3, 14e-3, 17e-3, 19e-3, 20e-3]
+        )
+        full = FieldState.from_function(m.grid, E=E, H=H)
+        for c in ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz"):
+            np.testing.assert_allclose(m.component(c), full.component(c), atol=1e-15)
+
+    def test_two_planes_compose(self, grid):
+        f = FieldState.from_function(grid, E=lambda x, y, z: (1 + 0 * x, 1 + 0 * y, 0 * z))
+        # The PMC wall sits half the boundary cell outside the grid.
+        z_wall = 4e-3 + 0.5 * float(grid.dz[-1])
+        m = f.mirrored(self._spec(0, 0.0, "PEC", True), self._spec(2, z_wall, "PMC", False))
+        assert m.grid.Nx == 2 * grid.Nx and m.grid.Nz == 2 * grid.Nz + 1
+        # Ex is normal to the electric plane (even) and tangential to the
+        # magnetic one (even): unchanged everywhere.  Ey is tangential to
+        # the electric plane (odd there) and to the magnetic one (even).
+        assert np.all(m.Ex == 1.0)
+        ey = m.Ey
+        assert np.all(ey[: grid.Nx + 1] == -1.0) or np.all(ey[: grid.Nx] == -1.0)
+        assert np.all(ey[grid.Nx + 1 :] == 1.0)
+
+    def test_plane_inside_the_grid_is_refused(self, grid):
+        with pytest.raises(ValueError, match="inside the grid"):
+            FieldState.zeros(grid).mirrored(self._spec(0, 5e-3, "PEC", True))
+
+
 class TestConstruction:
     def test_zeros_shapes(self, grid):
         f = FieldState.zeros(grid)

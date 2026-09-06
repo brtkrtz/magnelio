@@ -130,8 +130,60 @@ def _pec_cells(mesh, nodes, region=None) -> np.ndarray | None:
     return np.isin(ids, pec_ids)[region.ix, region.iy, region.iz]
 
 
+def _region_in(grid, nodes):
+    """The cell slices of *grid* that carry the region with these *nodes*."""
+    from magnelio.monitors.base import MonitorRegion  # noqa: PLC0415
+
+    slices = []
+    for own, mine in zip((grid.x, grid.y, grid.z), nodes):
+        own = np.asarray(own, dtype=float)
+        i0 = int(np.searchsorted(own, mine[0] - 1e-12 * max(1.0, abs(mine[0]))))
+        slices.append(slice(i0, i0 + mine.size - 1))
+    centres = [0.5 * (m[:-1] + m[1:]) for m in nodes]
+    return MonitorRegion(
+        ix=slices[0],
+        iy=slices[1],
+        iz=slices[2],
+        xc=centres[0],
+        yc=centres[1],
+        zc=centres[2],
+        ndim=sum(1 for m in nodes if m.size > 2),
+    )
+
+
+def _frames_from_series(series, mesh) -> _FieldFrames:
+    """Frames over a :class:`~magnelio.fields.FieldRecording` / ``FieldSpectrum``."""
+    from magnelio.fields._interp import _interp_to_cell_centres  # noqa: PLC0415
+
+    grid = series.grid
+    nodes = (
+        np.asarray(grid.x, dtype=float),
+        np.asarray(grid.y, dtype=float),
+        np.asarray(grid.z, dtype=float),
+    )
+    full = [slice(0, grid.Nx), slice(0, grid.Ny), slice(0, grid.Nz)]
+
+    def layer(frame, axis, k, comps):
+        slabs = list(full)
+        slabs[axis] = slice(k, k + 1)
+        data = _interp_to_cell_centres(series._frame_arrays(frame), list(comps), *slabs, grid)
+        return {c: np.squeeze(np.asarray(a), axis=axis) for c, a in data.items()}
+
+    region = _region_in(mesh.grid, nodes) if mesh is not None else None
+    return _FieldFrames(
+        nodes=nodes,
+        components=tuple(series.components),
+        labels=np.asarray(series._labels, dtype=float),
+        kind=series._kind,
+        is_complex=bool(series.is_complex),
+        layer=layer,
+        pec=_pec_cells(mesh, nodes, region),
+        name=type(series).__name__,
+    )
+
+
 def _frames_from_field(fs, mesh) -> _FieldFrames:
-    from magnelio.monitors.base import _interp_to_cell_centres  # noqa: PLC0415
+    from magnelio.fields._interp import _interp_to_cell_centres  # noqa: PLC0415
 
     grid = fs._grid
     nodes = (
@@ -259,12 +311,15 @@ def _frames_from_loaded_time(reader, mesh) -> _FieldFrames:
 
 
 def _frames_of(source, mesh) -> _FieldFrames:
+    from magnelio.fields.series import _FieldSeries  # noqa: PLC0415
     from magnelio.fields.state import FieldState  # noqa: PLC0415
     from magnelio.monitors.field_frequency import MonitorFieldFrequency  # noqa: PLC0415
     from magnelio.monitors.field_time import MonitorFieldTime  # noqa: PLC0415
 
     if isinstance(source, FieldState):
         return _frames_from_field(source, mesh)
+    if isinstance(source, _FieldSeries):
+        return _frames_from_series(source, mesh)
     if isinstance(source, MonitorFieldTime):
         return _frames_from_time_monitor(source, mesh)
     if isinstance(source, MonitorFieldFrequency):
