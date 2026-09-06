@@ -21246,3 +21246,94 @@ with magnetic conductivity (`α_H ≠ 1`) gets the pairing to first order.
 The solver's energy trace and `recording.energy()` differ on models with
 an electric symmetry plane by the strip on the plane (the trace books
 it whole); the trace is a relative quantity and stays as it is.
+
+## DD-261 — Fields in the volume of the 3D viewer: lattice arrows, isosurfaces, a second toolbar row
+
+**Date:** 2026-09-06
+**Status:** Accepted (developer consensus on the four design questions
+2026-09-06; implemented the same day on `feat/viewer-volume-fields`).
+
+**Problem.**  [[DD-259]] step 0 laid a field on the viewer's cutting
+plane — one cell layer as a sheet with arrows — and the developer's
+browser review asked for the volume: the field behind the cut, not
+only on it, and a different arrow style.  The toolbar's single row was
+already overflowing (the *Show* select wrapped, the field selector was
+clipped), so more controls had no place.  Commercial suites draw a 3D
+vector field as arrows on a decimated lattice, coloured by magnitude,
+and offer isosurfaces of the magnitude; both are usually clipped to the
+kept side of a cutting plane.
+
+**Decision.**  Four choices, each put to the developer with a
+recommendation and accepted:
+
+1. **Both representations** — arrows on an even 3D lattice over the
+   kept half, and translucent isosurfaces of the magnitude (the ±level
+   of a signed component) — as *Show* groups of every volume source
+   (`volume arrows`, `isosurface`), `volume=` choosing what is on at
+   first (`"arrows"`, `"isosurface"`, `"both"`, default nothing: the
+   cut view of step 0 is unchanged).  Arrows in the volume replace the
+   arrows on the cut.  Volume rendering with an opacity ramp is not
+   offered: the browser renderer takes uniform image data only, and a
+   graded grid resampled onto one loses its resolution.
+2. **Arrow style**, on the cut and in the volume alike: coloured by
+   magnitude on the sheet's colour scale (no second scalar bar), length
+   growing with the magnitude from a floor of three tenths of the
+   lattice spacing to one spacing, so a decaying field keeps readable
+   arrows — the default of the commercial suites.  `arrow_color=` paints
+   one colour, as step 0 did by default.
+3. **A second toolbar row** for the field controls — play, frame,
+   phase, field, isosurface level, arrow density — under the viewer's
+   own row, which ends the overflow.
+4. **One isosurface at half the ceiling** by default, the level slider
+   moving it between 5 and 95 %; `levels=` fixes surfaces in field
+   units and hides the slider.
+
+**Findings.**  (a) **Frame protocol.**  `_FieldFrames` gains a
+`volume(frame, comps)` loader beside `layer`; every adapter (series,
+field, store reader) provides it, so the view stays storage-agnostic.
+A volume representation costs the whole region per frame instead of a
+layer, cached per frame like the layer.  (b) **Lattice and resampling.**
+`_lattice3` is `_arrow_grid` in 3D (the density counts along the
+longest axis, the others keep the spacing even); `_resample3` is the
+trilinear counterpart of `_resample`, an eight-corner stencil that
+drops cells buried in metal instead of reading them as zero and marks
+a raster point dead when more than half its stencil is — exact for a
+linear field.  The kept half is a coordinate test on the lattice, the
+same rule as the geometry's clip.  (c) **Isosurfaces.**  A persistent
+`RectilinearGrid` on the region's nodes takes the cell values of the
+frame (zero inside metal, so the surface closes on the conductor),
+`cell_data_to_point_data` then `contour`, clipped open with the
+geometry's `_clip_body`; the contour keeps the level as its scalar, so
+the surfaces colour on the sheet's scale and a signed component's ±
+levels come out blue and red.  (d) **The polydata rule, once more.**
+`add_mesh(..., smooth_shading=True)` hands the mapper a *copy* with
+normals; the view's persistent polydata was then written into every
+frame while the browser drew the copy — the level slider moved
+nothing.  The contour filter computes normals itself; the actor is
+added without smooth shading, and the actor's dataset *is* the view's
+polydata (`mapper.dataset is view._iso_pd`, gated).  (e) **Second row.**
+PyVista's menu is a `VCard` of fixed height whose rows do not wrap; a
+scoped style sheet (`.v-card:has(.mio-field-row)`) lets the card grow
+and its inner row wrap, and the field controls sit in a `flex-basis:
+100 %` div that lands on the second line.  Driven through trame's
+state in the tests (menu toggles, level and density sliders, the
+component switch to a signed isosurface) and seen in Chrome on the
+notebook `investigations/viewer3d/volume_view_check.ipynb` (internal
+record): the second row lands under the cut controls with *Field*,
+*iso %* and *arrows*, the isosurface draws translucent and clipped at
+the cut, the level slider moves it, the lattice arrows colour on the
+sheet's scale.  The developer's own look is still to come.
+
+**Gates.**  `tests/unit/test_field_3d.py` — `TestVolume` (the volume
+loader against `cell_centred`, the lattice's even spacing and the
+trilinear identity with a dead stencil, arrows clipped to the kept
+half and coloured on the sheet's range, the arrow floor, the standing
+pattern's two isosurfaces at L/6 and 5L/6 and at a fixed level, the
+whole volume without a cut, a plane monitor's arrows-only offer, the
+argument checks) and `TestVolumeControls` (groups hidden at start, the
+*Show* menu, the level and density sliders, ± levels of a signed
+component, the second-row builder under a layout).
+
+**Consequences.**  0.x PATCH content, ships with 0.7.0; the default
+call is unchanged, the arrow style is not (coloured, floored).  Tutorial
+07 opens the magic tee's volume monitor with an isosurface.

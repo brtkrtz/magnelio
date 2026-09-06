@@ -1,7 +1,9 @@
 # Magnelio — Project Status
 
 *Last updated: 2026-09-06.*  **On `main`, unreleased (for 0.7.0):**
-**DD-260** — energy and flux from a recording (`recording.energy()`,
+**DD-261** — fields in the volume of the 3D viewer (lattice arrows,
+isosurfaces, coloured arrows, a second toolbar row; browser review
+open); **DD-260** — energy and flux from a recording (`recording.energy()`,
 `.flux()`; a monitor carries its region's operators, in the store too);
 **DD-259** complete — field monitors keep the grid quantities
 (`monitor.recording`/`.spectrum`, store schema 3.0, the dictionary API
@@ -14,13 +16,12 @@ hands out `Run` objects, `docs/migration-0.6.md`): the usability series
 objects, `aborted`/`stale`, reprs without arrays; `plot_energy`,
 `watch`, `follow`, `monitor`), **DD-249/250** (`lofted(blend="tangent")`),
 **DD-251** (in-place notebook progress), **DD-252** (`refine_port_modes`).
-Before it: v0.5.2 (2026-09-04) DD-245…DD-248 and the precision chapter;
-v0.5.1 (2026-09-03) DD-242…DD-244 and the band-DTBC port on the GPU;
-v0.5.0 (2026-09-02) DD-224…DD-241 — the API grammar and its Phases A–D,
-the content gate on the public remote, `docs/migration-0.5.md`.
+Before it: v0.5.0–v0.5.2 (2026-09-02…04) DD-224…DD-248 — the API
+grammar and its phases, the content gate, `docs/migration-0.5.md`.
 
 Open: KB-023, KB-038, KB-043 and KB-046.  Unit and integration: 3522
-passed / 10 skipped (2026-09-06, after DD-260, NumPy backend; the
+passed / 10 skipped (2026-09-06, after DD-260; the unit suite alone
+3050 passed / 5 skipped after DD-261, which touched the viewer only; NumPy backend; the
 four GPU tests need `CUPY_ACCELERATORS=""` outside the sandbox).
 Channels: GitHub, PyPI,
 conda-forge and the two docs channels below.
@@ -33,6 +34,7 @@ floors regenerate from the `validation/` certificates their DDs name.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-261** (2026-09-06) — fields in the volume of the 3D viewer.  `show(volume="arrows"|"isosurface"|"both")`: arrows on an even 3D lattice over the kept half (`_lattice3`/`_resample3`, trilinear with the metal dropped from the stencil) and translucent isosurfaces (persistent `RectilinearGrid` → `cell_data_to_point_data` → `contour`, clipped open at the cut; ± levels for a signed component), both *Show* groups of every volume source; `_FieldFrames.volume` loader beside `layer`.  Arrows on the cut and in the volume now coloured by magnitude on the sheet's scale with a length floor of 0.3 spacing (`arrow_color=` for one colour).  Field controls in a **second toolbar row** (play, frame, phase, field, iso level 5–95 %, arrow density) via a scoped `:has()` style on PyVista's card — ends the one-row overflow.  Finding: `smooth_shading=True` hands the mapper a copy, so the persistent polydata was no longer what the browser drew.  Gates `TestVolume`, `TestVolumeControls`.  Seen in Chrome (second row, isosurface, level slider, coloured lattice arrows); **the developer's own browser look is still open.**
 * **DD-260** (2026-09-06) — energy and flux are identities on a recording.  A field monitor takes the region's cut of the solver's `M_ε`/`M_μ` at attach (`attach_operators`), plus the kind of each region end (`cut`/`wall`/`pmc`) and the symmetry faces (`fields/_operators.py`, `RegionOperators`); `FieldState`/`FieldRecording`/`FieldSpectrum` get `energy()` and `flux(normal, position)`, full-model booking as the flux monitor.  The conserved energy needs no second frame: `h(n−½) = h(n+½) + β_H·(C e)` makes the DD-225 pairing `½hMμh + (dt/2)(Ce)·h` from one frame.  Measured: energy trace reproduced to 1e-9, flux monitor bit for bit (whole domain and one-cell layer), |S21|² to 1.4e-5 on the plate line, half box behind an electric symmetry plane = full box to 1e-9 (the plane must be booked as a cut), two regions add to their union.  A spectrum is an **RMS phasor** (DD-078) — read as peak it gave half a watt.  Store: operator datasets pre-declared (SWMR), filled by the sink after setup, `valid` flag; schema-additive on 3.0.  Fixed on the way: a project run without ports crashed at its first flush.  Gates `test_field_energy.py` (33), `test_recording_energy.py` (4).
 * **DD-259** (2026-09-05, *Proposed*; **step 0 merged `7a59be1`** after the developer's browser review — the first cut re-created the actors per frame and froze the browser after 75 frames, now updated in place; **step 1 merged `5b71c52`**: `fields.FieldRecording`/`FieldSpectrum`, `FieldState.mirrored` exact on PEC and PMC planes, the cell-centre averaging moved to `fields._interp`; **step 2 merged `ddd40e8`**: the monitors record the grid quantities on the region's Yee positions, `monitor.recording`/`.spectrum` hand out the containers — bit-identical to the old record-time average because a region carries its own dual widths; **step 3 merged `fa4bde8`**: `.data`/`.data_raw`/`.component`/`.region` removed on monitors and readers, pictures drawn through `monitors/_frame_plots.py` averaging only the drawn layer, lazy store reader, `docs/migration-0.7.md`; a frame's `t` is the electric instant `t + dt` (was one step early), the frequency monitor keeps the port recorder's phase convention; store schema **3.0** (`layout="yee"`, `dual_x/y/z`, 2.x monitors refused), `fields.xdmf` and `io/xdmf.py` gone, time monitors exported as `.vtr` series; **step 4** documented (chapter section *ParaView export*, tutorial 07); **step 5 merged**: `SourceFieldInitial.from_recording(recording, name=, t=|frame=)` — a frame is the march's own leapfrog pair, so the source carries `h_lead` (lead of its H samples) and `attach` takes the Faraday step of the difference `(½ − h_lead/dt)`; a run resumed from a whole-domain frame on the same grid and step continues the recorded one **bit for bit** (gate `test_recorded_frame_continues_the_march`); energy/flux from a recording left to their own DD) — field monitors keep the grid quantities and derive every view at access time.  The cell-centre averaging at record time is DD-014's ParaView layout (2026-03-11, before the first monitor existed), a filter that cannot be undone: conductor faces smeared, no energy/flux from a recording, no replay as an initial field, H labelled half a step early.  Five steps for 0.7.0 after v0.6.0 and the DD-256 patch: containers (`FieldRecording`/`FieldSpectrum`), raw recording + store schema bump (old stores refused), hard break of `.data`/`.region`, ParaView as VTR export, replay.  **Step 0 shipped:** the 3D viewer lays a field on its cutting plane (`monitor.show()`, `field.show()`, `plots.show_field`) — the exposed cell layer as a coloured sheet (|E|/|H| or one signed component), arrows on an even lattice, frame/phase sliders and a component selector in the toolbar, PEC cells cut out with `mesh=`; the frame source is a protocol (`_FieldFrames`), so step 1 swaps the storage underneath.  Gates `test_field_3d.py` (23; the controls driven through trame's state), tutorials 07/20, chapter *3D viewer → Fields on the cut*.
 * **DD-258** (2026-09-05, merged `c006d39`) — the solver's field container is `FieldArrays`; `FieldState` names the public one only (the double name hid the grid-quantity vs. field distinction DD-085 exists to keep visible).  Rename only, no user-visible change.
@@ -317,7 +319,8 @@ flickers to ``"done"`` between sequential runs; the reader skips
 
 ## Open construction sites
 
-* **0.7.0 release** — DD-256, DD-257 and DD-259 are on `main`; the release needs the developer's go (`docs/migration-0.7.md` is written).
+* **3D viewer, browser review (DD-261)** — the second toolbar row and the volume representations are gated through trame's state and were seen once in Chrome; the developer's earlier notes (a different arrow style, the overflowing menu) are addressed by DD-261 and await his look.
+* **0.7.0 release** — DD-256, DD-257, DD-259, DD-260 and DD-261 are on `main`; the release needs the developer's go (`docs/migration-0.7.md` is written).
 * **Band-pipeline runtime** — convolution (DD-245) and axis ranking
   (DD-247) closed: 314.9 s → 81.2 s on a 201-point axis, no item
   dominates.  Left: postprocessing is `eigs` + `splu` at 96.6 % over a

@@ -1,26 +1,32 @@
 """3D view of a field or a field monitor on the viewer's cutting plane.
 
 The geometry viewer (:mod:`magnelio.post.plot_3d`) opens a model along
-an axis-aligned plane; this module lays the field on that plane.  The
-cell layer the cut exposes carries one value per cell — the magnitude
-of E or H, or one signed component — as a coloured sheet, and, for a
-field group, arrows on an even lattice over the layer.  The viewer's
-position slider therefore walks through a recorded volume; a frame
-slider (time or frequency) and a phase slider (complex data) come with
-the source.
+an axis-aligned plane; this module lays the field on that plane and,
+on request, into the volume.  The cell layer the cut exposes carries
+one value per cell — the magnitude of E or H, or one signed component —
+as a coloured sheet, and, for a field group, arrows on an even lattice
+over the layer.  The volume behind the cut can carry arrows on a 3D
+lattice, coloured by magnitude, and isosurfaces of the magnitude (or
+the ±level of a signed component), both clipped to the kept half like
+the solids.  The viewer's position slider therefore walks through a
+recorded volume; a frame slider (time or frequency), a phase slider
+(complex data), a level slider (isosurfaces) and a density slider
+(arrows) come with the source, in a second toolbar row.
 
 The values are the cell-centred physical fields of the exposed layer
 alone, computed when the cut moves — a field picture stands for a cell
-layer (DD-175).  Symmetry planes are not mirrored: the 3D view shows
-the modelled half, as the geometry view does.
+layer (DD-175) — and of the whole region when a volume representation
+is shown.  Symmetry planes are not mirrored: the 3D view shows the
+modelled half, as the geometry view does.
 
 The source is abstracted as :class:`_FieldFrames` — region nodes, frame
-labels and a layer loader — so the storage underneath the monitors can
-change without touching the view.
+labels, a layer loader and a volume loader — so the storage underneath
+the monitors can change without touching the view.
 """
 
-# Design: DD-259 (step 0 of the raw-monitor plan); the scene, cut and
-# widget machinery is DD-190's.
+# Design: DD-259 (step 0 of the raw-monitor plan), DD-261 (the volume
+# representations, the arrow style and the second toolbar row); the
+# scene, cut and widget machinery is DD-190's.
 
 from __future__ import annotations
 
@@ -45,6 +51,12 @@ _PLOT_TYPES = ("vector", "color")
 _SHEET_HAIRS = 2.0
 _ARROW_HAIRS = 3.0
 _HAIR = 1e-3
+# The shortest arrow drawn, as a fraction of the lattice spacing: a
+# decaying field keeps readable arrows instead of vanishing ones.
+_ARROW_FLOOR = 0.3
+_ISO_OPACITY = 0.5
+_VOLUME_CHOICES = ("arrows", "isosurface", "both")
+_VOLUME_GROUPS = ("volume arrows", "isosurface")
 
 
 # ---------------------------------------------------------------------------
@@ -75,6 +87,10 @@ class _FieldFrames:
         ``(nx, ny, nz)`` mask of the cells buried in a perfect conductor;
         those are cut out of the sheet.
     name : str
+    volume : callable
+        ``volume(frame, comps)`` returns ``{comp: array}`` with the
+        cell-centred physical values of the whole region, shaped
+        ``(nx, ny, nz)`` — what the volume representations draw.
     """
 
     nodes: tuple[np.ndarray, np.ndarray, np.ndarray]
@@ -85,6 +101,7 @@ class _FieldFrames:
     layer: Callable[[int, int, int, list[str]], dict[str, np.ndarray]]
     pec: np.ndarray | None = None
     name: str = ""
+    volume: Callable[[int, list[str]], dict[str, np.ndarray]] | None = None
 
     @property
     def shape(self) -> tuple[int, int, int]:
@@ -171,6 +188,12 @@ def _frames_from_series(series, mesh) -> _FieldFrames:
         )
         return {c: np.squeeze(np.asarray(a), axis=axis) for c, a in data.items()}
 
+    def volume(frame, comps):
+        data = _interp_to_cell_centres(
+            series._frame_arrays(frame), list(comps), *full, grid, dual=series._dual
+        )
+        return {c: np.asarray(a) for c, a in data.items()}
+
     region = _region_in(mesh.grid, nodes) if mesh is not None else None
     return _FieldFrames(
         nodes=nodes,
@@ -181,6 +204,7 @@ def _frames_from_series(series, mesh) -> _FieldFrames:
         layer=layer,
         pec=_pec_cells(mesh, nodes, region),
         name=type(series).__name__,
+        volume=volume,
     )
 
 
@@ -198,8 +222,12 @@ def _frames_from_field(fs, mesh) -> _FieldFrames:
     def layer(frame, axis, k, comps):
         slabs = list(full)
         slabs[axis] = slice(k, k + 1)
-        data = _interp_to_cell_centres(fs._raw, list(comps), *slabs, grid)
+        data = _interp_to_cell_centres(fs._raw, list(comps), *slabs, grid, dual=fs._dual)
         return {c: np.squeeze(np.asarray(a), axis=axis) for c, a in data.items()}
+
+    def volume(frame, comps):
+        data = _interp_to_cell_centres(fs._raw, list(comps), *full, grid, dual=fs._dual)
+        return {c: np.asarray(a) for c, a in data.items()}
 
     return _FieldFrames(
         nodes=nodes,
@@ -210,6 +238,7 @@ def _frames_from_field(fs, mesh) -> _FieldFrames:
         layer=layer,
         pec=_pec_cells(mesh, nodes),
         name="field",
+        volume=volume,
     )
 
 
@@ -244,6 +273,11 @@ def _frames_from_loaded_time(reader, mesh) -> _FieldFrames:
         data = _interp_to_cell_centres(fs._raw, list(comps), *slabs, grid, dual=fs._dual)
         return {c: np.squeeze(np.asarray(a), axis=axis) for c, a in data.items()}
 
+    def volume(frame, comps):
+        fs = reader.frame(frame)
+        data = _interp_to_cell_centres(fs._raw, list(comps), *full, grid, dual=fs._dual)
+        return {c: np.asarray(a) for c, a in data.items()}
+
     region = _region_in(mesh.grid, nodes) if mesh is not None else None
     return _FieldFrames(
         nodes=nodes,
@@ -254,6 +288,7 @@ def _frames_from_loaded_time(reader, mesh) -> _FieldFrames:
         layer=layer,
         pec=_pec_cells(mesh, nodes, region),
         name=reader.name,
+        volume=volume,
     )
 
 
@@ -337,9 +372,71 @@ def _layer_sheet(nodes_display, axis: int, k: int, position: float, keep):
     return pv.PolyData(points, faces=faces)
 
 
+def _lattice3(centres, density: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Isotropic 3D arrow raster over the cell-centre extents.
+
+    *density* counts arrows along the longest axis; the others get the
+    count that keeps the spacing equal (the 3D counterpart of
+    :func:`~magnelio.post.plot_field._arrow_grid`).
+    """
+    centres = tuple(np.asarray(c, dtype=float) for c in centres)
+    spans = [float(c[-1] - c[0]) if c.size > 1 else 0.0 for c in centres]
+    span = max(spans)
+    if span <= 0.0 or density < 2:
+        return centres
+    step = span / (density - 1)
+    out = []
+    for c, sp in zip(centres, spans):
+        if sp <= 0.0:
+            out.append(c)
+        else:
+            out.append(np.linspace(c[0], c[-1], max(2, int(round(sp / step)) + 1)))
+    return tuple(out)  # type: ignore[return-value]
+
+
+def _resample3(centres, raster, arrays, valid):
+    """Trilinear resampling of cell-centre volumes onto the arrow raster.
+
+    Invalid cells (a cell buried in a conductor) are dropped from the
+    stencil instead of read as zeros, so no field is smeared into or
+    out of the metal; a raster point whose stencil is more than half
+    invalid yields NaN and is reported as not live.
+    """
+    idx, frac = [], []
+    for c, r in zip(centres, raster):
+        c = np.asarray(c, dtype=float)
+        r = np.asarray(r, dtype=float)
+        if c.size < 2:
+            idx.append(np.zeros(r.size, dtype=int))
+            frac.append(np.zeros(r.size))
+            continue
+        i = np.clip(np.searchsorted(c, r, side="right") - 1, 0, c.size - 2)
+        idx.append(i)
+        frac.append(np.clip((r - c[i]) / np.diff(c)[i], 0.0, 1.0))
+    n_cells = [np.asarray(c).size for c in centres]
+    total = [np.zeros(tuple(r.size for r in raster)) for _ in arrays]
+    norm = np.zeros(tuple(r.size for r in raster))
+    for corner in range(8):
+        ii, ww = [], []
+        for a in range(3):
+            up = (corner >> a) & 1
+            ii.append(np.minimum(idx[a] + up, n_cells[a] - 1))
+            ww.append(frac[a] if up else 1.0 - frac[a])
+        w = ww[0][:, None, None] * ww[1][None, :, None] * ww[2][None, None, :]
+        sel = np.ix_(*ii)
+        if valid is not None:
+            w = w * np.asarray(valid, dtype=float)[sel]
+        norm += w
+        for k, a in enumerate(arrays):
+            total[k] += w * np.asarray(a, dtype=float)[sel]
+    live = norm > 0.5
+    safe = np.where(live, norm, 1.0)
+    return [np.where(live, t / safe, np.nan) for t in total], live
+
+
 @dataclass
 class _FieldView:
-    """The field on the cut: state, actors and the notebook controls."""
+    """The field on the cut and in the volume: state, actors and the notebook controls."""
 
     frames: _FieldFrames
     component: str
@@ -352,19 +449,29 @@ class _FieldView:
     density: int
     threshold: float
     opacity: float
-    arrow_color: str
+    arrow_color: str | None
     fps: float = 4.0
+    volume_start: str | None = None
+    iso_level: float = 0.5
+    levels: tuple[float, ...] | None = None
     nodes_display: tuple[np.ndarray, np.ndarray, np.ndarray] = field(init=False)
     _play_task: Any = field(default=None, repr=False)
     sheet_actor: Any = None
     arrow_actor: Any = None
-    # The polydata behind the two actors live as long as the view: every
+    volume_actor: Any = None
+    iso_actor: Any = None
+    # The polydata behind the actors live as long as the view: every
     # frame and every cut change is written *into* them (DD-259 step 0
     # finding d), never swapped or re-created.
     _sheet_pd: Any = field(default=None, repr=False)
     _arrow_pd: Any = field(default=None, repr=False)
+    _volume_pd: Any = field(default=None, repr=False)
+    _iso_pd: Any = field(default=None, repr=False)
+    _iso_grid: Any = field(default=None, repr=False)
     _bar_title: str = field(default="", repr=False)
+    _painted: dict = field(default_factory=dict, repr=False)
     _layer_cache: dict = field(default_factory=dict, repr=False)
+    _volume_cache: dict = field(default_factory=dict, repr=False)
     _vmax_cache: dict = field(default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
@@ -379,6 +486,39 @@ class _FieldView:
     @property
     def has_arrows(self) -> bool:
         return self.plot_type == "vector" and self.is_group
+
+    @property
+    def can_iso(self) -> bool:
+        """Isosurfaces need a volume: at least two cells along every axis."""
+        return self.frames.volume is not None and min(self.frames.shape) >= 2
+
+    @property
+    def has_volume(self) -> bool:
+        return self.frames.volume is not None
+
+    def groups(self) -> set[str]:
+        """The toolbar groups this view offers."""
+        out = {"field"}
+        if self.has_arrows:
+            out.add("arrows")
+            if self.has_volume:
+                out.add("volume arrows")
+        if self.can_iso:
+            out.add("isosurface")
+        return out
+
+    def hidden_at_start(self) -> set[str]:
+        """Groups hidden until the Show menu turns them on."""
+        wanted = set()
+        if self.volume_start in ("arrows", "both"):
+            wanted.add("volume arrows")
+        if self.volume_start in ("isosurface", "both"):
+            wanted.add("isosurface")
+        hidden = set(_VOLUME_GROUPS) - wanted
+        if "volume arrows" in wanted:
+            # Arrows in the volume replace the arrows on the cut.
+            hidden.add("arrows")
+        return hidden
 
     @property
     def group(self) -> str:
@@ -407,6 +547,13 @@ class _FieldView:
             return f"f = {value * 1e-9:.4g} GHz"
         return ""
 
+    @property
+    def colour_map(self) -> str:
+        return self.cmap or ("viridis" if self.is_group else "RdBu_r")
+
+    def colour_range(self, vmax: float) -> tuple[float, float]:
+        return (0.0, vmax) if self.is_group else (-vmax, vmax)
+
     # ── values ───────────────────────────────────────────────────────────
 
     def _layer(self, axis: int, k: int) -> dict[str, np.ndarray]:
@@ -418,18 +565,37 @@ class _FieldView:
             self._layer_cache[key] = held
         return held
 
-    def values(self, axis: int, k: int) -> tuple[np.ndarray, dict[str, np.ndarray] | None]:
-        """Scalar of the layer (magnitude or signed component) and its vectors."""
-        layer = self._layer(axis, k)
+    def _volume(self) -> dict[str, np.ndarray]:
+        key = (self.frame, tuple(self.comps()))
+        held = self._volume_cache.get(key)
+        if held is None:
+            if self.frames.volume is None:
+                raise RuntimeError("this field source offers no volume")
+            held = self.frames.volume(self.frame, self.comps())
+            self._volume_cache.clear()
+            self._volume_cache[key] = held
+        return held
+
+    def _instant(self, data: dict) -> dict[str, np.ndarray]:
+        """Real values of *data* at the view's phase (complex sources)."""
         if self.frames.is_complex:
             phasor = np.exp(1j * np.deg2rad(self.phase))
-            layer = {c: np.real(np.asarray(a) * phasor) for c, a in layer.items()}
-        else:
-            layer = {c: np.real(np.asarray(a, dtype=float)) for c, a in layer.items()}
+            return {c: np.real(np.asarray(a) * phasor) for c, a in data.items()}
+        return {c: np.real(np.asarray(a, dtype=float)) for c, a in data.items()}
+
+    def _scalar_and_vectors(self, data: dict):
         if self.is_group:
-            mag = np.sqrt(sum(a**2 for a in layer.values()))
-            return mag, layer
-        return layer[self.component], None
+            mag = np.sqrt(sum(a**2 for a in data.values()))
+            return mag, data
+        return data[self.component], None
+
+    def values(self, axis: int, k: int) -> tuple[np.ndarray, dict[str, np.ndarray] | None]:
+        """Scalar of the layer (magnitude or signed component) and its vectors."""
+        return self._scalar_and_vectors(self._instant(self._layer(axis, k)))
+
+    def volume_values(self) -> tuple[np.ndarray, dict[str, np.ndarray] | None]:
+        """Scalar of the whole region ``(nx, ny, nz)`` and its vectors."""
+        return self._scalar_and_vectors(self._instant(self._volume()))
 
     def vmax(self) -> float:
         """Colour and arrow ceiling: fixed, or the peak over every frame and layer."""
@@ -459,42 +625,70 @@ class _FieldView:
         self._vmax_cache[self.component] = best
         return best
 
+    def iso_values(self, vmax: float) -> list[float]:
+        """The isosurface levels in field units."""
+        if self.levels is not None:
+            levels = [float(v) for v in self.levels]
+        else:
+            levels = [float(self.iso_level) * vmax]
+        if not self.is_group:
+            levels = sorted({-v for v in levels} | set(levels))
+        return levels
+
     # ── actors ───────────────────────────────────────────────────────────
 
-    def _hide(self) -> None:
+    def _hide_cut(self) -> None:
         for actor in (self.sheet_actor, self.arrow_actor):
             if actor is not None:
                 actor.SetVisibility(False)
 
+    def _hide(self) -> None:
+        self._hide_cut()
+        for actor in (self.volume_actor, self.iso_actor):
+            if actor is not None:
+                actor.SetVisibility(False)
+
     def apply(self, scene, shown) -> None:
-        """(Re)build the sheet and arrows for the scene's cut state."""
-        cut = scene.cut
-        if cut.axis is None:
-            self._hide()
-            return
-        axis = _viewer._AXIS_INDEX[cut.axis]
-        k = _layer_index(self.nodes_display, axis, cut)
-        if k is None:
-            self._hide()
-            return
-        n = self.nodes_display[axis]
-        hair = _HAIR * (n[k + 1] - n[k]) * (-1.0 if cut.flip else 1.0)
-        keep = None if self.frames.pec is None else ~np.take(self.frames.pec, k, axis=axis)
-        scalar, vectors = self.values(axis, k)
+        """(Re)build the sheet, the arrows and the volume for the scene's cut state."""
         vmax = self.vmax()
-        if not self._draw_sheet(
-            scene, axis, k, cut.position + _SHEET_HAIRS * hair, keep, scalar, vmax
-        ):
-            self._hide()
-            return
-        self.sheet_actor.SetVisibility("field" in shown)
+        cut = scene.cut
+        axis = None if cut.axis is None else _viewer._AXIS_INDEX[cut.axis]
+        k = None if axis is None else _layer_index(self.nodes_display, axis, cut)
+        if k is None:
+            self._hide_cut()
+        else:
+            n = self.nodes_display[axis]
+            hair = _HAIR * (n[k + 1] - n[k]) * (-1.0 if cut.flip else 1.0)
+            keep = None if self.frames.pec is None else ~np.take(self.frames.pec, k, axis=axis)
+            scalar, vectors = self.values(axis, k)
+            if not self._draw_sheet(
+                scene, axis, k, cut.position + _SHEET_HAIRS * hair, keep, scalar, vmax
+            ):
+                self._hide_cut()
+            else:
+                self.sheet_actor.SetVisibility("field" in shown)
+                drawn = False
+                if self.has_arrows and vectors is not None:
+                    drawn = self._draw_arrows(
+                        scene, axis, k, cut.position + _ARROW_HAIRS * hair, keep, vectors, vmax
+                    )
+                if self.arrow_actor is not None:
+                    self.arrow_actor.SetVisibility(drawn and "arrows" in shown)
+
+        want_volume = "volume arrows" in shown and self.has_arrows and self.has_volume
+        want_iso = "isosurface" in shown and self.can_iso
+        if want_volume or want_iso:
+            scalar3, vectors3 = self.volume_values()
         drawn = False
-        if self.has_arrows and vectors is not None:
-            drawn = self._draw_arrows(
-                scene, axis, k, cut.position + _ARROW_HAIRS * hair, keep, vectors, vmax
-            )
-        if self.arrow_actor is not None:
-            self.arrow_actor.SetVisibility(drawn and "arrows" in shown)
+        if want_volume and vectors3 is not None:
+            drawn = self._draw_volume_arrows(scene, vectors3, vmax)
+        if self.volume_actor is not None:
+            self.volume_actor.SetVisibility(drawn)
+        drawn = False
+        if want_iso:
+            drawn = self._draw_isosurfaces(scene, scalar3, vmax)
+        if self.iso_actor is not None:
+            self.iso_actor.SetVisibility(drawn)
 
     _BAR_KWARGS = {
         "vertical": True,
@@ -507,6 +701,17 @@ class _FieldView:
         "width": 0.05,
         "height": 0.45,
     }
+
+    def _paint(self, name: str, actor, vmax: float) -> None:
+        """Keep an actor's colour map and range in step with the component."""
+        cmap, clim = self.colour_map, self.colour_range(vmax)
+        if self._painted.get(name) == (cmap, clim):
+            return
+        mapper = actor.mapper
+        mapper.lookup_table.cmap = cmap
+        mapper.scalar_range = clim
+        mapper.lookup_table.scalar_range = clim
+        self._painted[name] = (cmap, clim)
 
     def _draw_sheet(self, scene, axis, k, position, keep, scalar, vmax) -> bool:
         """Write the layer into the sheet; ``False`` when no cell is left to show.
@@ -527,8 +732,8 @@ class _FieldView:
         if keep is not None:
             values = values[np.asarray(keep, dtype=bool).ravel(order="F")]
         sheet.cell_data["field"] = values
-        clim = (0.0, vmax) if self.is_group else (-vmax, vmax)
-        cmap = self.cmap or ("viridis" if self.is_group else "RdBu_r")
+        clim = self.colour_range(vmax)
+        cmap = self.colour_map
         if self.sheet_actor is None:
             self._sheet_pd = sheet
             self.sheet_actor = pl.add_mesh(
@@ -566,13 +771,64 @@ class _FieldView:
         mapper.Update()
         return True
 
-    def _draw_arrows(self, scene, axis, k, position, keep, vectors, vmax) -> bool:
-        """Write the layer's arrows into the glyph polydata; ``False`` when none."""
+    def _glyphs(self, points, vec, mag, spacing, vmax):
+        """Arrow glyphs at *points*: coloured by magnitude, length scaled with a floor."""
         import pyvista as pv  # noqa: PLC0415
 
+        cloud = pv.PolyData(points)
+        cloud["vec"] = vec / np.maximum(mag, 1e-300)[:, None]
+        cloud["mag"] = np.minimum(mag, vmax)
+        cloud["len"] = spacing * np.maximum(np.minimum(mag, vmax) / vmax, _ARROW_FLOOR)
+        glyphs = cloud.glyph(
+            orient="vec",
+            scale="len",
+            factor=1.0,
+            geom=pv.Arrow(
+                tip_length=0.3,
+                tip_radius=0.1,
+                shaft_radius=0.035,
+                tip_resolution=8,
+                shaft_resolution=8,
+            ),
+        )
+        return glyphs if glyphs.n_cells else None
+
+    def _place_arrows(self, scene, name: str, glyphs, vmax: float):
+        """Create or refresh a glyph actor; returns the actor."""
+        pl = scene.plotter
+        is_volume = name == "field_volume_arrows"
+        actor = self.volume_actor if is_volume else self.arrow_actor
+        if actor is None:
+            kwargs = {"name": name, "reset_camera": False, "render": False}
+            if self.arrow_color is None:
+                kwargs.update(
+                    scalars="mag",
+                    cmap=self.colour_map,
+                    clim=self.colour_range(vmax),
+                    show_scalar_bar=False,
+                )
+            else:
+                kwargs["color"] = self.arrow_color
+            actor = pl.add_mesh(glyphs, **kwargs)
+            if is_volume:
+                self._volume_pd, self.volume_actor = glyphs, actor
+            else:
+                self._arrow_pd, self.arrow_actor = glyphs, actor
+            self._painted[name] = (self.colour_map, self.colour_range(vmax))
+        else:
+            (self._volume_pd if is_volume else self._arrow_pd).copy_from(glyphs)
+            if self.arrow_color is None:
+                self._paint(name, actor, vmax)
+        if self.arrow_color is None:
+            actor.mapper.SetScalarModeToUsePointFieldData()
+            actor.mapper.SelectColorArray("mag")
+        actor.mapper.Update()
+        return actor
+
+    def _draw_arrows(self, scene, axis, k, position, keep, vectors, vmax) -> bool:
+        """Write the layer's arrows into the glyph polydata; ``False`` when none."""
         from magnelio.post.plot_field import _arrow_grid, _resample  # noqa: PLC0415
 
-        pl = scene.plotter
         u_axis, v_axis = (a for a in range(3) if a != axis)
         u, v = self.nodes_display[u_axis], self.nodes_display[v_axis]
         uc, vc = 0.5 * (u[:-1] + u[1:]), 0.5 * (v[:-1] + v[1:])
@@ -599,35 +855,86 @@ class _FieldView:
         )
         if not np.isfinite(spacing):
             spacing = 0.1 * _viewer._diag(scene.bounds)
-        cloud = pv.PolyData(points)
-        cloud["vec"] = vec / np.maximum(mag[mask], 1e-300)[:, None]
-        cloud["mag"] = np.minimum(mag[mask], vmax)
-        glyphs = cloud.glyph(
-            orient="vec",
-            scale="mag",
-            factor=spacing / vmax,
-            geom=pv.Arrow(
-                tip_length=0.3,
-                tip_radius=0.1,
-                shaft_radius=0.035,
-                tip_resolution=8,
-                shaft_resolution=8,
-            ),
-        )
-        if glyphs.n_cells == 0:
+        glyphs = self._glyphs(points, vec, mag[mask], spacing, vmax)
+        if glyphs is None:
             return False
-        if self.arrow_actor is None:
-            self._arrow_pd = glyphs
-            self.arrow_actor = pl.add_mesh(
-                self._arrow_pd,
-                color=self.arrow_color,
-                name="field_arrows",
+        self._place_arrows(scene, "field_arrows", glyphs, vmax)
+        return True
+
+    def _draw_volume_arrows(self, scene, vectors, vmax) -> bool:
+        """Arrows on a 3D lattice over the kept half of the region; ``False`` when none."""
+        centres = tuple(0.5 * (n[:-1] + n[1:]) for n in self.nodes_display)
+        raster = _lattice3(centres, self.density)
+        comps = self.comps()
+        arrays = [vectors[c] for c in comps]
+        keep = None if self.frames.pec is None else ~self.frames.pec
+        (ax_, ay_, az_), live = _resample3(centres, raster, arrays, keep)
+        mag = np.sqrt(ax_**2 + ay_**2 + az_**2)
+        mask = live & np.isfinite(mag) & (mag >= self.threshold * vmax)
+        xx, yy, zz = np.meshgrid(*raster, indexing="ij")
+        cut = scene.cut
+        if cut.axis is not None:
+            coord = (xx, yy, zz)[_viewer._AXIS_INDEX[cut.axis]]
+            mask &= (coord >= cut.position) if cut.flip else (coord <= cut.position)
+        if not np.any(mask):
+            return False
+        points = np.stack([xx[mask], yy[mask], zz[mask]], axis=1)
+        vec = np.stack([ax_[mask], ay_[mask], az_[mask]], axis=1)
+        steps = [float(r[1] - r[0]) for r in raster if r.size > 1]
+        spacing = min(steps) if steps else 0.1 * _viewer._diag(scene.bounds)
+        glyphs = self._glyphs(points, vec, mag[mask], spacing, vmax)
+        if glyphs is None:
+            return False
+        self._place_arrows(scene, "field_volume_arrows", glyphs, vmax)
+        return True
+
+    def _draw_isosurfaces(self, scene, scalar, vmax) -> bool:
+        """Contour the region's scalar and clip it to the kept half; ``False`` when empty."""
+        import pyvista as pv  # noqa: PLC0415
+
+        pl = scene.plotter
+        values = np.asarray(scalar, dtype=float)
+        if self.frames.pec is not None:
+            # No field inside a conductor: the surface closes on the metal.
+            values = np.where(self.frames.pec, 0.0, values)
+        if self._iso_grid is None:
+            self._iso_grid = pv.RectilinearGrid(*self.nodes_display)
+        self._iso_grid.cell_data["field"] = values.ravel(order="F")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            points = self._iso_grid.cell_data_to_point_data()
+            contour = points.contour(isosurfaces=self.iso_values(vmax), scalars="field")
+        if contour.n_cells == 0:
+            return False
+        clipped = _viewer._clip_body(contour, scene.cut, closed=False)
+        if clipped is None or clipped.n_cells == 0:
+            return False
+        clim, cmap = self.colour_range(vmax), self.colour_map
+        if self.iso_actor is None:
+            self._iso_pd = clipped
+            self.iso_actor = pl.add_mesh(
+                self._iso_pd,
+                scalars="field",
+                cmap=cmap,
+                clim=clim,
+                opacity=_ISO_OPACITY,
+                # No ``smooth_shading``: PyVista would hand the mapper a
+                # copy with normals, and the view's polydata — written
+                # into on every frame — would no longer be what is drawn
+                # (the contour filter computes normals itself).
+                show_scalar_bar=False,
+                name="field_iso",
                 reset_camera=False,
                 render=False,
             )
+            self._painted["field_iso"] = (cmap, clim)
         else:
-            self._arrow_pd.copy_from(glyphs)
-        self.arrow_actor.mapper.Update()
+            self._iso_pd.copy_from(clipped)
+            self._paint("field_iso", self.iso_actor, vmax)
+        mapper = self.iso_actor.mapper
+        mapper.SetScalarModeToUsePointFieldData()
+        mapper.SelectColorArray("field")
+        mapper.Update()
         return True
 
     # ── notebook controls ────────────────────────────────────────────────
@@ -637,20 +944,27 @@ class _FieldView:
         return (self.frame + 1) % max(self.frames.n_frames, 1)
 
     def attach_controls(self, server, key: str, refresh) -> Callable[[], None]:
-        """Register the frame / phase / component / play handlers; return the widget builder."""
+        """Register the frame / phase / component / play / level / density handlers.
+
+        Returns the builder of the field controls, which draws them as a
+        second row under the viewer's toolbar.
+        """
         import asyncio  # noqa: PLC0415
 
-        from trame.widgets import html  # noqa: PLC0415
+        from trame.widgets import client, html  # noqa: PLC0415
         from trame.widgets import vuetify3 as vuetify  # noqa: PLC0415
 
         state = server.state
         k_frame, k_phase, k_comp = f"{key}_frame", f"{key}_phase", f"{key}_comp"
         k_label, k_play = f"{key}_frame_label", f"{key}_play"
+        k_level, k_density = f"{key}_level", f"{key}_density"
         state[k_frame] = int(self.frame)
         state[k_phase] = float(self.phase)
         state[k_comp] = self.component
         state[k_label] = self.frame_label()
         state[k_play] = False
+        state[k_level] = int(round(100.0 * self.iso_level))
+        state[k_density] = int(self.density)
         state[f"{key}_comps"] = _available_components(self.frames.components)
         n_frames = self.frames.n_frames
 
@@ -713,51 +1027,107 @@ class _FieldView:
             self.component = comp
             refresh()
 
+        @state.change(k_level)
+        def _on_level(**kwargs):
+            level = float(kwargs[k_level]) / 100.0
+            if not (0.0 < level < 1.0) or level == self.iso_level:
+                return
+            self.iso_level = level
+            refresh()
+
+        @state.change(k_density)
+        def _on_density(**kwargs):
+            density = int(kwargs[k_density])
+            if density < 2 or density == self.density:
+                return
+            self.density = density
+            refresh()
+
         def items() -> None:
-            if n_frames > 1:
-                with vuetify.VBtn(
-                    icon=True,
-                    size="small",
-                    variant="text",
-                    click=f"{k_play} = !{k_play}",
-                    style="margin-left: 8px;",
-                ):
-                    vuetify.VIcon("mdi-play", v_if=(f"!{k_play}",))
-                    vuetify.VIcon("mdi-pause", v_else=True)
-                    vuetify.VTooltip(
-                        "Play / pause the frames", activator="parent", location="bottom"
-                    )
-                vuetify.VSlider(
-                    v_model=(k_frame, state[k_frame]),
-                    min=0,
-                    max=n_frames - 1,
-                    step=1,
-                    hide_details=True,
-                    density="compact",
-                    style="width: 160px; margin-left: 4px;",
-                )
-                html.Span(f"{{{{ {k_label} }}}}", style="margin-left: 6px; white-space: nowrap;")
-            if self.frames.is_complex:
-                vuetify.VSlider(
-                    v_model=(k_phase, state[k_phase]),
-                    min=0,
-                    max=360,
-                    step=5,
-                    thumb_label=True,
-                    hide_details=True,
-                    density="compact",
-                    style="width: 120px; margin-left: 12px;",
-                )
-                html.Span("phase °", style="margin-left: 4px; white-space: nowrap;")
-            vuetify.VSelect(
-                v_model=(k_comp, state[k_comp]),
-                items=(f"{key}_comps", state[f"{key}_comps"]),
-                label="Field",
-                density="compact",
-                hide_details=True,
-                variant="plain",
-                style="width: 80px; margin-left: 8px;",
+            # A second row under the viewer's toolbar.  PyVista's menu is
+            # a card of fixed height whose rows do not wrap; the card is
+            # told to grow and its row to wrap where this row is present.
+            client.Style(
+                ".v-card:has(.mio-field-row) { height: auto !important; "
+                "overflow: visible !important; }\n"
+                ".v-card:has(.mio-field-row) > .v-row { align-items: flex-start !important; }\n"
+                ".v-card:has(.mio-field-row) > .v-row > .v-row { flex-wrap: wrap !important; }\n"
             )
+            with html.Div(
+                classes="mio-field-row",
+                style="flex-basis: 100%; display: flex; align-items: center; "
+                "flex-wrap: nowrap; padding: 2px 4px 2px 0;",
+            ):
+                if n_frames > 1:
+                    with vuetify.VBtn(
+                        icon=True,
+                        size="small",
+                        variant="text",
+                        click=f"{k_play} = !{k_play}",
+                        style="margin-left: 8px;",
+                    ):
+                        vuetify.VIcon("mdi-play", v_if=(f"!{k_play}",))
+                        vuetify.VIcon("mdi-pause", v_else=True)
+                        vuetify.VTooltip(
+                            "Play / pause the frames", activator="parent", location="bottom"
+                        )
+                    vuetify.VSlider(
+                        v_model=(k_frame, state[k_frame]),
+                        min=0,
+                        max=n_frames - 1,
+                        step=1,
+                        hide_details=True,
+                        density="compact",
+                        style="width: 160px; margin-left: 4px;",
+                    )
+                    html.Span(
+                        f"{{{{ {k_label} }}}}", style="margin-left: 6px; white-space: nowrap;"
+                    )
+                if self.frames.is_complex:
+                    vuetify.VSlider(
+                        v_model=(k_phase, state[k_phase]),
+                        min=0,
+                        max=360,
+                        step=5,
+                        thumb_label=True,
+                        hide_details=True,
+                        density="compact",
+                        style="width: 120px; margin-left: 12px;",
+                    )
+                    html.Span("phase °", style="margin-left: 4px; white-space: nowrap;")
+                vuetify.VSelect(
+                    v_model=(k_comp, state[k_comp]),
+                    items=(f"{key}_comps", state[f"{key}_comps"]),
+                    label="Field",
+                    density="compact",
+                    hide_details=True,
+                    variant="plain",
+                    style="width: 80px; margin-left: 8px;",
+                )
+                if self.can_iso and self.levels is None:
+                    vuetify.VSlider(
+                        v_model=(k_level, state[k_level]),
+                        min=5,
+                        max=95,
+                        step=5,
+                        thumb_label=True,
+                        hide_details=True,
+                        density="compact",
+                        style="width: 110px; margin-left: 12px;",
+                    )
+                    html.Span("iso %", style="margin-left: 4px; white-space: nowrap;")
+                if self.has_arrows:
+                    vuetify.VSlider(
+                        v_model=(k_density, state[k_density]),
+                        min=5,
+                        max=40,
+                        step=1,
+                        thumb_label=True,
+                        hide_details=True,
+                        density="compact",
+                        style="width: 110px; margin-left: 12px;",
+                    )
+                    html.Span("arrows", style="margin-left: 4px; white-space: nowrap;")
 
         return items
 
@@ -813,8 +1183,11 @@ def show_field(
     density: int = 20,
     threshold: float = 0.02,
     opacity: float = 1.0,
-    arrow_color: str = "#303030",
+    arrow_color: str | None = None,
     fps: float = 4.0,
+    volume: str | None = None,
+    levels=None,
+    iso_level: float = 0.5,
     geometry=None,
     mesh=None,
     show_ports: bool = True,
@@ -833,11 +1206,17 @@ def show_field(
     with the field laid on the cutting plane: the cell layer the cut
     exposes as a coloured sheet — the magnitude of a field group, or one
     signed component — and, for a field group, arrows on an even lattice
-    over that layer.  Moving the position slider walks the cut through
+    over that layer.  The volume behind the cut can carry the field too
+    (*volume*): arrows on a 3D lattice, coloured by magnitude, and
+    isosurfaces of the magnitude (the ±level of a signed component),
+    both clipped to the kept half like the solids; the *Show* menu turns
+    either on and off.  Moving the position slider walks the cut through
     the recorded volume; a time or frequency monitor adds a frame slider,
-    complex data a phase slider, and a selector switches the field.  The
-    values are the cell-centred physical fields of the exposed layer,
-    computed for that layer when the cut moves.
+    complex data a phase slider, a selector switches the field, and
+    sliders set the isosurface level and the arrow density.  The values
+    are the cell-centred physical fields of the exposed layer, computed
+    for that layer when the cut moves — and of the whole region when a
+    volume representation is shown.
 
     Parameters
     ----------
@@ -876,17 +1255,38 @@ def show_field(
         Colour map; default ``"viridis"`` for a magnitude, ``"RdBu_r"``
         for a signed component.
     density : int, default 20
-        Arrows along the longer in-plane axis.
+        Arrows along the longer in-plane axis of the cut, and along the
+        longest axis of the region in the volume; the other axes get
+        the count that keeps the lattice even.
     threshold : float, default 0.02
         Arrows below this fraction of *vmax* are not drawn.
     opacity : float, default 1.0
         Opacity of the field sheet.
-    arrow_color : str
-        Colour of the arrows.
+    arrow_color : str, optional
+        One colour for every arrow.  Default: the arrows are coloured by
+        their magnitude on the sheet's colour scale.  Either way an
+        arrow's length grows with its magnitude, from three tenths of
+        the lattice spacing up to one spacing, so a decaying field keeps
+        readable arrows.
     fps : float, default 4.0
         Frames per second of the toolbar's play button (notebook widget);
         the effective rate is bounded by how fast the browser receives a
-        frame.
+        frame — a volume representation costs the whole region per frame.
+    volume : {"arrows", "isosurface", "both"}, optional
+        What to draw in the volume behind the cut at first.  ``"arrows"``
+        replaces the arrows on the cut by arrows on a 3D lattice over the
+        kept half; ``"isosurface"`` adds translucent surfaces of the
+        magnitude at *iso_level* (or at *levels*); ``"both"`` draws
+        both.  Default: nothing in the volume — the *Show* menu offers
+        both representations whenever the source is a volume.
+    levels : sequence of float, optional
+        Isosurface levels in field units (V/m or A/m).  Default: one
+        surface at *iso_level* of the colour ceiling, movable with the
+        toolbar's level slider; given levels are fixed.  A signed
+        component gets each level with both signs.
+    iso_level : float, default 0.5
+        The isosurface level as a fraction of *vmax* when *levels* is
+        not given.
     geometry : GeometryModel, optional
         Draw the model's solids and features with the field.
     mesh : Mesh, optional
@@ -912,11 +1312,21 @@ def show_field(
     Symmetry planes are not mirrored in the 3D view; it shows the
     modelled half of the model, as the geometry view does.  Every
     sample is a cell-centre average of the staggered components — the
-    picture stands for a layer of cells, not for a plane.
+    picture stands for a layer of cells, not for a plane — and the
+    isosurfaces interpolate those cell values to the nodes before they
+    are contoured.
     """
     frames = _frames_of(source, mesh)
     if plot_type not in _PLOT_TYPES:
         raise ValueError(f"plot_type must be one of {_PLOT_TYPES}; got {plot_type!r}")
+    if volume is not None and volume not in _VOLUME_CHOICES:
+        raise ValueError(f"volume must be one of {_VOLUME_CHOICES} or None; got {volume!r}")
+    if levels is not None:
+        levels = tuple(float(v) for v in np.atleast_1d(np.asarray(levels, dtype=float)))
+        if not levels or any(not np.isfinite(v) or v <= 0.0 for v in levels):
+            raise ValueError(f"levels must be positive field values; got {levels}")
+    if not (0.0 < float(iso_level) < 1.0):
+        raise ValueError(f"iso_level must lie in (0, 1); got {iso_level!r}")
     available = _available_components(frames.components)
     if component not in available:
         raise KeyError(
@@ -952,7 +1362,17 @@ def show_field(
         opacity=float(opacity),
         arrow_color=arrow_color,
         fps=float(fps),
+        volume_start=volume,
+        iso_level=float(iso_level),
+        levels=levels,
     )
+    if volume is not None and not view.has_volume:
+        raise ValueError(f"{frames.name!r} offers no volume to draw {volume!r} in")
+    if volume in ("isosurface", "both") and not view.can_iso:
+        raise ValueError(
+            f"isosurfaces need at least two cells along every axis; {frames.name!r} "
+            f"spans {frames.shape} cells"
+        )
     extent = []
     for nodes in view.nodes_display:
         extent += [float(nodes[0]), float(nodes[-1])]
