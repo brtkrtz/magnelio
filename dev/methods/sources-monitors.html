@@ -868,10 +868,18 @@ DD-085).</p></li>
 </ul>
 <p>All monitors return physical SI units; the calibration (C = 1 pinned
 at the excitation source) is in-house bookkeeping (DD-085).</p>
-<p>A field monitor plots on a slice (<code class="docutils literal notranslate"><span class="pre">plot</span></code>, <code class="docutils literal notranslate"><span class="pre">interact</span></code>) and opens in the
-3D viewer (<code class="docutils literal notranslate"><span class="pre">show</span></code>), where the field lies on the viewer’s cutting plane
-and the position slider walks it through the recorded volume — see
-<a class="reference internal" href="viewer.html"><span class="std std-doc">the viewer chapter</span></a>.</p>
+<p>A field monitor records the <em>grid quantities on the Yee positions</em> of
+its region — a copy of the solver’s own samples, nothing averaged — and
+hands them out as a <code class="docutils literal notranslate"><span class="pre">FieldRecording</span></code> (<code class="docutils literal notranslate"><span class="pre">monitor.recording</span></code>) or, for the
+running transform, a <code class="docutils literal notranslate"><span class="pre">FieldSpectrum</span></code> (<code class="docutils literal notranslate"><span class="pre">monitor.spectrum</span></code>); the
+cell-centred <code class="docutils literal notranslate"><span class="pre">data</span></code> is derived from those on access.  The recording’s
+<code class="docutils literal notranslate"><span class="pre">times</span></code> are the instants of the electric field, <code class="docutils literal notranslate"><span class="pre">times_h</span></code> those of the
+magnetic one, half a step later.  A project store keeps the same
+staggered frames, one dataset per component, and the ParaView export
+converts them at export time.  A field monitor plots on a slice
+(<code class="docutils literal notranslate"><span class="pre">plot</span></code>, <code class="docutils literal notranslate"><span class="pre">interact</span></code>) and opens in the 3D viewer (<code class="docutils literal notranslate"><span class="pre">show</span></code>), where the
+field lies on the viewer’s cutting plane and the position slider walks
+it through the recorded volume — see <a class="reference internal" href="viewer.html"><span class="std std-doc">the viewer chapter</span></a>.</p>
 <p>A plotted field plane is one <em>layer</em> of cells, sampled at their
 centres, not a mathematical plane — the plane coordinate printed in the
 title is the cell-centre coordinate the request snapped to.  Geometry
@@ -908,9 +916,9 @@ for every feed type (DD-198).</p>
 <h2>Project store, checkpointing, resume<a class="headerlink" href="#project-store-checkpointing-resume" title="Link to this heading">#</a></h2>
 <p>Runs stream results append-only into an HDF5-based on-disk project
 store (SWMR single-writer/multi-reader), with periodic checkpoints
-and bit-exact resume (DD-070).  File formats: HDF5, XDMF/VTK for
-field visualisation.  This is engineering infrastructure, not a
-research method; the formats are community standards.</p>
+and bit-exact resume (DD-070).  File formats: HDF5 for the store, VTK
+series for field visualisation.  This is engineering infrastructure,
+not a research method; the formats are community standards.</p>
 </section>
 </section>
 

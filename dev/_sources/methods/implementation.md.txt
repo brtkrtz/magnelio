@@ -36,4 +36,4 @@ polygon kernels).  Engineering only.
 - NumPy/SciPy: sparse matrices, `eigsh` (ARPACK), `spsolve` (SuperLU),
   `nnls` (Lawson–Hanson {cite}`lawsonhanson1974`).
 - pythonocc-core / Open CASCADE: geometry kernel.
-- h5py/HDF5, VTK, XDMF: storage and visualisation formats.
+- h5py/HDF5, VTK: storage and visualisation formats.

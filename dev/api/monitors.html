@@ -844,7 +844,7 @@ the constructor.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldFrequency.attach">
 <span class="sig-name descname"><span class="pre">attach</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldFrequency.attach" title="Link to this definition">#</a></dt>
-<dd><p>Snap to grid and allocate DFT accumulators.</p>
+<dd><p>Snap to grid and allocate one DFT accumulator per staggered component.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
@@ -980,11 +980,17 @@ Ignored for amplitude plots (<code class="docutils literal notranslate"><span cl
 <code class="docutils literal notranslate"><span class="pre">t_H</span> <span class="pre">=</span> <span class="pre">(n</span> <span class="pre">+</span> <span class="pre">0.5)</span> <span class="pre">*</span> <span class="pre">dt</span></code>.  The correct time is passed to the
 DFT accumulator for each component so that the Leapfrog
 staggering is handled automatically.</p>
+<p>The bins accumulate the grid quantities on the region’s Yee
+positions; nothing is averaged until the spectrum is read.  The
+time stamps are the ones the port recorder uses for the same
+step (<code class="docutils literal notranslate"><span class="pre">t</span></code> for the sample of <code class="docutils literal notranslate"><span class="pre">e</span></code> taken after step <em>n</em>), so a
+renormalised pattern is phase-consistent with the run’s
+S-parameters.</p>
 <p>With an <code class="docutils literal notranslate"><span class="pre">interval</span></code>, steps off the stride return before the
-cell-centre interpolation — which is where a whole-volume
-monitor spends its time, so the saving is proportional.  The
-stride is keyed on the absolute step index, so a resumed run
-samples the same instants as an uninterrupted one.</p>
+copy — which is where a whole-volume monitor spends its time, so
+the saving is proportional.  The stride is keyed on the absolute
+step index, so a resumed run samples the same instants as an
+uninterrupted one.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1072,11 +1078,12 @@ and the rendering <code class="docutils literal notranslate"><span class="pre">m
 <dl class="py property">
 <dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldFrequency.data">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">data</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#magnelio.monitors.MonitorFieldFrequency.data" title="Link to this definition">#</a></dt>
-<dd><p>Recorded fields per 1 W incident CW power.</p>
+<dd><p>Recorded fields per 1 W incident CW power, averaged onto cell centres.</p>
 <p>Each bin is divided by the spectrum of the run’s excitation, so
 E is in V/m and H in A/m, both per √W of incident power.  Raises
 if no source reference is available (see <a class="reference internal" href="#magnelio.monitors.MonitorFieldFrequency.renormalize" title="magnelio.monitors.MonitorFieldFrequency.renormalize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">renormalize()</span></code></a>);
-<a class="reference internal" href="#magnelio.monitors.MonitorFieldFrequency.data_raw" title="magnelio.monitors.MonitorFieldFrequency.data_raw"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data_raw</span></code></a> returns the undivided bins instead.</p>
+<a class="reference internal" href="#magnelio.monitors.MonitorFieldFrequency.data_raw" title="magnelio.monitors.MonitorFieldFrequency.data_raw"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data_raw</span></code></a> returns the undivided bins instead.  Derived
+from <a class="reference internal" href="#magnelio.monitors.MonitorFieldFrequency.spectrum" title="magnelio.monitors.MonitorFieldFrequency.spectrum"><code class="xref py py-attr docutils literal notranslate"><span class="pre">spectrum</span></code></a> on every access.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Keys are component names.  Values have shape
@@ -1118,6 +1125,21 @@ reference is set — <a class="reference internal" href="#magnelio.monitors.Moni
 <dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldFrequency.is_renormalized">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">is_renormalized</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#magnelio.monitors.MonitorFieldFrequency.is_renormalized" title="Link to this definition">#</a></dt>
 <dd><p>Whether 1 W renormalization has been applied.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldFrequency.spectrum">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">spectrum</span></span><a class="headerlink" href="#magnelio.monitors.MonitorFieldFrequency.spectrum" title="Link to this definition">#</a></dt>
+<dd><p>The pattern as a <a class="reference internal" href="fields.html#magnelio.fields.FieldSpectrum" title="magnelio.fields.FieldSpectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">FieldSpectrum</span></code></a>, per 1 W CW.</p>
+<p>Every frame keeps the Yee staggering of the region.  Raises
+without a source reference (see <a class="reference internal" href="#magnelio.monitors.MonitorFieldFrequency.renormalize" title="magnelio.monitors.MonitorFieldFrequency.renormalize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">renormalize()</span></code></a>);
+<a class="reference internal" href="#magnelio.monitors.MonitorFieldFrequency.spectrum_raw" title="magnelio.monitors.MonitorFieldFrequency.spectrum_raw"><code class="xref py py-attr docutils literal notranslate"><span class="pre">spectrum_raw</span></code></a> is the undivided transform.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldFrequency.spectrum_raw">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">spectrum_raw</span></span><a class="headerlink" href="#magnelio.monitors.MonitorFieldFrequency.spectrum_raw" title="Link to this definition">#</a></dt>
+<dd><p>The raw transform as a <a class="reference internal" href="fields.html#magnelio.fields.FieldSpectrum" title="magnelio.fields.FieldSpectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">FieldSpectrum</span></code></a>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1405,7 +1427,7 @@ slider then runs over time at a fixed slice plane.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldTime.load_state_dict">
 <span class="sig-name descname"><span class="pre">load_state_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sd</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldTime.load_state_dict" title="Link to this definition">#</a></dt>
-<dd><p>Restore the target-time cursor (see <a class="reference internal" href="#magnelio.monitors.MonitorFieldTime.state_dict" title="magnelio.monitors.MonitorFieldTime.state_dict"><code class="xref py py-meth docutils literal notranslate"><span class="pre">state_dict()</span></code></a>).</p>
+<dd><p>Restore the schedule cursor (see <a class="reference internal" href="#magnelio.monitors.MonitorFieldTime.state_dict" title="magnelio.monitors.MonitorFieldTime.state_dict"><code class="xref py py-meth docutils literal notranslate"><span class="pre">state_dict()</span></code></a>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>sd</strong> (<em>dict</em>)</p>
@@ -1465,10 +1487,11 @@ nearest cell-centre plane (3D monitors only).</p></li>
 <span class="sig-name descname"><span class="pre">pop_pending</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldTime.pop_pending" title="Link to this definition">#</a></dt>
 <dd><p>Drain the snapshots recorded since the last call (streaming).</p>
 <p>Returns the pending recorded times and, per component, the pending
-snapshots stacked along a leading time axis, then clears the in-RAM
-snapshot buffer — so a project-backed run stays <strong>memory-bounded</strong>
-(the run sink flushes each batch to disk instead of the monitor
-holding every snapshot).  <code class="docutils literal notranslate"><span class="pre">_next_idx</span></code> (target-time progress) is
+snapshots — grid quantities on the region’s Yee positions, shape
+<code class="docutils literal notranslate"><span class="pre">(k,</span> <span class="pre">*Yee</span> <span class="pre">shape)</span></code> — stacked along a leading time axis, then
+clears the in-RAM snapshot buffer — so a project-backed run stays
+<strong>memory-bounded</strong> (the run sink flushes each batch to disk
+instead of the monitor holding every snapshot).  <code class="docutils literal notranslate"><span class="pre">_next_idx</span></code> (target-time progress) is
 <em>kept</em>, so recording continues at the right time point.  The in-RAM
 path never calls this, so its <code class="docutils literal notranslate"><span class="pre">data</span></code>/<code class="docutils literal notranslate"><span class="pre">t</span></code> accumulation is
 unchanged.</p>
@@ -1482,8 +1505,13 @@ unchanged.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldTime.record">
 <span class="sig-name descname"><span class="pre">record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldTime.record" title="Link to this definition">#</a></dt>
-<dd><p>Record a snapshot if <em>t</em> matches a requested time point.</p>
-<p>Called at every time step by the solver.</p>
+<dd><p>Record a snapshot when the electric field’s instant meets a target.</p>
+<p>Called at every time step by the solver, after the H update of
+step <em>n</em>: <code class="docutils literal notranslate"><span class="pre">e</span></code> then stands at <code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">+</span> <span class="pre">dt</span></code> and <code class="docutils literal notranslate"><span class="pre">h</span></code> half a step
+later.  The snapshot is a copy of the grid quantities on the
+region’s Yee positions — no averaging — stamped with the
+electric instant; the recording states the magnetic one as
+<code class="docutils literal notranslate"><span class="pre">times</span> <span class="pre">+</span> <span class="pre">dt/2</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1518,12 +1546,13 @@ and the rendering <code class="docutils literal notranslate"><span class="pre">m
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldTime.state_dict">
 <span class="sig-name descname"><span class="pre">state_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldTime.state_dict" title="Link to this definition">#</a></dt>
-<dd><p>Checkpoint the target-time cursor for a bit-exact resume.</p>
-<p>Only <code class="docutils literal notranslate"><span class="pre">_next_idx</span></code> is state a continuation must restore — the
-recorded snapshots themselves live in the run’s <code class="docutils literal notranslate"><span class="pre">results.h5</span></code>
-(streamed), and the region is re-resolved on attach.  <code class="docutils literal notranslate"><span class="pre">_next_idx</span></code>
-equals the number of snapshots recorded so far, so it also drives
-the monitor-stream truncation on resume.</p>
+<dd><p>Checkpoint the schedule cursor for a bit-exact resume.</p>
+<p>Two counters: the targets consumed (<code class="docutils literal notranslate"><span class="pre">next_idx</span></code>) and the frames
+recorded (<code class="docutils literal notranslate"><span class="pre">n_recorded</span></code>) — they differ when the schedule is
+finer than the time step.  The frames themselves live in the
+run’s <code class="docutils literal notranslate"><span class="pre">results.h5</span></code> (streamed), and the region is re-resolved on
+attach; <code class="docutils literal notranslate"><span class="pre">n_recorded</span></code> drives the monitor-stream truncation on
+resume.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>dict</p>
@@ -1534,7 +1563,9 @@ the monitor-stream truncation on resume.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldTime.data">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">data</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#magnelio.monitors.MonitorFieldTime.data" title="Link to this definition">#</a></dt>
-<dd><p>All snapshots stacked along a leading time axis.</p>
+<dd><p>The snapshots averaged onto cell centres, stacked along time.</p>
+<p>Derived from <a class="reference internal" href="#magnelio.monitors.MonitorFieldTime.recording" title="magnelio.monitors.MonitorFieldTime.recording"><code class="xref py py-attr docutils literal notranslate"><span class="pre">recording</span></code></a> on every access; the recording
+itself keeps the staggered samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Keys are component names (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;Ex&quot;</span></code>).  Values have shape
@@ -1548,6 +1579,16 @@ dims are empty, giving shape <code class="docutils literal notranslate"><span cl
 </dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldTime.recording">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">recording</span></span><a class="headerlink" href="#magnelio.monitors.MonitorFieldTime.recording" title="Link to this definition">#</a></dt>
+<dd><p>The snapshots as a <a class="reference internal" href="fields.html#magnelio.fields.FieldRecording" title="magnelio.fields.FieldRecording"><code class="xref py py-class docutils literal notranslate"><span class="pre">FieldRecording</span></code></a>.</p>
+<p>Every frame keeps the Yee staggering of the region; the magnetic
+field’s instants are <code class="docutils literal notranslate"><span class="pre">recording.times_h</span></code>.  Raises when nothing
+has been recorded — on a project-backed run the frames stream to
+the store and are read back through the project’s monitors.</p>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldTime.region">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">region</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">MonitorRegion</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#magnelio.monitors.MonitorFieldTime.region" title="Link to this definition">#</a></dt>
 <dd><p>Resolved grid region (available after <a class="reference internal" href="#magnelio.monitors.MonitorFieldTime.attach" title="magnelio.monitors.MonitorFieldTime.attach"><code class="xref py py-meth docutils literal notranslate"><span class="pre">attach()</span></code></a>).</p>
@@ -1556,7 +1597,7 @@ dims are empty, giving shape <code class="docutils literal notranslate"><span cl
 <dl class="py property">
 <dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldTime.t">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">t</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span><a class="headerlink" href="#magnelio.monitors.MonitorFieldTime.t" title="Link to this definition">#</a></dt>
-<dd><p>Actually recorded time points [s].</p>
+<dd><p>Recorded instants [s] of the electric field.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1938,6 +1979,8 @@ basis.  Only meaningful relative to <a class="reference internal" href="#magneli
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.data_raw"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.data_raw</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.f"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.f</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.is_renormalized"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.is_renormalized</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.spectrum"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.spectrum</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.spectrum_raw"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.spectrum_raw</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldSurface"><code class="docutils literal notranslate"><span class="pre">MonitorFieldSurface</span></code></a><ul class="nav section-nav flex-column">
@@ -1963,6 +2006,7 @@ basis.  Only meaningful relative to <a class="reference internal" href="#magneli
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.show"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.show()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.state_dict"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.state_dict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.data"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.data</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.recording"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.recording</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.region"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.region</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.t"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.t</span></code></a></li>
 </ul>
