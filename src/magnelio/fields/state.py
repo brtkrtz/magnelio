@@ -31,21 +31,14 @@ from collections.abc import Callable
 import numpy as np
 
 from magnelio._fields.field_arrays import FieldArrays
+from magnelio.fields._interp import _interp_to_cell_centres, _solver_dual_widths
 from magnelio.mesh.grid import GridLines
 
 _COMPONENTS = ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz")
 _AXES = ("x", "y", "z")
 
-
-def _dual_widths(d: np.ndarray) -> np.ndarray:
-    """Dual widths in the solver convention (boundary node = full end cell)."""
-    n = d.size
-    out = np.empty(n + 1)
-    out[0] = d[0]
-    if n > 1:
-        out[1:n] = 0.5 * (d[:-1] + d[1:])
-    out[n] = d[-1]
-    return out
+# Dual widths in the solver convention (boundary node = full end cell).
+_dual_widths = _solver_dual_widths
 
 
 def _yee_shapes(Nx: int, Ny: int, Nz: int) -> dict[str, tuple[int, int, int]]:
@@ -328,10 +321,7 @@ class FieldState:
         dict[str, np.ndarray]
             ``{name: array}`` with shape ``(nx, ny, nz)`` of the box.
         """
-        from magnelio.monitors.base import (  # noqa: PLC0415
-            _interp_to_cell_centres,
-            resolve_region,
-        )
+        from magnelio.monitors.base import resolve_region  # noqa: PLC0415
 
         names = list(_COMPONENTS if components is None else components)
         for name in names:
@@ -354,6 +344,81 @@ class FieldState:
             return self
         raw = FieldArrays(**{c: np.real(getattr(self._raw, c)) for c in _COMPONENTS})
         return type(self)._from_raw(self._grid, raw)
+
+    # ── symmetry ─────────────────────────────────────────────────────────
+
+    def mirrored(self, *mirrors) -> FieldState:
+        """The field continued across symmetry planes, on the extended grid.
+
+        A model declared with symmetry planes is solved on the reduced
+        domain; this returns the field of the whole structure — the
+        simulated part plus its mirror images — with every component
+        continued by its own rule: across a magnetic (PMC) plane E
+        continues like a polar vector (normal component odd, tangential
+        even) and H like a pseudovector, across an electric (PEC) plane
+        the roles swap.  The staggering is kept: a sample sitting on
+        the wall appears once, and the cell a magnetic wall bisects
+        gets its centre sample from the wall value (zero for an odd
+        component, the neighbour's value for an even one).
+
+        Parameters
+        ----------
+        *mirrors : MirrorSpec
+            One plane each (:class:`magnelio.post._symmetry.MirrorSpec`:
+            axis, wall position, ``"PEC"``/``"PMC"``, side).  A plane
+            must bound the grid: on the wall for PEC, half the boundary
+            cell outside it for PMC.
+        """
+        out = self
+        for spec in mirrors:
+            out = out._mirrored_once(spec)
+        return out
+
+    def _mirrored_once(self, spec) -> FieldState:
+        from magnelio.post._symmetry import mirror_sign  # noqa: PLC0415
+
+        a = int(spec.axis)
+        nodes = list(self._nodes())
+        n = nodes[a]
+        tol = 1e-9 * abs(float(n[-1] - n[0]))
+        edge = float(n[0] if spec.at_low else n[-1])
+        outside = (edge - spec.wall) if spec.at_low else (spec.wall - edge)
+        if outside < -tol:
+            raise ValueError(
+                f"the {spec.kind} plane at {_AXES[a]} = {spec.wall:g} m lies inside the grid "
+                f"({edge:g} m is its {'low' if spec.at_low else 'high'} end)"
+            )
+        reflected = 2.0 * float(spec.wall) - n[::-1]
+        shared = outside <= tol  # the wall is a grid line: its samples appear once
+        if spec.at_low:
+            nodes[a] = np.concatenate([reflected[:-1] if shared else reflected, n])
+        else:
+            nodes[a] = np.concatenate([n, reflected[1:] if shared else reflected])
+        grid = GridLines(*nodes)
+
+        comps = {}
+        for name in _COMPONENTS:
+            group, caxis = name[0], _AXES.index(name[1])
+            values = self.component(name)
+            sign = mirror_sign(group, caxis, a, spec.kind)
+            flipped = sign * np.flip(values, axis=a)
+            on_centre = (caxis == a) if group == "E" else (caxis != a)
+            if not on_centre:
+                if shared:
+                    flipped = np.delete(flipped, -1 if spec.at_low else 0, axis=a)
+                parts = [flipped, values]
+            elif shared:
+                parts = [flipped, values]
+            else:
+                # The cell the wall bisects: its centre sample is the
+                # wall value itself.
+                near = np.take(values, [0 if spec.at_low else -1], axis=a)
+                wall = near if sign > 0 else 0.0 * near
+                parts = [flipped, wall, values]
+            if not spec.at_low:
+                parts = parts[::-1]
+            comps[name] = np.concatenate(parts, axis=a)
+        return FieldState(grid, **comps)
 
     # ── plotting ─────────────────────────────────────────────────────────
 
@@ -426,7 +491,6 @@ class FieldState:
             _AXES as _AX,
         )
         from magnelio.monitors.base import (  # noqa: PLC0415
-            _interp_to_cell_centres,
             _resolve_component,
             plane_slab_halfwidth,
             resolve_plane_view,

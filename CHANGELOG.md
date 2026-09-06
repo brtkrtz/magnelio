@@ -22,6 +22,14 @@ major version is 0, minor releases may change the public API.
   pattern, and a selector switches the component; with `mesh=` the
   cells inside metal are cut out so the solids show through.  Also
   available as `magnelio.plots.show_field`.
+- `magnelio.fields.FieldRecording` and `FieldSpectrum`: frames of a
+  field on one grid over time (with the magnetic field's half-step
+  time base) and over frequency (complex, with `snapshot` at a
+  phase), each frame a `FieldState`, with `component`, `cell_centred`,
+  `plot` and `show`.  `FieldState.mirrored` continues a field across
+  the model's symmetry planes on the extended grid, keeping the
+  staggering.  The monitors will record into these containers in
+  0.7.0.
 
 ### Changed
 

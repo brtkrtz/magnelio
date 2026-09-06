@@ -20887,9 +20887,35 @@ record `investigations/patch-array/kb035_synthetic.py`.
 **Status:** Proposed (developer consensus on the strategy 2026-09-05).
 **Step 0 implemented 2026-09-05** on `feat/field-viewer-3d`
 (`src/magnelio/post/field_3d.py`, `tests/unit/test_field_3d.py`,
-`docs/methods/viewer.md`, tutorials 07 and 20); awaiting the developer's
-browser review.  Steps 1–5 are scheduled for 0.7.0 after the v0.6.0
-release and the [[DD-256]] patch.
+`docs/methods/viewer.md`, tutorials 07 and 20), reviewed by the
+developer in the browser 2026-09-06 and merged (`7a59be1`).
+**Step 1 implemented 2026-09-06** on `feat/field-series`
+(`src/magnelio/fields/series.py`, `fields/_interp.py`,
+`FieldState.mirrored`, `tests/unit/test_field_series.py`,
+`TestMirrored`, chapter section *Field containers*).  Steps 2–5 are
+scheduled for 0.7.0 after the [[DD-256]] patch.
+
+*Step 1 decisions.*  `FieldRecording(grid, times, dt=, **components)`
+and `FieldSpectrum(grid, frequencies, **components)` share one base:
+frames stacked along a leading axis as grid quantities, a subset of
+the six components allowed (`components` names them, a `frame(i)` is a
+`FieldState` with zeros for the rest), `component(name)` the physical
+stack, `cell_centred(frame=)` per frame or stacked, `plot` delegating
+to the frame with the instant or frequency appended to the title,
+`show` through the viewer's frame protocol (`_frames_from_series`).
+The magnetic time base is `times_h = times + dt/2`, stated rather than
+hidden.  The cell-centre averaging now lives in `fields._interp`;
+`monitors.base` re-exports it, so the dependency points from the
+monitors to the containers.  `FieldState.mirrored(*specs)` continues a
+field across DD-154's `MirrorSpec` planes on the *extended grid* with
+the staggering kept — and it is exact: on a PEC plane (a grid line)
+the wall's samples appear once, on a PMC plane (half a cell outside)
+the extended grid gains the cell the wall bisects, and the components
+whose samples fall on that wall (E normal, H tangential) are exactly
+the odd ones, so their wall sample is zero and no estimate is ever
+needed.  Verified against the analytic continuation of even/odd test
+fields to 1e-15.  A frame already feeds `SourceFieldInitial` (step 5's
+`from_recording` reduces to `at_time`).
 
 *Step 0 findings.*  (a) PyVista 0.48 feeds a mesh added under an
 existing actor name through a small pipeline whose output stays empty
