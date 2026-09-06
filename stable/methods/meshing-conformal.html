@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=8fa8b3e9"></script>
+    <script src="../_static/documentation_options.js?v=fe7df9b0"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -177,8 +177,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.6.html">
-    Upgrading from 0.5.x
+  <a class="nav-link nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -190,6 +190,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
@@ -356,6 +363,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -891,6 +905,40 @@ The bare-grid equivalent radius <span class="math notranslate nohighlight">\(r_0
 <span class="math notranslate nohighlight">\(\kappa_0 = e^{-\gamma}/2^{3/2} \approx 0.1985\)</span> comes from the
 square-lattice Green’s function, as given in the thin-wire literature
 <span class="bibtex-citation" id="id8">[<a class="reference internal" href="../bibliography.html#id19" title="Taku Noda and Shigeru Yokoyama. Thin wire representation in finite difference time domain surge simulation. IEEE Transactions on Power Delivery, 17(3):840–847, 2002. doi:10.1109/TPWRD.2002.1022813.">11</a>]</span>.</p>
+<section id="where-a-wire-ends">
+<h3>Where a wire ends<a class="headerlink" href="#where-a-wire-ends" title="Link to this heading">#</a></h3>
+<p>A wire’s end is a grid node, and what it connects to is decided by
+that node’s other edges:</p>
+<ul class="simple">
+<li><p><strong>On a PEC solid</strong> the shared node joins the wire’s masked edge chain
+to the solid’s masked edges; current continuity is topological.  The
+solid’s conformal faces keep their values in the last ring, so the
+foot segment carries the bare-grid inductance — an error of one cell
+at each such end.</p></li>
+<li><p><strong>On a thin sheet</strong> (the thin-metallisation path above) the sheet is
+one grid plane at its substrate-side face, and its far face is not in
+the grid.  A wire vertex anywhere inside the metal’s thickness — the
+natural way to draw a bond is on the metal’s top face — collapses
+onto the sheet plane, so the wire ends on the sheet’s own node and
+the junction is the same topological contact as on a solid.  The
+ring faces of the foot segment cross the metal layer; there the
+wire’s factor <span class="math notranslate nohighlight">\(m\)</span> composes with the sub-cell value of the face, as it
+does with a dielectric, so the free part of the segment keeps the
+wire’s inductance.  Gated against the same monopole on a solid built
+on one grid: resonance within 1 %, feed resistance within 3 % for a
+sheet of a fifth of a cell.  The comparison is in-house.</p></li>
+<li><p><strong>Open</strong> ends and ends on a <strong>PMC</strong> wall are the ideal open; a <strong>PEC
+wall</strong> is the electric mirror (a monopole).</p></li>
+<li><p>A <strong>lumped port</strong> drives exactly one edge between two wires (or a
+chain with a skipped edge); the port edge must not be part of a
+wire.</p></li>
+</ul>
+<p>A wire that lands <em>beside</em> the metal, or crosses a sheet, follows the
+same rule: only coordinates inside a sheet’s thickness band move, by
+less than the sheet thickness, itself below the cell floor.  Wire–wire
+junctions away from a conductor, oblique in-cell segments and
+insulated wires are outside the model.</p>
+</section>
 </section>
 <section id="mesh-quality-safeguards">
 <h2>Mesh quality safeguards<a class="headerlink" href="#mesh-quality-safeguards" title="Link to this heading">#</a></h2>
@@ -958,7 +1006,10 @@ reported edge floor (DD-191) are in-house engineering.</p>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#conformal-sub-cell-material-matrices-partially-filled-cells">Conformal sub-cell material matrices (partially filled cells)</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#thin-conducting-sheets">Thin conducting sheets</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#thin-wire-sub-cell-model">Thin-wire sub-cell model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#thin-wire-sub-cell-model">Thin-wire sub-cell model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#where-a-wire-ends">Where a wire ends</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mesh-quality-safeguards">Mesh quality safeguards</a></li>
 </ul>
   </nav></div>

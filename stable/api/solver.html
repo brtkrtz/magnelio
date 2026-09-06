@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=8fa8b3e9"></script>
+    <script src="../_static/documentation_options.js?v=fe7df9b0"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -175,8 +175,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.6.html">
-    Upgrading from 0.5.x
+  <a class="nav-link nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -188,6 +188,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
@@ -354,6 +361,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -557,7 +571,7 @@
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>frequencies</strong> (<em>np.ndarray</em>) – Resonant frequencies [Hz], shape <code class="docutils literal notranslate"><span class="pre">(n_modes,)</span></code>, ascending.</p></li>
-<li><p><strong>modes</strong> (<em>list</em><em>[</em><a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><em>FieldState</em></a><em>]</em>) – One FieldState per mode with E and H fields on the Yee grid.
+<li><p><strong>modes</strong> (<em>list</em><em>[</em><em>FieldArrays</em><em>]</em>) – One FieldArrays per mode with E and H fields on the Yee grid.
 Field amplitudes are normalised so that <code class="docutils literal notranslate"><span class="pre">e^T</span> <span class="pre">M_eps</span> <span class="pre">e</span> <span class="pre">=</span> <span class="pre">1</span></code>.</p></li>
 <li><p><strong>mesh</strong> (<a class="reference internal" href="core.html#magnelio.Mesh" title="magnelio.Mesh"><em>Mesh</em></a>) – Reference mesh (grid, material library).</p></li>
 <li><p><strong>solver_info</strong> (<em>dict</em>) – Metadata: solver backend, number of iterations, residuals, etc.</p></li>
@@ -725,7 +739,7 @@ to this for Ctrl-C, or call it from a monitor / GUI.</p>
 <dd><p>Execute the leapfrog time-stepping loop.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><em>FieldState</em></p>
+<dd class="field-odd"><p><em>FieldArrays</em></p>
 </dd>
 </dl>
 </dd></dl>

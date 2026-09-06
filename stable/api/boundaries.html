@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=8fa8b3e9"></script>
+    <script src="../_static/documentation_options.js?v=fe7df9b0"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -175,8 +175,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.6.html">
-    Upgrading from 0.5.x
+  <a class="nav-link nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -188,6 +188,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
@@ -354,6 +361,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -782,7 +796,7 @@ when <code class="docutils literal notranslate"><span class="pre">wall_sigma</sp
 <dd><p>Zero tangential E-field on this PEC face.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>E</strong> (<a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><em>FieldState</em></a>) – <code class="xref py py-class docutils literal notranslate"><span class="pre">FieldState</span></code> to
+<dd class="field-odd"><p><strong>E</strong> (<em>FieldArrays</em>) – <code class="xref py py-class docutils literal notranslate"><span class="pre">FieldArrays</span></code> to
 modify in place.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -831,7 +845,7 @@ face as closed.</p>
 <dd><p>Apply periodic BC to E field (copy from opposite face).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>E</strong> (<a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><em>FieldState</em></a>)</p>
+<dd class="field-odd"><p><strong>E</strong> (<em>FieldArrays</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -845,7 +859,7 @@ face as closed.</p>
 <dd><p>Apply periodic BC to H field (copy from opposite face).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>H</strong> (<a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><em>FieldState</em></a>)</p>
+<dd class="field-odd"><p><strong>H</strong> (<em>FieldArrays</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>

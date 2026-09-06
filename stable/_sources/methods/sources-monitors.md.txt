@@ -134,17 +134,27 @@ A transient run can also start *from* a field instead of being driven
 into one.  `SourceFieldInitial(name, field)` carries a
 `magnelio.fields.FieldState` that becomes the state at `t = 0`;
 `SourceFieldInitial.from_project(project, name=…, mode=…)` takes it
-from the eigenmodes of a stored project, `from_function` and
+from the eigenmodes of a stored project, `from_recording(recording,
+name=…, t=…)` from a frame of a time monitor's `FieldRecording` —
+live or read back from a project — and `from_function` and
 `from_arrays` from a formula or from data.  Its excitation has no
 waveform — the amplitude alone scales the field (`amplitude_unit` is
 `"1"`) — and the run then rings down freely, which is how a Q is
 measured (how-to *Ring-down*).
 
-The electric field is written on the primal edges and the magnetic
-field half a leapfrog step ahead, following the discrete Faraday law,
-so a mode of the discrete operator starts as exactly that mode and
-oscillates without a transient.  Several initial fields in one run
-superpose.
+The march holds the magnetic field half a leapfrog step ahead of the
+electric one.  A field given at one instant — an eigenmode, a formula
+— is moved there by a half discrete Faraday step, so a mode of the
+discrete operator starts as exactly that mode and oscillates without
+a transient.  A recorded frame already *is* such a pair: its E stands
+at the frame's instant, its H half a time step later (`times_h`), and
+the source takes both as they are (`h_lead`, the lead of the magnetic
+samples, is the recording's half step).  A frame of a monitor covering
+the whole domain, replayed on the same grid with the same time step,
+therefore continues the recorded run bit for bit from that frame — a
+ring-down cut short resumes from its last frame, a state reached under
+one excitation is handed to another model.  Several initial fields in
+one run superpose.
 
 Nothing about the model restricts an initial field.  Where the run
 carries state besides the fields — an absorber's convolutions, the
@@ -297,6 +307,63 @@ wavelength to 0.983 at eighteen, with the residual tracking the
 near-to-far-field box's own closure and not the source.  The pattern
 is `sin θ` and the peak directivity 1.5 throughout.
 
+## Field containers
+
+Three objects in `magnelio.fields` carry a field between analyses,
+plots and files, all on the Yee positions of one grid — nothing is
+averaged until a picture asks for it:
+
+- **`FieldState`** — one snapshot: the six components at their own
+  positions (`component`, `positions`), at arbitrary points (`at`),
+  averaged onto cell centres (`cell_centred`), sliced (`plot`), in 3D
+  (`show`), continued across the model's symmetry planes
+  (`mirrored`), and written back into a run as an initial field.
+  Eigenmodes hand one out per mode.
+- **`FieldRecording`** — frames of a transient field on one grid:
+  `times` for the electric field and `times_h`, half a leapfrog step
+  later, for the magnetic one; `frame(i)` and `at_time(t)` are
+  `FieldState`s, `component(name)` the whole stack; a frame becomes
+  the start of a new run (`SourceFieldInitial.from_recording`).
+- **`FieldSpectrum`** — complex frames, one per frequency:
+  `at_frequency(f)` is the complex pattern, `snapshot(f, phase=…)` its
+  real field at an instant.
+
+Both series may hold a subset of the six components (`components`);
+a frame fills the rest with zeros.  A recording's grid is whatever
+region was recorded — a plane monitor's is one cell thick, with the
+normal component on one node plane and the tangential ones on two,
+which is the layer a field picture stands for.  The field monitors
+record into these containers (`monitor.recording`, `monitor.spectrum`),
+and they are the vocabulary for fields you assemble or resample
+yourself.
+
+### Energy and flux
+
+A monitor's frames are the solver's own samples, so the two FIT
+identities the march itself relies on hold on them: the stored energy
+$\tfrac12 e^{\mathsf T} M_\varepsilon e + \tfrac12 h^{\mathsf T} M_\mu h$
+and the Poynting flux $\sum e\,h$ through a plane.  A recording or
+spectrum from a monitor carries what they need — the material
+operators of its region, cut from the solver's own when the monitor
+was attached, and how its edges are booked — so `recording.energy()`
+gives the joules of every frame and `recording.flux("z", position)`
+the watts through the region's cross-section at a plane;
+`spectrum.energy()` and `spectrum.flux(...)` are the time averages of
+a frequency monitor's pattern, per watt incident; `frame.energy()` and
+`frame.flux(...)` do the same for one `FieldState`.  The numbers are
+the march's: a recording of the whole domain reproduces the run's
+energy trace — the leapfrog's own conserved pairing of the two
+magnetic half-steps, formed from a single frame through the discrete
+Faraday law — a recording's flux is what a `MonitorFluxTime` on the
+same plane records, bit for bit, and on a matched line a spectrum's
+flux is $|S_{21}|^2$.  Where a region is cut out of the domain, the
+dual patches on the cut count by the half that lies inside, so two
+adjoining regions add up to their union; a model solved behind
+symmetry planes reports the whole model, as the flux monitor does.
+A field assembled by hand or an eigenmode carries no operators and
+says so.  A project store keeps the operators with the monitor, so a
+recording read back in another session states its energy too.
+
 ## Field, flux and frequency monitors
 
 - **MonitorFieldTime** — time snapshots of E/H in a region, streamed
@@ -315,6 +382,20 @@ is `sin θ` and the peak directivity 1.5 throughout.
 
 All monitors return physical SI units; the calibration (C = 1 pinned
 at the excitation source) is in-house bookkeeping (DD-085).
+
+A field monitor records the *grid quantities on the Yee positions* of
+its region — a copy of the solver's own samples, nothing averaged — and
+hands them out as a `FieldRecording` (`monitor.recording`) or, for the
+running transform, a `FieldSpectrum` (`monitor.spectrum`); a
+cell-centred array is one call away (`recording.cell_centred(...)`),
+but nothing is averaged until asked for.  The recording's
+`times` are the instants of the electric field, `times_h` those of the
+magnetic one, half a step later.  A project store keeps the same
+staggered frames, one dataset per component, and the ParaView export
+converts them at export time.  A field monitor plots on a slice
+(`plot`, `interact`) and opens in the 3D viewer (`show`), where the
+field lies on the viewer's cutting plane and the position slider walks
+it through the recorded volume — see [the viewer chapter](viewer.md).
 
 A plotted field plane is one *layer* of cells, sampled at their
 centres, not a mathematical plane — the plane coordinate printed in the
@@ -341,8 +422,9 @@ waveform *is* the incident power-wave amplitude $a(t)$ in $\sqrt{\rm W}$
 (DD-078), dividing it out leaves the field of a **1 W CW excitation** at
 each monitor frequency — E in V/m, H in A/m, per $\sqrt{\rm W}$ of
 incident power.  A run performs that division on its own monitors, so
-`.data` is in those units from the moment the run returns; `.data_raw`
-exposes the undivided bins for callers who want the transient itself.
+`.spectrum` is in those units from the moment the run returns;
+`.spectrum_raw` exposes the undivided transform for callers who want
+the transient itself.
 For a TE/TM feed the waveform launches a frequency-dependent power —
 the mode's wave impedance varies across the band — and the run divides
 additionally by the ratio $|a(f)|/|W(f)|$ of the incident wave it
@@ -353,6 +435,35 @@ for every feed type (DD-198).
 
 Runs stream results append-only into an HDF5-based on-disk project
 store (SWMR single-writer/multi-reader), with periodic checkpoints
-and bit-exact resume (DD-070).  File formats: HDF5, XDMF/VTK for
-field visualisation.  This is engineering infrastructure, not a
-research method; the formats are community standards.
+and bit-exact resume (DD-070).  File formats: HDF5 for the store, VTK
+series for field visualisation.  This is engineering infrastructure,
+not a research method; the formats are community standards.
+
+(paraview-export)=
+## ParaView export
+
+A field monitor's frames leave the store as VTK files when a project
+run closes: under `runs/<run>/paraview/`, one rectilinear `.vtr` per
+frame of a time monitor (`<monitor>/t_0000.vtr`, …) or per frequency
+of a frequency monitor (`f_0000.vtr`, …), collected by a
+`<monitor>.pvd` whose axis is the frame's electric instant, or its
+frequency.  The files hold *cell data*: the recorded components
+averaged onto the cell centres at export time — the numbers
+`recording.cell_centred()` returns — and the vectors `E` and `H`
+where a group was recorded whole.  ParaView reads plain VTK and never
+touches the staggered frames in `results.h5` or `fields_freq.h5`.
+Beside the data, `paraview_open.py` builds a `paraview.simple`
+pipeline (translucent geometry, a slice through each monitor, glyphs
+scaled to the field, the model's symmetry planes mirrored in the
+pipeline rather than in the files) and, when `pvpython` is on the
+path, `paraview.pvsm` is baked from it as a double-clickable state.
+`Project.export_paraview()` regenerates the set with other options or
+after a skipped export; eigenmodes take the same shape one directory
+up, one `.vtr` per mode (`export_paraview_eigenmodes`).  Tutorial 07
+opens such a session.
+
+The export is a step *after* the run, not a live view: the files are
+written when the run closes, and a resumed run rewrites them.
+Watching a run while it marches is what `watch`, `follow` and the
+notebook viewer are for ([Projects and runs](projects-and-runs.md),
+the how-to *Watching a simulation that is still running*).

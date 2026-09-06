@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=8fa8b3e9"></script>
+    <script src="../_static/documentation_options.js?v=fe7df9b0"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -177,8 +177,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.6.html">
-    Upgrading from 0.5.x
+  <a class="nav-link nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -190,6 +190,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
@@ -356,6 +363,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -676,16 +690,25 @@ region, where it is indistinguishable from a scattered wave.</p>
 into one.  <code class="docutils literal notranslate"><span class="pre">SourceFieldInitial(name,</span> <span class="pre">field)</span></code> carries a
 <code class="docutils literal notranslate"><span class="pre">magnelio.fields.FieldState</span></code> that becomes the state at <code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">=</span> <span class="pre">0</span></code>;
 <code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.from_project(project,</span> <span class="pre">name=…,</span> <span class="pre">mode=…)</span></code> takes it
-from the eigenmodes of a stored project, <code class="docutils literal notranslate"><span class="pre">from_function</span></code> and
+from the eigenmodes of a stored project, <code class="docutils literal notranslate"><span class="pre">from_recording(recording,</span> <span class="pre">name=…,</span> <span class="pre">t=…)</span></code> from a frame of a time monitor’s <code class="docutils literal notranslate"><span class="pre">FieldRecording</span></code> —
+live or read back from a project — and <code class="docutils literal notranslate"><span class="pre">from_function</span></code> and
 <code class="docutils literal notranslate"><span class="pre">from_arrays</span></code> from a formula or from data.  Its excitation has no
 waveform — the amplitude alone scales the field (<code class="docutils literal notranslate"><span class="pre">amplitude_unit</span></code> is
 <code class="docutils literal notranslate"><span class="pre">&quot;1&quot;</span></code>) — and the run then rings down freely, which is how a Q is
 measured (how-to <em>Ring-down</em>).</p>
-<p>The electric field is written on the primal edges and the magnetic
-field half a leapfrog step ahead, following the discrete Faraday law,
-so a mode of the discrete operator starts as exactly that mode and
-oscillates without a transient.  Several initial fields in one run
-superpose.</p>
+<p>The march holds the magnetic field half a leapfrog step ahead of the
+electric one.  A field given at one instant — an eigenmode, a formula
+— is moved there by a half discrete Faraday step, so a mode of the
+discrete operator starts as exactly that mode and oscillates without
+a transient.  A recorded frame already <em>is</em> such a pair: its E stands
+at the frame’s instant, its H half a time step later (<code class="docutils literal notranslate"><span class="pre">times_h</span></code>), and
+the source takes both as they are (<code class="docutils literal notranslate"><span class="pre">h_lead</span></code>, the lead of the magnetic
+samples, is the recording’s half step).  A frame of a monitor covering
+the whole domain, replayed on the same grid with the same time step,
+therefore continues the recorded run bit for bit from that frame — a
+ring-down cut short resumes from its last frame, a state reached under
+one excitation is handed to another model.  Several initial fields in
+one run superpose.</p>
 <p>Nothing about the model restricts an initial field.  Where the run
 carries state besides the fields — an absorber’s convolutions, the
 pole currents of a dispersive material, the branch currents of a
@@ -821,6 +844,63 @@ wavelength to 0.983 at eighteen, with the residual tracking the
 near-to-far-field box’s own closure and not the source.  The pattern
 is <code class="docutils literal notranslate"><span class="pre">sin</span> <span class="pre">θ</span></code> and the peak directivity 1.5 throughout.</p>
 </section>
+<section id="field-containers">
+<h2>Field containers<a class="headerlink" href="#field-containers" title="Link to this heading">#</a></h2>
+<p>Three objects in <code class="docutils literal notranslate"><span class="pre">magnelio.fields</span></code> carry a field between analyses,
+plots and files, all on the Yee positions of one grid — nothing is
+averaged until a picture asks for it:</p>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">FieldState</span></code></strong> — one snapshot: the six components at their own
+positions (<code class="docutils literal notranslate"><span class="pre">component</span></code>, <code class="docutils literal notranslate"><span class="pre">positions</span></code>), at arbitrary points (<code class="docutils literal notranslate"><span class="pre">at</span></code>),
+averaged onto cell centres (<code class="docutils literal notranslate"><span class="pre">cell_centred</span></code>), sliced (<code class="docutils literal notranslate"><span class="pre">plot</span></code>), in 3D
+(<code class="docutils literal notranslate"><span class="pre">show</span></code>), continued across the model’s symmetry planes
+(<code class="docutils literal notranslate"><span class="pre">mirrored</span></code>), and written back into a run as an initial field.
+Eigenmodes hand one out per mode.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">FieldRecording</span></code></strong> — frames of a transient field on one grid:
+<code class="docutils literal notranslate"><span class="pre">times</span></code> for the electric field and <code class="docutils literal notranslate"><span class="pre">times_h</span></code>, half a leapfrog step
+later, for the magnetic one; <code class="docutils literal notranslate"><span class="pre">frame(i)</span></code> and <code class="docutils literal notranslate"><span class="pre">at_time(t)</span></code> are
+<code class="docutils literal notranslate"><span class="pre">FieldState</span></code>s, <code class="docutils literal notranslate"><span class="pre">component(name)</span></code> the whole stack; a frame becomes
+the start of a new run (<code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.from_recording</span></code>).</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">FieldSpectrum</span></code></strong> — complex frames, one per frequency:
+<code class="docutils literal notranslate"><span class="pre">at_frequency(f)</span></code> is the complex pattern, <code class="docutils literal notranslate"><span class="pre">snapshot(f,</span> <span class="pre">phase=…)</span></code> its
+real field at an instant.</p></li>
+</ul>
+<p>Both series may hold a subset of the six components (<code class="docutils literal notranslate"><span class="pre">components</span></code>);
+a frame fills the rest with zeros.  A recording’s grid is whatever
+region was recorded — a plane monitor’s is one cell thick, with the
+normal component on one node plane and the tangential ones on two,
+which is the layer a field picture stands for.  The field monitors
+record into these containers (<code class="docutils literal notranslate"><span class="pre">monitor.recording</span></code>, <code class="docutils literal notranslate"><span class="pre">monitor.spectrum</span></code>),
+and they are the vocabulary for fields you assemble or resample
+yourself.</p>
+<section id="energy-and-flux">
+<h3>Energy and flux<a class="headerlink" href="#energy-and-flux" title="Link to this heading">#</a></h3>
+<p>A monitor’s frames are the solver’s own samples, so the two FIT
+identities the march itself relies on hold on them: the stored energy
+<span class="math notranslate nohighlight">\(\tfrac12 e^{\mathsf T} M_\varepsilon e + \tfrac12 h^{\mathsf T} M_\mu h\)</span>
+and the Poynting flux <span class="math notranslate nohighlight">\(\sum e\,h\)</span> through a plane.  A recording or
+spectrum from a monitor carries what they need — the material
+operators of its region, cut from the solver’s own when the monitor
+was attached, and how its edges are booked — so <code class="docutils literal notranslate"><span class="pre">recording.energy()</span></code>
+gives the joules of every frame and <code class="docutils literal notranslate"><span class="pre">recording.flux(&quot;z&quot;,</span> <span class="pre">position)</span></code>
+the watts through the region’s cross-section at a plane;
+<code class="docutils literal notranslate"><span class="pre">spectrum.energy()</span></code> and <code class="docutils literal notranslate"><span class="pre">spectrum.flux(...)</span></code> are the time averages of
+a frequency monitor’s pattern, per watt incident; <code class="docutils literal notranslate"><span class="pre">frame.energy()</span></code> and
+<code class="docutils literal notranslate"><span class="pre">frame.flux(...)</span></code> do the same for one <code class="docutils literal notranslate"><span class="pre">FieldState</span></code>.  The numbers are
+the march’s: a recording of the whole domain reproduces the run’s
+energy trace — the leapfrog’s own conserved pairing of the two
+magnetic half-steps, formed from a single frame through the discrete
+Faraday law — a recording’s flux is what a <code class="docutils literal notranslate"><span class="pre">MonitorFluxTime</span></code> on the
+same plane records, bit for bit, and on a matched line a spectrum’s
+flux is <span class="math notranslate nohighlight">\(|S_{21}|^2\)</span>.  Where a region is cut out of the domain, the
+dual patches on the cut count by the half that lies inside, so two
+adjoining regions add up to their union; a model solved behind
+symmetry planes reports the whole model, as the flux monitor does.
+A field assembled by hand or an eigenmode carries no operators and
+says so.  A project store keeps the operators with the monitor, so a
+recording read back in another session states its energy too.</p>
+</section>
+</section>
 <section id="field-flux-and-frequency-monitors">
 <h2>Field, flux and frequency monitors<a class="headerlink" href="#field-flux-and-frequency-monitors" title="Link to this heading">#</a></h2>
 <ul class="simple">
@@ -840,6 +920,19 @@ DD-085).</p></li>
 </ul>
 <p>All monitors return physical SI units; the calibration (C = 1 pinned
 at the excitation source) is in-house bookkeeping (DD-085).</p>
+<p>A field monitor records the <em>grid quantities on the Yee positions</em> of
+its region — a copy of the solver’s own samples, nothing averaged — and
+hands them out as a <code class="docutils literal notranslate"><span class="pre">FieldRecording</span></code> (<code class="docutils literal notranslate"><span class="pre">monitor.recording</span></code>) or, for the
+running transform, a <code class="docutils literal notranslate"><span class="pre">FieldSpectrum</span></code> (<code class="docutils literal notranslate"><span class="pre">monitor.spectrum</span></code>); a
+cell-centred array is one call away (<code class="docutils literal notranslate"><span class="pre">recording.cell_centred(...)</span></code>),
+but nothing is averaged until asked for.  The recording’s
+<code class="docutils literal notranslate"><span class="pre">times</span></code> are the instants of the electric field, <code class="docutils literal notranslate"><span class="pre">times_h</span></code> those of the
+magnetic one, half a step later.  A project store keeps the same
+staggered frames, one dataset per component, and the ParaView export
+converts them at export time.  A field monitor plots on a slice
+(<code class="docutils literal notranslate"><span class="pre">plot</span></code>, <code class="docutils literal notranslate"><span class="pre">interact</span></code>) and opens in the 3D viewer (<code class="docutils literal notranslate"><span class="pre">show</span></code>), where the
+field lies on the viewer’s cutting plane and the position slider walks
+it through the recorded volume — see <a class="reference internal" href="viewer.html"><span class="std std-doc">the viewer chapter</span></a>.</p>
 <p>A plotted field plane is one <em>layer</em> of cells, sampled at their
 centres, not a mathematical plane — the plane coordinate printed in the
 title is the cell-centre coordinate the request snapped to.  Geometry
@@ -864,8 +957,9 @@ waveform <em>is</em> the incident power-wave amplitude <span class="math notrans
 (DD-078), dividing it out leaves the field of a <strong>1 W CW excitation</strong> at
 each monitor frequency — E in V/m, H in A/m, per <span class="math notranslate nohighlight">\(\sqrt{\rm W}\)</span> of
 incident power.  A run performs that division on its own monitors, so
-<code class="docutils literal notranslate"><span class="pre">.data</span></code> is in those units from the moment the run returns; <code class="docutils literal notranslate"><span class="pre">.data_raw</span></code>
-exposes the undivided bins for callers who want the transient itself.
+<code class="docutils literal notranslate"><span class="pre">.spectrum</span></code> is in those units from the moment the run returns;
+<code class="docutils literal notranslate"><span class="pre">.spectrum_raw</span></code> exposes the undivided transform for callers who want
+the transient itself.
 For a TE/TM feed the waveform launches a frequency-dependent power —
 the mode’s wave impedance varies across the band — and the run divides
 additionally by the ratio <span class="math notranslate nohighlight">\(|a(f)|/|W(f)|\)</span> of the incident wave it
@@ -876,9 +970,36 @@ for every feed type (DD-198).</p>
 <h2>Project store, checkpointing, resume<a class="headerlink" href="#project-store-checkpointing-resume" title="Link to this heading">#</a></h2>
 <p>Runs stream results append-only into an HDF5-based on-disk project
 store (SWMR single-writer/multi-reader), with periodic checkpoints
-and bit-exact resume (DD-070).  File formats: HDF5, XDMF/VTK for
-field visualisation.  This is engineering infrastructure, not a
-research method; the formats are community standards.</p>
+and bit-exact resume (DD-070).  File formats: HDF5 for the store, VTK
+series for field visualisation.  This is engineering infrastructure,
+not a research method; the formats are community standards.</p>
+</section>
+<section id="paraview-export">
+<span id="id6"></span><h2>ParaView export<a class="headerlink" href="#paraview-export" title="Link to this heading">#</a></h2>
+<p>A field monitor’s frames leave the store as VTK files when a project
+run closes: under <code class="docutils literal notranslate"><span class="pre">runs/&lt;run&gt;/paraview/</span></code>, one rectilinear <code class="docutils literal notranslate"><span class="pre">.vtr</span></code> per
+frame of a time monitor (<code class="docutils literal notranslate"><span class="pre">&lt;monitor&gt;/t_0000.vtr</span></code>, …) or per frequency
+of a frequency monitor (<code class="docutils literal notranslate"><span class="pre">f_0000.vtr</span></code>, …), collected by a
+<code class="docutils literal notranslate"><span class="pre">&lt;monitor&gt;.pvd</span></code> whose axis is the frame’s electric instant, or its
+frequency.  The files hold <em>cell data</em>: the recorded components
+averaged onto the cell centres at export time — the numbers
+<code class="docutils literal notranslate"><span class="pre">recording.cell_centred()</span></code> returns — and the vectors <code class="docutils literal notranslate"><span class="pre">E</span></code> and <code class="docutils literal notranslate"><span class="pre">H</span></code>
+where a group was recorded whole.  ParaView reads plain VTK and never
+touches the staggered frames in <code class="docutils literal notranslate"><span class="pre">results.h5</span></code> or <code class="docutils literal notranslate"><span class="pre">fields_freq.h5</span></code>.
+Beside the data, <code class="docutils literal notranslate"><span class="pre">paraview_open.py</span></code> builds a <code class="docutils literal notranslate"><span class="pre">paraview.simple</span></code>
+pipeline (translucent geometry, a slice through each monitor, glyphs
+scaled to the field, the model’s symmetry planes mirrored in the
+pipeline rather than in the files) and, when <code class="docutils literal notranslate"><span class="pre">pvpython</span></code> is on the
+path, <code class="docutils literal notranslate"><span class="pre">paraview.pvsm</span></code> is baked from it as a double-clickable state.
+<code class="docutils literal notranslate"><span class="pre">Project.export_paraview()</span></code> regenerates the set with other options or
+after a skipped export; eigenmodes take the same shape one directory
+up, one <code class="docutils literal notranslate"><span class="pre">.vtr</span></code> per mode (<code class="docutils literal notranslate"><span class="pre">export_paraview_eigenmodes</span></code>).  Tutorial 07
+opens such a session.</p>
+<p>The export is a step <em>after</em> the run, not a live view: the files are
+written when the run closes, and a resumed run rewrites them.
+Watching a run while it marches is what <code class="docutils literal notranslate"><span class="pre">watch</span></code>, <code class="docutils literal notranslate"><span class="pre">follow</span></code> and the
+notebook viewer are for (<a class="reference internal" href="projects-and-runs.html"><span class="std std-doc">Projects and runs</span></a>,
+the how-to <em>Watching a simulation that is still running</em>).</p>
 </section>
 </section>
 
@@ -935,9 +1056,14 @@ research method; the formats are community standards.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#initial-fields">Initial fields</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#field-sources-reusing-what-a-model-radiates">Field sources: reusing what a model radiates</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#impressed-currents-on-a-path">Impressed currents on a path</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#field-containers">Field containers</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#energy-and-flux">Energy and flux</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#field-flux-and-frequency-monitors">Field, flux and frequency monitors</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#signal-processing">Signal processing</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#project-store-checkpointing-resume">Project store, checkpointing, resume</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#paraview-export">ParaView export</a></li>
 </ul>
   </nav></div>
 

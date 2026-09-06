@@ -385,16 +385,17 @@ PEC wall instead, this picture would be criss-crossed by
 standing-wave fringes — and the S11 curve above would ripple with the
 resonances of the box instead of showing one clean antenna dip.
 
-.. GENERATED FROM PYTHON SOURCE LINES 225-250
+.. GENERATED FROM PYTHON SOURCE LINES 225-251
 
 .. code-block:: Python
 
 
     # The saturation level is taken from the data rather than written out
-    # as a number: ``data`` is in V/m per √W of incident power, and a scale
-    # tied to the pattern's own peak keeps this plot honest no matter what
-    # the drive level or the structure is.
-    e_peak = np.sqrt(sum(np.abs(v) ** 2 for v in nearfield.data.values())).max()
+    # as a number: the spectrum is in V/m per √W of incident power, and a
+    # scale tied to the pattern's own peak keeps this plot honest no matter
+    # what the drive level or the structure is.
+    pattern = nearfield.spectrum.cell_centred()
+    e_peak = np.sqrt(sum(np.abs(v) ** 2 for v in pattern.values())).max()
 
     fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.6))
     nearfield.plot(
@@ -426,7 +427,7 @@ resonances of the box instead of showing one clean antenna dip.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 251-266
+.. GENERATED FROM PYTHON SOURCE LINES 252-267
 
 The far field: how much power goes where
 ----------------------------------------
@@ -444,7 +445,7 @@ pattern; the elevation cut below is the monopole's textbook shape —
 maximum along the ground plane, a null straight up, nothing below
 the horizon.
 
-.. GENERATED FROM PYTHON SOURCE LINES 266-271
+.. GENERATED FROM PYTHON SOURCE LINES 267-272
 
 .. code-block:: Python
 
@@ -465,7 +466,7 @@ the horizon.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 272-281
+.. GENERATED FROM PYTHON SOURCE LINES 273-282
 
 The numbers behind the plot come as the standard antenna quantities,
 all referenced to the half-space problem the ground plane defines.
@@ -477,7 +478,7 @@ within the discretisation, and the peak sits at the monopole's
 textbook ~5.2 dBi (the half-wave dipole's 2.15 dBi plus 3 dB from
 radiating into half the space).
 
-.. GENERATED FROM PYTHON SOURCE LINES 281-289
+.. GENERATED FROM PYTHON SOURCE LINES 282-290
 
 .. code-block:: Python
 
@@ -505,7 +506,7 @@ radiating into half the space).
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 290-309
+.. GENERATED FROM PYTHON SOURCE LINES 291-310
 
 The last line doubles as a sanity check on the whole simulation: for
 a lossless antenna, the power radiated through the far-field surface
@@ -530,7 +531,7 @@ components built from them.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 15.016 seconds)
+   **Total running time of the script:** (0 minutes 14.506 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_08_open_boundary.py:

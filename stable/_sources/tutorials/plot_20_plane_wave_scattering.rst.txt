@@ -152,7 +152,7 @@ all of it, and the mesh is sized for the top of the band.
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (1.1 s)
+      mesh | conformal cells | done (1.0 s)
       mesh | PEC masks
       mesh | 94 x 94 x 94 cells (1.4 s total)
     grid: 94 x 94 x 94 cells
@@ -264,7 +264,55 @@ through the box: that is the field split at work.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 143-154
+.. GENERATED FROM PYTHON SOURCE LINES 143-147
+
+The same recording in the 3D viewer: the sphere is cut along the
+monitor plane and the last frame — the scattered wave leaving — is
+laid on the cut, the cells inside the metal cut out of the sheet.
+In a notebook a frame slider runs through the three instants.
+
+.. GENERATED FROM PYTHON SOURCE LINES 147-150
+
+.. code-block:: Python
+
+
+    movie.show(component="E", t=movie.t[-1], geometry=model, mesh=mesh, flip=True)
+
+
+
+
+
+
+
+
+.. tab-set::
+
+
+
+   .. tab-item:: Static Scene
+
+
+
+            
+     .. image-sg:: /tutorials/images/sphx_glr_plot_20_plane_wave_scattering_002.png
+        :alt: plot 20 plane wave scattering
+        :srcset: /tutorials/images/sphx_glr_plot_20_plane_wave_scattering_002.png
+        :class: sphx-glr-single-img
+     
+
+
+   .. tab-item:: Interactive Scene
+
+
+
+       .. offlineviewer:: /home/runner/work/magnelio/magnelio/docs/tutorials/images/sphx_glr_plot_20_plane_wave_scattering_002.vtksz
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 151-162
 
 From the far field to the radar cross section
 ---------------------------------------------
@@ -278,7 +326,7 @@ port's waveform; the general analysis leaves it to you, because with
 several drives there is no single reference.  ``renormalize`` names
 the excitation the monitors refer to from now on.
 
-.. GENERATED FROM PYTHON SOURCE LINES 154-157
+.. GENERATED FROM PYTHON SOURCE LINES 162-165
 
 .. code-block:: Python
 
@@ -292,7 +340,7 @@ the excitation the monitors refer to from now on.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 158-172
+.. GENERATED FROM PYTHON SOURCE LINES 166-180
 
 The monostatic (backscatter) RCS follows from the far-zone amplitude
 in the direction the wave came from, θ = π, per 1 V/m of incident
@@ -309,7 +357,7 @@ classic result that the RCS of a sphere is not simply its silhouette,
 but oscillates around it as the creeping wave around the back
 interferes with the specular return from the front.
 
-.. GENERATED FROM PYTHON SOURCE LINES 172-206
+.. GENERATED FROM PYTHON SOURCE LINES 180-214
 
 .. code-block:: Python
 
@@ -391,7 +439,7 @@ interferes with the specular return from the front.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 207-216
+.. GENERATED FROM PYTHON SOURCE LINES 215-224
 
 The simulated curve follows the Mie oscillation across the band, and
 the resonance peak near ka = 1 lands within a percent.  On the steep
@@ -403,7 +451,7 @@ the specular return and the creeping wave around the back is what
 creates the oscillation in the first place.  A finer mesh moves the
 flanks in; the peak, where the derivative vanishes, is already there.
 
-.. GENERATED FROM PYTHON SOURCE LINES 216-228
+.. GENERATED FROM PYTHON SOURCE LINES 224-236
 
 .. code-block:: Python
 
@@ -422,16 +470,16 @@ flanks in; the peak, where the derivative vanishes, is already there.
 
 
 
-.. image-sg:: /tutorials/images/sphx_glr_plot_20_plane_wave_scattering_002.png
+.. image-sg:: /tutorials/images/sphx_glr_plot_20_plane_wave_scattering_003.png
    :alt: PEC sphere: backscatter against the exact solution
-   :srcset: /tutorials/images/sphx_glr_plot_20_plane_wave_scattering_002.png
+   :srcset: /tutorials/images/sphx_glr_plot_20_plane_wave_scattering_003.png
    :class: sphx-glr-single-img
 
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 229-235
+.. GENERATED FROM PYTHON SOURCE LINES 237-243
 
 The bistatic pattern — the scattered power in every direction — is
 the far-field monitor's ordinary pattern cut, read as ``U``, the
@@ -440,7 +488,7 @@ lobe (θ = 0, the shadow) already dominates, which is the optical
 limit announcing itself: the shadow of a large object carries as much
 scattered power as its reflection.
 
-.. GENERATED FROM PYTHON SOURCE LINES 235-246
+.. GENERATED FROM PYTHON SOURCE LINES 243-254
 
 .. code-block:: Python
 
@@ -458,9 +506,9 @@ scattered power as its reflection.
 
 
 
-.. image-sg:: /tutorials/images/sphx_glr_plot_20_plane_wave_scattering_003.png
+.. image-sg:: /tutorials/images/sphx_glr_plot_20_plane_wave_scattering_004.png
    :alt: bistatic scattering, E-plane (dB rel. to peak)
-   :srcset: /tutorials/images/sphx_glr_plot_20_plane_wave_scattering_003.png
+   :srcset: /tutorials/images/sphx_glr_plot_20_plane_wave_scattering_004.png
    :class: sphx-glr-single-img
 
 
@@ -469,11 +517,11 @@ scattered power as its reflection.
  .. code-block:: none
 
 
-    <matplotlib.legend.Legend object at 0x7fe14684cd50>
+    <matplotlib.legend.Legend object at 0x7f35c0fb1850>
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 247-257
+.. GENERATED FROM PYTHON SOURCE LINES 255-265
 
 Where to go from here
 ---------------------
@@ -489,7 +537,7 @@ only requires that its direction follows a grid axis.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 24.775 seconds)
+   **Total running time of the script:** (1 minutes 23.103 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_20_plane_wave_scattering.py:

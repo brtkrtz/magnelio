@@ -235,7 +235,7 @@ splitting curves of a tee, 50 dB is plenty.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 107-132
+.. GENERATED FROM PYTHON SOURCE LINES 107-133
 
 Declaring monitors
 ------------------
@@ -255,15 +255,16 @@ accumulate the complex field pattern at a single frequency on the
 two cuts from above — a running Fourier transform over the whole
 run, one plane for each drive we are going to look at.
 
-A frequency monitor's ``.data`` is in **fields per 1 W of incident CW
-power** — E in V/m, H in A/m, per square root of a watt.  The run
-divides its own excitation spectrum out of the accumulated transform
-to get there, so the numbers are absolute and comparable between
-runs, not merely proportional to whatever pulse drove them.  Should
-you ever want the untouched transform, it stays available as
-``.data_raw``.
+A frequency monitor's ``.spectrum`` is a ``FieldSpectrum`` in
+**fields per 1 W of incident CW power** — E in V/m, H in A/m, per
+square root of a watt.  The run divides its own excitation spectrum
+out of the accumulated transform to get there, so the numbers are
+absolute and comparable between runs, not merely proportional to
+whatever pulse drove them.  Should you ever want the untouched
+transform, it stays available as ``.spectrum_raw``.  A time monitor
+hands out its frames the same way, as ``.recording``.
 
-.. GENERATED FROM PYTHON SOURCE LINES 132-168
+.. GENERATED FROM PYTHON SOURCE LINES 133-169
 
 .. code-block:: Python
 
@@ -310,7 +311,7 @@ you ever want the untouched transform, it stays available as
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 169-176
+.. GENERATED FROM PYTHON SOURCE LINES 170-177
 
 Driving the H-arm
 -----------------
@@ -320,7 +321,7 @@ simulation, and at its start every monitor is cleared.  We therefore
 run one excitation at a time and harvest the pictures in between —
 first the H-arm.
 
-.. GENERATED FROM PYTHON SOURCE LINES 176-179
+.. GENERATED FROM PYTHON SOURCE LINES 177-180
 
 .. code-block:: Python
 
@@ -334,7 +335,7 @@ first the H-arm.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 180-186
+.. GENERATED FROM PYTHON SOURCE LINES 181-187
 
 The point monitor plots straight away — a 0D region over time gives
 the field at that spot as a trace.  The pulse arrives after its trip
@@ -343,7 +344,7 @@ is the junction ringing down through all four ports (the run
 continues well past the window shown, until that tail has decayed
 by the requested 50 dB):
 
-.. GENERATED FROM PYTHON SOURCE LINES 186-190
+.. GENERATED FROM PYTHON SOURCE LINES 187-191
 
 .. code-block:: Python
 
@@ -369,7 +370,7 @@ by the requested 50 dB):
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 191-197
+.. GENERATED FROM PYTHON SOURCE LINES 192-198
 
 The movie monitor holds every frame of the mid-height cut; three of
 them tell the story.  The pulse runs down the H-arm, meets the
@@ -378,7 +379,7 @@ junction, and leaves through the two collinear arms — with the
 mirror plane of the tee, so it can only excite the symmetric
 combination of the two arms:
 
-.. GENERATED FROM PYTHON SOURCE LINES 197-204
+.. GENERATED FROM PYTHON SOURCE LINES 198-205
 
 .. code-block:: Python
 
@@ -401,7 +402,7 @@ combination of the two arms:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 205-211
+.. GENERATED FROM PYTHON SOURCE LINES 206-212
 
 The frequency monitor condenses the whole run into one complex
 pattern per field component.  At 10 GHz the in-phase split shows as
@@ -410,7 +411,7 @@ fully in-plane in this cut — curls through the junction accordingly.
 The standing-wave modulation visible in the H-arm is real physics:
 an unmatched tee reflects part of the drive back up its feed.
 
-.. GENERATED FROM PYTHON SOURCE LINES 211-219
+.. GENERATED FROM PYTHON SOURCE LINES 212-220
 
 .. code-block:: Python
 
@@ -434,7 +435,7 @@ an unmatched tee reflects part of the drive back up its feed.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 220-229
+.. GENERATED FROM PYTHON SOURCE LINES 221-230
 
 The S-parameters say the same thing without pictures: the drive
 splits evenly (``|S13|`` a little above −3 dB plus a reflected
@@ -446,7 +447,7 @@ The isolation gets an axis of its own on the right.  Drawn on the
 shared scale it would sit 150 dB below everything else and squeeze
 the two curves that carry the actual splitting into one line.
 
-.. GENERATED FROM PYTHON SOURCE LINES 229-258
+.. GENERATED FROM PYTHON SOURCE LINES 230-259
 
 .. code-block:: Python
 
@@ -498,7 +499,7 @@ the two curves that carry the actual splitting into one line.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 259-273
+.. GENERATED FROM PYTHON SOURCE LINES 260-274
 
 An isolation of −160 dB is not a converged small number — it is the
 numerical floor.  The E-arm mode is *antisymmetric* under the tee's
@@ -515,7 +516,7 @@ The second run feeds port 4.  Same monitors, fresh data — and the
 vertical cut now earns its keep, because this drive lives in that
 plane:
 
-.. GENERATED FROM PYTHON SOURCE LINES 273-283
+.. GENERATED FROM PYTHON SOURCE LINES 274-284
 
 .. code-block:: Python
 
@@ -541,7 +542,7 @@ plane:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 284-290
+.. GENERATED FROM PYTHON SOURCE LINES 285-291
 
 The arrows come down the E-arm and split at the junction — and
 because the E-arm's field points *along* the collinear axis, the
@@ -550,7 +551,7 @@ panel shows :math:`E_z` flipping between the left and the right
 arm.  This drive produces the antisymmetric combination, the exact
 counterpart of the H-arm's symmetric one:
 
-.. GENERATED FROM PYTHON SOURCE LINES 290-296
+.. GENERATED FROM PYTHON SOURCE LINES 291-297
 
 .. code-block:: Python
 
@@ -574,7 +575,7 @@ counterpart of the H-arm's symmetric one:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 297-320
+.. GENERATED FROM PYTHON SOURCE LINES 298-321
 
 Sum and difference: that is the "magic".  Two signals entering the
 collinear arms emerge at the H-arm added and at the E-arm
@@ -603,7 +604,7 @@ results reopen after a restart, and the fields go to ParaView.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 19.733 seconds)
+   **Total running time of the script:** (0 minutes 15.960 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_06_field_monitors.py:

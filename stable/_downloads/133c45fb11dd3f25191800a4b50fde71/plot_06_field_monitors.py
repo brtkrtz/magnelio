@@ -122,13 +122,14 @@ print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 # two cuts from above — a running Fourier transform over the whole
 # run, one plane for each drive we are going to look at.
 #
-# A frequency monitor's ``.data`` is in **fields per 1 W of incident CW
-# power** — E in V/m, H in A/m, per square root of a watt.  The run
-# divides its own excitation spectrum out of the accumulated transform
-# to get there, so the numbers are absolute and comparable between
-# runs, not merely proportional to whatever pulse drove them.  Should
-# you ever want the untouched transform, it stays available as
-# ``.data_raw``.
+# A frequency monitor's ``.spectrum`` is a ``FieldSpectrum`` in
+# **fields per 1 W of incident CW power** — E in V/m, H in A/m, per
+# square root of a watt.  The run divides its own excitation spectrum
+# out of the accumulated transform to get there, so the numbers are
+# absolute and comparable between runs, not merely proportional to
+# whatever pulse drove them.  Should you ever want the untouched
+# transform, it stays available as ``.spectrum_raw``.  A time monitor
+# hands out its frames the same way, as ``.recording``.
 
 zc = b / 2  # mid-height of the collinear and H arms
 f0 = 10.0e9  # pattern frequency

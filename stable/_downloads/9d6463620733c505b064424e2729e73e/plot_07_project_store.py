@@ -193,6 +193,29 @@ axes[1].set_title("E-arm drive: $E_z$, vertical slice")
 fig.tight_layout()
 
 # %%
+# The volume can also be opened in the 3D viewer.  ``show`` lays the
+# field on the viewer's cutting plane — here the E-arm drive, cut
+# along the E-arm's own symmetry plane, the tee's metal drawn with it
+# and the cells inside the walls cut out of the field sheet — and,
+# with ``volume="isosurface"``, adds the surface where the magnitude of E reaches
+# half its ceiling, clipped at the cut so its inside shows.  In a
+# notebook the position slider walks the cut through the whole
+# recorded volume, a phase slider turns the complex pattern, a level
+# slider moves the surface, and the *Show* menu swaps the arrows on
+# the cut for arrows on a lattice through the volume; a documentation
+# build shows the frame the call asks for.
+
+mon_e.show(
+    component="E",
+    normal="y",
+    position=0.0,
+    geometry=model,
+    mesh=mesh,
+    phase=90.0,
+    volume="isosurface",
+)
+
+# %%
 # Running longer: resume
 # ----------------------
 #
@@ -235,6 +258,13 @@ for name in sorted(os.listdir(run_dir)):
         print(name)
 
 # %%
+# The data went to ``paraview/`` when the run closed: one ``.vtr``
+# file per monitor frequency, collected by a ``.pvd`` whose axis is
+# the frequency (for a time monitor, the instant).  They hold cell
+# data — the staggered frames of ``fields_freq.h5`` averaged onto the
+# cell centres at export time, the same numbers
+# ``spectrum.cell_centred()`` returns — so ParaView reads plain VTK
+# files and never opens the store itself.
 # ``paraview.pvsm`` is a double-clickable state file: geometry as
 # translucent solids, slice and clip widgets through the field
 # volume, arrow glyphs on an even lattice with sensible lengths, and
