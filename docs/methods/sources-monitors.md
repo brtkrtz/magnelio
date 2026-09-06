@@ -337,6 +337,33 @@ record into these containers (`monitor.recording`, `monitor.spectrum`),
 and they are the vocabulary for fields you assemble or resample
 yourself.
 
+### Energy and flux
+
+A monitor's frames are the solver's own samples, so the two FIT
+identities the march itself relies on hold on them: the stored energy
+$\tfrac12 e^{\mathsf T} M_\varepsilon e + \tfrac12 h^{\mathsf T} M_\mu h$
+and the Poynting flux $\sum e\,h$ through a plane.  A recording or
+spectrum from a monitor carries what they need — the material
+operators of its region, cut from the solver's own when the monitor
+was attached, and how its edges are booked — so `recording.energy()`
+gives the joules of every frame and `recording.flux("z", position)`
+the watts through the region's cross-section at a plane;
+`spectrum.energy()` and `spectrum.flux(...)` are the time averages of
+a frequency monitor's pattern, per watt incident; `frame.energy()` and
+`frame.flux(...)` do the same for one `FieldState`.  The numbers are
+the march's: a recording of the whole domain reproduces the run's
+energy trace — the leapfrog's own conserved pairing of the two
+magnetic half-steps, formed from a single frame through the discrete
+Faraday law — a recording's flux is what a `MonitorFluxTime` on the
+same plane records, bit for bit, and on a matched line a spectrum's
+flux is $|S_{21}|^2$.  Where a region is cut out of the domain, the
+dual patches on the cut count by the half that lies inside, so two
+adjoining regions add up to their union; a model solved behind
+symmetry planes reports the whole model, as the flux monitor does.
+A field assembled by hand or an eigenmode carries no operators and
+says so.  A project store keeps the operators with the monitor, so a
+recording read back in another session states its energy too.
+
 ## Field, flux and frequency monitors
 
 - **MonitorFieldTime** — time snapshots of E/H in a region, streamed

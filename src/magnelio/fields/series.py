@@ -64,20 +64,25 @@ class _FieldSeries:
         self._labels = labels
         self._raw = raw
         self._dual = None
+        self._ops = None
         self._frame_cache: tuple[int, FieldArrays] | None = None
 
     @classmethod
-    def _from_raw(cls, grid: GridLines, labels, raw: dict[str, np.ndarray], dual=None, **kwargs):
+    def _from_raw(
+        cls, grid: GridLines, labels, raw: dict[str, np.ndarray], dual=None, ops=None, **kwargs
+    ):
         """Wrap stacked grid quantities without conversion (internal).
 
         *dual*: the dual widths of the ``h`` samples when the grid is a
-        region cut from a larger one (see :meth:`FieldState._from_raw`).
+        region cut from a larger one (see :meth:`FieldState._from_raw`);
+        *ops*: the region's material operators (DD-260), when known.
         """
         self = cls.__new__(cls)
         self._grid = grid
         self._labels = np.atleast_1d(np.asarray(labels, dtype=float))
         self._raw = {name: np.asarray(a) for name, a in raw.items()}
         self._dual = dual
+        self._ops = ops
         self._frame_cache = None
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -152,13 +157,18 @@ class _FieldSeries:
         self._frame_cache = (i, fa)
         return fa
 
+    def _h_lead(self) -> float:
+        return 0.0
+
     def frame(self, i: int) -> FieldState:
         """Frame *i* as a :class:`~magnelio.fields.FieldState`.
 
         Components that were not recorded are zero in the frame; see
         :attr:`components`.
         """
-        return FieldState._from_raw(self._grid, self._frame_arrays(i), dual=self._dual)
+        return FieldState._from_raw(
+            self._grid, self._frame_arrays(i), dual=self._dual, ops=self._ops, h_lead=self._h_lead()
+        )
 
     def component(self, name: str) -> np.ndarray:
         """The physical samples of one recorded component, ``(n_frames, *Yee shape)``."""
@@ -248,6 +258,47 @@ class _FieldSeries:
         data = _interp_to_cell_centres(self._frame_arrays(frame), names, *slabs, g, dual=self._dual)
         return {c: np.squeeze(np.asarray(a), axis=axis) for c, a in data.items()}
 
+    # ── energy and flux (DD-260) ─────────────────────────────────────────
+
+    def energy(self) -> np.ndarray:
+        """The stored energy [J] of every frame, full-model booking.
+
+        :meth:`FieldState.energy` frame by frame — the region's own
+        operators, the leapfrog pairing for the frames of a march, the
+        time-averaged energy for a spectrum's complex frames (RMS
+        phasors per 1 W CW).  Needs a
+        series that carries its region's operators: a monitor's does.
+
+        Returns
+        -------
+        np.ndarray
+            ``(n_frames,)``.
+        """
+        return np.array([self.frame(i).energy() for i in range(self.n_frames)], dtype=float)
+
+    def flux(self, normal: str, position: float) -> np.ndarray:
+        """Poynting flux [W] through the region's cross-section, per frame.
+
+        :meth:`FieldState.flux` frame by frame — the FIT pairing
+        :class:`~magnelio.monitors.MonitorFluxTime` records, on the
+        recorded frames; the time-averaged real power for a spectrum —
+        per watt incident, for a monitor's spectrum per 1 W CW.
+
+        Parameters
+        ----------
+        normal : {"x", "y", "z"}
+        position : float
+            Position [m] along the normal; the nearest node.
+
+        Returns
+        -------
+        np.ndarray
+            ``(n_frames,)``.
+        """
+        return np.array(
+            [self.frame(i).flux(normal, position) for i in range(self.n_frames)], dtype=float
+        )
+
     # ── pictures ─────────────────────────────────────────────────────────
 
     def _label_text(self, i: int) -> str:
@@ -320,6 +371,9 @@ class FieldRecording(_FieldSeries):
     def times_h(self) -> np.ndarray:
         """Instants [s] of the magnetic-field frames: ``times + dt/2``."""
         return self._labels + (0.5 * self.dt if self.dt else 0.0)
+
+    def _h_lead(self) -> float:
+        return 0.5 * self.dt if self.dt else 0.0
 
     def index_of(self, t: float) -> int:
         """Index of the frame nearest to *t* [s]."""

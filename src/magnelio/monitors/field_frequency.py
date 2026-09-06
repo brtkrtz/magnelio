@@ -247,10 +247,25 @@ class MonitorFieldFrequency:
         self._subgrid = region_grid(mesh.grid, r)
         self._dual = _region_dual(mesh.grid, r.ix, r.iy, r.iz)
         self._slices = {c: _region_slices(r.ix, r.iy, r.iz, c) for c in self._components}
+        self._ops = None
         shapes = _yee_shapes(self._subgrid.Nx, self._subgrid.Ny, self._subgrid.Nz)
         self._accumulators = {}
         for comp in self._components:
             self._accumulators[comp] = DFTAccumulator(self.freqs, shapes[comp])
+
+    def attach_operators(self, mesh, M_eps, M_mu) -> None:
+        """Take the region's cut of the solver's material diagonals (DD-260).
+
+        Called by the solver after :meth:`attach`; the spectrum then
+        states its time-averaged energy and power flow
+        (:meth:`~magnelio.fields.FieldSpectrum.energy`,
+        :meth:`~magnelio.fields.FieldSpectrum.flux`).
+        """
+        from magnelio.fields._operators import region_operators  # noqa: PLC0415
+
+        if self._region is None:
+            raise RuntimeError("Monitor not attached. Call attach() first.")
+        self._ops = region_operators(mesh, self._region, M_eps, M_mu)
 
     def record(self, fields, n: int, t: float, dt: float) -> None:
         """Accumulate DFT contribution from the current time step.
@@ -342,6 +357,18 @@ class MonitorFieldFrequency:
                 if self._incident_amplitude is None
                 else np.asarray(self._incident_amplitude, dtype=float)
             ),
+            # The region's material operators and edge kinds (DD-260);
+            # None when no solver attached them.
+            "operators": (
+                None
+                if self._ops is None
+                else {
+                    "m_eps": dict(self._ops.m_eps),
+                    "m_mu": dict(self._ops.m_mu),
+                    "ends": self._ops.ends_codes(),
+                    "symmetry": self._ops.symmetry_flags(),
+                }
+            ),
         }
 
     def load_result_dump(self, dump: dict) -> None:
@@ -357,6 +384,13 @@ class MonitorFieldFrequency:
                 self._accumulators[comp]._bins[...] = np.asarray(bins[comp])
         if "incident_amplitude" in dump:
             self._incident_amplitude = np.asarray(dump["incident_amplitude"], dtype=float)
+        ops = dump.get("operators")
+        if ops is not None:
+            from magnelio.fields._operators import RegionOperators  # noqa: PLC0415
+
+            self._ops = RegionOperators.from_arrays(
+                ops["m_eps"], ops["m_mu"], ops["ends"], ops["symmetry"]
+            )
 
     # ------------------------------------------------------------------
     # Source renormalization
@@ -457,7 +491,7 @@ class MonitorFieldFrequency:
             for comp, acc in self._accumulators.items()
         }
         return FieldSpectrum._from_raw(
-            self._subgrid, np.asarray(self.freqs, dtype=float), raw, dual=self._dual
+            self._subgrid, np.asarray(self.freqs, dtype=float), raw, dual=self._dual, ops=self._ops
         )
 
     @property

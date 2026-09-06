@@ -1265,6 +1265,25 @@ class _RunResultWriter:
             mg.create_dataset("grid_z", data=grid.z[region.iz.start : region.iz.stop + 1])
             for axis, d in zip("xyz", _region_dual(grid, region.ix, region.iy, region.iz)):
                 mg.create_dataset(f"dual_{axis}", data=np.asarray(d, dtype=float))
+            # The region's material operators and edge kinds (DD-260):
+            # declared here, written by ``write_monitor_operators`` once
+            # the solver has attached them — SWMR allows no new datasets
+            # then, so they are created up front and ``valid`` says
+            # whether they were filled.
+            shapes = _yee_shapes(nx, ny, nz)
+            og = mg.create_group("operators")
+            ops_ds = {}
+            for comp in ("Ex", "Ey", "Ez"):
+                ops_ds[f"m_eps_{comp}"] = og.create_dataset(
+                    f"m_eps_{comp}", shape=shapes[comp], dtype="f8"
+                )
+            for comp in ("Hx", "Hy", "Hz"):
+                ops_ds[f"m_mu_{comp}"] = og.create_dataset(
+                    f"m_mu_{comp}", shape=shapes[comp], dtype="f8"
+                )
+            ops_ds["ends"] = og.create_dataset("ends", shape=(3, 2), dtype="i1")
+            ops_ds["symmetry"] = og.create_dataset("symmetry", shape=(6,), dtype="i1")
+            ops_ds["valid"] = og.create_dataset("valid", shape=(), dtype="i1")
             times_ds = mg.create_dataset(
                 "times",
                 shape=(0,),
@@ -1272,7 +1291,6 @@ class _RunResultWriter:
                 dtype="f8",
                 chunks=(256,),
             )
-            shapes = _yee_shapes(nx, ny, nz)
             comp_ds = {}
             for comp in components:
                 shp = shapes[comp]
@@ -1290,7 +1308,32 @@ class _RunResultWriter:
                 "comps": comp_ds,
                 "times": times_ds,
                 "n": 0,
+                "ops": ops_ds,
             }
+
+    def write_monitor_operators(self, monitors) -> None:
+        """Fill the operator datasets declared for the field monitors (DD-260).
+
+        Called once the solver has attached the monitors and handed
+        them the region's cut of its material diagonals; idempotent, so
+        a resumed run rewrites the same values.  Monitors without
+        operators, or a store declared without the datasets, are left
+        alone.
+        """
+        for mon in monitors:
+            m = self._mon.get(getattr(mon, "name", None))
+            ops = getattr(mon, "_ops", None)
+            if m is None or ops is None or "ops" not in m:
+                continue
+            ds = m["ops"]
+            for comp in ("Ex", "Ey", "Ez"):
+                ds[f"m_eps_{comp}"][...] = np.asarray(ops.m_eps[comp], dtype=float)
+            for comp in ("Hx", "Hy", "Hz"):
+                ds[f"m_mu_{comp}"][...] = np.asarray(ops.m_mu[comp], dtype=float)
+            ds["ends"][...] = ops.ends_codes()
+            ds["symmetry"][...] = ops.symmetry_flags()
+            ds["valid"][()] = 1
+        self._f.flush()
 
     def _declare_flux(self, f, monitors) -> None:
         """Create the ``flux/<name>/`` group tree (DD-070 follow-up).
@@ -1485,7 +1528,7 @@ class _RunResultWriter:
                     ds.resize((mk, *ds.shape[1:]))
                     comp_ds[comp] = ds
                 mg["times"].resize((mk,))
-                self._mon[name] = {
+                entry = {
                     "nx": nx,
                     "ny": ny,
                     "nz": nz,
@@ -1493,6 +1536,9 @@ class _RunResultWriter:
                     "times": mg["times"],
                     "n": mk,
                 }
+                if "operators" in mg:
+                    entry["ops"] = {key: mg["operators"][key] for key in mg["operators"]}
+                self._mon[name] = entry
         # Flux monitors (DD-070 follow-up): truncate each scalar stream to
         # its checkpointed sample count, same rationale as the field monitors.
         self._flux = {}
@@ -1625,6 +1671,10 @@ class _RunSink:
         """
         self._checkpoint_requested = True
 
+    def write_monitor_operators(self, monitors) -> None:
+        """Write the field monitors' region operators (DD-260); see the writer."""
+        self._writer.write_monitor_operators(monitors)
+
     def flush(self, energy: tuple | None = None) -> None:
         """Append the newly recorded V/I tail (+ optional energy sample).
 
@@ -1636,7 +1686,8 @@ class _RunSink:
             the V/I tail past the last energy check.  When present, its
             step also drives the periodic resume checkpoint.
         """
-        n_rec = self._recorder.n_steps_recorded
+        # A run without ports (a ring-down) records no V/I: nothing to drain.
+        n_rec = self._recorder.n_steps_recorded if self._recorder is not None else 0
         if n_rec > self._n_flushed:
             tail = self._recorder.tail(self._n_flushed)
             off = self._step_offset
@@ -2070,6 +2121,27 @@ def _list_run_freq(run_dir: Path) -> list[str]:
         return [name for name in f if isinstance(f[name], h5py.Group)]
 
 
+def _read_operators(group):
+    """The region operators stored under *group* (DD-260), or ``None``.
+
+    Absent in stores written before they existed, and unfilled
+    (``valid`` = 0) when the run never reached the solver's setup.
+    """
+    if "operators" not in group:
+        return None
+    og = group["operators"]
+    if "valid" not in og or int(og["valid"][()]) != 1:
+        return None
+    from magnelio.fields._operators import RegionOperators  # noqa: PLC0415
+
+    return RegionOperators.from_arrays(
+        {c: og[f"m_eps_{c}"][()] for c in ("Ex", "Ey", "Ez")},
+        {c: og[f"m_mu_{c}"][()] for c in ("Hx", "Hy", "Hz")},
+        og["ends"][()],
+        og["symmetry"][()],
+    )
+
+
 class _LazyRecording:
     """A :class:`~magnelio.fields.FieldRecording` over a store reader.
 
@@ -2102,7 +2174,12 @@ class _LazyRecording:
                 return False
 
         rec = FieldRecording._from_raw(
-            reader._subgrid, reader._t, {}, dual=reader._dual, dt=reader._dt
+            reader._subgrid,
+            reader._t,
+            {},
+            dual=reader._dual,
+            ops=getattr(reader, "_ops", None),
+            dt=reader._dt,
         )
         rec.__class__ = _Lazy
         return rec
@@ -2158,6 +2235,7 @@ class _LoadedFieldMonitor:
             self._dual = tuple(np.asarray(mg[f"dual_{a}"][()], dtype=float) for a in "xyz")
             self._dt = float(f.attrs["dt"]) if "dt" in f.attrs else None
             sym_attr = mg.attrs.get("symmetry")
+            self._ops = _read_operators(mg)
         self._mirrors = mirrors_from_jsonable(
             json.loads(sym_attr) if sym_attr is not None else None,
         )
@@ -2210,7 +2288,13 @@ class _LoadedFieldMonitor:
             c: (self._read(c, i) if c in self._components else np.zeros(shapes[c]))
             for c in ("Ex", "Ey", "Ez", "Hx", "Hy", "Hz")
         }
-        fs = FieldState._from_raw(g, FieldArrays(**arrays), dual=self._dual)
+        fs = FieldState._from_raw(
+            g,
+            FieldArrays(**arrays),
+            dual=self._dual,
+            ops=self._ops,
+            h_lead=0.5 * self._dt if self._dt else 0.0,
+        )
         self._frame_cache = (i, fs)
         return fs
 
@@ -2372,6 +2456,7 @@ class _LoadedFreqMonitor:
             self._grid_z = g["grid_z"][()]
             self._dual = tuple(np.asarray(g[f"dual_{a}"][()], dtype=float) for a in "xyz")
             sym_attr = g.attrs.get("symmetry")
+            self._ops = _read_operators(g)
         from magnelio.monitors.base import mirrors_from_jsonable  # noqa: PLC0415
 
         self._mirrors = mirrors_from_jsonable(
@@ -2502,6 +2587,7 @@ class _LoadedFreqMonitor:
         mon._dual = self._dual
         r = mon._region
         mon._slices = {c: _region_slices(r.ix, r.iy, r.iz, c) for c in self._components}
+        mon._ops = self._ops
         mon._accumulators = {}
         incident = None
         with h5py.File(self._run_dir / "fields_freq.h5", "r") as f:
@@ -2675,6 +2761,18 @@ def _write_freq_result_h5(path, dumps: dict, n_completed: int) -> None:
             bg = g.create_group("bins")
             for comp, arr in dump["bins"].items():
                 bg.create_dataset(comp, data=np.asarray(arr))
+            # Schema-additive (DD-260): the region's material operators
+            # and edge kinds; absent when no solver attached them.
+            ops = dump.get("operators")
+            if ops is not None:
+                og = g.create_group("operators")
+                for comp, arr in ops["m_eps"].items():
+                    og.create_dataset(f"m_eps_{comp}", data=np.asarray(arr, dtype=float))
+                for comp, arr in ops["m_mu"].items():
+                    og.create_dataset(f"m_mu_{comp}", data=np.asarray(arr, dtype=float))
+                og.create_dataset("ends", data=np.asarray(ops["ends"], dtype=np.int8))
+                og.create_dataset("symmetry", data=np.asarray(ops["symmetry"], dtype=np.int8))
+                og.create_dataset("valid", data=np.int8(1))
     os.replace(tmp, path)
 
 

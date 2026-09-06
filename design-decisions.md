@@ -21139,3 +21139,110 @@ layer.
 box ([[DD-226]]) are a transport format for tangential fields and stay as
 they are.  Live viewing in ParaView during a run ends with step 4; the
 notebook viewer (step 0) and [[DD-255]]'s `watch`/`follow` replace it.
+
+## DD-260 — Energy and flux are identities on a recording; a monitor carries its region's operators
+
+**Date:** 2026-09-06
+**Status:** Accepted (developer consensus on the four design questions
+2026-09-06; implemented the same day on `feat/recording-energy-flux`).
+
+**Problem.**  [[DD-259]] made a field monitor's frames the solver's own
+grid quantities, so the two FIT identities the march relies on — the
+stored energy `½ eᵀMε e + ½ hᵀMμ h` ([[DD-225]]'s conserved pairing) and
+the Poynting flux `Σ e·h` ([[DD-085]], what `MonitorFluxTime` records) —
+hold on a recorded frame in principle.  What a recording lacked was
+everything *around* the samples: the material operators of its region,
+the boundary conditions its edges touch (a magnetic wall books its
+boundary patch whole, an electric one by half, a symmetry plane doubles
+the aperture), the share of a dual patch that lies inside a sub-region,
+and the second magnetic half-step the conserved energy pairs with.  Its
+step-5 note listed these as the open questions of a DD of their own.
+
+**Decision.**  Four choices, each put to the developer with a
+recommendation and accepted:
+
+1. **The monitor cuts the operators from the solver and the containers
+   carry them.**  After `attach(mesh)` the solver calls
+   `attach_operators(mesh, M_ε, M_μ)` with its own diagonals (port-plane
+   flattening included, in the run's precision); the monitor keeps a
+   `RegionOperators` (`fields/_operators.py`): the diagonals cut to the
+   region's Yee positions, the *kind* of each of the region's six ends
+   (`cut`, `wall`, `pmc`) and the model's symmetry faces.
+   `FieldRecording`, `FieldSpectrum` and every frame they hand out carry
+   it; a field assembled by hand or an eigenmode has none and a
+   `RuntimeError` says so.  The project store keeps it with the monitor
+   — schema-additive on 3.0, like [[DD-140]]/[[DD-154]]/[[DD-198]]'s
+   additions: an `operators` group under the monitor, read as absent by
+   an older reader — so a recording read back in another session states
+   its energy without the mesh.  (The alternative, `energy(mesh)`
+   building the operators on demand, is how commercial post-processors
+   work — fields from the monitor, materials from the model — but they
+   always have the model at hand; a portable recording does not.)
+2. **Full-model booking**, as [[DD-155]] gives the flux monitor: two per
+   symmetry plane for the energy, per plane whose axis lies in the
+   cross-section for the flux.  The solver's energy trace stays the
+   meshed half; it is used relatively.
+3. **Energy and flux in one DD** — they share the operators and the
+   edge booking.
+4. **Methods on the containers**: `FieldState.energy()`, `.flux(normal,
+   position)`; `FieldRecording`/`FieldSpectrum.energy()`, `.flux(...)`
+   frame by frame.
+
+**Findings.**  (a) **The conserved energy needs no second frame.**
+[[DD-225]] pairs `h(n−½)·Mμ·h(n+½)`; a frame holds only `h(n+½)`, but
+the discrete Faraday law gives the other, `h(n−½) = h(n+½) + β_H·(C e)`,
+and with `β_H·Mμ = dt` the magnetic term is `½ hᵀMμh + (dt/2)·(C e)ᵀh` —
+one curl on the region's own edges, which every region has.  The
+source's `h_lead` ([[DD-259]] step 5) is the same half step seen from
+the other side, so a frame carries `h_lead = dt/2` and a hand-built
+field zero.  Measured: a whole-domain recording of the WR-90 ring-down
+reproduces the run's energy trace at every recorded check to 10⁻⁹
+(round-off of the different summation order and of `(a−b)+b`), and
+its flux through a plane *is* the flux monitor's record, bit for bit,
+from the whole domain and from a one-cell layer alike.  (b) **Edge
+booking.**  At a cut the dual patch straddles it and the half cell
+inside counts: `(d/2)/dual`; at a physical wall the energy keeps the
+solver's full-end-cell convention (so the trace is reproduced) while
+the flux books ½ at any wall and 1 at a magnetic one (the flux
+monitor's weights — the same formula, since the solver's dual there is
+the full cell); an **electric symmetry plane is a cut**: the other
+half of every dual patch on it belongs to the mirror image, and
+booking it whole then doubling would count the strip on the plane
+twice — the half box behind such a plane reports the full box's joules
+to 10⁻⁹ only with the half weight.  Two adjoining regions add up to
+their union (energy and flux, 10⁻¹²).  (c) **A spectrum is an RMS
+phasor.**  The first cut read a complex frame as a peak phasor
+(`¼ eMe*`, `½ Re Σ e·h*`) and the flux through the matched plate line
+came out at exactly half a watt per watt incident: the 1 W-CW
+normalisation of [[DD-078]] (`|a|² = P`) hands out RMS phasors, so the
+time-averaged power is `Re Σ e·h*` and the energy `½ eMe* + ½ hMh*` —
+now |S21|² to 1.4·10⁻⁵ on that line.  (d) **`mirrored()` carries the
+operators**, continued as even quantities with the dual widths, the
+mirrored end taking the kind of the end it mirrors and the crossed
+plane leaving the symmetry list, so a mirrored field's energy and flux
+are the half's (10⁻¹²) — a gate that also caught (b).  (e) **SWMR.**
+The store declares a monitor's datasets before the solver's setup and
+allows no new datasets afterwards, so the operator datasets are created
+empty with the monitor group and filled by the sink
+(`write_monitor_operators`) when the solver attaches them, a `valid`
+flag saying whether they were; a resumed run rewrites the same values.
+(f) A project-backed run **without ports** — a ring-down — crashed at
+its first flush on the absent port recorder, since before this DD;
+guarded.
+
+**Gates.**  `tests/unit/test_field_energy.py` (33: quadratic forms,
+the half-step pairing against the curl matrix, additivity over cuts on
+two axes, symmetry doubling, RMS phasors, bit-identity with
+`MonitorFluxTime` over three normals and three boundary declarations,
+a one-cell layer, mirroring across PEC and PMC planes, the store
+encoding, both monitors' round trips) and
+`tests/integration/test_recording_energy.py` (the energy trace and the
+flux monitor reproduced, the project store, |S21|² on the plate line,
+the half box behind an electric symmetry plane).
+
+**Consequences.**  0.x PATCH content, ships with 0.7.0.  The energy of
+a frame is the leapfrog invariant only for `h_lead = dt/2`; a region
+with magnetic conductivity (`α_H ≠ 1`) gets the pairing to first order.
+The solver's energy trace and `recording.energy()` differ on models with
+an electric symmetry plane by the strip on the plane (the trace books
+it whole); the trace is a relative quantity and stays as it is.
