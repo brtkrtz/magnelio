@@ -821,6 +821,34 @@ wavelength to 0.983 at eighteen, with the residual tracking the
 near-to-far-field box’s own closure and not the source.  The pattern
 is <code class="docutils literal notranslate"><span class="pre">sin</span> <span class="pre">θ</span></code> and the peak directivity 1.5 throughout.</p>
 </section>
+<section id="field-containers">
+<h2>Field containers<a class="headerlink" href="#field-containers" title="Link to this heading">#</a></h2>
+<p>Three objects in <code class="docutils literal notranslate"><span class="pre">magnelio.fields</span></code> carry a field between analyses,
+plots and files, all on the Yee positions of one grid — nothing is
+averaged until a picture asks for it:</p>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">FieldState</span></code></strong> — one snapshot: the six components at their own
+positions (<code class="docutils literal notranslate"><span class="pre">component</span></code>, <code class="docutils literal notranslate"><span class="pre">positions</span></code>), at arbitrary points (<code class="docutils literal notranslate"><span class="pre">at</span></code>),
+averaged onto cell centres (<code class="docutils literal notranslate"><span class="pre">cell_centred</span></code>), sliced (<code class="docutils literal notranslate"><span class="pre">plot</span></code>), in 3D
+(<code class="docutils literal notranslate"><span class="pre">show</span></code>), continued across the model’s symmetry planes
+(<code class="docutils literal notranslate"><span class="pre">mirrored</span></code>), and written back into a run as an initial field.
+Eigenmodes hand one out per mode.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">FieldRecording</span></code></strong> — frames of a transient field on one grid:
+<code class="docutils literal notranslate"><span class="pre">times</span></code> for the electric field and <code class="docutils literal notranslate"><span class="pre">times_h</span></code>, half a leapfrog step
+later, for the magnetic one; <code class="docutils literal notranslate"><span class="pre">frame(i)</span></code> and <code class="docutils literal notranslate"><span class="pre">at_time(t)</span></code> are
+<code class="docutils literal notranslate"><span class="pre">FieldState</span></code>s, <code class="docutils literal notranslate"><span class="pre">component(name)</span></code> the whole stack.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">FieldSpectrum</span></code></strong> — complex frames, one per frequency:
+<code class="docutils literal notranslate"><span class="pre">at_frequency(f)</span></code> is the complex pattern, <code class="docutils literal notranslate"><span class="pre">snapshot(f,</span> <span class="pre">phase=…)</span></code> its
+real field at an instant.</p></li>
+</ul>
+<p>Both series may hold a subset of the six components (<code class="docutils literal notranslate"><span class="pre">components</span></code>);
+a frame fills the rest with zeros.  A recording’s grid is whatever
+region was recorded — a plane monitor’s is one cell thick, with the
+normal component on one node plane and the tangential ones on two,
+which is the layer a field picture stands for.  From 0.7.0 the field
+monitors record into these containers; today they are the vocabulary
+for fields you assemble or resample yourself.</p>
+</section>
 <section id="field-flux-and-frequency-monitors">
 <h2>Field, flux and frequency monitors<a class="headerlink" href="#field-flux-and-frequency-monitors" title="Link to this heading">#</a></h2>
 <ul class="simple">
@@ -840,6 +868,10 @@ DD-085).</p></li>
 </ul>
 <p>All monitors return physical SI units; the calibration (C = 1 pinned
 at the excitation source) is in-house bookkeeping (DD-085).</p>
+<p>A field monitor plots on a slice (<code class="docutils literal notranslate"><span class="pre">plot</span></code>, <code class="docutils literal notranslate"><span class="pre">interact</span></code>) and opens in the
+3D viewer (<code class="docutils literal notranslate"><span class="pre">show</span></code>), where the field lies on the viewer’s cutting plane
+and the position slider walks it through the recorded volume — see
+<a class="reference internal" href="viewer.html"><span class="std std-doc">the viewer chapter</span></a>.</p>
 <p>A plotted field plane is one <em>layer</em> of cells, sampled at their
 centres, not a mathematical plane — the plane coordinate printed in the
 title is the cell-centre coordinate the request snapped to.  Geometry
@@ -935,6 +967,7 @@ research method; the formats are community standards.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#initial-fields">Initial fields</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#field-sources-reusing-what-a-model-radiates">Field sources: reusing what a model radiates</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#impressed-currents-on-a-path">Impressed currents on a path</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#field-containers">Field containers</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#field-flux-and-frequency-monitors">Field, flux and frequency monitors</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#signal-processing">Signal processing</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#project-store-checkpointing-resume">Project store, checkpointing, resume</a></li>

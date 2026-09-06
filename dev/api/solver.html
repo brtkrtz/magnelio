@@ -557,7 +557,7 @@
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>frequencies</strong> (<em>np.ndarray</em>) – Resonant frequencies [Hz], shape <code class="docutils literal notranslate"><span class="pre">(n_modes,)</span></code>, ascending.</p></li>
-<li><p><strong>modes</strong> (<em>list</em><em>[</em><a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><em>FieldState</em></a><em>]</em>) – One FieldState per mode with E and H fields on the Yee grid.
+<li><p><strong>modes</strong> (<em>list</em><em>[</em><em>FieldArrays</em><em>]</em>) – One FieldArrays per mode with E and H fields on the Yee grid.
 Field amplitudes are normalised so that <code class="docutils literal notranslate"><span class="pre">e^T</span> <span class="pre">M_eps</span> <span class="pre">e</span> <span class="pre">=</span> <span class="pre">1</span></code>.</p></li>
 <li><p><strong>mesh</strong> (<a class="reference internal" href="core.html#magnelio.Mesh" title="magnelio.Mesh"><em>Mesh</em></a>) – Reference mesh (grid, material library).</p></li>
 <li><p><strong>solver_info</strong> (<em>dict</em>) – Metadata: solver backend, number of iterations, residuals, etc.</p></li>
@@ -725,7 +725,7 @@ to this for Ctrl-C, or call it from a monitor / GUI.</p>
 <dd><p>Execute the leapfrog time-stepping loop.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><em>FieldState</em></p>
+<dd class="field-odd"><p><em>FieldArrays</em></p>
 </dd>
 </dl>
 </dd></dl>

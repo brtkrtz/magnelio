@@ -563,7 +563,10 @@ the grid lines they live on, so a field can be read at its own sample
 positions or at arbitrary points, sliced and plotted, and handed from
 one analysis to another (an eigenmode into a time-domain start, a
 monitor snapshot into a plot).</p>
-<p><a class="reference internal" href="#magnelio.fields.SurfaceRecording" title="magnelio.fields.SurfaceRecording"><code class="xref py py-class docutils literal notranslate"><span class="pre">SurfaceRecording</span></code></a> is the second coupling object: the tangential
+<p><a class="reference internal" href="#magnelio.fields.FieldRecording" title="magnelio.fields.FieldRecording"><code class="xref py py-class docutils literal notranslate"><span class="pre">FieldRecording</span></code></a> and <a class="reference internal" href="#magnelio.fields.FieldSpectrum" title="magnelio.fields.FieldSpectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">FieldSpectrum</span></code></a> are series of such
+snapshots on one grid — over time, and over frequency as complex
+patterns — with the same vocabulary frame by frame.</p>
+<p><a class="reference internal" href="#magnelio.fields.SurfaceRecording" title="magnelio.fields.SurfaceRecording"><code class="xref py py-class docutils literal notranslate"><span class="pre">SurfaceRecording</span></code></a> is the other coupling object: the tangential
 fields on a closed box over time, written by
 <a class="reference internal" href="monitors.html#magnelio.monitors.MonitorFieldSurface" title="magnelio.monitors.MonitorFieldSurface"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonitorFieldSurface</span></code></a> and replayed by
 <a class="reference internal" href="sources.html#magnelio.sources.SourceFieldSurface" title="magnelio.sources.SourceFieldSurface"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourceFieldSurface</span></code></a>.</p>
@@ -740,6 +743,187 @@ recording’s own grid reproduces it rather than smoothing it.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="magnelio.fields.FieldRecording">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.fields.</span></span><span class="sig-name descname"><span class="pre">FieldRecording</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">times</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldRecording" title="Link to this definition">#</a></dt>
+<dd><p>Frames of a time-domain field on one grid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grid</strong> (<a class="reference internal" href="mesh.html#magnelio.mesh.GridLines" title="magnelio.mesh.GridLines"><em>GridLines</em></a>) – The grid the samples live on (a monitor’s region as its own grid).</p></li>
+<li><p><strong>times</strong> (<em>array_like</em>) – Instants [s] of the electric-field frames, ascending.</p></li>
+<li><p><strong>dt</strong> (<em>float</em><em>, </em><em>optional</em>) – The time step [s].  The magnetic field of a leapfrog march is
+sampled half a step <em>after</em> the electric field; <a class="reference internal" href="#magnelio.fields.FieldRecording.times_h" title="magnelio.fields.FieldRecording.times_h"><code class="xref py py-attr docutils literal notranslate"><span class="pre">times_h</span></code></a>
+states those instants.  <code class="docutils literal notranslate"><span class="pre">None</span></code> when the recording did not
+come from a march.</p></li>
+<li><p><strong>**components</strong> (<em>array_like</em>) – Physical field arrays, E in V/m and H in A/m, each shaped
+<code class="docutils literal notranslate"><span class="pre">(n_frames,</span> <span class="pre">*Yee</span> <span class="pre">shape)</span></code> — a subset of <code class="docutils literal notranslate"><span class="pre">Ex</span> <span class="pre">Ey</span> <span class="pre">Ez</span> <span class="pre">Hx</span> <span class="pre">Hy</span> <span class="pre">Hz</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.fields.FieldRecording.at_time">
+<span class="sig-name descname"><span class="pre">at_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldRecording.at_time" title="Link to this definition">#</a></dt>
+<dd><p>The frame nearest to <em>t</em> [s].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>t</strong> (<em>float</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.fields.FieldState" title="magnelio.fields.state.FieldState"><em>FieldState</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.fields.FieldRecording.index_of">
+<span class="sig-name descname"><span class="pre">index_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldRecording.index_of" title="Link to this definition">#</a></dt>
+<dd><p>Index of the frame nearest to <em>t</em> [s].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>t</strong> (<em>float</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.fields.FieldRecording.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldRecording.plot" title="Link to this definition">#</a></dt>
+<dd><p>Plot one frame on a slice plane.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;E&quot;</span></code>/<code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code> for a vector plot or magnitude, <code class="docutils literal notranslate"><span class="pre">&quot;Ez&quot;</span></code>, …
+for one component.</p></li>
+<li><p><strong>t</strong> (<em>float</em><em>, </em><em>optional</em>) – Instant [s]; the nearest frame is drawn.</p></li>
+<li><p><strong>frame</strong> (<em>int</em><em>, </em><em>optional</em>) – Frame index (default 0; exclusive with <em>t</em>).</p></li>
+<li><p><strong>**kwargs</strong> – Passed to <a class="reference internal" href="#magnelio.fields.FieldState.plot" title="magnelio.fields.FieldState.plot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">magnelio.fields.FieldState.plot()</span></code></a> — the
+plane (<code class="docutils literal notranslate"><span class="pre">normal</span></code>, <code class="docutils literal notranslate"><span class="pre">position</span></code>), <code class="docutils literal notranslate"><span class="pre">plot_type</span></code>, <code class="docutils literal notranslate"><span class="pre">ax</span></code>,
+<code class="docutils literal notranslate"><span class="pre">geometry</span></code> and the rest.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>fig, ax</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.fields.FieldRecording.times">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">times</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span><a class="headerlink" href="#magnelio.fields.FieldRecording.times" title="Link to this definition">#</a></dt>
+<dd><p>Instants [s] of the electric-field frames.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.fields.FieldRecording.times_h">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">times_h</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span><a class="headerlink" href="#magnelio.fields.FieldRecording.times_h" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">times</span> <span class="pre">+</span> <span class="pre">dt/2</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Instants [s] of the magnetic-field frames</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="magnelio.fields.FieldSpectrum">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.fields.</span></span><span class="sig-name descname"><span class="pre">FieldSpectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequencies</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">components</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldSpectrum" title="Link to this definition">#</a></dt>
+<dd><p>Complex frames of a field on one grid, one per frequency.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grid</strong> (<a class="reference internal" href="mesh.html#magnelio.mesh.GridLines" title="magnelio.mesh.GridLines"><em>GridLines</em></a>)</p></li>
+<li><p><strong>frequencies</strong> (<em>array_like</em>) – Frequencies [Hz] of the frames.</p></li>
+<li><p><strong>**components</strong> (<em>array_like</em>) – Complex field arrays, E in V/m and H in A/m (per √W for a
+monitor’s pattern), each shaped <code class="docutils literal notranslate"><span class="pre">(n_frames,</span> <span class="pre">*Yee</span> <span class="pre">shape)</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.fields.FieldSpectrum.at_frequency">
+<span class="sig-name descname"><span class="pre">at_frequency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldSpectrum.at_frequency" title="Link to this definition">#</a></dt>
+<dd><p>The (complex) frame nearest to <em>f</em> [Hz].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>f</strong> (<em>float</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.fields.FieldState" title="magnelio.fields.state.FieldState"><em>FieldState</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.fields.FieldSpectrum.index_of">
+<span class="sig-name descname"><span class="pre">index_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldSpectrum.index_of" title="Link to this definition">#</a></dt>
+<dd><p>Index of the frame nearest to <em>f</em> [Hz].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>f</strong> (<em>float</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.fields.FieldSpectrum.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldSpectrum.plot" title="Link to this definition">#</a></dt>
+<dd><p>Plot one frame on a slice plane.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;E&quot;</span></code>/<code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code> for a vector plot or magnitude, <code class="docutils literal notranslate"><span class="pre">&quot;Ez&quot;</span></code>, …
+for one component.</p></li>
+<li><p><strong>f</strong> (<em>float</em><em>, </em><em>optional</em>) – Frequency [Hz]; the nearest frame is drawn.</p></li>
+<li><p><strong>frame</strong> (<em>int</em><em>, </em><em>optional</em>) – Frame index (default 0; exclusive with <em>f</em>).</p></li>
+<li><p><strong>phase</strong> (<em>float</em><em>, </em><em>optional</em>) – Instant of the complex pattern in degrees,
+<code class="docutils literal notranslate"><span class="pre">Re(F</span> <span class="pre">·</span> <span class="pre">exp(j·phase))</span></code>.  Default: the instant of maximum
+energy on the slice (see <a class="reference internal" href="#magnelio.fields.FieldState.plot" title="magnelio.fields.FieldState.plot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">FieldState.plot()</span></code></a>).</p></li>
+<li><p><strong>**kwargs</strong> – Passed to <a class="reference internal" href="#magnelio.fields.FieldState.plot" title="magnelio.fields.FieldState.plot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">magnelio.fields.FieldState.plot()</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>fig, ax</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.fields.FieldSpectrum.snapshot">
+<span class="sig-name descname"><span class="pre">snapshot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldSpectrum.snapshot" title="Link to this definition">#</a></dt>
+<dd><p>The real field <code class="docutils literal notranslate"><span class="pre">Re(F</span> <span class="pre">·</span> <span class="pre">exp(j·phase))</span></code> of one frame, <em>phase</em> in degrees.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>f</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>frame</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>phase</strong> (<em>float</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.fields.FieldSpectrum.f">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">f</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span><a class="headerlink" href="#magnelio.fields.FieldSpectrum.f" title="Link to this definition">#</a></dt>
+<dd><p>Alias of <a class="reference internal" href="#magnelio.fields.FieldSpectrum.frequencies" title="magnelio.fields.FieldSpectrum.frequencies"><code class="xref py py-attr docutils literal notranslate"><span class="pre">frequencies</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="magnelio.fields.FieldSpectrum.frequencies">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">frequencies</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span><a class="headerlink" href="#magnelio.fields.FieldSpectrum.frequencies" title="Link to this definition">#</a></dt>
+<dd><p>Frequencies [Hz] of the frames.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="magnelio.fields.FieldState">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.fields.</span></span><span class="sig-name descname"><span class="pre">FieldState</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ey</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ez</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Hx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Hy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Hz</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldState" title="Link to this definition">#</a></dt>
 <dd><p>Electric and magnetic field on a grid, sampled at the Yee positions.</p>
@@ -867,6 +1051,33 @@ on one side — the interpolation is continued linearly.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="magnelio.fields.FieldState.mirrored">
+<span class="sig-name descname"><span class="pre">mirrored</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">mirrors</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldState.mirrored" title="Link to this definition">#</a></dt>
+<dd><p>The field continued across symmetry planes, on the extended grid.</p>
+<p>A model declared with symmetry planes is solved on the reduced
+domain; this returns the field of the whole structure — the
+simulated part plus its mirror images — with every component
+continued by its own rule: across a magnetic (PMC) plane E
+continues like a polar vector (normal component odd, tangential
+even) and H like a pseudovector, across an electric (PEC) plane
+the roles swap.  The staggering is kept: a sample sitting on
+the wall appears once, and the cell a magnetic wall bisects
+gets its centre sample from the wall value (zero for an odd
+component, the neighbour’s value for an even one).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>*mirrors</strong> (<em>MirrorSpec</em>) – One plane each (<code class="xref py py-class docutils literal notranslate"><span class="pre">magnelio.post._symmetry.MirrorSpec</span></code>:
+axis, wall position, <code class="docutils literal notranslate"><span class="pre">&quot;PEC&quot;</span></code>/<code class="docutils literal notranslate"><span class="pre">&quot;PMC&quot;</span></code>, side).  A plane
+must bound the grid: on the wall for PEC, half the boundary
+cell outside it for PMC.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.fields.FieldState" title="magnelio.fields.state.FieldState"><em>FieldState</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="magnelio.fields.FieldState.plot">
 <span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_arrows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldState.plot" title="Link to this definition">#</a></dt>
 <dd><p>Plot the field on a slice plane.</p>
@@ -940,6 +1151,24 @@ cell-centre plane.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#magnelio.fields.FieldState" title="magnelio.fields.state.FieldState"><em>FieldState</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.fields.FieldState.show">
+<span class="sig-name descname"><span class="pre">show</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldState.show" title="Link to this definition">#</a></dt>
+<dd><p>Interactive 3D view of the field on a cutting plane.</p>
+<p>The geometry viewer with the field laid on its cut: the exposed
+cell layer as a coloured sheet (<code class="docutils literal notranslate"><span class="pre">&quot;E&quot;</span></code>/<code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code> magnitude, or one
+signed component such as <code class="docutils literal notranslate"><span class="pre">&quot;Ez&quot;</span></code>) with arrows for a field
+group, walked through the volume by the position slider.  See
+<a class="reference internal" href="plots.html#magnelio.plots.show_field" title="magnelio.plots.show_field"><code class="xref py py-func docutils literal notranslate"><span class="pre">magnelio.plots.show_field()</span></code></a> for the arguments — the plane
+(<code class="docutils literal notranslate"><span class="pre">normal</span></code>, <code class="docutils literal notranslate"><span class="pre">position</span></code>), <code class="docutils literal notranslate"><span class="pre">geometry</span></code> and <code class="docutils literal notranslate"><span class="pre">mesh</span></code> overlays,
+<code class="docutils literal notranslate"><span class="pre">phase</span></code> for a complex field, and the rendering <code class="docutils literal notranslate"><span class="pre">mode</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>component</strong> (<em>str</em>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1252,16 +1481,35 @@ component is read on the time base it was sampled on.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FaceRecord.resample"><code class="docutils literal notranslate"><span class="pre">FaceRecord.resample()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldRecording"><code class="docutils literal notranslate"><span class="pre">FieldRecording</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldRecording.at_time"><code class="docutils literal notranslate"><span class="pre">FieldRecording.at_time()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldRecording.index_of"><code class="docutils literal notranslate"><span class="pre">FieldRecording.index_of()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldRecording.plot"><code class="docutils literal notranslate"><span class="pre">FieldRecording.plot()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldRecording.times"><code class="docutils literal notranslate"><span class="pre">FieldRecording.times</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldRecording.times_h"><code class="docutils literal notranslate"><span class="pre">FieldRecording.times_h</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldSpectrum"><code class="docutils literal notranslate"><span class="pre">FieldSpectrum</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldSpectrum.at_frequency"><code class="docutils literal notranslate"><span class="pre">FieldSpectrum.at_frequency()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldSpectrum.index_of"><code class="docutils literal notranslate"><span class="pre">FieldSpectrum.index_of()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldSpectrum.plot"><code class="docutils literal notranslate"><span class="pre">FieldSpectrum.plot()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldSpectrum.snapshot"><code class="docutils literal notranslate"><span class="pre">FieldSpectrum.snapshot()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldSpectrum.f"><code class="docutils literal notranslate"><span class="pre">FieldSpectrum.f</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldSpectrum.frequencies"><code class="docutils literal notranslate"><span class="pre">FieldSpectrum.frequencies</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState"><code class="docutils literal notranslate"><span class="pre">FieldState</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.from_function"><code class="docutils literal notranslate"><span class="pre">FieldState.from_function()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.zeros"><code class="docutils literal notranslate"><span class="pre">FieldState.zeros()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.at"><code class="docutils literal notranslate"><span class="pre">FieldState.at()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.cell_centred"><code class="docutils literal notranslate"><span class="pre">FieldState.cell_centred()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.component"><code class="docutils literal notranslate"><span class="pre">FieldState.component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.mirrored"><code class="docutils literal notranslate"><span class="pre">FieldState.mirrored()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.plot"><code class="docutils literal notranslate"><span class="pre">FieldState.plot()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.positions"><code class="docutils literal notranslate"><span class="pre">FieldState.positions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.real"><code class="docutils literal notranslate"><span class="pre">FieldState.real()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.scaled"><code class="docutils literal notranslate"><span class="pre">FieldState.scaled()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.show"><code class="docutils literal notranslate"><span class="pre">FieldState.show()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.Ex"><code class="docutils literal notranslate"><span class="pre">FieldState.Ex</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.Ey"><code class="docutils literal notranslate"><span class="pre">FieldState.Ey</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.Ez"><code class="docutils literal notranslate"><span class="pre">FieldState.Ez</span></code></a></li>

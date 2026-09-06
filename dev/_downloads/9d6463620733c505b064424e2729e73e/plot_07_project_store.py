@@ -193,6 +193,17 @@ axes[1].set_title("E-arm drive: $E_z$, vertical slice")
 fig.tight_layout()
 
 # %%
+# The volume can also be opened in the 3D viewer.  ``show`` lays the
+# field on the viewer's cutting plane — here the E-arm drive, cut
+# along the E-arm's own symmetry plane, the tee's metal drawn with it
+# and the cells inside the walls cut out of the field sheet.  In a
+# notebook the position slider walks the cut through the whole
+# recorded volume, and a phase slider turns the complex pattern; a
+# documentation build shows the frame the call asks for.
+
+mon_e.show(component="E", normal="y", position=0.0, geometry=model, mesh=mesh, phase=90.0)
+
+# %%
 # Running longer: resume
 # ----------------------
 #

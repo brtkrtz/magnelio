@@ -562,7 +562,7 @@ geometry model via <code class="docutils literal notranslate"><span class="pre">
 <code class="docutils literal notranslate"><span class="pre">'z'</span></code>, <code class="docutils literal notranslate"><span class="pre">ijk[k]</span></code> is the edge’s <strong>lower-index</strong> base node, <code class="docutils literal notranslate"><span class="pre">signs[k]</span></code>
 is <code class="docutils literal notranslate"><span class="pre">+1</span></code> if the curve runs along <code class="docutils literal notranslate"><span class="pre">+axis</span></code> there (else <code class="docutils literal notranslate"><span class="pre">-1</span></code>),
 <code class="docutils literal notranslate"><span class="pre">dls[k]</span></code> is the edge length [m], and <code class="docutils literal notranslate"><span class="pre">flat_indices[k]</span></code> indexes the
-flat E layout (<code class="docutils literal notranslate"><span class="pre">Ex|Ey|Ez</span></code> concatenated — the <code class="docutils literal notranslate"><span class="pre">FieldState</span></code> / <code class="docutils literal notranslate"><span class="pre">M_eps</span></code>
+flat E layout (<code class="docutils literal notranslate"><span class="pre">Ex|Ey|Ez</span></code> concatenated — the <code class="docutils literal notranslate"><span class="pre">FieldArrays</span></code> / <code class="docutils literal notranslate"><span class="pre">M_eps</span></code>
 ordering), so the same path serves both field-array and flat-vector
 consumers.</p>
 <dl class="field-list simple">
@@ -790,7 +790,7 @@ it validates the rasteriser before any physics is built on it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>field</strong> (<a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><em>FieldState</em></a>) – The E field to integrate (<code class="docutils literal notranslate"><span class="pre">field.Ex/Ey/Ez</span></code>).</p></li>
+<li><p><strong>field</strong> (<em>FieldArrays</em>) – The E field to integrate (<code class="docutils literal notranslate"><span class="pre">field.Ex/Ey/Ez</span></code>).</p></li>
 <li><p><strong>curve</strong> (<a class="reference internal" href="geo.html#magnelio.geo.Curve" title="magnelio.geo.Curve"><em>Curve</em></a>) – The path of integration.</p></li>
 <li><p><strong>grid</strong> (<a class="reference internal" href="mesh.html#magnelio.mesh.GridLines" title="magnelio.mesh.GridLines"><em>GridLines</em></a>) – The simulation grid the field lives on.</p></li>
 <li><p><strong>samples_per_cell</strong> (<em>int</em><em>, </em><em>default 4</em>) – Forwarded to <a class="reference internal" href="#magnelio.circuit.rasterize_curve" title="magnelio.circuit.rasterize_curve"><code class="xref py py-func docutils literal notranslate"><span class="pre">rasterize_curve()</span></code></a>.</p></li>

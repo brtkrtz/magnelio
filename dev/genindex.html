@@ -558,14 +558,14 @@
 </li>
       <li><a href="api/core.html#magnelio.AnalysisTD">AnalysisTD (class in magnelio)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/boundaries.html#magnelio.boundaries.CPMLBoundary.apply">apply() (magnelio.boundaries.CPMLBoundary method)</a>
 
       <ul>
         <li><a href="api/boundaries.html#magnelio.boundaries.PECBoundary.apply">(magnelio.boundaries.PECBoundary method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/boundaries.html#magnelio.boundaries.PeriodicBoundary.apply_E">apply_E() (magnelio.boundaries.PeriodicBoundary method)</a>
 </li>
       <li><a href="api/boundaries.html#magnelio.boundaries.PeriodicBoundary.apply_H">apply_H() (magnelio.boundaries.PeriodicBoundary method)</a>
@@ -583,6 +583,10 @@
 </li>
       </ul></li>
       <li><a href="api/signals.html#magnelio.signals.Signal1D.at_frequencies">at_frequencies() (magnelio.signals.Signal1D method)</a>
+</li>
+      <li><a href="api/fields.html#magnelio.fields.FieldSpectrum.at_frequency">at_frequency() (magnelio.fields.FieldSpectrum method)</a>
+</li>
+      <li><a href="api/fields.html#magnelio.fields.FieldRecording.at_time">at_time() (magnelio.fields.FieldRecording method)</a>
 </li>
       <li><a href="api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency.attach">attach() (magnelio.monitors.MonitorFarFieldFrequency method)</a>
 
@@ -960,9 +964,11 @@
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency.f">f (magnelio.monitors.MonitorFarFieldFrequency property)</a>
+      <li><a href="api/fields.html#magnelio.fields.FieldSpectrum.f">f (magnelio.fields.FieldSpectrum property)</a>
 
       <ul>
+        <li><a href="api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency.f">(magnelio.monitors.MonitorFarFieldFrequency property)</a>
+</li>
         <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldFrequency.f">(magnelio.monitors.MonitorFieldFrequency property)</a>
 </li>
         <li><a href="api/monitors.html#magnelio.monitors.MonitorWallLoss.f">(magnelio.monitors.MonitorWallLoss property)</a>
@@ -1020,6 +1026,10 @@
 </li>
       <li><a href="api/solver.html#magnelio.solver.EigenmodeResult.field">field() (magnelio.solver.EigenmodeResult method)</a>
 </li>
+      <li><a href="api/fields.html#magnelio.fields.FieldRecording">FieldRecording (class in magnelio.fields)</a>
+</li>
+      <li><a href="api/fields.html#magnelio.fields.FieldSpectrum">FieldSpectrum (class in magnelio.fields)</a>
+</li>
       <li><a href="api/fields.html#magnelio.fields.FieldState">FieldState (class in magnelio.fields)</a>
 </li>
       <li><a href="api/geo.html#magnelio.geo.Shape.filleted">filleted() (magnelio.geo.Shape method)</a>
@@ -1053,6 +1063,8 @@
       <li><a href="api/io.html#magnelio.io.Project.follow">follow() (magnelio.io.Project method)</a>
 </li>
       <li><a href="api/core.html#magnelio.MeshControl.forced_planes">forced_planes (magnelio.MeshControl attribute)</a>
+</li>
+      <li><a href="api/fields.html#magnelio.fields.FieldSpectrum.frequencies">frequencies (magnelio.fields.FieldSpectrum property)</a>
 </li>
       <li><a href="api/sources.html#magnelio.sources.SourceFieldInitial.from_arrays">from_arrays() (magnelio.sources.SourceFieldInitial class method)</a>
 </li>
@@ -1198,6 +1210,12 @@
 </li>
       <li><a href="api/sources.html#magnelio.sources.SourcePlaneWave.incident_H">incident_H() (magnelio.sources.SourcePlaneWave method)</a>
 </li>
+      <li><a href="api/fields.html#magnelio.fields.FieldRecording.index_of">index_of() (magnelio.fields.FieldRecording method)</a>
+
+      <ul>
+        <li><a href="api/fields.html#magnelio.fields.FieldSpectrum.index_of">(magnelio.fields.FieldSpectrum method)</a>
+</li>
+      </ul></li>
       <li><a href="api/boundaries.html#magnelio.boundaries.CPMLBoundary.initialize">initialize() (magnelio.boundaries.CPMLBoundary method)</a>
 </li>
       <li><a href="api/sources.html#magnelio.sources.SourceCurrentPath.inject_E">inject_E() (magnelio.sources.SourceCurrentPath method)</a>
@@ -1503,8 +1521,12 @@
 </li>
       <li><a href="api/core.html#magnelio.MeshControl.min_nodes_per_wavelength">min_nodes_per_wavelength (magnelio.MeshControl attribute)</a>
 </li>
-      <li><a href="api/geo.html#magnelio.geo.Shape.mirrored">mirrored() (magnelio.geo.Shape method)</a>
+      <li><a href="api/fields.html#magnelio.fields.FieldState.mirrored">mirrored() (magnelio.fields.FieldState method)</a>
+
+      <ul>
+        <li><a href="api/geo.html#magnelio.geo.Shape.mirrored">(magnelio.geo.Shape method)</a>
 </li>
+      </ul></li>
       <li><a href="api/ports.html#magnelio.ports.Mode">Mode (class in magnelio.ports)</a>
 </li>
       <li><a href="api/core.html#magnelio.Excitation.mode">mode (magnelio.Excitation attribute)</a>
@@ -1738,9 +1760,13 @@
 </li>
       <li><a href="api/mesh.html#magnelio.mesh.PlaneSource">PlaneSource (class in magnelio.mesh)</a>
 </li>
-      <li><a href="api/fields.html#magnelio.fields.FieldState.plot">plot() (magnelio.fields.FieldState method)</a>
+      <li><a href="api/fields.html#magnelio.fields.FieldRecording.plot">plot() (magnelio.fields.FieldRecording method)</a>
 
       <ul>
+        <li><a href="api/fields.html#magnelio.fields.FieldSpectrum.plot">(magnelio.fields.FieldSpectrum method)</a>
+</li>
+        <li><a href="api/fields.html#magnelio.fields.FieldState.plot">(magnelio.fields.FieldState method)</a>
+</li>
         <li><a href="api/core.html#magnelio.GeometryModel.plot">(magnelio.GeometryModel method)</a>
 </li>
         <li><a href="api/io.html#magnelio.io.LoadedGeometry.plot">(magnelio.io.LoadedGeometry method)</a>
@@ -1794,10 +1820,10 @@
 </li>
       <li><a href="api/plots.html#magnelio.plots.plot_field_vector">plot_field_vector() (in module magnelio.plots)</a>
 </li>
-      <li><a href="api/plots.html#magnelio.plots.plot_mesh_section">plot_mesh_section() (in module magnelio.plots)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/plots.html#magnelio.plots.plot_mesh_section">plot_mesh_section() (in module magnelio.plots)</a>
+</li>
       <li><a href="api/plots.html#magnelio.plots.plot_pattern_3d">plot_pattern_3d() (in module magnelio.plots)</a>
 </li>
       <li><a href="api/plots.html#magnelio.plots.plot_pattern_cut">plot_pattern_cut() (in module magnelio.plots)</a>
@@ -2122,6 +2148,16 @@
 </li>
       <li><a href="api/geo.html#magnelio.geo.Shape.shelled">shelled() (magnelio.geo.Shape method)</a>
 </li>
+      <li><a href="api/fields.html#magnelio.fields.FieldState.show">show() (magnelio.fields.FieldState method)</a>
+
+      <ul>
+        <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldFrequency.show">(magnelio.monitors.MonitorFieldFrequency method)</a>
+</li>
+        <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldTime.show">(magnelio.monitors.MonitorFieldTime method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/plots.html#magnelio.plots.show_field">show_field() (in module magnelio.plots)</a>
+</li>
       <li><a href="api/plots.html#magnelio.plots.show_geometry">show_geometry() (in module magnelio.plots)</a>
 </li>
       <li><a href="api/core.html#magnelio.AnalysisEigenmode.sigma">sigma (magnelio.AnalysisEigenmode attribute)</a>
@@ -2152,10 +2188,12 @@
 </li>
       <li><a href="api/core.html#magnelio.MeshControl.singularity_refinement">singularity_refinement (magnelio.MeshControl attribute)</a>
 </li>
-      <li><a href="api/fields.html#magnelio.fields.SurfaceRecording.size">size (magnelio.fields.SurfaceRecording property)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/fields.html#magnelio.fields.SurfaceRecording.size">size (magnelio.fields.SurfaceRecording property)</a>
+</li>
+      <li><a href="api/fields.html#magnelio.fields.FieldSpectrum.snapshot">snapshot() (magnelio.fields.FieldSpectrum method)</a>
+</li>
       <li><a href="api/core.html#magnelio.AnalysisTD.solve_ports">solve_ports() (magnelio.AnalysisTD method)</a>
 </li>
       <li><a href="api/core.html#magnelio.Excitation.source">source (magnelio.Excitation attribute)</a>
@@ -2288,10 +2326,16 @@
 </li>
       <li><a href="api/fields.html#magnelio.fields.SurfaceRecording.time_weights">time_weights() (magnelio.fields.SurfaceRecording method)</a>
 </li>
-      <li><a href="api/fields.html#magnelio.fields.SurfaceRecording.times">times (magnelio.fields.SurfaceRecording attribute)</a>
+      <li><a href="api/fields.html#magnelio.fields.FieldRecording.times">times (magnelio.fields.FieldRecording property)</a>
+
+      <ul>
+        <li><a href="api/fields.html#magnelio.fields.SurfaceRecording.times">(magnelio.fields.SurfaceRecording attribute)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/fields.html#magnelio.fields.FieldRecording.times_h">times_h (magnelio.fields.FieldRecording property)</a>
+</li>
       <li><a href="api/core.html#magnelio.BoundaryConditions.to_dict">to_dict() (magnelio.BoundaryConditions method)</a>
 </li>
       <li><a href="api/fields.html#magnelio.fields.SurfaceRecording.to_h5">to_h5() (magnelio.fields.SurfaceRecording method)</a>

@@ -1051,6 +1051,24 @@ so they travel with the bins.</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldFrequency.show">
+<span class="sig-name descname"><span class="pre">show</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldFrequency.show" title="Link to this definition">#</a></dt>
+<dd><p>Interactive 3D view of the DFT field on a cutting plane.</p>
+<p>The geometry viewer with the field laid on its cut, a phase
+slider for the complex pattern, a frequency slider when several
+bins were recorded, and the position slider walking through the
+region.  See <a class="reference internal" href="plots.html#magnelio.plots.show_field" title="magnelio.plots.show_field"><code class="xref py py-func docutils literal notranslate"><span class="pre">magnelio.plots.show_field()</span></code></a> for the arguments
+— the bin (<code class="docutils literal notranslate"><span class="pre">f=</span></code> or <code class="docutils literal notranslate"><span class="pre">frame=</span></code>), <code class="docutils literal notranslate"><span class="pre">phase</span></code>, the plane
+(<code class="docutils literal notranslate"><span class="pre">normal</span></code>, <code class="docutils literal notranslate"><span class="pre">position</span></code>), <code class="docutils literal notranslate"><span class="pre">geometry</span></code> and <code class="docutils literal notranslate"><span class="pre">mesh</span></code> overlays,
+and the rendering <code class="docutils literal notranslate"><span class="pre">mode</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>component</strong> (<em>str</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldFrequency.data">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">data</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#magnelio.monitors.MonitorFieldFrequency.data" title="Link to this definition">#</a></dt>
@@ -1481,6 +1499,23 @@ unchanged.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldTime.show">
+<span class="sig-name descname"><span class="pre">show</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldTime.show" title="Link to this definition">#</a></dt>
+<dd><p>Interactive 3D view of the recorded field on a cutting plane.</p>
+<p>The geometry viewer with the field laid on its cut, a time slider
+over the recorded frames, and the position slider walking through
+the region.  See <a class="reference internal" href="plots.html#magnelio.plots.show_field" title="magnelio.plots.show_field"><code class="xref py py-func docutils literal notranslate"><span class="pre">magnelio.plots.show_field()</span></code></a> for the
+arguments — the frame (<code class="docutils literal notranslate"><span class="pre">t=</span></code> or <code class="docutils literal notranslate"><span class="pre">frame=</span></code>), the plane
+(<code class="docutils literal notranslate"><span class="pre">normal</span></code>, <code class="docutils literal notranslate"><span class="pre">position</span></code>), <code class="docutils literal notranslate"><span class="pre">geometry</span></code> and <code class="docutils literal notranslate"><span class="pre">mesh</span></code> overlays,
+and the rendering <code class="docutils literal notranslate"><span class="pre">mode</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>component</strong> (<em>str</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldTime.state_dict">
 <span class="sig-name descname"><span class="pre">state_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldTime.state_dict" title="Link to this definition">#</a></dt>
 <dd><p>Checkpoint the target-time cursor for a bit-exact resume.</p>
@@ -1898,6 +1933,7 @@ basis.  Only meaningful relative to <a class="reference internal" href="#magneli
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.record"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.record()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.renormalize"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.renormalize()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.result_dump"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.result_dump()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.show"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.show()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.data"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.data</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.data_raw"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.data_raw</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.f"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.f</span></code></a></li>
@@ -1924,6 +1960,7 @@ basis.  Only meaningful relative to <a class="reference internal" href="#magneli
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.plot"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.plot()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.pop_pending"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.pop_pending()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.record"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.record()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.show"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.show()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.state_dict"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.state_dict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.data"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.data</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.region"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.region</span></code></a></li>

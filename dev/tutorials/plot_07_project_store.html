@@ -716,11 +716,11 @@ signals, with the accessors you already know:</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">"Read back from the project store"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_07_project_store_001.png" srcset="../_images/sphx_glr_plot_07_project_store_001.png" alt="Read back from the project store" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Project /tmp/tmpuzg4yzp6/magic_tee
+<img src="../_images/sphx_glr_plot_07_project_store_001.png" srcset="../_images/sphx_glr_plot_07_project_store_001.png" alt="Read back from the project store" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Project /tmp/tmpzyngolov/magic_tee
   analysis   AnalysisScatteringTD
   status     done
-  last call  finished 2026-09-05 19:32:59 in 19.4 s
-  created    2026-09-05 19:32:40
+  last call  finished 2026-09-06 08:31:12 in 19.5 s
+  created    2026-09-06 08:30:53
   runs       2
 run          excited  state  steps    energy  elapsed  stop reason
 ───────────  ───────  ─────  ─────  ────────  ───────  ───────────
@@ -779,7 +779,27 @@ recorded in the same simulation:</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_07_project_store_003.png" srcset="../_images/sphx_glr_plot_07_project_store_003.png" alt="H-arm drive: $E_z$, mid-height slice, E-arm drive: $E_z$, vertical slice" class = "sphx-glr-single-img"/></section>
+<img src="../_images/sphx_glr_plot_07_project_store_003.png" srcset="../_images/sphx_glr_plot_07_project_store_003.png" alt="H-arm drive: $E_z$, mid-height slice, E-arm drive: $E_z$, vertical slice" class = "sphx-glr-single-img"/><p>The volume can also be opened in the 3D viewer.  <code class="docutils literal notranslate"><span class="pre">show</span></code> lays the
+field on the viewer’s cutting plane — here the E-arm drive, cut
+along the E-arm’s own symmetry plane, the tee’s metal drawn with it
+and the cells inside the walls cut out of the field sheet.  In a
+notebook the position slider walks the cut through the whole
+recorded volume, and a phase slider turns the complex pattern; a
+documentation build shows the frame the call asks for.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">mon_e</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s2">"E"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="mf">90.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-0">
+Static Scene</label><div class="sd-tab-content docutils">
+<img src="../_images/sphx_glr_plot_07_project_store_004.png" srcset="../_images/sphx_glr_plot_07_project_store_004.png" alt="plot 07 project store" class = "sphx-glr-single-img"/></div>
+<input id="sd-tab-item-1" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-1">
+Interactive Scene</label><div class="sd-tab-content docutils">
+<iframe src='../_static/static_viewer.html?fileURL=../_images/tutorials/images/sphx_glr_plot_07_project_store_004.vtksz' width='100%%' height='400px' frameborder='0'></iframe></div>
+</div>
+</section>
 <section id="running-longer-resume">
 <h2>Running longer: resume<a class="headerlink" href="#running-longer-resume" title="Link to this heading">#</a></h2>
 <p>Every run directory carries a checkpoint with the complete solver
@@ -852,7 +872,7 @@ how-to <em>Watching a simulation that is still running</em> is that recipe.</p>
 <p>The tee is now exhausted as a teaching device for closed structures.
 The next tutorial opens the domain: absorbing boundaries, and with
 them the first antenna.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 26.980 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 27.603 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-07-project-store-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/8ffbd898ad191daf250f8485ee8f3138/plot_07_project_store.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_07_project_store.ipynb</span></code></a></p>

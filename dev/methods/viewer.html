@@ -628,6 +628,56 @@ triangles that mean nothing — and a 3D handle competes with the camera
 for the mouse.  Axis-aligned, slider-driven cutting planes are also
 what users of commercial EM suites expect.</p>
 </section>
+<section id="fields-on-the-cut">
+<h2>Fields on the cut<a class="headerlink" href="#fields-on-the-cut" title="Link to this heading">#</a></h2>
+<p>The same viewer shows a field: a monitor’s recording, or a
+<a class="reference internal" href="../api/fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><code class="xref py py-class docutils literal notranslate"><span class="pre">FieldState</span></code></a> such as an eigenmode.  The cell
+layer the cut exposes is laid over the cut as a coloured sheet, and the
+position slider walks that layer through the recorded volume.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">monitor</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>                                   <span class="c1"># |E| with arrows, mid-plane of the region</span>
+<span class="n">monitor</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="s2">"Ez"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>     <span class="c1"># one signed component, diverging colours</span>
+<span class="n">monitor</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">)</span>          <span class="c1"># with the solids; metal cut out of the sheet</span>
+<span class="n">pattern</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="mf">10e9</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="mf">90.0</span><span class="p">)</span>                 <span class="c1"># a frequency monitor at a phase</span>
+<span class="n">eigen</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="s2">"H"</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>         <span class="c1"># an eigenmode</span>
+</pre></div>
+</div>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Appearance</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Field sheet</p></td>
+<td><p>The exposed layer of cells, each coloured by the magnitude of <code class="docutils literal notranslate"><span class="pre">E</span></code> or <code class="docutils literal notranslate"><span class="pre">H</span></code> (dark to bright) or by one signed component (<code class="docutils literal notranslate"><span class="pre">Ex</span></code>, <code class="docutils literal notranslate"><span class="pre">Hz</span></code>, …; blue–white–red about zero).  The colour ceiling is the peak over every frame and layer of the recording, so a wave keeps its colour while the frame slider runs; <code class="docutils literal notranslate"><span class="pre">vmax=</span></code> fixes it.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Arrows</p></td>
+<td><p>For <code class="docutils literal notranslate"><span class="pre">E</span></code> or <code class="docutils literal notranslate"><span class="pre">H</span></code>: arrows on an even lattice over the layer, all three components, the longest spanning one lattice spacing; arrows below 2 % of the ceiling are left out.  <code class="docutils literal notranslate"><span class="pre">plot_type=&quot;color&quot;</span></code> drops them.</p></td>
+</tr>
+<tr class="row-even"><td><p>Metal</p></td>
+<td><p>With <code class="docutils literal notranslate"><span class="pre">mesh=</span></code>, cells buried in a perfect conductor are cut out of the sheet, so the solids’ cut faces show through where no field is defined.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The toolbar gains a <strong>play button</strong> and a <strong>frame slider</strong> (time or
+frequency, with the value beside it), a <strong>phase slider</strong> for complex
+data (a frequency monitor’s pattern at <code class="docutils literal notranslate"><span class="pre">Re(F·e^{jφ})</span></code>), and a
+<strong>Field</strong> selector that switches between the recorded components;
+<em>Field on cut</em> and <em>Field arrows</em> join the <em>Show</em> menu.  Play runs the
+frames in a loop at <code class="docutils literal notranslate"><span class="pre">fps=</span></code> (default 4) — each frame is one layer
+computed and sent to the browser, so the rate is bounded by the size
+of the layer.  In a script or a documentation build the initial frame
+is chosen with <code class="docutils literal notranslate"><span class="pre">t=</span></code>, <code class="docutils literal notranslate"><span class="pre">f=</span></code> or <code class="docutils literal notranslate"><span class="pre">frame=</span></code>.</p>
+<p>Two things the picture is not.  It is not a plane: every value is the
+cell-centre average of the staggered components in one layer of cells,
+the same convention as the 2D slice plots.  And it is not mirrored:
+a model with symmetry planes shows its modelled half here, as the
+geometry view does.</p>
+<p>A monitor read back from a project store (<code class="docutils literal notranslate"><span class="pre">project.monitors[...]</span></code>)
+shows the same way; its frames are read from disk one at a time as the
+slider moves, so a volume monitor of any size opens at once.</p>
+</section>
 <section id="rendering-modes">
 <h2>Rendering modes<a class="headerlink" href="#rendering-modes" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="table">
@@ -697,8 +747,9 @@ needed for Magnelio’s viewer.</p>
 no screen-space labels): port names lie in the port plane, element
 names face the initial camera; both scale with the model.</p></li>
 <li><p>The cutting plane is axis-aligned by design (see above).</p></li>
-<li><p>Field monitors are not yet shown in 3D; use the ParaView export
-(<a class="reference internal" href="sources-monitors.html"><span class="doc">Sources, monitors and post-processing</span></a>) or the 2D slice plots.</p></li>
+<li><p>Fields are shown on the cutting plane only — one layer at a time, not
+as a volume rendering or an iso-surface; the ParaView export
+(<a class="reference internal" href="sources-monitors.html"><span class="doc">Sources, monitors and post-processing</span></a>) covers those.</p></li>
 </ul>
 </section>
 </section>
@@ -752,6 +803,7 @@ names face the initial camera; both scale with the model.</p></li>
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-is-drawn">What is drawn</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-cutting-plane">The cutting plane</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fields-on-the-cut">Fields on the cut</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rendering-modes">Rendering modes</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#requirements">Requirements</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#limitations">Limitations</a></li>
