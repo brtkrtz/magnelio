@@ -10,7 +10,10 @@ staggered component, the region's grid lines and dual widths beside
 them — carries the same for the frequency monitors' bins, and writes
 no XDMF descriptor any more (the ParaView export converts on its own).
 A 2.x store's monitor data cannot be read by a 3.0 reader, and none is
-converted.  Every artefact the store writes (``project.json``,
+converted.  Additions that an older reader can ignore ride on 3.0
+without a bump, as DD-140, DD-154 and DD-198 did: the field monitors'
+region operators (DD-260, an ``operators`` group whose ``valid`` flag
+says whether it was filled).  Every artefact the store writes (``project.json``,
 ``results.h5``, ``checkpoint.h5``, the setup recipe) is stamped with
 :data:`SCHEMA_VERSION` and every reader validates it via
 :func:`validate_schema` — an unknown or missing version fails loudly

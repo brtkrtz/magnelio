@@ -39,6 +39,18 @@ major version is 0, minor releases may change the public API.
   bit from that frame, so a ring-down cut short resumes from its last
   frame.  `h_lead` on the source states that lead for any field
   (zero for an eigenmode or a formula, as before).
+- Energy and flux from a recorded field.  `recording.energy()` and
+  `recording.flux(normal, position)` on a field monitor's
+  `FieldRecording` — and `energy()`/`flux()` on every `FieldState`
+  frame — state the stored joules and the Poynting watts through the
+  region's cross-section from the recorded samples: the numbers the
+  run's energy trace and a `MonitorFluxTime` report, bit for bit for
+  the flux.  `spectrum.energy()` and `spectrum.flux(...)` on a
+  frequency monitor's `FieldSpectrum` are the time averages per watt
+  incident (on a matched line, `|S21|²`).  A monitor carries the
+  material operators of its region for this, live and in a project
+  store; two adjoining regions add up to their union, and a model
+  solved behind symmetry planes reports the whole model.
 
 ### Removed
 
@@ -86,6 +98,9 @@ major version is 0, minor releases may change the public API.
 
 ### Fixed
 
+- A project-backed run without ports — a ring-down from an initial
+  field — crashed at its first flush; it now streams its monitors and
+  energy trace like any other run.
 - A `ThinWire` drawn onto the top face of a thin metallisation (a bond
   wire on a pad, a probe on a patch) now ends on the sheet's own grid
   node: vertices inside the sheet's thickness collapse onto the sheet

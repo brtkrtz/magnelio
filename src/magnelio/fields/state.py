@@ -52,6 +52,31 @@ def _yee_shapes(Nx: int, Ny: int, Nz: int) -> dict[str, tuple[int, int, int]]:
     }
 
 
+def _continued(values, a: int, at_low: bool, shared: bool, sign: float, on_centre: bool):
+    """*values* continued across a symmetry plane along axis *a* (DD-154).
+
+    Node-sampled quantities (``on_centre`` false) share the wall sample
+    when the wall is a grid line; cell-sampled ones gain the cell the
+    wall bisects, whose sample is the wall value — the neighbour's for
+    an even quantity, zero for an odd one.
+    """
+    values = np.asarray(values)
+    flipped = sign * np.flip(values, axis=a)
+    if not on_centre:
+        if shared:
+            flipped = np.delete(flipped, -1 if at_low else 0, axis=a)
+        parts = [flipped, values]
+    elif shared:
+        parts = [flipped, values]
+    else:
+        near = np.take(values, [0 if at_low else -1], axis=a)
+        wall = near if sign > 0 else 0.0 * near
+        parts = [flipped, wall, values]
+    if not at_low:
+        parts = parts[::-1]
+    return np.concatenate(parts, axis=a)
+
+
 class FieldState:
     """Electric and magnetic field on a grid, sampled at the Yee positions.
 
@@ -101,21 +126,32 @@ class FieldState:
         raw = {name: arrays[name].astype(dtype) * lengths[name] for name in _COMPONENTS}
         self._raw = FieldArrays(**raw)
         self._dual = None
+        self._ops = None
+        self._h_lead = 0.0
 
     # ── construction ─────────────────────────────────────────────────────
 
     @classmethod
-    def _from_raw(cls, grid: GridLines, raw: FieldArrays, dual=None) -> FieldState:
+    def _from_raw(
+        cls, grid: GridLines, raw: FieldArrays, dual=None, ops=None, h_lead: float = 0.0
+    ) -> FieldState:
         """Wrap solver grid quantities without conversion (internal).
 
         *dual* names the dual widths the ``h`` samples were formed with
         when they differ from the solver convention on *grid* — a region
         cut from a larger grid (:func:`~magnelio.fields._interp._region_dual`).
+        *ops* are the region's material operators
+        (:class:`~magnelio.fields._operators.RegionOperators`) when the
+        field can state its energy and flux; *h_lead* the lead [s] of
+        the magnetic samples over the electric ones (half a step for
+        the state of a march).
         """
         self = cls.__new__(cls)
         self._grid = grid
         self._raw = raw
         self._dual = dual
+        self._ops = ops
+        self._h_lead = float(h_lead)
         return self
 
     @classmethod
@@ -347,14 +383,101 @@ class FieldState:
     def scaled(self, factor) -> FieldState:
         """A copy multiplied by a (possibly complex) scalar."""
         raw = FieldArrays(**{c: getattr(self._raw, c) * factor for c in _COMPONENTS})
-        return type(self)._from_raw(self._grid, raw, dual=self._dual)
+        return self._like(raw)
 
     def real(self) -> FieldState:
         """The real part (the field of a complex mode at its zero-phase instant)."""
         if not self.is_complex:
             return self
         raw = FieldArrays(**{c: np.real(getattr(self._raw, c)) for c in _COMPONENTS})
-        return type(self)._from_raw(self._grid, raw, dual=self._dual)
+        return self._like(raw)
+
+    def _like(self, raw: FieldArrays, grid: GridLines | None = None, dual=None, ops=None):
+        """A field on the same grid with the same operators and lead, new samples."""
+        return type(self)._from_raw(
+            grid if grid is not None else self._grid,
+            raw,
+            dual=dual if grid is not None else self._dual,
+            ops=ops if grid is not None else self._ops,
+            h_lead=self._h_lead,
+        )
+
+    # ── energy and flux (DD-260) ─────────────────────────────────────────
+
+    def energy(self) -> float:
+        """The stored energy [J] of the field, full-model booking.
+
+        ``½ eᵀMε e + ½ hᵀMμ h`` on the field's own samples, with the
+        material operators of the region the field carries — a
+        monitor's frame does (live or read back from a project), an
+        eigenmode or a field assembled by hand does not, and a
+        ``RuntimeError`` says so.  For a frame of a march, whose
+        magnetic samples lead the electric ones by half a step, the
+        magnetic term is the one the leapfrog conserves —
+        ``h(t−dt/2)·Mμ·h(t+dt/2)``, formed from the frame alone through
+        the discrete Faraday law — so a recording of the whole domain
+        reproduces the run's energy trace.  A complex frame is read as
+        an RMS phasor — a spectrum's frames per 1 W CW are — and gives
+        the time-averaged energy.  Where
+        the region is cut out of the domain, the dual patches on its
+        boundary count with the half that lies inside, so the energies
+        of two adjoining regions add up to that of their union.  A
+        model solved on a symmetry-reduced domain reports the joules of
+        the whole model.
+
+        Returns
+        -------
+        float
+        """
+        from magnelio.fields._operators import energy, no_operators  # noqa: PLC0415
+
+        if self._ops is None:
+            raise no_operators("this field")
+        return energy(self._raw, self._ops, self._grid, self._dual, self._h_lead)
+
+    def flux(self, normal: str, position: float) -> float:
+        """Poynting flux [W] through the field's cross-section at a plane.
+
+        The FIT pairing ``Σ e·h`` of the samples on the plane — the
+        identity :class:`~magnelio.monitors.MonitorFluxTime` records
+        during a march, here on a recorded frame, over the region's
+        extent — positive along the axis; the plane snaps to the
+        nearest grid node; the pairing takes the electric samples on
+        that node plane and the magnetic ones in the cell above it, as
+        the flux monitor does.  A complex frame is read as an RMS
+        phasor — a spectrum's frames per 1 W CW are — and gives the
+        time-averaged real power ``Re Σ e·h*``, so on a matched line
+        a spectrum's flux is the transmitted watts per watt incident.
+        Needs the region's operators like
+        :meth:`energy`; a model solved on a symmetry-reduced domain
+        reports the watts of the whole cross-section.
+
+        Parameters
+        ----------
+        normal : {"x", "y", "z"}
+            Normal axis of the plane.
+        position : float
+            Position [m] along that axis.
+
+        Returns
+        -------
+        float
+        """
+        from magnelio.fields._operators import flux, no_operators, plane_index  # noqa: PLC0415
+
+        if self._ops is None:
+            raise no_operators("this field")
+        if normal not in _AXES:
+            raise ValueError(f"normal must be 'x', 'y' or 'z'; got {normal!r}")
+        axis = _AXES.index(normal)
+        return flux(
+            self._raw,
+            self._ops,
+            self._grid,
+            self._dual,
+            axis,
+            plane_index(self._grid, axis, position),
+        )
 
     # ── symmetry ─────────────────────────────────────────────────────────
 
@@ -407,29 +530,58 @@ class FieldState:
             nodes[a] = np.concatenate([n, reflected[1:] if shared else reflected])
         grid = GridLines(*nodes)
 
+        def on_centre_of(name: str) -> bool:
+            group, caxis = name[0], _AXES.index(name[1])
+            return (caxis == a) if group == "E" else (caxis != a)
+
         comps = {}
         for name in _COMPONENTS:
             group, caxis = name[0], _AXES.index(name[1])
-            values = self.component(name)
             sign = mirror_sign(group, caxis, a, spec.kind)
-            flipped = sign * np.flip(values, axis=a)
-            on_centre = (caxis == a) if group == "E" else (caxis != a)
-            if not on_centre:
-                if shared:
-                    flipped = np.delete(flipped, -1 if spec.at_low else 0, axis=a)
-                parts = [flipped, values]
-            elif shared:
-                parts = [flipped, values]
-            else:
-                # The cell the wall bisects: its centre sample is the
-                # wall value itself.
-                near = np.take(values, [0 if spec.at_low else -1], axis=a)
-                wall = near if sign > 0 else 0.0 * near
-                parts = [flipped, wall, values]
-            if not spec.at_low:
-                parts = parts[::-1]
-            comps[name] = np.concatenate(parts, axis=a)
-        return FieldState(grid, **comps)
+            comps[name] = _continued(
+                self.component(name), a, spec.at_low, shared, sign, on_centre_of(name)
+            )
+        if self._ops is None:
+            return FieldState(grid, **comps)
+
+        # The operators continue like even quantities, the dual widths
+        # with the nodes; the mirrored end takes the kind of the end it
+        # mirrors, and the plane crossed is no symmetry plane any more.
+        from magnelio.fields._operators import RegionOperators  # noqa: PLC0415
+
+        ops = self._ops
+        dual = list(self._lengths_dual())
+        dual[a] = _continued(dual[a], 0, spec.at_low, shared, 1.0, False)
+        m_eps = {
+            c: _continued(ops.m_eps[c], a, spec.at_low, shared, 1.0, on_centre_of(c))
+            for c in ops.m_eps
+        }
+        m_mu = {
+            c: _continued(ops.m_mu[c], a, spec.at_low, shared, 1.0, on_centre_of(c))
+            for c in ops.m_mu
+        }
+        ends = list(ops.ends)
+        lo, hi = ends[a]
+        ends[a] = (hi, hi) if spec.at_low else (lo, lo)
+        face = f"{_AXES[a]}{'min' if spec.at_low else 'max'}"
+        new_ops = RegionOperators(
+            m_eps=m_eps,
+            m_mu=m_mu,
+            ends=tuple(ends),
+            symmetry=tuple(f for f in ops.symmetry if f != face),
+        )
+        out = FieldState.zeros(grid)
+        out._dual = tuple(dual)
+        lengths = out._lengths()
+        raw = FieldArrays(**{c: np.asarray(comps[c]) * lengths[c] for c in _COMPONENTS})
+        return self._like(raw, grid=grid, dual=tuple(dual), ops=new_ops)
+
+    def _lengths_dual(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """The dual widths of the h samples along each axis."""
+        if self._dual is not None:
+            return tuple(np.asarray(d, dtype=float) for d in self._dual)
+        g = self._grid
+        return tuple(_dual_widths(np.asarray(d, dtype=float)) for d in (g.dx, g.dy, g.dz))
 
     # ── plotting ─────────────────────────────────────────────────────────
 

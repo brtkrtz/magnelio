@@ -199,10 +199,24 @@ class MonitorFieldTime:
         self._subgrid = region_grid(mesh.grid, r)
         self._dual = _region_dual(mesh.grid, r.ix, r.iy, r.iz)
         self._slices = {c: _region_slices(r.ix, r.iy, r.iz, c) for c in self._components}
+        self._ops = None
         self._snapshots = []
         self._recorded_times = []
         self._next_idx = 0
         self._n_recorded = 0
+
+    def attach_operators(self, mesh, M_eps, M_mu) -> None:
+        """Take the region's cut of the solver's material diagonals (DD-260).
+
+        Called by the solver after :meth:`attach`, with its own ``M_ε``
+        and ``M_μ`` diagonals; the recording then states its energy and
+        flux (:meth:`~magnelio.fields.FieldRecording.energy`).
+        """
+        from magnelio.fields._operators import region_operators  # noqa: PLC0415
+
+        if self._region is None:
+            raise RuntimeError("Monitor not attached. Call attach() first.")
+        self._ops = region_operators(mesh, self._region, M_eps, M_mu)
 
     def record(self, fields, n: int, t: float, dt: float) -> None:
         """Record a snapshot when the electric field's instant meets a target.
@@ -329,6 +343,7 @@ class MonitorFieldTime:
             np.asarray(self._recorded_times, dtype=float),
             raw,
             dual=self._dual,
+            ops=self._ops,
             dt=float(self._dt) if self._dt else None,
         )
 

@@ -727,10 +727,16 @@ class FITTimeDomainSolver:
             if hasattr(probe, "attach"):
                 probe.attach(mesh)
 
-        # Attach monitors
+        # Attach monitors; a field monitor also takes the region's cut of
+        # the material diagonals (DD-260), and a project sink writes it
+        # into the datasets it declared for them.
         for mon in self.monitors:
             if hasattr(mon, "attach"):
                 mon.attach(mesh)
+            if hasattr(mon, "attach_operators"):
+                mon.attach_operators(mesh, self._M_eps_diag, self._M_mu_diag)
+        if self.sink is not None and hasattr(self.sink, "write_monitor_operators"):
+            self.sink.write_monitor_operators(self.monitors)
 
     _ALL_FACES = frozenset({"xmin", "xmax", "ymin", "ymax", "zmin", "zmax"})
 
