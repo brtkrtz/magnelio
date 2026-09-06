@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=f1622b98"></script>
+    <script src="../_static/documentation_options.js?v=e1271356"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -175,8 +175,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.6.html">
-    Upgrading from 0.5.x
+  <a class="nav-link nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -188,6 +188,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
@@ -354,6 +361,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -681,17 +695,17 @@ mesh.h5                                                      11880.4
 project.json                                                     3.8
 geometry/geometry_0.vtp                                          3.5
 runs/port3_mode0/checkpoint.h5                                1523.7
-runs/port3_mode0/fields_freq.h5                               3721.6
+runs/port3_mode0/fields_freq.h5                               5579.0
 runs/port3_mode0/paraview_open.py                               18.9
 runs/port3_mode0/results.h5                                    699.6
 runs/port3_mode0/paraview/volume_pattern.pvd                     0.2
-runs/port3_mode0/paraview/volume_pattern/f_0000.vtr           1312.8
+runs/port3_mode0/paraview/volume_pattern/f_0000.vtr           1314.0
 runs/port4_mode0/checkpoint.h5                                1523.7
-runs/port4_mode0/fields_freq.h5                               3721.6
+runs/port4_mode0/fields_freq.h5                               5579.0
 runs/port4_mode0/paraview_open.py                               18.9
 runs/port4_mode0/results.h5                                    699.6
 runs/port4_mode0/paraview/volume_pattern.pvd                     0.2
-runs/port4_mode0/paraview/volume_pattern/f_0000.vtr           1311.6
+runs/port4_mode0/paraview/volume_pattern/f_0000.vtr           1309.7
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">project.json</span></code> carries the run registry and the reconstruction
@@ -716,16 +730,16 @@ signals, with the accessors you already know:</p>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">"Read back from the project store"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_07_project_store_001.png" srcset="../_images/sphx_glr_plot_07_project_store_001.png" alt="Read back from the project store" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Project /tmp/tmpip87w2ox/magic_tee
+<img src="../_images/sphx_glr_plot_07_project_store_001.png" srcset="../_images/sphx_glr_plot_07_project_store_001.png" alt="Read back from the project store" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Project /tmp/tmp8qr1j6u2/magic_tee
   analysis   AnalysisScatteringTD
   status     done
-  last call  finished 2026-09-06 09:22:01 in 12.6 s
-  created    2026-09-06 09:21:50
+  last call  finished 2026-09-06 16:29:58 in 14.3 s
+  created    2026-09-06 16:29:45
   runs       2
 run          excited  state  steps    energy  elapsed  stop reason
 ───────────  ───────  ─────  ─────  ────────  ───────  ───────────
-port3_mode0  port3:0  done    6401  -45.3 dB    5.1 s  port_signal
-port4_mode0  port4:0  done    6401  -49.0 dB    5.2 s  port_signal
+port3_mode0  port3:0  done    6401  -45.3 dB    5.7 s  port_signal
+port4_mode0  port4:0  done    6401  -49.0 dB    5.7 s  port_signal
 
 Text(0.5, 1.0, 'Read back from the project store')
 </pre></div>
@@ -782,11 +796,23 @@ recorded in the same simulation:</p>
 <img src="../_images/sphx_glr_plot_07_project_store_003.png" srcset="../_images/sphx_glr_plot_07_project_store_003.png" alt="H-arm drive: $E_z$, mid-height slice, E-arm drive: $E_z$, vertical slice" class = "sphx-glr-single-img"/><p>The volume can also be opened in the 3D viewer.  <code class="docutils literal notranslate"><span class="pre">show</span></code> lays the
 field on the viewer’s cutting plane — here the E-arm drive, cut
 along the E-arm’s own symmetry plane, the tee’s metal drawn with it
-and the cells inside the walls cut out of the field sheet.  In a
+and the cells inside the walls cut out of the field sheet — and,
+with <code class="docutils literal notranslate"><span class="pre">volume=&quot;isosurface&quot;</span></code>, adds the surface where the magnitude of E reaches
+half its ceiling, clipped at the cut so its inside shows.  In a
 notebook the position slider walks the cut through the whole
-recorded volume, and a phase slider turns the complex pattern; a
-documentation build shows the frame the call asks for.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">mon_e</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s2">"E"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="mf">90.0</span><span class="p">)</span>
+recorded volume, a phase slider turns the complex pattern, a level
+slider moves the surface, and the <em>Show</em> menu swaps the arrows on
+the cut for arrows on a lattice through the volume; a documentation
+build shows the frame the call asks for.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">mon_e</span><span class="o">.</span><span class="n">show</span><span class="p">(</span>
+    <span class="n">component</span><span class="o">=</span><span class="s2">"E"</span><span class="p">,</span>
+    <span class="n">normal</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span>
+    <span class="n">position</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span>
+    <span class="n">phase</span><span class="o">=</span><span class="mf">90.0</span><span class="p">,</span>
+    <span class="n">volume</span><span class="o">=</span><span class="s2">"isosurface"</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 <div class="sd-tab-set docutils">
@@ -845,7 +871,14 @@ the listing above:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>paraview_open.py
 </pre></div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">paraview.pvsm</span></code> is a double-clickable state file: geometry as
+<p>The data went to <code class="docutils literal notranslate"><span class="pre">paraview/</span></code> when the run closed: one <code class="docutils literal notranslate"><span class="pre">.vtr</span></code>
+file per monitor frequency, collected by a <code class="docutils literal notranslate"><span class="pre">.pvd</span></code> whose axis is
+the frequency (for a time monitor, the instant).  They hold cell
+data — the staggered frames of <code class="docutils literal notranslate"><span class="pre">fields_freq.h5</span></code> averaged onto the
+cell centres at export time, the same numbers
+<code class="docutils literal notranslate"><span class="pre">spectrum.cell_centred()</span></code> returns — so ParaView reads plain VTK
+files and never opens the store itself.
+<code class="docutils literal notranslate"><span class="pre">paraview.pvsm</span></code> is a double-clickable state file: geometry as
 translucent solids, slice and clip widgets through the field
 volume, arrow glyphs on an even lattice with sensible lengths, and
 a threshold-gated volume glyph set — assembled and scaled to the
@@ -872,7 +905,7 @@ how-to <em>Watching a simulation that is still running</em> is that recipe.</p>
 <p>The tee is now exhausted as a teaching device for closed structures.
 The next tutorial opens the domain: absorbing boundaries, and with
 them the first antenna.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 18.097 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 21.168 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-07-project-store-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/8ffbd898ad191daf250f8485ee8f3138/plot_07_project_store.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_07_project_store.ipynb</span></code></a></p>

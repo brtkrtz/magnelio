@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=f1622b98"></script>
+    <script src="../_static/documentation_options.js?v=e1271356"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -177,8 +177,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.6.html">
-    Upgrading from 0.5.x
+  <a class="nav-link nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -190,6 +190,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
@@ -356,6 +363,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -770,19 +784,19 @@ permittivity.</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (1.0 s)
+  mesh | materials | done (1.8 s)
   mesh | conformal cells
-  mesh | conformal cells | done (4.4 s)
+  mesh | conformal cells | done (7.5 s)
   mesh | PEC masks
-  mesh | 28 x 28 x 9 cells (5.4 s total)
+  mesh | 28 x 28 x 9 cells (9.3 s total)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (1.4 s)
+  mesh | materials | done (2.3 s)
   mesh | conformal cells
-  mesh | conformal cells | done (6.1 s)
+  mesh | conformal cells | done (10.5 s)
   mesh | PEC masks
-  mesh | 35 x 35 x 12 cells (7.5 s total)
+  mesh | 35 x 35 x 12 cells (12.8 s total)
 coarse (  7056 cells):  f0 = 2.7275 GHz
 fine   ( 14700 cells):  f0 = 2.7262 GHz
 next mode is at 4.85 GHz — the band is clear
@@ -886,35 +900,35 @@ much.</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (3.5 s)
+  mesh | materials | done (6.0 s)
   mesh | conformal cells
-  mesh | conformal cells | done (11.6 s)
+  mesh | conformal cells | done (19.8 s)
   mesh | PEC masks
-  mesh | 78 x 28 x 9 cells (15.2 s total)
+  mesh | 78 x 28 x 9 cells (25.9 s total)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (3.4 s)
+  mesh | materials | done (6.0 s)
   mesh | conformal cells
-  mesh | conformal cells | done (14.8 s)
+  mesh | conformal cells | done (25.5 s)
   mesh | PEC masks
-  mesh | 78 x 44 x 9 cells (18.3 s total)
+  mesh | 78 x 44 x 9 cells (31.6 s total)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (3.5 s)
+  mesh | materials | done (6.0 s)
   mesh | conformal cells
-  mesh | conformal cells | done (11.4 s)
+  mesh | conformal cells | done (19.9 s)
   mesh | PEC masks
-  mesh | 78 x 28 x 9 cells (14.9 s total)
+  mesh | 78 x 28 x 9 cells (25.9 s total)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (3.4 s)
+  mesh | materials | done (6.0 s)
   mesh | conformal cells
-  mesh | conformal cells | done (13.7 s)
+  mesh | conformal cells | done (24.0 s)
   mesh | PEC masks
-  mesh | 78 x 46 x 9 cells (17.2 s total)
+  mesh | 78 x 46 x 9 cells (30.1 s total)
 window  4.0 mm -&gt;  k = 0.00801,  centre 3.0285 GHz
 window  6.0 mm -&gt;  k = 0.03102,  centre 2.9615 GHz
 window  8.0 mm -&gt;  k = 0.06525,  centre 2.8893 GHz
@@ -955,11 +969,12 @@ the pair’s frequency is a fraction of the passband.</p>
 <img src="../_images/sphx_glr_plot_13_dielectric_filter_003.png" srcset="../_images/sphx_glr_plot_13_dielectric_filter_003.png" alt="Coupling is set by the window" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (4.2 s)
+  mesh | materials | done (7.3 s)
   mesh | conformal cells
-  mesh | conformal cells | done (18.0 s)
+  mesh | conformal cells | 438 sections
+  mesh | conformal cells | done (31.3 s)
   mesh | PEC masks
-  mesh | 96 x 52 x 12 cells (22.3 s total)
+  mesh | 96 x 52 x 12 cells (38.8 s total)
 window 6.0 mm, coarse grid:  k = 0.03102, f = 2.9615 GHz
 window 6.0 mm, fine grid:    k = 0.03125, f = 2.9609 GHz
 k moves 0.7 %, f moves 0.0 %
@@ -1082,29 +1097,29 @@ either number alone.</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (1.5 s)
+  mesh | materials | done (2.7 s)
   mesh | conformal cells
-  mesh | conformal cells | done (7.6 s)
+  mesh | conformal cells | done (13.0 s)
   mesh | PEC masks
-  mesh | 56 x 40 x 13 cells (9.2 s total)
+  mesh | 56 x 40 x 13 cells (15.7 s total)
 probe at 6.0 mm:  f0 = 3.1092 GHz,  Qe = 14.3 (group delay) / 14.0 (ring-down)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (1.5 s)
+  mesh | materials | done (2.7 s)
   mesh | conformal cells
-  mesh | conformal cells | done (7.6 s)
+  mesh | conformal cells | done (13.0 s)
   mesh | PEC masks
-  mesh | 57 x 40 x 13 cells (9.2 s total)
+  mesh | 57 x 40 x 13 cells (15.7 s total)
 probe at 7.0 mm:  f0 = 3.0515 GHz,  Qe = 22.4 (group delay) / 21.9 (ring-down)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (1.5 s)
+  mesh | materials | done (2.7 s)
   mesh | conformal cells
-  mesh | conformal cells | done (7.5 s)
+  mesh | conformal cells | done (13.0 s)
   mesh | PEC masks
-  mesh | 59 x 40 x 13 cells (9.1 s total)
+  mesh | 59 x 40 x 13 cells (15.7 s total)
 probe at 8.0 mm:  f0 = 3.0137 GHz,  Qe = 36.2 (group delay) / 35.4 (ring-down)
 </pre></div>
 </div>
@@ -1216,11 +1231,11 @@ full run and add nothing.</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (3.1 s)
+  mesh | materials | done (5.3 s)
   mesh | conformal cells
-  mesh | conformal cells | done (14.7 s)
+  mesh | conformal cells | done (25.6 s)
   mesh | PEC masks
-  mesh | 90 x 40 x 13 cells (17.8 s total)
+  mesh | 90 x 40 x 13 cells (31.0 s total)
 grid: 90 x 40 x 13 = 46800 cells
 </pre></div>
 </div>
@@ -1328,11 +1343,12 @@ are separated in phase rather than locked to a symmetry.  The
 monitor recorded three frequencies across the band, so that claim
 can simply be read off it: sum <span class="math notranslate nohighlight">\(E_z\)</span> over each half of the
 housing and compare the phases.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x_cells</span></a> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">region</span><span class="o">.</span><span class="n">xc</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">spectrum</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">spectrum</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x_cells</span></a> <span class="o">=</span> <span class="n">spectrum</span><span class="o">.</span><span class="n">cell_centres</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">left</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">right</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x_cells</span></a> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">x_cells</span></a> <span class="o">&gt;=</span> <span class="mf">0.0</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">"  f [GHz]   phase L    phase R   difference"</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">f</span></a> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pattern</span><span class="o">.</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">f</span></a><span class="p">):</span>
-    <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ez</span></a> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"Ez"</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">f</span></a> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">spectrum</span><span class="o">.</span><span class="n">frequencies</span><span class="p">):</span>
+    <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ez</span></a> <span class="o">=</span> <span class="n">spectrum</span><span class="o">.</span><span class="n">cell_centred</span><span class="p">([</span><span class="s2">"Ez"</span><span class="p">],</span> <span class="n">frame</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">squeeze</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="s2">"Ez"</span><span class="p">]</span>
     <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">phi_l</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">degrees</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.angle.html#numpy.angle" title="numpy.angle" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">angle</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ez</span></a><span class="p">[</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">left</span></a><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()))</span>
     <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">phi_r</span></a> <span class="o">=</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">degrees</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.angle.html#numpy.angle" title="numpy.angle" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">angle</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ez</span></a><span class="p">[</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">right</span></a><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()))</span>
     <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">delta</span></a> <span class="o">=</span> <span class="p">(</span><a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">phi_r</span></a> <span class="o">-</span> <a href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute"><span class="n">phi_l</span></a> <span class="o">+</span> <span class="mf">180.0</span><span class="p">)</span> <span class="o">%</span> <span class="mf">360.0</span> <span class="o">-</span> <span class="mf">180.0</span>
@@ -1388,7 +1404,7 @@ halved the runtime and left the answer where it was.</p></li>
 <p>Extending to a higher order changes nothing structural: synthesise
 more prototype elements, extract one <span class="math notranslate nohighlight">\(k\)</span> per adjacent pair,
 and mirror one more chamber into the housing.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (6 minutes 16.299 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (8 minutes 2.569 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-13-dielectric-filter-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/95600003609aa4cead576ecb61ae602f/plot_13_dielectric_filter.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_13_dielectric_filter.ipynb</span></code></a></p>

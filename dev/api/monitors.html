@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=f1622b98"></script>
+    <script src="../_static/documentation_options.js?v=e1271356"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -175,8 +175,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.6.html">
-    Upgrading from 0.5.x
+  <a class="nav-link nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -188,6 +188,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
@@ -354,6 +361,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -853,18 +867,16 @@ the constructor.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldFrequency.component">
-<span class="sig-name descname"><span class="pre">component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldFrequency.component" title="Link to this definition">#</a></dt>
-<dd><p>Return DFT data for a single component.</p>
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldFrequency.attach_operators">
+<span class="sig-name descname"><span class="pre">attach_operators</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M_eps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M_mu</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldFrequency.attach_operators" title="Link to this definition">#</a></dt>
+<dd><p>Take the region’s cut of the solver’s material diagonals (DD-260).</p>
+<p>Called by the solver after <a class="reference internal" href="#magnelio.monitors.MonitorFieldFrequency.attach" title="magnelio.monitors.MonitorFieldFrequency.attach"><code class="xref py py-meth docutils literal notranslate"><span class="pre">attach()</span></code></a>; the spectrum then
+states its time-averaged energy and power flow
+(<code class="xref py py-meth docutils literal notranslate"><span class="pre">energy()</span></code>,
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">flux()</span></code>).</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – Component name, e.g. <code class="docutils literal notranslate"><span class="pre">&quot;Ez&quot;</span></code>.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Shape <code class="docutils literal notranslate"><span class="pre">(n_freqs,</span> <span class="pre">&lt;spatial</span> <span class="pre">dims&gt;)</span></code>, complex128.</p>
-</dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>np.ndarray</p>
+<dd class="field-odd"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -883,27 +895,25 @@ the constructor.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldFrequency.interact">
 <span class="sig-name descname"><span class="pre">interact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldFrequency.interact" title="Link to this definition">#</a></dt>
-<dd><p>Interactive frequency slider for DFT field snapshots (Jupyter notebook).</p>
-<p>Requires <code class="docutils literal notranslate"><span class="pre">ipywidgets</span></code>.  The colour range (scalar) or arrow
-scale (vector) is fixed across all frequencies for visual stability.</p>
+<dd><p>A notebook slider over the frequencies (needs ipywidgets).</p>
+<p>The colour range (scalar) or arrow scale (vector) is fixed over
+every frequency for visual stability.  The arguments are those
+of <a class="reference internal" href="#magnelio.monitors.MonitorFieldFrequency.plot" title="magnelio.monitors.MonitorFieldFrequency.plot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">plot()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>component</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;E&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code> for vector / amplitude plots.
-<code class="docutils literal notranslate"><span class="pre">&quot;Ex&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Ez&quot;</span></code>, … for individual component scalar plots.</p></li>
-<li><p><strong>normal</strong> (<em>{&quot;x&quot;</em><em>, </em><em>&quot;y&quot;</em><em>, </em><em>&quot;z&quot;}</em><em>, </em><em>optional</em>) – Slice-plane normal for 3D monitors (required there); the
-slider then runs over frequency at a fixed slice plane.</p></li>
-<li><p><strong>position</strong> (<em>float</em>) – Slice-plane position along <em>normal</em> [m] (3D monitors only).</p></li>
-<li><p><strong>plot_type</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;vector&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;color&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;contour&quot;</span></code>.</p></li>
-<li><p><strong>phase</strong> (<em>float</em>) – Phase angle [degrees] for instantaneous field extraction.</p></li>
-<li><p><strong>scale_mm</strong> (<em>bool</em>) – Use millimetres for spatial axes.</p></li>
-<li><p><strong>cmap</strong> (<em>str</em><em> or </em><em>None</em>) – Colormap (None = auto-select).</p></li>
-<li><p><strong>geometry</strong> (<em>list</em><em>, </em><em>optional</em>) – Geometry objects for cross-section overlay (2D only).</p></li>
-<li><p><strong>flip</strong> (<em>bool</em>) – Swap horizontal and vertical axes (2D only).</p></li>
-<li><p><strong>density</strong> (<em>int</em>) – Target arrows per axis (vector mode only).</p></li>
-<li><p><strong>threshold</strong> (<em>float</em>) – Suppress arrows below this fraction of peak (vector mode only).</p></li>
-<li><p><strong>vmax</strong> (<em>float</em><em> or </em><em>None</em>) – Clip arrow length at this magnitude (vector mode only).</p></li>
-<li><p><strong>figsize</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>) or </em><em>None</em>) – Figure size in inches <code class="docutils literal notranslate"><span class="pre">(width,</span> <span class="pre">height)</span></code>.</p></li>
+<li><p><strong>component</strong> (<em>str</em>)</p></li>
+<li><p><strong>normal</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>position</strong> (<em>float</em>)</p></li>
+<li><p><strong>plot_type</strong> (<em>str</em>)</p></li>
+<li><p><strong>phase</strong> (<em>float</em>)</p></li>
+<li><p><strong>scale_mm</strong> (<em>bool</em>)</p></li>
+<li><p><strong>cmap</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>flip</strong> (<em>bool</em>)</p></li>
+<li><p><strong>density</strong> (<em>int</em>)</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>)</p></li>
+<li><p><strong>vmax</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>figsize</strong> (<em>tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>] </em><em>| </em><em>None</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -928,38 +938,40 @@ keeps integrating from the checkpointed partial DFT.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldFrequency.plot">
-<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_arrows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quiver_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldFrequency.plot" title="Link to this definition">#</a></dt>
-<dd><p>Plot DFT field data.</p>
-<p>For 0D monitors: line plot over frequency (ignores <em>f</em> / <em>f_index</em>).
-For 2D monitors: colour-map, contour, or quiver plot at a frequency.
-For 3D monitors: the same plane plots on a slice selected with
-<em>normal</em> and <em>position</em>.</p>
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_arrows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quiver_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorbar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldFrequency.plot" title="Link to this definition">#</a></dt>
+<dd><p>Plot the pattern at one frequency.</p>
+<p>A point region draws its magnitude over frequency (ignores <em>f</em>
+/ <em>f_index</em>); a line region the values along its axis; a plane
+region the pattern on its own plane; a volume the plane selected
+with <em>normal</em> and <em>position</em>.  Only the drawn layer is averaged
+onto cell centres.  The pattern is per 1 W CW (see
+<a class="reference internal" href="#magnelio.monitors.MonitorFieldFrequency.spectrum" title="magnelio.monitors.MonitorFieldFrequency.spectrum"><code class="xref py py-attr docutils literal notranslate"><span class="pre">spectrum</span></code></a>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>component</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;E&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code> for vector / amplitude plots.
-<code class="docutils literal notranslate"><span class="pre">&quot;Ex&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Hz&quot;</span></code>, … for a single component (scalar only).</p></li>
-<li><p><strong>f</strong> (<em>float</em><em>, </em><em>optional</em>) – Frequency [Hz].  Nearest is used.</p></li>
-<li><p><strong>f_index</strong> (<em>int</em><em>, </em><em>optional</em>) – Frequency index (overrides <em>f</em>).</p></li>
-<li><p><strong>normal</strong> (<em>{&quot;x&quot;</em><em>, </em><em>&quot;y&quot;</em><em>, </em><em>&quot;z&quot;}</em><em>, </em><em>optional</em>) – Slice-plane normal for 3D monitors (required there).  For a
-2D monitor it may be given for validation but is redundant.</p></li>
+<li><p><strong>component</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;E&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code> for a vector plot or the envelope
+magnitude, <code class="docutils literal notranslate"><span class="pre">&quot;Ex&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Hz&quot;</span></code>, … for a single component.</p></li>
+<li><p><strong>f</strong> (<em>float</em><em>, </em><em>optional</em>) – Frequency [Hz]; the nearest frame is drawn.</p></li>
+<li><p><strong>f_index</strong> (<em>int</em><em>, </em><em>optional</em>) – Frame index (overrides <em>f</em>).</p></li>
+<li><p><strong>normal</strong> (<em>{&quot;x&quot;</em><em>, </em><em>&quot;y&quot;</em><em>, </em><em>&quot;z&quot;}</em><em>, </em><em>optional</em>) – Slice-plane normal for a volume (required there).</p></li>
 <li><p><strong>position</strong> (<em>float</em>) – Slice-plane position along <em>normal</em> [m]; snapped to the
-nearest cell-centre plane (3D monitors only).</p></li>
+nearest cell-centre plane.</p></li>
 <li><p><strong>plot_type</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;vector&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;color&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;contour&quot;</span></code>.</p></li>
-<li><p><strong>phase</strong> (<em>float</em>) – Phase angle [degrees] for extracting the instantaneous field
-from complex phasors: <code class="docutils literal notranslate"><span class="pre">Re(F</span> <span class="pre">·</span> <span class="pre">exp(j·phase·π/180))</span></code>.
-Ignored for amplitude plots (<code class="docutils literal notranslate"><span class="pre">component=&quot;E&quot;</span></code>/<code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code>).</p></li>
+<li><p><strong>phase</strong> (<em>float</em>) – Instant of the complex pattern in degrees,
+<code class="docutils literal notranslate"><span class="pre">Re(F</span> <span class="pre">·</span> <span class="pre">exp(j·phase))</span></code>; a group magnitude is the envelope
+and ignores it.</p></li>
 <li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.1)"><em>matplotlib.axes.Axes</em></a><em>, </em><em>optional</em>)</p></li>
 <li><p><strong>scale_mm</strong> (<em>bool</em>)</p></li>
 <li><p><strong>cmap</strong> (<em>str</em><em> or </em><em>None</em>) – Colourmap (None = auto-select).</p></li>
-<li><p><strong>geometry</strong> (<em>list</em><em>, </em><em>optional</em>) – Geometry objects for cross-section overlay (2D only).</p></li>
-<li><p><strong>flip</strong> (<em>bool</em>) – Swap horizontal and vertical axes (2D only).</p></li>
+<li><p><strong>geometry</strong> (<a class="reference internal" href="core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><em>GeometryModel</em></a><em>, </em><em>optional</em>) – Cross-section overlay of the plane.</p></li>
+<li><p><strong>flip</strong> (<em>bool</em>) – Swap horizontal and vertical axes.</p></li>
 <li><p><strong>vmin</strong> (<em>float</em><em>, </em><em>optional</em>) – Colour limits (scalar) or arrow clipping (vector).</p></li>
 <li><p><strong>vmax</strong> (<em>float</em><em>, </em><em>optional</em>) – Colour limits (scalar) or arrow clipping (vector).</p></li>
 <li><p><strong>density</strong> (<em>int</em>) – Target arrows per axis (vector mode).</p></li>
 <li><p><strong>normalize_arrows</strong> (<em>bool</em>) – Unit-length arrows, colour = magnitude.</p></li>
 <li><p><strong>threshold</strong> (<em>float</em>) – Suppress arrows below this fraction of peak.</p></li>
 <li><p><strong>quiver_scale</strong> (<em>float</em><em> or </em><em>None</em>) – Fixed quiver scale override.</p></li>
+<li><p><strong>colorbar</strong> (<em>bool</em><em>, </em><em>default True</em>) – Draw the colour bar; <code class="docutils literal notranslate"><span class="pre">False</span></code> for a panel of a shared figure.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1071,46 +1083,6 @@ and the rendering <code class="docutils literal notranslate"><span class="pre">m
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>component</strong> (<em>str</em>)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldFrequency.data">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">data</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#magnelio.monitors.MonitorFieldFrequency.data" title="Link to this definition">#</a></dt>
-<dd><p>Recorded fields per 1 W incident CW power, averaged onto cell centres.</p>
-<p>Each bin is divided by the spectrum of the run’s excitation, so
-E is in V/m and H in A/m, both per √W of incident power.  Raises
-if no source reference is available (see <a class="reference internal" href="#magnelio.monitors.MonitorFieldFrequency.renormalize" title="magnelio.monitors.MonitorFieldFrequency.renormalize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">renormalize()</span></code></a>);
-<a class="reference internal" href="#magnelio.monitors.MonitorFieldFrequency.data_raw" title="magnelio.monitors.MonitorFieldFrequency.data_raw"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data_raw</span></code></a> returns the undivided bins instead.  Derived
-from <a class="reference internal" href="#magnelio.monitors.MonitorFieldFrequency.spectrum" title="magnelio.monitors.MonitorFieldFrequency.spectrum"><code class="xref py py-attr docutils literal notranslate"><span class="pre">spectrum</span></code></a> on every access.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Keys are component names.  Values have shape
-<code class="docutils literal notranslate"><span class="pre">(n_freqs,</span> <span class="pre">&lt;spatial</span> <span class="pre">dims&gt;)</span></code>, complex128.
-For a 0D monitor the spatial dims are squeezed away,
-giving shape <code class="docutils literal notranslate"><span class="pre">(n_freqs,)</span></code>.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict[str, np.ndarray]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldFrequency.data_raw">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">data_raw</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#magnelio.monitors.MonitorFieldFrequency.data_raw" title="Link to this definition">#</a></dt>
-<dd><p>Raw DFT bins, in field units x seconds.</p>
-<p>The running sum <code class="docutils literal notranslate"><span class="pre">Σ</span> <span class="pre">field(t_n)·exp(+jω</span> <span class="pre">t_n)·dt</span></code> as accumulated,
-i.e. the field folded with the spectrum of the excitation
-waveform.  Always returns these, whether or not a source
-reference is set — <a class="reference internal" href="#magnelio.monitors.MonitorFieldFrequency.data" title="magnelio.monitors.MonitorFieldFrequency.data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data</span></code></a> is the physical counterpart.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Same layout as <a class="reference internal" href="#magnelio.monitors.MonitorFieldFrequency.data" title="magnelio.monitors.MonitorFieldFrequency.data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data</span></code></a>.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict[str, np.ndarray]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1369,18 +1341,15 @@ the constructor.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldTime.component">
-<span class="sig-name descname"><span class="pre">component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldTime.component" title="Link to this definition">#</a></dt>
-<dd><p>Return recorded data for a single component.</p>
+<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldTime.attach_operators">
+<span class="sig-name descname"><span class="pre">attach_operators</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M_eps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M_mu</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldTime.attach_operators" title="Link to this definition">#</a></dt>
+<dd><p>Take the region’s cut of the solver’s material diagonals (DD-260).</p>
+<p>Called by the solver after <a class="reference internal" href="#magnelio.monitors.MonitorFieldTime.attach" title="magnelio.monitors.MonitorFieldTime.attach"><code class="xref py py-meth docutils literal notranslate"><span class="pre">attach()</span></code></a>, with its own <code class="docutils literal notranslate"><span class="pre">M_ε</span></code>
+and <code class="docutils literal notranslate"><span class="pre">M_μ</span></code> diagonals; the recording then states its energy and
+flux (<code class="xref py py-meth docutils literal notranslate"><span class="pre">energy()</span></code>).</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – Component name, e.g. <code class="docutils literal notranslate"><span class="pre">&quot;Ez&quot;</span></code>.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Shape <code class="docutils literal notranslate"><span class="pre">(n_times,</span> <span class="pre">&lt;spatial</span> <span class="pre">dims&gt;)</span></code>.</p>
-</dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>np.ndarray</p>
+<dd class="field-odd"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1399,26 +1368,25 @@ the constructor.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldTime.interact">
 <span class="sig-name descname"><span class="pre">interact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldTime.interact" title="Link to this definition">#</a></dt>
-<dd><p>Interactive time-step slider for field snapshots (Jupyter notebook).</p>
-<p>Requires <code class="docutils literal notranslate"><span class="pre">ipywidgets</span></code>.  The colour range (scalar) or arrow
-scale (vector) is fixed across all time steps for visual stability.</p>
+<dd><p>A notebook slider over the recorded frames (needs ipywidgets).</p>
+<p>The colour range (scalar) or arrow scale (vector) is fixed over
+every frame for visual stability.  The arguments are those of
+<a class="reference internal" href="#magnelio.monitors.MonitorFieldTime.plot" title="magnelio.monitors.MonitorFieldTime.plot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">plot()</span></code></a>; a volume needs its slice plane (<em>normal</em>,
+<em>position</em>), and the slider then runs over time on it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>component</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;E&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code> for vector / amplitude plots.
-<code class="docutils literal notranslate"><span class="pre">&quot;Ex&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Ez&quot;</span></code>, … for individual component scalar plots.</p></li>
-<li><p><strong>normal</strong> (<em>{&quot;x&quot;</em><em>, </em><em>&quot;y&quot;</em><em>, </em><em>&quot;z&quot;}</em><em>, </em><em>optional</em>) – Slice-plane normal for 3D monitors (required there); the
-slider then runs over time at a fixed slice plane.</p></li>
-<li><p><strong>position</strong> (<em>float</em>) – Slice-plane position along <em>normal</em> [m] (3D monitors only).</p></li>
-<li><p><strong>plot_type</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;vector&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;color&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;contour&quot;</span></code>.</p></li>
-<li><p><strong>scale_mm</strong> (<em>bool</em>) – Use millimetres for spatial axes.</p></li>
-<li><p><strong>cmap</strong> (<em>str</em><em> or </em><em>None</em>) – Colormap (None = auto-select).</p></li>
-<li><p><strong>geometry</strong> (<em>list</em><em>, </em><em>optional</em>) – Geometry objects for cross-section overlay (2D only).</p></li>
-<li><p><strong>flip</strong> (<em>bool</em>) – Swap horizontal and vertical axes (2D only).</p></li>
-<li><p><strong>density</strong> (<em>int</em>) – Target arrows per axis (vector mode only).</p></li>
-<li><p><strong>threshold</strong> (<em>float</em>) – Suppress arrows below this fraction of peak (vector mode only).</p></li>
-<li><p><strong>vmax</strong> (<em>float</em><em> or </em><em>None</em>) – Clip arrow length at this magnitude (vector mode only).</p></li>
-<li><p><strong>figsize</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>) or </em><em>None</em>) – Figure size in inches <code class="docutils literal notranslate"><span class="pre">(width,</span> <span class="pre">height)</span></code>.</p></li>
+<li><p><strong>component</strong> (<em>str</em>)</p></li>
+<li><p><strong>normal</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>position</strong> (<em>float</em>)</p></li>
+<li><p><strong>plot_type</strong> (<em>str</em>)</p></li>
+<li><p><strong>scale_mm</strong> (<em>bool</em>)</p></li>
+<li><p><strong>cmap</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>flip</strong> (<em>bool</em>)</p></li>
+<li><p><strong>density</strong> (<em>int</em>)</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>)</p></li>
+<li><p><strong>vmax</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>figsize</strong> (<em>tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>] </em><em>| </em><em>None</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -1440,36 +1408,37 @@ slider then runs over time at a fixed slice plane.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldTime.plot">
-<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_arrows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quiver_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldTime.plot" title="Link to this definition">#</a></dt>
-<dd><p>Plot recorded field data.</p>
-<p>For 0D monitors: line plot over time (ignores <em>t</em> / <em>t_index</em>).
-For 1D monitors: line plot at a specific time.
-For 2D monitors: colour-map, contour, or quiver plot at a time.
-For 3D monitors: the same plane plots on a slice selected with
-<em>normal</em> and <em>position</em>.</p>
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_arrows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quiver_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorbar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.monitors.MonitorFieldTime.plot" title="Link to this definition">#</a></dt>
+<dd><p>Plot one frame of the recording.</p>
+<p>A point region draws its value over time (ignores <em>t</em> /
+<em>t_index</em>); a line region the values along its axis at one
+instant; a plane region the frame on its own plane; a volume
+the plane selected with <em>normal</em> and <em>position</em>.  Only the
+drawn layer is averaged onto cell centres.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>component</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;E&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code> for vector magnitude or vector plot.
-<code class="docutils literal notranslate"><span class="pre">&quot;Ex&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Hy&quot;</span></code>, … for a single component (scalar only).</p></li>
-<li><p><strong>t</strong> (<em>float</em><em>, </em><em>optional</em>) – Time point [s].  Nearest recorded time is used.</p></li>
-<li><p><strong>t_index</strong> (<em>int</em><em>, </em><em>optional</em>) – Time index (overrides <em>t</em>).</p></li>
-<li><p><strong>normal</strong> (<em>{&quot;x&quot;</em><em>, </em><em>&quot;y&quot;</em><em>, </em><em>&quot;z&quot;}</em><em>, </em><em>optional</em>) – Slice-plane normal for 3D monitors (required there).  For a
-2D monitor it may be given for validation but is redundant.</p></li>
+<li><p><strong>component</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;E&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code> for a vector plot or magnitude,
+<code class="docutils literal notranslate"><span class="pre">&quot;Ex&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Hy&quot;</span></code>, … for a single component.</p></li>
+<li><p><strong>t</strong> (<em>float</em><em>, </em><em>optional</em>) – Instant [s]; the nearest frame is drawn.</p></li>
+<li><p><strong>t_index</strong> (<em>int</em><em>, </em><em>optional</em>) – Frame index (overrides <em>t</em>).</p></li>
+<li><p><strong>normal</strong> (<em>{&quot;x&quot;</em><em>, </em><em>&quot;y&quot;</em><em>, </em><em>&quot;z&quot;}</em><em>, </em><em>optional</em>) – Slice-plane normal for a volume (required there); for a
+plane region it may name the plane’s own normal.</p></li>
 <li><p><strong>position</strong> (<em>float</em>) – Slice-plane position along <em>normal</em> [m]; snapped to the
-nearest cell-centre plane (3D monitors only).</p></li>
+nearest cell-centre plane.</p></li>
 <li><p><strong>plot_type</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;vector&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;color&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;contour&quot;</span></code>.</p></li>
 <li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.1)"><em>matplotlib.axes.Axes</em></a><em>, </em><em>optional</em>)</p></li>
 <li><p><strong>scale_mm</strong> (<em>bool</em>)</p></li>
 <li><p><strong>cmap</strong> (<em>str</em><em> or </em><em>None</em>) – Colourmap (None = auto-select).</p></li>
-<li><p><strong>geometry</strong> (<em>list</em><em>, </em><em>optional</em>) – Geometry objects for cross-section overlay (2D only).</p></li>
-<li><p><strong>flip</strong> (<em>bool</em>) – Swap horizontal and vertical axes (2D only).</p></li>
+<li><p><strong>geometry</strong> (<a class="reference internal" href="core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><em>GeometryModel</em></a><em>, </em><em>optional</em>) – Cross-section overlay of the plane.</p></li>
+<li><p><strong>flip</strong> (<em>bool</em>) – Swap horizontal and vertical axes.</p></li>
 <li><p><strong>vmin</strong> (<em>float</em><em>, </em><em>optional</em>) – Colour limits (scalar) or arrow clipping (vector).</p></li>
 <li><p><strong>vmax</strong> (<em>float</em><em>, </em><em>optional</em>) – Colour limits (scalar) or arrow clipping (vector).</p></li>
 <li><p><strong>density</strong> (<em>int</em>) – Target arrows per axis (vector mode).</p></li>
 <li><p><strong>normalize_arrows</strong> (<em>bool</em>) – Unit-length arrows, colour = magnitude.</p></li>
 <li><p><strong>threshold</strong> (<em>float</em>) – Suppress arrows below this fraction of peak.</p></li>
 <li><p><strong>quiver_scale</strong> (<em>float</em><em> or </em><em>None</em>) – Fixed quiver scale override.</p></li>
+<li><p><strong>colorbar</strong> (<em>bool</em><em>, </em><em>default True</em>) – Draw the colour bar; <code class="docutils literal notranslate"><span class="pre">False</span></code> for a panel of a shared figure.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1561,24 +1530,6 @@ resume.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldTime.data">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">data</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#magnelio.monitors.MonitorFieldTime.data" title="Link to this definition">#</a></dt>
-<dd><p>The snapshots averaged onto cell centres, stacked along time.</p>
-<p>Derived from <a class="reference internal" href="#magnelio.monitors.MonitorFieldTime.recording" title="magnelio.monitors.MonitorFieldTime.recording"><code class="xref py py-attr docutils literal notranslate"><span class="pre">recording</span></code></a> on every access; the recording
-itself keeps the staggered samples.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Keys are component names (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;Ex&quot;</span></code>).  Values have shape
-<code class="docutils literal notranslate"><span class="pre">(n_times,</span> <span class="pre">&lt;spatial</span> <span class="pre">dims&gt;)</span></code>.  For a 0D monitor the spatial
-dims are empty, giving shape <code class="docutils literal notranslate"><span class="pre">(n_times,)</span></code>.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict[str, np.ndarray]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
 <dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldTime.recording">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">recording</span></span><a class="headerlink" href="#magnelio.monitors.MonitorFieldTime.recording" title="Link to this definition">#</a></dt>
 <dd><p>The snapshots as a <a class="reference internal" href="fields.html#magnelio.fields.FieldRecording" title="magnelio.fields.FieldRecording"><code class="xref py py-class docutils literal notranslate"><span class="pre">FieldRecording</span></code></a>.</p>
@@ -1586,12 +1537,6 @@ dims are empty, giving shape <code class="docutils literal notranslate"><span cl
 field’s instants are <code class="docutils literal notranslate"><span class="pre">recording.times_h</span></code>.  Raises when nothing
 has been recorded — on a project-backed run the frames stream to
 the store and are read back through the project’s monitors.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="magnelio.monitors.MonitorFieldTime.region">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">region</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">MonitorRegion</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#magnelio.monitors.MonitorFieldTime.region" title="Link to this definition">#</a></dt>
-<dd><p>Resolved grid region (available after <a class="reference internal" href="#magnelio.monitors.MonitorFieldTime.attach" title="magnelio.monitors.MonitorFieldTime.attach"><code class="xref py py-meth docutils literal notranslate"><span class="pre">attach()</span></code></a>).</p>
 </dd></dl>
 
 <dl class="py property">
@@ -1966,7 +1911,7 @@ basis.  Only meaningful relative to <a class="reference internal" href="#magneli
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.from_ranges"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.from_ranges()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.attach"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.attach()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.component"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.attach_operators"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.attach_operators()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.finalize"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.finalize()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.interact"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.interact()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.load_result_dump"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.load_result_dump()</span></code></a></li>
@@ -1975,8 +1920,6 @@ basis.  Only meaningful relative to <a class="reference internal" href="#magneli
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.renormalize"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.renormalize()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.result_dump"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.result_dump()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.show"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.show()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.data"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.data</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.data_raw"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.data_raw</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.f"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.f</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.is_renormalized"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.is_renormalized</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldFrequency.spectrum"><code class="docutils literal notranslate"><span class="pre">MonitorFieldFrequency.spectrum</span></code></a></li>
@@ -1996,7 +1939,7 @@ basis.  Only meaningful relative to <a class="reference internal" href="#magneli
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.from_ranges"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.from_ranges()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.attach"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.attach()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.component"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.attach_operators"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.attach_operators()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.finalize"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.finalize()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.interact"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.interact()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.load_state_dict"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.load_state_dict()</span></code></a></li>
@@ -2005,9 +1948,7 @@ basis.  Only meaningful relative to <a class="reference internal" href="#magneli
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.record"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.record()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.show"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.show()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.state_dict"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.state_dict()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.data"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.data</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.recording"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.recording</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.region"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.region</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.monitors.MonitorFieldTime.t"><code class="docutils literal notranslate"><span class="pre">MonitorFieldTime.t</span></code></a></li>
 </ul>
 </li>

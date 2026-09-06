@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="_static/documentation_options.js?v=f1622b98"></script>
+    <script src="_static/documentation_options.js?v=e1271356"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/sg-tags.js?v=d80f6fa4"></script>
@@ -172,8 +172,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="migration-0.6.html">
-    Upgrading from 0.5.x
+  <a class="nav-link nav-internal" href="migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -185,6 +185,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="migration-0.5.html">
     Upgrading from 0.4.x
@@ -349,6 +356,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -610,6 +624,12 @@
         <li><a href="api/sources.html#magnelio.sources.SourcePlaneWave.attach">(magnelio.sources.SourcePlaneWave method)</a>
 </li>
       </ul></li>
+      <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldFrequency.attach_operators">attach_operators() (magnelio.monitors.MonitorFieldFrequency method)</a>
+
+      <ul>
+        <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldTime.attach_operators">(magnelio.monitors.MonitorFieldTime method)</a>
+</li>
+      </ul></li>
       <li><a href="api/fields.html#magnelio.fields.FaceRecord.axis">axis (magnelio.fields.FaceRecord attribute)</a>
 </li>
   </ul></td>
@@ -720,16 +740,10 @@
         <li><a href="api/core.html#magnelio.Material.color">(magnelio.Material attribute)</a>
 </li>
       </ul></li>
-      <li><a href="api/fields.html#magnelio.fields.FieldState.component">component() (magnelio.fields.FieldState method)</a>
-
-      <ul>
-        <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldFrequency.component">(magnelio.monitors.MonitorFieldFrequency method)</a>
-</li>
-        <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldTime.component">(magnelio.monitors.MonitorFieldTime method)</a>
-</li>
-      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/fields.html#magnelio.fields.FieldState.component">component() (magnelio.fields.FieldState method)</a>
+</li>
       <li><a href="api/fields.html#magnelio.fields.ComponentRecord">ComponentRecord (class in magnelio.fields)</a>
 </li>
       <li><a href="api/fields.html#magnelio.fields.FaceRecord.components">components (magnelio.fields.FaceRecord attribute)</a>
@@ -778,14 +792,6 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldFrequency.data">data (magnelio.monitors.MonitorFieldFrequency property)</a>
-
-      <ul>
-        <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldTime.data">(magnelio.monitors.MonitorFieldTime property)</a>
-</li>
-      </ul></li>
-      <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldFrequency.data_raw">data_raw (magnelio.monitors.MonitorFieldFrequency property)</a>
-</li>
       <li><a href="api/analysis.html#magnelio.analysis.ScatteringResult.db">db() (magnelio.analysis.ScatteringResult method)</a>
 
       <ul>
@@ -816,10 +822,10 @@
 </li>
       <li><a href="api/ports.html#magnelio.ports.PortReport.dispersion">dispersion() (magnelio.ports.PortReport method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/core.html#magnelio.Material.dispersion_mu">dispersion_mu (magnelio.Material attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/materials.html#magnelio.materials.DispersionModel">DispersionModel (class in magnelio.materials)</a>
 </li>
       <li><a href="api/core.html#magnelio.Material.dispersive">dispersive() (magnelio.Material class method)</a>
@@ -890,6 +896,8 @@
 </li>
       <li><a href="api/geo.html#magnelio.geo.Path.ellipse_to">ellipse_to() (magnelio.geo.Path method)</a>
 </li>
+      <li><a href="api/fields.html#magnelio.fields.FieldState.energy">energy() (magnelio.fields.FieldState method)</a>
+</li>
       <li><a href="api/io.html#magnelio.io.Run.energy_db">energy_db (magnelio.io.Run property)</a>
 </li>
       <li><a href="api/io.html#magnelio.io.Run.energy_stop_db">energy_stop_db (magnelio.io.Run property)</a>
@@ -906,14 +914,14 @@
 </li>
       <li><a href="api/core.html#magnelio.Material.epsilon">epsilon (magnelio.Material attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/ports.html#magnelio.ports.ModeReport.epsilon_eff">epsilon_eff (magnelio.ports.ModeReport attribute)</a>
 
       <ul>
         <li><a href="api/ports.html#magnelio.ports.PortDispersionReport.epsilon_eff">(magnelio.ports.PortDispersionReport attribute)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/ports.html#magnelio.ports.PortRefinementReport.estimated_error">estimated_error (magnelio.ports.PortRefinementReport property)</a>
 </li>
       <li><a href="api/materials.html#magnelio.materials.DispersionModel.evaluate">evaluate() (magnelio.materials.DispersionModel method)</a>
@@ -1060,6 +1068,8 @@
 </li>
       <li><a href="api/solver.html#magnelio.solver.FITTimeDomainSolver">FITTimeDomainSolver (class in magnelio.solver)</a>
 </li>
+      <li><a href="api/fields.html#magnelio.fields.FieldState.flux">flux() (magnelio.fields.FieldState method)</a>
+</li>
       <li><a href="api/io.html#magnelio.io.Project.follow">follow() (magnelio.io.Project method)</a>
 </li>
       <li><a href="api/core.html#magnelio.MeshControl.forced_planes">forced_planes (magnelio.MeshControl attribute)</a>
@@ -1108,6 +1118,8 @@
         <li><a href="api/sources.html#magnelio.sources.SourceFieldIncident.from_ranges">(magnelio.sources.SourceFieldIncident class method)</a>
 </li>
       </ul></li>
+      <li><a href="api/sources.html#magnelio.sources.SourceFieldInitial.from_recording">from_recording() (magnelio.sources.SourceFieldInitial class method)</a>
+</li>
       <li><a href="api/monitors.html#magnelio.monitors.MonitorFarFieldFrequency.from_result_dump">from_result_dump() (magnelio.monitors.MonitorFarFieldFrequency class method)</a>
 </li>
       <li><a href="api/post.html#magnelio.post.SParameterResult.from_single_excitation">from_single_excitation() (magnelio.post.SParameterResult class method)</a>
@@ -1998,16 +2010,12 @@
 </li>
       <li><a href="api/io.html#magnelio.io.Project.refresh">refresh() (magnelio.io.Project method)</a>
 </li>
-      <li><a href="api/monitors.html#magnelio.monitors.MonitorFieldTime.region">region (magnelio.monitors.MonitorFieldTime property)</a>
-</li>
       <li><a href="api/ports.html#magnelio.ports.RegionConductor">RegionConductor (class in magnelio.ports)</a>
 </li>
       <li><a href="api/io.html#magnelio.io.ProjectStore.register_planned_runs">register_planned_runs() (magnelio.io.ProjectStore method)</a>
 </li>
       <li><a href="api/ports.html#magnelio.ports.RefinementLevel.rel_change">rel_change (magnelio.ports.RefinementLevel attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/analysis.html#magnelio.analysis.ScatteringTDResult.renormalize">renormalize() (magnelio.analysis.ScatteringTDResult method)</a>
 
       <ul>
@@ -2022,6 +2030,8 @@
         <li><a href="api/post.html#magnelio.post.SParameterResult.renormalize">(magnelio.post.SParameterResult method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/io.html#magnelio.io.ProjectStore.reopen_run">reopen_run() (magnelio.io.ProjectStore method)</a>
 </li>
       <li><a href="api/ports.html#magnelio.ports.PortReport.report">report (magnelio.ports.PortReport attribute)</a>

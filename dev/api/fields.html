@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=f1622b98"></script>
+    <script src="../_static/documentation_options.js?v=e1271356"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -175,8 +175,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.6.html">
-    Upgrading from 0.5.x
+  <a class="nav-link nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -188,6 +188,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
@@ -354,6 +361,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -1051,6 +1065,64 @@ on one side — the interpolation is continued linearly.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="magnelio.fields.FieldState.energy">
+<span class="sig-name descname"><span class="pre">energy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldState.energy" title="Link to this definition">#</a></dt>
+<dd><p>The stored energy [J] of the field, full-model booking.</p>
+<p><code class="docutils literal notranslate"><span class="pre">½</span> <span class="pre">eᵀMε</span> <span class="pre">e</span> <span class="pre">+</span> <span class="pre">½</span> <span class="pre">hᵀMμ</span> <span class="pre">h</span></code> on the field’s own samples, with the
+material operators of the region the field carries — a
+monitor’s frame does (live or read back from a project), an
+eigenmode or a field assembled by hand does not, and a
+<code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code> says so.  For a frame of a march, whose
+magnetic samples lead the electric ones by half a step, the
+magnetic term is the one the leapfrog conserves —
+<code class="docutils literal notranslate"><span class="pre">h(t−dt/2)·Mμ·h(t+dt/2)</span></code>, formed from the frame alone through
+the discrete Faraday law — so a recording of the whole domain
+reproduces the run’s energy trace.  A complex frame is read as
+an RMS phasor — a spectrum’s frames per 1 W CW are — and gives
+the time-averaged energy.  Where
+the region is cut out of the domain, the dual patches on its
+boundary count with the half that lies inside, so the energies
+of two adjoining regions add up to that of their union.  A
+model solved on a symmetry-reduced domain reports the joules of
+the whole model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.fields.FieldState.flux">
+<span class="sig-name descname"><span class="pre">flux</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">normal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldState.flux" title="Link to this definition">#</a></dt>
+<dd><p>Poynting flux [W] through the field’s cross-section at a plane.</p>
+<p>The FIT pairing <code class="docutils literal notranslate"><span class="pre">Σ</span> <span class="pre">e·h</span></code> of the samples on the plane — the
+identity <a class="reference internal" href="monitors.html#magnelio.monitors.MonitorFluxTime" title="magnelio.monitors.MonitorFluxTime"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonitorFluxTime</span></code></a> records
+during a march, here on a recorded frame, over the region’s
+extent — positive along the axis; the plane snaps to the
+nearest grid node; the pairing takes the electric samples on
+that node plane and the magnetic ones in the cell above it, as
+the flux monitor does.  A complex frame is read as an RMS
+phasor — a spectrum’s frames per 1 W CW are — and gives the
+time-averaged real power <code class="docutils literal notranslate"><span class="pre">Re</span> <span class="pre">Σ</span> <span class="pre">e·h*</span></code>, so on a matched line
+a spectrum’s flux is the transmitted watts per watt incident.
+Needs the region’s operators like
+<a class="reference internal" href="#magnelio.fields.FieldState.energy" title="magnelio.fields.FieldState.energy"><code class="xref py py-meth docutils literal notranslate"><span class="pre">energy()</span></code></a>; a model solved on a symmetry-reduced domain
+reports the watts of the whole cross-section.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>normal</strong> (<em>{&quot;x&quot;</em><em>, </em><em>&quot;y&quot;</em><em>, </em><em>&quot;z&quot;}</em>) – Normal axis of the plane.</p></li>
+<li><p><strong>position</strong> (<em>float</em>) – Position [m] along that axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="magnelio.fields.FieldState.mirrored">
 <span class="sig-name descname"><span class="pre">mirrored</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">mirrors</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldState.mirrored" title="Link to this definition">#</a></dt>
 <dd><p>The field continued across symmetry planes, on the extended grid.</p>
@@ -1079,7 +1151,7 @@ cell outside it for PMC.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.fields.FieldState.plot">
-<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_arrows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldState.plot" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_arrows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorbar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldState.plot" title="Link to this definition">#</a></dt>
 <dd><p>Plot the field on a slice plane.</p>
 <p>The staggered components are averaged onto cell centres and
 rendered on the plane selected by <em>normal</em> and <em>position</em>.  A
@@ -1106,6 +1178,7 @@ cell-centre plane.</p></li>
 <li><p><strong>threshold</strong> (<em>float</em>) – Suppress arrows below this fraction of the peak (vector).</p></li>
 <li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – Plot title; default names the component and the plane.</p></li>
 <li><p><strong>unit</strong> (<em>str</em><em>, </em><em>optional</em>) – Colour-bar unit label; default <code class="docutils literal notranslate"><span class="pre">&quot;V/m&quot;</span></code> / <code class="docutils literal notranslate"><span class="pre">&quot;A/m&quot;</span></code>.</p></li>
+<li><p><strong>colorbar</strong> (<em>bool</em><em>, </em><em>default True</em>) – Draw the colour bar; <code class="docutils literal notranslate"><span class="pre">False</span></code> for a panel of a shared figure.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1504,6 +1577,8 @@ component is read on the time base it was sampled on.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.at"><code class="docutils literal notranslate"><span class="pre">FieldState.at()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.cell_centred"><code class="docutils literal notranslate"><span class="pre">FieldState.cell_centred()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.component"><code class="docutils literal notranslate"><span class="pre">FieldState.component()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.energy"><code class="docutils literal notranslate"><span class="pre">FieldState.energy()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.flux"><code class="docutils literal notranslate"><span class="pre">FieldState.flux()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.mirrored"><code class="docutils literal notranslate"><span class="pre">FieldState.mirrored()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.plot"><code class="docutils literal notranslate"><span class="pre">FieldState.plot()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.positions"><code class="docutils literal notranslate"><span class="pre">FieldState.positions()</span></code></a></li>

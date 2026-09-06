@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=f1622b98"></script>
+    <script src="../_static/documentation_options.js?v=e1271356"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -175,8 +175,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.6.html">
-    Upgrading from 0.5.x
+  <a class="nav-link nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -188,6 +188,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
+    Upgrading from 0.5.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.5.html">
     Upgrading from 0.4.x
@@ -354,6 +361,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
   </a>
 </li>
 
@@ -770,13 +784,14 @@ bound waveform (<code class="xref py py-meth docutils literal notranslate"><span
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.sources.SourceFieldInitial">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.sources.</span></span><span class="sig-name descname"><span class="pre">SourceFieldInitial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldInitial" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.sources.</span></span><span class="sig-name descname"><span class="pre">SourceFieldInitial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h_lead</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldInitial" title="Link to this definition">#</a></dt>
 <dd><p>The field at t = 0 of a time-domain run.</p>
 <p>Declared on the model with <a class="reference internal" href="core.html#magnelio.GeometryModel.add_source" title="magnelio.GeometryModel.add_source"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_source()</span></code></a>
 (or passed as <code class="docutils literal notranslate"><span class="pre">sources=</span></code> to the analysis) and named by an
 <a class="reference internal" href="core.html#magnelio.Excitation" title="magnelio.Excitation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Excitation</span></code></a> whose <code class="docutils literal notranslate"><span class="pre">amplitude</span></code> scales the field
 (unit <code class="docutils literal notranslate"><span class="pre">&quot;1&quot;</span></code>); it has no waveform, delay or phase.  Build one with
-<a class="reference internal" href="#magnelio.sources.SourceFieldInitial.from_project" title="magnelio.sources.SourceFieldInitial.from_project"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_project()</span></code></a>, <a class="reference internal" href="#magnelio.sources.SourceFieldInitial.from_function" title="magnelio.sources.SourceFieldInitial.from_function"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_function()</span></code></a> or <a class="reference internal" href="#magnelio.sources.SourceFieldInitial.from_arrays" title="magnelio.sources.SourceFieldInitial.from_arrays"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_arrays()</span></code></a>.</p>
+<a class="reference internal" href="#magnelio.sources.SourceFieldInitial.from_project" title="magnelio.sources.SourceFieldInitial.from_project"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_project()</span></code></a>, <a class="reference internal" href="#magnelio.sources.SourceFieldInitial.from_recording" title="magnelio.sources.SourceFieldInitial.from_recording"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_recording()</span></code></a>, <a class="reference internal" href="#magnelio.sources.SourceFieldInitial.from_function" title="magnelio.sources.SourceFieldInitial.from_function"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_function()</span></code></a>
+or <a class="reference internal" href="#magnelio.sources.SourceFieldInitial.from_arrays" title="magnelio.sources.SourceFieldInitial.from_arrays"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_arrays()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -786,6 +801,14 @@ a grid other than the run’s is resampled onto the run’s grid
 by trilinear interpolation per component (which does not
 preserve the discrete divergence exactly — prefer the run’s
 own grid).</p></li>
+<li><p><strong>h_lead</strong> (<em>float</em><em>, </em><em>default 0.0</em>) – Lead [s] of the magnetic samples over the electric ones.  A
+field given at one instant — an eigenmode, a formula — has
+none; the state of a leapfrog march holds H half a time step
+after E, which <a class="reference internal" href="#magnelio.sources.SourceFieldInitial.from_recording" title="magnelio.sources.SourceFieldInitial.from_recording"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_recording()</span></code></a> states from the
+recording’s <code class="docutils literal notranslate"><span class="pre">dt</span></code>.  The run starts from H half <em>its</em> step
+ahead, and the field is moved there by a Faraday step of the
+difference — none at all when the lead is the run’s own half
+step, so a recorded march state is taken as it is.</p></li>
 </ul>
 </dd>
 </dl>
@@ -793,6 +816,9 @@ own grid).</p></li>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ring</span> <span class="o">=</span> <span class="n">sources</span><span class="o">.</span><span class="n">SourceFieldInitial</span><span class="o">.</span><span class="n">from_project</span><span class="p">(</span><span class="s2">"cavity_modes"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"mode0"</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">mesh</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">f_max</span><span class="o">=</span><span class="n">f_max</span><span class="p">)</span><span class="o">.</span><span class="n">with_sources</span><span class="p">([</span><span class="n">ring</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">AnalysisTD</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">excitations</span><span class="o">=</span><span class="p">[</span><span class="s2">"mode0"</span><span class="p">],</span> <span class="n">t_end</span><span class="o">=</span><span class="mf">50e-9</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">again</span> <span class="o">=</span> <span class="n">sources</span><span class="o">.</span><span class="n">SourceFieldInitial</span><span class="o">.</span><span class="n">from_recording</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">result</span><span class="o">.</span><span class="n">monitors</span><span class="p">[</span><span class="s2">"volume"</span><span class="p">]</span><span class="o">.</span><span class="n">recording</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"resume"</span>
+<span class="gp">... </span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="py method">
@@ -858,16 +884,52 @@ or the opened <a class="reference internal" href="io.html#magnelio.io.Project" t
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="magnelio.sources.SourceFieldInitial.from_recording">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_recording</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recording</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldInitial.from_recording" title="Link to this definition">#</a></dt>
+<dd><p>One frame of a <a class="reference internal" href="fields.html#magnelio.fields.FieldRecording" title="magnelio.fields.FieldRecording"><code class="xref py py-class docutils literal notranslate"><span class="pre">FieldRecording</span></code></a> as the start of a run.</p>
+<p>A time monitor’s recording holds the march’s own state: E at
+the frame’s instant and H half a time step later, the leapfrog
+pair the solver marched with.  The source takes both as they
+are (<code class="docutils literal notranslate"><span class="pre">h_lead</span> <span class="pre">=</span> <span class="pre">dt/2</span></code>), so a run on the same grid with the
+same time step continues the recorded one from that frame — a
+ring-down cut short resumes from its last frame, a state
+reached under one excitation is handed to another model.  The
+recording of a monitor covering the whole domain is on the
+run’s grid; any other frame is resampled onto it, as any
+initial field is.  A recording assembled without <code class="docutils literal notranslate"><span class="pre">dt</span></code> is
+taken as a field at one instant.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>recording</strong> (<a class="reference internal" href="fields.html#magnelio.fields.FieldRecording" title="magnelio.fields.FieldRecording"><em>FieldRecording</em></a>) – The frames — a monitor’s <code class="docutils literal notranslate"><span class="pre">recording</span></code>, live or read back
+from a project.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Source name.</p></li>
+<li><p><strong>t</strong> (<em>float</em><em>, </em><em>optional</em>) – Instant [s]; the nearest frame is taken.</p></li>
+<li><p><strong>frame</strong> (<em>int</em><em>, </em><em>optional</em>) – Frame index (exclusive with <em>t</em>).  Default: the last frame.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#magnelio.sources.SourceFieldInitial" title="magnelio.sources.SourceFieldInitial">SourceFieldInitial</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="magnelio.sources.SourceFieldInitial.attach">
 <span class="sig-name descname"><span class="pre">attach</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">solver</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.sources.SourceFieldInitial.attach" title="Link to this definition">#</a></dt>
 <dd><p>Write the scaled field into the solver’s state.</p>
 <p><code class="docutils literal notranslate"><span class="pre">e(0)</span></code> is the field on the primal edges (PEC edges zeroed).
 The march holds H half a step <em>ahead</em> of E when it enters its
-first E update, so the start is <code class="docutils literal notranslate"><span class="pre">h(+dt/2)</span></code>, half a discrete
-Faraday step from <code class="docutils literal notranslate"><span class="pre">h(0)</span></code>: <code class="docutils literal notranslate"><span class="pre">h(dt/2)</span> <span class="pre">=</span> <span class="pre">h(0)</span> <span class="pre">−</span> <span class="pre">½·β_H·(C</span> <span class="pre">e(0))</span></code>.
-For an eigenmode of the discrete operator started at its E
-maximum (<code class="docutils literal notranslate"><span class="pre">h(0)</span> <span class="pre">=</span> <span class="pre">0</span></code>) this is the exact leapfrog state of that
-mode, so the run is a pure oscillation of it.</p>
+first E update, so the start is <code class="docutils literal notranslate"><span class="pre">h(+dt/2)</span></code>.  The field’s own
+H samples lead its E by <code class="docutils literal notranslate"><span class="pre">h_lead</span></code>, and the difference is a
+discrete Faraday step of that length:
+<code class="docutils literal notranslate"><span class="pre">h(dt/2)</span> <span class="pre">=</span> <span class="pre">h(h_lead)</span> <span class="pre">−</span> <span class="pre">(½</span> <span class="pre">−</span> <span class="pre">h_lead/dt)·β_H·(C</span> <span class="pre">e(0))</span></code>.  For an
+eigenmode of the discrete operator started at its E maximum
+(<code class="docutils literal notranslate"><span class="pre">h_lead</span> <span class="pre">=</span> <span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">h(0)</span> <span class="pre">=</span> <span class="pre">0</span></code>) this is the exact leapfrog state
+of that mode, so the run is a pure oscillation of it; for a
+frame recorded by a march with this time step
+(<code class="docutils literal notranslate"><span class="pre">h_lead</span> <span class="pre">=</span> <span class="pre">dt/2</span></code>) it is the recorded state itself, so the run
+continues the recorded one.</p>
 <p>The contribution is <em>added</em> to the solver’s state, which the
 solver allocated as zeros: two initial fields excited in the
 same run superpose, as the linear start they are.</p>
@@ -1202,6 +1264,7 @@ bound waveform (<code class="xref py py-meth docutils literal notranslate"><span
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldInitial.from_arrays"><code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.from_arrays()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldInitial.from_function"><code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.from_function()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldInitial.from_project"><code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.from_project()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldInitial.from_recording"><code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.from_recording()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldInitial.attach"><code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.attach()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldInitial.clear_excitation"><code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.clear_excitation()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.sources.SourceFieldInitial.inject_E"><code class="docutils literal notranslate"><span class="pre">SourceFieldInitial.inject_E()</span></code></a></li>

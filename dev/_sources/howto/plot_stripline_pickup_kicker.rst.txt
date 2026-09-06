@@ -336,77 +336,79 @@ once more without changing the mode.
 
       mesh | feature planes
     UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0239035 m, would create a 0.0011 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=6.9) keeps it, or refine the mesh.
+      mesh | feature planes | done (0.6 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 26 x 38 x 10 cells (0.7 s total)
+      mesh | 26 x 38 x 10 cells (0.8 s total)
       mesh | feature planes
     UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0232202 m, would create a 0.00157 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=4.8) keeps it, or refine the mesh.
-      mesh | feature planes | done (0.5 s)
+      mesh | feature planes | done (0.6 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 27 x 39 x 10 cells (0.7 s total)
+      mesh | 27 x 39 x 10 cells (0.8 s total)
       mesh | feature planes
     UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.02397 m, would create a 0.00103 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=7.3) keeps it, or refine the mesh.
-      mesh | feature planes | done (0.5 s)
+      mesh | feature planes | done (0.6 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 28 x 40 x 10 cells (0.7 s total)
+      mesh | 28 x 40 x 10 cells (0.8 s total)
       mesh | feature planes
     UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0225167 m, would create a 0.000866 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=8.7) keeps it, or refine the mesh.
-      mesh | feature planes | done (0.5 s)
+      mesh | feature planes | done (0.6 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 28 x 41 x 10 cells (0.7 s total)
+      mesh | 28 x 41 x 10 cells (0.8 s total)
       mesh | feature planes
     UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0269002 m, would create a 0.0009 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=8.4) keeps it, or refine the mesh.
-      mesh | feature planes | done (0.5 s)
+      mesh | feature planes | done (0.6 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 30 x 42 x 10 cells (0.7 s total)
+      mesh | 30 x 42 x 10 cells (0.8 s total)
       mesh | feature planes
-      mesh | feature planes | done (0.5 s)
+      mesh | feature planes | done (0.6 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 26 x 38 x 10 cells (0.7 s total)
+      mesh | 26 x 38 x 10 cells (0.8 s total)
       mesh | feature planes
-      mesh | feature planes | done (0.5 s)
+      mesh | feature planes | done (0.6 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 27 x 39 x 10 cells (0.7 s total)
+      mesh | 27 x 39 x 10 cells (0.8 s total)
       mesh | feature planes
+      mesh | feature planes | done (0.6 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 28 x 40 x 10 cells (0.7 s total)
+      mesh | 28 x 40 x 10 cells (0.8 s total)
       mesh | feature planes
-      mesh | feature planes | done (0.5 s)
+      mesh | feature planes | done (0.6 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 28 x 41 x 10 cells (0.7 s total)
+      mesh | 28 x 41 x 10 cells (0.8 s total)
       mesh | feature planes
-      mesh | feature planes | done (0.5 s)
+      mesh | feature planes | done (0.6 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 30 x 42 x 10 cells (0.7 s total)
+      mesh | 30 x 42 x 10 cells (0.8 s total)
     h = 5 mm: Z_strip =  40.8 ohm (sum)   39.7 ohm (difference)
     h = 6 mm: Z_strip =  45.0 ohm (sum)   43.7 ohm (difference)
     h = 7 mm: Z_strip =  48.4 ohm (sum)   46.8 ohm (difference)
@@ -443,18 +445,19 @@ impedances for the design follow, together with the mode itself:
  .. code-block:: none
 
       mesh | feature planes
+      mesh | feature planes | done (0.6 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 29 x 41 x 10 cells (0.7 s total)
+      mesh | 29 x 41 x 10 cells (0.8 s total)
       mesh | feature planes
-      mesh | feature planes | done (0.5 s)
+      mesh | feature planes | done (0.6 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
       mesh | PEC masks
-      mesh | 29 x 41 x 10 cells (0.7 s total)
+      mesh | 29 x 41 x 10 cells (0.8 s total)
     design: Z_strip = 52.8 ohm (sum), 51.0 ohm (difference)
 
 
@@ -484,7 +487,7 @@ transverse analysis below needs its *gradient* — so the line is asked
 for close to the axis, and the monitor reports the cell centre it
 actually landed on.
 
-.. GENERATED FROM PYTHON SOURCE LINES 262-307
+.. GENERATED FROM PYTHON SOURCE LINES 262-310
 
 .. code-block:: Python
 
@@ -526,7 +529,10 @@ actually landed on.
     model, mesh, result, line, plane, Z_PORT = kicker_run("PEC")
     print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
     print(f"coax port impedance on the grid: {Z_PORT:.1f} ohm")
-    print(f"field line recorded at y = {line.region.yc[0] * 1e3:.2f} mm, {len(line.region.zc)} points")
+    print(
+        f"field line recorded at y = {line.spectrum.cell_centres[1][0] * 1e3:.2f} mm, "
+        f"{len(line.spectrum.cell_centres[2])} points"
+    )
 
     fig, ax = plt.subplots(figsize=(9.0, 3.6))
     model.plot_cross_section(mesh=mesh, normal="x", position=0.0, flip=True, ax=ax)
@@ -548,14 +554,14 @@ actually landed on.
 
       mesh | feature planes
     UserWarning: 10 geometry-edge planes (3 on x, 3 on y, 4 on z) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at z = 0.149896 m, would create a 0.00175 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=4.3) keeps it, or refine the mesh.
-      mesh | feature planes | done (1.1 s)
+      mesh | feature planes | done (1.3 s)
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (1.4 s)
+      mesh | materials | done (1.6 s)
       mesh | conformal cells
-      mesh | conformal cells | done (14.1 s)
+      mesh | conformal cells | done (18.0 s)
       mesh | PEC masks
-      mesh | 46 x 56 x 209 cells (16.7 s total)
+      mesh | 46 x 56 x 209 cells (21.0 s total)
     grid: 46 x 56 x 209 cells
     coax port impedance on the grid: 52.3 ohm
     field line recorded at y = 0.90 mm, 209 points
@@ -563,14 +569,14 @@ actually landed on.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 308-312
+.. GENERATED FROM PYTHON SOURCE LINES 311-315
 
 The S-parameters say what a network analyser would: the feeds are
 matched, and the drive power leaves through the *upstream* port of
 the same strip — a stripline is a directional coupler, and a kicker's
 upstream loads have to absorb the full drive power.
 
-.. GENERATED FROM PYTHON SOURCE LINES 312-318
+.. GENERATED FROM PYTHON SOURCE LINES 315-321
 
 .. code-block:: Python
 
@@ -592,7 +598,7 @@ upstream loads have to absorb the full drive power.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 319-324
+.. GENERATED FROM PYTHON SOURCE LINES 322-327
 
 The field picture shows what the beam will see: the drive enters at
 the right, and the longitudinal field that does the kicking is
@@ -600,7 +606,7 @@ concentrated at the two strip ends, where the strip voltage steps
 from its line value to the grounded pit.  Along the strip itself the
 field is transverse — a TEM line has no :math:`E_z`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 324-332
+.. GENERATED FROM PYTHON SOURCE LINES 327-335
 
 .. code-block:: Python
 
@@ -624,7 +630,7 @@ field is transverse — a TEM line has no :math:`E_z`.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 333-354
+.. GENERATED FROM PYTHON SOURCE LINES 336-357
 
 Beam voltage and kicker constant
 --------------------------------
@@ -648,7 +654,7 @@ voltage at the kicker's input terminal, :math:`V_K = \sqrt{2 Z_c P}`,
 where :math:`P` is the total drive power — two watts here, one per
 strip — and :math:`Z_c` the feed impedance as the grid sees it.
 
-.. GENERATED FROM PYTHON SOURCE LINES 354-381
+.. GENERATED FROM PYTHON SOURCE LINES 357-384
 
 .. code-block:: Python
 
@@ -662,9 +668,9 @@ strip — and :math:`Z_c` the feed impedance as the grid sees it.
 
     P_IN = 2.0
     V_K = math.sqrt(2 * Z_PORT * P_IN)
-    z_line = line.region.zc
-    y_line = line.region.yc[0]
-    ez_diff = line.data["Ez"]
+    z_line = line.spectrum.cell_centres[2]
+    y_line = line.spectrum.cell_centres[1][0]
+    ez_diff = line.spectrum.cell_centred(["Ez"], squeeze=True)["Ez"]
 
     v_forward = beam_voltage(ez_diff, z_line, FREQS, direction=+1)
     v_backward = beam_voltage(ez_diff, z_line, FREQS, direction=-1)
@@ -691,7 +697,7 @@ strip — and :math:`Z_c` the feed impedance as the grid sees it.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 382-424
+.. GENERATED FROM PYTHON SOURCE LINES 385-427
 
 The two directions are not equivalent.  A particle running *against*
 the drive wave collects the kicks of both strip ends in phase at the
@@ -736,7 +742,7 @@ Lambertson, eqs. 4.7 and 4.11):
 :math:`1/k_B`: at a fixed longitudinal field, a transverse kicker
 gets *weaker* with frequency.
 
-.. GENERATED FROM PYTHON SOURCE LINES 424-431
+.. GENERATED FROM PYTHON SOURCE LINES 427-434
 
 .. code-block:: Python
 
@@ -754,7 +760,7 @@ gets *weaker* with frequency.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 432-444
+.. GENERATED FROM PYTHON SOURCE LINES 435-447
 
 Longitudinal quantities: the sum mode
 -------------------------------------
@@ -769,13 +775,18 @@ constant and shunt impedance are (eqs. 4.1 and 4.10)
     K_\parallel = \frac{|V|}{V_K}, \qquad
     R_\parallel T^2 = Z_c\, |K_\parallel|^2 .
 
-.. GENERATED FROM PYTHON SOURCE LINES 444-450
+.. GENERATED FROM PYTHON SOURCE LINES 447-458
 
 .. code-block:: Python
 
 
     model_sum, mesh_sum, result_sum, line_sum, _, Z_PORT_SUM = kicker_run("PMC")
-    v_sum = beam_voltage(line_sum.data["Ez"], line_sum.region.zc, FREQS, direction=+1)
+    v_sum = beam_voltage(
+        line_sum.spectrum.cell_centred(["Ez"], squeeze=True)["Ez"],
+        line_sum.spectrum.cell_centres[2],
+        FREQS,
+        direction=+1,
+    )
     k_par = np.abs(v_sum) / V_K
     r_par = Z_PORT * k_par**2
 
@@ -788,19 +799,19 @@ constant and shunt impedance are (eqs. 4.1 and 4.10)
  .. code-block:: none
 
       mesh | feature planes
-      mesh | feature planes | done (1.1 s)
+      mesh | feature planes | done (1.3 s)
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (1.4 s)
+      mesh | materials | done (1.6 s)
       mesh | conformal cells
-      mesh | conformal cells | done (13.8 s)
+      mesh | conformal cells | done (17.9 s)
       mesh | PEC masks
-      mesh | 46 x 56 x 209 cells (16.5 s total)
+      mesh | 46 x 56 x 209 cells (20.9 s total)
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 451-489
+.. GENERATED FROM PYTHON SOURCE LINES 459-497
 
 The ideal stripline as the reference
 ------------------------------------
@@ -841,7 +852,7 @@ for the real device?  The field picture above answers it: the kicks
 happen where the strip meets its feed, so the electrical length is
 the distance between the two feeds, not the strip's own length.
 
-.. GENERATED FROM PYTHON SOURCE LINES 489-524
+.. GENERATED FROM PYTHON SOURCE LINES 497-532
 
 .. code-block:: Python
 
@@ -902,7 +913,7 @@ the distance between the two feeds, not the strip's own length.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 525-556
+.. GENERATED FROM PYTHON SOURCE LINES 533-564
 
 The ideal curves reproduce the shape — the lobes, the maximum near
 the design frequency, the :math:`1/k_B^2` decline of the transverse
@@ -936,7 +947,7 @@ signal per unit displacement, ideally
 :math:`4\sin(\varphi/2) / (\varphi\, b)` and independent of
 frequency.
 
-.. GENERATED FROM PYTHON SOURCE LINES 556-583
+.. GENERATED FROM PYTHON SOURCE LINES 564-591
 
 .. code-block:: Python
 
@@ -986,7 +997,7 @@ frequency.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 584-596
+.. GENERATED FROM PYTHON SOURCE LINES 592-604
 
 Where to go next
 ----------------
@@ -1004,7 +1015,7 @@ that move the real device toward, or away from, the ideal stripline.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (5 minutes 54.617 seconds)
+   **Total running time of the script:** (6 minutes 17.009 seconds)
 
 
 .. _sphx_glr_download_howto_plot_stripline_pickup_kicker.py:

@@ -297,7 +297,10 @@ def kicker_run(mode):
 model, mesh, result, line, plane, Z_PORT = kicker_run("PEC")
 print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 print(f"coax port impedance on the grid: {Z_PORT:.1f} ohm")
-print(f"field line recorded at y = {line.region.yc[0] * 1e3:.2f} mm, {len(line.region.zc)} points")
+print(
+    f"field line recorded at y = {line.spectrum.cell_centres[1][0] * 1e3:.2f} mm, "
+    f"{len(line.spectrum.cell_centres[2])} points"
+)
 
 fig, ax = plt.subplots(figsize=(9.0, 3.6))
 model.plot_cross_section(mesh=mesh, normal="x", position=0.0, flip=True, ax=ax)
@@ -361,9 +364,9 @@ def beam_voltage(ez, z, f, beta=1.0, direction=+1):
 
 P_IN = 2.0
 V_K = math.sqrt(2 * Z_PORT * P_IN)
-z_line = line.region.zc
-y_line = line.region.yc[0]
-ez_diff = line.data["Ez"]
+z_line = line.spectrum.cell_centres[2]
+y_line = line.spectrum.cell_centres[1][0]
+ez_diff = line.spectrum.cell_centred(["Ez"], squeeze=True)["Ez"]
 
 v_forward = beam_voltage(ez_diff, z_line, FREQS, direction=+1)
 v_backward = beam_voltage(ez_diff, z_line, FREQS, direction=-1)
@@ -443,7 +446,12 @@ r_perp = Z_PORT * k_perp**2
 #     R_\parallel T^2 = Z_c\, |K_\parallel|^2 .
 
 model_sum, mesh_sum, result_sum, line_sum, _, Z_PORT_SUM = kicker_run("PMC")
-v_sum = beam_voltage(line_sum.data["Ez"], line_sum.region.zc, FREQS, direction=+1)
+v_sum = beam_voltage(
+    line_sum.spectrum.cell_centred(["Ez"], squeeze=True)["Ez"],
+    line_sum.spectrum.cell_centres[2],
+    FREQS,
+    direction=+1,
+)
 k_par = np.abs(v_sum) / V_K
 r_par = Z_PORT * k_par**2
 

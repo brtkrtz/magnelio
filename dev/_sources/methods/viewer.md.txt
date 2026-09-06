@@ -81,18 +81,46 @@ eigen.field(0).show("H", geometry=model)         # an eigenmode
 | Item | Appearance |
 |---|---|
 | Field sheet | The exposed layer of cells, each coloured by the magnitude of `E` or `H` (dark to bright) or by one signed component (`Ex`, `Hz`, …; blue–white–red about zero).  The colour ceiling is the peak over every frame and layer of the recording, so a wave keeps its colour while the frame slider runs; `vmax=` fixes it. |
-| Arrows | For `E` or `H`: arrows on an even lattice over the layer, all three components, the longest spanning one lattice spacing; arrows below 2 % of the ceiling are left out.  `plot_type="color"` drops them. |
+| Arrows | For `E` or `H`: arrows on an even lattice over the layer, all three components, coloured by their magnitude on the sheet's scale; the length grows with the magnitude from three tenths of the lattice spacing to one spacing, so a decaying field keeps readable arrows.  Arrows below 2 % of the ceiling are left out; `plot_type="color"` drops them, `arrow_color=` paints them one colour. |
 | Metal | With `mesh=`, cells buried in a perfect conductor are cut out of the sheet, so the solids' cut faces show through where no field is defined. |
 
-The toolbar gains a **play button** and a **frame slider** (time or
-frequency, with the value beside it), a **phase slider** for complex
-data (a frequency monitor's pattern at `Re(F·e^{jφ})`), and a
-**Field** selector that switches between the recorded components;
-*Field on cut* and *Field arrows* join the *Show* menu.  Play runs the
-frames in a loop at `fps=` (default 4) — each frame is one layer
-computed and sent to the browser, so the rate is bounded by the size
-of the layer.  In a script or a documentation build the initial frame
-is chosen with `t=`, `f=` or `frame=`.
+The field controls sit in a **second toolbar row**: a **play button**
+and a **frame slider** (time or frequency, with the value beside it),
+a **phase slider** for complex data (a frequency monitor's pattern at
+`Re(F·e^{jφ})`), a **Field** selector that switches between the
+recorded components, and the level and density sliders of the volume
+representations below; *Field on cut* and *Field arrows* join the
+*Show* menu.  Play runs the frames in a loop at `fps=` (default 4) —
+each frame is one layer computed and sent to the browser, so the rate
+is bounded by the size of the layer.  In a script or a documentation
+build the initial frame is chosen with `t=`, `f=` or `frame=`.
+
+## Fields in the volume
+
+The cut shows one layer; the volume behind it can carry the field
+too, in the two forms every 3D field plot offers.
+
+```python
+monitor.show(volume="arrows")                    # arrows on a 3D lattice over the kept half
+monitor.show(volume="isosurface", iso_level=0.4) # |E| at 40 % of the ceiling
+monitor.show("Hx", volume="both", levels=[2.0])  # ±2 A/m surfaces, arrows too
+```
+
+| Item | Appearance |
+|---|---|
+| Arrows in volume | The same arrows as on the cut, on an even 3D lattice over the region (`density=` counts them along its longest axis), clipped to the kept half like the solids; they replace the arrows on the cut.  A slider sets the density. |
+| Isosurfaces | Translucent surfaces where the magnitude equals a level — by default one at `iso_level` (half the colour ceiling), which a slider moves between 5 and 95 %; `levels=` fixes surfaces at values in V/m or A/m.  A signed component gets each level with both signs, blue and red.  The surfaces are clipped at the cut, so the cut shows their inside. |
+
+Both are entries of the *Show* menu whenever the source is a volume
+(isosurfaces need at least two cells along every axis, so a plane
+monitor offers arrows only); `volume=` only chooses what is on at
+first.  Without a cut (*Cut* set to *off*) the whole region is drawn.
+A volume representation costs the whole region per frame instead of
+one layer — a large monitor plays slower with it on.  The cell values
+are interpolated to the grid nodes before the surfaces are contoured,
+so a surface is as fine as the grid.  Volume rendering with an opacity
+ramp is not offered: the browser renderer takes only uniform image
+data, and a graded grid resampled onto one would lose its resolution.
 
 Two things the picture is not.  It is not a plane: every value is the
 cell-centre average of the staggered components in one layer of cells,
@@ -167,6 +195,6 @@ needed for Magnelio's viewer.
   no screen-space labels): port names lie in the port plane, element
   names face the initial camera; both scale with the model.
 - The cutting plane is axis-aligned by design (see above).
-- Fields are shown on the cutting plane only — one layer at a time, not
-  as a volume rendering or an iso-surface; the ParaView export
-  ({doc}`sources-monitors`) covers those.
+- Fields are drawn on the cut and, as arrows and isosurfaces, in the
+  volume — not as a volume rendering; the
+  {ref}`ParaView export <paraview-export>` covers that.
