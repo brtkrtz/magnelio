@@ -196,12 +196,24 @@ fig.tight_layout()
 # The volume can also be opened in the 3D viewer.  ``show`` lays the
 # field on the viewer's cutting plane — here the E-arm drive, cut
 # along the E-arm's own symmetry plane, the tee's metal drawn with it
-# and the cells inside the walls cut out of the field sheet.  In a
+# and the cells inside the walls cut out of the field sheet — and,
+# with ``volume="isosurface"``, adds the surface where the magnitude of E reaches
+# half its ceiling, clipped at the cut so its inside shows.  In a
 # notebook the position slider walks the cut through the whole
-# recorded volume, and a phase slider turns the complex pattern; a
-# documentation build shows the frame the call asks for.
+# recorded volume, a phase slider turns the complex pattern, a level
+# slider moves the surface, and the *Show* menu swaps the arrows on
+# the cut for arrows on a lattice through the volume; a documentation
+# build shows the frame the call asks for.
 
-mon_e.show(component="E", normal="y", position=0.0, geometry=model, mesh=mesh, phase=90.0)
+mon_e.show(
+    component="E",
+    normal="y",
+    position=0.0,
+    geometry=model,
+    mesh=mesh,
+    phase=90.0,
+    volume="isosurface",
+)
 
 # %%
 # Running longer: resume

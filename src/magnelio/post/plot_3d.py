@@ -70,6 +70,8 @@ _GROUPS = (
     ("cut cells", "Grid on cut"),
     ("field", "Field on cut"),
     ("arrows", "Field arrows"),
+    ("volume arrows", "Arrows in volume"),
+    ("isosurface", "Isosurfaces"),
     ("ports", "Ports"),
     ("elements", "Lumped elements"),
     ("wires", "Wires"),
@@ -280,9 +282,7 @@ class _Scene:
         if self.domain_actor is not None:
             present.add("domain")
         if self.field_view is not None:
-            present.add("field")
-            if self.field_view.has_arrows:
-                present.add("arrows")
+            present.update(self.field_view.groups())
         present.update(o.group for o in self.overlays)
         return [key for key, _ in _GROUPS if key in present]
 
@@ -1100,6 +1100,8 @@ def _build_scene(
         show_ports=show_ports,
         labels=show_labels,
     )
+    if field_view is not None:
+        scene.hidden_groups |= set(field_view.hidden_at_start())
 
     _apply_cut(scene)
     pl.add_axes()

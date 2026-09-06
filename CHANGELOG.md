@@ -39,6 +39,18 @@ major version is 0, minor releases may change the public API.
   bit from that frame, so a ring-down cut short resumes from its last
   frame.  `h_lead` on the source states that lead for any field
   (zero for an eigenmode or a formula, as before).
+- Fields in the volume of the 3D viewer.  `show(volume="arrows")`
+  draws the field as arrows on an even 3D lattice over the kept half
+  of the cut, `show(volume="isosurface")` as translucent surfaces of
+  the magnitude at a level (`iso_level=`, a slider between 5 and 95 %
+  of the colour ceiling, or fixed `levels=` in field units; a signed
+  component gets both signs), `"both"` draws both; the *Show* menu
+  offers them for every volume source.  Arrows — on the cut and in
+  the volume — are now coloured by their magnitude on the sheet's
+  scale and never shorter than three tenths of the lattice spacing
+  (`arrow_color=` paints them one colour as before).  The field
+  controls moved to a second toolbar row with level and density
+  sliders, which also ends the overflow of the one-row menu.
 - Energy and flux from a recorded field.  `recording.energy()` and
   `recording.flux(normal, position)` on a field monitor's
   `FieldRecording` — and `energy()`/`flux()` on every `FieldState`

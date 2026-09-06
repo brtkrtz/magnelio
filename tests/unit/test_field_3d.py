@@ -527,3 +527,276 @@ class TestWithMesh:
         assert img.shape[:2] == (200, 300)
         assert img.std() > 5.0
         pl.close()
+
+
+# ---------------------------------------------------------------------------
+# The volume: arrows on a 3D lattice and isosurfaces (DD-261)
+# ---------------------------------------------------------------------------
+
+
+def _actor(pl, name):
+    return pl.renderer.actors[name]
+
+
+class TestVolume:
+    def test_volume_loader_matches_cell_centred(self):
+        grid = _grid()
+        fs = _field(grid)
+        frames = field_3d._frames_of(fs, None)
+        vol = frames.volume(0, ["Ex", "Ey", "Ez"])
+        cc = fs.cell_centred(["Ex", "Ey", "Ez"])
+        for c in ("Ex", "Ey", "Ez"):
+            np.testing.assert_array_equal(vol[c], cc[c])
+        mon = _time_monitor(grid, corners=None)
+        vol = field_3d._frames_of(mon, None).volume(2, ["Ez"])
+        np.testing.assert_allclose(vol["Ez"], 3e-3 / _dz(grid))
+
+    def test_lattice_is_even_and_resampling_is_trilinear(self):
+        centres = (np.linspace(0.5, 9.5, 10), np.linspace(0.5, 4.5, 5), np.array([1.0]))
+        raster = field_3d._lattice3(centres, 10)
+        assert raster[0].size == 10 and raster[2].size == 1
+        step = raster[0][1] - raster[0][0]
+        assert raster[1][1] - raster[1][0] == pytest.approx(step, rel=1e-9)
+        x, y, z = np.meshgrid(*centres, indexing="ij")
+        linear = 2.0 * x - 3.0 * y + 0.5
+        (out,), live = field_3d._resample3(centres, raster, [linear], None)
+        rx, ry, rz = np.meshgrid(*raster, indexing="ij")
+        assert live.all()
+        np.testing.assert_allclose(out, 2.0 * rx - 3.0 * ry + 0.5, rtol=1e-12)
+        # A raster point whose stencil is mostly inside metal is not live.
+        valid = np.ones_like(linear, dtype=bool)
+        valid[:5] = False
+        (out,), live = field_3d._resample3(centres, raster, [linear], valid)
+        assert not live[0, 0, 0] and live[-1, -1, 0]
+        assert np.isnan(out[0, 0, 0])
+
+    def test_volume_arrows_fill_the_kept_half(self):
+        grid = _grid()
+        pl = _field(grid).show(mode="none", volume="arrows", density=6, normal="z", position=LZ / 2)
+        arrows = _actor(pl, "field_volume_arrows")
+        assert arrows.GetVisibility()
+        pd = arrows.mapper.dataset
+        assert isinstance(pd, pv.PolyData) and pd.n_cells > 0
+        # Clipped to the kept half (below the cut, flip=False); an arrow
+        # may reach past its lattice point by at most one spacing.
+        spacing = LZ * 1e3 / 4  # the lattice follows the longest axis
+        assert pd.bounds[5] <= LZ * 1e3 / 2 + spacing * 1.01
+        assert pd.bounds[4] >= -spacing
+        # Coloured by magnitude on the sheet's scale; the cut arrows step aside.
+        assert "mag" in pd.point_data
+        lo, hi = arrows.mapper.scalar_range
+        assert lo == 0.0 and hi == pytest.approx(float(_sheet(pl).cell_data["field"].max()))
+        assert _actor(pl, "field_cut").GetVisibility()
+        assert not _actor(pl, "field_arrows").GetVisibility()
+        pl.close()
+
+    def test_arrow_length_has_a_floor(self):
+        """The shortest arrow is three tenths of the lattice spacing."""
+        grid = _grid()
+        fs = FieldState.from_function(
+            grid, E=lambda x, y, z: (0 * x, 0 * y, 0.05 + 0.95 * (x / LX) ** 4)
+        )
+        pl = fs.show(mode="none", density=6, normal="z", position=LZ / 2, threshold=0.0)
+        pd = _actor(pl, "field_arrows").mapper.dataset
+        lengths = np.asarray(pd["len"], dtype=float)
+        # The strongest cell sets the ceiling, so the longest arrow spans
+        # one lattice spacing; the weakest field (5 %) would be invisible
+        # without the floor.
+        assert lengths.min() >= field_3d._ARROW_FLOOR * lengths.max() * (1.0 - 1e-6)
+        assert lengths.min() < 0.5 * lengths.max()
+        pl.close()
+
+    def test_single_colour_arrows_on_request(self):
+        pl = _field(_grid()).show(mode="none", density=6, arrow_color="#303030")
+        pd = _actor(pl, "field_arrows").mapper.dataset
+        assert _actor(pl, "field_arrows").mapper.scalar_visibility is False or (
+            "mag" in pd.point_data
+        )
+        pl.close()
+
+    def test_isosurface_of_a_standing_pattern(self):
+        """|E| = |sin(πx/L)| at half the ceiling: two sheets at L/6 and 5L/6."""
+        grid = _grid(nx=24)
+        pl = _field(grid).show(
+            mode="none", plot_type="color", volume="isosurface", normal="z", position=LZ / 2
+        )
+        iso = _actor(pl, "field_iso")
+        assert iso.GetVisibility()
+        pd = iso.mapper.dataset
+        assert isinstance(pd, pv.PolyData) and pd.n_cells > 0
+        x = pd.points[:, 0] / 1e3
+        cell = LX / 24
+        near_low = np.abs(x - LX / 6) < cell
+        near_high = np.abs(x - 5 * LX / 6) < cell
+        assert near_low.any() and near_high.any()
+        assert (near_low | near_high).all()
+        # Clipped to the kept half.
+        assert pd.points[:, 2].max() <= LZ * 1e3 / 2 + 1e-9
+        lo, hi = iso.mapper.scalar_range
+        assert lo == 0.0 and hi == pytest.approx(float(_sheet(pl).cell_data["field"].max()))
+        # Fixed levels in field units move the sheets.
+        pl2 = _field(grid).show(mode="none", volume="isosurface", levels=[0.9])
+        x2 = _actor(pl2, "field_iso").mapper.dataset.points[:, 0] / 1e3
+        x_level = np.arcsin(0.9) / np.pi * LX
+        assert (np.abs(x2 - x_level) < cell).any() and (np.abs(x2 - (LX - x_level)) < cell).any()
+        pl.close()
+        pl2.close()
+
+    def test_no_cut_shows_the_whole_volume(self):
+        from magnelio.post.plot_3d import _apply_cut, _build_scene  # noqa: PLC0415
+
+        grid = _grid()
+        frames = field_3d._frames_of(_field(grid), None)
+        view = field_3d._FieldView(
+            frames=frames,
+            component="E",
+            plot_type="vector",
+            frame=0,
+            phase=0.0,
+            vmax_fixed=None,
+            cmap=None,
+            unit_scale=1e3,
+            density=6,
+            threshold=0.0,
+            opacity=1.0,
+            arrow_color=None,
+            volume_start="both",
+        )
+        scene = _build_scene(
+            None,
+            mesh=None,
+            cut=("z", LZ / 2),
+            flip=False,
+            show_ports=True,
+            show_wires=True,
+            show_grid=False,
+            show_labels=True,
+            size=(300, 200),
+            render_edges=False,
+            edge_color="#202020",
+            quality=1.0,
+            scale_mm=True,
+            camera="iso",
+            off_screen=True,
+            field_view=view,
+            extent=(0.0, LX * 1e3, 0.0, LY * 1e3, 0.0, LZ * 1e3),
+        )
+        pl = scene.plotter
+        half = _actor(pl, "field_volume_arrows").mapper.dataset.n_points
+        scene.cut = _CutState()
+        _apply_cut(scene)
+        whole = _actor(pl, "field_volume_arrows").mapper.dataset.n_points
+        assert whole > half
+        assert not _actor(pl, "field_cut").GetVisibility()
+        assert _actor(pl, "field_iso").GetVisibility()
+        assert _actor(pl, "field_iso").mapper.dataset.points[:, 2].max() > LZ * 1e3 / 2
+        pl.close()
+
+    def test_plane_monitor_offers_arrows_but_no_isosurface(self):
+        grid = _grid()
+        mon = MonitorFieldTime(
+            corners=((None, None, LZ / 2), (None, None, LZ / 2)),
+            times=[0.0],
+            fields=["E"],
+            name="m",
+        )
+        mon.attach(_FakeMesh(grid))
+        f = FieldArrays.zeros(grid.Nx, grid.Ny, grid.Nz)
+        f.Ez[:] = 1e-3
+        f.Ex[:] = 0.5e-3
+        mon.record(f, 0, -1e-12, 1e-12)
+        with pytest.raises(ValueError, match="two cells"):
+            mon.show(mode="none", volume="isosurface")
+        pl = mon.show(mode="none", volume="arrows", density=5)
+        assert _actor(pl, "field_volume_arrows").GetVisibility()
+        pl.close()
+
+    def test_bad_arguments(self):
+        fs = _field(_grid())
+        with pytest.raises(ValueError, match="volume must be"):
+            fs.show(mode="none", volume="fog")
+        with pytest.raises(ValueError, match="levels"):
+            fs.show(mode="none", levels=[-1.0])
+        with pytest.raises(ValueError, match="iso_level"):
+            fs.show(mode="none", iso_level=1.5)
+
+
+class TestVolumeControls:
+    def test_show_menu_level_and_density(self):
+        """Volume groups start hidden, the menu turns them on, the sliders reshape them."""
+        pytest.importorskip("trame.app")
+        from trame.app import get_server  # noqa: PLC0415
+
+        from magnelio.post.plot_3d import _GROUPS, _attach_controls, _build_scene  # noqa: PLC0415
+
+        grid = _grid(nx=24)
+        frames = field_3d._frames_of(_field(grid), None)
+        view = field_3d._FieldView(
+            frames=frames,
+            component="E",
+            plot_type="vector",
+            frame=0,
+            phase=0.0,
+            vmax_fixed=None,
+            cmap=None,
+            unit_scale=1e3,
+            density=6,
+            threshold=0.0,
+            opacity=1.0,
+            arrow_color=None,
+        )
+        scene = _build_scene(
+            None,
+            mesh=None,
+            cut=("z", LZ / 2),
+            flip=False,
+            show_ports=True,
+            show_wires=True,
+            show_grid=False,
+            show_labels=True,
+            size=(300, 200),
+            render_edges=False,
+            edge_color="#202020",
+            quality=1.0,
+            scale_mm=True,
+            camera="iso",
+            off_screen=True,
+            field_view=view,
+            extent=(0.0, LX * 1e3, 0.0, LY * 1e3, 0.0, LZ * 1e3),
+        )
+        assert {"volume arrows", "isosurface"} <= set(scene.groups_present())
+        assert {"volume arrows", "isosurface"} <= scene.hidden_groups
+        pl = scene.plotter
+        assert "field_volume_arrows" not in pl.renderer.actors
+        assert "field_iso" not in pl.renderer.actors
+        server = get_server(f"mio_test_vol_{id(scene)}", client_type="vue3")
+        menu_items = _attach_controls(scene, server)
+        state = server.state
+        key = f"mio3d_{id(scene)}"
+        state.ready()
+        with state:
+            state[f"{key}_show"] = [g for g, _ in _GROUPS]
+        assert _actor(pl, "field_volume_arrows").GetVisibility()
+        assert _actor(pl, "field_iso").GetVisibility()
+        n_arrows = _actor(pl, "field_volume_arrows").mapper.dataset.n_points
+        x_before = _actor(pl, "field_iso").mapper.dataset.points[:, 0].min()
+        with state:
+            state[f"{key}_level"] = 90
+        x_after = _actor(pl, "field_iso").mapper.dataset.points[:, 0].min()
+        assert x_after > x_before  # the sheets move inwards at a higher level
+        with state:
+            state[f"{key}_density"] = 12
+        assert _actor(pl, "field_volume_arrows").mapper.dataset.n_points > n_arrows
+        with state:
+            state[f"{key}_show"] = [g for g, _ in _GROUPS if g not in ("volume arrows",)]
+        assert not _actor(pl, "field_volume_arrows").GetVisibility()
+        # A signed component: the isosurface carries both signs.
+        with state:
+            state[f"{key}_comp"] = "Hx"
+        iso = _actor(pl, "field_iso").mapper.dataset
+        assert iso["field"].min() < 0.0 < iso["field"].max()
+        from trame.ui.vuetify3 import SinglePageLayout  # noqa: PLC0415
+
+        with SinglePageLayout(server) as layout, layout.toolbar:
+            menu_items()
+        pl.close()
