@@ -39,6 +39,15 @@ major version is 0, minor releases may change the public API.
   file naming the older spelling lost its solids, its geometry clip and
   the slice linked to it on the newer release, with a flood of *Missing
   input data* errors.
+- The ParaView session cuts the geometry **once**: one `geometry_cut`
+  whose plane every monitor's slice shares, so dragging any one of them
+  drags them all.  There used to be a clip and a plane link per monitor.
+- Every set of arrows in the session is coloured by its field's
+  magnitude when the session is built, hidden ones included, so a set
+  switched on later comes up on the scale of the visible one instead of
+  in a flat colour.  The field sheet on the cut carries the same scale
+  explicitly, and each monitor gets its own transfer function, because
+  the magnitude cap it is scaled to is its own.
 - A `.pvsm` is bound to the ParaView that baked it, so
   `export_paraview(pvpython=…)` (or `MAGNELIO_PVPYTHON`) picks the one
   to bake for when a machine carries several, and the version that

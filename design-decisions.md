@@ -21657,6 +21657,7 @@ Files: `src/magnelio/post/plot_3d.py`, `src/magnelio/post/field_3d.py`,
 `src/magnelio/geo/__init__.py`, `src/magnelio/io/project.py`,
 `src/magnelio/analysis/eigenmode.py`, `docs/methods/viewer.md`,
 `docs/methods/projects-and-runs.md`.
+
 ## DD-265 — A ParaView state file is bound to its ParaView: the geometry is completed at export time, and the bake names its interpreter
 
 **Date:** 2026-09-07
@@ -21744,3 +21745,68 @@ Files: `src/magnelio/io/paraview.py`, `src/magnelio/io/project.py`,
 `docs/methods/sources-monitors.md`,
 `examples/tutorials/plot_07_project_store.py`.
 
+## DD-266 — One cutting plane for the session, and every set of arrows coloured when it is made
+
+**Date:** 2026-09-07
+**Status:** Accepted (developer findings after the [[DD-265]] pass,
+2026-09-07; patch after v0.7.0).
+
+**Problem.**  Three findings from the developer's first session on
+ParaView 6.1.  (1) A `geometry_cut_<monitor>` per monitor, each with
+its own registered plane link — five monitors, five geometry clips,
+five links, and no single plane that opens the solids where the field
+is looked at.  (2) "Most arrows have `coloring = Solid Color` instead
+of the field strength": only the *first shown* monitor's pair was
+given a representation, so every hidden glyph set — the imaginary
+part, the volume arrows, every other monitor — came up in ParaView's
+flat default when it was switched on, and had to be coloured by hand.
+(3) A `vtkContext2DScalarBarActor` warning that `%-#6.1e` is a printf
+format, deprecated in 6.1.
+
+**Findings.**  (a) `vtkSMProxyLink` takes any number of proxies, so one
+link can hold the geometry clip's plane and every monitor's slice
+plane together; measured, moving one slice drags the other slice and
+the clip.  (b) `simple.GetDisplayProperties(proxy, view)` creates a
+representation without showing it (its `Visibility` is then set to 0),
+so the colouring can be fixed at build time; a representation not
+asked for is not stored in the state at all, which is why the hidden
+sets had none.  ParaView's own auto-colouring only runs for a
+representation that is shown, which is exactly why the *first* pair
+looked right and nothing else did.  (c) The scalar-bar warning is not
+ours: 6.1's own defaults are already `{:<#6.1e}`, 6.0's are
+`%-#6.1e`, and the warning appears only when a state **baked by 6.0**
+is opened on 6.1 — the version binding of [[DD-265]].  Measured: a
+fresh 6.1 export, live script and baked state alike, raises none.
+
+**Decision.**
+
+1. **One cut.**  `clip_geometry` makes a single `geometry_cut` at the
+   first monitor's plane, and `link_planes("cut_plane", …)` registers
+   one link over that plane and every `<monitor>_slice` plane.  A
+   session has one cutting plane, whichever monitor is on show.
+2. **Colour at build time.**  `coloured(proxy, array, visible, bar)`
+   replaces `show_coloured`: it fixes the transfer function (scaled
+   `0 … cap` before the array is attached, so no unbuilt data is asked
+   for its range), colours the representation and *then* sets its
+   visibility.  Applied to every glyph set — cut arrows, the
+   imaginary part, the volume arrows — and to the field sheet, which
+   now carries the same magnitude on the same scale explicitly rather
+   than by ParaView's default.  One scalar bar, on the visible pair.
+   The transfer function is per representation (`UseSeparateColorMap`,
+   best-effort): monitors of one run share an array *name* but not a
+   cap, and a shared map would price one monitor's arrows on another's
+   scale.
+3. **Nothing to fix for the scalar bar** beyond DD-265: the chapter
+   already says to bake with the ParaView that opens the session.
+
+**Consequences.**  The pipeline browser loses one clip and one link
+per monitor beyond the first.  Every representation is built at export
+time, so the export pays one pipeline update per glyph set (measured:
+4.2 s for a three-monitor run including the bake) and the state file
+carries them.  The linked plane means a monitor whose region does not
+reach the shared plane shows an empty slice until the plane is dragged
+into it — the price of one cutting plane, and the developer's ask.
+Gates: `tests/integration/test_paraview_session.py::test_every_glyph_comes_up_coloured_by_its_field`
+(one `geometry_cut`, one `cut_plane` link, no glyph on `Solid Color`),
+`::test_pvsm_bake` (the per-monitor clips and links are gone).
+Files: `src/magnelio/io/paraview.py`, `docs/methods/sources-monitors.md`.

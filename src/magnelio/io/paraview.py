@@ -1214,19 +1214,31 @@ def build():
 
     normals = {"x": [1.0, 0.0, 0.0], "y": [0.0, 1.0, 0.0], "z": [0.0, 0.0, 1.0]}
 
-    def link_planes(name, a, b):
-        # Two-way link between a slice plane and a geometry-clip plane so
-        # dragging one drags the other.  Registered links survive into
-        # saved state files.  Best-effort: purely cosmetic.
+    def link_planes(name, planes):
+        # ONE cutting plane for the whole session (DD-266): the geometry
+        # clip and every monitor's slice are linked in both directions,
+        # so dragging any one of them drags them all and the solids are
+        # always opened where the field is shown.  Registered links
+        # survive into saved state files.  Best-effort: purely cosmetic.
+        if len(planes) < 2:
+            return
         try:
             link = servermanager.vtkSMProxyLink()
-            link.AddLinkedProxy(a.SMProxy, 1)
-            link.AddLinkedProxy(b.SMProxy, 2)
-            link.AddLinkedProxy(b.SMProxy, 1)
-            link.AddLinkedProxy(a.SMProxy, 2)
+            for plane in planes:
+                link.AddLinkedProxy(plane.SMProxy, 1)  # input
+                link.AddLinkedProxy(plane.SMProxy, 2)  # output
             servermanager.ProxyManager().RegisterLink(name, link)
         except Exception:
             pass
+
+    def clip_geometry(origin, normal):
+        # The one geometry cut of the session.  Its plane joins the
+        # link below, so it opens the solids wherever the field is cut.
+        clip = simple.Clip(registrationName="geometry_cut", Input=geom)
+        clip.ClipType = "Plane"
+        clip.ClipType.Origin = origin
+        clip.ClipType.Normal = normal
+        return clip
 
     # -- geometry: coloured per material via categorical LUT -----------
     # ``geometry.vtm`` already holds the WHOLE model: the export clips
@@ -1263,9 +1275,12 @@ def build():
     # One Python filter per monitor holds the whole preparation (mirror,
     # cell-to-point, lattice, arrow lengths); what remains in the
     # pipeline browser is the reader, the field, one cut with its
-    # arrows, the geometry clip linked to the cut, and the hidden
-    # volume arrows.
+    # arrows, and the hidden volume arrows.  The geometry is clipped
+    # ONCE for the whole session (DD-266) and shares its plane with
+    # every monitor's slice.
     shown_any = False
+    geom_clip = None
+    cut_planes = []
     for mon in CONFIG["monitors"]:
         path = _abspath(mon["data"])
         if not os.path.exists(path):
@@ -1315,19 +1330,37 @@ def build():
                 pass
             return gly
 
-        def show_coloured(proxy, arr=None):
-            d = simple.Show(proxy, view)
+        def coloured(proxy, arr=None, visible=False, bar=False):
+            # Every representation is coloured when it is made, whether
+            # it is shown now or waits hidden (DD-266): a glyph set
+            # switched on later came up in a flat "Solid Color" and had
+            # to be coloured by hand, which is what the arrow scale is
+            # there to avoid.  The colour carries the TRUE magnitude
+            # (linear, un-compressed); only the arrow length is
+            # compressed.  Each monitor gets its own transfer function
+            # (`separate`), because the cap it is scaled to is its own.
+            d = simple.GetDisplayProperties(proxy, view)
             if arr:
-                # Colour carries the TRUE magnitude (linear, un-compressed);
-                # only the arrow length is compressed.
-                simple.ColorBy(d, ("POINTS", arr, "Magnitude"))
-                lut = simple.GetColorTransferFunction(arr)
+                sep = True
+                try:
+                    d.UseSeparateColorMap = 1
+                except Exception:
+                    sep = False
+                try:
+                    lut = simple.GetColorTransferFunction(arr, d, separate=sep)
+                except TypeError:  # older paraview.simple
+                    sep = False
+                    lut = simple.GetColorTransferFunction(arr)
+                # Scaled before the array is attached: rescaling after
+                # would ask the (possibly unbuilt) data for its range.
                 lut.RescaleTransferFunction(0.0, glyph["cap"])
                 try:
                     lut.AutomaticRescaleRangeMode = "Never"
                 except Exception:
                     pass
-                d.SetScalarBarVisibility(view, True)
+                simple.ColorBy(d, ("POINTS", arr, "Magnitude"), separate=sep)
+                d.SetScalarBarVisibility(view, bar)
+            d.Visibility = 1 if visible else 0
             return d
 
         is_first = not shown_any
@@ -1339,43 +1372,39 @@ def build():
                 # until asked for: glyphing the section lattice in 3D
                 # would bury the field under its own arrows.
                 vol = programmable(name + "_volume", "volume", "vtkPolyData", False)
-                make_glyph(vol, name + "_volume_arrows", arrays[0])
+                coloured(make_glyph(vol, name + "_volume_arrows", arrays[0]), arrays[0])
             # One cut, normal to the shortest extent (the largest section);
             # the plane widget turns it to any other orientation.
             sl = simple.Slice(registrationName=name + "_slice", Input=field)
             sl.SliceType = "Plane"
             sl.SliceType.Origin = mon["center"]
             sl.SliceType.Normal = normals[mon["default_axis"]]
+            cut_planes.append(sl.SliceType)
             arrows = make_glyph(sl, name + "_arrows", arrays[0])
+            coloured(arrows, arrays[0], visible=is_first, bar=is_first)
             if len(arrays) > 1:
                 # The imaginary part of a frequency monitor: the field a
                 # quarter period later, ready one click from visible.
-                make_glyph(sl, name + "_arrows_im", arrays[1])
-            if geom is not None:
-                clip = simple.Clip(registrationName="geometry_cut_" + name, Input=geom)
-                clip.ClipType = "Plane"
-                clip.ClipType.Origin = mon["center"]
-                clip.ClipType.Normal = normals[mon["default_axis"]]
-                link_planes("plane_" + name, sl.SliceType, clip.ClipType)
-            if is_first:
-                show_coloured(sl)
-                show_coloured(arrows, arrays[0])
-                shown_any = True
+                coloured(make_glyph(sl, name + "_arrows_im", arrays[1]), arrays[1])
+            if geom is not None and geom_clip is None:
+                geom_clip = clip_geometry(mon["center"], normals[mon["default_axis"]])
+            # The sheet carries the same magnitude on the same scale;
+            # one scalar bar for the pair is enough.
+            coloured(sl, arrays[0], visible=is_first)
+            shown_any = shown_any or is_first
         else:
             # Planar (or lower-dimensional) monitor: the lattice already is
             # the section — glyph it directly, no slicing needed.
             arrows = make_glyph(field, name + "_arrows", arrays[0])
+            coloured(arrows, arrays[0], visible=is_first, bar=is_first)
             if len(arrays) > 1:
-                make_glyph(field, name + "_arrows_im", arrays[1])
-            if geom is not None and mon.get("planar_normal"):
-                clip = simple.Clip(registrationName="geometry_cut_" + name, Input=geom)
-                clip.ClipType = "Plane"
-                clip.ClipType.Origin = mon["center"]
-                clip.ClipType.Normal = normals[mon["planar_normal"]]
-            if is_first:
-                show_coloured(field)
-                show_coloured(arrows, arrays[0])
-                shown_any = True
+                coloured(make_glyph(field, name + "_arrows_im", arrays[1]), arrays[1])
+            if geom is not None and geom_clip is None and mon.get("planar_normal"):
+                geom_clip = clip_geometry(mon["center"], normals[mon["planar_normal"]])
+            coloured(field, arrays[0], visible=is_first)
+            shown_any = shown_any or is_first
+
+    link_planes("cut_plane", cut_planes + ([geom_clip.ClipType] if geom_clip else []))
 
     try:
         simple.GetAnimationScene().UpdateAnimationUsingDataTimeSteps()

@@ -472,13 +472,24 @@ resamples them onto an even lattice, handing out `<field>`,
 high percentile of the magnitude so edge singularities keep their
 direction without dictating the scale) — then `<monitor>_slice`, one
 cut normal to the region's shortest extent whose plane widget turns
-it to any other, `<monitor>_arrows` on the cut, centred on their
-sample points, and `geometry_cut_<monitor>`, the solids clipped by
-the same plane and linked to it, so dragging one drags the other.
-`<monitor>_volume` and `<monitor>_volume_arrows` wait hidden for the
-whole volume, thresholded to the cells carrying field; a frequency
-monitor's `<monitor>_arrows_im` holds the field a quarter period
-later.  Eigenmodes take the same shape one directory up, one `.vtr`
+it to any other, and `<monitor>_arrows` on the cut, centred on their
+sample points.  `<monitor>_volume` and `<monitor>_volume_arrows` wait
+hidden for the whole volume, thresholded to the cells carrying field;
+a frequency monitor's `<monitor>_arrows_im` holds the field a quarter
+period later.
+
+Beside the monitors there is exactly **one** `geometry_cut`: the
+solids clipped by the session's cutting plane.  That plane is shared —
+`geometry_cut` and every monitor's slice are linked, so dragging any
+one of them drags them all and the solids are always opened where the
+field is shown.
+
+Every set of arrows is coloured by its field's magnitude when the
+session is built, whether it is shown at once or waits hidden, so a
+set switched on later comes up on the same scale rather than in a flat
+colour.  The colour carries the true magnitude while the arrow length
+is compressed, and each monitor gets its own transfer function,
+because the cap it is scaled to is its own.  Eigenmodes take the same shape one directory up, one `.vtr`
 per mode.  Tutorial 07 opens such a session.
 
 `geometry.vtm` holds the **whole** model: a geometry declared behind
