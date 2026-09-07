@@ -21463,3 +21463,109 @@ file get one cut per monitor and turn it with the plane widget.  The
 Files: `src/magnelio/io/paraview.py`, `src/magnelio/io/project.py`,
 `docs/methods/sources-monitors.md` (*ParaView export*), tutorials 07
 and 13, `docs/migration-0.7.md`, `README.md`.
+
+## DD-263 — The 3D viewer after the v0.7.0 review: whole model, own toolbar, parallel in the browser
+
+**Date:** 2026-09-07
+**Status:** Accepted (developer decisions from the v0.7.0 review,
+2026-09-06/07; implemented on `feat/viewer-review-0.7`, patch after
+v0.7.0).
+
+**Problem.**  The developer's review of the viewer shipped in v0.7.0
+([[DD-259]] step 0, [[DD-261]]) listed: no isometric projection in the
+browser; no larger window; a line or point monitor crashed
+(`IndexError`); the play button ran over frames only, not over the
+phase; the readouts changed width as the frames played and pushed the
+controls about; two boxes (*Domain box* and PyVista's *bounding box*)
+that did not agree; the vectors' anchor at the arrow's tail, no cones,
+no thickness; no help anywhere (the `show()` docstrings said nothing
+about the mouse); no `show()` on an eigenmode result; and, from a look
+at the TESLA cell, no mirroring across the symmetry planes with the
+planes drawn on the CAD hull instead of at x = 0.
+
+**Findings.**  (a) The scene *is* built with parallel projection, but
+trame's camera serialiser sends position, focal point, view-up and
+clipping range only; `push_camera` (a view button) sends the
+projection, the initial scene load does not — so the browser opened in
+perspective.  (b) PyVista's toolbar shows, in client mode, a *bounding
+box* toggle that draws the bounds of the visible actors (the clipped
+half plus labels), an edge toggle, a ruler, an HTML export, and labels
+its isometric button *Perspective view*; its projection toggle starts
+`False` while the scene is parallel.  (c) `_resample` indexed a
+one-cell axis with `xc.size - 2 = -1`.  (d) The play button and the
+frame slider stood under one `if n_frames > 1`, so a single-bin
+spectrum had no play at all.  (e) The frame readout was `.4g` in a
+span without a minimum width, the position slider a bare thumb label
+without a unit.  (f) `_add_symmetry_planes` placed the sheet on the
+scene's bound, which without `mesh=` is the CAD hull ∪ field extent.
+(g) `FieldState.mirrored` (DD-259 step 1) was there; the viewer never
+derived the planes.  (h) The vtk.js bindings of trame's local view,
+read from its bundle: left drag rotate, middle pan, right/wheel zoom,
+alt + left pan, ctrl + left zoom, shift + left select, alt + shift +
+left roll; the offline viewer of the documentation pages differs
+(shift + left pan, alt + left zoom).
+
+**Decision.**  Three choices put to the developer and accepted (own
+toolbar; mirror in the viewer and draw the planes where declared;
+everything else as routine), implemented as one series:
+
+1. **Projection in the browser.**  `_extend_camera_serializer` wraps
+   trame's camera serialiser to add `parallelProjection` and
+   `parallelScale`, installed in the registry *and* under the name the
+   registry's initialiser rebinds at every server start.
+2. **Own toolbar.**  `_viewer_class()` subclasses PyVista's vuetify3
+   viewer and overrides `ui_controls`: reset, isometric, along x/y/z,
+   projection toggle (starting in the scene's state), rendering toggle
+   in `"trame"` mode, screenshot, **pop-out** (`window.open` of the
+   widget's own URL — the trame server is an HTTP server), **help** (a
+   dialog built from `_HELP_ROWS`).  Installed by pre-registering the
+   instance in PyVista's viewer cache (`_install_viewer`) before
+   `show()` looks it up.  No bounding box, edges, ruler, HTML export.
+   *Domain box* stays: the computational domain including the
+   absorbing buffer.
+3. **Symmetry.**  `show_field(mirror=True)`: with a mesh (an eigenmode
+   result brings its own) the planes the region reaches come from
+   `resolve_mirrors`, every frame is `mirrored(*specs)` on access (one
+   frame held at a time, as before), the PEC mask is folded onto the
+   mirrored cells (`_mirrored_mask`), the scene's mesh overlay is
+   dropped (it no longer matches the frames).  All frame sources go
+   through one `_frames_from_states`.  `_add_symmetry_planes` takes the
+   declared position (`symmetry_entries`; `"SymmetryPMC"` = 0) and
+   falls back to the domain face for a `None` declaration.
+4. **Eigenmodes.**  `EigenmodeResult.show(component, **kwargs)`: the
+   modes are the frames (`kind="mode"`, label `mode i  f GHz`, index
+   first because degenerate pairs share the frequency, unit `a.u.`);
+   `frame=` picks the first mode — `mode=` is the rendering mode of
+   every `show()` and stays so; a complex Bloch mode is turned to its
+   energy maximum (`_mode_state`, the rule of `plot`) before the phase
+   slider.
+5. **Controls.**  A play button per animatable slider (`_PHASE_STEP`
+   10° per tick; the two exclude each other); readouts of fixed width
+   (`min-width` in `ch`, tabular numerals): frame labels with decimals
+   fixed per series from the smallest frame step (`.4g` for one
+   frame), `phase = 120°`, the position with its unit and as many
+   decimals as the slider step needs.
+6. **Vectors.**  Glyphs centred on the sample point (`pv.Arrow(start=(-0.5, 0, 0))`,
+   `pv.Cone`); `glyph="arrow"|"cone"`, `glyph_width=`; *Show* entries
+   renamed *Vectors on cut* and *Field vectors*.
+7. **Lines and points.**  `_arrow_grid` gives a one-cell axis one
+   raster point, `_stencil_axis` reads it as constant.
+8. **Help.**  `_HELP_ROWS` (mouse, camera, cut, show, field) in the
+   dialog, the same bindings in the `show_field`/`show_geometry`
+   docstrings and in the chapter.
+
+**Consequences.**  A field behind symmetry planes is shown whole
+whenever the mesh is at hand; `mirror=False` restores the half.  The
+volume of a mirrored region doubles per plane, so a large monitor
+plays slower mirrored.  The docs' rotatable scenes keep vtk.js's
+bindings (documented as such).  Chrome check of the widget itself:
+open at the time of writing (the developer's look), the state-driven
+tests cover the handlers.  Gates: `tests/unit/test_field_3d.py`
+(`TestLabels`, `TestGlyphs`, `TestLineAndPointMonitors`,
+`TestPhasePlay`, `TestEigenmodes`, `TestMirror`),
+`tests/unit/test_plot_3d.py::TestToolbar`; tutorial 18 shows the
+π-mode of the TESLA cell whole.
+Files: `src/magnelio/post/plot_3d.py`, `src/magnelio/post/field_3d.py`,
+`src/magnelio/post/plot_field.py`, `src/magnelio/solver/eigenmode_result.py`,
+`docs/methods/viewer.md`, `examples/tutorials/plot_18_periodic_tesla_cell.py`.
+

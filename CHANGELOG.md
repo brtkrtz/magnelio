@@ -33,6 +33,36 @@ major version is 0, minor releases may change the public API.
 - `paraview_open.py` works on ParaView builds whose bundled
   `numpy_interface` predates numpy 2.4.
 
+- The 3D viewer's toolbar is its own: camera reset, isometric and
+  axis views, a projection toggle, screenshot, a **pop-out** button
+  that opens the view in a browser tab of its own, and a **help**
+  dialog listing every control and the mouse bindings.  PyVista's
+  bounding-box, edge, ruler and HTML-export buttons are gone (the
+  *Domain box* group is the computational domain).  The browser now
+  opens the scene in parallel projection, as it is built.
+- Field vectors are centred on their sample points; `glyph="cone"`
+  draws cones, `glyph_width=` sets their thickness.  The *Show* menu
+  names them *Vectors on cut* and *Field vectors*.
+- The toolbar's readouts keep a fixed width while the frames play
+  (frame time or frequency with decimals fixed per series, the phase,
+  the cut position with its unit), so the controls no longer shift.
+- The symmetry planes are drawn where they were declared (`x = 0` for
+  `"SymmetryPMC"`), not on the edge of the scene.
+
+### Added
+
+- The 3D viewer shows the whole model: with `mesh=` a field recorded
+  behind symmetry planes is continued across them with the parity of
+  each component (`mirror=False` shows the modelled part).
+- `EigenmodeResult.show()`: the modes on the viewer's cutting plane
+  with a slider over them, labelled by index and eigenfrequency;
+  `frame=` picks the first mode.  A complex Bloch mode is shown at its
+  energy maximum, with the phase slider from there.
+- A play button for the phase of a complex field, also on a
+  single-bin spectrum.
+- Line and point monitors show in the 3D viewer (their row of cells,
+  or their one cell, with the vectors on it).
+
 ### Deprecated
 
 - `ProjectStore.create(paraview=)` has no effect any more; `geometry.vtm`

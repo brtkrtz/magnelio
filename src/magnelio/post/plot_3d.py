@@ -69,8 +69,8 @@ _GROUPS = (
     ("solids", "Solids"),
     ("cut cells", "Grid on cut"),
     ("field", "Field on cut"),
-    ("arrows", "Field arrows"),
-    ("volume arrows", "Arrows in volume"),
+    ("arrows", "Vectors on cut"),
+    ("volume arrows", "Field vectors"),
     ("isosurface", "Isosurfaces"),
     ("ports", "Ports"),
     ("elements", "Lumped elements"),
@@ -168,6 +168,7 @@ def _show_when_server_ready(pl, mode: str, jupyter_kwargs: dict) -> None:
     async def fill() -> None:
         try:
             await server.ready
+            _install_viewer(pl, server, mode)
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", message="Suppress rendering")
                 view = pl.show(
@@ -185,6 +186,177 @@ def _show_when_server_ready(pl, mode: str, jupyter_kwargs: dict) -> None:
     task.add_done_callback(_PENDING_VIEWS.discard)
 
 
+def _extend_camera_serializer() -> None:
+    """Send the projection with the camera to the browser renderer (DD-263).
+
+    trame's scene serialiser describes a camera by position, focal
+    point, view-up and clipping range only, so a scene built with
+    parallel projection opened in perspective in the browser until the
+    first camera push.  The serialiser is wrapped to add the two
+    projection fields vtk.js understands, and the wrapper is installed
+    both in the registry and in the name the registry's initialiser
+    reads, which runs again at every server start.
+    """
+    try:
+        from trame_vtk.modules.vtk.serializers import initialize as init_mod  # noqa: PLC0415
+        from trame_vtk.modules.vtk.serializers import registry, render_windows  # noqa: PLC0415
+    except ImportError:  # pragma: no cover - the [jupyter] extra is absent
+        return
+    base = render_windows.camera_serializer
+    if getattr(base, "_magnelio_projection", False):
+        return
+
+    def camera_serializer(parent, instance, obj_id, context, depth):
+        out = base(parent, instance, obj_id, context, depth)
+        props = out.setdefault("properties", {})
+        props["parallelProjection"] = int(instance.GetParallelProjection())
+        props["parallelScale"] = float(instance.GetParallelScale())
+        return out
+
+    camera_serializer._magnelio_projection = True  # type: ignore[attr-defined]
+    render_windows.camera_serializer = camera_serializer
+    init_mod.camera_serializer = camera_serializer
+    for name in ("vtkCamera", "vtkOpenGLCamera"):
+        registry.register_instance_serializer(name, camera_serializer)
+
+
+# The help dialog's rows: (control, what it does); an empty second
+# entry marks a section heading.  The docstrings and the chapter list
+# the same bindings.
+_HELP_ROWS = (
+    ("Mouse (browser view)", ""),
+    ("left drag", "orbit"),
+    ("middle drag, or alt + left drag", "pan"),
+    ("right drag, wheel, or ctrl + left drag", "zoom"),
+    ("alt + shift + left drag", "roll"),
+    ("Camera", ""),
+    ("reset", "the whole scene in view"),
+    ("iso, x, y, z", "isometric view, or looking along an axis"),
+    ("projection", "parallel (as an engineering drawing) or perspective"),
+    ("screenshot", "save the view as a PNG"),
+    ("pop out", "the same view in a browser tab of its own"),
+    ("Cut", ""),
+    ("Cut, slider, Flip", "the cutting plane's normal, its position, the side removed"),
+    ("undo, reset", "the previous cut; the initial cut"),
+    (
+        "Show",
+        "the object groups drawn — solids, grid on cut, field on cut, vectors on cut, "
+        "field vectors (in the volume), isosurfaces, ports, lumped elements, wires, labels, "
+        "symmetry planes, domain box (the computational domain including the absorbing buffer)",
+    ),
+    ("Field", ""),
+    ("play, slider, readout", "the frame: time, frequency or mode"),
+    ("play, phase", "a complex field at Re(F·e^{jφ}); play turns the phase"),
+    ("Field", "|E|, |H|, or one signed component"),
+    ("iso %, arrows", "the isosurface level; the number of arrows along the longest axis"),
+)
+
+
+def _viewer_class():
+    """PyVista's viewer with this module's toolbar (DD-263).
+
+    PyVista's own row carries buttons that do not fit a field viewer —
+    a bounding box of the actors (which is the clipped half, and not
+    the domain box), edge and ruler toggles, an HTML export — and
+    labels its isometric button *Perspective view*.  The subclass keeps
+    the camera controls, names them, starts the projection toggle in
+    the state the scene is built in, and adds a pop-out and a help
+    button.  Built lazily: the trame stack is an optional extra.
+    """
+    from pyvista.trame.ui.vuetify3 import Viewer, button, checkbox  # noqa: PLC0415
+    from trame.widgets import html  # noqa: PLC0415
+    from trame.widgets import vuetify3 as vuetify  # noqa: PLC0415
+
+    class MagnelioViewer(Viewer):
+        def ui_controls(self, mode=None, default_server_rendering=True, v_show=None):
+            with vuetify.VRow(
+                v_show=v_show,
+                classes="pa-0 ma-0 align-center fill-height",
+                style="flex-wrap: nowrap",
+            ) as row:
+                server = row.server
+                server.state.change(self.SERVER_RENDERING)(self.on_rendering_mode_change)
+                server.state.change(self.PARALLEL)(self.on_parallel_projection_change)
+                # The scene is built with parallel projection; the toggle
+                # must say so, or its first click would switch nothing.
+                server.state[self.PARALLEL] = bool(
+                    self.plotter.renderer.camera.GetParallelProjection()
+                )
+                k_help = f"{self.plotter._id_name}_help"
+                server.state[k_help] = False
+                vuetify.VDivider(vertical=True, classes="mr-1")
+                button(click=self.reset_camera, icon="mdi-arrow-expand-all", tooltip="Reset camera")
+                vuetify.VDivider(vertical=True, classes="mx-1")
+                button(click=self.view_isometric, icon="mdi-axis-arrow", tooltip="Isometric view")
+                button(click=self.view_yz, icon="mdi-axis-x-arrow", tooltip="View along x")
+                button(click=self.view_xz, icon="mdi-axis-y-arrow", tooltip="View along y")
+                button(click=self.view_xy, icon="mdi-axis-z-arrow", tooltip="View along z")
+                checkbox(
+                    model=(self.PARALLEL, server.state[self.PARALLEL]),
+                    icons=("mdi-perspective-less", "mdi-perspective-more"),
+                    tooltip=f"Projection ({{{{ {self.PARALLEL} ? 'parallel' : 'perspective' }}}})",
+                )
+                if mode == "trame":
+                    vuetify.VDivider(vertical=True, classes="mx-1")
+                    checkbox(
+                        model=(self.SERVER_RENDERING, default_server_rendering),
+                        icons=("mdi-dns", "mdi-open-in-app"),
+                        tooltip="Rendering "
+                        f"({{{{ {self.SERVER_RENDERING} ? 'in the kernel' : 'in the browser' }}}})",
+                    )
+                vuetify.VDivider(vertical=True, classes="mx-1")
+
+                def attach_screenshot():
+                    return server.protocol.addAttachment(self.screenshot())
+
+                button(
+                    click="utils.download('screenshot.png', "
+                    f"trigger('{server.trigger_name(attach_screenshot)}'), 'image/png')",
+                    icon="mdi-file-png-box",
+                    tooltip="Save a screenshot",
+                )
+                button(
+                    click="window.open(window.location.href, '_blank')",
+                    icon="mdi-open-in-new",
+                    tooltip="Open in a browser tab of its own",
+                )
+                button(click=f"{k_help} = true", icon="mdi-help-circle-outline", tooltip="Controls")
+                with vuetify.VDialog(v_model=(k_help, False), max_width=640, scrollable=True):
+                    with vuetify.VCard():
+                        vuetify.VCardTitle("Viewer controls")
+                        with vuetify.VCardText(), html.Table(style="border-spacing: 8px 2px;"):
+                            for control, action in _HELP_ROWS:
+                                with html.Tr():
+                                    if action:
+                                        html.Td(control, style="white-space: nowrap;")
+                                        html.Td(action)
+                                    else:
+                                        html.Th(
+                                            control,
+                                            colspan=2,
+                                            style="text-align: left; padding-top: 8px;",
+                                        )
+                        with vuetify.VCardActions():
+                            vuetify.VSpacer()
+                            vuetify.VBtn("Close", click=f"{k_help} = false")
+
+    return MagnelioViewer
+
+
+def _install_viewer(pl, server, mode: str | None) -> None:
+    """Register this module's viewer for *pl* before PyVista's ``show`` looks one up."""
+    try:
+        from pyvista.trame import ui as pv_ui  # noqa: PLC0415
+    except ImportError:  # pragma: no cover - the [jupyter] extra is absent
+        return
+    if pl._id_name in pv_ui._VIEWERS:
+        return
+    viewer_class = _viewer_class()
+    pv_ui._VIEWERS[pl._id_name] = viewer_class(
+        pl, server=server, suppress_rendering=mode == "client"
+    )
+
+
 def _configure_pyvista() -> None:
     """One-time process settings the viewer relies on.
 
@@ -200,8 +372,12 @@ def _configure_pyvista() -> None:
       user is respected.
     * trame's VTK serialiser calls deprecated VTK 9.6 accessors; the
       warnings carry nothing a user can act on.
+    * The scene serialiser learns the camera's projection, so the
+      browser opens the view in parallel projection like the kernel.
     """
     import pyvista as pv  # noqa: PLC0415
+
+    _extend_camera_serializer()
 
     try:
         from vtkmodules.vtkAcceleratorsVTKmFilters import vtkmFilterOverrides  # noqa: PLC0415
@@ -740,19 +916,36 @@ def _add_face_port(pl, scene: _Scene, port, *, bounds, unit_scale, index, name, 
         )
 
 
-def _add_symmetry_planes(pl, scene: _Scene, boundary_conditions, *, bounds) -> None:
-    """Translucent sheets on the domain faces declared as symmetry planes."""
+def _add_symmetry_planes(
+    pl, scene: _Scene, boundary_conditions, *, bounds, unit_scale: float = 1.0
+) -> None:
+    """Translucent sheets on the declared symmetry planes.
+
+    A plane declared with a position (``"SymmetryPMC"`` stands for the
+    plane through the origin) is drawn there: with a fully modelled
+    geometry the scene's bounds reach past the plane, and the sheet
+    then cuts through the model where the solver cut it.  A plane
+    declared without one (the geometry ends at it) lies on the domain
+    face.
+    """
     import pyvista as pv  # noqa: PLC0415
+
+    from magnelio.boundaries.boundary_conditions import symmetry_entries  # noqa: PLC0415
 
     symmetry = getattr(boundary_conditions, "symmetry", None)
     if not symmetry:
         return
+    declared = symmetry_entries(boundary_conditions)
     for face in symmetry:
         kind = str(getattr(boundary_conditions, face, ""))
         axis = _AXIS_INDEX.get(face[0])
         if axis is None:
             continue
-        pos = bounds[2 * axis + 1] if face.endswith("max") else bounds[2 * axis]
+        at = declared.get(face)
+        if at is not None:
+            pos = float(at) * unit_scale
+        else:
+            pos = bounds[2 * axis + 1] if face.endswith("max") else bounds[2 * axis]
         b = list(bounds)
         b[2 * axis] = b[2 * axis + 1] = pos
         _add_overlay(
@@ -823,7 +1016,13 @@ def _add_overlays(
             name = str(getattr(element, "name", None) or f"element{i + 1}")
             line_feature(i, "elements", name, element.start, element.end, _ELEMENT_COLOR)
 
-    _add_symmetry_planes(pl, scene, getattr(geometry, "boundary_conditions", None), bounds=bounds)
+    _add_symmetry_planes(
+        pl,
+        scene,
+        getattr(geometry, "boundary_conditions", None),
+        bounds=bounds,
+        unit_scale=unit_scale,
+    )
     scene.domain_actor = pl.add_mesh(
         pv.Box(bounds).outline(), color=_DOMAIN_COLOR, line_width=1, name="domain"
     )
@@ -836,11 +1035,12 @@ def _add_overlays(
 
 def _attach_controls(scene: _Scene, server) -> Any:
     """Register state handlers and return the toolbar builder."""
+    from trame.widgets import html  # noqa: PLC0415
     from trame.widgets import vuetify3 as vuetify  # noqa: PLC0415
 
     key = f"mio3d_{id(scene)}"
     k_axis, k_pos, k_flip = f"{key}_axis", f"{key}_pos", f"{key}_flip"
-    k_min, k_max, k_step = f"{key}_min", f"{key}_max", f"{key}_step"
+    k_min, k_max, k_step, k_dec = f"{key}_min", f"{key}_max", f"{key}_step", f"{key}_dec"
     k_reset, k_undo, k_show = f"{key}_reset", f"{key}_undo", f"{key}_show"
     state, ctrl = server.state, server.controller
     groups = scene.groups_present()
@@ -854,11 +1054,25 @@ def _attach_controls(scene: _Scene, server) -> Any:
         span = max(hi - lo, 1e-12)
         return lo, hi, span / 400.0
 
+    def decimals_of(step: float) -> int:
+        # Enough digits to tell two slider steps apart, and no more.
+        return int(np.clip(np.ceil(-np.log10(max(step, 1e-300))), 0, 6))
+
+    # The position readout is as wide as the widest value it can show,
+    # so the toolbar does not reflow while the slider moves.
+    pos_chars = 3 + len(scene.unit)
+    for axis in _AXIS_INDEX:
+        lo_a, hi_a, step_a = slider_range(axis)
+        digits = decimals_of(step_a)
+        for v in (lo_a, hi_a):
+            pos_chars = max(pos_chars, len(f"{v:.{digits}f}") + 1 + len(scene.unit))
+
     lo, hi, step = slider_range(scene.cut.axis)
     state[k_axis] = scene.cut.axis or "off"
     state[k_pos] = scene.cut.position
     state[k_flip] = scene.cut.flip
     state[k_min], state[k_max], state[k_step] = lo, hi, step
+    state[k_dec] = decimals_of(step)
     state[k_show] = [g for g in groups if g not in scene.hidden_groups]
     state[f"{key}_groups"] = [{"title": titles[g], "value": g} for g in groups]
 
@@ -898,6 +1112,7 @@ def _attach_controls(scene: _Scene, server) -> Any:
         push_state(_CutState(axis, pos, scene.cut.flip))
         with state:
             state[k_min], state[k_max], state[k_step] = lo, hi, step
+            state[k_dec] = decimals_of(step)
             state[k_pos] = pos
         refresh()
 
@@ -932,6 +1147,7 @@ def _attach_controls(scene: _Scene, server) -> Any:
         with state:
             state[k_axis] = new.axis or "off"
             state[k_min], state[k_max], state[k_step] = lo, hi, step
+            state[k_dec] = decimals_of(step)
             state[k_pos] = new.position
             state[k_flip] = new.flip
         refresh()
@@ -962,11 +1178,15 @@ def _attach_controls(scene: _Scene, server) -> Any:
             min=(k_min, lo),
             max=(k_max, hi),
             step=(k_step, step),
-            thumb_label=True,
             hide_details=True,
             density="compact",
             style="width: 220px; margin-left: 8px;",
             disabled=(f"{k_axis} === 'off'",),
+        )
+        html.Span(
+            f"{{{{ Number({k_pos}).toFixed({k_dec}) }}}} {scene.unit}",
+            style=f"margin-left: 6px; white-space: nowrap; min-width: {pos_chars}ch; "
+            "font-variant-numeric: tabular-nums;",
         )
         vuetify.VSwitch(
             v_model=(k_flip, state[k_flip]),
@@ -1148,6 +1368,8 @@ def _display(scene: _Scene, mode: str | None, notebook: bool):
         if server is not None and not server.running and _loop_is_running():
             _show_when_server_ready(pl, mode, jupyter_kwargs)
             return None
+        if server is not None:
+            _install_viewer(pl, server, mode)
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="Suppress rendering")
             pl.show(jupyter_backend=mode, jupyter_kwargs=jupyter_kwargs)
@@ -1247,6 +1469,14 @@ def show_geometry(
 
     Notes
     -----
+    **Controls** (notebook widget).  The toolbar: camera buttons (reset,
+    isometric, along x/y/z, parallel or perspective projection, a
+    screenshot, pop-out into a browser tab of its own, help), then
+    *Cut* / position / *Flip* / undo / reset and the *Show* menu of the
+    object groups.  The mouse: left drag orbits, middle drag (or alt +
+    left) pans, right drag or the wheel zooms, alt + shift + left
+    rolls.  The help button lists the same.
+
     The widget needs the ``trame`` stack (``pip install magnelio[jupyter]``
     or the conda-forge packages ``trame``, ``trame-vtk``,
     ``trame-vuetify``).  Without it the view falls back to a static
