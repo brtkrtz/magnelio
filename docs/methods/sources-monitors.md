@@ -534,7 +534,11 @@ launches an interpreter, which is how a sandboxed ParaView is reached:
 export MAGNELIO_PVPYTHON="flatpak run --command=pvpython org.paraview.ParaView"
 ```
 
-`bake_state=False` skips the state file altogether.  Two build notes: ParaView 6.0 bundles a
+`bake_state=False` skips the state file altogether.  When a state file
+was asked for and none could be baked, the export says why — no
+ParaView found, or a setting that names nothing.  In a notebook, set
+the variable with `os.environ[...] = ...`: IPython's `%set_env` keeps
+the quotes you type inside the value.  Two build notes: ParaView 6.0 bundles a
 `numpy_interface` older than numpy 2.4, which stops every Python
 filter — the generated script shims that for `paraview --script` and
 for the bake, but a state file opened on such a build cannot be

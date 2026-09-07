@@ -280,6 +280,44 @@ def test_the_interpreter_may_be_a_launcher_command(monkeypatch):
     assert resolve_pvpython("no-such-runner run --command=pvpython app") is None
 
 
+def test_a_command_quoted_as_a_whole_still_resolves(monkeypatch):
+    """``%set_env VAR="a b c"`` keeps the quotes in the value.
+
+    ``shlex`` then reads the lot as one argument, which names nothing —
+    and the bake used to fall away in silence.  A single token that
+    carries whitespace and resolves to no file is split again; a real
+    path with spaces resolves first and never reaches that branch.
+    """
+    from magnelio.io.paraview import resolve_pvpython
+
+    monkeypatch.delenv("MAGNELIO_PVPYTHON", raising=False)
+    quoted = f'"{sys.executable} -X utf8"'
+    assert resolve_pvpython(quoted) == [sys.executable, "-X", "utf8"]
+    monkeypatch.setenv("MAGNELIO_PVPYTHON", quoted)
+    assert resolve_pvpython() == [sys.executable, "-X", "utf8"]
+
+
+def test_a_bake_that_cannot_run_says_so(tmp_path, monkeypatch):
+    """The absent state file must not be the only sign (DD-265).
+
+    ``export_paraview`` returns ``state: None`` either way — because no
+    ParaView is installed, or because the setting names nothing — and
+    the two need different answers from the caller.
+    """
+    monkeypatch.setenv("MAGNELIO_PVSM_BAKE", "1")
+    script = tmp_path / "paraview_open.py"
+    script.write_text("print('never runs')\n", encoding="utf-8")
+
+    monkeypatch.setenv("MAGNELIO_PVPYTHON", "no-such-pvpython-anywhere")
+    with pytest.warns(UserWarning, match="is not an executable"):
+        assert bake_pvsm(script, tmp_path / "s.pvsm") is False
+
+    monkeypatch.delenv("MAGNELIO_PVPYTHON")
+    monkeypatch.setattr("shutil.which", lambda _name: None)
+    with pytest.warns(UserWarning, match="no 'pvpython' on PATH"):
+        assert bake_pvsm(script, tmp_path / "s.pvsm") is False
+
+
 def test_export_vtm_blocks_names_materials(tmp_path):
     pytest.importorskip("OCC.Core.BRepPrimAPI")
     vtk = pytest.importorskip("vtk")

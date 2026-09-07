@@ -60,6 +60,11 @@ major version is 0, minor releases may change the public API.
 - `paraview_open.py` run with a plain Python says what it is and how to
   open it, instead of failing on an import whose message points at the
   sibling `paraview/` data directory.
+- An export that could not bake the state file says why, instead of
+  returning `state: None` and leaving the caller to guess whether
+  ParaView is missing or the setting names nothing.  A command quoted as
+  a whole — the shape IPython's `%set_env` leaves in the value — is
+  taken apart rather than read as one argument that names no file.
 
 - The 3D viewer's toolbar is its own: camera reset, isometric and
   axis views, a projection toggle, screenshot, a **pop-out** button

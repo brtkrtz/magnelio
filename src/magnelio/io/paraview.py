@@ -1495,8 +1495,21 @@ def resolve_pvpython(pvpython=None) -> list[str] | None:
         parts = shlex.split(named)
     if not parts:
         return None
-    exe = shutil.which(parts[0]) or (parts[0] if Path(parts[0]).is_file() else None)
-    return None if exe is None else [exe, *parts[1:]]
+    resolved = _which(parts[0])
+    if resolved is None and len(parts) == 1 and parts[0].strip() != parts[0].split()[0]:
+        # One token carrying whitespace and naming nothing: a command
+        # someone quoted as a whole.  IPython's ``%set_env VAR="a b c"``
+        # keeps the quotes in the value, and shlex then reads the lot as
+        # a single argument.  A real path with spaces resolved above and
+        # never reaches here.
+        parts = parts[0].split()
+        resolved = _which(parts[0])
+    return None if resolved is None else [resolved, *parts[1:]]
+
+
+def _which(name: str) -> str | None:
+    """*name* as an executable path, or ``None``."""
+    return shutil.which(name) or (name if Path(name).is_file() else None)
 
 
 def _stamp_version(script_path: Path, version: str) -> None:
@@ -1536,6 +1549,30 @@ def bake_pvsm(
         return False
     cmd = resolve_pvpython(pvpython)
     if cmd is None:
+        # Silence here is what makes a mistyped setting expensive: the
+        # call returns, the state file is simply absent, and nothing
+        # says which of the two it was.
+        named = pvpython or os.environ.get("MAGNELIO_PVPYTHON")
+        if named:
+            warnings.warn(
+                f"no ParaView state file was baked: {named!r} is not an executable, so "
+                f"nothing could run the session script.  Note that a value quoted as a "
+                f"whole is one argument, not a command — IPython's %set_env keeps those "
+                f"quotes.  The session opens without a state file: "
+                f"paraview --script=paraview_open.py",
+                UserWarning,
+                stacklevel=4,
+            )
+        else:
+            warnings.warn(
+                "no ParaView state file was baked: no 'pvpython' on PATH.  Name one in "
+                "MAGNELIO_PVPYTHON or in export_paraview(pvpython=...) — a path, or the "
+                "command that launches one, e.g. "
+                "flatpak run --command=pvpython org.paraview.ParaView.  The session opens "
+                "without a state file: paraview --script=paraview_open.py",
+                UserWarning,
+                stacklevel=4,
+            )
         return False
     pvsm_path = Path(pvsm_path)
     cmd = [
@@ -1550,6 +1587,15 @@ def bake_pvsm(
     except (OSError, subprocess.TimeoutExpired):
         return False
     baked = proc.returncode == 0 and pvsm_path.exists()
+    if not baked:
+        tail = (proc.stderr or proc.stdout or "").strip().splitlines()[-3:]
+        warnings.warn(
+            f"no ParaView state file was baked: {' '.join(cmd[: len(cmd) - 4])} exited "
+            f"with {proc.returncode} or wrote nothing.  The session opens without one: "
+            f"paraview --script=paraview_open.py" + ("\n" + "\n".join(tail) if tail else ""),
+            UserWarning,
+            stacklevel=4,
+        )
     if baked:
         for line in (proc.stdout or "").splitlines():
             if line.startswith(_VERSION_MARKER):
