@@ -72,7 +72,7 @@ extensions = [
     "sphinx_design",
 ]
 
-# 3D views (``model.plot()``) become a two-tab figure in the gallery:
+# 3D views (``model.show()``) become a two-tab figure in the gallery:
 # PyVista's dynamic scraper takes a screenshot of every plotter a script
 # showed (the default tab, and the thumbnail) and exports the same scene
 # as a ``.vtksz`` file that the second tab renders in the browser.

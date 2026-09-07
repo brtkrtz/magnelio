@@ -735,17 +735,15 @@ class TestParaViewSymmetry:
         )
         text = script.read_text(encoding="utf-8")
         compile(text, str(script), "exec")  # the generated file must parse
-        # The geometry is reflected by the renderer; the fields are
-        # mirrored inside the monitor's Python filter (DD-262).
-        assert "simple.Reflect" in text
+        # The fields are mirrored inside the monitor's Python filter
+        # (DD-262); the solids are already whole in geometry.vtm, so the
+        # session builds no reflection of its own (DD-265) — ParaView
+        # renamed that proxy between releases and a state file naming
+        # the old spelling lost its whole geometry branch.
         assert "simple.ProgrammableFilter" in text
         assert '"symmetry"' in text or "symmetry" in text
-        # Both property sets of the reflection filter must stay in the
-        # script: renderers disagree on which one they expose, and the
-        # session showed half a model for want of the newer names
-        # (DD-169).
-        for prop in ("PlaneMode", "ReflectionPlane", "Plane", "Center"):
-            assert prop in text
+        for gone in ("simple.Reflect", "PlaneMode", "ReflectionPlane", "symclip"):
+            assert gone not in text, gone
 
 
 class TestStoreRoundTrip:

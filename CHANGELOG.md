@@ -32,14 +32,50 @@ major version is 0, minor releases may change the public API.
   reflection filter treated it as polar).
 - `paraview_open.py` works on ParaView builds whose bundled
   `numpy_interface` predates numpy 2.4.
+- `geometry.vtm` holds the whole model: solids declared behind symmetry
+  planes are clipped to the simulated half and mirrored while the file
+  is written.  The session no longer builds a reflection of its own —
+  ParaView renamed that filter's proxy between 6.0 and 6.1, and a state
+  file naming the older spelling lost its solids, its geometry clip and
+  the slice linked to it on the newer release, with a flood of *Missing
+  input data* errors.
+- The ParaView session cuts the geometry **once**: one `geometry_cut`
+  whose plane every monitor's slice shares, so dragging any one of them
+  drags them all.  There used to be a clip and a plane link per monitor.
+- Every set of arrows in the session is coloured by its field's
+  magnitude when the session is built, hidden ones included, so a set
+  switched on later comes up on the scale of the visible one instead of
+  in a flat colour.  The field sheet on the cut carries the same scale
+  explicitly, and each monitor gets its own transfer function, because
+  the magnitude cap it is scaled to is its own.
+- A `.pvsm` is bound to the ParaView that baked it, so
+  `export_paraview(pvpython=…)` (or `MAGNELIO_PVPYTHON`) picks the one
+  to bake for when a machine carries several, and the version that
+  baked it is written into the header of `paraview_open.py` beside it.
+  `paraview_open.py` builds the session live and runs on any ParaView;
+  the chapter now says which of the two to open.
 
 - The 3D viewer's toolbar is its own: camera reset, isometric and
   axis views, a projection toggle, screenshot, a **pop-out** button
   that opens the view in a browser tab of its own, and a **help**
   dialog listing every control and the mouse bindings.  PyVista's
-  bounding-box, edge, ruler and HTML-export buttons are gone (the
-  *Domain box* group is the computational domain).  The browser now
-  opens the scene in parallel projection, as it is built.
+  bounding-box and edge buttons are gone (the *Domain box* group is the
+  computational domain).  The browser now opens the scene in parallel
+  projection, as it is built.
+- The toolbar's screenshot is the picture on screen.  Rendering in the
+  browser it is taken there, so a camera turned with the mouse — and a
+  view popped out into its own tab — comes out as it stands; before,
+  the button either failed with *This plotter has not yet been set up
+  and rendered* or saved the kernel's untouched camera.
+- The projection toggle switches both ways: the change is pushed to the
+  browser's camera, not only to the kernel's.
+- The browser tab of a view is called *Magnelio Viewer* (with the name
+  of what it shows, for a field), not *PyVista*.
+- A stored eigenmode analysis reads like an in-RAM one:
+  `AnalysisEigenmode(..., project=…).run()` returns the project reader,
+  and the reader now answers to `frequencies`, `n_modes`, `field`,
+  `show` and `plot` — as the reader of a scattering analysis has always
+  answered to `S`, `db` and `plot_s`.
 - Field vectors are centred on their sample points; `glyph="cone"`
   draws cones, `glyph_width=` sets their thickness.  The *Show* menu
   names them *Vectors on cut* and *Field vectors*.
@@ -51,6 +87,11 @@ major version is 0, minor releases may change the public API.
 
 ### Added
 
+- `GeometryModel.show()` — the 3D view of the model, under the name
+  every interactive view in magnelio carries.
+- The viewer's toolbar has a **ruler** again (a measured box around the
+  scene, its axes titled in the display unit) and an **HTML export**
+  that saves the scene as a standalone page needing no kernel.
 - The 3D viewer shows the whole model: with `mesh=` a field recorded
   behind symmetry planes is continued across them with the parity of
   each component (`mirror=False` shows the modelled part).
@@ -65,6 +106,9 @@ major version is 0, minor releases may change the public API.
 
 ### Deprecated
 
+- `GeometryModel.plot()` — use `GeometryModel.show()`.  `plot` draws
+  into matplotlib everywhere else in the library; the interactive 3D
+  view is `show`.  The alias keeps working and warns.
 - `ProjectStore.create(paraview=)` has no effect any more; `geometry.vtm`
   is written by the ParaView export.
 

@@ -800,7 +800,7 @@ class TestOCCExtractCriticalPlanes:
 class TestGeometryQueriesIgnoreTriangulation:
     """Geometric queries must not read rendering state (KB-012).
 
-    ``JupyterRenderer.DisplayShape`` (``model.plot()``) tessellates the
+    ``JupyterRenderer.DisplayShape`` (``model.show()``) tessellates the
     cached solids in place, and ``BRepBndLib::Add`` prefers a present
     triangulation — whose node box, enlarged by the tessellation
     deflection, differs from the analytic face box by whole tenths of
@@ -4170,3 +4170,17 @@ class TestOverlapBatching:
         assert check_pairwise_overlaps(shapes, materials=materials, tolerance=2e-9) == []
         found = check_pairwise_overlaps(shapes, materials=materials, tolerance=0.5e-9)
         assert [(i, j) for i, j, _ in found] == [(0, 6), (0, 7), (0, 8)]
+
+
+def test_plot_is_a_deprecated_alias_of_show():
+    """``plot`` draws into matplotlib elsewhere; the 3D view is ``show`` (DD-264)."""
+    import pytest
+
+    import magnelio as mio
+    from magnelio import geo
+
+    model = mio.GeometryModel(background="pec")
+    model.add(geo.Brick(origin=(0, 0, 0), size=(1e-3, 1e-3, 1e-3), material="air"))
+    with pytest.deprecated_call(match="use GeometryModel.show"):
+        pl = model.plot(mode="none")
+    assert pl is not None

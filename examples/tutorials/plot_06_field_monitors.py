@@ -61,7 +61,7 @@ model.add(geo.Union(collinear, h_arm, e_arm, name="tee"))
 # inside the tee — the hollow the waves live in — with the E-arm
 # standing up from the broad wall of the collinear guide.
 
-model.plot()
+model.show()
 
 # %%
 # Two cross-sections show the whole device: the mid-height cut

@@ -278,8 +278,12 @@ for name in sorted(os.listdir(run_dir)):
 # for the whole volume — assembled and scaled to the data, so the
 # first thing you see is the field, not a grey box.
 # ``paraview_open.py`` builds the same session from scratch
-# (``paraview --script=paraview_open.py``) if you prefer a live
-# pipeline over a state file; after a resume, call ``export_paraview``
+# (``paraview --script=paraview_open.py``).  Prefer it whenever the
+# state file misbehaves: it works on any ParaView, while a ``.pvsm`` is
+# bound to the release that baked it — the header of the script says
+# which one that was, and ``export_paraview(pvpython=…)`` (or
+# ``MAGNELIO_PVPYTHON``) picks the ParaView to bake for when a machine
+# carries several.  After a resume, call ``export_paraview``
 # again and the set is regenerated.  A view of this very project,
 # after dragging the slice plane to the tee's mid-height and switching
 # the volume arrows on:

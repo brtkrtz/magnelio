@@ -21569,3 +21569,244 @@ Files: `src/magnelio/post/plot_3d.py`, `src/magnelio/post/field_3d.py`,
 `src/magnelio/post/plot_field.py`, `src/magnelio/solver/eigenmode_result.py`,
 `docs/methods/viewer.md`, `examples/tutorials/plot_18_periodic_tesla_cell.py`.
 
+## DD-264 — The second viewer pass: a screenshot of what is on screen, a stored eigenmode result that reads like the in-RAM one
+
+**Date:** 2026-09-07
+**Status:** Accepted (developer findings from a second pass over the
+v0.7.0 review, 2026-09-07; implemented after [[DD-263]], patch after
+v0.7.0).
+
+**Problem.**  Five findings from the developer's second look.  (1)
+`AnalysisEigenmode(..., project=…).run()` returns a
+`Project`, and `Project` had no `plot`, `show`, `frequencies` or
+`field`: putting a project name on an eigenmode analysis changed what
+the returned object *can do*, while [[DD-070]]/[[DD-224]] had made
+exactly that impossible for the scattering analyses (the reader
+implements the scattering contract).  (2) The toolbar's PNG button
+raised `AttributeError: This plotter has not yet been set up and
+rendered with show()` in a notebook cell, produced a picture of the
+kernel's camera (not the browser's) in the popped-out tab, and
+sometimes did nothing at all.  (3) The projection toggle switched
+once and then stood still.  (4) The ruler and the HTML export, dropped
+with PyVista's toolbar in DD-263, were wanted back.  (5) The browser
+tab was called *PyVista*, and `GeometryModel.plot()` — the 3D view —
+carried the name every *matplotlib* drawing in magnelio carries.
+
+**Findings.**  (a) In client rendering the viewer is built with
+`suppress_rendering=True`, so `Plotter.render()` returns without
+rendering, `_rendered` stays `False` and `Plotter.screenshot` refuses:
+the kernel has no rendered window to photograph, and its camera is not
+the one the user turned.  PyVista hides its own PNG button in that
+mode for the same reason.  (b) trame's local view exposes
+`captureImage()`, which resolves to a PNG blob and is exactly the
+picture on screen; `utils.download` awaits a promise and accepts a
+blob as content, and the template's scope carries `trame` (its
+`refs` hold the view) — the Vue `$refs` of the toolbar's own component
+do not.  (c) `on_parallel_projection_change` ends in `update()`, which
+pushes the scene; the browser applies it to the actors and keeps its
+own camera.  Only `push_camera` carries `parallelProjection`, so the
+toggle never reached the picture (measured in Chrome: the state
+flipped, the image did not).  (d) `plotter._id_name` is
+`P_{hex(id(plotter))}_{len(_ALL_PLOTTERS)}` and a closed plotter is
+dropped from `_ALL_PLOTTERS`: six plotters opened and closed in a row
+all read as the same name.  PyVista caches one viewer per name
+forever, and `_install_viewer` honoured a cached entry — so a toolbar
+could drive a plotter that no longer exists.  That is the "sometimes
+nothing happens" of (2).
+
+**Decision.**
+
+1. **The reader is the result, for eigenmodes too.**  `Project.__getattr__`
+   serves `frequencies`, `modes`, `n_modes`, `solver_info`, `field`,
+   `show` and `plot` off `self.eigenmodes`.  A project written by
+   another analysis does not have them — the lookup fails, so
+   `hasattr` says no instead of a call failing later, and the message
+   names the analysis that wrote the project.
+2. **The screenshot is taken where the picture is drawn.**
+   `_screenshot_js` writes the button's click expression per rendering
+   mode: `trame.refs['view_…'].captureImage()` in the browser, the
+   kernel attachment in server rendering, and the switchable view picks
+   per `SERVER_RENDERING`.
+3. **The projection reaches the browser.**  `MagnelioViewer.on_parallel_projection_change`
+   follows PyVista's handler with `update_camera()` (push_camera +
+   update_image).
+4. **Ruler and HTML export return**, the ruler with the display unit in
+   its axis titles (`show_grid(xtitle="x [mm]", …)`, the unit parked on
+   the plotter at build time).
+5. **Names.**  The trame state's `trame__title` is set after PyVista's
+   `initialize` has written *PyVista* over it: `Magnelio Viewer`, plus
+   what the view shows (a field view carries its source's name).
+   `GeometryModel.show()` is the 3D view; `plot()` stays as a
+   deprecated alias — `plot` is matplotlib everywhere else in the
+   library.
+6. **A recycled plotter name is not a viewer.**  `_install_viewer`
+   replaces a cached entry whose `plotter` is not the one being shown.
+
+**Consequences.**  The PNG button now saves what the user sees,
+including a camera turned in the browser; the file is produced by
+vtk.js, so it carries the browser's anti-aliasing rather than the
+kernel's SSAA.  `GeometryModel.plot()` warns from this patch on; the
+examples and the chapter use `show()`.  Checked in Chrome against a
+trame server built from the same scene code
+(`investigations/viewer-review-followup/` — internal dossier): tab
+name, projection both ways, ruler, PNG with the browser camera, HTML
+export.  Gates: `tests/unit/test_plot_3d.py::TestToolbar`,
+`tests/unit/test_project_store.py::TestEigenModeRoundTrip`,
+`tests/unit/test_geometry.py::test_plot_is_a_deprecated_alias_of_show`.
+Files: `src/magnelio/post/plot_3d.py`, `src/magnelio/post/field_3d.py`,
+`src/magnelio/geo/__init__.py`, `src/magnelio/io/project.py`,
+`src/magnelio/analysis/eigenmode.py`, `docs/methods/viewer.md`,
+`docs/methods/projects-and-runs.md`.
+
+## DD-265 — A ParaView state file is bound to its ParaView: the geometry is completed at export time, and the bake names its interpreter
+
+**Date:** 2026-09-07
+**Status:** Accepted (developer decision, 2026-09-07: all three parts;
+implemented after [[DD-264]], patch after v0.7.0).
+
+**Problem.**  The developer moved from ParaView 6.0.1 to 6.1 (which
+ends the numpy 2.4 breakage [[DD-262]] shimmed) and the session came up
+worse than before: dozens of `vtkPVGeometryFilter … Missing input data`
+and `vtkPVMetaClipDataSet … Input port 0 … has 0 connections but is not
+optional`, solids without their colour or transparency, and a slice
+that could not be moved.
+
+**Findings.**  (a) The `.pvsm` in the project had been baked by 6.0.1 —
+`bake_pvsm` took whatever `shutil.which("pvpython")` found, and the
+distribution build comes first on `PATH` even when the ParaView the
+developer opens is a downloaded 6.1.  (b) `simple.Reflect` resolves to
+`AxisAlignedReflectionFilter` in 6.0 and to `ReflectionFilter`
+(deprecated, to go in 6.2) in 6.1: loading the 6.0 state on 6.1 gives
+*No proxy that matches: group=filters and proxy=AxisAlignedReflectionFilter*,
+the two geometry mirrors vanish, and the clips below them are left
+without an input — the flood of errors, the half model, the dead
+slice.  Measured on the developer's own `pi_mode` export: script path
+clean and **pixel-identical** under 6.0.1 and 6.1.0 with the slice
+movable and the linked clip following; the 6.0-baked state gives
+`geometry_cut_eigenmodes` 0 points on 6.1.  (c) So the fragility is
+structural: a state file names proxies by the spelling of the release
+that wrote it and drops a renamed one together with its whole branch,
+while the generated script builds the session live and is version-free
+by construction.  (d) Separately: the developer counted 29 pipeline
+entries against DD-262's "seven".  Not a defect — that project carries
+**five** monitors (1 geometry reader + 7 + 4 + 4 + 5 + 8 = 29); the
+seven is per monitor.  The chapter now says so.
+
+**Decision.**
+
+1. **The geometry is completed where the fields already are — at export
+   time.**  `export_vtm(..., mirrors=…)` clips every block to the
+   simulated half and appends its reflection (`_half_and_mirror`:
+   `vtkClipPolyData`, `vtkTransformPolyDataFilter`, and
+   `vtkReverseSense` because a mirror reverses the winding of every
+   triangle), so `geometry.vtm` holds the whole model and the session
+   builds no reflection of its own.  `_ensure_geometry_vtm` records the
+   planes in `geometry.vtm.json` and rebuilds when they differ, so a
+   file written before this DD is not shown as a half model.  The
+   session loses `<label>_symclip_<i>` and `<label>_mirror_<i>` per
+   plane, and with them the only version-fragile proxy it had.
+2. **The bake names its interpreter.**  `export_paraview(pvpython=…)`,
+   `export_paraview_eigenmodes(pvpython=…)` and `MAGNELIO_PVPYTHON`
+   (`resolve_pvpython`); the version the bake ran under travels back on
+   stdout (`_VERSION_MARKER`, printed by the script after `SaveState`)
+   and is written into the header of `paraview_open.py`
+   (`_stamp_version`), which also states in prose that the state is
+   bound to it and the script is not.
+3. **The chapter says which file to open.**  A new section *Which of
+   the two files to open* in `docs/methods/sources-monitors.md`:
+   `paraview_open.py` is the robust path, `paraview.pvsm` the
+   convenience bound to one release; tutorial 07 says the same.  The
+   `usercustomize.py` advice for the numpy 2.4 breakage is replaced by
+   the finding that a state file cannot be helped there at all —
+   ParaView's own filter preamble (`from paraview.vtk.numpy_interface.algorithms import *`,
+   a hardcoded C++ string) runs before the first line of any script of
+   ours, so no `Script` or `RequestInformationScript` can carry the
+   shim.
+
+**Consequences.**  Verified end to end on a copy of the developer's
+`pi_mode` project: the state **baked by 6.0.1 now loads on 6.1.0** with
+all eight proxies carrying data and the geometry whole
+(x, y ∈ [−0.1033, 0.1033] m against the simulated quarter) — the
+scenario that produced the report.  The reverse direction (6.1-baked
+opened on 6.0.1) still loses the *Python filters* to the numpy 2.4
+breakage, but no longer the geometry.  The pipeline is two proxies per
+symmetry plane shorter.  The mirroring costs one clip and one
+transform per solid per plane at export time and doubles the
+tessellated geometry per plane on disk (kilobytes).  The DD-169
+warning path for a renderer without a usable reflection filter is gone
+with the filter.  Gates:
+`tests/unit/test_paraview_export.py::test_export_vtm_completes_the_model_across_symmetry_planes`,
+`::test_the_baking_paraview_is_named_in_the_script`,
+`::test_the_bake_interpreter_can_be_named`,
+`tests/unit/test_symmetry_declaration.py` (the session builds no
+reflection); record `investigations/viewer-review-followup/MEASUREMENTS.md`
+(internal record).
+Files: `src/magnelio/io/paraview.py`, `src/magnelio/io/project.py`,
+`docs/methods/sources-monitors.md`,
+`examples/tutorials/plot_07_project_store.py`.
+
+## DD-266 — One cutting plane for the session, and every set of arrows coloured when it is made
+
+**Date:** 2026-09-07
+**Status:** Accepted (developer findings after the [[DD-265]] pass,
+2026-09-07; patch after v0.7.0).
+
+**Problem.**  Three findings from the developer's first session on
+ParaView 6.1.  (1) A `geometry_cut_<monitor>` per monitor, each with
+its own registered plane link — five monitors, five geometry clips,
+five links, and no single plane that opens the solids where the field
+is looked at.  (2) "Most arrows have `coloring = Solid Color` instead
+of the field strength": only the *first shown* monitor's pair was
+given a representation, so every hidden glyph set — the imaginary
+part, the volume arrows, every other monitor — came up in ParaView's
+flat default when it was switched on, and had to be coloured by hand.
+(3) A `vtkContext2DScalarBarActor` warning that `%-#6.1e` is a printf
+format, deprecated in 6.1.
+
+**Findings.**  (a) `vtkSMProxyLink` takes any number of proxies, so one
+link can hold the geometry clip's plane and every monitor's slice
+plane together; measured, moving one slice drags the other slice and
+the clip.  (b) `simple.GetDisplayProperties(proxy, view)` creates a
+representation without showing it (its `Visibility` is then set to 0),
+so the colouring can be fixed at build time; a representation not
+asked for is not stored in the state at all, which is why the hidden
+sets had none.  ParaView's own auto-colouring only runs for a
+representation that is shown, which is exactly why the *first* pair
+looked right and nothing else did.  (c) The scalar-bar warning is not
+ours: 6.1's own defaults are already `{:<#6.1e}`, 6.0's are
+`%-#6.1e`, and the warning appears only when a state **baked by 6.0**
+is opened on 6.1 — the version binding of [[DD-265]].  Measured: a
+fresh 6.1 export, live script and baked state alike, raises none.
+
+**Decision.**
+
+1. **One cut.**  `clip_geometry` makes a single `geometry_cut` at the
+   first monitor's plane, and `link_planes("cut_plane", …)` registers
+   one link over that plane and every `<monitor>_slice` plane.  A
+   session has one cutting plane, whichever monitor is on show.
+2. **Colour at build time.**  `coloured(proxy, array, visible, bar)`
+   replaces `show_coloured`: it fixes the transfer function (scaled
+   `0 … cap` before the array is attached, so no unbuilt data is asked
+   for its range), colours the representation and *then* sets its
+   visibility.  Applied to every glyph set — cut arrows, the
+   imaginary part, the volume arrows — and to the field sheet, which
+   now carries the same magnitude on the same scale explicitly rather
+   than by ParaView's default.  One scalar bar, on the visible pair.
+   The transfer function is per representation (`UseSeparateColorMap`,
+   best-effort): monitors of one run share an array *name* but not a
+   cap, and a shared map would price one monitor's arrows on another's
+   scale.
+3. **Nothing to fix for the scalar bar** beyond DD-265: the chapter
+   already says to bake with the ParaView that opens the session.
+
+**Consequences.**  The pipeline browser loses one clip and one link
+per monitor beyond the first.  Every representation is built at export
+time, so the export pays one pipeline update per glyph set (measured:
+4.2 s for a three-monitor run including the bake) and the state file
+carries them.  The linked plane means a monitor whose region does not
+reach the shared plane shows an empty slice until the plane is dragged
+into it — the price of one cutting plane, and the developer's ask.
+Gates: `tests/integration/test_paraview_session.py::test_every_glyph_comes_up_coloured_by_its_field`
+(one `geometry_cut`, one `cut_plane` link, no glyph on `Solid Color`),
+`::test_pvsm_bake` (the per-monitor clips and links are gone).
+Files: `src/magnelio/io/paraview.py`, `docs/methods/sources-monitors.md`.

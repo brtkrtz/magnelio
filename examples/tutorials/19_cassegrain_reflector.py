@@ -292,7 +292,7 @@ model.add_port(
     )
 )
 print(f"box: {np.round((hi - lo) * 1e3, 0)} mm")
-model.plot()
+model.show()
 
 # %%
 # The assembled antenna — horn on the left, the subreflector on its

@@ -109,10 +109,13 @@ class AnalysisEigenmode(_AnalysisBase):
             ``project`` is set, the model and the eigenmode result are
             written into the project directory and a read-only
             :class:`~magnelio.io.project.Project` reader is returned
-            instead (its ``.eigenmodes`` yields the ``EigenmodeResult``).
-            Eigenmode analysis has no time-marching state, so it is a
-            one-shot result — the streaming/resume machinery does not
-            apply.
+            instead — the same object :func:`~magnelio.open_project`
+            returns, and it answers to the result's own members
+            (``frequencies``, ``n_modes``, ``field``, ``show``,
+            ``plot``), so a script reads the same either way; the
+            result itself is ``.eigenmodes``.  Eigenmode analysis has
+            no time-marching state, so it is a one-shot result — the
+            streaming/resume machinery does not apply.
         """
         grid = self.mesh.grid
         Nx, Ny, Nz = grid.Nx, grid.Ny, grid.Nz

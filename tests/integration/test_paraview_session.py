@@ -267,15 +267,27 @@ def test_pvsm_bake(session_project, monkeypatch):
         # on the computational grid.
         "Eplane_field",
         "Eplane_arrows",
-        "geometry_cut_Evol",
-        '<ProxyLink name="plane_Evol"',
+        # One cut for the whole session, one link holding every plane
+        # of it together (DD-266).
+        "geometry_cut",
+        '<ProxyLink name="cut_plane"',
         'type="ProgrammableFilter"',
         'name="InformationScript"',
         "E_len",
     ):
         assert marker in text, marker
     # The proxy chain of DD-115 is gone from the pipeline browser.
-    for gone in ("Evol_lattice", "Evol_slice_y", "Evol_E_dir", "Efreq_E_im_dir", "Evol_points"):
+    for gone in (
+        "Evol_lattice",
+        "Evol_slice_y",
+        "Evol_E_dir",
+        "Efreq_E_im_dir",
+        "Evol_points",
+        # A geometry clip per monitor, and a link per monitor with it.
+        "geometry_cut_Evol",
+        "geometry_cut_Eplane",
+        'name="plane_Evol"',
+    ):
         assert gone not in text, gone
 
 
@@ -327,6 +339,67 @@ def test_pvsm_reloads_with_field_on_the_cut(session_project, tmp_path, monkeypat
     assert int(values["SLICE_POINTS"]) > 0
     assert int(values["ARROW_CELLS"]) > 0
     assert values["TIMES_MATCH"] == "True"
+
+
+_COLOUR_PROBE = """
+import sys
+import numpy
+if not hasattr(numpy, "in1d"):
+    numpy.in1d = numpy.isin
+from paraview import simple
+simple.LoadState(sys.argv[1])
+view = simple.GetActiveView()
+pxm = simple.servermanager.ProxyManager()
+by_id = {}
+for (name, _sid), src in pxm.GetProxiesInGroup("sources").items():
+    by_id[src.GetGlobalIDAsString()] = name
+# paraview.simple shadows the builtin sum with a numpy reduction.
+print("CUTS", len([n for n in by_id.values() if n.startswith("geometry_cut")]))
+print("LINKS", ",".join(pxm.GetLinkName(i) for i in range(pxm.GetNumberOfLinks())))
+for rep in view.Representations:
+    inp = getattr(rep, "Input", None)
+    if inp is None:
+        continue
+    name = by_id.get(inp.SMProxy.GetGlobalIDAsString(), "?")
+    print("REP", name, list(rep.ColorArrayName)[1] or "SOLID")
+"""
+
+
+@pytest.mark.skipif(shutil.which("pvpython") is None, reason="pvpython not installed")
+def test_every_glyph_comes_up_coloured_by_its_field(session_project, tmp_path, monkeypatch):
+    """A hidden glyph set must not come up in a flat colour (DD-266).
+
+    Representations are made and coloured when the session is built,
+    not when a set is first shown, so switching one on gives the field
+    on the same scale as the visible one.  And the solids are cut
+    *once*: one clip whose plane every monitor's slice shares.
+    """
+    import subprocess  # noqa: PLC0415
+
+    monkeypatch.setenv("MAGNELIO_PVSM_BAKE", "1")
+    state = open_project(session_project).export_paraview()["state"]
+    assert state is not None
+    probe = tmp_path / "colour_probe.py"
+    probe.write_text(_COLOUR_PROBE, encoding="utf-8")
+    proc = subprocess.run(
+        [shutil.which("pvpython"), "--force-offscreen-rendering", str(probe), str(state)],
+        capture_output=True,
+        text=True,
+        timeout=600,
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stderr[-2000:]
+    lines = [
+        ln.split() for ln in proc.stdout.splitlines() if ln.startswith(("CUTS", "LINKS", "REP"))
+    ]
+    cuts = next(int(ln[1]) for ln in lines if ln[0] == "CUTS")
+    assert cuts == 1, "the session cuts the geometry once"
+    links = next(ln[1] for ln in lines if ln[0] == "LINKS")
+    assert links == "cut_plane"
+    reps = {ln[1]: ln[2] for ln in lines if ln[0] == "REP"}
+    glyphs = {n: c for n, c in reps.items() if "_arrows" in n}
+    assert glyphs, reps
+    assert "SOLID" not in glyphs.values(), glyphs
 
 
 def test_run_close_writes_no_paraview_artefacts(tmp_path):

@@ -4063,6 +4063,14 @@ class CheckpointState(Mapping):
         return html_kv(title, self._summary_rows())
 
 
+# What an eigenmode project answers to beyond its own members: the
+# public surface of EigenmodeResult, served through Project.__getattr__
+# so a stored eigenmode analysis reads like an in-RAM one (DD-264).
+_EIGENMODE_MEMBERS = frozenset(
+    {"frequencies", "modes", "n_modes", "solver_info", "field", "show", "plot"}
+)
+
+
 class Project(ScatteringResultMixin):
     """Read-only view over a project directory.
 
@@ -4266,6 +4274,33 @@ class Project(ScatteringResultMixin):
         if not (self.path / "eigenmodes.h5").exists():
             return None
         return _load_eigenmodes(self.path, mesh=self.mesh)
+
+    def __getattr__(self, name: str):
+        """Serve the eigenmode result's members off an eigenmode project.
+
+        ``AnalysisEigenmode.run()`` returns the in-RAM
+        :class:`~magnelio.solver.eigenmode_result.EigenmodeResult`
+        without ``project=`` and this reader with it, so the reader has
+        to answer to the same names — the way it already implements the
+        scattering contract (:mod:`magnelio.analysis.result_interface`).
+        A project written by another analysis simply does not have
+        them: the lookup fails, so ``hasattr`` says no rather than a
+        call failing later.
+        """
+        if name in _EIGENMODE_MEMBERS:
+            result = self.eigenmodes
+            if result is not None:
+                return getattr(result, name)
+            written_by = self.setup.get("analysis")
+            raise AttributeError(
+                f"{name!r} belongs to an eigenmode result; the project at {self.path} "
+                + (
+                    f"was written by {written_by} and holds no eigenmodes"
+                    if written_by
+                    else "holds no eigenmodes"
+                )
+            )
+        raise AttributeError(f"{type(self).__name__!r} object has no attribute {name!r}")
 
     # -- time-domain runs ------------------------------------------------
 
@@ -4804,6 +4839,7 @@ class Project(ScatteringResultMixin):
         *,
         glyph_percentile: float = 98.0,
         bake_state: bool = True,
+        pvpython: str | Path | None = None,
     ) -> dict:
         """Write the ready-to-open ParaView session for one run.
 
@@ -4828,6 +4864,13 @@ class Project(ScatteringResultMixin):
             arrow scaling).
         bake_state : bool, default True
             Bake ``paraview.pvsm`` via ``pvpython`` when available.
+        pvpython : str or Path, optional
+            Which ``pvpython`` bakes the state, when the machine carries
+            more than one ParaView (default: ``MAGNELIO_PVPYTHON``, else
+            the first on ``PATH``).  A state file names its proxies the
+            way the release that wrote it spells them, so bake it with
+            the ParaView that will open it; ``paraview_open.py`` builds
+            the session live and needs no such care.
 
         Returns
         -------
@@ -4842,6 +4885,7 @@ class Project(ScatteringResultMixin):
             self._run_name_for_excited(excited),
             glyph_percentile=glyph_percentile,
             bake_state=bake_state,
+            pvpython=pvpython,
         )
 
     def export_paraview_eigenmodes(
@@ -4849,6 +4893,7 @@ class Project(ScatteringResultMixin):
         *,
         glyph_percentile: float = 98.0,
         bake_state: bool = True,
+        pvpython: str | Path | None = None,
     ) -> dict:
         """Write the ParaView session for the stored eigenmodes.
 
@@ -4875,6 +4920,13 @@ class Project(ScatteringResultMixin):
             the arrow scaling).
         bake_state : bool, default True
             Bake ``paraview.pvsm`` via ``pvpython`` when available.
+        pvpython : str or Path, optional
+            Which ``pvpython`` bakes the state, when the machine carries
+            more than one ParaView (default: ``MAGNELIO_PVPYTHON``, else
+            the first on ``PATH``).  A state file names its proxies the
+            way the release that wrote it spells them, so bake it with
+            the ParaView that will open it; ``paraview_open.py`` builds
+            the session live and needs no such care.
 
         Returns
         -------
@@ -4894,6 +4946,7 @@ class Project(ScatteringResultMixin):
             self.path,
             glyph_percentile=glyph_percentile,
             bake_state=bake_state,
+            pvpython=pvpython,
         )
 
     def checkpoint_state(

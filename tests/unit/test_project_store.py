@@ -204,6 +204,42 @@ class TestEigenModeRoundTrip:
         )
         assert proj.mesh.material_id.shape == mesh.material_id.shape
 
+    def test_reader_answers_to_the_result_members(self, tmp_path):
+        """``project=`` must not change what the returned object can do.
+
+        The in-RAM result and the store-backed reader are handed to the
+        same user script, so the reader serves the eigenmode result's
+        own members (DD-264).
+        """
+        from magnelio.analysis.eigenmode import AnalysisEigenmode  # noqa: PLC0415
+
+        mesh = self._mesh()
+        ram = AnalysisEigenmode(mesh=mesh, n_modes=3, verbose=False).run()
+        proj = AnalysisEigenmode(
+            mesh=mesh, n_modes=3, verbose=False, project=tmp_path / "eig3"
+        ).run()
+
+        assert proj.n_modes == ram.n_modes
+        np.testing.assert_allclose(proj.frequencies, ram.frequencies, rtol=1e-6)
+        assert proj.field(0).grid.Nx == ram.field(0).grid.Nx
+        assert callable(proj.plot)
+        assert callable(proj.show)
+        # A reopened reader answers the same.
+        assert open_project(tmp_path / "eig3").n_modes == ram.n_modes
+
+    def test_members_absent_on_a_project_without_eigenmodes(self, tmp_path):
+        """No eigenmodes, no eigenmode members — ``hasattr`` says so."""
+        mesh = self._mesh()
+        ProjectStore.create(tmp_path / "td", mesh, setup={"analysis": "AnalysisTD"})
+        proj = open_project(tmp_path / "td")
+
+        assert not hasattr(proj, "plot")
+        assert not hasattr(proj, "frequencies")
+        with pytest.raises(AttributeError, match="eigenmode result"):
+            proj.n_modes
+        with pytest.raises(AttributeError, match="no attribute 'wobble'"):
+            proj.wobble
+
 
 class TestPlannedRunProtocol:
     """Planned-run pre-registration closes the inter-run status gap.

@@ -1,6 +1,6 @@
 # 3D viewer
 
-`model.plot()` opens an interactive 3D view of a
+`model.show()` opens an interactive 3D view of a
 {class}`~magnelio.GeometryModel`: the solids coloured by material, the
 declared features, and — with a mesh — the FIT grid.  The same call
 serves three situations:
@@ -13,8 +13,8 @@ serves three situations:
   tab has no toolbar — the cutting plane stays where the script put it.
 
 ```python
-model.plot()                                  # geometry only
-model.plot(mesh=mesh, cut=("y", 0.0))         # opened along y = 0, grid cells on the cut
+model.show()                                  # geometry only
+model.show(mesh=mesh, cut=("y", 0.0))         # opened along y = 0, grid cells on the cut
 ```
 
 ## What is drawn
@@ -47,11 +47,14 @@ toolbar:
   a group to hide it.
 
 Before the cut controls sit the camera buttons: reset, isometric view,
-a view along x, y or z, the projection toggle (parallel, as the scene
-opens, or perspective), a screenshot, a **pop-out** button that opens
-the same view in a browser tab of its own (`size=` sets the height of
-the widget in the notebook), and **help**, a dialog listing every
-control and the mouse bindings.
+a view along x, y or z, and the projection toggle (parallel, as the
+scene opens, or perspective).  Then a **ruler** (a measured box around
+the scene, its axes titled in the display unit), a **screenshot** of
+the view as it stands, an **HTML export** — the scene as a standalone
+page that opens without a kernel — a **pop-out** button that opens the
+same view in a browser tab of its own (`size=` sets the height of the
+widget in the notebook), and **help**, a dialog listing every control
+and the mouse bindings.
 
 A single plane cuts every solid; the openings are capped, so a cut
 metal body reads as solid metal, not as a hollow shell.  With a mesh,
