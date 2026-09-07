@@ -112,6 +112,32 @@ major version is 0, minor releases may change the public API.
 - `ProjectStore.create(paraview=)` has no effect any more; `geometry.vtm`
   is written by the ParaView export.
 
+### Fixed
+
+- The phase of a complex field runs forward in time.  Every picture
+  that takes a `phase` — the 3D viewer's phase slider and its play
+  button, `plot(phase=…)`, `interact`, `FieldSpectrum.snapshot` — now
+  shows `Re(F·e^{-jφ})`, the instant at `ωt = φ`.  It showed
+  `Re(F·e^{+jφ})`, which is the same pattern run backwards: a wave
+  animated on a frequency monitor crawled back toward the port that
+  launched it.  The library's phasors are those of the `e^{-jωt}`
+  convention (the running DFT sums `e^{+jωt}`), as the far-field
+  transform has always assumed.  A picture at a phase other than 0 or
+  180 degrees is now the mirror in time of what the same call gave
+  before.
+- The viewer's toolbar has room for its labels.  It sat in a card of
+  fixed height whose rows did not wrap, so *Cut* and *Show* were clipped
+  along the top and a narrow window put the controls on the right out of
+  reach; the card now grows and its rows wrap.  A field view's second
+  row worked this way already.
+- `show_grid=True` on a field that is continued across the model's
+  symmetry planes says that no grid is drawn — the mesh covers the
+  modelled part only — instead of dropping it in silence.
+- `show()` on a monitor read back from a project describes its
+  arguments: that `geometry=` is what draws the model with the field,
+  and what `mesh=` brings (the metal cut out of the sheet, the symmetry
+  planes, the grid on the cut).  Both read *see `show_field`*.
+
 ### Removed
 
 - The automatic ParaView export at a run's close and after an eigenmode

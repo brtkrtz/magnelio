@@ -790,6 +790,35 @@ class TestDFTAccumulator:
         # Should have significant magnitude
         assert np.abs(acc.result[0]) > 1.0
 
+    def test_a_rising_phase_runs_the_wave_forward(self):
+        """``at_phase`` must walk a wave the way it ran in the simulation.
+
+        The accumulator sums ``e^{+jwt}``, so its bins are phasors of
+        the ``e^{-jwt}`` convention and an instant is ``Re(F e^{-jwt})``.
+        Reconstructing with ``e^{+j}`` instead played every animation
+        backwards — a wave crawled back toward the port that launched
+        it.  Recorded here on a wave whose direction is known.
+        """
+        from magnelio.monitors._frame_plots import at_phase
+
+        f0, c = 1e9, 3e8
+        w, k = 2 * np.pi * f0, 2 * np.pi * f0 / c
+        wavelength = c / f0
+        x = np.linspace(0.0, 3 * wavelength, 601)
+        dt = 1e-12
+        acc = DFTAccumulator(np.array([f0]), (x.size,))
+        for n in range(2000):  # cos(wt - kx): travels toward +x
+            acc.accumulate(np.cos(w * n * dt - k * x), n * dt, dt)
+        bins = acc.result[0]
+
+        def crest(phase_deg):
+            # The crest nearest the origin, in wavelengths.
+            v = at_phase(bins, phase_deg)
+            return (x[int(np.argmax(v))] % wavelength) / wavelength
+
+        for phase in (0.0, 30.0, 60.0, 90.0):
+            np.testing.assert_allclose(crest(phase), phase / 360.0, atol=0.01)
+
 
 # -- MonitorFluxTime tests ------------------------------------------------
 

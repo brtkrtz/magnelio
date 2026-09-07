@@ -574,7 +574,8 @@ class MonitorFieldFrequency:
             ``"vector"``, ``"color"``, or ``"contour"``.
         phase : float
             Instant of the complex pattern in degrees,
-            ``Re(F · exp(j·phase))``; a group magnitude is the envelope
+            ``Re(F · exp(-j·phase))``, the pattern at ``w t = phase``,
+            so it advances with time; a group magnitude is the envelope
             and ignores it.
         ax : matplotlib.axes.Axes, optional
         scale_mm : bool
@@ -677,8 +678,13 @@ class MonitorFieldFrequency:
         bins were recorded, and the position slider walking through the
         region.  See :func:`magnelio.plots.show_field` for the arguments
         — the bin (``f=`` or ``frame=``), ``phase``, the plane
-        (``normal``, ``position``), ``geometry`` and ``mesh`` overlays,
-        and the rendering ``mode``.
+        (``normal``, ``position``), ``volume`` for the region behind the
+        cut, and the rendering ``mode``.
+
+        The monitor carries the field alone: pass ``geometry=`` to draw
+        the model with it, and ``mesh=`` to cut the metal cells out of
+        the sheet, to name the symmetry planes the field is continued
+        across, and (with ``show_grid=True``) to draw the grid cells.
         """
         from magnelio.post.field_3d import show_field  # noqa: PLC0415
 

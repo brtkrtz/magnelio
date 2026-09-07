@@ -425,6 +425,17 @@ incident power.  A run performs that division on its own monitors, so
 `.spectrum` is in those units from the moment the run returns;
 `.spectrum_raw` exposes the undivided transform for callers who want
 the transient itself.
+
+The sign in that exponent fixes the library's phasor convention:
+frequency-domain fields are those of the $e^{-j\omega t}$ convention,
+so the instant of a pattern at time $t$ is
+$\mathrm{Re}\left(F\,e^{-j\omega t}\right)$.  That is what the
+`phase` argument of every picture means — degrees of $\omega t$,
+advancing with time — and what the viewer's phase play animates, so a
+travelling wave moves the way it ran in the simulation.  The
+far-field transform (whose textbook formulas are written for
+$e^{+j\omega t}$) conjugates on the way in and back out, so its
+patterns are phasors of the same convention as everything else.
 For a TE/TM feed the waveform launches a frequency-dependent power —
 the mode's wave impedance varies across the band — and the run divides
 additionally by the ratio $|a(f)|/|W(f)|$ of the incident wave it

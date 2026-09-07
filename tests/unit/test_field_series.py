@@ -149,8 +149,9 @@ class TestSpectrum:
         assert spec.index_of(1.8e9) == 1
         assert spec.at_frequency(2e9).is_complex
         np.testing.assert_allclose(spec.at_frequency(2e9).Ez, 1j)
-        # Re(j · e^{-jπ/2}) = 1; the snapshot is real.
-        snap = spec.snapshot(2e9, phase=-90.0)
+        # Re(j · e^{-jπ/2}) = 1; the snapshot is real.  The phasors are
+        # those of the e^{-jwt} convention, so the phase is w t.
+        snap = spec.snapshot(2e9, phase=90.0)
         assert not snap.is_complex
         np.testing.assert_allclose(snap.Ez, 1.0, atol=1e-12)
         np.testing.assert_allclose(spec.snapshot(frame=1).Ez, 0.0, atol=1e-12)
