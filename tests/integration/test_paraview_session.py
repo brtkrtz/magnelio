@@ -13,13 +13,12 @@ as separate, environment-gated tests.
 
 from __future__ import annotations
 
-import shutil
-
 import numpy as np
 import pytest
 
 from magnelio import AnalysisScatteringTD, Material, MeshControl, open_project
 from magnelio.geo import Brick
+from magnelio.io.paraview import resolve_pvpython
 from magnelio.mesh.mesher import Mesh
 from magnelio.monitors import MonitorFieldFrequency, MonitorFieldTime
 from magnelio.ports import PortWaveguide
@@ -27,6 +26,16 @@ from magnelio.solver.stability import (
     compute_min_effective_eps,
     compute_min_effective_mu,
     courant_dt,
+)
+
+#: A ParaView reached through a runner (``flatpak run …``) rather than
+#: as a file is sandboxed, and its sandbox need not reach pytest's
+#: temporary directory — a bake that produces nothing then says nothing
+#: about magnelio.  A plain interpreter has no such excuse.
+_SANDBOXED_PV = len(resolve_pvpython() or [1]) > 1
+_SANDBOX_HINT = (
+    "the resolved pvpython produced no state file; a sandboxed ParaView may not reach "
+    "the temporary directory (try: flatpak override --user --filesystem=/tmp <app>)"
 )
 
 A, B, LZ = 10.0e-3, 5.0e-3, 20.0e-3
@@ -242,12 +251,14 @@ def test_export_paraview_regenerates(session_project):
     assert {m["name"] for m in config["monitors"]} == {"Eplane", "Evol", "Efreq"}
 
 
-@pytest.mark.skipif(shutil.which("pvpython") is None, reason="pvpython not installed")
+@pytest.mark.skipif(resolve_pvpython() is None, reason="no pvpython (see MAGNELIO_PVPYTHON)")
 def test_pvsm_bake(session_project, monkeypatch):
     monkeypatch.setenv("MAGNELIO_PVSM_BAKE", "1")
     proj = open_project(session_project)
     out = proj.export_paraview()
     state = out["state"]
+    if state is None and _SANDBOXED_PV:
+        pytest.skip(_SANDBOX_HINT)
     assert state is not None and state.exists()
     text = state.read_text(encoding="utf-8", errors="replace")
     assert "ServerManagerState" in text
@@ -311,7 +322,7 @@ print("TIMES_MATCH", list(field.TimestepValues) == list(reader.TimestepValues))
 """
 
 
-@pytest.mark.skipif(shutil.which("pvpython") is None, reason="pvpython not installed")
+@pytest.mark.skipif(resolve_pvpython() is None, reason="no pvpython (see MAGNELIO_PVPYTHON)")
 def test_pvsm_reloads_with_field_on_the_cut(session_project, tmp_path, monkeypatch):
     """A second ParaView finds the cut populated and the time axis intact.
 
@@ -323,11 +334,13 @@ def test_pvsm_reloads_with_field_on_the_cut(session_project, tmp_path, monkeypat
 
     monkeypatch.setenv("MAGNELIO_PVSM_BAKE", "1")
     state = open_project(session_project).export_paraview()["state"]
+    if state is None and _SANDBOXED_PV:
+        pytest.skip(_SANDBOX_HINT)
     assert state is not None
     probe = tmp_path / "probe.py"
     probe.write_text(_RELOAD_PROBE, encoding="utf-8")
     proc = subprocess.run(
-        [shutil.which("pvpython"), "--force-offscreen-rendering", str(probe), str(state)],
+        [*resolve_pvpython(), "--force-offscreen-rendering", str(probe), str(state)],
         capture_output=True,
         text=True,
         timeout=600,
@@ -365,7 +378,7 @@ for rep in view.Representations:
 """
 
 
-@pytest.mark.skipif(shutil.which("pvpython") is None, reason="pvpython not installed")
+@pytest.mark.skipif(resolve_pvpython() is None, reason="no pvpython (see MAGNELIO_PVPYTHON)")
 def test_every_glyph_comes_up_coloured_by_its_field(session_project, tmp_path, monkeypatch):
     """A hidden glyph set must not come up in a flat colour (DD-266).
 
@@ -378,11 +391,13 @@ def test_every_glyph_comes_up_coloured_by_its_field(session_project, tmp_path, m
 
     monkeypatch.setenv("MAGNELIO_PVSM_BAKE", "1")
     state = open_project(session_project).export_paraview()["state"]
+    if state is None and _SANDBOXED_PV:
+        pytest.skip(_SANDBOX_HINT)
     assert state is not None
     probe = tmp_path / "colour_probe.py"
     probe.write_text(_COLOUR_PROBE, encoding="utf-8")
     proc = subprocess.run(
-        [shutil.which("pvpython"), "--force-offscreen-rendering", str(probe), str(state)],
+        [*resolve_pvpython(), "--force-offscreen-rendering", str(probe), str(state)],
         capture_output=True,
         text=True,
         timeout=600,

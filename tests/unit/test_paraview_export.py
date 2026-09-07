@@ -255,10 +255,29 @@ def test_the_bake_interpreter_can_be_named(tmp_path, monkeypatch):
     from magnelio.io.paraview import resolve_pvpython
 
     monkeypatch.delenv("MAGNELIO_PVPYTHON", raising=False)
-    assert resolve_pvpython(sys.executable) == sys.executable
+    assert resolve_pvpython(sys.executable) == [sys.executable]
     monkeypatch.setenv("MAGNELIO_PVPYTHON", sys.executable)
-    assert resolve_pvpython() == sys.executable
+    assert resolve_pvpython() == [sys.executable]
     assert resolve_pvpython("no-such-pvpython-anywhere") is None
+
+
+def test_the_interpreter_may_be_a_launcher_command(monkeypatch):
+    """A sandboxed ParaView is reached through its runner, not a path.
+
+    ``flatpak run --command=pvpython …`` is a command with arguments;
+    resolving it to a single executable would drop the arguments and
+    bake with whatever ``pvpython`` happened to be on ``PATH``.
+    """
+    from magnelio.io.paraview import resolve_pvpython
+
+    monkeypatch.delenv("MAGNELIO_PVPYTHON", raising=False)
+    command = f"{sys.executable} -X utf8"
+    assert resolve_pvpython(command) == [sys.executable, "-X", "utf8"]
+    # A sequence carries a path that a split would break in two.
+    assert resolve_pvpython([sys.executable, "-X", "utf8"]) == [sys.executable, "-X", "utf8"]
+    monkeypatch.setenv("MAGNELIO_PVPYTHON", command)
+    assert resolve_pvpython() == [sys.executable, "-X", "utf8"]
+    assert resolve_pvpython("no-such-runner run --command=pvpython app") is None
 
 
 def test_export_vtm_blocks_names_materials(tmp_path):

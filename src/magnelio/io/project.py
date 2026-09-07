@@ -4864,13 +4864,16 @@ class Project(ScatteringResultMixin):
             arrow scaling).
         bake_state : bool, default True
             Bake ``paraview.pvsm`` via ``pvpython`` when available.
-        pvpython : str or Path, optional
+        pvpython : str or Path or sequence of str, optional
             Which ``pvpython`` bakes the state, when the machine carries
             more than one ParaView (default: ``MAGNELIO_PVPYTHON``, else
-            the first on ``PATH``).  A state file names its proxies the
-            way the release that wrote it spells them, so bake it with
-            the ParaView that will open it; ``paraview_open.py`` builds
-            the session live and needs no such care.
+            the first on ``PATH``).  A path, or the command that
+            launches one — a sandboxed ParaView is reached through its
+            runner, e.g. ``"flatpak run --command=pvpython org.paraview.ParaView"``.
+            A state file names its proxies the way the release that
+            wrote it spells them, so bake it with the ParaView that
+            will open it; ``paraview_open.py`` builds the session live
+            and needs no such care.
 
         Returns
         -------
@@ -4920,13 +4923,16 @@ class Project(ScatteringResultMixin):
             the arrow scaling).
         bake_state : bool, default True
             Bake ``paraview.pvsm`` via ``pvpython`` when available.
-        pvpython : str or Path, optional
+        pvpython : str or Path or sequence of str, optional
             Which ``pvpython`` bakes the state, when the machine carries
             more than one ParaView (default: ``MAGNELIO_PVPYTHON``, else
-            the first on ``PATH``).  A state file names its proxies the
-            way the release that wrote it spells them, so bake it with
-            the ParaView that will open it; ``paraview_open.py`` builds
-            the session live and needs no such care.
+            the first on ``PATH``).  A path, or the command that
+            launches one — a sandboxed ParaView is reached through its
+            runner, e.g. ``"flatpak run --command=pvpython org.paraview.ParaView"``.
+            A state file names its proxies the way the release that
+            wrote it spells them, so bake it with the ParaView that
+            will open it; ``paraview_open.py`` builds the session live
+            and needs no such care.
 
         Returns
         -------

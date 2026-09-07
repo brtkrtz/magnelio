@@ -53,7 +53,10 @@ major version is 0, minor releases may change the public API.
   to bake for when a machine carries several, and the version that
   baked it is written into the header of `paraview_open.py` beside it.
   `paraview_open.py` builds the session live and runs on any ParaView;
-  the chapter now says which of the two to open.
+  the chapter now says which of the two to open.  The setting takes a
+  path or the command that launches an interpreter, so a sandboxed
+  ParaView is reached through its runner
+  (`flatpak run --command=pvpython org.paraview.ParaView`).
 
 - The 3D viewer's toolbar is its own: camera reset, isometric and
   axis views, a projection toggle, screenshot, a **pop-out** button

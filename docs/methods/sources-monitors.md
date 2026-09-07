@@ -527,8 +527,14 @@ than one ParaView, name the one that will open the session:
 project.export_paraview(pvpython="/opt/ParaView-6.1/bin/pvpython")
 ```
 
-or set `MAGNELIO_PVPYTHON` once; `bake_state=False` skips the state
-file altogether.  Two build notes: ParaView 6.0 bundles a
+or set `MAGNELIO_PVPYTHON` once.  It takes a path or the command that
+launches an interpreter, which is how a sandboxed ParaView is reached:
+
+```bash
+export MAGNELIO_PVPYTHON="flatpak run --command=pvpython org.paraview.ParaView"
+```
+
+`bake_state=False` skips the state file altogether.  Two build notes: ParaView 6.0 bundles a
 `numpy_interface` older than numpy 2.4, which stops every Python
 filter — the generated script shims that for `paraview --script` and
 for the bake, but a state file opened on such a build cannot be
