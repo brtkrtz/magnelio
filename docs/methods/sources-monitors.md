@@ -442,28 +442,51 @@ not a research method; the formats are community standards.
 (paraview-export)=
 ## ParaView export
 
-A field monitor's frames leave the store as VTK files when a project
-run closes: under `runs/<run>/paraview/`, one rectilinear `.vtr` per
-frame of a time monitor (`<monitor>/t_0000.vtr`, …) or per frequency
-of a frequency monitor (`f_0000.vtr`, …), collected by a
-`<monitor>.pvd` whose axis is the frame's electric instant, or its
-frequency.  The files hold *cell data*: the recorded components
-averaged onto the cell centres at export time — the numbers
-`recording.cell_centred()` returns — and the vectors `E` and `H`
-where a group was recorded whole.  ParaView reads plain VTK and never
-touches the staggered frames in `results.h5` or `fields_freq.h5`.
-Beside the data, `paraview_open.py` builds a `paraview.simple`
-pipeline (translucent geometry, a slice through each monitor, glyphs
-scaled to the field, the model's symmetry planes mirrored in the
-pipeline rather than in the files) and, when `pvpython` is on the
-path, `paraview.pvsm` is baked from it as a double-clickable state.
-`Project.export_paraview()` regenerates the set with other options or
-after a skipped export; eigenmodes take the same shape one directory
-up, one `.vtr` per mode (`export_paraview_eigenmodes`).  Tutorial 07
-opens such a session.
+A field monitor's frames leave the store as VTK files when you ask
+for them: `project.export_paraview()` writes one run's set,
+`project.export_paraview_eigenmodes()` the eigenmodes', and both
+tessellate the solids into `geometry.vtm` on their first call.  Under
+`runs/<run>/paraview/` there is one rectilinear `.vtr` per frame of a
+time monitor (`<monitor>/t_0000.vtr`, …) or per frequency of a
+frequency monitor (`f_0000.vtr`, …), collected by a `<monitor>.pvd`
+whose axis is the frame's electric instant, or its frequency.  The
+files hold *cell data*: the recorded components averaged onto the
+cell centres at export time — the numbers `recording.cell_centred()`
+returns — and the vectors `E` and `H` where a group was recorded
+whole.  ParaView reads plain VTK and never touches the staggered
+frames in `results.h5` or `fields_freq.h5`.  The copy takes about as
+much disk as the monitor's own data, which is why it is a call and
+not a side effect of the run.
 
-The export is a step *after* the run, not a live view: the files are
-written when the run closes, and a resumed run rewrites them.
-Watching a run while it marches is what `watch`, `follow` and the
-notebook viewer are for ([Projects and runs](projects-and-runs.md),
-the how-to *Watching a simulation that is still running*).
+Beside the data, `paraview_open.py` builds a `paraview.simple`
+pipeline and, when `pvpython` is on the path, `paraview.pvsm` is
+baked from it as a double-clickable state.  What the pipeline browser
+shows per monitor: the reader, `<monitor>_field` — a Python filter
+that mirrors the recorded half across the model's symmetry planes
+with the continuation rules of the monitor plots (`E` and `H` each
+with their own parity), averages the cells onto the points and
+resamples them onto an even lattice, handing out `<field>`,
+`<field>_mag` and `<field>_len` (the arrow length, saturating at a
+high percentile of the magnitude so edge singularities keep their
+direction without dictating the scale) — then `<monitor>_slice`, one
+cut normal to the region's shortest extent whose plane widget turns
+it to any other, `<monitor>_arrows` on the cut, centred on their
+sample points, and `geometry_cut_<monitor>`, the solids clipped by
+the same plane and linked to it, so dragging one drags the other.
+`<monitor>_volume` and `<monitor>_volume_arrows` wait hidden for the
+whole volume, thresholded to the cells carrying field; a frequency
+monitor's `<monitor>_arrows_im` holds the field a quarter period
+later.  Eigenmodes take the same shape one directory up, one `.vtr`
+per mode.  Tutorial 07 opens such a session.
+
+The export is a step *after* the run, not a live view; after a
+resume, call it again and the set is regenerated.  Watching a run
+while it marches is what `watch`, `follow` and the notebook viewer
+are for ([Projects and runs](projects-and-runs.md), the how-to
+*Watching a simulation that is still running*).  One build note:
+ParaView 6.0 bundles a `numpy_interface` older than numpy 2.4, which
+stops every Python filter; the generated script shims that for
+`paraview --script` and the bake, while a double-click on
+`paraview.pvsm` needs the same one-liner
+(`numpy.in1d = numpy.isin`) in a `usercustomize.py` on the machine
+running that ParaView until the build catches up.

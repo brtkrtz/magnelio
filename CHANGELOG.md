@@ -9,6 +9,40 @@ major version is 0, minor releases may change the public API.
 
 ## [Unreleased]
 
+### Changed
+
+- ParaView files are written on request only.  `project.export_paraview()`
+  and `project.export_paraview_eigenmodes()` are now the only calls that
+  write the `.vtr`/`.pvd` series, `paraview_open.py`, `paraview.pvsm`
+  and the tessellated `geometry.vtm`; a run's close, a resume and the
+  eigenmode solver write none of them.  Since 0.7.0 a time monitor's
+  frames are materialised as VTK files at twice the size of the store's
+  own copy — that copy is now made when it is asked for.
+- The ParaView pipeline is one Python filter per monitor.
+  `<monitor>_field` mirrors the recorded half across the model's
+  symmetry planes, averages the cells onto the points and resamples
+  them onto the even lattice, handing out `<field>`, `<field>_mag` and
+  `<field>_len`; `<monitor>_slice` and `<monitor>_arrows` follow, with
+  the geometry clip linked to the slice plane as before, and
+  `<monitor>_volume`/`<monitor>_volume_arrows` hold the thresholded
+  volume view.  The reflect/merge/calculator chain per monitor and the
+  three preset cuts are gone (the plane widget turns the one cut),
+  arrows are centred on their sample points, and the magnetic field is
+  continued across a symmetry plane as the axial vector it is (the
+  reflection filter treated it as polar).
+- `paraview_open.py` works on ParaView builds whose bundled
+  `numpy_interface` predates numpy 2.4.
+
+### Deprecated
+
+- `ProjectStore.create(paraview=)` has no effect any more; `geometry.vtm`
+  is written by the ParaView export.
+
+### Removed
+
+- The automatic ParaView export at a run's close and after an eigenmode
+  solve.
+
 ## [0.7.0] - 2026-09-06
 
 A minor release under the pre-1.0 reading: the field monitors' dictionary API is gone, `docs/migration-0.7.md` lists every renamed spelling.

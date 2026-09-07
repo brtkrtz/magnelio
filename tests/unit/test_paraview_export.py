@@ -21,12 +21,13 @@ import pytest
 
 from magnelio import Material
 from magnelio.io.paraview import (
+    _FIELD_SCRIPT,
+    _INFO_SCRIPT,
     _length_exponent,
     _magnitude_stats,
     _material_table,
-    _mirror_factor,
-    _mirror_fixes,
     _mirror_signature,
+    _mirror_signs,
     _monitor_geometry,
     _pick_vector,
     _prepare_mirroring,
@@ -185,18 +186,21 @@ def test_written_script_compiles_and_embeds_config(tmp_path):
             {
                 "name": "E_vol",
                 "kind": "time",
-                "data": "paraview/E_vol.xdmf",
-                "reader": "xdmf",
+                "data": "paraview/E_vol.pvd",
+                "reader": "pvd",
                 "glyph": {
                     "arrays": ["E"],
                     "cap": 123.4,
                     "exponent": 0.5,
                     "length": 1e-3,
+                    "threshold": 2.468,
                 },
                 "center": [0.0, 0.0, 0.0],
                 "slice_axes": ["x", "y", "z"],
                 "default_axis": "y",
                 "planar_normal": None,
+                "resample_dims": [40, 30, 20],
+                "resample_dims_volume": [20, 15, 10],
                 "l_ref": 1e-3,
             }
         ],
@@ -204,6 +208,10 @@ def test_written_script_compiles_and_embeds_config(tmp_path):
     script = write_paraview_script(tmp_path / "paraview_open.py", config)
     text = script.read_text(encoding="utf-8")
     compile(text, str(script), "exec")
+    # The per-monitor preparation is one Python filter whose scripts
+    # travel inside the session file (DD-262).
+    assert "simple.ProgrammableFilter" in text
+    assert "FIELD_SCRIPT" in text and "INFO_SCRIPT" in text
     # The config must round-trip verbatim through the embedded literal
     # (executing only the header stops at the paraview import inside
     # build(), which is not reached).
@@ -289,8 +297,12 @@ def test_export_vtm_blocks_names_materials(tmp_path):
     assert mb.GetBlock(1).GetNumberOfCells() > 12
 
 
-def _eigen_project(tmp_path, n_modes=4):
-    """A small air-box eigenmode project, written to *tmp_path*."""
+def _eigen_project(tmp_path, n_modes=4, export=True):
+    """A small air-box eigenmode project, written to *tmp_path*.
+
+    With *export* the ParaView session is written as well — on request,
+    as the store no longer does it by itself (DD-262).
+    """
     pytest.importorskip("OCC.Core.BRepPrimAPI")
     pytest.importorskip("vtk")
 
@@ -302,25 +314,48 @@ def _eigen_project(tmp_path, n_modes=4):
     model.add(Brick(origin=(0, 0, 0), size=(30e-3, 20e-3, 15e-3), material=Material.air()))
     mesh = Mesh.from_geometry(model, MeshControl(min_nodes_per_wavelength=8), f_max=12e9)
     path = tmp_path / "cavity"
-    return AnalysisEigenmode(
+    project = AnalysisEigenmode(
         mesh=mesh,
         n_modes=n_modes,
         verbose=False,
         project=str(path),
         geometry=model,
     ).run()
+    if export:
+        project.export_paraview_eigenmodes(bake_state=False)
+    return project
 
 
 class TestEigenmodeExport:
     """Eigenmodes reach ParaView without a driven run (DD-139)."""
 
-    def test_writing_eigenmodes_generates_the_session(self, tmp_path):
+    def test_writing_eigenmodes_exports_nothing(self, tmp_path):
+        # The solver writes the result; the ParaView files are the
+        # user's call (DD-262).
+        project = _eigen_project(tmp_path, export=False)
+        assert (project.path / "eigenmodes.h5").exists()
+        assert not (project.path / "paraview_open.py").exists()
+        assert not (project.path / "paraview").exists()
+        assert not (project.path / "geometry.vtm").exists()
+
+    def test_export_generates_the_session(self, tmp_path):
         project = _eigen_project(tmp_path)
         assert (project.path / "paraview_open.py").exists()
         assert (project.path / "paraview" / "eigenmodes.pvd").exists()
         n = len(project.eigenmodes.frequencies)
         vtrs = sorted((project.path / "paraview" / "eigenmodes").glob("mode_*.vtr"))
         assert len(vtrs) == n
+
+    def test_export_writes_geometry_vtm_when_missing(self, tmp_path):
+        project = _eigen_project(tmp_path, export=False)
+        assert (project.path / "geometry.brep").exists()
+        assert not (project.path / "geometry.vtm").exists()
+        project.export_paraview_eigenmodes(bake_state=False)
+        assert (project.path / "geometry.vtm").exists()
+        assert (project.path / "geometry" / "geometry_0.vtp").exists()
+        config = _config_of(project.path / "paraview_open.py")
+        assert config["geometry"] == "geometry.vtm"
+        assert config["materials"][0]["name"] == "air"
 
     def test_time_axis_is_the_mode_index_not_the_frequency(self, tmp_path):
         # Degenerate pairs share a frequency exactly; two datasets at one
@@ -406,14 +441,13 @@ class TestEigenmodeExport:
 
 
 class TestMirrorSigns:
-    """A reflected half must carry the continuation the monitors use.
+    """A mirrored half must carry the continuation the monitors use.
 
-    The renderer's reflection filter transforms every 3-component array
-    as a polar vector and leaves single components alone.  Neither is the
-    physical continuation on its own, and which correction is missing
-    depends on the field and on the wall type — so the export resolves
-    both against :func:`~magnelio.post._symmetry.mirror_sign`, the same
-    function the monitor plots continue their data with.
+    The session's field filter builds the mirrored copy in numpy, one
+    sign per array and component (DD-262), so no renderer guesswork is
+    left to correct: the export resolves every array against
+    :func:`~magnelio.post._symmetry.mirror_sign`, the same function the
+    monitor plots continue their data with.
     """
 
     def test_array_names_resolve_to_field_and_component(self):
@@ -428,38 +462,39 @@ class TestMirrorSigns:
         assert _mirror_signature("|E|") is None
         assert _mirror_signature("MaterialIndex") is None
 
-    def test_a_vector_is_corrected_exactly_when_the_filter_guessed_wrong(self):
-        # The filter negates the component along the mirror axis, which
-        # is the continuation of E across a magnetic wall and of H
-        # across an electric one.  The two opposite pairings are off by
-        # a global minus.
-        assert _mirror_factor("E", None, 0, "PMC") == 1.0
-        assert _mirror_factor("H", None, 0, "PEC") == 1.0
-        assert _mirror_factor("E", None, 0, "PEC") == -1.0
-        assert _mirror_factor("H", None, 0, "PMC") == -1.0
+    def test_every_field_array_gets_its_sign(self):
+        arrays = ["Ex", "Ey", "Ez", "E", "|E|", "Hx", "H", "E_re", "H_im"]
+        mirrors = [["y", 0.0, True, "PEC"]]
+        (plane,) = _mirror_signs(arrays, mirrors)
+        # Across an electric wall E continues with its normal component
+        # even and both tangential ones odd, H the other way round; the
+        # magnitude is even and needs no entry.
+        assert plane == {
+            "Ex": -1.0,
+            "Ey": 1.0,
+            "Ez": -1.0,
+            "E": [-1.0, 1.0, -1.0],
+            "Hx": 1.0,
+            "H": [1.0, -1.0, 1.0],
+            "E_re": [-1.0, 1.0, -1.0],
+            "H_im": [1.0, -1.0, 1.0],
+        }
 
     def test_single_components_carry_their_full_continuation(self):
         from magnelio.post._symmetry import mirror_sign
 
-        for field in ("E", "H"):
-            for kind in ("PEC", "PMC"):
-                for comp in range(3):
-                    assert _mirror_factor(field, comp, 1, kind) == mirror_sign(field, comp, 1, kind)
-
-    def test_only_the_wrong_signed_arrays_reach_the_fix_list(self):
-        arrays = ["Ex", "Ey", "Ez", "E", "|E|"]
-        mirrors = [["y", 0.0, True, "PEC"]]
-        (plane,) = _mirror_fixes(arrays, mirrors)
-        # Across an electric wall E continues with its normal component
-        # even and both tangential ones odd; the filter did the reverse
-        # for the vector and nothing for the components.
-        assert plane == [["Ex", -1.0], ["Ez", -1.0], ["E", -1.0]]
+        arrays = [f"{f}{a}" for f in "EH" for a in "xyz"]
+        for kind in ("PEC", "PMC"):
+            (plane,) = _mirror_signs(arrays, [["y", 0.0, True, kind]])
+            for field in ("E", "H"):
+                for comp, axis in enumerate("xyz"):
+                    assert plane[f"{field}{axis}"] == mirror_sign(field, comp, 1, kind)
 
     def test_the_two_wall_types_disagree_on_every_entry(self):
         arrays = ["Ex", "Ey", "Ez", "E"]
-        pec, pmc = _mirror_fixes(arrays, [["x", 0.0, True, "PEC"], ["x", 0.0, True, "PMC"]])
-        assert pec == [["Ey", -1.0], ["Ez", -1.0], ["E", -1.0]]
-        assert pmc == [["Ex", -1.0]]
+        pec, pmc = _mirror_signs(arrays, [["x", 0.0, True, "PEC"], ["x", 0.0, True, "PMC"]])
+        assert pec == {"Ex": 1.0, "Ey": -1.0, "Ez": -1.0, "E": [1.0, -1.0, -1.0]}
+        assert pmc == {"Ex": -1.0, "Ey": 1.0, "Ez": 1.0, "E": [-1.0, 1.0, 1.0]}
 
     def test_a_monitor_collapsed_onto_a_mirrored_axis_gains_a_layer(self):
         # Mirroring turns its single cell layer into two, and a lattice
@@ -480,12 +515,12 @@ class TestMirrorSigns:
         spec = {"field_arrays": ["Ex", "E"], "resample_dims": [4, 4, 4]}
         _prepare_mirroring([spec], [["z", 0.0, True, "PEC"]])
         assert "field_arrays" not in spec
-        assert spec["mirror_fix"] == [[["Ex", -1.0], ["E", -1.0]]]
+        assert spec["mirror_signs"] == [{"Ex": -1.0, "E": [-1.0, -1.0, 1.0]}]
 
-    def test_without_symmetry_nothing_is_corrected(self):
+    def test_without_symmetry_nothing_is_signed(self):
         spec = {"field_arrays": ["Ex", "E"], "resample_dims": [4, 4, 4]}
         _prepare_mirroring([spec], [])
-        assert spec["mirror_fix"] == []
+        assert spec["mirror_signs"] == []
 
 
 class TestSymmetryReachesTheSession:
@@ -518,10 +553,192 @@ class TestSymmetryReachesTheSession:
         config = _config_of(project.path / "paraview_open.py")
         planes = {p[0]: p[3] for p in config["symmetry"]}
         assert planes == {"x": "PMC", "y": "PEC"}
-        # Two planes of opposite type put opposite corrections on the
-        # same field: the vector needs one on the electric wall only.
-        fixes = config["monitors"][0]["mirror_fix"]
-        assert ["E", -1.0] not in fixes[0]
-        assert ["E", -1.0] in fixes[1]
-        assert ["H", -1.0] in fixes[0]
-        assert ["H", -1.0] not in fixes[1]
+        # Two planes of opposite type continue the same field with
+        # opposite parities: E polar across the magnetic wall (normal
+        # odd), axial across the electric one; H the other way round.
+        signs = config["monitors"][0]["mirror_signs"]
+        assert signs[0]["E"] == [-1.0, 1.0, 1.0]
+        assert signs[1]["E"] == [-1.0, 1.0, -1.0]
+        assert signs[0]["H"] == [1.0, -1.0, -1.0]
+        assert signs[1]["H"] == [1.0, -1.0, 1.0]
+
+
+# ═════════════════════════════════════════════════════════════════════
+# The monitor's Python filter, run outside ParaView (DD-262)
+# ═════════════════════════════════════════════════════════════════════
+
+
+class _FilterStub:
+    """What the field script asks of ``self`` inside a ProgrammableFilter."""
+
+    def __init__(self, inp, out):
+        self._inp, self._out = inp, out
+
+    def GetInputDataObject(self, _port, _index):  # noqa: N802 — VTK spelling
+        return self._inp
+
+    def GetOutputDataObject(self, _port):  # noqa: N802 — VTK spelling
+        return self._out
+
+
+def _frame_grid(nx=4, ny=3, nz=2, dx=1e-3):
+    """A monitor frame as the export writes it: cell data on the node grid.
+
+    ``Ex = 1`` everywhere, ``Ey = y`` (the cell centre's coordinate),
+    ``Ez = 0``; the vector ``E`` beside the three components.
+    """
+    import vtk
+    from vtk.util import numpy_support as ns
+
+    x, y, z = (np.arange(n + 1, dtype=float) * dx for n in (nx, ny, nz))
+    rg = vtk.vtkRectilinearGrid()
+    rg.SetDimensions(nx + 1, ny + 1, nz + 1)
+    setters = (rg.SetXCoordinates, rg.SetYCoordinates, rg.SetZCoordinates)
+    for setter, nodes in zip(setters, (x, y, z)):
+        setter(ns.numpy_to_vtk(nodes, deep=True))
+    cy = 0.5 * (y[1:] + y[:-1])
+    ex = np.ones((nz, ny, nx))
+    ey = np.broadcast_to(cy[None, :, None], (nz, ny, nx)).copy()
+    ez = np.zeros((nz, ny, nx))
+    vec = np.stack([ex, ey, ez], axis=-1).reshape(-1, 3)
+    for name, data in (("E", vec), ("Ex", ex.ravel()), ("Ey", ey.ravel()), ("Ez", ez.ravel())):
+        arr = ns.numpy_to_vtk(np.ascontiguousarray(data), deep=True)
+        arr.SetName(name)
+        rg.GetCellData().AddArray(arr)
+    return rg
+
+
+def _run_field_script(cfg, mode, grid=None):
+    """Execute the filter script the way ParaView does, shadowed builtins included."""
+    import vtk
+
+    grid = grid if grid is not None else _frame_grid()
+    out = vtk.vtkPolyData() if mode == "volume" else vtk.vtkImageData()
+    scope = {"self": _FilterStub(grid, out), "CFG": cfg, "MODE": mode}
+    # ParaView's preamble: the array reductions of numpy_interface take
+    # the names of the builtins, which is what a script must survive.
+    exec("from vtkmodules.numpy_interface.algorithms import *", scope)  # noqa: S102
+    exec(_FIELD_SCRIPT, scope)  # noqa: S102
+    return out
+
+
+def _point_array(dataset, name):
+    from vtk.util import numpy_support as ns
+
+    arr = dataset.GetPointData().GetArray(name)
+    assert arr is not None, name
+    return ns.vtk_to_numpy(arr)
+
+
+def _cfg(**overrides):
+    cfg = {
+        "dims": [9, 7, 5],
+        "dims_volume": [5, 4, 3],
+        "arrays": ["E"],
+        "cap": 1.2,
+        "exponent": 0.5,
+        "threshold": 0.0,
+        "symmetry": [],
+        "signs": [],
+    }
+    cfg.update(overrides)
+    return cfg
+
+
+class TestFieldScript:
+    """The per-monitor filter: cell frame in, even lattice with arrow lengths out."""
+
+    def test_section_is_the_lattice_with_magnitude_and_length(self):
+        pytest.importorskip("vtk")
+        cfg = _cfg(cap=0.5)
+        out = _run_field_script(cfg, "section")
+        assert tuple(out.GetDimensions()) == tuple(cfg["dims"])
+        assert out.GetPointData().GetArray("vtkValidPointMask") is None
+        vec = _point_array(out, "E")
+        mag = _point_array(out, "E_mag")
+        length = _point_array(out, "E_len")
+        np.testing.assert_allclose(mag, np.sqrt(np.sum(vec * vec, axis=-1)), rtol=1e-12)
+        # |E| >= 1 everywhere (Ex = 1) and the cap is 0.5: every arrow
+        # saturates at the full length.
+        assert np.all(mag >= 1.0)
+        np.testing.assert_allclose(length, 1.0)
+        # The lattice spans the frame's bounds (VTK pulls the samples a
+        # millionth of the span inside, so no point sits on the face).
+        assert out.GetBounds() == pytest.approx((0.0, 4e-3, 0.0, 3e-3, 0.0, 2e-3), abs=1e-7)
+
+    def test_length_law_compresses_below_the_cap(self):
+        pytest.importorskip("vtk")
+        cfg = _cfg(cap=4.0, exponent=0.5)
+        out = _run_field_script(cfg, "section")
+        mag = _point_array(out, "E_mag")
+        length = _point_array(out, "E_len")
+        np.testing.assert_allclose(length, np.sqrt(np.minimum(mag, 4.0) / 4.0), rtol=1e-12)
+
+    def test_electric_wall_on_a_grid_line_mirrors_without_a_seam_cell(self):
+        pytest.importorskip("vtk")
+        # E across an electric wall: normal component even, tangential
+        # odd — the sign table the export resolves through mirror_sign.
+        cfg = _cfg(
+            symmetry=[["x", 0.0, True, "PEC"]],
+            signs=[{"E": [1.0, -1.0, -1.0], "Ex": 1.0, "Ey": -1.0, "Ez": -1.0}],
+            cap=100.0,
+            exponent=1.0,
+        )
+        out = _run_field_script(cfg, "section")
+        # 2n - 1 nodes: the wall's node reflects onto itself.
+        assert out.GetBounds()[:2] == pytest.approx((-4e-3, 4e-3), abs=1e-7)
+        nx, ny, nz = out.GetDimensions()
+        vec = _point_array(out, "E").reshape(nz, ny, nx, 3)
+        ex, ey = vec[..., 0], vec[..., 1]
+        np.testing.assert_allclose(ex, np.flip(ex, axis=2), atol=1e-12)
+        np.testing.assert_allclose(ey, -np.flip(ey, axis=2), atol=1e-12)
+        # On the wall itself the odd component vanishes; the even one
+        # keeps its value.
+        assert np.all(np.abs(ey[:, :, nx // 2]) < 1e-12)
+        np.testing.assert_allclose(ex[:, :, nx // 2], 1.0)
+        # The single component agrees with the vector's.
+        np.testing.assert_allclose(_point_array(out, "Ey").reshape(nz, ny, nx), ey, atol=1e-12)
+
+    def test_magnetic_wall_half_a_cell_out_gets_a_cell_astride_it(self):
+        pytest.importorskip("vtk")
+        # E across a magnetic wall: normal component odd, tangential even.
+        cfg = _cfg(
+            symmetry=[["x", -0.5e-3, True, "PMC"]],
+            signs=[{"E": [-1.0, 1.0, 1.0], "Ex": -1.0, "Ey": 1.0, "Ez": 1.0}],
+            cap=100.0,
+            exponent=1.0,
+        )
+        out = _run_field_script(cfg, "section")
+        # 2(n + 1) nodes: the reflected grid stops one cell short of
+        # the original, the cell between takes the wall value.
+        assert out.GetBounds()[:2] == pytest.approx((-5e-3, 4e-3), abs=1e-7)
+        nx, ny, nz = out.GetDimensions()
+        vec = _point_array(out, "E").reshape(nz, ny, nx, 3)
+        ex, ey = vec[..., 0], vec[..., 1]
+        np.testing.assert_allclose(ex, -np.flip(ex, axis=2), atol=1e-12)
+        np.testing.assert_allclose(ey, np.flip(ey, axis=2), atol=1e-12)
+        assert np.all(np.abs(ex[:, :, nx // 2]) < 1e-12)  # the wall sample
+
+    def test_volume_is_the_thresholded_point_cloud(self):
+        pytest.importorskip("vtk")
+        cfg = _cfg(threshold=0.0)
+        out = _run_field_script(cfg, "volume")
+        assert out.GetNumberOfPoints() == int(np.prod(cfg["dims_volume"]))
+        assert out.GetNumberOfVerts() == out.GetNumberOfPoints()
+        for name in ("E", "E_mag", "E_len", "Ex"):
+            assert out.GetPointData().GetArray(name) is not None, name
+        assert out.GetPointData().GetArray("vtkValidPointMask") is None
+        # Ey grows with y: a threshold between its extremes keeps the
+        # upper part of the lattice only.
+        ey = _point_array(out, "E")[:, 1]
+        cut = float(np.median(np.sqrt(1.0 + ey * ey)))
+        kept = _run_field_script(_cfg(threshold=cut), "volume")
+        expect = int(np.count_nonzero(np.sqrt(1.0 + ey * ey) >= cut))
+        assert 0 < kept.GetNumberOfPoints() == expect < out.GetNumberOfPoints()
+        assert _run_field_script(_cfg(threshold=1e9), "volume").GetNumberOfPoints() == 0
+
+    def test_info_script_declares_the_lattice_extent(self):
+        # The one line ParaView needs to run the field script once per
+        # update instead of four times.
+        assert "WHOLE_EXTENT" in _INFO_SCRIPT
+        assert 'CFG["dims"]' in _INFO_SCRIPT

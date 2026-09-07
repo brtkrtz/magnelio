@@ -735,7 +735,10 @@ class TestParaViewSymmetry:
         )
         text = script.read_text(encoding="utf-8")
         compile(text, str(script), "exec")  # the generated file must parse
+        # The geometry is reflected by the renderer; the fields are
+        # mirrored inside the monitor's Python filter (DD-262).
         assert "simple.Reflect" in text
+        assert "simple.ProgrammableFilter" in text
         assert '"symmetry"' in text or "symmetry" in text
         # Both property sets of the reflection filter must stay in the
         # script: renderers disagree on which one they expose, and the
@@ -743,8 +746,6 @@ class TestParaViewSymmetry:
         # (DD-169).
         for prop in ("PlaneMode", "ReflectionPlane", "Plane", "Center"):
             assert prop in text
-        for flag in ("ReflectAllInputArrays", "FlipAllInputArrays"):
-            assert flag in text
 
 
 class TestStoreRoundTrip:

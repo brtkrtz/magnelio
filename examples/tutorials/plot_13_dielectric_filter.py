@@ -672,9 +672,15 @@ fig.tight_layout()
 # period here — not from the monitor's own frequencies, or the band
 # edge folds onto the very bins being recorded.
 #
-# Because the run was given a ``project=``, the session is on disk
-# when it finishes — ``paraview.pvsm`` next to the results, ready to
-# double-click.  Below is that session rendered: the electric field as
+# Because the run was given a ``project=``, ``result`` is the project
+# on disk, and one call writes the ParaView session next to the
+# results — ``paraview.pvsm``, ready to double-click:
+#
+# .. code-block:: python
+#
+#     result.export_paraview()
+#
+# Below is that session rendered: the electric field as
 # vectors throughout the volume, housing and ceramic transparent, the
 # arrows coloured by their own :math:`z` component so the sense stays
 # readable where one points away from the viewer.

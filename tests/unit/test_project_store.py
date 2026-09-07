@@ -113,9 +113,11 @@ class TestFullModelRoundTrip:
             setup={"f_max": 10e9, "dt": 1.2e-12},
         )
 
-        # files present
-        for name in ("project.json", "mesh.h5", "geometry.brep", "geometry.vtm", "geometry.json"):
+        # files present — the tessellated geometry.vtm is the ParaView
+        # export's, not the store's (DD-262)
+        for name in ("project.json", "mesh.h5", "geometry.brep", "geometry.json"):
             assert (tmp_path / "proj" / name).exists(), name
+        assert not (tmp_path / "proj" / "geometry.vtm").exists()
 
         p = open_project(tmp_path / "proj")
 

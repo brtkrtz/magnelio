@@ -1,13 +1,14 @@
-"""ParaView session export on a real streamed run (DD-115).
+"""ParaView session export on a real streamed run (DD-115, DD-262).
 
 A project-backed TEM run with a plane time monitor, a volume time
-monitor and a frequency monitor must leave a ready-to-open session in
-the run directory: per-monitor VTK series over time, the frequency DFT as a
-``.vtr``-per-frequency series (values and cell ordering gated against
-``fields_freq.h5``), the per-solid ``geometry.vtm``, and the generated
-``paraview_open.py`` whose embedded config carries slice planes and a
-positive glyph clip cap.  The ``pvpython`` state bake runs as a
-separate, environment-gated test.
+monitor and a frequency monitor; ``export_paraview()`` must leave a
+ready-to-open session in the run directory: per-monitor VTK series over
+time, the frequency DFT as a ``.vtr``-per-frequency series (values and
+cell ordering gated against ``fields_freq.h5``), the per-solid
+``geometry.vtm``, and the generated ``paraview_open.py`` whose embedded
+config carries slice planes and a positive glyph clip cap.  The run
+itself writes none of it.  The ``pvpython`` state bake and reload run
+as separate, environment-gated tests.
 """
 
 from __future__ import annotations
@@ -101,6 +102,7 @@ def session_run(tmp_path_factory):
     p = tmp_path_factory.mktemp("pv") / "pp"
     analysis = _tem_analysis(p)
     analysis.run(excited=[("port1", 0)], energy_stop_db=None, total_time_steps=N_TOTAL)
+    open_project(p).export_paraview(bake_state=False)
     return p, analysis
 
 
@@ -249,40 +251,97 @@ def test_pvsm_bake(session_project, monkeypatch):
     assert state is not None and state.exists()
     text = state.read_text(encoding="utf-8", errors="replace")
     assert "ServerManagerState" in text
-    # The baked pipeline carries the pre-built session: slice planes,
-    # glyph arrows, the plane-linked geometry cuts, and the registered
-    # slice<->clip plane links that make them drag together.
+    # The baked pipeline carries the pre-built session (DD-262): one
+    # Python filter per monitor with its scripts, one cut with its
+    # arrows, the hidden volume arrows, the plane-linked geometry cut
+    # and the registered slice<->clip link that makes them drag together.
     for marker in (
-        "Evol_slice_y",
-        "Evol_arrows_E_y",
-        "Efreq_E_im_dir",
-        # Every arrow set sits on an evenly spaced lattice: one sized for
-        # in-plane density feeding the cuts, a coarser one for the
-        # whole-volume view behind its field threshold.
-        "Evol_lattice",
-        "Evol_lattice_volume",
-        "Evol_volume_E",
-        "Evol_volume_region_E",
-        # Planar monitors are resampled too — no branch is left on the
-        # computational grid.
-        "Eplane_lattice",
-        "geometry_cut_Evol_y",
-        "Efreq",
-        '<ProxyLink name="plane_Evol_y"',
+        "Evol_field",
+        "Evol_slice",
+        "Evol_arrows",
+        "Evol_volume",
+        "Evol_volume_arrows",
+        "Efreq_field",
+        "Efreq_arrows_im",
+        # Planar monitors go through the same filter — no branch is left
+        # on the computational grid.
+        "Eplane_field",
+        "Eplane_arrows",
+        "geometry_cut_Evol",
+        '<ProxyLink name="plane_Evol"',
+        'type="ProgrammableFilter"',
+        'name="InformationScript"',
+        "E_len",
     ):
         assert marker in text, marker
+    # The proxy chain of DD-115 is gone from the pipeline browser.
+    for gone in ("Evol_lattice", "Evol_slice_y", "Evol_E_dir", "Efreq_E_im_dir", "Evol_points"):
+        assert gone not in text, gone
 
 
-def test_run_close_warns_not_raises_on_broken_export(tmp_path, monkeypatch):
-    """A failing viz export must downgrade to a warning, not kill the run."""
+_RELOAD_PROBE = """
+import sys
+import numpy
+if not hasattr(numpy, "in1d"):
+    numpy.in1d = numpy.isin
+from paraview import simple
+simple.LoadState(sys.argv[1])
+field = simple.FindSource("Evol_field")
+# ParaView names a loaded reader after its file.
+reader = simple.FindSource("Evol.pvd") or simple.FindSource("Evol")
+sl = simple.FindSource("Evol_slice")
+arrows = simple.FindSource("Evol_arrows")
+for proxy in (reader, field, sl, arrows):
+    proxy.UpdatePipeline()
+print("SLICE_POINTS", sl.GetDataInformation().GetNumberOfPoints())
+print("ARROW_CELLS", arrows.GetDataInformation().GetNumberOfCells())
+print("TIMES_MATCH", list(field.TimestepValues) == list(reader.TimestepValues))
+"""
+
+
+@pytest.mark.skipif(shutil.which("pvpython") is None, reason="pvpython not installed")
+def test_pvsm_reloads_with_field_on_the_cut(session_project, tmp_path, monkeypatch):
+    """A second ParaView finds the cut populated and the time axis intact.
+
+    The one test that catches an extent negotiation or preamble failure
+    inside the Python filter: the state file may carry every proxy and
+    still show an empty cut.
+    """
+    import subprocess  # noqa: PLC0415
+
+    monkeypatch.setenv("MAGNELIO_PVSM_BAKE", "1")
+    state = open_project(session_project).export_paraview()["state"]
+    assert state is not None
+    probe = tmp_path / "probe.py"
+    probe.write_text(_RELOAD_PROBE, encoding="utf-8")
+    proc = subprocess.run(
+        [shutil.which("pvpython"), "--force-offscreen-rendering", str(probe), str(state)],
+        capture_output=True,
+        text=True,
+        timeout=600,
+        check=False,
+    )
+    out = proc.stdout
+    assert proc.returncode == 0, proc.stderr[-2000:]
+    values = dict(line.split(" ", 1) for line in out.splitlines() if " " in line)
+    assert int(values["SLICE_POINTS"]) > 0
+    assert int(values["ARROW_CELLS"]) > 0
+    assert values["TIMES_MATCH"] == "True"
+
+
+def test_run_close_writes_no_paraview_artefacts(tmp_path):
+    """The run leaves the store alone; the session is a step the user takes (DD-262)."""
     pytest.importorskip("OCC.Core.BRepPrimAPI")
-    import magnelio.io.paraview as pv  # noqa: PLC0415
-
-    def boom(*a, **k):
-        raise RuntimeError("synthetic viz failure")
-
-    monkeypatch.setattr(pv, "export_run_visualization", boom)
-    with pytest.warns(UserWarning, match="ParaView session export failed"):
-        _tem_analysis(tmp_path / "pp").run(
-            excited=[("port1", 0)], energy_stop_db=None, total_time_steps=60
-        )
+    pytest.importorskip("vtk")
+    p = tmp_path / "pp"
+    _tem_analysis(p).run(excited=[("port1", 0)], energy_stop_db=None, total_time_steps=60)
+    run_dir = p / "runs" / "port1_mode0"
+    assert (run_dir / "results.h5").exists()
+    assert not (run_dir / "paraview").exists()
+    assert not (run_dir / "paraview_open.py").exists()
+    assert not (p / "geometry.vtm").exists()
+    out = open_project(p).export_paraview(bake_state=False)
+    assert (run_dir / "paraview").is_dir()
+    assert (run_dir / "paraview_open.py").exists()
+    assert (p / "geometry.vtm").exists()
+    assert _config_from_script(out["script"])["geometry"] == "../../geometry.vtm"

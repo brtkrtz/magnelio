@@ -7449,6 +7449,12 @@ string.  The resume/run-longer path keeps its explicit signature
 ## DD-115 — Ready-to-open ParaView sessions from the project store
 
 **Status:** Decided 2026-08-04 (session 150); shipped same session.
+**Superseded in part by [[DD-262]] (2026-09-07):** the export is on
+request only (`Project.export_paraview()`), no longer a side effect of
+the run's close, and the per-monitor pipeline is one
+`ProgrammableFilter` feeding one cut instead of the reflect / point /
+lattice / calculator chain with three cuts.  The glyph length law, the
+lattice sizing and the cap/exponent statistics below stand.
 
 **Problem.**  The store's ParaView surface was raw material, not a
 result: `geometry.stl` collapsed all solids into one unnamed,
@@ -9056,7 +9062,9 @@ warning; `spec.md` untouched (solver-internal heuristic).
 ## DD-139 — Eigenmodes reach ParaView on the same path as monitors
 
 **Date:** 2026-08-12
-**Status:** Accepted — implemented, tested.
+**Status:** Accepted — implemented, tested.  **Note ([[DD-262]],
+2026-09-07):** `write_eigenmodes` no longer exports; the session is
+written by `Project.export_paraview_eigenmodes()` on request.
 
 **Problem.**  `Project.export_paraview` covered only monitors of driven
 runs.  Rendering an eigenmode meant writing the `.vtr` by hand — the
@@ -11239,6 +11247,14 @@ internal dossier `investigations/section-open-chains/`.
 ---
 
 ## DD-169 — The mirrored half carries the field, not a look-alike
+
+**Note ([[DD-262]], 2026-09-07):** the reflect / calculator / group
+sign correction of the *field* data is retired — the fields are
+mirrored in numpy inside `<monitor>_field` with `mirror_sign` per
+array and component, which also continues H as the axial vector the
+reflection filter could not.  The placement logic of the reflection
+filter and the `MAGNELIO_SYMMETRY_UNAVAILABLE` marker remain for the
+geometry only.
 
 **Problem.**  DD-155 made a declared symmetry plane visible: half-model
 data on disk, full model in the renderer, one reflection filter per
@@ -21337,3 +21353,113 @@ component, the second-row builder under a layout).
 **Consequences.**  0.x PATCH content, ships with 0.7.0; the default
 call is unchanged, the arrow style is not (coloured, floored).  Tutorial
 07 opens the magic tee's volume monitor with an isosurface.
+
+## DD-262 — The ParaView export is a call, not a side effect; one Python filter per monitor
+
+**Date:** 2026-09-07
+**Status:** Accepted (developer decisions from the v0.7.0 review,
+2026-09-06; implemented on `feat/paraview-on-demand`, patch after
+v0.7.0).
+
+**Problem.**  Two findings of the developer's v0.7.0 review.  (1) Since
+[[DD-259]] a time monitor's ParaView export is a *materialised copy*:
+one `.vtr` per frame with 12 float64 per cell (the six components plus
+the `E` and `H` triples) against the store's 6 — twice the bytes, zlib
+on the VTK side only — and [[DD-115]] wrote it at every run close,
+after every resume and on an abort, with no switch (`ProjectStore.create(paraview=)`
+governed `geometry.vtm` alone and was not reachable from the
+analyses; the `export_paraview` docstring promised a `paraview=False`
+path that did not exist).  Before DD-259 the XDMF descriptor over
+`results.h5` cost nothing, so the automatic export had been free.
+(2) The pipeline browser was overloaded: per 3D monitor about 28
+proxies (reader, the [[DD-169]] reflect/merge/sign/group chain per
+plane, `_points`, two `ResampleToImage` lattices, a `_mag` and a
+`_dir` calculator per array, a threshold, a volume glyph, three cuts
+with a glyph set each and a linked geometry clip each), and the
+result filters were not found at first sight.
+
+**Decision.**  Three choices put to the developer, recommendations
+accepted.
+
+1. **Export on request only.**  `Project.export_paraview()` and
+   `Project.export_paraview_eigenmodes()` are the only writers of the
+   `.vtr`/`.pvd` series, `paraview_open.py`, the baked `.pvsm` and —
+   on their first call — `geometry.vtm` (`_ensure_geometry_vtm`,
+   tessellating `project.geometry`, best-effort).  `_RunSink.close()`
+   and `write_eigenmodes()` write nothing; `ProjectStore.create(paraview=)`
+   is a deprecated no-op (kept so 0.7.1 stays a PATCH; removal with
+   the next MINOR).  Tutorials 07 and 13 show the call.  Commercial
+   suites treat an export as an action of the user for the same
+   reason.
+2. **One `ProgrammableFilter` per monitor.**  `<monitor>_field` takes
+   the reader's cell frame and, in numpy, mirrors it across the
+   declared planes with the sign of every array and component from
+   `mirror_sign` (`_mirror_signs` replaces `_mirror_fixes`; H is
+   continued as the axial vector it is, closing the limitation
+   STATUS carried since DD-169), builds the mirrored
+   `vtkRectilinearGrid`, `vtkCellDataToPointData`,
+   `vtkResampleToImage` onto the even lattice, and adds `<arr>_mag`
+   and `<arr>_len` (the DD-115 length law).  Downstream: one
+   `<monitor>_slice` (normal to the shortest extent; the plane widget
+   turns it), `<monitor>_arrows` (`OrientationArray=<arr>`,
+   `ScaleArray=<arr>_len`, **centred** through
+   `GlyphTransform.Translate=[-0.5,0,0]`), `<monitor>_arrows_im` hidden
+   for a frequency monitor, `geometry_cut_<monitor>` linked to the
+   slice plane, and hidden `<monitor>_volume` (a second filter at the
+   reader, `vtkPolyData` point cloud thresholded at 2 % of the cap)
+   with `<monitor>_volume_arrows`.  Seven proxies instead of ~28.  The
+   geometry keeps the reflection filter (polydata, block names, no
+   vectors); the symmetry-unavailable marker now speaks of the
+   geometry only.  A `TrivialProducer` (the chat's first idea) was
+   rejected: it holds data, not a recipe, so the `.pvsm` would load
+   empty and the time axis would be static.
+3. The three scripts (`_FIELD_SCRIPT`, `_INFO_SCRIPT`,
+   `_UPDATE_SCRIPT`) are module constants embedded into the session
+   file by `repr`, so the unit tests run the field script under the
+   mio environment's VTK without pvpython.
+
+**Findings (pvpython 6.0.1, Fedora).**  (a) A `vtkImageData` output
+needs a `RequestInformationScript` declaring `WHOLE_EXTENT`; without
+it the executive renegotiates and runs the field script four times
+per update.  A `vtkPolyData` output needs none.  (b) The proxy's
+`Parameters` property cannot be set from pvpython 6.0
+(`AttributeError`), so `CFG`/`MODE` are prepended to the script text,
+the information script included.  (c) ParaView executes the filter's
+preamble `from ...numpy_interface.algorithms import *` in `__main__`,
+shadowing `max`, `min`, `abs`, `sum`, `any`, `all` for the script
+*and for the calling session*; the scripts and the certificate probe
+use `np.` reductions only, and `TestFieldScript` fills its namespace
+the same way.  (d) **ParaView 6.0.1 × numpy ≥ 2.4:** the preamble dies
+at `numpy.in1d` (removed in 2.4), so every Python filter is dead on
+that build until `numpy.in1d = numpy.isin` is set; the session header
+shims it for `paraview --script` and the bake, a double-click on
+`paraview.pvsm` needs the same line in a `usercustomize.py` of the
+machine's ParaView Python (documented in the chapter).  (e) ParaView
+names a loaded reader after its file (`Evol.pvd`), the filters keep
+their registration names.  (f) `vtkResampleToImage` pulls its samples
+a millionth of the span inside the bounds.
+
+**Measured.**  Symmetry certificate (`validation/paraview_symmetry_certificate.py`,
+quarter cavity with a PMC and a PEC plane): every component of E and H
+reproduces `mirror_sign` across both planes to ≤ 1.3e-15 of the peak,
+single components equal the vector's to 0; before, `Hx`/`Hz` across
+the PEC plane and `Hy` across the PMC plane carried the polar sign.
+Reload test: the baked state re-opened in a second pvpython has
+2100 points on the cut and 31500 arrow cells for the TEM fixture's
+volume monitor, and the filter inherits the reader's time steps.
+
+**Consequences.**  A run directory holds no ParaView files until asked
+(tutorial 07's listing shrinks accordingly); the export is
+regenerated by calling it again after a resume.  Users of the state
+file get one cut per monitor and turn it with the plane widget.  The
+`FlipAllInputArrays` limitation leaves STATUS.  Gates:
+`tests/unit/test_paraview_export.py` (`TestFieldScript`,
+`TestMirrorSigns`, `TestEigenmodeExport`),
+`tests/integration/test_paraview_session.py`
+(`test_run_close_writes_no_paraview_artefacts`, `test_pvsm_bake`,
+`test_pvsm_reloads_with_field_on_the_cut` — the last two gated on
+`pvpython`), `tests/unit/test_symmetry_declaration.py`,
+`validation/paraview_symmetry_certificate.py`.
+Files: `src/magnelio/io/paraview.py`, `src/magnelio/io/project.py`,
+`docs/methods/sources-monitors.md` (*ParaView export*), tutorials 07
+and 13, `docs/migration-0.7.md`, `README.md`.

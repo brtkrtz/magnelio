@@ -172,8 +172,8 @@ def test_monitor_bit_exact_across_resume(tmp_path):
 # ═════════════════════════════════════════════════════════════════════
 
 
-def test_paraview_series_written_from_the_staggered_frames(tmp_path):
-    """The store holds staggered frames; the ParaView export converts them (DD-259)."""
+def test_paraview_series_exported_from_the_staggered_frames(tmp_path):
+    """The store holds staggered frames; the ParaView export converts them (DD-259, DD-262)."""
     pytest.importorskip("OCC.Core.BRepPrimAPI")
     pytest.importorskip("vtk")
     p = tmp_path / "pp"
@@ -184,6 +184,8 @@ def test_paraview_series_written_from_the_staggered_frames(tmp_path):
     )
     run_dir = p / "runs" / "port1_mode0"
     assert not (run_dir / "fields.xdmf").exists()
+    assert not (run_dir / "paraview").exists()
+    open_project(p).export_paraview(bake_state=False)
     pvd = run_dir / "paraview" / "Eplane.pvd"
     assert pvd.exists()
     root = ET.parse(pvd).getroot()

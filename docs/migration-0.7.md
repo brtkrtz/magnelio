@@ -22,7 +22,7 @@ written by 0.6.x cannot be read by 0.7 and are refused with a message.
 | `mon.t` | unchanged — but see below | — |
 | `project.monitors[...]` readers: `.data`, `.component(...)` | `.recording` / `.spectrum` as above; `.frame(i)` reads one frame | `AttributeError` |
 | `mon.plot(...)`, `mon.interact(...)`, `mon.show(...)` | unchanged | — |
-| `runs/<name>/fields.xdmf` | `runs/<name>/paraview/<monitor>.pvd` with one `.vtr` per frame | the XDMF file is not written |
+| `runs/<name>/fields.xdmf` | `runs/<name>/paraview/<monitor>.pvd` with one `.vtr` per frame, written by `project.export_paraview()` (0.7.1: no longer at the run's close) | the XDMF file is not written |
 | a project written by 0.6.x | re-run it | `ProjectSchemaError: schema version '2.0' is not supported` |
 
 `squeeze=True` drops the spatial axes of length one, which is what the

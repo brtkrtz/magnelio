@@ -48,9 +48,10 @@ large grids stay tractable.
   symmetry planes — directivity, gain, realized gain, radiated power
   and efficiency, drawn as polar cuts or a 3D pattern surface
 - Project store on disk: streamed results, bit-exact resume,
-  post-processing on the stored data (HDF5 + ParaView/XDMF); every run
-  generates a ready-to-open ParaView session (coloured per-solid
-  geometry, slice planes, normalised field glyphs)
+  post-processing on the stored data (HDF5); `export_paraview()`
+  writes a ready-to-open ParaView session (coloured per-solid
+  geometry, a cut with normalised field glyphs, the symmetry planes
+  mirrored)
 - Interop: Touchstone (`.sNp`) export and `scikit-rf` adapter
 
 ## Installation
