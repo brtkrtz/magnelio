@@ -17,16 +17,20 @@ Three layers:
    (they belong to the project, not to a run), with the *mode index*
    on the ParaView axis — see :func:`export_eigenmode_visualization`.
 3. :func:`export_run_visualization` — generates ``paraview_open.py``, a
-   ``paraview.simple`` pipeline script (coloured geometry, per-monitor
-   slice planes, normalised and magnitude-clipped field glyphs,
-   plane-linked geometry clips) and, when ``pvpython`` is on the PATH,
-   bakes it into a double-clickable ``paraview.pvsm`` state file.
+   ``paraview.simple`` pipeline script (coloured geometry, one Python
+   filter per monitor that mirrors, averages and resamples the field
+   onto an even lattice, a cut with magnitude-clipped arrows, the
+   geometry clip linked to the cut plane) and, when ``pvpython`` is on
+   the PATH, bakes it into a double-clickable ``paraview.pvsm`` file.
 
-Everything here is visualization-only: failures must never invalidate a
-run, so the store calls into this module behind broad guards.
+Everything here is written on request — by :meth:`Project.export_paraview`
+and :meth:`Project.export_paraview_eigenmodes`, never at a run's close
+(DD-262).  The geometry tessellation is best-effort; a failure there
+warns and the field export goes on without the solids.
 """
 
-# Design: DD-115 (three-layer ParaView export pipeline).
+# Design: DD-115 (three-layer ParaView export pipeline), DD-262 (export on
+# request, one ProgrammableFilter per monitor).
 
 from __future__ import annotations
 
@@ -350,53 +354,43 @@ def _mirror_signature(array_name: str) -> tuple[str, int | None] | None:
     return None
 
 
-def _mirror_factor(field: str, comp: int | None, mirror_axis: int, kind: str) -> float:
-    """Sign the renderer's reflection filter still owes a field array.
+def _mirror_signs(array_names, mirrors) -> list[dict]:
+    """Per mirror plane, the continuation sign of every field array.
 
-    The filter transforms every 3-component array as a polar vector: it
-    negates the component along the mirror axis and leaves the other two.
-    That is the entire continuation exactly when the normal component is
-    the odd one — for the other pairing every component is off by a
-    global minus, which is what a vector gets back here.  Single
-    components the filter never touches, so they carry their
-    continuation factor in full.
+    ``{name: ±1.0}`` for a single component, ``{name: [sx, sy, sz]}``
+    for a vector — the rule of :func:`~magnelio.post._symmetry.mirror_sign`
+    (E polar across a magnetic wall and axial across an electric one, H
+    the other way round), applied inside the session's field filter
+    where the mirrored copy is built in numpy.  Magnitudes and anything
+    unrecognised are left out: they are even and the filter defaults to
+    ``+1``.
     """
     from magnelio.post._symmetry import mirror_sign  # noqa: PLC0415
 
-    if comp is None:
-        return -mirror_sign(field, mirror_axis, mirror_axis, kind)
-    return mirror_sign(field, comp, mirror_axis, kind)
-
-
-def _mirror_fixes(array_names, mirrors) -> list[list]:
-    """Per mirror plane, the ``[name, factor]`` pairs needing correction.
-
-    Arrays the filter already continues correctly are left out, so a
-    plane that needs nothing produces an empty list and stays a single
-    reflection rather than a reflect/negate/join branch.
-    """
-    fixes = []
+    out = []
     for axis, _wall, _at_low, kind in mirrors:
         mirror_axis = _COMP_AXES[axis]
-        plane = []
+        plane: dict = {}
         for name in array_names:
             signature = _mirror_signature(name)
             if signature is None:
                 continue
-            factor = _mirror_factor(signature[0], signature[1], mirror_axis, kind)
-            if factor < 0.0:
-                plane.append([name, factor])
-        fixes.append(plane)
-    return fixes
+            field, comp = signature
+            if comp is None:
+                plane[name] = [mirror_sign(field, c, mirror_axis, kind) for c in range(3)]
+            else:
+                plane[name] = mirror_sign(field, comp, mirror_axis, kind)
+        out.append(plane)
+    return out
 
 
 def _prepare_mirroring(monitors, mirrors) -> None:
     """Resolve each monitor spec against the declared mirror planes.
 
-    Two edits, both in place.  The sign corrections replace the raw array
-    listing, and a monitor collapsed onto a mirrored axis gets its second
-    sampling layer: mirroring turns its single cell layer into two, and a
-    lattice of one would sample the seam between them instead.
+    Two edits, both in place.  The continuation signs replace the raw
+    array listing, and a monitor collapsed onto a mirrored axis gets its
+    second sampling layer: mirroring turns its single cell layer into
+    two, and a lattice of one would sample the seam between them instead.
 
     The lattice is deliberately *not* widened otherwise.  Its spacing is
     sized for a target arrow count in the displayed picture, and the
@@ -404,7 +398,7 @@ def _prepare_mirroring(monitors, mirrors) -> None:
     that target on the full model rather than on each half.
     """
     for spec in monitors:
-        spec["mirror_fix"] = _mirror_fixes(spec.pop("field_arrays", []), mirrors)
+        spec["mirror_signs"] = _mirror_signs(spec.pop("field_arrays", []), mirrors)
         for axis, _wall, _at_low, _kind in mirrors:
             index = _COMP_AXES[axis]
             for key in ("resample_dims", "resample_dims_volume"):
@@ -952,7 +946,7 @@ def _export_eigenmodes(project_path: Path, pv_dir: Path, grid, percentile: float
 # ═════════════════════════════════════════════════════════════════════
 
 _SCRIPT_HEADER = """\
-# Generated by magnelio (DD-115) — ready-to-open ParaView session for this run.
+# Generated by magnelio (DD-115, DD-262) — ready-to-open ParaView session.
 #
 #   Open in the GUI:   paraview --script=paraview_open.py
 #   Bake a state file: pvpython paraview_open.py --save-state paraview.pvsm
@@ -962,6 +956,166 @@ import json
 import os
 import sys
 
+import numpy
+
+# ParaView 6.0 ships a numpy_interface that still calls numpy.in1d, gone
+# in numpy 2.4; every Python filter dies in its preamble without this.
+if not hasattr(numpy, "in1d"):
+    numpy.in1d = numpy.isin
+
+"""
+
+# The three scripts of the per-monitor ProgrammableFilter (DD-262).  They
+# run inside ParaView's Python, whose filter preamble does
+# ``from ...numpy_interface.algorithms import *`` and thereby shadows
+# ``max``, ``min``, ``abs``, ``sum``, ``any`` and ``all`` with array
+# reductions — hence only ``np.`` functions below.  ``CFG`` and ``MODE``
+# are prepended by the session script (a ``Parameters`` property exists
+# on the proxy but cannot be set from pvpython 6.0).
+_FIELD_SCRIPT = """\
+import numpy as np
+from vtkmodules.vtkCommonCore import vtkPoints
+from vtkmodules.vtkCommonDataModel import vtkCellArray, vtkPolyData, vtkRectilinearGrid
+from vtkmodules.vtkFiltersCore import vtkCellDataToPointData, vtkResampleToImage
+from vtkmodules.util import numpy_support as ns
+
+inp = self.GetInputDataObject(0, 0)
+out = self.GetOutputDataObject(0)
+
+# The stored frame: cell data on the monitor's node grid, x fastest.
+dims = list(inp.GetDimensions())
+coords = [ns.vtk_to_numpy(getattr(inp, "Get%sCoordinates" % ax)()).astype(float) for ax in "XYZ"]
+ncell = [d - 1 if d > 1 else 1 for d in dims]
+cd = inp.GetCellData()
+cells = {}
+for i in range(cd.GetNumberOfArrays()):
+    a = cd.GetArray(i)
+    if a is None:
+        continue
+    cells[a.GetName()] = ns.vtk_to_numpy(a).reshape(ncell[2], ncell[1], ncell[0], -1)
+
+# Symmetry planes: the simulated half on disk, the whole model here.
+# Each component continues with its own sign (CFG["signs"]); a wall on
+# a grid line (PEC) reflects its node onto itself, a magnetic wall half
+# a cell outside the grid leaves one cell astride it, which takes the
+# wall value: the edge value for an even component, zero for an odd one.
+for pi, plane in enumerate(CFG.get("symmetry") or []):
+    axis, wall, at_low = "xyz".index(plane[0]), float(plane[1]), bool(plane[2])
+    signs = CFG["signs"][pi] if pi < len(CFG["signs"]) else {}
+    npax = 2 - axis
+    c = coords[axis]
+    tol = 1e-9 * np.maximum(np.abs(float(c[-1] - c[0])), 1e-300)
+    refl = 2.0 * wall - c[::-1]
+    if at_low:
+        gap = np.abs(float(refl[-1] - c[0])) > tol
+        if not gap:
+            refl = refl[:-1]
+        coords[axis] = np.concatenate([refl, c])
+    else:
+        gap = np.abs(float(refl[0] - c[-1])) > tol
+        if not gap:
+            refl = refl[1:]
+        coords[axis] = np.concatenate([c, refl])
+    for name, a in list(cells.items()):
+        s = np.asarray(signs.get(name, 1.0), dtype=float).reshape(-1)
+        flipped = np.flip(a, axis=npax) * s
+        parts = [flipped]
+        if gap:
+            edge = np.take(a, [0] if at_low else [-1], axis=npax)
+            parts.append(0.5 * (edge + edge * s))
+        cells[name] = np.concatenate(parts + [a] if at_low else [a] + parts[::-1], axis=npax)
+
+rg = vtkRectilinearGrid()
+rg.SetDimensions(len(coords[0]), len(coords[1]), len(coords[2]))
+for ax, c in zip("XYZ", coords):
+    getattr(rg, "Set%sCoordinates" % ax)(ns.numpy_to_vtk(np.ascontiguousarray(c), deep=True))
+for name, a in cells.items():
+    flat = np.ascontiguousarray(a).reshape(-1, a.shape[-1])
+    arr = ns.numpy_to_vtk(flat if flat.shape[1] > 1 else flat[:, 0].copy(), deep=True)
+    arr.SetName(name)
+    rg.GetCellData().AddArray(arr)
+
+# Cell averages to the nodes, then onto the even lattice: arrows are
+# never placed on the computational grid, whose spacing varies by a
+# factor of 40 and would read as crowded planes with voids between.
+c2p = vtkCellDataToPointData()
+c2p.SetInputData(rg)
+c2p.PassCellDataOff()
+res = vtkResampleToImage()
+res.SetInputConnection(c2p.GetOutputPort())
+res.SetUseInputBounds(True)
+res.SetSamplingDimensions(*(CFG["dims_volume"] if MODE == "volume" else CFG["dims"]))
+res.Update()
+img = res.GetOutput()
+pd = img.GetPointData()
+
+# Arrow length law: (min(|v|, cap) / cap) ** exponent.  The cap
+# saturates the edge singularities, the exponent (fitted at export
+# time) keeps the typical field-carrying magnitude visible.
+cap, expo = float(CFG["cap"]), float(CFG["exponent"])
+lengths = {}
+for arr in CFG["arrays"]:
+    v = ns.vtk_to_numpy(pd.GetArray(arr))
+    m = np.sqrt(np.sum(v * v, axis=-1))
+    lengths[arr] = (m, (np.minimum(m, cap) / cap) ** expo if cap > 0.0 else np.zeros_like(m))
+
+if MODE == "volume":
+    # A point cloud of the lattice points carrying field, for the
+    # volume arrows: a whole-domain monitor is mostly quiet volume.
+    keep = np.zeros(img.GetNumberOfPoints(), dtype=bool)
+    for arr in CFG["arrays"]:
+        keep |= lengths[arr][0] >= float(CFG["threshold"])
+    idx = np.nonzero(keep)[0]
+    dx, dy, _dz = img.GetDimensions()
+    ijk = np.stack([idx % dx, (idx // dx) % dy, idx // (dx * dy)], axis=-1)
+    xyz = np.asarray(img.GetOrigin()) + ijk * np.asarray(img.GetSpacing())
+    poly = vtkPolyData()
+    pts = vtkPoints()
+    pts.SetData(ns.numpy_to_vtk(np.ascontiguousarray(xyz, dtype=float), deep=True))
+    poly.SetPoints(pts)
+    n = int(idx.size)
+    verts = vtkCellArray()
+    verts.SetData(
+        ns.numpy_to_vtkIdTypeArray(np.arange(n + 1, dtype=np.int64), deep=True),
+        ns.numpy_to_vtkIdTypeArray(np.arange(n, dtype=np.int64), deep=True),
+    )
+    poly.SetVerts(verts)
+    for i in range(pd.GetNumberOfArrays()):
+        a = pd.GetArray(i)
+        if a is None or a.GetName() in ("vtkValidPointMask", "vtkGhostType"):
+            continue
+        va = ns.numpy_to_vtk(np.ascontiguousarray(ns.vtk_to_numpy(a)[idx]), deep=True)
+        va.SetName(a.GetName())
+        poly.GetPointData().AddArray(va)
+    for arr in CFG["arrays"]:
+        for suffix, val in (("_mag", lengths[arr][0][idx]), ("_len", lengths[arr][1][idx])):
+            va = ns.numpy_to_vtk(np.ascontiguousarray(val), deep=True)
+            va.SetName(arr + suffix)
+            poly.GetPointData().AddArray(va)
+    out.ShallowCopy(poly)
+else:
+    for arr in CFG["arrays"]:
+        for suffix, val in (("_mag", lengths[arr][0]), ("_len", lengths[arr][1])):
+            va = ns.numpy_to_vtk(np.ascontiguousarray(val), deep=True)
+            va.SetName(arr + suffix)
+            pd.AddArray(va)
+    pd.RemoveArray("vtkValidPointMask")
+    out.ShallowCopy(img)
+"""
+
+# Declares the lattice extent up front; without it the executive
+# renegotiates and runs the field script four times per update.
+_INFO_SCRIPT = """\
+executive = self.GetExecutive()
+outInfo = executive.GetOutputInformation(0)
+d = CFG["dims"]
+outInfo.Set(executive.WHOLE_EXTENT(), 0, d[0] - 1, 0, d[1] - 1, 0, d[2] - 1)
+"""
+
+_UPDATE_SCRIPT = """\
+executive = self.GetExecutive()
+inInfo = executive.GetInputInformation(0, 0)
+inInfo.Set(executive.UPDATE_EXTENT(), inInfo.Get(executive.WHOLE_EXTENT()), 6)
 """
 
 _SCRIPT_BODY = """
@@ -997,26 +1151,6 @@ def build():
             pass
 
     unmirrored = []
-    array_types = {10: "Float", 11: "Double"}
-
-    def cell_array_types(source):
-        # Element types of the cell arrays, by name.  The corrected copy
-        # has to keep the precision of the original: a double array
-        # meeting its float twin where the halves are joined makes the
-        # array vanish from the joined dataset without a word — and that
-        # array is the one carrying the field.  Reading the type off the
-        # data cannot guess wrong, which is why it is worth the one
-        # pipeline pass it costs.
-        out = {}
-        try:
-            source.UpdatePipeline()
-            info = source.GetDataInformation().GetCellDataInformation()
-            for i in range(info.GetNumberOfArrays()):
-                a = info.GetArrayInformation(i)
-                out[a.GetName()] = array_types.get(a.GetDataType(), "Double")
-        except Exception:
-            pass
-        return out
 
     def mirror_plane(r, axis, wall):
         # Place a reflection filter on an arbitrary axis-aligned plane.
@@ -1036,101 +1170,37 @@ def build():
             else:
                 r.Plane = axis.upper()
                 r.Center = wall
+            return True
         except Exception:
             return False
-        # Without this the filter continues only arrays flagged as
-        # vectors, and the sign corrections below assume it ran.
-        for flag in ("ReflectAllInputArrays", "FlipAllInputArrays"):
-            if flag in props:
-                try:
-                    setattr(r, flag, 1)
-                    return True
-                except Exception:
-                    pass
-        return False
 
-    def reflected(inp, label, fixes=None, clip_first=False, merge=False):
-        # Symmetry planes: half-model data on disk, full model in the
-        # renderer — one reflection per declared plane.  clip_first drops
-        # the far half of a fully modelled geometry so only the simulated
-        # half is mirrored (the display shows what the solver saw).
-        #
-        # The filter continues every 3-component array as a polar vector.
-        # That is the exact continuation for one pairing of field and
-        # wall type only; *fixes* lists, per plane, the arrays left with
-        # the wrong sign — including the single components, which the
-        # filter does not touch at all.  Those planes reflect without the
-        # input copy, so the mirrored branch stands alone and its
-        # correction is a constant factor needing no coordinate test,
-        # and the two halves are rejoined afterwards.
-        #
-        # *merge* flattens the dataset around every reflection, and field
-        # data needs it twice over.  Reflecting a composite dataset
-        # assigns the continued vector to different cells than the
-        # untouched single components, so colour and arrows would come
-        # from different places; and joining two halves leaves cell-to-
-        # point averaging blind to the seam, which puts a non-zero
-        # tangential field on an electric wall.  Geometry has neither
-        # problem and keeps its blocks, which carry the body names.
+    def reflected(inp, label):
+        # Symmetry planes of the GEOMETRY: the solids are clipped to the
+        # simulated half first (the display shows what the solver saw)
+        # and reflected once per declared plane.  Field data does not
+        # come through here — the monitor filter mirrors it in numpy,
+        # with the continuation sign of every component.
         head = inp
-        grouped = False
         for i, plane in enumerate(CONFIG.get("symmetry") or []):
             axis, wall, at_low = plane[0], plane[1], plane[2]
-            before, built = head, []
-            if clip_first:
-                cl = simple.Clip(
-                    registrationName="%s_symclip_%d" % (label, i), Input=head
-                )
-                cl.ClipType = "Plane"
-                origin = [0.0, 0.0, 0.0]
-                origin["xyz".index(axis)] = wall
-                cl.ClipType.Origin = origin
-                cl.ClipType.Normal = normals[axis]
-                cl.Invert = 0 if at_low else 1
-                head = cl
-                built.append(cl)
-            if merge:
-                head = simple.MergeBlocks(
-                    registrationName="%s_flat_%d" % (label, i), Input=head
-                )
-                built.append(head)
-            r = simple.Reflect(
-                registrationName="%s_mirror_%d" % (label, i), Input=head
-            )
-            built.append(r)
+            before = head
+            cl = simple.Clip(registrationName="%s_symclip_%d" % (label, i), Input=head)
+            cl.ClipType = "Plane"
+            origin = [0.0, 0.0, 0.0]
+            origin["xyz".index(axis)] = wall
+            cl.ClipType.Origin = origin
+            cl.ClipType.Normal = normals[axis]
+            cl.Invert = 0 if at_low else 1
+            r = simple.Reflect(registrationName="%s_mirror_%d" % (label, i), Input=cl)
             if not mirror_plane(r, axis, wall):
                 # Half-built filters left hanging in the pipeline are
                 # exactly what makes this failure read as a feature.
-                for proxy in reversed(built):
-                    simple.Delete(proxy)
+                simple.Delete(r)
+                simple.Delete(cl)
                 unmirrored.append(label)
                 return before
-            fix = fixes[i] if fixes and i < len(fixes) else []
-            if not fix:
-                r.CopyInput = 1
-                head, grouped = r, False
-                continue
-            r.CopyInput = 0
-            types = cell_array_types(r)
-            branch = r
-            for name, factor in fix:
-                calc = simple.Calculator(
-                    registrationName="%s_sign_%d_%s" % (label, i, name), Input=branch
-                )
-                calc.AttributeType = "Cell Data"
-                calc.ResultArrayName = name
-                calc.Function = '%g*"%s"' % (factor, name)
-                try:
-                    calc.ResultArrayType = types.get(name, "Double")
-                except Exception:
-                    pass
-                branch = calc
-            head = simple.GroupDatasets(
-                registrationName="%s_joined_%d" % (label, i), Input=[head, branch]
-            )
-            grouped = True
-        if merge and grouped:
-            head = simple.MergeBlocks(registrationName="%s_full" % label, Input=head)
+            r.CopyInput = 1
+            head = r
         return head
 
     # -- geometry: coloured per material via categorical LUT -----------
@@ -1139,7 +1209,7 @@ def build():
         geom = simple.XMLMultiBlockDataReader(
             registrationName="geometry", FileName=[_abspath(CONFIG["geometry"])]
         )
-        geom = reflected(geom, "geometry", clip_first=True)
+        geom = reflected(geom, "geometry")
         disp = simple.Show(geom, view)
         disp.Representation = "Surface"
         simple.ColorBy(disp, ("CELLS", "MaterialIndex"))
@@ -1160,100 +1230,60 @@ def build():
         disp.Opacity = 0.85
 
     # -- monitors ------------------------------------------------------
+    # One Python filter per monitor holds the whole preparation (mirror,
+    # cell-to-point, lattice, arrow lengths); what remains in the
+    # pipeline browser is the reader, the field, one cut with its
+    # arrows, the geometry clip linked to the cut, and the hidden
+    # volume arrows.
     shown_any = False
     for mon in CONFIG["monitors"]:
         path = _abspath(mon["data"])
         if not os.path.exists(path):
             continue
-        if mon["reader"] == "xdmf":
-            src = simple.XDMFReader(registrationName=mon["name"], FileNames=[path])
-        else:
-            src = simple.PVDReader(registrationName=mon["name"], FileName=path)
-        src = reflected(src, mon["name"], mon.get("mirror_fix"), merge=True)
-        pts = simple.CellDatatoPointData(registrationName=mon["name"] + "_points", Input=src)
-
         glyph = mon.get("glyph")
-        arrays = glyph["arrays"] if glyph else []
+        dims = mon.get("resample_dims")
+        if not glyph or not dims:
+            continue
+        name = mon["name"]
+        arrays = glyph["arrays"]
+        src = simple.PVDReader(registrationName=name, FileName=path)
+        cfg = {
+            "dims": dims,
+            "dims_volume": mon.get("resample_dims_volume") or dims,
+            "arrays": arrays,
+            "cap": glyph["cap"],
+            "exponent": glyph["exponent"],
+            "threshold": glyph["threshold"],
+            "symmetry": CONFIG.get("symmetry") or [],
+            "signs": mon.get("mirror_signs") or [],
+        }
 
-        def lattice(label, dims):
-            # Everything downstream is glyphed on an evenly spaced lattice.
-            # The computational grid is deliberately NOT used for arrow
-            # placement: its spacing routinely varies by a factor of 40
-            # between a geometry-refined region and a wavelength-sized one,
-            # which reads as arrows crowding into isolated planes with
-            # voids between them.  Resampling happens on the RAW field,
-            # ahead of the direction calculators below, so the non-linear
-            # length map is applied to interpolated field values rather
-            # than the interpolation being applied to compressed ones.
-            r = simple.ResampleToImage(registrationName=label, Input=pts)
-            r.SamplingDimensions = dims
-            return r
-
-        def direction_arrays(inp, prefix):
-            # One direction array per field array.  The Calculator maps the
-            # magnitude to a DIMENSIONLESS 0..1 length factor, so the glyph
-            # ScaleFactor below is a plain length in metres — the length of
-            # the longest arrow, readable and inside the range ParaView's
-            # slider offers.
-            #
-            #   |dir| = (min(|v|, cap) / cap) ^ exponent
-            #
-            # Two baked numbers do two separate jobs: `cap` saturates the
-            # edge singularities, and `exponent` < 1 compresses the length
-            # span so the typical field-carrying magnitude still shows.  A
-            # linear map (exponent 1) cannot: a whole-domain monitor is
-            # routinely half zeros (PEC interior, quiet volume), which puts
-            # the typical magnitude 20-30x below the cap and its arrow
-            # below a millimetre.  The exponent is fitted per monitor at
-            # export time, so a more extreme distribution compresses harder.
-            head = inp
-            for arr in arrays:
-                mag = simple.Calculator(
-                    registrationName="%s_%s_mag" % (prefix, arr), Input=head
-                )
-                mag.AttributeType = "Point Data"
-                mag.ResultArrayName = arr + "_mag"
-                mag.Function = "mag(%s)" % arr
-                calc = simple.Calculator(
-                    registrationName="%s_%s_dir" % (prefix, arr), Input=mag
-                )
-                calc.AttributeType = "Point Data"
-                calc.ResultArrayName = arr + "_dir"
-                eps = glyph["cap"] * 1e-12
-                calc.Function = "%s*((min(mag(%s),%.9g)/%.9g)^%.6g)/(mag(%s)+%.9g)" % (
-                    arr,
-                    arr,
-                    glyph["cap"],
-                    glyph["cap"],
-                    glyph["exponent"],
-                    arr,
-                    eps,
-                )
-                head = calc
-            return head
+        def programmable(label, mode, output_type, info):
+            pf = simple.ProgrammableFilter(registrationName=label, Input=src)
+            pf.OutputDataSetType = output_type
+            head = "CFG = %r\\nMODE = %r\\n" % (cfg, mode)
+            pf.Script = head + FIELD_SCRIPT
+            if info:
+                pf.RequestInformationScript = head + INFO_SCRIPT
+                pf.RequestUpdateExtentScript = UPDATE_SCRIPT
+            return pf
 
         def make_glyph(inp, label, arr):
             gly = simple.Glyph(registrationName=label, Input=inp, GlyphType="Arrow")
-            gly.OrientationArray = ["POINTS", arr + "_dir"]
-            gly.ScaleArray = ["POINTS", arr + "_dir"]
-            gly.VectorScaleMode = "Scale by Magnitude"
+            gly.OrientationArray = ["POINTS", arr]
+            gly.ScaleArray = ["POINTS", arr + "_len"]
+            # The length array is dimensionless 0..1, so the factor is a
+            # plain length in metres: the longest arrow drawn.
             gly.ScaleFactor = glyph["length"]
             # The input already IS the even spacing asked for, so every
             # point carries an arrow; any seeding mode would undo it.
             gly.GlyphMode = "All Points"
-            return gly
-
-        def field_region(inp, label, arr):
-            # Cells carrying field, for the volume glyphs; *inp* unchanged
-            # when this ParaView predates the current Threshold API.
             try:
-                thr = simple.Threshold(registrationName=label, Input=inp)
-                thr.Scalars = ["POINTS", arr + "_mag"]
-                thr.LowerThreshold = glyph["threshold"]
-                thr.UpperThreshold = 1e30
-                return thr
+                # Centred on the sample point rather than starting there.
+                gly.GlyphTransform.Translate = [-0.5, 0.0, 0.0]
             except Exception:
-                return inp  # older Threshold API: glyph the whole volume
+                pass
+            return gly
 
         def show_coloured(proxy, arr=None):
             d = simple.Show(proxy, view)
@@ -1271,82 +1301,62 @@ def build():
             return d
 
         is_first = not shown_any
-        dims = mon.get("resample_dims")
-        if not arrays or not dims:
-            continue
-        head = direction_arrays(lattice(mon["name"] + "_lattice", dims), mon["name"])
+        field = programmable(name + "_field", "section", "vtkImageData", True)
 
         if mon["slice_axes"]:
-            # Whole-volume arrows get their own, coarser lattice: the one
-            # feeding the cuts is sized for in-plane density, and glyphing
-            # every one of its points in 3D would bury the field under its
-            # own arrows.
-            vol_dims = mon.get("resample_dims_volume")
-            if vol_dims:
-                vol = direction_arrays(
-                    lattice(mon["name"] + "_lattice_volume", vol_dims),
-                    mon["name"] + "_volume",
-                )
-                for arr in arrays:
-                    region = field_region(
-                        vol, "%s_volume_region_%s" % (mon["name"], arr), arr
-                    )
-                    make_glyph(region, "%s_volume_%s" % (mon["name"], arr), arr)
-            for axis in mon["slice_axes"]:
-                sl = simple.Slice(
-                    registrationName="%s_slice_%s" % (mon["name"], axis), Input=head
-                )
-                sl.SliceType = "Plane"
-                sl.SliceType.Origin = mon["center"]
-                sl.SliceType.Normal = normals[axis]
-                glyphs = [
-                    (arr, make_glyph(sl, "%s_arrows_%s_%s" % (mon["name"], arr, axis), arr))
-                    for arr in arrays
-                ]
-                if geom is not None:
-                    clip = simple.Clip(
-                        registrationName="geometry_cut_%s_%s" % (mon["name"], axis),
-                        Input=geom,
-                    )
-                    clip.ClipType = "Plane"
-                    clip.ClipType.Origin = mon["center"]
-                    clip.ClipType.Normal = normals[axis]
-                    link_planes("plane_%s_%s" % (mon["name"], axis), sl.SliceType, clip.ClipType)
-                if is_first and axis == mon["default_axis"]:
-                    show_coloured(sl)
-                    # Only the first array's arrows are shown; the others
-                    # (the imaginary part of a frequency monitor) sit
-                    # ready in the pipeline, one click from visible.
-                    for arr, gly in glyphs[:1]:
-                        show_coloured(gly, arr)
-                    shown_any = True
+            if mon.get("resample_dims_volume"):
+                # Whole-volume arrows on their own, coarser lattice, hidden
+                # until asked for: glyphing the section lattice in 3D
+                # would bury the field under its own arrows.
+                vol = programmable(name + "_volume", "volume", "vtkPolyData", False)
+                make_glyph(vol, name + "_volume_arrows", arrays[0])
+            # One cut, normal to the shortest extent (the largest section);
+            # the plane widget turns it to any other orientation.
+            sl = simple.Slice(registrationName=name + "_slice", Input=field)
+            sl.SliceType = "Plane"
+            sl.SliceType.Origin = mon["center"]
+            sl.SliceType.Normal = normals[mon["default_axis"]]
+            arrows = make_glyph(sl, name + "_arrows", arrays[0])
+            if len(arrays) > 1:
+                # The imaginary part of a frequency monitor: the field a
+                # quarter period later, ready one click from visible.
+                make_glyph(sl, name + "_arrows_im", arrays[1])
+            if geom is not None:
+                clip = simple.Clip(registrationName="geometry_cut_" + name, Input=geom)
+                clip.ClipType = "Plane"
+                clip.ClipType.Origin = mon["center"]
+                clip.ClipType.Normal = normals[mon["default_axis"]]
+                link_planes("plane_" + name, sl.SliceType, clip.ClipType)
+            if is_first:
+                show_coloured(sl)
+                show_coloured(arrows, arrays[0])
+                shown_any = True
         else:
             # Planar (or lower-dimensional) monitor: the lattice already is
             # the section — glyph it directly, no slicing needed.
-            glyphs = [
-                (arr, make_glyph(head, "%s_arrows_%s" % (mon["name"], arr), arr)) for arr in arrays
-            ]
+            arrows = make_glyph(field, name + "_arrows", arrays[0])
+            if len(arrays) > 1:
+                make_glyph(field, name + "_arrows_im", arrays[1])
             if geom is not None and mon.get("planar_normal"):
-                clip = simple.Clip(registrationName="geometry_cut_" + mon["name"], Input=geom)
+                clip = simple.Clip(registrationName="geometry_cut_" + name, Input=geom)
                 clip.ClipType = "Plane"
                 clip.ClipType.Origin = mon["center"]
                 clip.ClipType.Normal = normals[mon["planar_normal"]]
             if is_first:
-                show_coloured(head)
-                for arr, gly in glyphs[:1]:
-                    show_coloured(gly, arr)
+                show_coloured(field)
+                show_coloured(arrows, arrays[0])
                 shown_any = True
 
     if unmirrored:
         # Announced in the view itself, not only on stdout: the failure
-        # shows a half model that looks like a whole one, and nothing
-        # else in the picture says so.
+        # shows the solids of the simulated half next to complete fields,
+        # and nothing else in the picture says so.
         print(SYMMETRY_MARKER + " " + ",".join(sorted(set(unmirrored))))
         try:
             note = simple.Text(registrationName="symmetry_note")
             note.Text = (
-                "Symmetry mirroring is not available in this ParaView build.\\n"
-                "Showing the simulated part of the model only."
+                "Symmetry mirroring of the geometry is not available in this ParaView build.\\n"
+                "The fields are complete; the solids show the simulated part only."
             )
             simple.Show(note, view).Color = [1.0, 0.35, 0.25]
         except Exception:
@@ -1380,6 +1390,9 @@ def write_paraview_script(script_path: str | Path, config: dict) -> Path:
         _SCRIPT_HEADER
         + f"CONFIG = json.loads({payload!r})\n"
         + f"SYMMETRY_MARKER = {_SYMMETRY_MARKER!r}\n"
+        + f"FIELD_SCRIPT = {_FIELD_SCRIPT!r}\n"
+        + f"INFO_SCRIPT = {_INFO_SCRIPT!r}\n"
+        + f"UPDATE_SCRIPT = {_UPDATE_SCRIPT!r}\n"
         + _SCRIPT_BODY,
         encoding="utf-8",
     )
@@ -1416,13 +1429,41 @@ def bake_pvsm(script_path: str | Path, pvsm_path: str | Path, timeout: float = 3
         return False
     if _SYMMETRY_MARKER in (proc.stdout or ""):
         warnings.warn(
-            "ParaView could not place the symmetry mirror planes, so the session "
-            "shows only the simulated part of the model. The reflection filter of "
-            "this ParaView build exposes none of the property sets magnelio knows.",
+            "ParaView could not place the symmetry mirror planes of the geometry, "
+            "so the session shows the solids of the simulated part only (the fields "
+            "are complete). The reflection filter of this ParaView build exposes "
+            "none of the property sets magnelio knows.",
             RuntimeWarning,
             stacklevel=2,
         )
     return proc.returncode == 0 and pvsm_path.exists()
+
+
+def _ensure_geometry_vtm(project) -> None:
+    """Tessellate the stored geometry into ``geometry.vtm`` if it is missing.
+
+    The exact ``geometry.brep`` is what the store writes; the multiblock
+    mesh ParaView reads is made here, on the first export.  Best-effort:
+    a tessellation failure (or a build without the CAD kernel) warns and
+    the session goes on without the solids.
+    """
+    path = project.path / "geometry.vtm"
+    if path.exists() or not (project.path / "geometry.brep").exists():
+        return
+    try:
+        with warnings.catch_warnings():
+            # The geometry reader notes thin wires it cannot rebuild;
+            # they carry no solid to tessellate anyway.
+            warnings.simplefilter("ignore")
+            solids = list(project.geometry)
+        if solids:
+            export_vtm(path, solids)
+    except Exception as exc:  # viz-only; the field export goes on
+        warnings.warn(
+            f"geometry.vtm could not be written (the ParaView session shows no solids): {exc}",
+            UserWarning,
+            stacklevel=2,
+        )
 
 
 def _geometry_config(project_path: Path, rel: str) -> tuple[str | None, list[dict]]:
@@ -1514,6 +1555,7 @@ def export_eigenmode_visualization(
     project = Project(project_path)
     if not (project.path / "eigenmodes.h5").exists():
         return {}
+    _ensure_geometry_vtm(project)
 
     pv_dir = project.path / "paraview"
     pv_dir.mkdir(exist_ok=True)
@@ -1549,7 +1591,8 @@ def export_run_visualization(
 ) -> dict:
     """Generate the ready-to-open ParaView session for one stored run.
 
-    Writes, under ``runs/<run_name>/``:
+    Writes the tessellated ``geometry.vtm`` into the project directory
+    when it is missing, and, under ``runs/<run_name>/``:
 
     * ``paraview/<monitor>.pvd`` + ``paraview/<monitor>/t_*.vtr`` — a
       field-time monitor's frames as a time series, averaged onto the
@@ -1588,6 +1631,7 @@ def export_run_visualization(
     run_dir = project.path / "runs" / run_name
     if not run_dir.is_dir():
         raise FileNotFoundError(f"no such run directory: {run_dir}")
+    _ensure_geometry_vtm(project)
 
     geometry_rel, materials = _geometry_config(project.path, "../../geometry.vtm")
 

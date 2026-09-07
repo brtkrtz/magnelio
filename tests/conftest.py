@@ -17,7 +17,8 @@ import os
 
 os.environ.setdefault("MAGNELIO_BACKEND", "numpy")
 os.environ.setdefault("MAGNELIO_PRECISION", "double")
-# No pvpython state-bake subprocesses during tests (DD-115): the light
-# ParaView artefacts (vtm/xdmf/vtr/script) still exercise the exporter;
-# the bake itself is covered by one dedicated, gated test.
+# No pvpython state-bake subprocesses during tests (DD-115): the tests
+# that call export_paraview() still exercise the exporter through the
+# light artefacts (vtm/vtr/script); the bake itself is covered by the
+# dedicated, gated tests.
 os.environ.setdefault("MAGNELIO_PVSM_BAKE", "0")

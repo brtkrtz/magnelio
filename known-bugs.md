@@ -16,8 +16,8 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Three entries are open as of 2026-09-03: KB-023, KB-038 and
-KB-043.**  Everything else is struck through and resolved.
+**Four entries are open as of 2026-09-07: KB-023, KB-038, KB-043 and
+KB-046.**  Everything else is struck through and resolved.
 
 ## KB-046: `volume()` is quadrature-limited on rational B-spline faces — Open (2026-09-04)
 

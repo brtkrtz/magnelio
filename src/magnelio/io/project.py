@@ -11,7 +11,8 @@ Directory layout (the write-once model, plus the ``runs/`` and
     <project>/
         project.json        schema/version, setup metadata, run index, status
         geometry.brep       exact OCC geometry (ordered compound)  [optional]
-        geometry.vtm        per-solid multiblock mesh for ParaView  [optional]
+        geometry.vtm        per-solid multiblock mesh for ParaView  [written
+                            by Project.export_paraview]
         geometry.json       per-shape names/materials + background (compound
                             order)
         mesh.h5             grid, material_id, material_library,
@@ -1806,7 +1807,9 @@ class _RunSink:
         consistent break point by the solver.  ``stop_reason`` /
         ``final_port_signal_db`` book why the run ended (and the |V|
         envelope level below peak it reached) into the run index;
-        ``elapsed`` books the march's wall time.
+        ``elapsed`` books the march's wall time.  No ParaView artefact
+        is written here: :meth:`Project.export_paraview` does that on
+        request (DD-262).
         """
         self.flush()
         if state == "done":
@@ -1821,28 +1824,6 @@ class _RunSink:
             final_port_signal_db=final_port_signal_db,
             elapsed=elapsed,
         )
-        self._export_paraview()
-
-    def _export_paraview(self) -> None:
-        """Generate the run's ParaView session (DD-115), best-effort.
-
-        Runs after the writer is closed and the run finalised, so the
-        exporter reads a consistent ``results.h5`` / ``fields_freq.h5``.
-        Visualization-only: any failure is downgraded to a warning —
-        it must never invalidate a completed run.
-        """
-        try:
-            from magnelio.io.paraview import export_run_visualization  # noqa: PLC0415
-
-            export_run_visualization(self._store.path, self._run_name)
-        except Exception as exc:  # viz-only; the run itself is complete
-            import warnings  # noqa: PLC0415
-
-            warnings.warn(
-                f"ParaView session export failed (visualization only): {exc}",
-                UserWarning,
-                stacklevel=2,
-            )
 
 
 _ENERGY_DTYPE = [("step", int), ("time", float), ("energy", float)]
@@ -3124,7 +3105,7 @@ class ProjectStore:
         *,
         geometry=None,
         setup: dict | None = None,
-        paraview: bool = True,
+        paraview: bool | None = None,
         exist_ok: bool = True,
     ) -> "ProjectStore":
         """Create a project directory and write the static model.
@@ -3137,17 +3118,18 @@ class ProjectStore:
             The simulation mesh (grid, materials, conformal sub-cell
             data) — written to ``mesh.h5``.
         geometry : GeometryModel or list, optional
-            Source geometry.  When given, an exact ``geometry.brep`` and
-            (if *paraview*) a per-solid ``geometry.vtm`` are written,
-            plus a ``geometry.json`` carrying per-shape names and
-            materials in compound order.
+            Source geometry.  When given, an exact ``geometry.brep`` is
+            written, plus a ``geometry.json`` carrying per-shape names
+            and materials in compound order.  The tessellated
+            ``geometry.vtm`` for ParaView is written by
+            :meth:`Project.export_paraview`.
         setup : dict, optional
             JSON-serialisable analysis metadata (dt, frequency plan,
             port/BC/excitation descriptions).  Stored under ``setup`` in
             ``project.json``; consumed by later work packages.
-        paraview : bool, default True
-            Also write the tessellated ``geometry.vtm`` for ParaView,
-            and generate the per-run ParaView session at run close.
+        paraview : bool, optional
+            Deprecated and without effect: ParaView files are written
+            on request by :meth:`Project.export_paraview`.
         exist_ok : bool, default True
             Reuse an existing directory (raise if False and it exists).
 
@@ -3162,6 +3144,16 @@ class ProjectStore:
                 "h5py is required for the project store. Install with: pip install h5py",
             ) from exc
 
+        if paraview is not None:
+            import warnings  # noqa: PLC0415
+
+            warnings.warn(
+                "ProjectStore.create(paraview=) is deprecated and has no effect: "
+                "ParaView files are written by Project.export_paraview()",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         path = Path(path)
         if path.exists() and not exist_ok:
             raise FileExistsError(f"project directory already exists: {path}")
@@ -3171,7 +3163,7 @@ class ProjectStore:
         store._write_mesh(mesh)
         has_geometry = geometry is not None
         if has_geometry:
-            store._write_geometry(geometry, paraview=paraview)
+            store._write_geometry(geometry)
 
         from magnelio._version import __version__  # noqa: PLC0415
 
@@ -3199,7 +3191,7 @@ class ProjectStore:
         with h5py.File(self.path / "mesh.h5", "w") as f:
             _save_mesh(f, mesh)
 
-    def _write_geometry(self, geometry, *, paraview: bool) -> None:
+    def _write_geometry(self, geometry) -> None:
         from magnelio.geo.wire import ThinWire  # noqa: PLC0415
 
         shapes = list(geometry)
@@ -3225,15 +3217,6 @@ class ProjectStore:
                 "background": (_material_to_dict(background) if background is not None else None),
             },
         )
-        if paraview:
-            try:
-                from magnelio.io.paraview import export_vtm  # noqa: PLC0415
-
-                solids = [s for s in shapes if not isinstance(s, ThinWire)]
-                if solids:
-                    export_vtm(self.path / "geometry.vtm", solids)
-            except ImportError:
-                pass  # VTM is viz-only; BREP is the source of truth
 
     def register_planned_runs(self, planned) -> None:
         """Pre-register planned runs as ``pending`` in the run index.
@@ -3513,7 +3496,9 @@ class ProjectStore:
         """Persist an :class:`EigenmodeResult` to ``eigenmodes.h5``.
 
         Eigenmode analysis has no time-marching state, so it produces a
-        one-shot result rather than a streamable/resumable run.
+        one-shot result rather than a streamable/resumable run.  The
+        ParaView session is written on request by
+        :meth:`Project.export_paraview_eigenmodes` (DD-262).
         """
         _save_eigenmodes(self.path, result)
 
@@ -3522,29 +3507,6 @@ class ProjectStore:
             meta["status"] = "done"
 
         _update_meta(self.path, _upd)
-        self._export_eigenmode_paraview()
-
-    def _export_eigenmode_paraview(self) -> None:
-        """Generate the eigenmode ParaView session, best-effort.
-
-        Mirrors the run-close export: visualization-only, so any
-        failure is downgraded to a warning rather than invalidating a
-        stored result.
-        """
-        try:
-            from magnelio.io.paraview import (  # noqa: PLC0415
-                export_eigenmode_visualization,
-            )
-
-            export_eigenmode_visualization(self.path)
-        except Exception as exc:  # viz-only; the result itself is written
-            import warnings  # noqa: PLC0415
-
-            warnings.warn(
-                f"ParaView eigenmode export failed (visualization only): {exc}",
-                UserWarning,
-                stacklevel=2,
-            )
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -4843,16 +4805,17 @@ class Project(ScatteringResultMixin):
         glyph_percentile: float = 98.0,
         bake_state: bool = True,
     ) -> dict:
-        """(Re-)generate the ready-to-open ParaView session for one run.
+        """Write the ready-to-open ParaView session for one run.
 
-        The run close already generates this automatically;
-        call this to regenerate with different options, or after the
-        automatic export was skipped (``paraview=False``, missing
-        ``pvpython``).  Writes ``paraview_open.py`` (open with
-        ``paraview --script=…``), per-monitor data descriptors under
-        ``paraview/``, and — when ``pvpython`` is available and
-        *bake_state* — the double-clickable ``paraview.pvsm``, all in
-        the run directory.
+        The only place the ParaView artefacts are written: a run's
+        close, a resume and the eigenmode solver write none of them.
+        Writes the tessellated ``geometry.vtm`` in the project directory
+        if it is missing, one ``.vtr`` per frame of every field monitor
+        under ``paraview/`` (collected by a ``.pvd`` per monitor),
+        ``paraview_open.py`` (open with ``paraview --script=…``), and —
+        when ``pvpython`` is available and *bake_state* — the
+        double-clickable ``paraview.pvsm``, all in the run directory.
+        Call it again after a resume; the set is regenerated.
 
         Parameters
         ----------
@@ -4887,10 +4850,10 @@ class Project(ScatteringResultMixin):
         glyph_percentile: float = 98.0,
         bake_state: bool = True,
     ) -> dict:
-        """(Re-)generate the ParaView session for the stored eigenmodes.
+        """Write the ParaView session for the stored eigenmodes.
 
-        The eigenmode counterpart of :meth:`export_paraview`; writing
-        the eigenmode result already generates this automatically.
+        The eigenmode counterpart of :meth:`export_paraview`, and like
+        it the only place these files are written.
         Eigenmodes have no excitation and no time axis, so they belong
         to the project rather than to a run: the artefacts land in the
         project directory itself (``paraview_open.py``,

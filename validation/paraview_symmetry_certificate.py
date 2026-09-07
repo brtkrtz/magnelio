@@ -1,27 +1,25 @@
 """Certificate: the mirrored halves of a ParaView session carry the field.
 
-Reproduces the measurements DD-169 cites.
+Reproduces the measurements DD-169 cites, on the pipeline of DD-262.
 
 A symmetry plane is declared once and consumed twice: the monitor plots
-continue their data with ``mirror_sign``, and the ParaView session lets
-the renderer's reflection filter do it.  The filter is not that
-continuation.  It transforms every 3-component array as a polar vector
-and leaves single components untouched, which is the physical answer for
-one pairing of field and wall type and off by a global minus for the
-other — so a model with an electric and a magnetic plane gets one half
-right and one half backwards, in a picture that looks symmetric either
-way.
+continue their data with ``mirror_sign``, and the ParaView session's
+per-monitor Python filter builds the mirrored copy in numpy with the
+signs the export resolved through the same function.  (Until DD-262
+the renderer's reflection filter did it, transforming every
+3-component array as a polar vector — right for one pairing of field
+and wall type, off by a global minus for the other, in a picture that
+looks symmetric either way.)
 
 Three checks, on a cavity carrying one plane of each type:
 
-1.  **The planes reach the renderer.**  Every declared plane becomes a
-    reflection in the built pipeline, and the displayed branch hangs off
-    the last of them rather than off the unmirrored reader.
+1.  **The planes reach the filter.**  Every declared plane stands in the
+    field filter's own configuration, and the displayed cut hangs off
+    that filter rather than off the unmirrored reader.
 
 2.  **Components stay together.**  The single components still equal the
-    components of the vector array everywhere.  Reflecting a composite
-    dataset assigns them to different cells, which would colour a glyph
-    from one place and aim it from another.
+    components of the vector array everywhere: one dataset, one
+    lattice, so a glyph is coloured and aimed from the same place.
 
 3.  **The continuation is the monitors'.**  Across each plane the field
     reproduces the sign ``mirror_sign`` prescribes, component by
@@ -72,8 +70,10 @@ def _build(path: Path):
 
 
 _PROBE = """
-import json, sys
+import ast, json, sys
 import numpy as np
+if not hasattr(np, "in1d"):
+    np.in1d = np.isin
 from paraview import simple, servermanager as sm
 from vtk.util import numpy_support as ns
 
@@ -90,21 +90,27 @@ config = scope["CONFIG"]
 planes = config["symmetry"]
 name = config["monitors"][0]["name"]
 
+# The monitor's Python filter carries the planes and the signs in its
+# own CFG line (DD-262); the slice must hang off that filter.
 report = {"planes": planes, "reflections": [], "displayed_from": None}
-for i in range(len(planes)):
-    report["reflections"].append(simple.FindSource("%s_mirror_%d" % (name, i)) is not None)
-head = simple.FindSource("%s_full" % name) or simple.FindSource(
-    "%s_mirror_%d" % (name, len(planes) - 1)
-)
-points = simple.FindSource("%s_points" % name)
-if points is not None and head is not None:
-    fed = points.Input
-    report["displayed_from"] = fed.SMProxy.GetGlobalID() == head.SMProxy.GetGlobalID()
+field = simple.FindSource("%s_field" % name)
+cfg = ast.literal_eval(field.Script.splitlines()[0].split("=", 1)[1].strip())
+report["reflections"] = [list(p) in [list(q) for q in cfg["symmetry"]] for p in planes]
+sl = simple.FindSource("%s_slice" % name)
+if sl is not None:
+    report["displayed_from"] = sl.Input.SMProxy.GetGlobalID() == field.SMProxy.GetGlobalID()
 
-res = simple.ResampleToImage(Input=simple.CellDatatoPointData(Input=head))
-res.SamplingDimensions = samples
-res.UpdatePipeline()
-image = sm.Fetch(res)
+# Sample the same filter at the certificate's own resolution (odd
+# counts put a sample on every wall).
+cfg["dims"] = samples
+probe = simple.ProgrammableFilter(Input=simple.FindSource(name))
+probe.OutputDataSetType = "vtkImageData"
+head = "CFG = %r\\nMODE = %r\\n" % (cfg, "section")
+probe.Script = head + scope["FIELD_SCRIPT"]
+probe.RequestInformationScript = head + scope["INFO_SCRIPT"]
+probe.RequestUpdateExtentScript = scope["UPDATE_SCRIPT"]
+probe.UpdatePipeline()
+image = sm.Fetch(probe)
 dims = image.GetDimensions()
 data = image.GetPointData()
 
@@ -113,22 +119,26 @@ def array(label):
     return ns.vtk_to_numpy(data.GetArray(label)).reshape(dims[2], dims[1], dims[0], -1)
 
 
-mask = array("vtkValidPointMask")[..., 0] > 0
+ghost = data.GetArray("vtkGhostType")
+mask = (array("vtkGhostType")[..., 0] == 0) if ghost is not None else np.ones(dims[::-1], bool)
 report["components_together"] = {}
 report["continuation"] = {}
-for field in ("E", "H"):
-    if data.GetArray(field) is None:
+for field_name in ("E", "H"):
+    if data.GetArray(field_name) is None:
         continue
-    vector = array(field)
-    scalars = {axis: array(field + axis)[..., 0] for axis in "xyz"}
-    scale = max(float(np.abs(v)[mask].max()) for v in scalars.values())
-    report["components_together"][field] = max(
-        float(np.abs(scalars[a] - vector[..., k])[mask].max()) for k, a in enumerate("xyz")
+    vector = array(field_name)
+    scalars = {axis: array(field_name + axis)[..., 0] for axis in "xyz"}
+    # ParaView runs the field filter in this module's namespace and its
+    # preamble shadows the builtin reductions with numpy_interface's, so
+    # nothing below relies on max().
+    scale = float(np.max([np.abs(v)[mask].max() for v in scalars.values()]))
+    report["components_together"][field_name] = float(
+        np.max([np.abs(scalars[a] - vector[..., k])[mask].max() for k, a in enumerate("xyz")])
     ) / scale
     for axis, wall, at_low, kind in planes:
         flip = 2 - "xyz".index(axis)
         for a in "xyz":
-            label = "%s%s %s%s" % (field, a, axis, kind)
+            label = "%s%s %s%s" % (field_name, a, axis, kind)
             want = expected[label]
             both = mask & np.flip(mask, axis=flip)
             gap = np.abs(np.flip(scalars[a], axis=flip) - want * scalars[a])[both].max()
@@ -176,10 +186,10 @@ def _run_probe(session: Path, workdir: Path, expected: dict):
 
 
 def check_planes_reach_the_renderer(report) -> bool:
-    print("\n[1] every declared plane becomes a reflection")
+    print("\n[1] every declared plane reaches the monitor's field filter")
     for (axis, wall, at_low, kind), built in zip(report["planes"], report["reflections"]):
-        print(f"      {axis} at {wall * 1e3:+8.4f} mm  {kind:3s}  reflection built: {built}")
-    print(f"      displayed branch hangs off the last reflection: {report['displayed_from']}")
+        print(f"      {axis} at {wall * 1e3:+8.4f} mm  {kind:3s}  in the filter's CFG: {built}")
+    print(f"      displayed cut hangs off the field filter: {report['displayed_from']}")
     return all(report["reflections"]) and report["displayed_from"] is True
 
 
