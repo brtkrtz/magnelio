@@ -406,13 +406,17 @@ class GeometryModel:
 
         return _plot_cross_section(self, normal, position, **kwargs)
 
-    def plot(self, mesh=None, **kwargs):
+    def show(self, mesh=None, **kwargs):
         """Interactive 3D view of the model.
 
         Thin wrapper around
         :func:`~magnelio.post.plot_3d.show_geometry`.  In a notebook the
         view is a widget with an axis-aligned cutting plane driven from
-        its toolbar; in a script it opens a window.
+        its toolbar; in a script it opens a window.  It is the viewer
+        every ``show()`` in magnelio opens — a field view
+        (:meth:`magnelio.fields.FieldState.show`, a monitor's, an
+        eigenmode result's) is this view with the field laid on its cut
+        and a second toolbar row.
 
         Parameters
         ----------
@@ -433,6 +437,22 @@ class GeometryModel:
         from magnelio.post.plot_3d import show_geometry as _show_geometry  # noqa: PLC0415
 
         return _show_geometry(self, mesh=mesh, **kwargs)
+
+    def plot(self, mesh=None, **kwargs):
+        """Deprecated alias of :meth:`show`.
+
+        ``plot`` draws into matplotlib everywhere else in magnelio;
+        the interactive 3D view is ``show``.
+        """
+        import warnings  # noqa: PLC0415
+
+        warnings.warn(
+            "GeometryModel.plot() is deprecated; use GeometryModel.show() "
+            "(plot() draws into matplotlib everywhere else in magnelio)",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.show(mesh=mesh, **kwargs)
 
     # ------------------------------------------------------------------
     # Validation

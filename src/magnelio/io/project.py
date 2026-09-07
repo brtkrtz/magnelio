@@ -4063,6 +4063,14 @@ class CheckpointState(Mapping):
         return html_kv(title, self._summary_rows())
 
 
+# What an eigenmode project answers to beyond its own members: the
+# public surface of EigenmodeResult, served through Project.__getattr__
+# so a stored eigenmode analysis reads like an in-RAM one (DD-264).
+_EIGENMODE_MEMBERS = frozenset(
+    {"frequencies", "modes", "n_modes", "solver_info", "field", "show", "plot"}
+)
+
+
 class Project(ScatteringResultMixin):
     """Read-only view over a project directory.
 
@@ -4266,6 +4274,33 @@ class Project(ScatteringResultMixin):
         if not (self.path / "eigenmodes.h5").exists():
             return None
         return _load_eigenmodes(self.path, mesh=self.mesh)
+
+    def __getattr__(self, name: str):
+        """Serve the eigenmode result's members off an eigenmode project.
+
+        ``AnalysisEigenmode.run()`` returns the in-RAM
+        :class:`~magnelio.solver.eigenmode_result.EigenmodeResult`
+        without ``project=`` and this reader with it, so the reader has
+        to answer to the same names — the way it already implements the
+        scattering contract (:mod:`magnelio.analysis.result_interface`).
+        A project written by another analysis simply does not have
+        them: the lookup fails, so ``hasattr`` says no rather than a
+        call failing later.
+        """
+        if name in _EIGENMODE_MEMBERS:
+            result = self.eigenmodes
+            if result is not None:
+                return getattr(result, name)
+            written_by = self.setup.get("analysis")
+            raise AttributeError(
+                f"{name!r} belongs to an eigenmode result; the project at {self.path} "
+                + (
+                    f"was written by {written_by} and holds no eigenmodes"
+                    if written_by
+                    else "holds no eigenmodes"
+                )
+            )
+        raise AttributeError(f"{type(self).__name__!r} object has no attribute {name!r}")
 
     # -- time-domain runs ------------------------------------------------
 

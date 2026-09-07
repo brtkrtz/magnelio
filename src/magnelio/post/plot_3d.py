@@ -233,7 +233,9 @@ _HELP_ROWS = (
     ("reset", "the whole scene in view"),
     ("iso, x, y, z", "isometric view, or looking along an axis"),
     ("projection", "parallel (as an engineering drawing) or perspective"),
-    ("screenshot", "save the view as a PNG"),
+    ("ruler", "a measured box around the scene"),
+    ("screenshot", "save the view as it stands as a PNG"),
+    ("HTML", "save the scene as a standalone page that needs no kernel"),
     ("pop out", "the same view in a browser tab of its own"),
     ("Cut", ""),
     ("Cut, slider, Flip", "the cutting plane's normal, its position, the side removed"),
@@ -252,6 +254,40 @@ _HELP_ROWS = (
 )
 
 
+# The browser tab's name, set on the trame state when the toolbar is
+# built.  A module-level value because the viewer class is handed the
+# plotter, not the scene it was built from.
+_VIEW_TITLE = "Magnelio Viewer"
+
+
+def _view_title() -> str:
+    """The title of the browser tab showing the view."""
+    return _VIEW_TITLE
+
+
+def _screenshot_js(viewer, trigger_name: str, mode: str | None) -> str:
+    """The PNG button's click expression for *mode*.
+
+    Rendering in the kernel: the plotter renders and the image comes
+    back as an attachment.  Rendering in the browser the kernel has no
+    rendered window at all (``suppress_rendering``) and its camera is
+    not the one the user turned — the picture has to be taken where it
+    is drawn, by the view component's own ``captureImage``, which
+    resolves to a PNG blob ``utils.download`` accepts as content.
+    """
+    # ``trame`` and ``utils`` are in the template's scope; the view
+    # component registers itself in ``trame.refs`` (its Vue ``$refs``
+    # belong to another component and are not reachable from here).
+    ref = f"view_{viewer.plotter._id_name}"
+    kernel = f"utils.download('screenshot.png', trigger('{trigger_name}'), 'image/png')"
+    client = f"utils.download('screenshot.png', trame.refs['{ref}'].captureImage(), 'image/png')"
+    if mode == "client":
+        return client
+    if mode == "trame":
+        return f"{viewer.SERVER_RENDERING} ? {kernel} : {client}"
+    return kernel
+
+
 def _viewer_class():
     """PyVista's viewer with this module's toolbar (DD-263).
 
@@ -268,6 +304,28 @@ def _viewer_class():
     from trame.widgets import vuetify3 as vuetify  # noqa: PLC0415
 
     class MagnelioViewer(Viewer):
+        def on_grid_visibility_change(self, **kwargs):
+            """PyVista's ruler, with the axis titles carrying the display unit."""
+            unit = getattr(self.plotter, "_magnelio_unit", None)
+            if not kwargs[self.GRID] or unit is None:
+                super().on_grid_visibility_change(**kwargs)
+                return
+            for renderer in self.plotter.renderers:
+                renderer.show_grid(xtitle=f"x [{unit}]", ytitle=f"y [{unit}]", ztitle=f"z [{unit}]")
+            self.update()
+
+        def on_parallel_projection_change(self, **kwargs):
+            """Switch the projection *and* tell the browser about it.
+
+            PyVista's handler pushes the scene (``update``), which the
+            browser applies to the actors but not to its own camera —
+            only ``push_camera`` carries ``parallelProjection`` over.
+            Without this the toggle moved the kernel camera alone and
+            the picture never changed.
+            """
+            super().on_parallel_projection_change(**kwargs)
+            self.update_camera()
+
         def ui_controls(self, mode=None, default_server_rendering=True, v_show=None):
             with vuetify.VRow(
                 v_show=v_show,
@@ -275,8 +333,12 @@ def _viewer_class():
                 style="flex-wrap: nowrap",
             ) as row:
                 server = row.server
+                # PyVista's initialize() names the browser tab "PyVista"
+                # before the UI is built; this runs after it.
+                server.state.trame__title = _view_title()
                 server.state.change(self.SERVER_RENDERING)(self.on_rendering_mode_change)
                 server.state.change(self.PARALLEL)(self.on_parallel_projection_change)
+                server.state.change(self.GRID)(self.on_grid_visibility_change)
                 # The scene is built with parallel projection; the toggle
                 # must say so, or its first click would switch nothing.
                 server.state[self.PARALLEL] = bool(
@@ -296,6 +358,11 @@ def _viewer_class():
                     icons=("mdi-perspective-less", "mdi-perspective-more"),
                     tooltip=f"Projection ({{{{ {self.PARALLEL} ? 'parallel' : 'perspective' }}}})",
                 )
+                checkbox(
+                    model=(self.GRID, False),
+                    icons=("mdi-ruler-square", "mdi-ruler-square"),
+                    tooltip=f"Ruler ({{{{ {self.GRID} ? 'on' : 'off' }}}})",
+                )
                 if mode == "trame":
                     vuetify.VDivider(vertical=True, classes="mx-1")
                     checkbox(
@@ -309,11 +376,20 @@ def _viewer_class():
                 def attach_screenshot():
                     return server.protocol.addAttachment(self.screenshot())
 
+                def attach_export():
+                    return server.protocol.addAttachment(self.export())
+
                 button(
-                    click="utils.download('screenshot.png', "
-                    f"trigger('{server.trigger_name(attach_screenshot)}'), 'image/png')",
+                    click=_screenshot_js(self, server.trigger_name(attach_screenshot), mode),
                     icon="mdi-file-png-box",
                     tooltip="Save a screenshot",
+                )
+                button(
+                    click="utils.download('scene.html', "
+                    f"trigger('{server.trigger_name(attach_export)}'), "
+                    "'application/octet-stream')",
+                    icon="mdi-language-html5",
+                    tooltip="Save the scene as a standalone HTML page",
                 )
                 button(
                     click="window.open(window.location.href, '_blank')",
@@ -344,12 +420,22 @@ def _viewer_class():
 
 
 def _install_viewer(pl, server, mode: str | None) -> None:
-    """Register this module's viewer for *pl* before PyVista's ``show`` looks one up."""
+    """Register this module's viewer for *pl* before PyVista's ``show`` looks one up.
+
+    PyVista caches one viewer per ``plotter._id_name``, and that name is
+    ``P_<hex(id(plotter))>_<len(_ALL_PLOTTERS)>``: a closed plotter is
+    dropped from the registry, so the next one takes its address *and*
+    its index and reads as the same plotter.  The cached viewer then
+    still drives the dead one — its toolbar renders and none of its
+    buttons do anything.  An entry that does not belong to *pl* is
+    therefore replaced, not honoured.
+    """
     try:
         from pyvista.trame import ui as pv_ui  # noqa: PLC0415
     except ImportError:  # pragma: no cover - the [jupyter] extra is absent
         return
-    if pl._id_name in pv_ui._VIEWERS:
+    existing = pv_ui._VIEWERS.get(pl._id_name)
+    if existing is not None and getattr(existing, "plotter", None) is pl:
         return
     viewer_class = _viewer_class()
     pv_ui._VIEWERS[pl._id_name] = viewer_class(
@@ -450,6 +536,7 @@ class _Scene:
     initial_cut: _CutState = field(default_factory=_CutState)
     history: list[_CutState] = field(default_factory=list)
     unit: str = "mm"
+    title: str | None = None  # what the view shows, for the browser tab
 
     def groups_present(self) -> list[str]:
         present = {"solids"} if self.bodies else set()
@@ -1242,6 +1329,7 @@ def _build_scene(
     off_screen,
     field_view=None,
     extent=None,
+    title=None,
 ) -> _Scene:
     import pyvista as pv  # noqa: PLC0415
 
@@ -1259,6 +1347,8 @@ def _build_scene(
         kwargs["window_size"] = tuple(int(v) for v in size)
     pl = pv.Plotter(**kwargs)
     pl.set_background("white")
+    # Read back by the toolbar's ruler, which titles its axes with it.
+    pl._magnelio_unit = unit
 
     cut_state = _CutState()
     if cut is not None:
@@ -1289,6 +1379,7 @@ def _build_scene(
         initial_cut=_CutState(cut_state.axis, cut_state.position, cut_state.flip),
         unit=unit,
         field_view=field_view,
+        title=title,
     )
 
     if grid is not None:
@@ -1350,7 +1441,10 @@ def _display(scene: _Scene, mode: str | None, notebook: bool):
     """Show a built scene the way *mode* and the environment ask for."""
     import pyvista as pv  # noqa: PLC0415
 
+    global _VIEW_TITLE
+
     pl = scene.plotter
+    _VIEW_TITLE = "Magnelio Viewer" + (f": {scene.title}" if scene.title else "")
 
     if mode == "none":
         return pl
@@ -1470,8 +1564,9 @@ def show_geometry(
     Notes
     -----
     **Controls** (notebook widget).  The toolbar: camera buttons (reset,
-    isometric, along x/y/z, parallel or perspective projection, a
-    screenshot, pop-out into a browser tab of its own, help), then
+    isometric, along x/y/z, parallel or perspective projection), a
+    ruler, a screenshot, an HTML export, a pop-out into a browser tab
+    of its own and help, then
     *Cut* / position / *Flip* / undo / reset and the *Show* menu of the
     object groups.  The mouse: left drag orbits, middle drag (or alt +
     left) pans, right drag or the wheel zooms, alt + shift + left

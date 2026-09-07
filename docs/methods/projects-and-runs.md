@@ -31,9 +31,11 @@ and how to read one that is still being written.
 **Project.**  A directory holding `project.json` (the index: setup,
 status, the run table), the mesh, the geometry when one was given, and
 one sub-directory per run.  The handle is a
-{class}`~magnelio.io.Project`.  It is also a scattering result — `S`,
-`db`, `plot_s`, the Touchstone export — so a script written for the
-in-RAM result runs unchanged against it.
+{class}`~magnelio.io.Project`.  It is also the result it holds — a
+scattering project answers to `S`, `db`, `plot_s` and the Touchstone
+export, an eigenmode project (`AnalysisEigenmode(..., project=…)`) to
+`frequencies`, `n_modes`, `field`, `show` and `plot` — so a script
+written for the in-RAM result runs unchanged against it.
 
 **Run.**  One march of the time-domain solver.  A scattering analysis
 makes one run per excited channel, named after it (`port3_mode0`); the

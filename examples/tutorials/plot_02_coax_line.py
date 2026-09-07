@@ -87,7 +87,7 @@ model.add(inner)  # the inner conductor
 # Looking at the model in three dimensions
 # ----------------------------------------
 #
-# ``model.plot()`` shows the model in three dimensions.  On this page
+# ``model.show()`` shows the model in three dimensions.  On this page
 # it is a picture; in a Jupyter notebook the same call opens a
 # rotatable, zoomable view with a cutting plane driven from its
 # toolbar — the fastest way to check that a boolean did what you
@@ -96,7 +96,7 @@ model.add(inner)  # the inner conductor
 # Here the model is opened along its axis to show the annulus around
 # the inner conductor.
 
-model.plot(cut=("y", 0.0))
+model.show(cut=("y", 0.0))
 
 # %%
 # The coax port
@@ -157,7 +157,7 @@ print(mesh.planes)
 # the cut coloured by material, and the two port windows on the domain
 # faces.
 
-model.plot(mesh=mesh, cut=("y", 0.0))
+model.show(mesh=mesh, cut=("y", 0.0))
 
 # Two cuts: across the cable, and along it.  The longitudinal cut
 # shows that the grid is uniform along the line — nothing varies in

@@ -21569,3 +21569,92 @@ Files: `src/magnelio/post/plot_3d.py`, `src/magnelio/post/field_3d.py`,
 `src/magnelio/post/plot_field.py`, `src/magnelio/solver/eigenmode_result.py`,
 `docs/methods/viewer.md`, `examples/tutorials/plot_18_periodic_tesla_cell.py`.
 
+## DD-264 — The second viewer pass: a screenshot of what is on screen, a stored eigenmode result that reads like the in-RAM one
+
+**Date:** 2026-09-07
+**Status:** Accepted (developer findings from a second pass over the
+v0.7.0 review, 2026-09-07; implemented after [[DD-263]], patch after
+v0.7.0).
+
+**Problem.**  Five findings from the developer's second look.  (1)
+`AnalysisEigenmode(..., project=…).run()` returns a
+`Project`, and `Project` had no `plot`, `show`, `frequencies` or
+`field`: putting a project name on an eigenmode analysis changed what
+the returned object *can do*, while [[DD-070]]/[[DD-224]] had made
+exactly that impossible for the scattering analyses (the reader
+implements the scattering contract).  (2) The toolbar's PNG button
+raised `AttributeError: This plotter has not yet been set up and
+rendered with show()` in a notebook cell, produced a picture of the
+kernel's camera (not the browser's) in the popped-out tab, and
+sometimes did nothing at all.  (3) The projection toggle switched
+once and then stood still.  (4) The ruler and the HTML export, dropped
+with PyVista's toolbar in DD-263, were wanted back.  (5) The browser
+tab was called *PyVista*, and `GeometryModel.plot()` — the 3D view —
+carried the name every *matplotlib* drawing in magnelio carries.
+
+**Findings.**  (a) In client rendering the viewer is built with
+`suppress_rendering=True`, so `Plotter.render()` returns without
+rendering, `_rendered` stays `False` and `Plotter.screenshot` refuses:
+the kernel has no rendered window to photograph, and its camera is not
+the one the user turned.  PyVista hides its own PNG button in that
+mode for the same reason.  (b) trame's local view exposes
+`captureImage()`, which resolves to a PNG blob and is exactly the
+picture on screen; `utils.download` awaits a promise and accepts a
+blob as content, and the template's scope carries `trame` (its
+`refs` hold the view) — the Vue `$refs` of the toolbar's own component
+do not.  (c) `on_parallel_projection_change` ends in `update()`, which
+pushes the scene; the browser applies it to the actors and keeps its
+own camera.  Only `push_camera` carries `parallelProjection`, so the
+toggle never reached the picture (measured in Chrome: the state
+flipped, the image did not).  (d) `plotter._id_name` is
+`P_{hex(id(plotter))}_{len(_ALL_PLOTTERS)}` and a closed plotter is
+dropped from `_ALL_PLOTTERS`: six plotters opened and closed in a row
+all read as the same name.  PyVista caches one viewer per name
+forever, and `_install_viewer` honoured a cached entry — so a toolbar
+could drive a plotter that no longer exists.  That is the "sometimes
+nothing happens" of (2).
+
+**Decision.**
+
+1. **The reader is the result, for eigenmodes too.**  `Project.__getattr__`
+   serves `frequencies`, `modes`, `n_modes`, `solver_info`, `field`,
+   `show` and `plot` off `self.eigenmodes`.  A project written by
+   another analysis does not have them — the lookup fails, so
+   `hasattr` says no instead of a call failing later, and the message
+   names the analysis that wrote the project.
+2. **The screenshot is taken where the picture is drawn.**
+   `_screenshot_js` writes the button's click expression per rendering
+   mode: `trame.refs['view_…'].captureImage()` in the browser, the
+   kernel attachment in server rendering, and the switchable view picks
+   per `SERVER_RENDERING`.
+3. **The projection reaches the browser.**  `MagnelioViewer.on_parallel_projection_change`
+   follows PyVista's handler with `update_camera()` (push_camera +
+   update_image).
+4. **Ruler and HTML export return**, the ruler with the display unit in
+   its axis titles (`show_grid(xtitle="x [mm]", …)`, the unit parked on
+   the plotter at build time).
+5. **Names.**  The trame state's `trame__title` is set after PyVista's
+   `initialize` has written *PyVista* over it: `Magnelio Viewer`, plus
+   what the view shows (a field view carries its source's name).
+   `GeometryModel.show()` is the 3D view; `plot()` stays as a
+   deprecated alias — `plot` is matplotlib everywhere else in the
+   library.
+6. **A recycled plotter name is not a viewer.**  `_install_viewer`
+   replaces a cached entry whose `plotter` is not the one being shown.
+
+**Consequences.**  The PNG button now saves what the user sees,
+including a camera turned in the browser; the file is produced by
+vtk.js, so it carries the browser's anti-aliasing rather than the
+kernel's SSAA.  `GeometryModel.plot()` warns from this patch on; the
+examples and the chapter use `show()`.  Checked in Chrome against a
+trame server built from the same scene code
+(`investigations/viewer-review-followup/` — internal dossier): tab
+name, projection both ways, ruler, PNG with the browser camera, HTML
+export.  Gates: `tests/unit/test_plot_3d.py::TestToolbar`,
+`tests/unit/test_project_store.py::TestEigenModeRoundTrip`,
+`tests/unit/test_geometry.py::test_plot_is_a_deprecated_alias_of_show`.
+Files: `src/magnelio/post/plot_3d.py`, `src/magnelio/post/field_3d.py`,
+`src/magnelio/geo/__init__.py`, `src/magnelio/io/project.py`,
+`src/magnelio/analysis/eigenmode.py`, `docs/methods/viewer.md`,
+`docs/methods/projects-and-runs.md`.
+

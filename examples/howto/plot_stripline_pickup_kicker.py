@@ -151,7 +151,7 @@ def build_coupler(h):
 model = mio.GeometryModel(background="pec")
 for body in build_coupler(7.5e-3):
     model.add(body)
-model.plot()
+model.show()
 
 # %%
 # Dimensioning the strip with the port solver

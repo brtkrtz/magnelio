@@ -299,7 +299,7 @@ model.add_port(ports.PortWaveguide(name="p1", plane="ymin", corners=window(x_nea
 model.add_port(ports.PortWaveguide(name="p2", plane="ymin", corners=window(x_far)))  # through
 model.add_port(ports.PortWaveguide(name="p3", plane="ymax", corners=window(x_near)))  # coupled
 model.add_port(ports.PortWaveguide(name="p4", plane="ymax", corners=window(x_far)))  # isolated
-model.plot()
+model.show()
 
 # %%
 # Mesh — the same control as the design step — and a look at the

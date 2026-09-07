@@ -1479,7 +1479,8 @@ def show_field(
     -----
     **Controls** (notebook widget).  The first toolbar row is the
     geometry viewer's — camera buttons (reset, isometric, along x/y/z,
-    parallel or perspective projection, screenshot, pop-out, help),
+    parallel or perspective projection, ruler, screenshot, HTML
+    export, pop-out, help),
     *Cut* / position / *Flip* / undo / reset, and the *Show* menu with
     *Field on cut*, *Vectors on cut*, *Field vectors* (in the volume)
     and *Isosurfaces* beside the geometry's groups.  The second row
@@ -1586,5 +1587,6 @@ def show_field(
         off_screen=off_screen or (notebook and mode not in (None, "none")),
         field_view=view,
         extent=tuple(extent),
+        title=frames.name,
     )
     return _viewer._display(scene, mode, notebook)
