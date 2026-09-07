@@ -399,3 +399,106 @@ class TestTinyBodies:
         model.add(post)
         pl = model.plot(mode="none")
         assert pl is not None
+
+
+# ---------------------------------------------------------------------------
+# DD-263: toolbar, projection, readouts
+# ---------------------------------------------------------------------------
+
+
+class TestToolbar:
+    def test_group_titles_name_the_vectors(self):
+        titles = dict(plot_3d._GROUPS)
+        assert titles["arrows"] == "Vectors on cut"
+        assert titles["volume arrows"] == "Field vectors"
+
+    def test_camera_serializer_carries_the_projection(self):
+        pytest.importorskip("trame_vtk")
+        from trame_vtk.modules.vtk.serializers import (  # noqa: PLC0415
+            initialize_serializers,
+            registry,
+        )
+
+        plot_3d._extend_camera_serializer()
+        # The registry's initialiser runs at every server start; it
+        # must pick the extended serialiser up, not put the bare one back.
+        initialize_serializers()
+        pl = pv.Plotter(off_screen=True)
+        pl.add_mesh(pv.Sphere())
+        pl.enable_parallel_projection()
+        out = registry.SERIALIZERS["vtkCamera"](pl.renderer, pl.camera, "cam", None, 0)
+        assert out["properties"]["parallelProjection"] == 1
+        assert out["properties"]["parallelScale"] == pytest.approx(pl.camera.parallel_scale)
+        pl.disable_parallel_projection()
+        out = registry.SERIALIZERS["vtkOpenGLCamera"](pl.renderer, pl.camera, "cam", None, 0)
+        assert out["properties"]["parallelProjection"] == 0
+        pl.close()
+
+    def test_own_toolbar_replaces_pyvistas(self, coax):
+        pytest.importorskip("trame.app")
+        from pyvista.trame import ui as pv_ui  # noqa: PLC0415
+        from trame.app import get_server  # noqa: PLC0415
+
+        model, _mesh = coax
+        pl = model.plot(mode="none")
+        server = get_server(f"mio_test_toolbar_{id(pl)}", client_type="vue3")
+        plot_3d._install_viewer(pl, server, "client")
+        viewer = pv_ui.get_viewer(pl, server=server, suppress_rendering=True)
+        assert type(viewer).__name__ == "MagnelioViewer"
+        with viewer.make_layout(server, template_name=pl._id_name) as layout:
+            viewer.ui(mode="client")
+        html = layout.html
+        for present in (
+            "Isometric view",
+            "View along x",
+            "mdi-open-in-new",
+            "Save a screenshot",
+            "Viewer controls",
+            "alt + shift + left drag",
+            "domain box (the computational domain",
+        ):
+            assert present in html, present
+        for gone in (
+            "Toggle bounding box",
+            "Toggle edge visibility",
+            "Toggle ruler",
+            "Perspective view",
+        ):
+            assert gone not in html, gone
+        # The projection toggle starts in the state the scene was built in.
+        assert server.state[viewer.PARALLEL] is True
+        pl.close()
+
+    def test_position_readout_has_a_unit_and_a_fixed_width(self, coax):
+        pytest.importorskip("trame.app")
+        from trame.app import get_server  # noqa: PLC0415
+        from trame.ui.vuetify3 import SinglePageLayout  # noqa: PLC0415
+
+        model, mesh = coax
+        scene = plot_3d._build_scene(
+            model,
+            mesh=mesh,
+            cut=("y", 0.0),
+            flip=False,
+            show_ports=True,
+            show_wires=True,
+            show_grid=True,
+            show_labels=True,
+            size=None,
+            render_edges=False,
+            edge_color="#202020",
+            quality=1.0,
+            scale_mm=True,
+            camera="iso",
+            off_screen=True,
+        )
+        server = get_server(f"mio_test_readout_{id(scene)}", client_type="vue3")
+        menu_items = plot_3d._attach_controls(scene, server)
+        with SinglePageLayout(server) as layout, layout.toolbar:
+            menu_items()
+        html = layout.html
+        assert "toFixed(" in html and " mm" in html and "tabular-nums" in html
+        assert "thumb-label" not in html
+        key = f"mio3d_{id(scene)}"
+        assert server.state[f"{key}_dec"] >= 1
+        scene.plotter.close()

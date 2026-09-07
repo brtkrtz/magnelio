@@ -16,8 +16,9 @@ recorded volume; a frame slider (time or frequency), a phase slider
 The values are the cell-centred physical fields of the exposed layer
 alone, computed when the cut moves — a field picture stands for a cell
 layer (DD-175) — and of the whole region when a volume representation
-is shown.  Symmetry planes are not mirrored: the 3D view shows the
-modelled half, as the geometry view does.
+is shown.  With a mesh that declares symmetry planes the frames are
+continued across them, so the view shows the whole model like every
+other field picture (DD-154); without one it shows the modelled part.
 
 The source is abstracted as :class:`_FieldFrames` — region nodes, frame
 labels, a layer loader and a volume loader — so the storage underneath
@@ -25,8 +26,9 @@ the monitors can change without touching the view.
 """
 
 # Design: DD-259 (step 0 of the raw-monitor plan), DD-261 (the volume
-# representations, the arrow style and the second toolbar row); the
-# scene, cut and widget machinery is DD-190's.
+# representations, the arrow style and the second toolbar row), DD-263
+# (mirroring, eigenmode frames, glyph styles, the phase play, the fixed
+# label widths); the scene, cut and widget machinery is DD-190's.
 
 from __future__ import annotations
 
@@ -57,6 +59,9 @@ _ARROW_FLOOR = 0.3
 _ISO_OPACITY = 0.5
 _VOLUME_CHOICES = ("arrows", "isosurface", "both")
 _VOLUME_GROUPS = ("volume arrows", "isosurface")
+_GLYPH_CHOICES = ("arrow", "cone")
+# Degrees the phase advances per tick of its play button.
+_PHASE_STEP = 10.0
 
 
 # ---------------------------------------------------------------------------
@@ -75,9 +80,9 @@ class _FieldFrames:
     components : tuple of str
         The recorded component names.
     labels : np.ndarray
-        One label per frame: times [s], frequencies [Hz], or ``[0.0]``
-        for a single field.
-    kind : {"time", "frequency", "field"}
+        One label per frame: times [s], frequencies [Hz], the modes'
+        eigenfrequencies [Hz], or ``[0.0]`` for a single field.
+    kind : {"time", "frequency", "mode", "field"}
     is_complex : bool
     layer : callable
         ``layer(frame, axis, k, comps)`` returns ``{comp: array}`` with
@@ -91,6 +96,9 @@ class _FieldFrames:
         ``volume(frame, comps)`` returns ``{comp: array}`` with the
         cell-centred physical values of the whole region, shaped
         ``(nx, ny, nz)`` — what the volume representations draw.
+    mirrored : bool
+        True when the frames are continued across the model's symmetry
+        planes: the nodes span the whole model then.
     """
 
     nodes: tuple[np.ndarray, np.ndarray, np.ndarray]
@@ -102,6 +110,7 @@ class _FieldFrames:
     pec: np.ndarray | None = None
     name: str = ""
     volume: Callable[[int, list[str]], dict[str, np.ndarray]] | None = None
+    mirrored: bool = False
 
     @property
     def shape(self) -> tuple[int, int, int]:
@@ -136,6 +145,8 @@ def _pec_cells(mesh, nodes, region=None) -> np.ndarray | None:
                 f"mesh does not match the field's grid along {_AXES[a]}: "
                 f"{theirs.size} vs {mine.size} nodes"
             )
+    if getattr(mesh, "material_id", None) is None:
+        return None  # a bare grid holder, no materials to cut out
     ids = np.asarray(mesh.material_id)
     pec_ids = [
         int(mid)
@@ -168,154 +179,220 @@ def _region_in(grid, nodes):
     )
 
 
-def _frames_from_series(series, mesh) -> _FieldFrames:
-    """Frames over a :class:`~magnelio.fields.FieldRecording` / ``FieldSpectrum``."""
+def _mirror_specs(mesh, nodes) -> tuple:
+    """The symmetry planes the region with *nodes* reaches, from the mesh's declaration.
+
+    Empty without a mesh, without a declaration, or when the region
+    stops short of every declared plane (the monitors' own rule,
+    :func:`~magnelio.monitors.base.resolve_mirrors`).
+    """
+    if mesh is None or getattr(mesh, "boundary_conditions", None) is None:
+        return ()
+    from magnelio.monitors.base import resolve_mirrors  # noqa: PLC0415
+
+    return tuple(resolve_mirrors(_region_in(mesh.grid, nodes), mesh))
+
+
+def _mirrored_mask(mask, nodes, mirrored_nodes, mirrors) -> np.ndarray:
+    """*mask* over the reduced region's cells, laid onto the mirrored region's.
+
+    Every mirrored cell centre is folded back across the planes (in the
+    reverse order they were applied) onto the reduced region and takes
+    that cell's value; the cell a magnetic wall bisects, whose centre
+    lies on the wall, takes the wall cell's.
+    """
+    index = []
+    for a in range(3):
+        c = 0.5 * (mirrored_nodes[a][:-1] + mirrored_nodes[a][1:])
+        for spec in reversed(mirrors):
+            if int(spec.axis) != a:
+                continue
+            fold = np.abs(c - spec.wall)
+            c = spec.wall + fold if spec.at_low else spec.wall - fold
+        n = nodes[a]
+        index.append(np.clip(np.searchsorted(n, c, side="right") - 1, 0, n.size - 2))
+    return mask[np.ix_(*index)]
+
+
+def _frames_from_states(
+    get_state,
+    *,
+    n_frames: int,
+    labels,
+    kind: str,
+    is_complex: bool,
+    components,
+    name: str,
+    mesh,
+    mirror: bool,
+) -> _FieldFrames:
+    """Frames over per-frame :class:`~magnelio.fields.FieldState` accessors.
+
+    *get_state(i)* returns frame *i*; one frame is held at a time, so a
+    store reader's monitor is never loaded whole.  With *mirror* and a
+    mesh that declares symmetry planes the region reaches, every frame
+    is continued across them (:meth:`FieldState.mirrored`, exact on
+    electric and magnetic walls) and the PEC mask follows.
+    """
     from magnelio.fields._interp import _interp_to_cell_centres  # noqa: PLC0415
 
-    grid = series.grid
-    nodes = (
-        np.asarray(grid.x, dtype=float),
-        np.asarray(grid.y, dtype=float),
-        np.asarray(grid.z, dtype=float),
-    )
+    first = get_state(0)
+    grid0 = first._grid
+    nodes0 = tuple(np.asarray(v, dtype=float) for v in (grid0.x, grid0.y, grid0.z))
+    region = _region_in(mesh.grid, nodes0) if mesh is not None else None
+    pec = _pec_cells(mesh, nodes0, region)
+    mirrors = _mirror_specs(mesh, nodes0) if mirror else ()
+    cache: dict = {}
+
+    def state(i):
+        fs = cache.get(i)
+        if fs is None:
+            fs = first if (i == 0 and not cache) else get_state(i)
+            if mirrors:
+                fs = fs.mirrored(*mirrors)
+            cache.clear()
+            cache[i] = fs
+        return fs
+
+    grid = state(0)._grid
+    nodes = tuple(np.asarray(v, dtype=float) for v in (grid.x, grid.y, grid.z))
+    if pec is not None and mirrors:
+        pec = _mirrored_mask(pec, nodes0, nodes, mirrors)
     full = [slice(0, grid.Nx), slice(0, grid.Ny), slice(0, grid.Nz)]
 
     def layer(frame, axis, k, comps):
+        fs = state(frame)
         slabs = list(full)
         slabs[axis] = slice(k, k + 1)
-        data = _interp_to_cell_centres(
-            series._frame_arrays(frame), list(comps), *slabs, grid, dual=series._dual
-        )
+        data = _interp_to_cell_centres(fs._raw, list(comps), *slabs, fs._grid, dual=fs._dual)
         return {c: np.squeeze(np.asarray(a), axis=axis) for c, a in data.items()}
 
     def volume(frame, comps):
-        data = _interp_to_cell_centres(
-            series._frame_arrays(frame), list(comps), *full, grid, dual=series._dual
-        )
+        fs = state(frame)
+        data = _interp_to_cell_centres(fs._raw, list(comps), *full, fs._grid, dual=fs._dual)
         return {c: np.asarray(a) for c, a in data.items()}
 
-    region = _region_in(mesh.grid, nodes) if mesh is not None else None
     return _FieldFrames(
-        nodes=nodes,
-        components=tuple(series.components),
-        labels=np.asarray(series._labels, dtype=float),
-        kind=series._kind,
-        is_complex=bool(series.is_complex),
+        nodes=nodes,  # type: ignore[arg-type]
+        components=tuple(components),
+        labels=np.asarray(labels, dtype=float).reshape(-1)[:n_frames],
+        kind=kind,
+        is_complex=bool(is_complex),
         layer=layer,
-        pec=_pec_cells(mesh, nodes, region),
-        name=type(series).__name__,
+        pec=pec,
+        name=name,
         volume=volume,
+        mirrored=bool(mirrors),
     )
 
 
-def _frames_from_field(fs, mesh) -> _FieldFrames:
-    from magnelio.fields._interp import _interp_to_cell_centres  # noqa: PLC0415
-
-    grid = fs._grid
-    nodes = (
-        np.asarray(grid.x, dtype=float),
-        np.asarray(grid.y, dtype=float),
-        np.asarray(grid.z, dtype=float),
+def _frames_from_series(series, mesh, mirror=True, name=None) -> _FieldFrames:
+    """Frames over a :class:`~magnelio.fields.FieldRecording` / ``FieldSpectrum``."""
+    return _frames_from_states(
+        series.frame,
+        n_frames=series.n_frames,
+        labels=series._labels,
+        kind=series._kind,
+        is_complex=series.is_complex,
+        components=series.components,
+        name=type(series).__name__ if name is None else name,
+        mesh=mesh,
+        mirror=mirror,
     )
-    full = [slice(0, grid.Nx), slice(0, grid.Ny), slice(0, grid.Nz)]
 
-    def layer(frame, axis, k, comps):
-        slabs = list(full)
-        slabs[axis] = slice(k, k + 1)
-        data = _interp_to_cell_centres(fs._raw, list(comps), *slabs, grid, dual=fs._dual)
-        return {c: np.squeeze(np.asarray(a), axis=axis) for c, a in data.items()}
 
-    def volume(frame, comps):
-        data = _interp_to_cell_centres(fs._raw, list(comps), *full, grid, dual=fs._dual)
-        return {c: np.asarray(a) for c, a in data.items()}
-
-    return _FieldFrames(
-        nodes=nodes,
-        components=_COMPONENTS,
+def _frames_from_field(fs, mesh, mirror=True) -> _FieldFrames:
+    return _frames_from_states(
+        lambda _i: fs,
+        n_frames=1,
         labels=np.zeros(1),
         kind="field",
-        is_complex=bool(fs.is_complex),
-        layer=layer,
-        pec=_pec_cells(mesh, nodes),
+        is_complex=fs.is_complex,
+        components=_COMPONENTS,
         name="field",
-        volume=volume,
+        mesh=mesh,
+        mirror=mirror,
     )
 
 
-def _frames_from_time_monitor(mon, mesh) -> _FieldFrames:
-    frames = _frames_from_series(mon.recording, mesh)
-    frames.name = mon.name
-    return frames
-
-
-def _frames_from_freq_monitor(mon, mesh) -> _FieldFrames:
-    frames = _frames_from_series(mon.spectrum, mesh)
-    frames.name = mon.name
-    return frames
-
-
-def _frames_from_loaded_time(reader, mesh) -> _FieldFrames:
+def _frames_from_loaded_time(reader, mesh, mirror=True) -> _FieldFrames:
     """Frames over a store reader; one frame is read from HDF5 at a time."""
-    from magnelio.fields._interp import _interp_to_cell_centres  # noqa: PLC0415
-
-    grid = reader.grid
-    nodes = (
-        np.asarray(grid.x, dtype=float),
-        np.asarray(grid.y, dtype=float),
-        np.asarray(grid.z, dtype=float),
-    )
-    full = [slice(0, grid.Nx), slice(0, grid.Ny), slice(0, grid.Nz)]
-
-    def layer(frame, axis, k, comps):
-        fs = reader.frame(frame)  # the reader keeps the last frame
-        slabs = list(full)
-        slabs[axis] = slice(k, k + 1)
-        data = _interp_to_cell_centres(fs._raw, list(comps), *slabs, grid, dual=fs._dual)
-        return {c: np.squeeze(np.asarray(a), axis=axis) for c, a in data.items()}
-
-    def volume(frame, comps):
-        fs = reader.frame(frame)
-        data = _interp_to_cell_centres(fs._raw, list(comps), *full, grid, dual=fs._dual)
-        return {c: np.asarray(a) for c, a in data.items()}
-
-    region = _region_in(mesh.grid, nodes) if mesh is not None else None
-    return _FieldFrames(
-        nodes=nodes,
-        components=tuple(reader.components),
+    return _frames_from_states(
+        reader.frame,
+        n_frames=int(np.asarray(reader.t).size),
         labels=np.asarray(reader.t, dtype=float),
         kind="time",
         is_complex=False,
-        layer=layer,
-        pec=_pec_cells(mesh, nodes, region),
+        components=reader.components,
         name=reader.name,
-        volume=volume,
+        mesh=mesh,
+        mirror=mirror,
     )
 
 
-def _frames_of(source, mesh) -> _FieldFrames:
+def _mode_state(result, i: int):
+    """Mode *i* of an eigenmode result at the instant of maximum energy.
+
+    An eigenvector's global phase is arbitrary; a complex (Bloch) mode
+    is turned so its real part carries the maximum of the energy over
+    all instants — the rule of the result's own ``plot`` — and the
+    phase slider turns it further from there.
+    """
+    from magnelio._fields.field_arrays import FieldArrays  # noqa: PLC0415
+    from magnelio.fields.state import FieldState  # noqa: PLC0415
+
+    fs = result.field(i)
+    if not fs.is_complex:
+        return fs
+    moment = sum(np.sum(np.asarray(fs.component(c), dtype=complex) ** 2) for c in _COMPONENTS)
+    rotation = np.exp(-0.5j * np.angle(moment)) if moment != 0 else 1.0
+    raw = fs._raw
+    turned = FieldArrays(**{c: np.asarray(getattr(raw, c)) * rotation for c in _COMPONENTS})
+    return FieldState._from_raw(fs._grid, turned, dual=fs._dual)
+
+
+def _frames_from_eigenmodes(result, mesh, mirror=True) -> _FieldFrames:
+    """Frames over the modes of an :class:`~magnelio.solver.eigenmode_result.EigenmodeResult`."""
+    if result.n_modes == 0:
+        raise ValueError("the eigenmode result holds no mode to show")
+    return _frames_from_states(
+        lambda i: _mode_state(result, i),
+        n_frames=result.n_modes,
+        labels=np.asarray(result.frequencies, dtype=float),
+        kind="mode",
+        is_complex=any(np.iscomplexobj(m.Ex) for m in result.modes),
+        components=_COMPONENTS,
+        name="eigenmodes",
+        mesh=result.mesh if mesh is None else mesh,
+        mirror=mirror,
+    )
+
+
+def _frames_of(source, mesh, mirror: bool = True) -> _FieldFrames:
     from magnelio.fields.series import _FieldSeries  # noqa: PLC0415
     from magnelio.fields.state import FieldState  # noqa: PLC0415
     from magnelio.monitors.field_frequency import MonitorFieldFrequency  # noqa: PLC0415
     from magnelio.monitors.field_time import MonitorFieldTime  # noqa: PLC0415
+    from magnelio.solver.eigenmode_result import EigenmodeResult  # noqa: PLC0415
 
     if isinstance(source, FieldState):
-        return _frames_from_field(source, mesh)
+        return _frames_from_field(source, mesh, mirror)
     if isinstance(source, _FieldSeries):
-        return _frames_from_series(source, mesh)
+        return _frames_from_series(source, mesh, mirror)
     if isinstance(source, MonitorFieldTime):
-        return _frames_from_time_monitor(source, mesh)
+        return _frames_from_series(source.recording, mesh, mirror, name=source.name)
     if isinstance(source, MonitorFieldFrequency):
-        return _frames_from_freq_monitor(source, mesh)
+        return _frames_from_series(source.spectrum, mesh, mirror, name=source.name)
+    if isinstance(source, EigenmodeResult):
+        return _frames_from_eigenmodes(source, mesh, mirror)
     kind = type(source).__name__
     if kind == "_LoadedFieldMonitor":
-        return _frames_from_loaded_time(source, mesh)
+        return _frames_from_loaded_time(source, mesh, mirror)
     if kind == "_LoadedFreqMonitor":
-        frames = _frames_from_series(source._hydrate().spectrum, mesh)
-        frames.name = source.name
-        return frames
+        return _frames_from_series(source._hydrate().spectrum, mesh, mirror, name=source.name)
     raise TypeError(
-        "show_field needs a FieldState, a MonitorFieldTime, a MonitorFieldFrequency "
-        f"or a project's monitor reader; got {kind}"
+        "show_field needs a FieldState, a MonitorFieldTime, a MonitorFieldFrequency, "
+        f"an EigenmodeResult or a project's monitor reader; got {kind}"
     )
 
 
@@ -454,8 +531,11 @@ class _FieldView:
     volume_start: str | None = None
     iso_level: float = 0.5
     levels: tuple[float, ...] | None = None
+    glyph: str = "arrow"
+    glyph_width: float = 1.0
     nodes_display: tuple[np.ndarray, np.ndarray, np.ndarray] = field(init=False)
     _play_task: Any = field(default=None, repr=False)
+    _phase_task: Any = field(default=None, repr=False)
     sheet_actor: Any = None
     arrow_actor: Any = None
     volume_actor: Any = None
@@ -531,6 +611,8 @@ class _FieldView:
 
     @property
     def unit(self) -> str:
+        if self.frames.kind == "mode":
+            return "a.u."  # an eigenvector carries no absolute amplitude
         unit = "V/m" if self.group == "E" else "A/m"
         return f"{unit} per √W" if self.frames.kind == "frequency" else unit
 
@@ -539,13 +621,43 @@ class _FieldView:
         label = f"|{self.component}|" if self.is_group else self.component
         return f"{label} ({self.unit})"
 
-    def frame_label(self) -> str:
-        value = float(self.frames.labels[self.frame])
-        if self.frames.kind == "time":
-            return f"t = {value * 1e9:.4g} ns"
-        if self.frames.kind == "frequency":
-            return f"f = {value * 1e-9:.4g} GHz"
-        return ""
+    def _label_format(self) -> tuple[str, float, str, int] | None:
+        """``(prefix, scale, unit, decimals)`` of the frame labels, or ``None``.
+
+        The decimals are fixed once per series from the smallest step
+        between frames, so every label has the same width and the
+        toolbar does not reflow while the frames play.
+        """
+        kind = self.frames.kind
+        if kind == "time":
+            prefix, scale, unit = "t", 1e9, "ns"
+        elif kind in ("frequency", "mode"):
+            prefix, scale, unit = "f", 1e-9, "GHz"
+        else:
+            return None
+        values = np.asarray(self.frames.labels, dtype=float) * scale
+        if values.size < 2:
+            return prefix, scale, unit, -1  # one frame: general format
+        steps = np.diff(np.unique(values))
+        step = float(steps.min()) if steps.size else 0.0
+        decimals = 0 if step <= 0.0 else int(np.clip(np.ceil(-np.log10(step)) + 1, 0, 3))
+        return prefix, scale, unit, decimals
+
+    def frame_label(self, frame: int | None = None) -> str:
+        fmt = self._label_format()
+        if fmt is None:
+            return ""
+        prefix, scale, unit, decimals = fmt
+        i = self.frame if frame is None else int(frame)
+        value = float(self.frames.labels[i]) * scale
+        number = f"{value:.4g}" if decimals < 0 else f"{value:.{decimals}f}"
+        if self.frames.kind == "mode":
+            return f"mode {i}  {number} {unit}"
+        return f"{prefix} = {number} {unit}"
+
+    def label_chars(self) -> int:
+        """Characters of the widest frame label — the span's minimum width."""
+        return max((len(self.frame_label(i)) for i in range(self.frames.n_frames)), default=0)
 
     @property
     def colour_map(self) -> str:
@@ -779,19 +891,26 @@ class _FieldView:
         cloud["vec"] = vec / np.maximum(mag, 1e-300)[:, None]
         cloud["mag"] = np.minimum(mag, vmax)
         cloud["len"] = spacing * np.maximum(np.minimum(mag, vmax) / vmax, _ARROW_FLOOR)
-        glyphs = cloud.glyph(
-            orient="vec",
-            scale="len",
-            factor=1.0,
-            geom=pv.Arrow(
-                tip_length=0.3,
-                tip_radius=0.1,
-                shaft_radius=0.035,
-                tip_resolution=8,
-                shaft_resolution=8,
-            ),
-        )
+        glyphs = cloud.glyph(orient="vec", scale="len", factor=1.0, geom=self._glyph_geometry())
         return glyphs if glyphs.n_cells else None
+
+    def _glyph_geometry(self):
+        """The unit glyph, centred on its sample point and pointing along +x."""
+        import pyvista as pv  # noqa: PLC0415
+
+        w = float(self.glyph_width)
+        if self.glyph == "cone":
+            return pv.Cone(
+                center=(0.0, 0.0, 0.0), direction=(1.0, 0.0, 0.0), height=1.0, radius=0.12 * w
+            )
+        return pv.Arrow(
+            start=(-0.5, 0.0, 0.0),
+            tip_length=0.3,
+            tip_radius=0.1 * w,
+            shaft_radius=0.035 * w,
+            tip_resolution=8,
+            shaft_resolution=8,
+        )
 
     def _place_arrows(self, scene, name: str, glyphs, vmax: float):
         """Create or refresh a glyph actor; returns the actor."""
@@ -956,17 +1075,19 @@ class _FieldView:
 
         state = server.state
         k_frame, k_phase, k_comp = f"{key}_frame", f"{key}_phase", f"{key}_comp"
-        k_label, k_play = f"{key}_frame_label", f"{key}_play"
+        k_label, k_play, k_play_phase = f"{key}_frame_label", f"{key}_play", f"{key}_play_phase"
         k_level, k_density = f"{key}_level", f"{key}_density"
         state[k_frame] = int(self.frame)
         state[k_phase] = float(self.phase)
         state[k_comp] = self.component
         state[k_label] = self.frame_label()
         state[k_play] = False
+        state[k_play_phase] = False
         state[k_level] = int(round(100.0 * self.iso_level))
         state[k_density] = int(self.density)
         state[f"{key}_comps"] = _available_components(self.frames.components)
         n_frames = self.frames.n_frames
+        label_chars = self.label_chars()
 
         @state.change(k_frame)
         def _on_frame(**kwargs):
@@ -978,38 +1099,59 @@ class _FieldView:
                 state[k_label] = self.frame_label()
             refresh()
 
-        async def _play() -> None:
-            # Advance the frame slider on the server's loop; each step goes
-            # through the slider's own handler, so the picture follows.
-            # Paced on the clock, so a slow frame shortens the pause
-            # instead of piling up behind the websocket.
-            period = 1.0 / max(float(self.fps), 0.1)
-            loop = asyncio.get_running_loop()
-            try:
-                while True:
-                    t0 = loop.time()
-                    with state:
-                        state[k_frame] = self.next_frame()
-                    await asyncio.sleep(max(period - (loop.time() - t0), 0.02))
-            except asyncio.CancelledError:  # pragma: no cover - stop button
-                pass
+        def paced(advance):
+            # A loop on the server's event loop: each step goes through
+            # the slider's own handler, so the picture follows.  Paced
+            # on the clock, so a slow frame shortens the pause instead
+            # of piling up behind the websocket.
+            async def run() -> None:
+                period = 1.0 / max(float(self.fps), 0.1)
+                loop = asyncio.get_running_loop()
+                try:
+                    while True:
+                        t0 = loop.time()
+                        with state:
+                            advance()
+                        await asyncio.sleep(max(period - (loop.time() - t0), 0.02))
+                except asyncio.CancelledError:  # pragma: no cover - stop button
+                    pass
 
-        @state.change(k_play)
-        def _on_play(**kwargs):
-            playing = bool(kwargs[k_play])
-            if playing and self._play_task is None:
+            return run
+
+        def advance_frame() -> None:
+            state[k_frame] = self.next_frame()
+
+        def advance_phase() -> None:
+            state[k_phase] = (float(state[k_phase]) + _PHASE_STEP) % 360.0
+
+        def toggle(attr: str, playing: bool, advance, other: str, k_other: str) -> None:
+            # The two play buttons exclude each other: starting one stops
+            # the other, so the picture never runs two clocks.
+            task = getattr(self, attr)
+            if playing and task is None:
                 try:
                     loop = asyncio.get_running_loop()
                 except RuntimeError:
-                    # No event loop (a script, a test): nothing can drive the
-                    # frames; put the button back.
+                    # No event loop (a script, a test): nothing can drive
+                    # the slider; put the button back.
                     with state:
-                        state[k_play] = False
+                        state[k_play if attr == "_play_task" else k_play_phase] = False
                     return
-                self._play_task = loop.create_task(_play())
-            elif not playing and self._play_task is not None:
-                self._play_task.cancel()
-                self._play_task = None
+                if getattr(self, other) is not None:
+                    with state:
+                        state[k_other] = False
+                setattr(self, attr, loop.create_task(paced(advance)()))
+            elif not playing and task is not None:
+                task.cancel()
+                setattr(self, attr, None)
+
+        @state.change(k_play)
+        def _on_play(**kwargs):
+            toggle("_play_task", bool(kwargs[k_play]), advance_frame, "_phase_task", k_play_phase)
+
+        @state.change(k_play_phase)
+        def _on_play_phase(**kwargs):
+            toggle("_phase_task", bool(kwargs[k_play_phase]), advance_phase, "_play_task", k_play)
 
         @state.change(k_phase)
         def _on_phase(**kwargs):
@@ -1043,6 +1185,27 @@ class _FieldView:
             self.density = density
             refresh()
 
+        def play_button(k_flag: str, tooltip: str) -> None:
+            with vuetify.VBtn(
+                icon=True,
+                size="small",
+                variant="text",
+                click=f"{k_flag} = !{k_flag}",
+                style="margin-left: 8px;",
+            ):
+                vuetify.VIcon("mdi-play", v_if=(f"!{k_flag}",))
+                vuetify.VIcon("mdi-pause", v_else=True)
+                vuetify.VTooltip(tooltip, activator="parent", location="bottom")
+
+        def readout(text: str, chars: int) -> None:
+            # A fixed-width readout: the toolbar must not reflow while
+            # the frames play.
+            html.Span(
+                text,
+                style=f"margin-left: 6px; white-space: nowrap; min-width: {chars}ch; "
+                "font-variant-numeric: tabular-nums;",
+            )
+
         def items() -> None:
             # A second row under the viewer's toolbar.  PyVista's menu is
             # a card of fixed height whose rows do not wrap; the card is
@@ -1059,18 +1222,7 @@ class _FieldView:
                 "flex-wrap: nowrap; padding: 2px 4px 2px 0;",
             ):
                 if n_frames > 1:
-                    with vuetify.VBtn(
-                        icon=True,
-                        size="small",
-                        variant="text",
-                        click=f"{k_play} = !{k_play}",
-                        style="margin-left: 8px;",
-                    ):
-                        vuetify.VIcon("mdi-play", v_if=(f"!{k_play}",))
-                        vuetify.VIcon("mdi-pause", v_else=True)
-                        vuetify.VTooltip(
-                            "Play / pause the frames", activator="parent", location="bottom"
-                        )
+                    play_button(k_play, "Play / pause the frames")
                     vuetify.VSlider(
                         v_model=(k_frame, state[k_frame]),
                         min=0,
@@ -1080,21 +1232,19 @@ class _FieldView:
                         density="compact",
                         style="width: 160px; margin-left: 4px;",
                     )
-                    html.Span(
-                        f"{{{{ {k_label} }}}}", style="margin-left: 6px; white-space: nowrap;"
-                    )
+                    readout(f"{{{{ {k_label} }}}}", label_chars)
                 if self.frames.is_complex:
+                    play_button(k_play_phase, "Play / pause the phase")
                     vuetify.VSlider(
                         v_model=(k_phase, state[k_phase]),
                         min=0,
                         max=360,
                         step=5,
-                        thumb_label=True,
                         hide_details=True,
                         density="compact",
-                        style="width: 120px; margin-left: 12px;",
+                        style="width: 120px; margin-left: 4px;",
                     )
-                    html.Span("phase °", style="margin-left: 4px; white-space: nowrap;")
+                    readout(f"phase = {{{{ Math.round({k_phase}) }}}}°", 12)
                 vuetify.VSelect(
                     v_model=(k_comp, state[k_comp]),
                     items=(f"{key}_comps", state[f"{key}_comps"]),
@@ -1110,24 +1260,22 @@ class _FieldView:
                         min=5,
                         max=95,
                         step=5,
-                        thumb_label=True,
                         hide_details=True,
                         density="compact",
                         style="width: 110px; margin-left: 12px;",
                     )
-                    html.Span("iso %", style="margin-left: 4px; white-space: nowrap;")
+                    readout(f"iso {{{{ {k_level} }}}} %", 8)
                 if self.has_arrows:
                     vuetify.VSlider(
                         v_model=(k_density, state[k_density]),
                         min=5,
                         max=40,
                         step=1,
-                        thumb_label=True,
                         hide_details=True,
                         density="compact",
                         style="width: 110px; margin-left: 12px;",
                     )
-                    html.Span("arrows", style="margin-left: 4px; white-space: nowrap;")
+                    readout(f"{{{{ {k_density} }}}} arrows", 9)
 
         return items
 
@@ -1188,6 +1336,9 @@ def show_field(
     volume: str | None = None,
     levels=None,
     iso_level: float = 0.5,
+    glyph: str = "arrow",
+    glyph_width: float = 1.0,
+    mirror: bool = True,
     geometry=None,
     mesh=None,
     show_ports: bool = True,
@@ -1212,17 +1363,20 @@ def show_field(
     both clipped to the kept half like the solids; the *Show* menu turns
     either on and off.  Moving the position slider walks the cut through
     the recorded volume; a time or frequency monitor adds a frame slider,
-    complex data a phase slider, a selector switches the field, and
-    sliders set the isosurface level and the arrow density.  The values
-    are the cell-centred physical fields of the exposed layer, computed
-    for that layer when the cut moves — and of the whole region when a
-    volume representation is shown.
+    an eigenmode result a mode slider, complex data a phase slider, a
+    selector switches the field, and sliders set the isosurface level
+    and the arrow density.  The values are the cell-centred physical
+    fields of the exposed layer, computed for that layer when the cut
+    moves — and of the whole region when a volume representation is
+    shown.  With a mesh that declares symmetry planes the field is
+    continued across them, so the picture is the whole model.
 
     Parameters
     ----------
-    source : FieldState, MonitorFieldTime, MonitorFieldFrequency, or a project's monitor reader
+    source : FieldState, monitor, EigenmodeResult, or a project's monitor reader
         What to show.  A monitor must have recorded (or be read from a
-        project); a :class:`~magnelio.fields.FieldState` is one frame.
+        project); a :class:`~magnelio.fields.FieldState` is one frame; an
+        eigenmode result's modes are its frames.
     component : str
         ``"E"`` or ``"H"`` for the magnitude sheet (with arrows when
         *plot_type* is ``"vector"``); ``"Ex"``, ``"Hy"``, … for one
@@ -1287,19 +1441,33 @@ def show_field(
     iso_level : float, default 0.5
         The isosurface level as a fraction of *vmax* when *levels* is
         not given.
+    glyph : {"arrow", "cone"}
+        The shape of the field vectors, centred on their sample points.
+    glyph_width : float, default 1.0
+        Thickness of the vectors relative to the default.
+    mirror : bool, default True
+        Continue the field across the model's symmetry planes, so the
+        view shows the whole model (as every other field picture does).
+        Needs *mesh* (an eigenmode result brings its own), whose
+        boundary declaration names the planes; a region that stops
+        short of a plane is not mirrored across it.  ``False`` shows the
+        modelled part only.
     geometry : GeometryModel, optional
         Draw the model's solids and features with the field.
     mesh : Mesh, optional
         The mesh the field was computed on.  Cells buried in a perfect
         conductor are cut out of the sheet, so the solids' cut faces
         show through where the field is not defined; with ``show_grid``
-        the grid cells are drawn on the cut as well.
+        the grid cells are drawn on the cut as well; and the symmetry
+        planes are read from it (*mirror*).
     show_ports, show_wires, show_labels : bool, default True
         As in the geometry viewer.
     show_grid : bool, default False
         With *mesh*: draw the grid cells on the cut under the field.
     mode, size, quality, scale_mm, camera
-        As in :func:`~magnelio.plots.show_geometry`.
+        As in :func:`~magnelio.plots.show_geometry`; *size* sets the
+        widget's height in the notebook, the toolbar's pop-out button
+        opens the same view in a browser tab of its own.
 
     Returns
     -------
@@ -1309,14 +1477,29 @@ def show_field(
 
     Notes
     -----
-    Symmetry planes are not mirrored in the 3D view; it shows the
-    modelled half of the model, as the geometry view does.  Every
-    sample is a cell-centre average of the staggered components — the
-    picture stands for a layer of cells, not for a plane — and the
-    isosurfaces interpolate those cell values to the nodes before they
-    are contoured.
+    **Controls** (notebook widget).  The first toolbar row is the
+    geometry viewer's — camera buttons (reset, isometric, along x/y/z,
+    parallel or perspective projection, screenshot, pop-out, help),
+    *Cut* / position / *Flip* / undo / reset, and the *Show* menu with
+    *Field on cut*, *Vectors on cut*, *Field vectors* (in the volume)
+    and *Isosurfaces* beside the geometry's groups.  The second row
+    holds the field: play and frame slider with the frame's time,
+    frequency or mode; play and phase slider for complex data; the
+    *Field* selector; the isosurface level and the arrow density.  The
+    mouse in the browser: left drag orbits, middle drag (or shift +
+    left) pans, right drag or the wheel zooms, ctrl + left rolls; the
+    help button lists the same.
+
+    Every sample is a cell-centre average of the staggered components
+    — the picture stands for a layer of cells, not for a plane — and
+    the isosurfaces interpolate those cell values to the nodes before
+    they are contoured.
     """
-    frames = _frames_of(source, mesh)
+    if glyph not in _GLYPH_CHOICES:
+        raise ValueError(f"glyph must be one of {_GLYPH_CHOICES}; got {glyph!r}")
+    if not (float(glyph_width) > 0.0):
+        raise ValueError(f"glyph_width must be positive; got {glyph_width!r}")
+    frames = _frames_of(source, mesh, bool(mirror))
     if plot_type not in _PLOT_TYPES:
         raise ValueError(f"plot_type must be one of {_PLOT_TYPES}; got {plot_type!r}")
     if volume is not None and volume not in _VOLUME_CHOICES:
@@ -1365,6 +1548,8 @@ def show_field(
         volume_start=volume,
         iso_level=float(iso_level),
         levels=levels,
+        glyph=glyph,
+        glyph_width=float(glyph_width),
     )
     if volume is not None and not view.has_volume:
         raise ValueError(f"{frames.name!r} offers no volume to draw {volume!r} in")
@@ -1378,6 +1563,11 @@ def show_field(
         extent += [float(nodes[0]), float(nodes[-1])]
 
     notebook, mode, off_screen = _viewer._resolve_mode(mode)
+    if mesh is None and frames.kind == "mode":
+        mesh = source.mesh
+    if frames.mirrored:
+        # The frames span the whole model now; the mesh does not.
+        mesh = None
     scene = _viewer._build_scene(
         geometry,
         mesh=mesh,

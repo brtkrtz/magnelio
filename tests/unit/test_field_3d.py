@@ -274,7 +274,10 @@ class TestFrequencyMonitor:
         )
         # The ceiling is |F|, the envelope over every phase.
         assert view.vmax() == pytest.approx(0.4)
-        assert view.frame_label() == "f = 2 GHz"
+        # Fixed decimals from the bin spacing, so the readout keeps its width.
+        assert view.frame_label() == "f = 2.0 GHz"
+        assert view.frame_label(0) == "f = 1.0 GHz"
+        assert view.label_chars() == len("f = 1.0 GHz")
         assert view.has_arrows
 
 
@@ -800,3 +803,363 @@ class TestVolumeControls:
         with SinglePageLayout(server) as layout, layout.toolbar:
             menu_items()
         pl.close()
+
+
+# ---------------------------------------------------------------------------
+# DD-263: the v0.7.0 review
+# ---------------------------------------------------------------------------
+
+
+def _view_of(frames, **overrides) -> field_3d._FieldView:
+    kwargs = dict(
+        frames=frames,
+        component="E",
+        plot_type="vector",
+        frame=0,
+        phase=0.0,
+        vmax_fixed=None,
+        cmap=None,
+        unit_scale=1e3,
+        density=10,
+        threshold=0.02,
+        opacity=1.0,
+        arrow_color=None,
+    )
+    kwargs.update(overrides)
+    return field_3d._FieldView(**kwargs)
+
+
+class TestLabels:
+    def test_time_labels_share_one_width(self):
+        # Frames 1 ps apart: three decimals in ns, every label as wide
+        # as the widest, so the toolbar does not reflow while playing.
+        view = _view_of(field_3d._frames_of(_time_monitor(_grid()), None))
+        labels = [view.frame_label(i) for i in range(3)]
+        assert labels == ["t = 0.000 ns", "t = 0.001 ns", "t = 0.002 ns"]
+        assert view.label_chars() == len(labels[0])
+
+    def test_one_frame_keeps_the_general_format(self):
+        grid = _grid()
+        mon = MonitorFieldTime(times=[1.234e-9], fields=["E"], name="m")
+        mon.attach(_FakeMesh(grid))
+        mon.record(FieldArrays.zeros(grid.Nx, grid.Ny, grid.Nz), 0, 1.234e-9 - 1e-12, 1e-12)
+        view = _view_of(field_3d._frames_of(mon, None))
+        assert view.frame_label() == "t = 1.234 ns"
+
+    def test_a_single_field_has_no_label(self):
+        view = _view_of(field_3d._frames_of(_field(_grid()), None))
+        assert view.frame_label() == ""
+        assert view.label_chars() == 0
+
+
+class TestGlyphs:
+    def test_arrow_and_cone_are_centred_on_the_sample_point(self):
+        view = _view_of(field_3d._frames_of(_field(_grid()), None))
+        for style in ("arrow", "cone"):
+            view.glyph = style
+            b = view._glyph_geometry().bounds
+            assert b[0] == pytest.approx(-0.5, abs=1e-6)
+            assert b[1] == pytest.approx(0.5, abs=1e-6)
+            assert b[2] == pytest.approx(-b[3], abs=1e-6)
+
+    def test_width_scales_the_radius_not_the_length(self):
+        view = _view_of(field_3d._frames_of(_field(_grid()), None))
+        thin = view._glyph_geometry().bounds
+        view.glyph_width = 2.0
+        thick = view._glyph_geometry().bounds
+        assert thick[3] == pytest.approx(2.0 * thin[3], rel=1e-6)
+        assert thick[1] == pytest.approx(thin[1], abs=1e-9)
+
+    def test_show_takes_the_glyph_arguments(self):
+        grid = _grid()
+        pl = _field(grid).show(glyph="cone", glyph_width=1.5, mode="none", size=(300, 200))
+        assert _actor(pl, "field_arrows").mapper.dataset.n_cells > 0
+        pl.close()
+        with pytest.raises(ValueError, match="glyph must be"):
+            _field(grid).show(glyph="dart", mode="none")
+        with pytest.raises(ValueError, match="glyph_width"):
+            _field(grid).show(glyph_width=0.0, mode="none")
+
+
+class TestLineAndPointMonitors:
+    """A monitor of one cell along two or three axes still draws (the review's IndexError)."""
+
+    def test_line_monitor_shows_sheet_and_arrows(self):
+        grid = _grid()
+        y0, z0 = 0.5 * LY, 0.5 * LZ
+        mon = _time_monitor(grid, corners=((None, y0, z0), (None, y0, z0)))
+        assert mon.recording.shape[1:] == (1, 1)
+        pl = mon.show(mode="none", size=(300, 200))
+        sheet = _sheet(pl)
+        assert sheet.n_cells == grid.Nx
+        assert _actor(pl, "field_arrows").mapper.dataset.n_points > 0
+        pl.close()
+
+    def test_point_monitor_shows_one_cell_and_one_arrow(self):
+        grid = _grid()
+        p = (0.4 * LX, 0.5 * LY, 0.5 * LZ)
+        mon = _time_monitor(grid, corners=(p, p))
+        assert mon.recording.shape == (1, 1, 1)
+        pl = mon.show(mode="none", size=(300, 200))
+        assert _sheet(pl).n_cells == 1
+        arrows = _actor(pl, "field_arrows").mapper.dataset
+        assert arrows.n_points > 0
+        # One arrow, centred on the cell: its x extent straddles the centre.
+        cx = 0.5 * (grid.x[2] + grid.x[3]) * 1e3
+        assert arrows.bounds[0] < cx < arrows.bounds[1]
+        pl.close()
+
+    def test_resample_reads_a_one_cell_axis_as_constant(self):
+        from magnelio.post.plot_field import _arrow_grid, _resample  # noqa: PLC0415
+
+        xc = np.linspace(0.5, 5.5, 6)
+        yc = np.array([2.0])
+        xs, ys = _arrow_grid(xc, yc, 4)
+        assert ys.size == 1  # not two coincident raster points
+        (a,), live = _resample(xc, yc, xs, ys, [np.arange(6.0)[:, None]], None)
+        assert live.all()
+        np.testing.assert_allclose(a[:, 0], xs - 0.5)
+
+
+class TestPhasePlay:
+    def test_a_single_bin_gets_a_phase_play_button(self):
+        pytest.importorskip("trame.app")
+        from trame.app import get_server  # noqa: PLC0415
+        from trame.ui.vuetify3 import SinglePageLayout  # noqa: PLC0415
+
+        from magnelio.post.plot_3d import _attach_controls, _build_scene  # noqa: PLC0415
+
+        grid = _grid()
+        mon = MonitorFieldFrequency(freqs=[1.0e9], fields=["E"], name="p")
+        mon.attach(_FakeMesh(grid))
+        f = FieldArrays.zeros(grid.Nx, grid.Ny, grid.Nz)
+        f.Ez[:] = 1e-3
+        mon.record(f, 0, 0.0, 1e-12)
+        mon.finalize()
+        mon.renormalize(Signal1D(t=np.array([0.0]), values=np.array([1e12]), dt=1e-12))
+        frames = field_3d._frames_of(mon, None)
+        assert frames.n_frames == 1 and frames.is_complex
+        view = _view_of(frames)
+        scene = _build_scene(
+            None,
+            mesh=None,
+            cut=("z", LZ / 2),
+            flip=False,
+            show_ports=True,
+            show_wires=True,
+            show_grid=False,
+            show_labels=True,
+            size=(300, 200),
+            render_edges=False,
+            edge_color="#202020",
+            quality=1.0,
+            scale_mm=True,
+            camera="iso",
+            off_screen=True,
+            field_view=view,
+            extent=(0.0, LX * 1e3, 0.0, LY * 1e3, 0.0, LZ * 1e3),
+        )
+        server = get_server(f"mio_test_phase_{id(scene)}", client_type="vue3")
+        menu_items = _attach_controls(scene, server)
+        state = server.state
+        key = f"mio3d_{id(scene)}"
+        state.ready()
+        # No event loop here: the button springs back, like the frame play.
+        with state:
+            state[f"{key}_play_phase"] = True
+        assert state[f"{key}_play_phase"] is False
+        with SinglePageLayout(server) as layout, layout.toolbar:
+            menu_items()
+        html = layout.html
+        assert "Play / pause the phase" in html
+        assert "Play / pause the frames" not in html  # one bin: no frame slider
+        assert "phase =" in html and "tabular-nums" in html
+        scene.plotter.close()
+
+    def test_phase_play_advances_the_phase_on_a_loop(self):
+        pytest.importorskip("trame.app")
+        import asyncio  # noqa: PLC0415
+
+        from trame.app import get_server  # noqa: PLC0415
+
+        from magnelio.post.plot_3d import _attach_controls, _build_scene  # noqa: PLC0415
+
+        grid = _grid()
+        frames = field_3d._frames_of(_freq_monitor(grid), None)
+        view = _view_of(frames, fps=50.0)
+        scene = _build_scene(
+            None,
+            mesh=None,
+            cut=("z", LZ / 2),
+            flip=False,
+            show_ports=True,
+            show_wires=True,
+            show_grid=False,
+            show_labels=True,
+            size=(300, 200),
+            render_edges=False,
+            edge_color="#202020",
+            quality=1.0,
+            scale_mm=True,
+            camera="iso",
+            off_screen=True,
+            field_view=view,
+            extent=(0.0, LX * 1e3, 0.0, LY * 1e3, 0.0, LZ * 1e3),
+        )
+        server = get_server(f"mio_test_phase_loop_{id(scene)}", client_type="vue3")
+        _attach_controls(scene, server)
+        state = server.state
+        key = f"mio3d_{id(scene)}"
+        state.ready()
+
+        async def drive():
+            with state:
+                state[f"{key}_play"] = True  # the frame play runs first ...
+            await asyncio.sleep(0.05)
+            with state:
+                state[f"{key}_play_phase"] = True  # ... and yields to the phase play
+            assert state[f"{key}_play"] is False
+            await asyncio.sleep(0.15)
+            with state:
+                state[f"{key}_play_phase"] = False
+            return float(state[f"{key}_phase"])
+
+        phase = asyncio.run(drive())
+        assert phase > 0.0 and phase % field_3d._PHASE_STEP == pytest.approx(0.0)
+        assert view.phase == phase
+        assert view._phase_task is None and view._play_task is None
+        scene.plotter.close()
+
+
+class TestEigenmodes:
+    @staticmethod
+    def _result(mesh, complex_second=False):
+        from magnelio.solver.eigenmode_result import EigenmodeResult  # noqa: PLC0415
+
+        grid = mesh.grid
+        first = FieldState.from_function(
+            grid, E=lambda x, y, z: (0 * x, 0 * y, np.sin(np.pi * x / 3.5e-3) + 2.0)
+        )
+        second = FieldState.from_function(grid, E=lambda x, y, z: (0 * x, 0 * y, 0 * z + 1.0))
+        modes = [first._raw, second._raw]
+        if complex_second:
+            raw = second._raw
+            modes[1] = FieldArrays(
+                **{c: np.asarray(getattr(raw, c)) * np.exp(0.7j) for c in field_3d._COMPONENTS}
+            )
+        return EigenmodeResult(frequencies=np.array([1.0e9, 2.5e9]), modes=modes, mesh=mesh)
+
+    def test_modes_are_the_frames(self, coax):
+        _model, mesh = coax
+        result = self._result(mesh)
+        frames = field_3d._frames_of(result, None)
+        assert frames.kind == "mode" and frames.n_frames == 2
+        assert frames.pec is not None  # the result's own mesh cuts the metal out
+        view = _view_of(frames)
+        assert view.frame_label(0) == "mode 0  1.0 GHz"
+        assert view.frame_label(1) == "mode 1  2.5 GHz"
+        assert view.unit == "a.u."
+        assert view.bar_title == "|E| (a.u.)"
+        # The second mode is uniform: the whole layer reads 1.
+        view.frame = 1
+        scalar, _ = view.values(2, 0)
+        assert np.nanmax(scalar) == pytest.approx(1.0)
+
+    def test_show_starts_at_the_requested_mode(self, coax):
+        _model, mesh = coax
+        result = self._result(mesh)
+        pl = result.show(frame=1, mode="none", size=(300, 200))
+        assert "|E| (a.u.)" in pl.scalar_bars
+        assert float(_sheet(pl).cell_data["field"].max()) == pytest.approx(1.0)
+        pl.close()
+        with pytest.raises(IndexError):
+            result.show(frame=5, mode="none")
+
+    def test_complex_mode_is_turned_to_its_energy_maximum(self, coax):
+        _model, mesh = coax
+        result = self._result(mesh, complex_second=True)
+        frames = field_3d._frames_of(result, None)
+        assert frames.is_complex
+        state = field_3d._mode_state(result, 1)
+        # The arbitrary phase e^{0.7j} is taken out: the real part is
+        # the whole field, the imaginary part nothing.
+        ez = state.component("Ez")
+        assert np.abs(ez.imag).max() < 1e-9 * np.abs(ez.real).max()
+
+    def test_empty_result_is_refused(self, coax):
+        from magnelio.solver.eigenmode_result import EigenmodeResult  # noqa: PLC0415
+
+        _model, mesh = coax
+        empty = EigenmodeResult(frequencies=np.zeros(0), modes=[], mesh=mesh)
+        with pytest.raises(ValueError, match="no mode"):
+            empty.show(mode="none")
+
+
+@pytest.fixture(scope="module")
+def half_box():
+    """An air box across x = 0 with a magnetic symmetry plane there, and a metal block."""
+    pytest.importorskip("OCC")
+    model = mio.GeometryModel(
+        background="pec", boundary_conditions=mio.BoundaryConditions(xmin="SymmetryPMC")
+    )
+    model.add(geo.Brick(origin=(-6e-3, 1e-3, 0), size=(12e-3, 3e-3, 3e-3), material="air"))
+    model.add(geo.Brick(origin=(-6e-3, 0, 0), size=(12e-3, 1e-3, 3e-3), material="pec"))
+    mesh = mio.Mesh.from_geometry(model, mio.MeshControl(max_cell_size=1e-3), f_max=20e9)
+    return model, mesh
+
+
+class TestMirror:
+    def test_frames_span_the_whole_model_with_the_right_parities(self, half_box):
+        _model, mesh = half_box
+        grid = mesh.grid
+        # The mesher kept x >= 0 and pulled the first grid line half a
+        # cell in: the magnetic wall sits at x = 0, between the samples.
+        h = float(grid.x[1] - grid.x[0])
+        assert grid.x[0] == pytest.approx(0.5 * h)
+        fs = FieldState.from_function(grid, E=lambda x, y, z: (x / 6e-3, 0 * y + 1.0, 0 * z))
+        half = field_3d._frames_of(fs, mesh, mirror=False)
+        full = field_3d._frames_of(fs, mesh, mirror=True)
+        assert not half.mirrored and full.mirrored
+        nx = half.shape[0]
+        # A magnetic wall half a cell outside the grid: the mirrored
+        # region has 2n + 1 cells, the middle one astride the wall.
+        assert full.shape == (2 * nx + 1, half.shape[1], half.shape[2])
+        assert full.nodes[0][0] == pytest.approx(-grid.x[-1], rel=1e-9)
+        vol = full.volume(0, ["Ex", "Ey", "Ez"])
+        # E across a magnetic wall: the normal component odd, the
+        # tangential one even.
+        np.testing.assert_allclose(vol["Ex"], -vol["Ex"][::-1], atol=1e-12)
+        np.testing.assert_allclose(vol["Ey"], vol["Ey"][::-1], atol=1e-12)
+        assert np.all(np.abs(vol["Ex"][nx]) < 1e-12)
+        # The metal mask follows the field: the block lies at y < 1 mm
+        # on both sides of the wall.
+        assert full.pec is not None and full.pec.shape == full.shape
+        np.testing.assert_array_equal(full.pec, full.pec[::-1])
+        assert full.pec[:, 0, :].all() and not full.pec[:, -1, :].any()
+
+    def test_the_default_is_mirrored_and_the_plane_sits_where_declared(self, half_box):
+        model, mesh = half_box
+        grid = mesh.grid
+        fs = FieldState.from_function(grid, E=lambda x, y, z: (0 * x, 0 * y + 1.0, 0 * z))
+        pl = fs.show(geometry=model, mesh=mesh, normal="z", mode="none", size=(300, 200))
+        # The sheet spans both halves, in mm.
+        assert _sheet(pl).bounds[0] < -5.0 and _sheet(pl).bounds[1] > 5.0
+        # The symmetry plane is drawn at x = 0, not on the scene's edge.
+        plane = _actor(pl, "symmetry_xmin").mapper.dataset.bounds
+        assert plane[0] == pytest.approx(0.0, abs=1e-9) and plane[1] == pytest.approx(0.0, abs=1e-9)
+        pl.close()
+        pl = fs.show(mesh=mesh, mirror=False, normal="z", mode="none", size=(300, 200))
+        assert _sheet(pl).bounds[0] >= -1e-9
+        pl.close()
+
+    def test_a_region_short_of_the_plane_is_not_mirrored(self, half_box):
+        _model, mesh = half_box
+        grid = mesh.grid
+        x0 = float(grid.x[2])
+        mon = MonitorFieldTime(
+            corners=((x0, None, None), (None, None, None)), times=[0.0], fields=["E"], name="m"
+        )
+        mon.attach(mesh)
+        mon.record(FieldArrays.zeros(grid.Nx, grid.Ny, grid.Nz), 0, -1e-12, 1e-12)
+        frames = field_3d._frames_of(mon, mesh, mirror=True)
+        assert not frames.mirrored

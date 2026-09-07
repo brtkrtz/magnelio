@@ -96,6 +96,30 @@ class EigenmodeResult:
             raise IndexError(f"mode must be in [0, {self.n_modes}); got {mode}")
         return _PublicFieldState._from_raw(self.mesh.grid, self.modes[mode])
 
+    def show(self, component: str = "E", **kwargs):
+        """Interactive 3D view of the modes on a cutting plane.
+
+        The geometry viewer with a mode's field laid on its cut and a
+        slider over the modes (each labelled with its index and
+        eigenfrequency), the position slider walking the layer through
+        the cavity; a complex Bloch mode is shown at the instant of its
+        maximum energy, with a phase slider to turn it.  The result's
+        own mesh cuts the metal out of the sheet and names the symmetry
+        planes the field is continued across, so the view shows the
+        whole cavity.  See :func:`magnelio.plots.show_field` for the
+        arguments — ``frame=`` picks the mode shown first, the plane
+        (`normal`, `position`), `geometry`, the rendering `mode` and
+        the rest.
+
+        Parameters
+        ----------
+        component : str
+            ``"E"``, ``"H"``, or one component such as ``"Ez"``.
+        """
+        from magnelio.post.field_3d import show_field  # noqa: PLC0415
+
+        return show_field(self, component, **kwargs)
+
     def plot(
         self,
         mode: int = 0,

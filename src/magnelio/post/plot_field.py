@@ -358,9 +358,23 @@ def _arrow_grid(xc: np.ndarray, yc: np.ndarray, density: int) -> tuple[np.ndarra
     if span <= 0.0 or density < 2:
         return np.asarray(xc, dtype=float), np.asarray(yc, dtype=float)
     step = span / (density - 1)
-    nx = max(2, int(round(lx / step)) + 1)
-    ny = max(2, int(round(ly / step)) + 1)
+    # An axis of one cell (a line or a point monitor) gets one raster
+    # point, not two coincident ones.
+    nx = 1 if lx <= 0.0 else max(2, int(round(lx / step)) + 1)
+    ny = 1 if ly <= 0.0 else max(2, int(round(ly / step)) + 1)
     return np.linspace(xc[0], xc[-1], nx), np.linspace(yc[0], yc[-1], ny)
+
+
+def _stencil_axis(c: np.ndarray, s: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Lower cell index and interpolation weight of the raster points *s* on *c*.
+
+    An axis with one cell (a line or a point monitor) has nothing to
+    interpolate along: every raster point reads that cell.
+    """
+    if c.size < 2:
+        return np.zeros(s.size, dtype=int), np.zeros(s.size)
+    i = np.clip(np.searchsorted(c, s, side="right") - 1, 0, c.size - 2)
+    return i, (s - c[i]) / np.diff(c)[i]
 
 
 def _resample(
@@ -381,16 +395,16 @@ def _resample(
     """
     xc = np.asarray(xc, dtype=float)
     yc = np.asarray(yc, dtype=float)
-    ix = np.clip(np.searchsorted(xc, xs, side="right") - 1, 0, xc.size - 2)
-    iy = np.clip(np.searchsorted(yc, ys, side="right") - 1, 0, yc.size - 2)
-    tx = ((xs - xc[ix]) / np.diff(xc)[ix])[:, None]
-    ty = ((ys - yc[iy]) / np.diff(yc)[iy])[None, :]
+    ix, tx = _stencil_axis(xc, np.asarray(xs, dtype=float))
+    iy, ty = _stencil_axis(yc, np.asarray(ys, dtype=float))
+    tx, ty = tx[:, None], ty[None, :]
+    ix1, iy1 = np.minimum(ix + 1, xc.size - 1)[:, None], np.minimum(iy + 1, yc.size - 1)[None, :]
     ix, iy = ix[:, None], iy[None, :]
     stencil = (
         (ix, iy, (1.0 - tx) * (1.0 - ty)),
-        (ix + 1, iy, tx * (1.0 - ty)),
-        (ix, iy + 1, (1.0 - tx) * ty),
-        (ix + 1, iy + 1, tx * ty),
+        (ix1, iy, tx * (1.0 - ty)),
+        (ix, iy1, (1.0 - tx) * ty),
+        (ix1, iy1, tx * ty),
     )
     m = np.ones((xc.size, yc.size)) if valid is None else valid.astype(float)
     wsum = sum(m[i, j] * c for i, j, c in stencil)
