@@ -57,6 +57,9 @@ major version is 0, minor releases may change the public API.
   path or the command that launches an interpreter, so a sandboxed
   ParaView is reached through its runner
   (`flatpak run --command=pvpython org.paraview.ParaView`).
+- `paraview_open.py` run with a plain Python says what it is and how to
+  open it, instead of failing on an import whose message points at the
+  sibling `paraview/` data directory.
 
 - The 3D viewer's toolbar is its own: camera reset, isometric and
   axis views, a projection toggle, screenshot, a **pop-out** button

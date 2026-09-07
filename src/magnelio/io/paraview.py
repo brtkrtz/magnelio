@@ -1204,7 +1204,22 @@ def _abspath(rel):
 
 
 def build():
-    from paraview import servermanager, simple
+    try:
+        from paraview import servermanager, simple
+    except ImportError as exc:
+        # Typing "python paraview_open.py" lands here, and the message
+        # Python gives is misleading: the sibling data directory is
+        # called "paraview" too, so the import finds a namespace package
+        # and reports "unknown location" rather than "no ParaView".
+        raise SystemExit(
+            "paraview_open.py is a ParaView session script and needs ParaView's own "
+            "interpreter, not a plain Python.\\n"
+            "    paraview --script=paraview_open.py\\n"
+            "    pvpython paraview_open.py --save-state paraview.pvsm\\n"
+            "A Flatpak ParaView is reached through its runner:\\n"
+            "    flatpak run org.paraview.ParaView --script=paraview_open.py\\n"
+            "(the import said: %s)" % exc
+        ) from exc
 
     try:
         simple._DisableFirstRenderCameraReset()
