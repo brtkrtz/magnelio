@@ -4839,6 +4839,7 @@ class Project(ScatteringResultMixin):
         *,
         glyph_percentile: float = 98.0,
         bake_state: bool = True,
+        pvpython: str | Path | None = None,
     ) -> dict:
         """Write the ready-to-open ParaView session for one run.
 
@@ -4863,6 +4864,13 @@ class Project(ScatteringResultMixin):
             arrow scaling).
         bake_state : bool, default True
             Bake ``paraview.pvsm`` via ``pvpython`` when available.
+        pvpython : str or Path, optional
+            Which ``pvpython`` bakes the state, when the machine carries
+            more than one ParaView (default: ``MAGNELIO_PVPYTHON``, else
+            the first on ``PATH``).  A state file names its proxies the
+            way the release that wrote it spells them, so bake it with
+            the ParaView that will open it; ``paraview_open.py`` builds
+            the session live and needs no such care.
 
         Returns
         -------
@@ -4877,6 +4885,7 @@ class Project(ScatteringResultMixin):
             self._run_name_for_excited(excited),
             glyph_percentile=glyph_percentile,
             bake_state=bake_state,
+            pvpython=pvpython,
         )
 
     def export_paraview_eigenmodes(
@@ -4884,6 +4893,7 @@ class Project(ScatteringResultMixin):
         *,
         glyph_percentile: float = 98.0,
         bake_state: bool = True,
+        pvpython: str | Path | None = None,
     ) -> dict:
         """Write the ParaView session for the stored eigenmodes.
 
@@ -4910,6 +4920,13 @@ class Project(ScatteringResultMixin):
             the arrow scaling).
         bake_state : bool, default True
             Bake ``paraview.pvsm`` via ``pvpython`` when available.
+        pvpython : str or Path, optional
+            Which ``pvpython`` bakes the state, when the machine carries
+            more than one ParaView (default: ``MAGNELIO_PVPYTHON``, else
+            the first on ``PATH``).  A state file names its proxies the
+            way the release that wrote it spells them, so bake it with
+            the ParaView that will open it; ``paraview_open.py`` builds
+            the session live and needs no such care.
 
         Returns
         -------
@@ -4929,6 +4946,7 @@ class Project(ScatteringResultMixin):
             self.path,
             glyph_percentile=glyph_percentile,
             bake_state=bake_state,
+            pvpython=pvpython,
         )
 
     def checkpoint_state(

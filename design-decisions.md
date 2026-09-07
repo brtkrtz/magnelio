@@ -21657,4 +21657,90 @@ Files: `src/magnelio/post/plot_3d.py`, `src/magnelio/post/field_3d.py`,
 `src/magnelio/geo/__init__.py`, `src/magnelio/io/project.py`,
 `src/magnelio/analysis/eigenmode.py`, `docs/methods/viewer.md`,
 `docs/methods/projects-and-runs.md`.
+## DD-265 — A ParaView state file is bound to its ParaView: the geometry is completed at export time, and the bake names its interpreter
+
+**Date:** 2026-09-07
+**Status:** Accepted (developer decision, 2026-09-07: all three parts;
+implemented after [[DD-264]], patch after v0.7.0).
+
+**Problem.**  The developer moved from ParaView 6.0.1 to 6.1 (which
+ends the numpy 2.4 breakage [[DD-262]] shimmed) and the session came up
+worse than before: dozens of `vtkPVGeometryFilter … Missing input data`
+and `vtkPVMetaClipDataSet … Input port 0 … has 0 connections but is not
+optional`, solids without their colour or transparency, and a slice
+that could not be moved.
+
+**Findings.**  (a) The `.pvsm` in the project had been baked by 6.0.1 —
+`bake_pvsm` took whatever `shutil.which("pvpython")` found, and the
+distribution build comes first on `PATH` even when the ParaView the
+developer opens is a downloaded 6.1.  (b) `simple.Reflect` resolves to
+`AxisAlignedReflectionFilter` in 6.0 and to `ReflectionFilter`
+(deprecated, to go in 6.2) in 6.1: loading the 6.0 state on 6.1 gives
+*No proxy that matches: group=filters and proxy=AxisAlignedReflectionFilter*,
+the two geometry mirrors vanish, and the clips below them are left
+without an input — the flood of errors, the half model, the dead
+slice.  Measured on the developer's own `pi_mode` export: script path
+clean and **pixel-identical** under 6.0.1 and 6.1.0 with the slice
+movable and the linked clip following; the 6.0-baked state gives
+`geometry_cut_eigenmodes` 0 points on 6.1.  (c) So the fragility is
+structural: a state file names proxies by the spelling of the release
+that wrote it and drops a renamed one together with its whole branch,
+while the generated script builds the session live and is version-free
+by construction.  (d) Separately: the developer counted 29 pipeline
+entries against DD-262's "seven".  Not a defect — that project carries
+**five** monitors (1 geometry reader + 7 + 4 + 4 + 5 + 8 = 29); the
+seven is per monitor.  The chapter now says so.
+
+**Decision.**
+
+1. **The geometry is completed where the fields already are — at export
+   time.**  `export_vtm(..., mirrors=…)` clips every block to the
+   simulated half and appends its reflection (`_half_and_mirror`:
+   `vtkClipPolyData`, `vtkTransformPolyDataFilter`, and
+   `vtkReverseSense` because a mirror reverses the winding of every
+   triangle), so `geometry.vtm` holds the whole model and the session
+   builds no reflection of its own.  `_ensure_geometry_vtm` records the
+   planes in `geometry.vtm.json` and rebuilds when they differ, so a
+   file written before this DD is not shown as a half model.  The
+   session loses `<label>_symclip_<i>` and `<label>_mirror_<i>` per
+   plane, and with them the only version-fragile proxy it had.
+2. **The bake names its interpreter.**  `export_paraview(pvpython=…)`,
+   `export_paraview_eigenmodes(pvpython=…)` and `MAGNELIO_PVPYTHON`
+   (`resolve_pvpython`); the version the bake ran under travels back on
+   stdout (`_VERSION_MARKER`, printed by the script after `SaveState`)
+   and is written into the header of `paraview_open.py`
+   (`_stamp_version`), which also states in prose that the state is
+   bound to it and the script is not.
+3. **The chapter says which file to open.**  A new section *Which of
+   the two files to open* in `docs/methods/sources-monitors.md`:
+   `paraview_open.py` is the robust path, `paraview.pvsm` the
+   convenience bound to one release; tutorial 07 says the same.  The
+   `usercustomize.py` advice for the numpy 2.4 breakage is replaced by
+   the finding that a state file cannot be helped there at all —
+   ParaView's own filter preamble (`from paraview.vtk.numpy_interface.algorithms import *`,
+   a hardcoded C++ string) runs before the first line of any script of
+   ours, so no `Script` or `RequestInformationScript` can carry the
+   shim.
+
+**Consequences.**  Verified end to end on a copy of the developer's
+`pi_mode` project: the state **baked by 6.0.1 now loads on 6.1.0** with
+all eight proxies carrying data and the geometry whole
+(x, y ∈ [−0.1033, 0.1033] m against the simulated quarter) — the
+scenario that produced the report.  The reverse direction (6.1-baked
+opened on 6.0.1) still loses the *Python filters* to the numpy 2.4
+breakage, but no longer the geometry.  The pipeline is two proxies per
+symmetry plane shorter.  The mirroring costs one clip and one
+transform per solid per plane at export time and doubles the
+tessellated geometry per plane on disk (kilobytes).  The DD-169
+warning path for a renderer without a usable reflection filter is gone
+with the filter.  Gates:
+`tests/unit/test_paraview_export.py::test_export_vtm_completes_the_model_across_symmetry_planes`,
+`::test_the_baking_paraview_is_named_in_the_script`,
+`::test_the_bake_interpreter_can_be_named`,
+`tests/unit/test_symmetry_declaration.py` (the session builds no
+reflection); record `investigations/viewer-review-followup/MEASUREMENTS.md`
+(internal record).
+Files: `src/magnelio/io/paraview.py`, `src/magnelio/io/project.py`,
+`docs/methods/sources-monitors.md`,
+`examples/tutorials/plot_07_project_store.py`.
 

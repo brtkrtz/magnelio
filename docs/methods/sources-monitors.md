@@ -461,7 +461,9 @@ not a side effect of the run.
 Beside the data, `paraview_open.py` builds a `paraview.simple`
 pipeline and, when `pvpython` is on the path, `paraview.pvsm` is
 baked from it as a double-clickable state.  What the pipeline browser
-shows per monitor: the reader, `<monitor>_field` — a Python filter
+shows per monitor — the count below is *per monitor*, so a run with
+five of them carries five such groups — is the reader, `<monitor>_field`
+— a Python filter
 that mirrors the recorded half across the model's symmetry planes
 with the continuation rules of the monitor plots (`E` and `H` each
 with their own parity), averages the cells onto the points and
@@ -479,14 +481,45 @@ monitor's `<monitor>_arrows_im` holds the field a quarter period
 later.  Eigenmodes take the same shape one directory up, one `.vtr`
 per mode.  Tutorial 07 opens such a session.
 
+`geometry.vtm` holds the **whole** model: a geometry declared behind
+symmetry planes is clipped to the simulated half and mirrored across
+each plane while the file is written, not by a filter in the session.
+The planes it was built for are recorded in `geometry.vtm.json`, so a
+file written for other planes is made again rather than shown as a
+half model.
+
 The export is a step *after* the run, not a live view; after a
 resume, call it again and the set is regenerated.  Watching a run
 while it marches is what `watch`, `follow` and the notebook viewer
 are for ([Projects and runs](projects-and-runs.md), the how-to
-*Watching a simulation that is still running*).  One build note:
-ParaView 6.0 bundles a `numpy_interface` older than numpy 2.4, which
-stops every Python filter; the generated script shims that for
-`paraview --script` and the bake, while a double-click on
-`paraview.pvsm` needs the same one-liner
-(`numpy.in1d = numpy.isin`) in a `usercustomize.py` on the machine
-running that ParaView until the build catches up.
+*Watching a simulation that is still running*).
+
+### Which of the two files to open
+
+`paraview_open.py` is the robust one.  It builds the session live, so
+it works on whatever ParaView runs it:
+
+```bash
+paraview --script=paraview_open.py
+```
+
+`paraview.pvsm` is the convenience — a double-click, no command line —
+and it is **bound to the ParaView that baked it**.  A state file names
+its proxies the way that release spelled them, and a renamed proxy is
+dropped on load together with everything downstream of it, which reads
+as missing solids and errors about filters without input rather than
+as a version mismatch.  The version that baked it is written into the
+header of `paraview_open.py` beside it.  On a machine carrying more
+than one ParaView, name the one that will open the session:
+
+```python
+project.export_paraview(pvpython="/opt/ParaView-6.1/bin/pvpython")
+```
+
+or set `MAGNELIO_PVPYTHON` once; `bake_state=False` skips the state
+file altogether.  Two build notes: ParaView 6.0 bundles a
+`numpy_interface` older than numpy 2.4, which stops every Python
+filter — the generated script shims that for `paraview --script` and
+for the bake, but a state file opened on such a build cannot be
+helped, since ParaView's own filter preamble runs before any script of
+ours.  Use `paraview --script=` there, or a newer ParaView.

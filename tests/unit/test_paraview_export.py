@@ -15,6 +15,7 @@ unit test on a coarse air box.
 from __future__ import annotations
 
 import re
+import sys
 
 import numpy as np
 import pytest
@@ -23,6 +24,7 @@ from magnelio import Material
 from magnelio.io.paraview import (
     _FIELD_SCRIPT,
     _INFO_SCRIPT,
+    _SCRIPT_HEADER,
     _length_exponent,
     _magnitude_stats,
     _material_table,
@@ -227,24 +229,36 @@ def test_bake_disabled_by_env(tmp_path, monkeypatch):
     assert bake_pvsm(script, tmp_path / "s.pvsm") is False
 
 
-def test_a_session_that_cannot_mirror_says_so(tmp_path, monkeypatch):
-    """A renderer without a usable reflection filter must not pass quietly.
+def test_the_baking_paraview_is_named_in_the_script(tmp_path):
+    """A state file is bound to the release that wrote it (DD-265).
 
-    Showing half a model as though it were whole is worse than showing
-    nothing, and the caller who only ever runs the export has no other
-    way to find out (DD-169).
+    Nothing in a ``.pvsm`` says which ParaView it came from, and opening
+    it with another one loses whole branches of the pipeline without an
+    error a caller would recognise.  The version therefore goes into the
+    header of the script that sits beside it.
     """
-    import shutil
+    from magnelio.io.paraview import _STAMP_NONE, _STAMP_PREFIX, _stamp_version
 
-    from magnelio.io.paraview import _SYMMETRY_MARKER
+    script = tmp_path / "paraview_open.py"
+    script.write_text(_SCRIPT_HEADER, encoding="utf-8")
+    assert _STAMP_PREFIX + _STAMP_NONE in script.read_text(encoding="utf-8")
 
-    if shutil.which("pvpython") is None:
-        pytest.skip("pvpython not available")
-    monkeypatch.setenv("MAGNELIO_PVSM_BAKE", "1")
-    script = tmp_path / "s.py"
-    script.write_text(f"print({_SYMMETRY_MARKER!r} + ' Et')\n")
-    with pytest.warns(RuntimeWarning, match="symmetry mirror planes"):
-        bake_pvsm(script, tmp_path / "s.pvsm")
+    # What the session script prints back after SaveState.
+    _stamp_version(script, "paraview version 9.9.9")
+    header = script.read_text(encoding="utf-8")
+    assert _STAMP_PREFIX + "9.9.9" in header
+    assert _STAMP_NONE not in header
+
+
+def test_the_bake_interpreter_can_be_named(tmp_path, monkeypatch):
+    """A machine with two ParaViews must not bake for the wrong one."""
+    from magnelio.io.paraview import resolve_pvpython
+
+    monkeypatch.delenv("MAGNELIO_PVPYTHON", raising=False)
+    assert resolve_pvpython(sys.executable) == sys.executable
+    monkeypatch.setenv("MAGNELIO_PVPYTHON", sys.executable)
+    assert resolve_pvpython() == sys.executable
+    assert resolve_pvpython("no-such-pvpython-anywhere") is None
 
 
 def test_export_vtm_blocks_names_materials(tmp_path):
@@ -295,6 +309,52 @@ def test_export_vtm_blocks_names_materials(tmp_path):
         assert arr.GetRange() == (float(i), float(i))
     # The curved solid tessellates finer than a box's 12 triangles.
     assert mb.GetBlock(1).GetNumberOfCells() > 12
+
+
+def test_export_vtm_completes_the_model_across_symmetry_planes(tmp_path):
+    """The file holds the whole model, not the simulated half (DD-265).
+
+    The completion used to be ParaView's `Reflect` filter, whose proxy
+    was renamed between 6.0 and 6.1 — a state file naming the old one
+    lost its entire geometry branch on the newer release.  Doing it here
+    keeps the session's pipeline to proxies that do not move.
+    """
+    pytest.importorskip("OCC.Core.BRepPrimAPI")
+    vtk = pytest.importorskip("vtk")
+
+    from magnelio import GeometryModel
+    from magnelio.geo import Brick
+    from magnelio.io.paraview import export_vtm
+
+    # A quarter block in the first quadrant, mirrored back over both walls.
+    model = GeometryModel()
+    model.add(Brick(origin=(0, 0, 0), size=(4e-3, 3e-3, 1e-3), material="pec", name="quarter"))
+
+    half = tmp_path / "half.vtm"
+    whole = tmp_path / "whole.vtm"
+    export_vtm(half, list(model))
+    export_vtm(
+        whole,
+        list(model),
+        mirrors=[("x", 0.0, True, "PEC"), ("y", 0.0, True, "PMC")],
+    )
+
+    def bounds(path):
+        reader = vtk.vtkXMLMultiBlockDataReader()
+        reader.SetFileName(str(path))
+        reader.Update()
+        return reader.GetOutput().GetBlock(0).GetBounds()
+
+    bh, bw = bounds(half), bounds(whole)
+    assert bh[0] == pytest.approx(0.0, abs=1e-12)
+    assert bh[2] == pytest.approx(0.0, abs=1e-12)
+    # Both walls sit at zero, so the model reaches as far below as above.
+    assert bw[0] == pytest.approx(-4e-3)
+    assert bw[1] == pytest.approx(4e-3)
+    assert bw[2] == pytest.approx(-3e-3)
+    assert bw[3] == pytest.approx(3e-3)
+    # The out-of-plane extent is untouched.
+    assert bw[4:] == pytest.approx(bh[4:])
 
 
 def _eigen_project(tmp_path, n_modes=4, export=True):

@@ -32,6 +32,19 @@ major version is 0, minor releases may change the public API.
   reflection filter treated it as polar).
 - `paraview_open.py` works on ParaView builds whose bundled
   `numpy_interface` predates numpy 2.4.
+- `geometry.vtm` holds the whole model: solids declared behind symmetry
+  planes are clipped to the simulated half and mirrored while the file
+  is written.  The session no longer builds a reflection of its own —
+  ParaView renamed that filter's proxy between 6.0 and 6.1, and a state
+  file naming the older spelling lost its solids, its geometry clip and
+  the slice linked to it on the newer release, with a flood of *Missing
+  input data* errors.
+- A `.pvsm` is bound to the ParaView that baked it, so
+  `export_paraview(pvpython=…)` (or `MAGNELIO_PVPYTHON`) picks the one
+  to bake for when a machine carries several, and the version that
+  baked it is written into the header of `paraview_open.py` beside it.
+  `paraview_open.py` builds the session live and runs on any ParaView;
+  the chapter now says which of the two to open.
 
 - The 3D viewer's toolbar is its own: camera reset, isometric and
   axis views, a projection toggle, screenshot, a **pop-out** button
