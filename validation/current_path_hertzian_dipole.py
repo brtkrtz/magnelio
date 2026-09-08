@@ -37,9 +37,11 @@ the source.
 
 (2026-08-30, 45 mm half-domain, f₀ = 10 GHz, L = 2.5 mm, kL = 0.524.)
 The pattern is ``sin θ`` throughout, ``|E_φ| / |E_θ|max`` stays near
-2 %, and ``arg(E_θ / j)`` is 180° — the library's far-zone amplitude
-is the conjugate of the ``e^{+jωt}`` textbook form (DD-204).  The
-*sign* of the injection is not read off that phase but from the exact
+2 %, and ``arg(E_θ / j)`` reads 0° up to the grid's own error (4.9° at
+10 nodes/λ, 2026-09-08) — the library's far-zone amplitude *is* the
+``e^{+jωt}`` textbook form (DD-204; it was its conjugate until DD-268
+settled the convention, and the same run then printed near 180°).
+The *sign* of the injection is not read off that phase but from the exact
 charge-continuity identity in
 ``tests/integration/test_source_current_path.py``.
 

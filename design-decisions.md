@@ -11685,7 +11685,10 @@ Three deliberate subtleties, each pinned by a test:
   conjugates once at the entrance and once at the exit, so the
   public pattern is a phasor like every other frequency-domain
   quantity.  The analytic Hertzian dipole pins the sign of
-  ``E_theta``.
+  ``E_theta``.  *[[DD-268]] (2026-09-07): the accumulator sums
+  ``e^{−jωt}`` now, so the two conjugations are gone and the textbook
+  algebra applies verbatim.  The Hertzian gate is unchanged in
+  purpose and now expects Balanis 4-2 as written.*
 - *Effective amplitudes.*  The per-1-W-CW normalisation of DD-170
   makes every renormalised phasor an effective (RMS) amplitude
   (``|V| = √(zP)``, port-units gate), so the radiation intensity is
@@ -12564,7 +12567,10 @@ impedances by reciprocity.  Three conventions are fixed by it:
   `Σ f·exp(+jωt)dt`, so a particle moving toward +z carries
   `exp(-j k_B z)`.  Verified by directivity: the wrong sign leaves 4 %
   of the beam voltage at the design frequency (the cancellation at the
-  second gap for a beam running with the wave).
+  second gap for a beam running with the wave).  *[[DD-268]]: the sum
+  is `exp(-jωt)` now, so a beam toward +z carries `exp(+j k_B z)` —
+  the how-to's `beam_voltage` was re-signed with it and the
+  directivity measurement is unchanged.*
 - **Symmetry plane as mode selector and drive.**  The plane between
   the two strips as `"SymmetryPMC"` is the sum mode, as
   `"SymmetryPEC"` the difference mode; one excited port in the half
@@ -17394,8 +17400,10 @@ offset left over: the residual tracks the near-to-far-field box's own
 closure, not the source.  Cross-polarisation stays near 2 %, the
 pattern is `sin θ`, and `arg(E_θ / j)` reads 180° — the library's
 far-zone amplitude is the conjugate of the `e^{+jωt}` textbook form
-(the DD-204 convention).  The *sign* of the injection is pinned by the
-charge-continuity identity above, not by that phase.
+(the [[DD-204]] convention).  The *sign* of the injection is pinned by
+the charge-continuity identity above, not by that phase.
+*[[DD-268]]: that reading is 0° now; the far-zone amplitude is the
+textbook form itself.*
 
 Integration gates: charge continuity to 1e-9 on a PEC box, and a
 two-cell filament on a 60³ uniform grid reading `P_rad` within 6 % of
@@ -21869,6 +21877,11 @@ actor of 99 cells at `mirror=False` and no actor at all at
    so the play button walks a wave away from the port that launched it.
    The convention is stated once for users in
    `docs/methods/sources-monitors.md`, beside the sum that fixes it.
+   **Amended by [[DD-268]]** (the same day, before any release): the
+   sign is `+j`, because the accumulator now sums `e^{-jωt}` and its
+   bins are `e^{+jωt}` phasors.  The finding — that `phase` is ωt and
+   that the reconstruction must read the bins with the sign the
+   accumulator gave them — stands, as do decisions 2 to 4.
 2. **Room for the toolbar.**  The cut row — which every viewer of the
    module carries — is wrapped in `div.mio-menu-row`, and
    `_viewer._MENU_CSS` lets the card grow (`height: auto`,
@@ -21889,7 +21902,8 @@ the mirror in time of what the same call gave before — a behaviour
 change, called out in the changelog under *Fixed*.  Magnitudes,
 S-parameters and far fields are untouched: none of them goes through
 these three functions, and the far-field transform's own conjugation
-([[DD-173]]) is unchanged.  Gates:
+([[DD-173]]) is unchanged (removed by [[DD-268]], which made it
+unnecessary).  Gates:
 `tests/unit/test_monitors.py::TestDFTAccumulator::test_a_rising_phase_runs_the_wave_forward`
 (the travelling-wave measurement above),
 `tests/unit/test_field_3d.py::TestFrequencyMonitor::test_phase_turns_the_pattern`
@@ -21899,3 +21913,131 @@ Files: `src/magnelio/monitors/_frame_plots.py`,
 `src/magnelio/fields/series.py`, `src/magnelio/monitors/field_frequency.py`,
 `src/magnelio/monitors/field_time.py`, `src/magnelio/io/project.py`,
 `docs/methods/viewer.md`, `docs/methods/sources-monitors.md`.
+
+## DD-268 — Frequency-domain fields are e^{+jωt} phasors: the running DFT sums e^{-jωt}
+
+**Date:** 2026-09-07
+**Status:** Accepted (developer decision the same day as [[DD-267]],
+before any release; branch `feat/phasor-convention-0.8`, shipped in
+0.8.0).
+
+**Problem.**  [[DD-267]] settled how a picture reads a phasor and, in
+doing so, wrote down what the library had been doing all along: the
+running DFT sums `Σ F(t) e^{+jωt} dt`, so a field monitor's bins are
+`e^{-jωt}` phasors.  Nothing else in the library speaks that
+convention.  The S-parameter path transforms its port signals with
+`Signal1D.at_frequencies` (`Σ x_n e^{-2πjft_n}`), `Waveform.spectrum`
+matches it, `cw_lockin_phasors` returns `a − jb` from a cos/sin fit,
+and the modal half-step rotation is `e^{+jω dt/2}` — all `e^{+jωt}`.
+The consequences were live: the phase of a field monitor and the phase
+of a port voltage at the same frequency were conjugates of each other,
+the near-to-far-field transform had to conjugate its inputs at the
+entrance and its result at the exit to reach the textbook algebra
+([[DD-173]]), a user computing a circular-polarisation handedness from
+`E_theta`/`E_phi` with a textbook formula got the wrong hand, and the
+transit phase of a beam toward `+z` had to be written `e^{-jk_B z}`
+([[DD-183]]) where every accelerator text writes `e^{+jk_B z}`.  The
+developer asked which convention the library works in; the honest
+answer was "two".
+
+**Findings.**
+
+(a) The sign lives in exactly two kernels: `monitors/_dft.py`
+(`DFTAccumulator.accumulate` and `source_spectrum`, which feed the
+frequency monitors and the far-field monitor) and a private copy in
+`monitors/wall_loss.py`.  Everything downstream inherits it.  The port
+machinery (`dtbc`, `zeta_pencil`, `dispersive_source`,
+`band_source_spectrum`) is in the numpy-rfft world already and reads no
+DFT bin; the DD-198 incident ratio is a magnitude.
+
+(b) Most consumers cannot tell the two signs apart: `Re Σ e·h*`
+(`wall_loss`, `surface_power`, [[DD-260]]'s `flux()`), `|·|²`
+([[DD-260]]'s `energy()`, `P_rad`, `directivity`, the pattern
+magnitudes).  What changes is every complex value a user reads:
+`.spectrum`/`.spectrum_raw`, `E_theta`/`E_phi`, the `_im` arrays of the
+ParaView export.
+
+(c) The store converts exactly.  A result file holds *raw* bins and no
+divisor; the divisor is recomputed on read from the run's stored real
+excitation waveform, so an old file read with the new divisor is
+exactly `conj(spectrum)`.  Conjugating the bins on read recovers the
+correct result to the last bit — of a finished transform as much as of
+a partial sum a resume continues, because the conjugate of a partial
+sum in the old kernel *is* the partial sum in the new one.
+`checkpoint.h5` carries no accumulator bins (the frequency, wall-loss
+and far-field monitors have no `state_dict`; a resume re-reads the
+three result files), so those three files are the whole version
+boundary.  Measured: the five legacy-store gates below fail on
+mutated-to-old files when the conjugation hook is removed and pass with
+it, and the resumed runs are bit-exact against uninterrupted ones.
+
+(d) Two independent measurements pin the absolute sign, and both were
+already in the tree pointing the other way: the analytic Hertzian
+dipole ([[DD-173]]), whose `E_theta` at the equator must be Balanis 4-2
+verbatim, and the stripline directivity ([[DD-183]]), where the wrong
+transit-phase sign swaps which beam direction sees its two gap kicks
+cancel.
+
+**Decision.**
+
+1. **One kernel sign.**  `DFTAccumulator.accumulate`, `source_spectrum`
+   and `MonitorWallLoss.record` sum `F(t) e^{-jωt} dt` — identical to
+   `Signal1D.at_frequencies` times `dt`.  A bin of `A·cos(ωt+φ)` is
+   `(T/2)·A·e^{+jφ}`.
+2. **Pictures read `Re(F e^{+jφ})`** in the three phasor evaluators, the
+   sign amendment to [[DD-267]] decision 1; `phase` still means ωt.
+3. **No conjugation in the NTFF transform.**  `post/far_field.py`
+   applies the textbook formulas verbatim; the returned pattern is a
+   phasor like every other frequency-domain quantity, and
+   `E(r) = A e^{-jkr}/r` — which its own docstring already claimed.
+4. **The store says which convention it holds.**  Schema stays `"3.0"`:
+   a bump would refuse 0.7 stores whose data is exactly convertible.
+   `fields_freq.h5`, `wall_loss.h5` and `far_field.h5` carry a file
+   attribute `phasor_convention = "exp(+jwt)"`
+   (`io/_schema.PHASOR_CONVENTION`), read through
+   `stored_phasors_conjugated`: absent means a file of the older era and
+   its complex data is conjugated on read; an unknown value raises
+   `ProjectSchemaError` rather than degrading silently.  The hooks sit
+   at the single read site of each file — `_LoadedFreqMonitor._hydrate`,
+   `_read_far_field_dump` (which serves both the loader and the resume),
+   and the two `_load_*_accumulators` of `analysis/time_domain.py`.
+5. **Release 0.8.0** with `docs/migration-0.8.md`: the complex values a
+   user reads are conjugated, which is a breaking change of meaning
+   under the Cargo reading even though no call signature moves.
+
+**Consequences.**  Every complex field the library hands out is the
+conjugate of what 0.7 returned; magnitudes, power, energy, gain,
+directivity and S-parameters are unchanged.  A monitor's phase may now
+be compared directly with a port voltage's phase at the same frequency,
+and textbook post-processing formulas apply as written.  Stored runs
+need no re-run and resume exactly.  The two in-tree consumers of the
+old sign were re-signed with the convention: the how-to's
+`beam_voltage` (`e^{+jk_B z}` for a beam toward `+z`) and the Hertzian
+validation script (`arg(E_θ / j)` reads 0° where it read 180°).
+Gates: `tests/unit/test_monitors.py::TestDFTAccumulator::
+test_matches_signal1d_at_frequencies` (the accumulator *is*
+`Signal1D.at_frequencies` times `dt`) and
+`::test_a_cosine_bin_is_the_engineering_phasor` (the absolute sign),
+`tests/unit/test_ntff_transform.py::TestFreeDipole::
+test_phase_convention_is_pinned` (Balanis verbatim, no conjugation),
+`tests/integration/test_project_freq.py::
+test_legacy_phasor_file_reads_conjugated`,
+`::test_legacy_partial_file_resumes_bit_exact`,
+`::test_unknown_phasor_convention_is_rejected`,
+`tests/integration/test_far_field_store.py::
+test_legacy_phasor_file_reads_conjugated`,
+`::test_legacy_partial_file_resumes_bit_exact`, and
+`tests/integration/test_wall_loss_store.py::
+test_legacy_partial_file_resumes_bit_exact`.
+Files: `src/magnelio/monitors/_dft.py`,
+`src/magnelio/monitors/wall_loss.py`,
+`src/magnelio/monitors/_frame_plots.py`,
+`src/magnelio/monitors/field_frequency.py`,
+`src/magnelio/post/far_field.py`, `src/magnelio/post/field_3d.py`,
+`src/magnelio/post/plot_3d.py`, `src/magnelio/fields/series.py`,
+`src/magnelio/io/_schema.py`, `src/magnelio/io/project.py`,
+`src/magnelio/io/paraview.py`, `src/magnelio/analysis/time_domain.py`,
+`docs/migration-0.8.md`, `docs/methods/sources-monitors.md`,
+`docs/methods/far-field.md`, `docs/methods/viewer.md`,
+`examples/howto/plot_stripline_pickup_kicker.py`,
+`validation/current_path_hertzian_dipole.py`.

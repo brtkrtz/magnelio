@@ -101,7 +101,7 @@ eigen.show(frame=2, glyph="cone")                # starting at mode 2, cones ins
 The field controls sit in a **second toolbar row**: a **play button**
 and a **frame slider** (time, frequency or mode, the value beside it
 in a readout of fixed width), a **play button** and a **phase slider**
-for complex data (a frequency monitor's pattern at `Re(F·e^{-jφ})` —
+for complex data (a frequency monitor's pattern at `Re(F·e^{+jφ})` —
 the instant at `ωt = φ`, so the phase advances with time and a
 travelling wave runs the way it ran in the simulation; the play turns
 the phase in steps of ten degrees), a **Field** selector

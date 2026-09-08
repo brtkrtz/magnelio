@@ -415,7 +415,7 @@ lock-in phasor extraction over an integer number of periods after
 settling (`cw_lockin_phasors`) — standard signal processing.
 
 A frequency monitor is divided by the same spectrum, and for the same
-reason.  Its running sum $\sum_n F(t_n)\,e^{+j\omega t_n}\,\Delta t$ is
+reason.  Its running sum $\sum_n F(t_n)\,e^{-j\omega t_n}\,\Delta t$ is
 the transient folded with the excitation, so it carries an extra factor
 of time and the pulse's own spectral shape.  Since the excitation
 waveform *is* the incident power-wave amplitude $a(t)$ in $\sqrt{\rm W}$
@@ -427,15 +427,19 @@ incident power.  A run performs that division on its own monitors, so
 the transient itself.
 
 The sign in that exponent fixes the library's phasor convention:
-frequency-domain fields are those of the $e^{-j\omega t}$ convention,
-so the instant of a pattern at time $t$ is
-$\mathrm{Re}\left(F\,e^{-j\omega t}\right)$.  That is what the
-`phase` argument of every picture means — degrees of $\omega t$,
-advancing with time — and what the viewer's phase play animates, so a
-travelling wave moves the way it ran in the simulation.  The
-far-field transform (whose textbook formulas are written for
-$e^{+j\omega t}$) conjugates on the way in and back out, so its
-patterns are phasors of the same convention as everything else.
+frequency-domain fields are those of the $e^{+j\omega t}$ convention —
+the convention of the S-parameters, of the port signals' own transform
+and of the textbook far-field formulas — so the instant of a pattern
+at time $t$ is $\mathrm{Re}\left(F\,e^{+j\omega t}\right)$.  That is
+what the `phase` argument of every picture means — degrees of $\omega
+t$, advancing with time — and what the viewer's phase play animates,
+so a travelling wave moves the way it ran in the simulation.  One
+convention runs through the library: the phase of a monitor and the
+phase of a port voltage at the same frequency may be compared
+directly, and the far-field transform applies its textbook formulas
+verbatim.  Runs written before 0.8 stored the conjugate of these
+phasors; they are converted as they are read, so a stored run needs no
+re-run.
 For a TE/TM feed the waveform launches a frequency-dependent power —
 the mode's wave impedance varies across the band — and the run divides
 additionally by the ratio $|a(f)|/|W(f)|$ of the incident wave it

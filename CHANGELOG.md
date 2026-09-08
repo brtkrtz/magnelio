@@ -11,6 +11,21 @@ major version is 0, minor releases may change the public API.
 
 ### Changed
 
+- Frequency-domain fields are `e^{+jωt}` phasors.  Every complex field
+  the library hands out — `.spectrum` and `.spectrum_raw` of a frequency
+  monitor, `E_theta` and `E_phi` of a far-field pattern, the
+  `<field>_im` arrays of the ParaView export — is the complex conjugate
+  of what 0.7 returned, and now shares the convention of the
+  S-parameters, of the port signals' own transform and of the textbook
+  far-field formulas.  A monitor's phase and a port voltage's phase at
+  the same frequency may be compared directly.  Magnitudes, power,
+  energy, gain, directivity and S-parameters are unchanged.  A stored
+  run written by an earlier release reads back correctly and resumes
+  exactly — the result files carry a `phasor_convention` attribute, and
+  data written without it is converted as it is read.  Post-processing
+  that applies a phase factor of its own needs the other sign: a transit
+  phase for a particle toward `+z` is `e^{+jk z}`.  See
+  *Upgrading from 0.7.x*.
 - ParaView files are written on request only.  `project.export_paraview()`
   and `project.export_paraview_eigenmodes()` are now the only calls that
   write the `.vtr`/`.pvd` series, `paraview_open.py`, `paraview.pvsm`
@@ -117,14 +132,11 @@ major version is 0, minor releases may change the public API.
 - The phase of a complex field runs forward in time.  Every picture
   that takes a `phase` — the 3D viewer's phase slider and its play
   button, `plot(phase=…)`, `interact`, `FieldSpectrum.snapshot` — now
-  shows `Re(F·e^{-jφ})`, the instant at `ωt = φ`.  It showed
-  `Re(F·e^{+jφ})`, which is the same pattern run backwards: a wave
-  animated on a frequency monitor crawled back toward the port that
-  launched it.  The library's phasors are those of the `e^{-jωt}`
-  convention (the running DFT sums `e^{+jωt}`), as the far-field
-  transform has always assumed.  A picture at a phase other than 0 or
-  180 degrees is now the mirror in time of what the same call gave
-  before.
+  shows `Re(F·e^{+jφ})`, the instant at `ωt = φ`.  It showed the same
+  pattern run backwards: a wave animated on a frequency monitor crawled
+  back toward the port that launched it.  A picture at a phase other
+  than 0 or 180 degrees is now the mirror in time of what the same call
+  gave before.
 - The viewer's toolbar has room for its labels.  It sat in a card of
   fixed height whose rows did not wrap, so *Cut* and *Show* were clipped
   along the top and a narrow window put the controls on the right out of
