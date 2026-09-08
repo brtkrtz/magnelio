@@ -2,10 +2,10 @@
 
 *Last updated: 2026-09-08.*  **Released v0.7.0** (2026-09-06; a minor
 under the Cargo reading — the field monitors' dictionary API is gone,
-`docs/migration-0.7.md`).  Unreleased on `main`'s successor branches:
-**v0.8.0** — the phasor convention of the frequency-domain fields
-(DD-268, `docs/migration-0.8.md`), the ParaView export on request
-(DD-262) and the viewer review (DD-263…267).  In v0.7.0:
+`docs/migration-0.7.md`).  Unreleased on `main`: **v0.8.0** — the
+phasor convention of the frequency-domain fields (DD-268,
+`docs/migration-0.8.md`), the ParaView export on request (DD-262) and
+the viewer review (DD-263…267).  In v0.7.0:
 **DD-261** — fields in the volume of the 3D viewer (lattice arrows,
 isosurfaces, coloured arrows, a second toolbar row; browser review
 open); **DD-260** — energy and flux from a recording (`recording.energy()`,
@@ -313,8 +313,7 @@ flickers to ``"done"`` between sequential runs; the reader skips
 
 ## Open construction sites
 
-* **3D viewer, browser review (DD-261, DD-263, DD-264, DD-267)** — the toolbar, the volume representations, the mirrored frames and the phase play are gated through trame's state; the toolbar was driven in Chrome for DD-264 (tab name, projection both ways, ruler, PNG with the browser camera, HTML export) and for DD-267 (the card growing with the cut row, the phase moving the crests away from the port), the mouse bindings in the help dialog are still read from the vtk.js bundle, not clicked through.  DD-268 conjugated the bins under all of it — the direction a wave travels on screen is unchanged (both the sum and the reconstruction flipped), but the phase play has not been driven in a browser since.
-* **Two branches unmerged** — `fix/paraview-launcher-command` (3 commits, DD-265 follow-up) and `feat/phasor-convention-0.8` (DD-268, branched off it).  Merge order: the launcher branch first, then the convention branch; then `git push private main`.
+* **3D viewer, browser review (DD-261, DD-263, DD-264, DD-267)** — the toolbar, the volume representations, the mirrored frames and the phase play are gated through trame's state; the toolbar was driven in Chrome for DD-264 (tab name, projection both ways, ruler, PNG with the browser camera, HTML export) and for DD-267 (the card growing with the cut row, the phase moving the crests away from the port), the mouse bindings in the help dialog are still read from the vtk.js bundle, not clicked through.  DD-268 conjugated the bins under all of it — both the sum and the reconstruction flipped, so the direction a wave travels on screen is unchanged, and the developer confirmed the viewer after the change (2026-09-08).
 * **Band-pipeline runtime** — convolution (DD-245) and axis ranking
   (DD-247) closed: 314.9 s → 81.2 s on a 201-point axis, no item
   dominates.  Left: postprocessing is `eigs` + `splu` at 96.6 % over a
