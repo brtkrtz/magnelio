@@ -220,3 +220,82 @@ def test_stored_bins_without_interval_read_as_every_step(tmp_path):
     an.run(excited=[("port1", 0)], energy_stop_db=None, total_time_steps=N_TOTAL)
     project = open_project(tmp_path / "proj")
     assert project.monitors["EHfreq"].interval is None
+
+
+# ═════════════════════════════════════════════════════════════════════
+# Phasor convention across releases (DD-268)
+# ═════════════════════════════════════════════════════════════════════
+
+
+def _demodernise_freq_file(path):
+    """Rewrite fields_freq.h5 the way releases up to v0.7.0 wrote it.
+
+    Their running DFT summed ``e^{+jwt}``, so every bin is the conjugate
+    of the one written today, and no file carried the convention stamp.
+    """
+    import h5py
+
+    with h5py.File(path, "r+") as f:
+        assert f.attrs["phasor_convention"] == "exp(+jwt)"
+        del f.attrs["phasor_convention"]
+        for name in f:
+            bg = f[name]["bins"]
+            for comp in bg:
+                bg[comp][...] = np.conj(bg[comp][()])
+
+
+def test_legacy_phasor_file_reads_conjugated(tmp_path):
+    """A store of the e^{-jwt} era hands out today's phasors, exactly."""
+    pytest.importorskip("OCC.Core.BRepPrimAPI")
+    ref_data = _ref_freq_data()
+
+    p = tmp_path / "pp"
+    _tem_analysis(project=p).run(
+        excited=[("port1", 0)], energy_stop_db=None, total_time_steps=N_TOTAL
+    )
+    _demodernise_freq_file(p / "runs" / "port1_mode0" / "fields_freq.h5")
+
+    _assert_freq_matches(open_project(p).monitors["EHfreq"], ref_data, "legacy")
+
+
+def test_legacy_partial_file_resumes_bit_exact(tmp_path):
+    """A partial sum of the old era continues into a run of the new one."""
+    pytest.importorskip("OCC.Core.BRepPrimAPI")
+    ref_data = _ref_freq_data()
+
+    p = tmp_path / "pp"
+    _tem_analysis(project=p).run(
+        excited=[("port1", 0)],
+        energy_stop_db=None,
+        total_time_steps=120,
+        checkpoint_interval=40,
+    )
+    ff = p / "runs" / "port1_mode0" / "fields_freq.h5"
+    _demodernise_freq_file(ff)
+
+    proj = resume(p, excited=("port1", 0), total_time_steps=N_TOTAL, verbose=False)
+    _assert_freq_matches(proj.monitors["EHfreq"], ref_data, "legacy resume")
+
+    # The finished run rewrote the file, so it is stamped again.
+    import h5py
+
+    with h5py.File(ff, "r") as f:
+        assert f.attrs["phasor_convention"] == "exp(+jwt)"
+
+
+def test_unknown_phasor_convention_is_rejected(tmp_path):
+    """An unreadable stamp fails loudly rather than degrading silently."""
+    pytest.importorskip("OCC.Core.BRepPrimAPI")
+    import h5py
+
+    from magnelio.io._schema import ProjectSchemaError
+
+    p = tmp_path / "pp"
+    _tem_analysis(project=p).run(
+        excited=[("port1", 0)], energy_stop_db=None, total_time_steps=N_TOTAL
+    )
+    with h5py.File(p / "runs" / "port1_mode0" / "fields_freq.h5", "r+") as f:
+        f.attrs["phasor_convention"] = "exp(-jwt-ish)"
+
+    with pytest.raises(ProjectSchemaError, match="phasor convention"):
+        open_project(p).monitors["EHfreq"].spectrum

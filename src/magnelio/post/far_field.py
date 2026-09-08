@@ -17,18 +17,19 @@ the field-component signs of the shared symmetry table
 (:func:`magnelio.post._symmetry.mirror_sign`), which *is* the
 image-current sign table.
 
-Convention note: the textbook formulas above assume the
-``e^{+j\\omega t}`` time convention, while the solver's running DFT
-accumulates ``\\sum F(t)\\,e^{+j\\omega t}\\,dt`` — phasors of the
-``e^{-j\\omega t}`` convention.  The transform therefore conjugates its
-inputs once at the entrance, applies the textbook formulas verbatim,
-and conjugates the result back, so the returned complex pattern is a
-phasor in the same convention as every other frequency-domain quantity
-of the library.
+Convention note: the textbook formulas above are written for the
+``e^{+j\\omega t}`` time convention, which is the convention of every
+phasor of the library (the running DFT accumulates
+``\\sum F(t)\\,e^{-j\\omega t}\\,dt``), so they apply verbatim and the
+returned pattern is a phasor like every other frequency-domain
+quantity: the field at distance ``r`` is ``E(r) = A\\,e^{-jkr}/r``.
 """
 
 # Design: DD-173 (far-field monitor and NTFF transform; spherical
-# convention, image theory, symmetry composition).
+# convention, image theory, symmetry composition); DD-268 (the
+# accumulator sums e^{-jωt} now — the transform used to conjugate its
+# inputs at the entrance and its result at the exit to bridge the
+# e^{-jωt} bins to the textbook algebra).
 
 from __future__ import annotations
 
@@ -63,7 +64,7 @@ class SurfacePatchSet:
     E, H : (n, 3) complex
         Tangential (or full — only the tangential part contributes)
         E [V/m] and H [A/m] phasors at one frequency, in the library's
-        ``e^{-jωt}`` convention.
+        ``e^{+jωt}`` convention.
     """
 
     centers: np.ndarray
@@ -196,15 +197,6 @@ def ntff_transform(
     phi = np.atleast_1d(np.asarray(phi, dtype=float))
 
     surf = _concat(list(patches))
-    # Library phasors are e^{-jωt}; the textbook algebra below is
-    # e^{+jωt}.  Conjugate in, conjugate out.
-    surf = SurfacePatchSet(
-        centers=surf.centers,
-        normals=surf.normals,
-        areas=surf.areas,
-        E=np.conj(surf.E),
-        H=np.conj(surf.H),
-    )
     expanded = [surf]
     for plane in image_planes:
         expanded += [_mirror_patches(s, plane) for s in expanded]
@@ -277,8 +269,8 @@ def ntff_transform(
         f=float(f),
         theta=theta,
         phi=phi,
-        E_theta=np.conj(A_th).reshape(n_th, n_ph),
-        E_phi=np.conj(A_ph).reshape(n_th, n_ph),
+        E_theta=A_th.reshape(n_th, n_ph),
+        E_phi=A_ph.reshape(n_th, n_ph),
         accepted_power=accepted_power,
         surface_power=surface_power,
         physical_mask=mask,

@@ -4,7 +4,8 @@ The exact near fields of a z-directed current element are sampled on a
 closed synthetic box and pushed through the surface-equivalence
 transform.  Gates: the sin²θ pattern with D = 1.5, the analytic
 radiated power, and — the highest-risk item — the complex phase of
-E_theta, which pins the e^{-jωt}/e^{+jωt} conjugation convention.
+E_theta, which pins the e^{+jωt} phasor convention (the transform
+applies the textbook formulas without conjugation).
 Image theory is pinned by exactness: for a mirror-symmetric field the
 image expansion of a half (quarter) box reproduces the full-box
 transform to machine precision, because the mirrored patches ARE the
@@ -33,8 +34,7 @@ IDL = 1.0e-3  # current-moment I*dl [A*m]
 def hertzian_fields(pts: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Exact fields of a z-directed Hertzian dipole at the origin.
 
-    Balanis 4-2 in the e^{+jωt} convention, conjugated to the
-    library's e^{-jωt} phasors.
+    Balanis 4-2 in the e^{+jωt} convention, which is the library's.
     """
     x, y, z = pts.T
     r = np.sqrt(x**2 + y**2 + z**2)
@@ -54,7 +54,7 @@ def hertzian_fields(pts: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     # Balanis writes peak phasors; the library's frequency-domain
     # quantities are effective (RMS) amplitudes — scale by 1/sqrt(2) so
     # the FarFieldResult power properties return the true average power.
-    return np.conj(E) / np.sqrt(2.0), np.conj(H) / np.sqrt(2.0)
+    return E / np.sqrt(2.0), H / np.sqrt(2.0)
 
 
 _FACES = {
@@ -135,11 +135,12 @@ class TestFreeDipole:
         assert free_dipole.P_rad == pytest.approx(P_ANALYTIC, rel=5e-3)
 
     def test_phase_convention_is_pinned(self, free_dipole):
-        # Library convention (e^{-jωt}, effective amplitudes):
-        # A_theta = -j η k I dl sinθ/(4π√2) for a peak current I.
+        # Library convention (e^{+jωt}, effective amplitudes) — Balanis
+        # 4-2 verbatim: A_theta = +j η k I dl sinθ/(4π√2) for a peak
+        # current I.
         res = free_dipole
         i_eq = np.argmin(np.abs(res.theta - np.pi / 2))
-        expected = -1j * ETA0 * K0 * IDL / (4.0 * np.pi * np.sqrt(2.0))
+        expected = 1j * ETA0 * K0 * IDL / (4.0 * np.pi * np.sqrt(2.0))
         assert res.E_theta[i_eq, 0] == pytest.approx(expected, rel=1e-2)
 
     def test_e_phi_vanishes(self, free_dipole):

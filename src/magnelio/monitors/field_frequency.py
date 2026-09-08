@@ -278,9 +278,9 @@ class MonitorFieldFrequency:
         The bins accumulate the grid quantities on the region's Yee
         positions; nothing is averaged until the spectrum is read.  The
         time stamps are the ones the port recorder uses for the same
-        step (``t`` for the sample of ``e`` taken after step *n*), so a
-        renormalised pattern is phase-consistent with the run's
-        S-parameters.
+        step (``t`` for the sample of ``e`` taken after step *n*) and
+        the transform carries the same sign, so a renormalised pattern
+        is phase-consistent with the run's S-parameters.
 
         With an ``interval``, steps off the stride return before the
         copy — which is where a whole-volume monitor spends its time, so
@@ -416,8 +416,10 @@ class MonitorFieldFrequency:
         same statement holds there.
 
         The source spectrum is computed in the same Fourier convention
-        as the internal DFT accumulator (``exp(+jωt)`` with ``dt``
-        integration weight), so the division is consistent.
+        as the internal DFT accumulator (``exp(-jωt)`` with ``dt``
+        integration weight — the sign of the S-parameters and of
+        :meth:`~magnelio.signals.Signal1D.at_frequencies`), so the
+        division is consistent.
 
         Repeating the call is harmless: the accumulated bins are never
         modified, so this only replaces the divisor.
@@ -574,7 +576,7 @@ class MonitorFieldFrequency:
             ``"vector"``, ``"color"``, or ``"contour"``.
         phase : float
             Instant of the complex pattern in degrees,
-            ``Re(F · exp(-j·phase))``, the pattern at ``w t = phase``,
+            ``Re(F · exp(+j·phase))``, the pattern at ``w t = phase``,
             so it advances with time; a group magnitude is the envelope
             and ignores it.
         ax : matplotlib.axes.Axes, optional

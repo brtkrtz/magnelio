@@ -2277,6 +2277,7 @@ def _load_freq_accumulators(project_path, run_name, monitors, n_completed):
     """
     from pathlib import Path  # noqa: PLC0415
 
+    from magnelio.io._schema import stored_phasors_conjugated  # noqa: PLC0415
     from magnelio.monitors.field_frequency import (  # noqa: PLC0415
         MonitorFieldFrequency,
     )
@@ -2301,11 +2302,17 @@ def _load_freq_accumulators(project_path, run_name, monitors, n_completed):
                 f"dump.  The frequency accumulator cannot be resumed "
                 f"consistently; restart the run or drop the frequency monitor.",
             )
+        # A partial sum of the e^{-jwt} era continues exactly once it is
+        # conjugated (DD-268); the next flush rewrites the file stamped.
+        flip = stored_phasors_conjugated(f.attrs, str(ff))
         for mon in freq_mons:
             if mon.name not in f:
                 continue
             bins_grp = f[mon.name]["bins"]
-            bins = {comp: bins_grp[comp][()] for comp in bins_grp}
+            bins = {
+                comp: (np.conj(bins_grp[comp][()]) if flip else bins_grp[comp][()])
+                for comp in bins_grp
+            }
             mon.load_result_dump({"bins": bins})
 
 
@@ -2321,6 +2328,7 @@ def _load_wall_loss_accumulators(project_path, run_name, monitors, n_completed):
     """
     from pathlib import Path  # noqa: PLC0415
 
+    from magnelio.io._schema import stored_phasors_conjugated  # noqa: PLC0415
     from magnelio.monitors.wall_loss import MonitorWallLoss  # noqa: PLC0415
 
     wl_mons = [m for m in monitors if isinstance(m, MonitorWallLoss)]
@@ -2343,6 +2351,10 @@ def _load_wall_loss_accumulators(project_path, run_name, monitors, n_completed):
                 f"dump.  The wall-loss accumulator cannot be resumed "
                 f"consistently; restart the run or drop the monitor.",
             )
+        # As for the frequency monitors: conjugate a partial sum written
+        # before the convention was stamped (DD-268).
+        flip = stored_phasors_conjugated(f.attrs, str(wl))
+        conj = np.conj if flip else (lambda a: a)
         for mon in wl_mons:
             if mon.name not in f:
                 continue
@@ -2350,8 +2362,8 @@ def _load_wall_loss_accumulators(project_path, run_name, monitors, n_completed):
             hg = raw["h_bins"]
             mon.load_result_dump(
                 {
-                    "h_bins": [hg[str(i)][()] for i in range(len(hg))],
-                    "ref_bins": {k: raw["ref_bins"][k][()] for k in raw["ref_bins"]},
+                    "h_bins": [conj(hg[str(i)][()]) for i in range(len(hg))],
+                    "ref_bins": {k: conj(raw["ref_bins"][k][()]) for k in raw["ref_bins"]},
                 }
             )
 

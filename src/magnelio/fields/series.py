@@ -307,9 +307,9 @@ class _FieldSeries:
     def _snapshot(self, i: int, phase: float | None) -> FieldState:
         fs = self.frame(i)
         if phase is not None and fs.is_complex:
-            # e^{-jwt} phasors (see monitors._frame_plots.at_phase):
+            # e^{+jwt} phasors (see monitors._frame_plots.at_phase):
             # a rising phase is time running forward.
-            fs = fs.scaled(np.exp(-1j * np.deg2rad(float(phase)))).real()
+            fs = fs.scaled(np.exp(1j * np.deg2rad(float(phase)))).real()
         return fs
 
     def _plot(self, i: int, phase: float | None, component: str, kwargs: dict):
@@ -468,7 +468,7 @@ class FieldSpectrum(_FieldSeries):
         return self.frame(self._nearest(f))
 
     def snapshot(self, f: float | None = None, *, frame: int | None = None, phase: float = 0.0):
-        """The real field ``Re(F · exp(-j·phase))`` of one frame, *phase* in degrees."""
+        """The real field ``Re(F · exp(+j·phase))`` of one frame, *phase* in degrees."""
         i = self._nearest(f) if f is not None else (0 if frame is None else frame)
         return self._snapshot(self._check_index(i), phase)
 
@@ -497,7 +497,7 @@ class FieldSpectrum(_FieldSeries):
             Frame index (default 0; exclusive with *f*).
         phase : float, optional
             Instant of the complex pattern in degrees,
-            ``Re(F · exp(-j·phase))``.  Default: the instant of maximum
+            ``Re(F · exp(+j·phase))``.  Default: the instant of maximum
             energy on the slice (see :meth:`FieldState.plot`).
         **kwargs
             Passed to :meth:`magnelio.fields.FieldState.plot`.

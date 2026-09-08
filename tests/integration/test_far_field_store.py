@@ -123,3 +123,71 @@ def test_recipe_roundtrip_carries_the_spec():
     assert back.name == mon.name
     assert back.margin_cells == mon.margin_cells
     np.testing.assert_array_equal(back.freqs, mon.freqs)
+
+
+# ═════════════════════════════════════════════════════════════════════
+# Phasor convention across releases (DD-268)
+# ═════════════════════════════════════════════════════════════════════
+
+
+def _demodernise_far_field_file(path):
+    """Rewrite far_field.h5 the way releases up to v0.7.0 wrote it.
+
+    Their running DFT summed ``e^{+jwt}``: the face bins and the stored
+    source spectrum are the conjugates of today's, and nothing carried
+    the convention stamp.
+    """
+    import h5py
+
+    with h5py.File(path, "r+") as f:
+        assert f.attrs["phasor_convention"] == "exp(+jwt)"
+        del f.attrs["phasor_convention"]
+        for name in f:
+            g = f[name]
+            if "source_spectrum" in g:
+                g["source_spectrum"][...] = np.conj(g["source_spectrum"][()])
+            for face in g["faces"].values():
+                for comp in face["bins"]:
+                    face["bins"][comp][...] = np.conj(face["bins"][comp][()])
+
+
+def test_legacy_phasor_file_reads_conjugated(tmp_path):
+    """A store of the e^{-jwt} era yields today's pattern."""
+    mon = _monitor()
+    p = tmp_path / "ff_legacy"
+    _analysis(mon, project=p).run(excited=[("feed", 0)], energy_stop_db=None, total_time_steps=300)
+    _demodernise_far_field_file(p / "runs" / "feed_mode0" / "far_field.h5")
+
+    a = mon.result(F0, **_ANGLES)
+    b = open_project(p).monitors["pattern"].result(F0, **_ANGLES)
+    np.testing.assert_allclose(b.E_theta, a.E_theta, rtol=1e-10)
+    np.testing.assert_allclose(b.E_phi, a.E_phi, rtol=1e-10)
+
+
+def test_legacy_partial_file_resumes_bit_exact(tmp_path):
+    """A partial sum of the old era continues into a run of the new one."""
+    import h5py
+
+    n1, n_total = 120, 300
+
+    ref = _monitor()
+    _analysis(ref).run(excited=[("feed", 0)], energy_stop_db=None, total_time_steps=n_total)
+    ref_pattern = ref.result(F0, **_ANGLES)
+
+    p = tmp_path / "ff_legacy_resume"
+    _analysis(_monitor(), project=p).run(
+        excited=[("feed", 0)],
+        energy_stop_db=None,
+        total_time_steps=n1,
+        checkpoint_interval=60,
+    )
+    ff = p / "runs" / "feed_mode0" / "far_field.h5"
+    _demodernise_far_field_file(ff)
+
+    proj = resume(p, excited=("feed", 0), total_time_steps=n_total, verbose=False)
+    resumed = proj.monitors["pattern"].result(F0, **_ANGLES)
+    np.testing.assert_allclose(resumed.E_theta, ref_pattern.E_theta, rtol=1e-10)
+    np.testing.assert_allclose(resumed.E_phi, ref_pattern.E_phi, rtol=1e-10)
+
+    with h5py.File(ff, "r") as f:
+        assert f.attrs["phasor_convention"] == "exp(+jwt)"

@@ -793,11 +793,14 @@ class TestDFTAccumulator:
     def test_a_rising_phase_runs_the_wave_forward(self):
         """``at_phase`` must walk a wave the way it ran in the simulation.
 
-        The accumulator sums ``e^{+jwt}``, so its bins are phasors of
-        the ``e^{-jwt}`` convention and an instant is ``Re(F e^{-jwt})``.
-        Reconstructing with ``e^{+j}`` instead played every animation
+        The accumulator sums ``e^{-jwt}``, so its bins are phasors of
+        the ``e^{+jwt}`` convention and an instant is ``Re(F e^{+jwt})``.
+        Reading the bins with the other sign played every animation
         backwards — a wave crawled back toward the port that launched
-        it.  Recorded here on a wave whose direction is known.
+        it.  Recorded here on a wave whose direction is known; the test
+        is a round trip, so it holds for either sign of the accumulator
+        as long as the reconstruction matches it (the absolute sign is
+        pinned by ``test_matches_signal1d_at_frequencies``).
         """
         from magnelio.monitors._frame_plots import at_phase
 
@@ -818,6 +821,42 @@ class TestDFTAccumulator:
 
         for phase in (0.0, 30.0, 60.0, 90.0):
             np.testing.assert_allclose(crest(phase), phase / 360.0, atol=0.01)
+
+    def test_matches_signal1d_at_frequencies(self):
+        """The accumulator is ``Signal1D.at_frequencies`` times ``dt``.
+
+        One sign for every spectrum of the library: the S-parameter
+        path transforms its port signals with ``Signal1D``, so a
+        monitor's phase and a port voltage's phase at the same
+        frequency are phasors of the same convention (DD-268).
+        """
+        from magnelio.monitors._dft import source_spectrum
+        from magnelio.signals import Signal1D
+
+        rng = np.random.default_rng(268)
+        dt, n = 2e-12, 400
+        v = rng.standard_normal(n)
+        freqs = np.array([0.7e9, 2.3e9, 5.1e9])
+        acc = DFTAccumulator(freqs, ())
+        for i in range(n):
+            acc.accumulate(v[i], i * dt, dt)
+        t = np.arange(n) * dt
+        expected = Signal1D(t=t, values=v, dt=dt).at_frequencies(freqs) * dt
+        np.testing.assert_allclose(acc.result, expected, rtol=1e-12, atol=1e-30)
+        np.testing.assert_allclose(source_spectrum(v, dt, freqs), expected, rtol=1e-12, atol=1e-30)
+
+    def test_a_cosine_bin_is_the_engineering_phasor(self):
+        """``A cos(wt + phi)`` over whole periods accumulates to ``(T/2) A e^{+j phi}``."""
+        f0, amp, phi = 2e9, 3.0, np.deg2rad(40.0)
+        periods, per_period = 20, 200
+        dt = 1.0 / (f0 * per_period)
+        n = periods * per_period
+        acc = DFTAccumulator(np.array([f0]), ())
+        for i in range(n):
+            t = i * dt
+            acc.accumulate(amp * np.cos(2 * np.pi * f0 * t + phi), t, dt)
+        expected = 0.5 * n * dt * amp * np.exp(1j * phi)
+        np.testing.assert_allclose(acc.result[0], expected, rtol=1e-9)
 
 
 # -- MonitorFluxTime tests ------------------------------------------------
