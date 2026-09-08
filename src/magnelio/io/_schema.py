@@ -13,7 +13,8 @@ A 2.x store's monitor data cannot be read by a 3.0 reader, and none is
 converted.  Additions that an older reader can ignore ride on 3.0
 without a bump, as DD-140, DD-154 and DD-198 did: the field monitors'
 region operators (DD-260, an ``operators`` group whose ``valid`` flag
-says whether it was filled).  Every artefact the store writes (``project.json``,
+says whether it was filled) and the phasor convention of the stored
+DFT bins (DD-268, :data:`PHASOR_CONVENTION`).  Every artefact the store writes (``project.json``,
 ``results.h5``, ``checkpoint.h5``, the setup recipe) is stamped with
 :data:`SCHEMA_VERSION` and every reader validates it via
 :func:`validate_schema` — an unknown or missing version fails loudly
@@ -24,6 +25,12 @@ moment the format is public.
 from __future__ import annotations
 
 SCHEMA_VERSION = "3.0"
+
+#: Phasor convention of the complex DFT bins in a result file.  Stamped
+#: on ``fields_freq.h5``, ``wall_loss.h5`` and ``far_field.h5``; absent
+#: on files written before the convention was settled, whose bins are
+#: the complex conjugates of these (DD-268).
+PHASOR_CONVENTION = "exp(+jwt)"
 
 
 class ProjectSchemaError(ValueError):
@@ -50,4 +57,53 @@ def validate_schema(found, where: str) -> None:
         )
 
 
-__all__ = ["SCHEMA_VERSION", "ProjectSchemaError", "validate_schema"]
+def stored_phasors_conjugated(attrs, where: str) -> bool:
+    """Whether the complex bins of a result file must be conjugated on read.
+
+    The running DFT summed ``e^{+jwt}`` up to and including v0.7.0, so
+    its bins were the conjugates of every other phasor of the library;
+    it sums ``e^{-jwt}`` now and the files say so.  A file without the
+    stamp is one of the older ones, and conjugating its bins is exact —
+    of a finished transform as much as of a partial sum a resume
+    continues.
+
+    Parameters
+    ----------
+    attrs : mapping
+        The HDF5 file attributes to read the stamp from.
+    where : str
+        Human-readable location for the error message.
+
+    Returns
+    -------
+    bool
+        ``True`` when the file predates the stamp and its complex data
+        is conjugated with respect to this release.
+
+    Raises
+    ------
+    ProjectSchemaError
+        The stamp is present but names a convention this release does
+        not know.
+    """
+    found = attrs.get("phasor_convention")
+    if found is None:
+        return True
+    found = found.decode() if isinstance(found, bytes) else str(found)
+    if found != PHASOR_CONVENTION:
+        raise ProjectSchemaError(
+            f"{where}: phasor convention {found!r} is not supported "
+            f"(current: {PHASOR_CONVENTION!r}). This store was written by "
+            f"another magnelio release — re-run the simulation to "
+            f"regenerate it."
+        )
+    return False
+
+
+__all__ = [
+    "PHASOR_CONVENTION",
+    "SCHEMA_VERSION",
+    "ProjectSchemaError",
+    "stored_phasors_conjugated",
+    "validate_schema",
+]

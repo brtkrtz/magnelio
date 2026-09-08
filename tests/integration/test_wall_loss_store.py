@@ -204,3 +204,51 @@ def test_stale_result_file_is_rejected(tmp_path):
 
     with pytest.raises(ValueError, match="wall_loss.h5 is at step"):
         resume(p, excited=("port1", 0), total_time_steps=200, verbose=False)
+
+
+# ═════════════════════════════════════════════════════════════════════
+# Phasor convention across releases (DD-268)
+# ═════════════════════════════════════════════════════════════════════
+
+
+def test_legacy_partial_file_resumes_bit_exact(tmp_path):
+    """A partial sum of the e^{-jwt} era continues into a run of the new one.
+
+    The reduction a reader serves is a power ratio and does not know
+    which sign the bins carry; the raw accumulators a resume reloads do,
+    and conjugating them is exact.
+    """
+    import h5py
+
+    n1, n_total = 80, 200
+
+    ref_mon = _monitor()
+    _analysis(ref_mon).run(
+        excited=[("port1", 0)],
+        energy_stop_db=None,
+        total_time_steps=n_total,
+    )
+    ref_frac = ref_mon.dissipated_fraction
+
+    p = tmp_path / "wl_legacy_resume"
+    _analysis(_monitor(), project=p).run(
+        excited=[("port1", 0)],
+        energy_stop_db=None,
+        total_time_steps=n1,
+        checkpoint_interval=40,
+    )
+    wl = p / "runs" / "port1_mode0" / "wall_loss.h5"
+    with h5py.File(wl, "r+") as f:
+        assert f.attrs["phasor_convention"] == "exp(+jwt)"
+        del f.attrs["phasor_convention"]
+        for name in f:
+            raw = f[name]["raw"]
+            for grp in ("h_bins", "ref_bins"):
+                for key in raw[grp]:
+                    raw[grp][key][...] = np.conj(raw[grp][key][()])
+
+    proj = resume(p, excited=("port1", 0), total_time_steps=n_total, verbose=False)
+    _assert_same_fraction(proj.monitors["walls"].dissipated_fraction, ref_frac)
+
+    with h5py.File(wl, "r") as f:
+        assert f.attrs["phasor_convention"] == "exp(+jwt)"

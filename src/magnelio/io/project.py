@@ -64,7 +64,9 @@ from magnelio._progress import (
 from magnelio._repr import fmt_array, fmt_db, fmt_value, html_kv, html_table, kv_block, text_table
 from magnelio.analysis.result_interface import RunSettings, ScatteringResultMixin
 from magnelio.io._schema import (
+    PHASOR_CONVENTION,
     SCHEMA_VERSION,
+    stored_phasors_conjugated,
     validate_schema,
 )
 from magnelio.post._energy import db_below_peak
@@ -2499,14 +2501,6 @@ class _LoadedFreqMonitor:
                 self._spectrum = source_spectrum(sig.values, sig.dt, self.freqs)
         return self._spectrum
 
-    def _read_bins(self, comp: str) -> np.ndarray:
-        import h5py  # noqa: PLC0415
-
-        if comp not in self._components:
-            raise KeyError(f"component {comp!r} not recorded; available: {self._components}")
-        with h5py.File(self._run_dir / "fields_freq.h5", "r") as f:
-            return f[self.name]["bins"][comp][()]
-
     @property
     def spectrum(self):
         """The pattern as a :class:`~magnelio.fields.FieldSpectrum`, per 1 W CW."""
@@ -2523,7 +2517,7 @@ class _LoadedFreqMonitor:
             raise RuntimeError(
                 f"monitor {self.name!r}: this run stores no excitation "
                 f"reference, so its DFT bins cannot be expressed as fields "
-                f"per 1 W CW.  Read .data_raw for the raw bins."
+                f"per 1 W CW.  Read .spectrum_raw for the raw transform."
             )
 
     def _incident_amplitude(self) -> np.ndarray | None:
@@ -2598,11 +2592,12 @@ class _LoadedFreqMonitor:
         mon._accumulators = {}
         incident = None
         with h5py.File(self._run_dir / "fields_freq.h5", "r") as f:
+            flip = stored_phasors_conjugated(f.attrs, str(self._run_dir / "fields_freq.h5"))
             bg = f[self.name]["bins"]
             for comp in self._components:
                 bins = bg[comp][()]
                 acc = DFTAccumulator(self.freqs, tuple(bins.shape[1:]))
-                acc._bins[...] = bins
+                acc._bins[...] = np.conj(bins) if flip else bins
                 mon._accumulators[comp] = acc
             if "incident_amplitude" in f[self.name]:
                 incident = np.asarray(f[self.name]["incident_amplitude"][()], dtype=float)
@@ -2626,7 +2621,7 @@ class _LoadedFreqMonitor:
         """Interactive 3D view of the stored DFT field on a cutting plane.
 
         The geometry viewer with the field laid on its cut, a phase
-        slider turning the complex pattern (``Re(F · exp(-j·phase))``,
+        slider turning the complex pattern (``Re(F · exp(+j·phase))``,
         so the phase advances with time), a frequency slider when
         several bins were recorded, and the position slider walking the
         exposed cell layer through the region.
@@ -2772,6 +2767,7 @@ def _write_freq_result_h5(path, dumps: dict, n_completed: int) -> None:
     tmp = path.with_name(path.name + ".tmp")
     with h5py.File(tmp, "w") as f:
         f.attrs["schema_version"] = SCHEMA_VERSION
+        f.attrs["phasor_convention"] = PHASOR_CONVENTION
         f.attrs["n_completed"] = int(n_completed)
         for name, dump in dumps.items():
             g = f.create_group(name)
@@ -2840,6 +2836,7 @@ def _write_wall_loss_h5(path, dumps: dict, n_completed: int) -> None:
     tmp = path.with_name(path.name + ".tmp")
     with h5py.File(tmp, "w") as f:
         f.attrs["schema_version"] = SCHEMA_VERSION
+        f.attrs["phasor_convention"] = PHASOR_CONVENTION
         f.attrs["n_completed"] = int(n_completed)
         for name, dump in dumps.items():
             g = f.create_group(name)
@@ -2947,6 +2944,7 @@ def _write_far_field_h5(path, dumps: dict, n_completed: int) -> None:
     tmp = path.with_name(path.name + ".tmp")
     with h5py.File(tmp, "w") as f:
         f.attrs["schema_version"] = SCHEMA_VERSION
+        f.attrs["phasor_convention"] = PHASOR_CONVENTION
         f.attrs["n_completed"] = int(n_completed)
         for name, dump in dumps.items():
             g = f.create_group(name)
@@ -2971,10 +2969,17 @@ def _write_far_field_h5(path, dumps: dict, n_completed: int) -> None:
 
 
 def _read_far_field_dump(run_dir: Path, name: str) -> dict:
-    """Read one monitor's dump back into the ``result_dump`` shape."""
+    """Read one monitor's dump back into the ``result_dump`` shape.
+
+    The single read site of ``far_field.h5``: the loaded monitor and the
+    resume path both come through here, so the conjugation a file of the
+    e^{-jwt} era needs (DD-268) is applied once.
+    """
     import h5py  # noqa: PLC0415
 
-    with h5py.File(Path(run_dir) / "far_field.h5", "r") as f:
+    ff_path = Path(run_dir) / "far_field.h5"
+    with h5py.File(ff_path, "r") as f:
+        flip = stored_phasors_conjugated(f.attrs, str(ff_path))
         g = f[name]
         dump = {
             "name": name,
@@ -2985,7 +2990,11 @@ def _read_far_field_dump(run_dir: Path, name: str) -> dict:
         }
         for key in ("source_spectrum", "accepted_power", "incident_amplitude"):
             if key in g:
-                dump[key] = g[key][()]
+                arr = g[key][()]
+                # The divisor is a transform of the same era as the bins.
+                if flip and key == "source_spectrum":
+                    arr = np.conj(arr)
+                dump[key] = arr
         for face_name, sg in g["faces"].items():
             dump["faces"].append(
                 {
@@ -2997,7 +3006,10 @@ def _read_far_field_dump(run_dir: Path, name: str) -> dict:
                     "c2": sg["c2"][()],
                     "w1": sg["w1"][()],
                     "w2": sg["w2"][()],
-                    "bins": {comp: sg["bins"][comp][()] for comp in sg["bins"]},
+                    "bins": {
+                        comp: (np.conj(sg["bins"][comp][()]) if flip else sg["bins"][comp][()])
+                        for comp in sg["bins"]
+                    },
                 }
             )
     return dump
