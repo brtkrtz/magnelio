@@ -1204,7 +1204,22 @@ def _abspath(rel):
 
 
 def build():
-    from paraview import servermanager, simple
+    try:
+        from paraview import servermanager, simple
+    except ImportError as exc:
+        # Typing "python paraview_open.py" lands here, and the message
+        # Python gives is misleading: the sibling data directory is
+        # called "paraview" too, so the import finds a namespace package
+        # and reports "unknown location" rather than "no ParaView".
+        raise SystemExit(
+            "paraview_open.py is a ParaView session script and needs ParaView's own "
+            "interpreter, not a plain Python.\\n"
+            "    paraview --script=paraview_open.py\\n"
+            "    pvpython paraview_open.py --save-state paraview.pvsm\\n"
+            "A Flatpak ParaView is reached through its runner:\\n"
+            "    flatpak run org.paraview.ParaView --script=paraview_open.py\\n"
+            "(the import said: %s)" % exc
+        ) from exc
 
     try:
         simple._DisableFirstRenderCameraReset()
@@ -1447,23 +1462,54 @@ def write_paraview_script(script_path: str | Path, config: dict) -> Path:
     return script_path
 
 
-def resolve_pvpython(pvpython: str | Path | None = None) -> str | None:
-    """The ``pvpython`` a bake should use, or ``None`` if there is none.
+def resolve_pvpython(pvpython=None) -> list[str] | None:
+    """How to start the ``pvpython`` a bake should use, or ``None``.
 
-    In order: the argument, ``MAGNELIO_PVPYTHON``, then the first
-    ``pvpython`` on ``PATH``.  The choice matters because the state file
-    a bake writes is only good for the ParaView that wrote it — a
-    machine carrying a distribution build beside a downloaded one bakes
-    for whichever comes first, which need not be the one that opens the
-    session (DD-265).
+    Returns the command as a list, ready to be extended with the bake's
+    own arguments.  In order: the argument, ``MAGNELIO_PVPYTHON``, then
+    the first ``pvpython`` on ``PATH``.  The choice matters because the
+    state file a bake writes is only good for the ParaView that wrote it
+    — a machine carrying a distribution build beside a downloaded one
+    bakes for whichever comes first, which need not be the one that
+    opens the session (DD-265).
+
+    Parameters
+    ----------
+    pvpython : str or Path or sequence of str, optional
+        A path to an interpreter, or the command that launches one —
+        a sandboxed or containerised ParaView is reached through its
+        runner rather than through a file on ``PATH``, e.g.
+        ``"flatpak run --command=pvpython org.paraview.ParaView"``.  A
+        string is split on whitespace, so pass a sequence when a path
+        contains spaces.
     """
     import os  # noqa: PLC0415
+    import shlex  # noqa: PLC0415
 
     named = pvpython or os.environ.get("MAGNELIO_PVPYTHON")
-    if named:
-        found = shutil.which(str(named))
-        return found or (str(named) if Path(named).is_file() else None)
-    return shutil.which("pvpython")
+    if not named:
+        found = shutil.which("pvpython")
+        return [found] if found else None
+    parts = [str(named)] if isinstance(named, Path) else list(named)
+    if isinstance(named, str):
+        parts = shlex.split(named)
+    if not parts:
+        return None
+    resolved = _which(parts[0])
+    if resolved is None and len(parts) == 1 and parts[0].strip() != parts[0].split()[0]:
+        # One token carrying whitespace and naming nothing: a command
+        # someone quoted as a whole.  IPython's ``%set_env VAR="a b c"``
+        # keeps the quotes in the value, and shlex then reads the lot as
+        # a single argument.  A real path with spaces resolved above and
+        # never reaches here.
+        parts = parts[0].split()
+        resolved = _which(parts[0])
+    return None if resolved is None else [resolved, *parts[1:]]
+
+
+def _which(name: str) -> str | None:
+    """*name* as an executable path, or ``None``."""
+    return shutil.which(name) or (name if Path(name).is_file() else None)
 
 
 def _stamp_version(script_path: Path, version: str) -> None:
@@ -1484,7 +1530,7 @@ def bake_pvsm(
     script_path: str | Path,
     pvsm_path: str | Path,
     timeout: float = 300.0,
-    pvpython: str | Path | None = None,
+    pvpython=None,
 ) -> bool:
     """Bake the pipeline script into a ``.pvsm`` state file via ``pvpython``.
 
@@ -1494,18 +1540,43 @@ def bake_pvsm(
     header, because the state file is bound to it.
     ``MAGNELIO_PVSM_BAKE=0`` disables the bake globally (the test suite
     pins this: a ``pvpython`` subprocess per streamed run would dominate
-    its runtime); ``MAGNELIO_PVPYTHON`` names the interpreter.
+    its runtime); ``MAGNELIO_PVPYTHON`` names the interpreter, or the
+    command that launches one (:func:`resolve_pvpython`).
     """
     import os  # noqa: PLC0415
 
     if os.environ.get("MAGNELIO_PVSM_BAKE", "1") == "0":
         return False
-    exe = resolve_pvpython(pvpython)
-    if exe is None:
+    cmd = resolve_pvpython(pvpython)
+    if cmd is None:
+        # Silence here is what makes a mistyped setting expensive: the
+        # call returns, the state file is simply absent, and nothing
+        # says which of the two it was.
+        named = pvpython or os.environ.get("MAGNELIO_PVPYTHON")
+        if named:
+            warnings.warn(
+                f"no ParaView state file was baked: {named!r} is not an executable, so "
+                f"nothing could run the session script.  Note that a value quoted as a "
+                f"whole is one argument, not a command — IPython's %set_env keeps those "
+                f"quotes.  The session opens without a state file: "
+                f"paraview --script=paraview_open.py",
+                UserWarning,
+                stacklevel=4,
+            )
+        else:
+            warnings.warn(
+                "no ParaView state file was baked: no 'pvpython' on PATH.  Name one in "
+                "MAGNELIO_PVPYTHON or in export_paraview(pvpython=...) — a path, or the "
+                "command that launches one, e.g. "
+                "flatpak run --command=pvpython org.paraview.ParaView.  The session opens "
+                "without a state file: paraview --script=paraview_open.py",
+                UserWarning,
+                stacklevel=4,
+            )
         return False
     pvsm_path = Path(pvsm_path)
     cmd = [
-        exe,
+        *cmd,
         "--force-offscreen-rendering",
         str(script_path),
         "--save-state",
@@ -1516,6 +1587,15 @@ def bake_pvsm(
     except (OSError, subprocess.TimeoutExpired):
         return False
     baked = proc.returncode == 0 and pvsm_path.exists()
+    if not baked:
+        tail = (proc.stderr or proc.stdout or "").strip().splitlines()[-3:]
+        warnings.warn(
+            f"no ParaView state file was baked: {' '.join(cmd[: len(cmd) - 4])} exited "
+            f"with {proc.returncode} or wrote nothing.  The session opens without one: "
+            f"paraview --script=paraview_open.py" + ("\n" + "\n".join(tail) if tail else ""),
+            UserWarning,
+            stacklevel=4,
+        )
     if baked:
         for line in (proc.stdout or "").splitlines():
             if line.startswith(_VERSION_MARKER):
@@ -1645,11 +1725,13 @@ def export_eigenmode_visualization(
         Percentile of ``|E|`` used as the glyph magnitude clip cap.
     bake_state : bool, default True
         Attempt the ``pvpython`` state bake.
-    pvpython : str or Path, optional
+    pvpython : str or Path or sequence of str, optional
         The ``pvpython`` that bakes the state file, when the machine
-        carries more than one ParaView.  Default: ``MAGNELIO_PVPYTHON``,
-        else the first on ``PATH``.  The state is only good for the
-        version that wrote it, so name the one that will open it.
+        carries more than one ParaView — a path, or the command that
+        launches one (:func:`resolve_pvpython`).  Default:
+        ``MAGNELIO_PVPYTHON``, else the first on ``PATH``.  The state is
+        only good for the version that wrote it, so name the one that
+        will open it.
 
     Returns
     -------
@@ -1721,11 +1803,13 @@ def export_run_visualization(
         Percentile of ``|v|`` used as the glyph magnitude clip cap.
     bake_state : bool, default True
         Attempt the ``pvpython`` state bake.
-    pvpython : str or Path, optional
+    pvpython : str or Path or sequence of str, optional
         The ``pvpython`` that bakes the state file, when the machine
-        carries more than one ParaView.  Default: ``MAGNELIO_PVPYTHON``,
-        else the first on ``PATH``.  The state is only good for the
-        version that wrote it, so name the one that will open it.
+        carries more than one ParaView — a path, or the command that
+        launches one (:func:`resolve_pvpython`).  Default:
+        ``MAGNELIO_PVPYTHON``, else the first on ``PATH``.  The state is
+        only good for the version that wrote it, so name the one that
+        will open it.
 
     Returns
     -------

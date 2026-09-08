@@ -53,7 +53,18 @@ major version is 0, minor releases may change the public API.
   to bake for when a machine carries several, and the version that
   baked it is written into the header of `paraview_open.py` beside it.
   `paraview_open.py` builds the session live and runs on any ParaView;
-  the chapter now says which of the two to open.
+  the chapter now says which of the two to open.  The setting takes a
+  path or the command that launches an interpreter, so a sandboxed
+  ParaView is reached through its runner
+  (`flatpak run --command=pvpython org.paraview.ParaView`).
+- `paraview_open.py` run with a plain Python says what it is and how to
+  open it, instead of failing on an import whose message points at the
+  sibling `paraview/` data directory.
+- An export that could not bake the state file says why, instead of
+  returning `state: None` and leaving the caller to guess whether
+  ParaView is missing or the setting names nothing.  A command quoted as
+  a whole — the shape IPython's `%set_env` leaves in the value — is
+  taken apart rather than read as one argument that names no file.
 
 - The 3D viewer's toolbar is its own: camera reset, isometric and
   axis views, a projection toggle, screenshot, a **pop-out** button

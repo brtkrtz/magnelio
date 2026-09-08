@@ -21711,7 +21711,15 @@ seven is per monitor.  The chapter now says so.
    stdout (`_VERSION_MARKER`, printed by the script after `SaveState`)
    and is written into the header of `paraview_open.py`
    (`_stamp_version`), which also states in prose that the state is
-   bound to it and the script is not.
+   bound to it and the script is not.  *Amended 2026-09-07:* the
+   setting is a **command**, not only a path — `resolve_pvpython`
+   returns the argv prefix (a string is `shlex.split`, a sequence is
+   taken as given).  A sandboxed or containerised ParaView has no
+   `pvpython` file to point at and is reached through its runner
+   (`flatpak run --command=pvpython org.paraview.ParaView`, measured
+   against the developer's Flathub build: reports 6.1.1 while the
+   Flathub metadata still says 6.1.0, and its `filesystems=home`
+   permission covers a project under `$HOME`).
 3. **The chapter says which file to open.**  A new section *Which of
    the two files to open* in `docs/methods/sources-monitors.md`:
    `paraview_open.py` is the robust path, `paraview.pvsm` the
