@@ -454,6 +454,49 @@ All three take the same channel arguments as `plot_s` and accept
 `ax=` to compose a figure; `mark=[f1, f2, …]` puts labelled dots on the
 named frequencies of a trace, which is how a resonance or a band edge
 gets pointed at.
+### Running out of time: continuing a truncated record
+
+A march has to stop somewhere.  On a high-Q structure what it leaves
+behind is a record still ringing at the last step, and the Fourier
+transform reads that edge as content: truncation ripple over every
+S-parameter.  Spending more steps is the honest fix and the library
+will do it (`energy_stop_db`, `port_signal_stop_db`), but a cavity
+whose decay time is thirty times the affordable march cannot be waited
+out at any price.
+
+Past the excitation, though, the record is no longer being driven: it
+is the structure's own free decay, a sum of damped exponentials whose
+poles are its resonances.  `result.extrapolate()` fits those poles —
+a matrix pencil on the Hankel matrix of the record, all channels of one
+excitation sharing one pole set, poles outside the unit circle
+discarded as impossible for a passive decay — continues every recorded
+V and I until the model has died away, and recomputes the S-matrix from
+the continued records through the unchanged pipeline.  The original
+result is untouched.
+
+This is a model, not a measurement, and it is trustworthy exactly as
+far as the tail really is a free decay of a few resonances.  The report
+in `extrapolation` gives the number that says so: the model fitted on
+the first half of its fit window, measured against the recorded second
+half.  Below about $10^{-2}$ the poles are the structure's; approaching
+one, the fit is describing noise — or a delay line, whose $e^{-2j\beta
+L}$ has infinitely many poles and whose record is a train of echoes
+rather than a ringing.  Above `0.3` the call says so out loud; and
+because a failed fit produces a continuation that decays immediately,
+it leaves the result alone rather than corrupting it.
+
+Nothing applies this automatically.  An extrapolated resonance mistaken
+for a measured one is exactly what the truncation warning exists to
+prevent, so the warning names the method and the method stays a
+deliberate call.
+
+Measured on an iris-coupled cavity fed through a slot below cut-off —
+lossless with one port, so $|S_{11}| = 1$ is an exact reference: a
+9.1 ns march reports a unitarity defect of 0.49, and its continuation
+0.0073.  Worth knowing from the same measurement: the raw defect *grows*
+with the length of the march, because a short run has barely filled the
+cavity yet.  Truncation error is not monotone in run length, so "run
+longer and see whether it moves" is a poor convergence test here.
 
 ### Band ports: one decomposition per frequency (DD-235)
 

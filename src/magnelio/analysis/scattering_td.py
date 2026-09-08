@@ -168,7 +168,9 @@ def _warn_on_truncated_band_record(signals: dict, excited_chan: tuple[str, int])
             f"band-run record ends at {tail / peak:.1e} of "
             f"peak on {excited_chan} (contract: < 1e-4); "
             f"S-parameters may carry truncation ripple — "
-            f"increase total_time_steps",
+            f"increase total_time_steps, or continue the record by its "
+            f"own poles with result.extrapolate() where the tail is a "
+            f"free decay of a few resonances",
             UserWarning,
             stacklevel=3,
         )
@@ -324,6 +326,9 @@ class ScatteringTDResult(ScatteringResultMixin):
     # reference impedances and the f_axis= recompute.
     port_dispersion: dict | None = None
     port_reference_scale: dict | None = None
+    # What extrapolate() did, per excitation (DD-272); None on a
+    # result straight from a run.
+    extrapolation: dict | None = None
     # Wall clock and per-excitation energy traces (DD-253).
     started: object | None = None
     finished: object | None = None
@@ -464,6 +469,136 @@ class ScatteringTDResult(ScatteringResultMixin):
                 )
             )
         return cols[0] if len(cols) == 1 else SParameterResult.merge(cols)
+
+    def extrapolate(
+        self,
+        *,
+        order: int | None = None,
+        tol: float = 1e-4,
+        decay_db: float = 80.0,
+        max_factor: float = 100.0,
+        fit_start: float | None = None,
+    ) -> "ScatteringTDResult":
+        """S-parameters as if the march had run until the fields died away.
+
+        A run has to stop somewhere, and on a high-Q structure what it
+        leaves behind is a record still ringing at the last step.  The
+        DFT reads that edge as content and lays truncation ripple over
+        every S-parameter.  Past the excitation, though, the record is
+        the structure's own free decay — a sum of damped exponentials
+        whose poles are its resonances — so a pole model fitted to what
+        *was* recorded continues it for as long as one likes, and the
+        S-parameters follow from the continued records through the same
+        pipeline as before.
+
+        This is a model, not a measurement.  It is trustworthy exactly
+        as far as the record really is a free decay of a few resonances:
+        read :attr:`extrapolation`, whose ``residual`` is the model
+        fitted on the first half of the fit window and measured against
+        the recorded second half.  Below about ``1e-2`` the poles are
+        the structure's; approaching one, the fit is describing noise
+        and the result should be thrown away in favour of a longer run.
+        Nothing here is applied automatically — an extrapolated
+        resonance mistaken for a measured one is exactly what the
+        truncation warning exists to prevent.
+
+        Parameters
+        ----------
+        order : int, optional
+            Model order (poles, two per resonance).  Default: from the
+            singular-value decay of the record's Hankel matrix.
+        tol : float, default 1e-4
+            Relative singular-value threshold for that choice.  Raise
+            it on a noisy record to keep fewer poles.
+        decay_db : float, default 80.0
+            Continue every record until the model has fallen this far
+            below its peak.
+        max_factor : float, default 100.0
+            Cap on the continuation, in multiples of the recorded
+            length — a pole a hair inside the unit circle would
+            otherwise ask for an unbounded record.  The report says
+            when the cap bit before the model had decayed.
+        fit_start : float, optional
+            Time [s] the fit window opens.  Default: when the
+            excitation waveform has fallen 60 dB below its peak, since
+            only past the source is the record a free decay.
+
+        Returns
+        -------
+        ScatteringTDResult
+            A new result whose records are the continued ones and whose
+            S-matrix was recomputed from them; the original is
+            untouched.  Its :attr:`extrapolation` maps every excitation
+            to an ``ExtrapolationReport``.
+
+        Examples
+        --------
+        >>> long = result.extrapolate()
+        >>> long.extrapolation[("port1", 0)]
+        >>> long.plot_s(("port1", "port1"))
+        """
+        from dataclasses import replace  # noqa: PLC0415
+
+        from magnelio.post._extrapolate import excitation_end, extend_records  # noqa: PLC0415
+        from magnelio.signals import Signal1D  # noqa: PLC0415
+
+        signals, reports = {}, {}
+        n_max = self.n_actual_steps
+        for excited, chans in self.signals.items():
+            ref = (self.reference_signals or {}).get(excited, self.reference_signal)
+            if fit_start is None:
+                start = excitation_end(ref.values)
+            else:
+                start = int(round(float(fit_start) / float(self.dt)))
+            keys = list(chans)
+            flat = [sig.values for key in keys for sig in chans[key]]
+            extended, report = extend_records(
+                flat,
+                self.dt,
+                fit_from=start,
+                order=order,
+                tol=tol,
+                decay_db=decay_db,
+                max_factor=max_factor,
+            )
+            n = extended[0].size
+            n_max = max(n_max, n)
+            t = np.arange(n) * float(self.dt)
+            out = {}
+            for i, key in enumerate(keys):
+                v_old, i_old = chans[key]
+                out[key] = (
+                    Signal1D(t=t, values=extended[2 * i], dt=self.dt, label=v_old.label),
+                    Signal1D(t=t, values=extended[2 * i + 1], dt=self.dt, label=i_old.label),
+                )
+            signals[excited] = out
+            reports[excited] = report
+
+        def _padded(sig: Signal1D) -> Signal1D:
+            """The excitation waveform on the longer axis — zero past its end."""
+            pad = n_max - sig.values.size
+            if pad <= 0:
+                return sig
+            return Signal1D(
+                t=np.arange(n_max) * float(self.dt),
+                values=np.concatenate([sig.values, np.zeros(pad)]),
+                dt=self.dt,
+                label=sig.label,
+            )
+
+        grown = replace(
+            self,
+            signals=signals,
+            n_actual_steps=int(n_max),
+            reference_signal=_padded(self.reference_signal),
+            reference_signals=(
+                None
+                if self.reference_signals is None
+                else {k: _padded(v) for k, v in self.reference_signals.items()}
+            ),
+            extrapolation=reports,
+        )
+        return replace(grown, s_params=grown._s_params_on(self.f_axis))
 
     def S(
         self,

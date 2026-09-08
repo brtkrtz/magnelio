@@ -39,7 +39,18 @@ major version is 0, minor releases may change the public API.
   transmission.  All three take `mark=[f, …]` to label frequencies on a
   trace.
 
-## [0.8.1] - 2026-09-08
+- S-parameters as if the run had gone on until the fields died away.
+  `result.extrapolate()` fits the free decay of the recorded port
+  signals with a matrix pencil, continues them by their own poles, and
+  recomputes the S-matrix — the answer to a high-Q structure whose ring
+  down is many times longer than any affordable march.  The original
+  result is untouched, and `extrapolation` reports what was done: the
+  fitted resonances and their decay times, and an out-of-sample error
+  that says whether the poles are the structure's or the noise's.
+  Nothing is applied automatically, and where the record is not a free
+  decay of a few resonances — a delay line, say — the call says so and
+  changes nothing.
+
 ## [0.8.1] - 2026-09-08
 
 ### Added
