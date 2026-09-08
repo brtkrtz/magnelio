@@ -167,7 +167,12 @@ class _FieldSeries:
         :attr:`components`.
         """
         return FieldState._from_raw(
-            self._grid, self._frame_arrays(i), dual=self._dual, ops=self._ops, h_lead=self._h_lead()
+            self._grid,
+            self._frame_arrays(i),
+            dual=self._dual,
+            ops=self._ops,
+            h_lead=self._h_lead(),
+            recorded=self.components,
         )
 
     def component(self, name: str) -> np.ndarray:
@@ -191,7 +196,9 @@ class _FieldSeries:
         Parameters
         ----------
         components : sequence of str, optional
-            Subset of the six names; default the recorded ones.
+            Subset of the six field names; default the recorded ones.
+            ``"Sx"``, ``"Sy"``, ``"Sz"`` are the Poynting vector
+            (:meth:`poynting`), derived from all six.
         corners : tuple of tuple, optional
             Two opposite corners [m] of a sub-box; default the whole grid.
         frame : int, optional
@@ -239,7 +246,8 @@ class _FieldSeries:
         k : int
             Cell index of the layer along *axis*.
         components : sequence of str, optional
-            Default the recorded ones.
+            Default the recorded ones; ``"Sx"``, ``"Sy"``, ``"Sz"`` are
+            the Poynting vector, derived from all six.
 
         Returns
         -------
@@ -248,15 +256,23 @@ class _FieldSeries:
             ascending order.
         """
         from magnelio.fields._interp import _interp_to_cell_centres  # noqa: PLC0415
+        from magnelio.fields._poynting import add_to, check_available, split  # noqa: PLC0415
 
         names = list(self.components if components is None else components)
+        fields, poynting = split(names)
+        if poynting:
+            check_available(self.components)
+            fields = list(_COMPONENTS)
         g = self._grid
         slabs = [slice(0, g.Nx), slice(0, g.Ny), slice(0, g.Nz)]
         if not (0 <= k < self.shape[axis]):
             raise IndexError(f"layer {k} out of range along axis {axis}")
         slabs[axis] = slice(k, k + 1)
-        data = _interp_to_cell_centres(self._frame_arrays(frame), names, *slabs, g, dual=self._dual)
-        return {c: np.squeeze(np.asarray(a), axis=axis) for c, a in data.items()}
+        data = _interp_to_cell_centres(
+            self._frame_arrays(frame), fields, *slabs, g, dual=self._dual
+        )
+        data = add_to(data, poynting)
+        return {c: np.squeeze(np.asarray(data[c]), axis=axis) for c in names}
 
     # ── energy and flux (DD-260) ─────────────────────────────────────────
 
@@ -299,6 +315,56 @@ class _FieldSeries:
             [self.frame(i).flux(normal, position) for i in range(self.n_frames)], dtype=float
         )
 
+    # ── the Poynting vector (DD-270) ─────────────────────────────────────
+
+    def poynting(
+        self,
+        corners=None,
+        frame: int | None = None,
+        *,
+        complex_product: bool = False,
+        squeeze: bool = False,
+    ) -> np.ndarray:
+        """The Poynting vector [W/m²] on the cell centres, per frame.
+
+        :meth:`FieldState.poynting` over the series — ``E × H`` formed
+        on the cell centres, instantaneous for a recording, the
+        time-averaged ``Re(E × H*)`` for a spectrum's RMS phasors.
+        Both fields must have been recorded (``fields=["E", "H"]``);
+        with only one of them there is no power density to state and
+        the call says so rather than returning zeros.
+
+        For the watts through a plane use :meth:`flux` — the exact FIT
+        identity on the samples.  This is the distribution: where the
+        power flows.
+
+        Parameters
+        ----------
+        corners : tuple of tuple, optional
+            Two opposite corners [m] of a sub-box; default the whole
+            region.
+        frame : int, optional
+            One frame; default all, stacked along a leading axis.
+        complex_product : bool, default False
+            For a complex series return ``E × H*`` itself — real part
+            the time-averaged power density, imaginary part the
+            reactive density of the stored near field.
+        squeeze : bool, default False
+            Drop the spatial axes of length one, as
+            :meth:`cell_centred` does; the trailing vector axis stays.
+
+        Returns
+        -------
+        np.ndarray
+            ``(nx, ny, nz, 3)`` for one frame, ``(n_frames, nx, ny, nz,
+            3)`` for all.
+        """
+        from magnelio.fields._poynting import check_available, cross  # noqa: PLC0415
+
+        check_available(self.components)
+        centred = self.cell_centred(corners=corners, frame=frame, squeeze=squeeze)
+        return cross(centred, complex_product=complex_product)
+
     # ── pictures ─────────────────────────────────────────────────────────
 
     def _label_text(self, i: int) -> str:
@@ -313,7 +379,17 @@ class _FieldSeries:
         return fs
 
     def _plot(self, i: int, phase: float | None, component: str, kwargs: dict):
-        fig, ax = self._snapshot(i, phase).plot(component, **kwargs)
+        from magnelio.fields._poynting import COMPONENTS as _S_COMPONENTS  # noqa: PLC0415
+
+        # The Poynting vector of a complex frame is already the time
+        # average (DD-270): rotating the phasors first would draw one
+        # instant of a quantity that has none, so the snapshot is
+        # taken only for the fields themselves.
+        if component in ("S", "|S|") or component in _S_COMPONENTS:
+            fs = self.frame(i)
+        else:
+            fs = self._snapshot(i, phase)
+        fig, ax = fs.plot(component, **kwargs)
         label = self._label_text(i)
         if label and kwargs.get("title") is None:
             ax.set_title(f"{ax.get_title()}, {label}")
@@ -498,7 +574,9 @@ class FieldSpectrum(_FieldSeries):
         phase : float, optional
             Instant of the complex pattern in degrees,
             ``Re(F · exp(+j·phase))``.  Default: the instant of maximum
-            energy on the slice (see :meth:`FieldState.plot`).
+            energy on the slice (see :meth:`FieldState.plot`).  It does
+            not act on ``"S"``: a time-averaged power density has no
+            instant.
         **kwargs
             Passed to :meth:`magnelio.fields.FieldState.plot`.
 

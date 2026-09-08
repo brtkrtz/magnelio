@@ -128,12 +128,19 @@ class FieldState:
         self._dual = None
         self._ops = None
         self._h_lead = 0.0
+        self._recorded = None
 
     # ── construction ─────────────────────────────────────────────────────
 
     @classmethod
     def _from_raw(
-        cls, grid: GridLines, raw: FieldArrays, dual=None, ops=None, h_lead: float = 0.0
+        cls,
+        grid: GridLines,
+        raw: FieldArrays,
+        dual=None,
+        ops=None,
+        h_lead: float = 0.0,
+        recorded=None,
     ) -> FieldState:
         """Wrap solver grid quantities without conversion (internal).
 
@@ -144,7 +151,11 @@ class FieldState:
         (:class:`~magnelio.fields._operators.RegionOperators`) when the
         field can state its energy and flux; *h_lead* the lead [s] of
         the magnetic samples over the electric ones (half a step for
-        the state of a march).
+        the state of a march).  *recorded* names the components that
+        carry data when the frame comes from a monitor that recorded
+        only some of them — the rest are zeros, and a derived quantity
+        that would read them as physical says so instead (DD-270);
+        ``None`` means every component is the field's own.
         """
         self = cls.__new__(cls)
         self._grid = grid
@@ -152,6 +163,7 @@ class FieldState:
         self._dual = dual
         self._ops = ops
         self._h_lead = float(h_lead)
+        self._recorded = None if recorded is None else tuple(recorded)
         return self
 
     @classmethod
@@ -359,7 +371,9 @@ class FieldState:
         Parameters
         ----------
         components : sequence of str, optional
-            Subset of the six names; default all.
+            Subset of the six field names; default all.  ``"Sx"``,
+            ``"Sy"``, ``"Sz"`` are the Poynting vector
+            (:meth:`poynting`), derived here from all six.
         corners : tuple of tuple, optional
             Two opposite corners [m] of a sub-box; default the whole grid.
 
@@ -368,15 +382,23 @@ class FieldState:
         dict[str, np.ndarray]
             ``{name: array}`` with shape ``(nx, ny, nz)`` of the box.
         """
+        from magnelio.fields._poynting import add_to, check_available, split  # noqa: PLC0415
         from magnelio.monitors.base import resolve_region  # noqa: PLC0415
 
         names = list(_COMPONENTS if components is None else components)
-        for name in names:
-            self._check_component(name)
+        fields, poynting = split(names)
+        if poynting:
+            # E x H needs all six at the same point, whatever was asked
+            # for; the requested names are picked out again below.
+            if self._recorded is not None:
+                check_available(self._recorded)
+            fields = list(_COMPONENTS)
         region = resolve_region(corners, self._grid)
-        return _interp_to_cell_centres(
-            self._raw, names, region.ix, region.iy, region.iz, self._grid, dual=self._dual
+        centred = _interp_to_cell_centres(
+            self._raw, fields, region.ix, region.iy, region.iz, self._grid, dual=self._dual
         )
+        centred = add_to(centred, poynting)
+        return {n: centred[n] for n in names}
 
     # ── arithmetic ───────────────────────────────────────────────────────
 
@@ -400,6 +422,7 @@ class FieldState:
             dual=dual if grid is not None else self._dual,
             ops=ops if grid is not None else self._ops,
             h_lead=self._h_lead,
+            recorded=self._recorded,
         )
 
     # ── energy and flux (DD-260) ─────────────────────────────────────────
@@ -478,6 +501,73 @@ class FieldState:
             axis,
             plane_index(self._grid, axis, position),
         )
+
+    def poynting(self, corners=None, *, complex_product: bool = False) -> np.ndarray:
+        """The Poynting vector [W/m²] on the cell centres.
+
+        ``E × H`` formed on the cell centres both fields interpolate to
+        (:meth:`cell_centred`), so the staggering is honoured and the
+        three components of the result live at one point.  Unlike
+        :meth:`energy` and :meth:`flux` this needs no material
+        operators — any field states it.
+
+        A real frame is an instant and gives the instantaneous power
+        density.  A complex frame is an RMS phasor — a spectrum's
+        frames per 1 W CW are — and gives the time-averaged density
+        ``Re(E × H*)``, with no further factor of a half, so its
+        integral over a cross-section is the transmitted watts.
+
+        For the power through a plane, prefer :meth:`flux`: that one is
+        the exact FIT identity on the samples themselves.  Summing this
+        field over a cross-section instead needs the *physical* patch
+        of every cell, which is not ``dx·dy`` at a boundary: at a
+        magnetic wall — a PMC face or a magnetic symmetry plane — the
+        wall lies half an outer cell beyond the outermost grid line, so
+        a naive sum is short by that half cell on every such face and
+        no warning fires.  This method is the spatial distribution —
+        where the power flows, not how much crosses a surface.
+
+        Parameters
+        ----------
+        corners : tuple of tuple, optional
+            Two opposite corners [m] of a sub-box; default the whole
+            grid.
+        complex_product : bool, default False
+            For a complex frame return ``E × H*`` itself instead of its
+            real part: the real part is the time-averaged power density
+            as before, the imaginary part the reactive power density of
+            the stored near field.  Ignored for a real frame.
+
+        Returns
+        -------
+        np.ndarray
+            Shape ``(nx, ny, nz, 3)`` over the box, the trailing axis
+            the vector components.
+
+        Raises
+        ------
+        KeyError
+            If the frame comes from a monitor that recorded only some
+            of the six components — a magnetic field of zeros would
+            otherwise read as a vanishing power density.
+
+        Notes
+        -----
+        In a frame of a march the magnetic samples lead the electric
+        ones by half a step, so the instantaneous product carries that
+        half step; the time-averaged reading of a spectrum does not.
+
+        This is a density at a place, not a total, so unlike
+        :meth:`energy` and :meth:`flux` it carries no full-model factor
+        on a symmetry-reduced model: the values are the model's own,
+        and the pictures continue them across the planes.
+        """
+        from magnelio.fields._poynting import check_available, cross  # noqa: PLC0415
+
+        if self._recorded is not None:
+            check_available(self._recorded)
+        centred = self.cell_centred(corners=corners)
+        return cross(centred, complex_product=complex_product)
 
     # ── symmetry ─────────────────────────────────────────────────────────
 
@@ -616,8 +706,12 @@ class FieldState:
         Parameters
         ----------
         component : str
-            ``"E"`` or ``"H"`` for a vector plot / vector magnitude;
-            ``"Ex"``, ``"Hy"``, … for a single component (scalar only).
+            ``"E"``, ``"H"`` or ``"S"`` for a vector plot / vector
+            magnitude; ``"Ex"``, ``"Hy"``, ``"Sz"``, … for a single
+            component (scalar only).  ``"S"`` is the Poynting vector
+            (:meth:`poynting`) — instantaneous for a real field,
+            time-averaged for a complex one — and needs all six
+            components.
         normal : {"x", "y", "z"}, optional
             Normal axis of the slice plane; default the thinnest axis.
         position : float
@@ -674,19 +768,33 @@ class FieldState:
         pv = resolve_plane_view(region, normal, position)
         (i0, c0), (i1, c1) = pv.free
 
-        is_magnitude = component in ("E", "H", "|E|", "|H|")
-        is_field_group = component in ("E", "H")
+        from magnelio.fields._poynting import (  # noqa: PLC0415
+            COMPONENTS as _S_COMPONENTS,
+        )
+        from magnelio.fields._poynting import (  # noqa: PLC0415
+            add_to,
+            check_available,
+        )
+
+        is_magnitude = component in ("E", "H", "S", "|E|", "|H|", "|S|")
+        is_field_group = component in ("E", "H", "S")
         field_group = component.strip("|")[:1]
-        if not is_magnitude and component not in _COMPONENTS:
-            raise KeyError(f"component must be E/H (or |E|/|H|) or one of {_COMPONENTS}.")
+        known = _COMPONENTS + _S_COMPONENTS
+        if not is_magnitude and component not in known:
+            raise KeyError(f"component must be E/H/S (or |E|/|H|/|S|) or one of {known}.")
         comps = [f"{field_group}{a}" for a in _AX] if is_magnitude else [component]
+        is_poynting = field_group == "S"
 
         slabs = [region.ix, region.iy, region.iz]
         if pv.slice_index is not None:
             base = slabs[pv.normal_idx].start
             slabs[pv.normal_idx] = slice(base + pv.slice_index, base + pv.slice_index + 1)
-        data = _interp_to_cell_centres(self._raw, comps, *slabs, grid, dual=self._dual)
-        data = {c: np.squeeze(a, axis=pv.normal_idx) for c, a in data.items()}
+        if is_poynting and self._recorded is not None:
+            check_available(self._recorded)
+        source = list(_COMPONENTS) if is_poynting else comps
+        data = _interp_to_cell_centres(self._raw, source, *slabs, grid, dual=self._dual)
+        data = add_to(data, comps if is_poynting else [])
+        data = {c: np.squeeze(np.asarray(data[c]), axis=pv.normal_idx) for c in comps}
         data = _real_snapshot(data)
 
         overlay = None
@@ -704,11 +812,11 @@ class FieldState:
             else f"{_AX[pv.normal_idx]}={pv.normal_pos:.3g} m"
         )
         if unit is None:
-            unit = "V/m" if field_group == "E" else "A/m"
+            unit = {"E": "V/m", "H": "A/m"}.get(field_group, "W/m²")
 
         if plot_type == "vector":
             if not is_field_group:
-                raise ValueError("Vector plots need component='E' or 'H'.")
+                raise ValueError("Vector plots need component='E', 'H' or 'S'.")
             return plot_field_vector(
                 c0,
                 c1,
@@ -718,7 +826,13 @@ class FieldState:
                 xlabel=_AX[i0],
                 ylabel=_AX[i1],
                 wlabel=_AX[pv.normal_idx],
-                title=title if title is not None else f"{field_group}-field, {pos_txt}",
+                title=title
+                if title is not None
+                else (
+                    f"Poynting vector, {pos_txt}"
+                    if is_poynting
+                    else f"{field_group}-field, {pos_txt}"
+                ),
                 clabel=f"|{field_group}| ({unit})",
                 ax=ax,
                 scale_mm=scale_mm,

@@ -387,7 +387,7 @@ def component_mirror_key(component: str) -> tuple[str, int | None]:
     ``"Ex"`` → ``("E", 0)``; ``"E"``/``"|H|"`` (magnitudes) →
     ``(field, None)`` — a magnitude is mirror-even, no sign involved.
     """
-    if component in ("E", "H", "|E|", "|H|"):
+    if component in ("E", "H", "S", "|E|", "|H|", "|S|"):
         return component.strip("|"), None
     return component[0], _AXES.index(component[1])
 
@@ -439,8 +439,8 @@ def _resolve_component(data: dict[str, np.ndarray], component: str) -> np.ndarra
     """Resolve a component name to an array, supporting vector magnitudes.
 
     Individual components (``"Ex"``, ``"Hy"``, …) are returned directly.
-    ``"|E|"`` and ``"|H|"`` compute the L2 norm of the available
-    E- or H-field components: ``sqrt(|Ex|² + |Ey|² + |Ez|²)``.
+    ``"|E|"``, ``"|H|"`` and ``"|S|"`` compute the L2 norm of the
+    available components of that group: ``sqrt(|Ex|² + |Ey|² + |Ez|²)``.
     """
     if component in data:
         return data[component]
@@ -449,9 +449,11 @@ def _resolve_component(data: dict[str, np.ndarray], component: str) -> np.ndarra
         parts = [data[c] for c in ("Ex", "Ey", "Ez") if c in data]
     elif component in ("H", "|H|"):
         parts = [data[c] for c in ("Hx", "Hy", "Hz") if c in data]
+    elif component in ("S", "|S|"):
+        parts = [data[c] for c in ("Sx", "Sy", "Sz") if c in data]
     else:
         raise KeyError(
-            f"Component '{component}' not recorded. Available: {list(data.keys())}, 'E', 'H'"
+            f"Component '{component}' not recorded. Available: {list(data.keys())}, 'E', 'H', 'S'"
         )
 
     if not parts:

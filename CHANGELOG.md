@@ -7,6 +7,27 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Added
+
+- The Poynting vector on any recorded field.  `poynting()` on a field
+  monitor's recording or spectrum — and on a single `FieldState` —
+  returns `E × H` on the cell centres, so the flow of power through a
+  coupler, out of an antenna or into a wall can be seen and not only
+  integrated.  A time-domain frame gives the instantaneous power
+  density, a frequency frame the time-averaged one; pass
+  `complex_product=True` for the full complex product, whose imaginary
+  part is the reactive density of the stored near field.  Record both
+  fields (`fields=["E", "H"]`) — with only one of them the call says so
+  rather than reading the missing half as zeros.
+- `"S"` is a component name like `"E"` and `"H"`: `plot("S")` draws the
+  flow on a cut, `"Sz"` one signed component, and the 3D viewer offers
+  the Poynting vector in its component menu whenever both fields were
+  recorded.  For the watts through a surface keep to `flux()`, which is
+  exact on the samples; the guide explains why a hand-rolled sum over
+  the vector field is short by half a boundary cell at a magnetic wall.
+
 ## [0.8.1] - 2026-09-08
 
 ### Added

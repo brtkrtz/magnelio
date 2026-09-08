@@ -39,6 +39,9 @@ from typing import Any
 
 import numpy as np
 
+from magnelio.fields._poynting import COMPONENTS as _S_COMPONENTS
+from magnelio.fields._poynting import add_to as _add_poynting
+from magnelio.fields._poynting import split as _split_poynting
 from magnelio.post import plot_3d as _viewer
 
 __all__ = ["show_field"]
@@ -260,17 +263,30 @@ def _frames_from_states(
         pec = _mirrored_mask(pec, nodes0, nodes, mirrors)
     full = [slice(0, grid.Nx), slice(0, grid.Ny), slice(0, grid.Nz)]
 
+    def sources_of(comps):
+        """The field components to interpolate, and the Poynting ones to derive.
+
+        The Poynting vector is formed after the mirroring, from the
+        continued fields, so its own parity needs no rule here (DD-270).
+        """
+        fields, poynting = _split_poynting(list(comps))
+        return (list(_COMPONENTS) if poynting else fields), poynting
+
     def layer(frame, axis, k, comps):
         fs = state(frame)
         slabs = list(full)
         slabs[axis] = slice(k, k + 1)
-        data = _interp_to_cell_centres(fs._raw, list(comps), *slabs, fs._grid, dual=fs._dual)
-        return {c: np.squeeze(np.asarray(a), axis=axis) for c, a in data.items()}
+        fields, poynting = sources_of(comps)
+        data = _interp_to_cell_centres(fs._raw, fields, *slabs, fs._grid, dual=fs._dual)
+        data = _add_poynting(data, poynting)
+        return {c: np.squeeze(np.asarray(data[c]), axis=axis) for c in comps}
 
     def volume(frame, comps):
         fs = state(frame)
-        data = _interp_to_cell_centres(fs._raw, list(comps), *full, fs._grid, dual=fs._dual)
-        return {c: np.asarray(a) for c, a in data.items()}
+        fields, poynting = sources_of(comps)
+        data = _interp_to_cell_centres(fs._raw, fields, *full, fs._grid, dual=fs._dual)
+        data = _add_poynting(data, poynting)
+        return {c: np.asarray(data[c]) for c in comps}
 
     return _FieldFrames(
         nodes=nodes,  # type: ignore[arg-type]
@@ -402,11 +418,21 @@ def _frames_of(source, mesh, mirror: bool = True) -> _FieldFrames:
 
 
 def _available_components(recorded) -> list[str]:
+    """The component names a view of *recorded* can offer, groups first.
+
+    The Poynting vector joins the list only when both fields are there
+    — it is derived from all six (DD-270).
+    """
     out = []
     for group in ("E", "H"):
         if all(f"{group}{a}" in recorded for a in _AXES):
             out.append(group)
+    has_both = all(c in recorded for c in _COMPONENTS)
+    if has_both:
+        out.append("S")
     out.extend(c for c in _COMPONENTS if c in recorded)
+    if has_both:
+        out.extend(_S_COMPONENTS)
     return out
 
 
@@ -561,7 +587,7 @@ class _FieldView:
 
     @property
     def is_group(self) -> bool:
-        return self.component in ("E", "H")
+        return self.component in ("E", "H", "S")
 
     @property
     def has_arrows(self) -> bool:
@@ -613,6 +639,11 @@ class _FieldView:
     def unit(self) -> str:
         if self.frames.kind == "mode":
             return "a.u."  # an eigenvector carries no absolute amplitude
+        if self.group == "S":
+            # A power density is quadratic in the fields, so a
+            # frequency frame per 1 W CW carries watts per square metre
+            # per watt incident, not per root watt.
+            return "W/m² per W" if self.frames.kind == "frequency" else "W/m²"
         unit = "V/m" if self.group == "E" else "A/m"
         return f"{unit} per √W" if self.frames.kind == "frequency" else unit
 
@@ -695,11 +726,18 @@ class _FieldView:
         ``e^{+j w t}`` convention (the running DFT sums ``e^{-j w t}``),
         so ``phi`` is ``w t`` and advancing it runs time forward — the
         phase play walks a wave away from the port that launched it.
+        Real values pass through, the Poynting vector among them.
         """
-        if self.frames.is_complex:
-            phasor = np.exp(1j * np.deg2rad(self.phase))
-            return {c: np.real(np.asarray(a) * phasor) for c, a in data.items()}
-        return {c: np.real(np.asarray(a, dtype=float)) for c, a in data.items()}
+        phasor = np.exp(1j * np.deg2rad(self.phase))
+        out = {}
+        for c, a in data.items():
+            a = np.asarray(a)
+            # A derived power density comes back real even from a
+            # complex frame — it is the time average and has no instant
+            # to rotate to (DD-270), so the phasor is applied to what
+            # is actually complex.
+            out[c] = np.real(a * phasor) if np.iscomplexobj(a) else np.real(a.astype(float))
+        return out
 
     def _scalar_and_vectors(self, data: dict):
         if self.is_group:
