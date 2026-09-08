@@ -210,8 +210,13 @@ def integrate_E(field, curve, grid, *, samples_per_cell: int = 4) -> float:
 
     Parameters
     ----------
-    field : FieldArrays
-        The E field to integrate (``field.Ex/Ey/Ez``).
+    field : FieldState
+        The E field to integrate (``field.Ex/Ey/Ez``), in **physical
+        units** [V/m] — a :class:`~magnelio.fields.FieldState`, e.g. a
+        frame of a monitor's recording or spectrum.  The solver's own
+        states are FIT grid quantities (``e = E·l``, in volts) and are
+        *not* what this function expects: multiplying those by ``dl``
+        again is wrong by a cell length.
     curve : Curve
         The path of integration.
     grid : GridLines
@@ -223,6 +228,11 @@ def integrate_E(field, curve, grid, *, samples_per_cell: int = 4) -> float:
     -------
     float
         The line integral [V] (the total voltage along the curve).
+
+    Notes
+    -----
+    Real-valued fields only: a complex frame currently loses its
+    imaginary part here (known limitation).
     """
     path = rasterize_curve(curve, grid, samples_per_cell=samples_per_cell)
     comp = {"x": field.Ex, "y": field.Ey, "z": field.Ez}
@@ -233,5 +243,8 @@ def integrate_E(field, curve, grid, *, samples_per_cell: int = 4) -> float:
         path.signs,
         path.dls,
     ):
+        # KB-047: this float() cast silently drops the imaginary part of
+        # a complex frame (ComplexWarning only).  Fixing it changes the
+        # declared return type, so it is a decision, not a typo.
         v += sign * float(comp[axis][i, j, k]) * dl
     return v
