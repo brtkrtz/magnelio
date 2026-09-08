@@ -208,34 +208,25 @@ everything went (sizes in kB):
 
     geometry.brep                                                    9.9
     geometry.json                                                    0.8
-    geometry.vtm                                                     0.3
     mesh.h5                                                      11880.4
     project.json                                                     3.8
-    geometry/geometry_0.vtp                                          3.5
     runs/port3_mode0/checkpoint.h5                                1523.7
     runs/port3_mode0/fields_freq.h5                               5579.0
-    runs/port3_mode0/paraview_open.py                               18.9
     runs/port3_mode0/results.h5                                    699.6
-    runs/port3_mode0/paraview/volume_pattern.pvd                     0.2
-    runs/port3_mode0/paraview/volume_pattern/f_0000.vtr           1314.0
     runs/port4_mode0/checkpoint.h5                                1523.7
     runs/port4_mode0/fields_freq.h5                               5579.0
-    runs/port4_mode0/paraview_open.py                               18.9
     runs/port4_mode0/results.h5                                    699.6
-    runs/port4_mode0/paraview/volume_pattern.pvd                     0.2
-    runs/port4_mode0/paraview/volume_pattern/f_0000.vtr           1309.7
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 123-139
+.. GENERATED FROM PYTHON SOURCE LINES 123-138
 
 ``project.json`` carries the run registry and the reconstruction
 recipe, ``mesh.h5`` and ``geometry.brep`` the exact model, and each
 run directory holds its streamed port signals (``results.h5``), the
-monitor's frequency-domain volume (``fields_freq.h5``), a resumable
-``checkpoint.h5`` — and a ready-made ParaView session, more on that
-below.
+monitor's frequency-domain volume (``fields_freq.h5``) and a
+resumable ``checkpoint.h5``.
 
 Evaluating from disk — in a different session
 ---------------------------------------------
@@ -247,15 +238,18 @@ separation the store exists for: a cluster job computes, your
 laptop evaluates.  S-parameters are derived on read from the stored
 signals, with the accessors you already know:
 
-.. GENERATED FROM PYTHON SOURCE LINES 139-146
+.. GENERATED FROM PYTHON SOURCE LINES 138-148
 
 .. code-block:: Python
 
 
-    proj = mio.open_project(proj_dir)
-    print(proj)
+    # ``open_project`` hands back the very same kind of object ``run()``
+    # returned above — a reader over the directory — only initialised from
+    # the path instead of by the run that wrote it.
+    result_loaded = mio.open_project(proj_dir)
+    print(type(result_loaded).__name__, "->", result_loaded.status)
 
-    fig, ax = proj.plot_s(("port1", "port3"), ("port1", "port4"), ("port4", "port3"))
+    fig, ax = result_loaded.plot_s(("port1", "port3"), ("port1", "port4"), ("port4", "port3"))
     ax.set_title("Read back from the project store")
 
 
@@ -271,22 +265,13 @@ signals, with the accessors you already know:
 
  .. code-block:: none
 
-    Project /tmp/tmpegq9_2vb/magic_tee
-      analysis   AnalysisScatteringTD
-      status     done
-      last call  finished 2026-09-06 17:25:51 in 13.7 s
-      created    2026-09-06 17:25:38
-      runs       2
-    run          excited  state  steps    energy  elapsed  stop reason
-    ───────────  ───────  ─────  ─────  ────────  ───────  ───────────
-    port3_mode0  port3:0  done    6401  -45.3 dB    5.4 s  port_signal
-    port4_mode0  port4:0  done    6401  -49.0 dB    5.4 s  port_signal
+    Project -> done
 
     Text(0.5, 1.0, 'Read back from the project store')
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 147-166
+.. GENERATED FROM PYTHON SOURCE LINES 149-168
 
 Watching a run: the energy trace
 --------------------------------
@@ -308,15 +293,15 @@ the run live, without touching the job that is computing; the
 how-to *Watching a simulation that is still running* shows the
 loop, and the live panel for a notebook.
 
-.. GENERATED FROM PYTHON SOURCE LINES 166-173
+.. GENERATED FROM PYTHON SOURCE LINES 168-175
 
 .. code-block:: Python
 
 
-    fig, ax = proj.plot_energy()
+    fig, ax = result_loaded.plot_energy()
     ax.set_title("Energy in the grid during the two runs")
 
-    trace = proj.runs["port3_mode0"].energy_trace
+    trace = result_loaded.runs["port3_mode0"].energy_trace
     print(f"energy samples stored for the H-arm run: {len(trace)}")
 
 
@@ -337,7 +322,7 @@ loop, and the live panel for a notebook.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 174-182
+.. GENERATED FROM PYTHON SOURCE LINES 176-184
 
 The monitor data of *every* run is preserved — where the previous
 tutorial had to harvest its in-RAM monitors between two ``run()``
@@ -348,13 +333,13 @@ stored pattern is a full 3D volume, the slice plane is chosen at
 mid-height cut, the E-arm drive on the vertical cut, both from data
 recorded in the same simulation:
 
-.. GENERATED FROM PYTHON SOURCE LINES 182-195
+.. GENERATED FROM PYTHON SOURCE LINES 184-197
 
 .. code-block:: Python
 
 
-    mon_h = proj.monitors_for(("port3", 0))["volume_pattern"]
-    mon_e = proj.monitors_for(("port4", 0))["volume_pattern"]
+    mon_h = result_loaded.monitors_for(("port3", 0))["volume_pattern"]
+    mon_e = result_loaded.monitors_for(("port4", 0))["volume_pattern"]
 
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.2))
     mon_h.plot(
@@ -377,7 +362,7 @@ recorded in the same simulation:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 196-207
+.. GENERATED FROM PYTHON SOURCE LINES 198-209
 
 The volume can also be opened in the 3D viewer.  ``show`` lays the
 field on the viewer's cutting plane — here the E-arm drive, cut
@@ -391,7 +376,7 @@ slider moves the surface, and the *Show* menu swaps the arrows on
 the cut for arrows on a lattice through the volume; a documentation
 build shows the frame the call asks for.
 
-.. GENERATED FROM PYTHON SOURCE LINES 207-218
+.. GENERATED FROM PYTHON SOURCE LINES 209-220
 
 .. code-block:: Python
 
@@ -440,7 +425,7 @@ build shows the frame the call asks for.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 219-230
+.. GENERATED FROM PYTHON SOURCE LINES 221-232
 
 Running longer: resume
 ----------------------
@@ -454,17 +439,19 @@ interrupted job, a stop criterion chosen too shallow, and the
 convergence question "would more ring-down change my S-parameters?".
 Here we ask the third one, extending the H-arm run by 2000 steps:
 
-.. GENERATED FROM PYTHON SOURCE LINES 230-240
+.. GENERATED FROM PYTHON SOURCE LINES 232-244
 
 .. code-block:: Python
 
 
-    s13_before = proj.S("port1", "port3")
-    n_before = proj.runs["port3_mode0"].n_steps
+    s13_before = result_loaded.S("port1", "port3")
+    n_before = result_loaded.runs["port3_mode0"].n_steps
 
-    proj = mio.resume(proj_dir, excited="port3", total_time_steps=n_before + 2000, verbose=False)
+    result_resumed = mio.resume(
+        proj_dir, excited="port3", total_time_steps=n_before + 2000, verbose=False
+    )
 
-    s13_after = proj.S("port1", "port3")
+    s13_after = result_resumed.S("port1", "port3")
     print(f"steps: {n_before} -> {n_before + 2000}")
     print(f"max |dS13| from 2000 extra steps: {np.abs(s13_after - s13_before).max():.1e}")
 
@@ -482,27 +469,27 @@ Here we ask the third one, extending the H-arm run by 2000 steps:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 241-254
+.. GENERATED FROM PYTHON SOURCE LINES 245-257
 
 The change is far below any engineering tolerance — the original
 stop criterion was deep enough, and finding that out cost two
 thousand time steps instead of a rerun.  (A resumed run appends to
-the same streams; the monitor volume and the ParaView session are
-updated along with it.)
+the same streams, the monitor volume along with them.)
 
 Into ParaView
 -------------
 
 Slice plots answer questions you already know how to ask; a 3D
-volume invites the ones you don't.  Every project run ships with a
-generated ParaView session for its monitors — the files appeared in
-the listing above:
+volume invites the ones you don't.  A project run can be handed to
+ParaView as a ready-made session — an export you ask for, since the
+VTK copy of a monitor takes about as much disk as the monitor itself:
 
-.. GENERATED FROM PYTHON SOURCE LINES 254-260
+.. GENERATED FROM PYTHON SOURCE LINES 257-264
 
 .. code-block:: Python
 
 
+    result_resumed.export_paraview(excited="port3")
     run_dir = os.path.join(proj_dir, "runs", "port3_mode0")
     for name in sorted(os.listdir(run_dir)):
         if "paraview" in name and os.path.isfile(os.path.join(run_dir, name)):
@@ -516,30 +503,39 @@ the listing above:
 
  .. code-block:: none
 
+    UserWarning: no ParaView state file was baked: no 'pvpython' on PATH.  Name one in MAGNELIO_PVPYTHON or in export_paraview(pvpython=...) — a path, or the command that launches one, e.g. flatpak run --command=pvpython org.paraview.ParaView.  The session opens without a state file: paraview --script=paraview_open.py
     paraview_open.py
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 261-299
+.. GENERATED FROM PYTHON SOURCE LINES 265-311
 
-The data went to ``paraview/`` when the run closed: one ``.vtr``
-file per monitor frequency, collected by a ``.pvd`` whose axis is
-the frequency (for a time monitor, the instant).  They hold cell
-data — the staggered frames of ``fields_freq.h5`` averaged onto the
-cell centres at export time, the same numbers
-``spectrum.cell_centred()`` returns — so ParaView reads plain VTK
-files and never opens the store itself.
-``paraview.pvsm`` is a double-clickable state file: geometry as
-translucent solids, slice and clip widgets through the field
-volume, arrow glyphs on an even lattice with sensible lengths, and
-a threshold-gated volume glyph set — assembled and scaled to the
-data, so the first thing you see is the field, not a grey box.
+The data went to ``paraview/``: one ``.vtr`` file per monitor
+frequency, collected by a ``.pvd`` whose axis is the frequency (for
+a time monitor, the instant).  They hold cell data — the staggered
+frames of ``fields_freq.h5`` averaged onto the cell centres at export
+time, the same numbers ``spectrum.cell_centred()`` returns — so
+ParaView reads plain VTK files and never opens the store itself.
+``paraview.pvsm`` is a double-clickable state file (baked when
+``pvpython`` is on the path): geometry as translucent solids, and per
+monitor a short pipeline — ``volume_pattern_field`` prepares the
+field (cell averages onto an even lattice, arrow lengths from the
+magnitude), ``volume_pattern_slice`` cuts it, ``volume_pattern_arrows``
+draws the arrows on the cut, the geometry clip follows the cut plane
+when you drag it, and ``volume_pattern_volume_arrows`` waits hidden
+for the whole volume — assembled and scaled to the data, so the
+first thing you see is the field, not a grey box.
 ``paraview_open.py`` builds the same session from scratch
-(``paraview --script=paraview_open.py``) if you prefer a live
-pipeline over a state file.  A view of this very project, after
-dragging the slice plane to the tee's mid-height and switching the
-volume glyph set on:
+(``paraview --script=paraview_open.py``).  Prefer it whenever the
+state file misbehaves: it works on any ParaView, while a ``.pvsm`` is
+bound to the release that baked it — the header of the script says
+which one that was, and ``export_paraview(pvpython=…)`` (or
+``MAGNELIO_PVPYTHON``) picks the ParaView to bake for when a machine
+carries several.  After a resume, call ``export_paraview``
+again and the set is regenerated.  A view of this very project,
+after dragging the slice plane to the tee's mid-height and switching
+the volume arrows on:
 
 .. image:: /_static/tutorial_07_paraview.png
    :width: 90 %
@@ -552,7 +548,7 @@ New in this tutorial: ``project=`` turns a simulation into a
 directory on disk — S-parameters and every run's monitor volumes
 read back with :func:`magnelio.open_project`, evaluation decoupled
 from computation, ``resume`` continuing a checkpointed run without a
-seam, and a generated ParaView session per run.  What we did *not*
+seam, and a ParaView session on request.  What we did *not*
 need: keeping the Python session alive, or re-running anything.
 A second process can even open the project *while* the solver
 marches and watch the energy and S-parameters converge live — the
@@ -565,7 +561,7 @@ them the first antenna.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 20.321 seconds)
+   **Total running time of the script:** (0 minutes 20.488 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_07_project_store.py:

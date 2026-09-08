@@ -132,13 +132,13 @@ print(f"grid: {mesh.Nx} x {mesh.Ny} x {mesh.Nz} cells")
 
 # %%
 # Looking at geometry and mesh before spending any solver time is one
-# call each.  ``model.plot()`` is the 3D view: the model opened along a
+# call each.  ``model.show()`` is the 3D view: the model opened along a
 # cutting plane, with the grid cells the cut exposes coloured by the
 # material the mesher assigned.  In the notebook version of this
 # tutorial it is an interactive widget (orbit, pan, zoom, and the
 # cutting plane in its toolbar); here it is rendered as a picture.
 
-model.plot(mesh=mesh, cut=("y", 0.0))
+model.show(mesh=mesh, cut=("y", 0.0))
 
 # %%
 # The 2D cross-section is the exact companion — a section through the

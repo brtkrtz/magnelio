@@ -206,7 +206,7 @@ below):
     model = mio.GeometryModel(background="pec")
     for body in build_coupler(7.5e-3):
         model.add(body)
-    model.plot()
+    model.show()
 
 
 
@@ -336,7 +336,7 @@ once more without changing the mode.
 
       mesh | feature planes
     UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0239035 m, would create a 0.0011 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=6.9) keeps it, or refine the mesh.
-      mesh | feature planes | done (0.5 s)
+      mesh | feature planes | done (0.6 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
@@ -389,7 +389,7 @@ once more without changing the mode.
       mesh | PEC masks
       mesh | 27 x 39 x 10 cells (0.8 s total)
       mesh | feature planes
-      mesh | feature planes | done (0.5 s)
+      mesh | feature planes | done (0.6 s)
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
@@ -559,9 +559,9 @@ actually landed on.
       mesh | materials
       mesh | materials | done (1.6 s)
       mesh | conformal cells
-      mesh | conformal cells | done (17.7 s)
+      mesh | conformal cells | done (17.8 s)
       mesh | PEC masks
-      mesh | 46 x 56 x 209 cells (20.7 s total)
+      mesh | 46 x 56 x 209 cells (20.9 s total)
     grid: 46 x 56 x 209 cells
     coax port impedance on the grid: 52.3 ohm
     field line recorded at y = 0.90 mm, 209 points
@@ -630,7 +630,7 @@ field is transverse — a TEM line has no :math:`E_z`.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 336-357
+.. GENERATED FROM PYTHON SOURCE LINES 336-359
 
 Beam voltage and kicker constant
 --------------------------------
@@ -641,20 +641,22 @@ the device on a line parallel to the axis gains the energy
 
 .. math::
 
-    V = \int E_z(z)\, e^{-\mathrm{j} k_B z}\, \mathrm{d}z, \qquad
+    V = \int E_z(z)\, e^{+\mathrm{j} k_B z}\, \mathrm{d}z, \qquad
     k_B = \frac{\omega}{\beta c}.
 
 The phase factor is the field's own oscillation sampled along the
-particle's path; its sign follows the phasor convention of the
-frequency monitors (tutorial 06) for a particle travelling toward
-:math:`+z`, and reverses for the opposite direction.  The monitor
+particle's path; its sign follows the :math:`e^{+\mathrm j \omega t}`
+phasor convention of the frequency monitors (see *Signal processing*
+in the chapter :doc:`/methods/sources-monitors`) for a particle
+travelling toward :math:`+z`, and reverses for the opposite
+direction.  The monitor
 data are fields per 1 W incident at the excited port, so :math:`V`
 comes out per watt too.  The **kicker constant** normalises it to the
 voltage at the kicker's input terminal, :math:`V_K = \sqrt{2 Z_c P}`,
 where :math:`P` is the total drive power — two watts here, one per
 strip — and :math:`Z_c` the feed impedance as the grid sees it.
 
-.. GENERATED FROM PYTHON SOURCE LINES 357-384
+.. GENERATED FROM PYTHON SOURCE LINES 359-386
 
 .. code-block:: Python
 
@@ -663,7 +665,7 @@ strip — and :math:`Z_c` the feed impedance as the grid sees it.
     def beam_voltage(ez, z, f, beta=1.0, direction=+1):
         """Complex beam voltage V(f) for a particle moving along ±z at velocity beta·c."""
         k_b = 2 * np.pi * f / (beta * C0)
-        return np.trapezoid(ez * np.exp(-1j * direction * k_b[:, None] * z[None, :]), z, axis=1)
+        return np.trapezoid(ez * np.exp(1j * direction * k_b[:, None] * z[None, :]), z, axis=1)
 
 
     P_IN = 2.0
@@ -697,7 +699,7 @@ strip — and :math:`Z_c` the feed impedance as the grid sees it.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 385-427
+.. GENERATED FROM PYTHON SOURCE LINES 387-429
 
 The two directions are not equivalent.  A particle running *against*
 the drive wave collects the kicks of both strip ends in phase at the
@@ -742,7 +744,7 @@ Lambertson, eqs. 4.7 and 4.11):
 :math:`1/k_B`: at a fixed longitudinal field, a transverse kicker
 gets *weaker* with frequency.
 
-.. GENERATED FROM PYTHON SOURCE LINES 427-434
+.. GENERATED FROM PYTHON SOURCE LINES 429-436
 
 .. code-block:: Python
 
@@ -760,7 +762,7 @@ gets *weaker* with frequency.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 435-447
+.. GENERATED FROM PYTHON SOURCE LINES 437-449
 
 Longitudinal quantities: the sum mode
 -------------------------------------
@@ -775,7 +777,7 @@ constant and shunt impedance are (eqs. 4.1 and 4.10)
     K_\parallel = \frac{|V|}{V_K}, \qquad
     R_\parallel T^2 = Z_c\, |K_\parallel|^2 .
 
-.. GENERATED FROM PYTHON SOURCE LINES 447-458
+.. GENERATED FROM PYTHON SOURCE LINES 449-460
 
 .. code-block:: Python
 
@@ -804,14 +806,14 @@ constant and shunt impedance are (eqs. 4.1 and 4.10)
       mesh | materials
       mesh | materials | done (1.6 s)
       mesh | conformal cells
-      mesh | conformal cells | done (17.6 s)
+      mesh | conformal cells | done (17.8 s)
       mesh | PEC masks
-      mesh | 46 x 56 x 209 cells (20.7 s total)
+      mesh | 46 x 56 x 209 cells (20.8 s total)
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 459-497
+.. GENERATED FROM PYTHON SOURCE LINES 461-499
 
 The ideal stripline as the reference
 ------------------------------------
@@ -852,7 +854,7 @@ for the real device?  The field picture above answers it: the kicks
 happen where the strip meets its feed, so the electrical length is
 the distance between the two feeds, not the strip's own length.
 
-.. GENERATED FROM PYTHON SOURCE LINES 497-532
+.. GENERATED FROM PYTHON SOURCE LINES 499-534
 
 .. code-block:: Python
 
@@ -913,7 +915,7 @@ the distance between the two feeds, not the strip's own length.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 533-564
+.. GENERATED FROM PYTHON SOURCE LINES 535-566
 
 The ideal curves reproduce the shape — the lobes, the maximum near
 the design frequency, the :math:`1/k_B^2` decline of the transverse
@@ -947,7 +949,7 @@ signal per unit displacement, ideally
 :math:`4\sin(\varphi/2) / (\varphi\, b)` and independent of
 frequency.
 
-.. GENERATED FROM PYTHON SOURCE LINES 564-591
+.. GENERATED FROM PYTHON SOURCE LINES 566-593
 
 .. code-block:: Python
 
@@ -997,7 +999,7 @@ frequency.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 592-604
+.. GENERATED FROM PYTHON SOURCE LINES 594-606
 
 Where to go next
 ----------------
@@ -1015,7 +1017,7 @@ that move the real device toward, or away from, the ideal stripline.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (6 minutes 4.207 seconds)
+   **Total running time of the script:** (6 minutes 14.539 seconds)
 
 
 .. _sphx_glr_download_howto_plot_stripline_pickup_kicker.py:

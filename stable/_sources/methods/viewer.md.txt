@@ -1,6 +1,6 @@
 # 3D viewer
 
-`model.plot()` opens an interactive 3D view of a
+`model.show()` opens an interactive 3D view of a
 {class}`~magnelio.GeometryModel`: the solids coloured by material, the
 declared features, and — with a mesh — the FIT grid.  The same call
 serves three situations:
@@ -13,8 +13,8 @@ serves three situations:
   tab has no toolbar — the cutting plane stays where the script put it.
 
 ```python
-model.plot()                                  # geometry only
-model.plot(mesh=mesh, cut=("y", 0.0))         # opened along y = 0, grid cells on the cut
+model.show()                                  # geometry only
+model.show(mesh=mesh, cut=("y", 0.0))         # opened along y = 0, grid cells on the cut
 ```
 
 ## What is drawn
@@ -26,8 +26,8 @@ model.plot(mesh=mesh, cut=("y", 0.0))         # opened along y = 0, grid cells o
 | Thin wires | Tubes in the wire colour. |
 | Discrete ports, lumped elements | Tubes between their two end points (red for ports, green for elements), with their name beside them. |
 | Waveguide ports | A translucent red window on the domain face they occupy — the declared sub-window, or the whole face — with the port name written in the window's plane. |
-| Symmetry planes | Tinted sheets on the domain faces declared `SymmetryPEC` / `SymmetryPMC` (blue / green). |
-| Domain | Outline of the bounding box; the grid extent when a mesh is given. |
+| Symmetry planes | Tinted sheets on the declared symmetry planes (`SymmetryPEC` blue, `SymmetryPMC` green) — where the solver cut the model, which for a fully modelled geometry is inside the picture, not on its edge. |
+| Domain box | Outline of the computational domain — the grid extent when a mesh is given, including the absorbing buffer at open faces; the bounds of the solids and the field otherwise. |
 
 Lengths are shown in millimetres (`scale_mm=False` for metres).  The
 projection is parallel, as in engineering drawings.
@@ -45,6 +45,16 @@ toolbar:
 - **Show** — a menu of the object groups (solids, grid on cut, ports,
   lumped elements, wires, labels, symmetry planes, domain box); untick
   a group to hide it.
+
+Before the cut controls sit the camera buttons: reset, isometric view,
+a view along x, y or z, and the projection toggle (parallel, as the
+scene opens, or perspective).  Then a **ruler** (a measured box around
+the scene, its axes titled in the display unit), a **screenshot** of
+the view as it stands, an **HTML export** — the scene as a standalone
+page that opens without a kernel — a **pop-out** button that opens the
+same view in a browser tab of its own (`size=` sets the height of the
+widget in the notebook), and **help**, a dialog listing every control
+and the mouse bindings.
 
 A single plane cuts every solid; the openings are capped, so a cut
 metal body reads as solid metal, not as a hollow shell.  With a mesh,
@@ -75,25 +85,39 @@ monitor.show()                                   # |E| with arrows, mid-plane of
 monitor.show("Ez", normal="y", position=0.0)     # one signed component, diverging colours
 monitor.show(geometry=model, mesh=mesh)          # with the solids; metal cut out of the sheet
 pattern.show(f=10e9, phase=90.0)                 # a frequency monitor at a phase
-eigen.field(0).show("H", geometry=model)         # an eigenmode
+eigen.show("H", geometry=model)                  # an eigenmode result: a slider over the modes
+eigen.show(frame=2, glyph="cone")                # starting at mode 2, cones instead of arrows
 ```
 
 | Item | Appearance |
 |---|---|
 | Field sheet | The exposed layer of cells, each coloured by the magnitude of `E` or `H` (dark to bright) or by one signed component (`Ex`, `Hz`, …; blue–white–red about zero).  The colour ceiling is the peak over every frame and layer of the recording, so a wave keeps its colour while the frame slider runs; `vmax=` fixes it. |
-| Arrows | For `E` or `H`: arrows on an even lattice over the layer, all three components, coloured by their magnitude on the sheet's scale; the length grows with the magnitude from three tenths of the lattice spacing to one spacing, so a decaying field keeps readable arrows.  Arrows below 2 % of the ceiling are left out; `plot_type="color"` drops them, `arrow_color=` paints them one colour. |
+| Vectors | For `E` or `H`: arrows on an even lattice over the layer, centred on their sample points, all three components, coloured by their magnitude on the sheet's scale; the length grows with the magnitude from three tenths of the lattice spacing to one spacing, so a decaying field keeps readable arrows.  Arrows below 2 % of the ceiling are left out; `plot_type="color"` drops them, `arrow_color=` paints them one colour, `glyph="cone"` draws cones and `glyph_width=` sets the thickness. |
 | Metal | With `mesh=`, cells buried in a perfect conductor are cut out of the sheet, so the solids' cut faces show through where no field is defined. |
+| Grid | With `mesh=` and `show_grid=True`, the grid cells are drawn on the cut under the field.  A mirrored field has no grid — the mesh covers the modelled part only — and says so; `mirror=False` brings it back. |
+| Symmetry | With `mesh=` (an eigenmode result brings its own), a field recorded behind the model's symmetry planes is continued across them with the parity of each component, so the picture is the whole model like every other field plot; `mirror=False` shows the modelled part.  A region that stops short of a plane is not mirrored across it. |
+| Lines and points | A monitor of one cell along two or three axes shows its row of cells, or its one cell, with the arrows on it. |
 
 The field controls sit in a **second toolbar row**: a **play button**
-and a **frame slider** (time or frequency, with the value beside it),
-a **phase slider** for complex data (a frequency monitor's pattern at
-`Re(F·e^{jφ})`), a **Field** selector that switches between the
-recorded components, and the level and density sliders of the volume
-representations below; *Field on cut* and *Field arrows* join the
-*Show* menu.  Play runs the frames in a loop at `fps=` (default 4) —
-each frame is one layer computed and sent to the browser, so the rate
-is bounded by the size of the layer.  In a script or a documentation
-build the initial frame is chosen with `t=`, `f=` or `frame=`.
+and a **frame slider** (time, frequency or mode, the value beside it
+in a readout of fixed width), a **play button** and a **phase slider**
+for complex data (a frequency monitor's pattern at `Re(F·e^{+jφ})` —
+the instant at `ωt = φ`, so the phase advances with time and a
+travelling wave runs the way it ran in the simulation; the play turns
+the phase in steps of ten degrees), a **Field** selector
+that switches between the recorded components, and the level and
+density sliders of the volume representations below; *Field on cut*
+and *Vectors on cut* join the *Show* menu.  Play runs the frames in a
+loop at `fps=` (default 4) — each frame is one layer computed and sent
+to the browser, so the rate is bounded by the size of the layer.  In a
+script or a documentation build the initial frame is chosen with `t=`,
+`f=` or `frame=`.
+
+An eigenmode result shows the same way, `result.show()`: its modes are
+the frames, labelled with index and eigenfrequency (degenerate pairs
+share the frequency, so the index leads), the amplitudes in arbitrary
+units; a complex Bloch mode is turned to the instant of its maximum
+energy first, the phase slider turns it from there.
 
 ## Fields in the volume
 
@@ -108,7 +132,7 @@ monitor.show("Hx", volume="both", levels=[2.0])  # ±2 A/m surfaces, arrows too
 
 | Item | Appearance |
 |---|---|
-| Arrows in volume | The same arrows as on the cut, on an even 3D lattice over the region (`density=` counts them along its longest axis), clipped to the kept half like the solids; they replace the arrows on the cut.  A slider sets the density. |
+| Field vectors | The same arrows as on the cut, on an even 3D lattice over the region (`density=` counts them along its longest axis), clipped to the kept half like the solids; they replace the vectors on the cut.  A slider sets the density. |
 | Isosurfaces | Translucent surfaces where the magnitude equals a level — by default one at `iso_level` (half the colour ceiling), which a slider moves between 5 and 95 %; `levels=` fixes surfaces at values in V/m or A/m.  A signed component gets each level with both signs, blue and red.  The surfaces are clipped at the cut, so the cut shows their inside. |
 
 Both are entries of the *Show* menu whenever the source is a volume
@@ -122,11 +146,9 @@ so a surface is as fine as the grid.  Volume rendering with an opacity
 ramp is not offered: the browser renderer takes only uniform image
 data, and a graded grid resampled onto one would lose its resolution.
 
-Two things the picture is not.  It is not a plane: every value is the
-cell-centre average of the staggered components in one layer of cells,
-the same convention as the 2D slice plots.  And it is not mirrored:
-a model with symmetry planes shows its modelled half here, as the
-geometry view does.
+One thing the picture is not: a plane.  Every value is the cell-centre
+average of the staggered components in one layer of cells, the same
+convention as the 2D slice plots.
 
 A monitor read back from a project store (`project.monitors[...]`)
 shows the same way; its frames are read from disk one at a time as the
@@ -159,9 +181,12 @@ slider moves, so a volume monitor of any size opens at once.
   - Scripts that want `plotter.screenshot(...)`, tests.
 ```
 
-The camera: left-drag orbits, right-drag (or shift + left-drag) pans,
-the wheel zooms.  The toolbar's own buttons reset the camera to the
-axis views.
+The mouse in the notebook widget: left drag orbits, middle drag (or
+alt + left drag) pans, right drag, the wheel or ctrl + left drag zoom,
+alt + shift + left drag rolls.  The rotatable views in these
+documentation pages use vtk.js's own bindings instead: shift + left
+drag pans there, alt + left drag zooms.  The toolbar's help button
+lists the bindings of the widget.
 
 ## Requirements
 
@@ -198,3 +223,5 @@ needed for Magnelio's viewer.
 - Fields are drawn on the cut and, as arrows and isosurfaces, in the
   volume — not as a volume rendering; the
   {ref}`ParaView export <paraview-export>` covers that.
+- The camera presets do not turn the flat labels: they face the
+  camera the view opened with.

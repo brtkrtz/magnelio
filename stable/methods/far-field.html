@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=fe7df9b0"></script>
+    <script src="../_static/documentation_options.js?v=486e5634"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -177,8 +177,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.7.html">
-    Upgrading from 0.6.x
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -190,6 +190,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
     Upgrading from 0.5.x
@@ -363,6 +370,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -602,7 +616,12 @@ negligible next to a volume monitor.</p>
 a <code class="docutils literal notranslate"><span class="pre">FarFieldResult</span></code> with the complex patterns <span class="math notranslate nohighlight">\(E_\theta\)</span>, <span class="math notranslate nohighlight">\(E_\varphi\)</span>
 on a spherical grid (ISO convention: <span class="math notranslate nohighlight">\(\theta\)</span> from the <span class="math notranslate nohighlight">\(+z\)</span> axis,
 <span class="math notranslate nohighlight">\(\varphi\)</span> from <span class="math notranslate nohighlight">\(+x\)</span> in the <span class="math notranslate nohighlight">\(xy\)</span>-plane), evaluated at any angular
-resolution without re-running the solver.</p>
+resolution without re-running the solver.  They are phasors of the
+<span class="math notranslate nohighlight">\(e^{+j\omega t}\)</span> convention like every other frequency-domain field of
+the library — the one the formulas above are written in — so the field
+at distance <span class="math notranslate nohighlight">\(r\)</span> is <span class="math notranslate nohighlight">\(\mathbf E(r) = (E_\theta\hat\theta +
+E_\varphi\hat\varphi)\,e^{-jkr}/r\)</span> and the handedness of a circular
+polarisation reads off them the textbook way.</p>
 </section>
 <section id="ground-planes-walls-and-symmetry-planes">
 <h2>Ground planes, walls and symmetry planes<a class="headerlink" href="#ground-planes-walls-and-symmetry-planes" title="Link to this heading">#</a></h2>

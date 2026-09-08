@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=fe7df9b0"></script>
+    <script src="../_static/documentation_options.js?v=486e5634"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -175,8 +175,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.7.html">
-    Upgrading from 0.6.x
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -188,6 +188,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
     Upgrading from 0.5.x
@@ -361,6 +368,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -586,9 +600,11 @@ and how to read one that is still being written.</p>
 <p><strong>Project.</strong>  A directory holding <code class="docutils literal notranslate"><span class="pre">project.json</span></code> (the index: setup,
 status, the run table), the mesh, the geometry when one was given, and
 one sub-directory per run.  The handle is a
-<a class="reference internal" href="../api/io.html#magnelio.io.Project" title="magnelio.io.Project"><code class="xref py py-class docutils literal notranslate"><span class="pre">Project</span></code></a>.  It is also a scattering result — <code class="docutils literal notranslate"><span class="pre">S</span></code>,
-<code class="docutils literal notranslate"><span class="pre">db</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_s</span></code>, the Touchstone export — so a script written for the
-in-RAM result runs unchanged against it.</p>
+<a class="reference internal" href="../api/io.html#magnelio.io.Project" title="magnelio.io.Project"><code class="xref py py-class docutils literal notranslate"><span class="pre">Project</span></code></a>.  It is also the result it holds — a
+scattering project answers to <code class="docutils literal notranslate"><span class="pre">S</span></code>, <code class="docutils literal notranslate"><span class="pre">db</span></code>, <code class="docutils literal notranslate"><span class="pre">plot_s</span></code> and the Touchstone
+export, an eigenmode project (<code class="docutils literal notranslate"><span class="pre">AnalysisEigenmode(...,</span> <span class="pre">project=…)</span></code>) to
+<code class="docutils literal notranslate"><span class="pre">frequencies</span></code>, <code class="docutils literal notranslate"><span class="pre">n_modes</span></code>, <code class="docutils literal notranslate"><span class="pre">field</span></code>, <code class="docutils literal notranslate"><span class="pre">show</span></code> and <code class="docutils literal notranslate"><span class="pre">plot</span></code> — so a script
+written for the in-RAM result runs unchanged against it.</p>
 <p><strong>Run.</strong>  One march of the time-domain solver.  A scattering analysis
 makes one run per excited channel, named after it (<code class="docutils literal notranslate"><span class="pre">port3_mode0</span></code>); the
 general time-domain analysis names its runs <code class="docutils literal notranslate"><span class="pre">run_1</span></code>, <code class="docutils literal notranslate"><span class="pre">run_2</span></code>, … or

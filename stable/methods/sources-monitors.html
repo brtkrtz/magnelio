@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=fe7df9b0"></script>
+    <script src="../_static/documentation_options.js?v=486e5634"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -177,8 +177,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.7.html">
-    Upgrading from 0.6.x
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -190,6 +190,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
     Upgrading from 0.5.x
@@ -363,6 +370,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -950,7 +964,7 @@ excitation spectrum (standard practice
 lock-in phasor extraction over an integer number of periods after
 settling (<code class="docutils literal notranslate"><span class="pre">cw_lockin_phasors</span></code>) — standard signal processing.</p>
 <p>A frequency monitor is divided by the same spectrum, and for the same
-reason.  Its running sum <span class="math notranslate nohighlight">\(\sum_n F(t_n)\,e^{+j\omega t_n}\,\Delta t\)</span> is
+reason.  Its running sum <span class="math notranslate nohighlight">\(\sum_n F(t_n)\,e^{-j\omega t_n}\,\Delta t\)</span> is
 the transient folded with the excitation, so it carries an extra factor
 of time and the pulse’s own spectral shape.  Since the excitation
 waveform <em>is</em> the incident power-wave amplitude <span class="math notranslate nohighlight">\(a(t)\)</span> in <span class="math notranslate nohighlight">\(\sqrt{\rm W}\)</span>
@@ -959,7 +973,21 @@ each monitor frequency — E in V/m, H in A/m, per <span class="math notranslate
 incident power.  A run performs that division on its own monitors, so
 <code class="docutils literal notranslate"><span class="pre">.spectrum</span></code> is in those units from the moment the run returns;
 <code class="docutils literal notranslate"><span class="pre">.spectrum_raw</span></code> exposes the undivided transform for callers who want
-the transient itself.
+the transient itself.</p>
+<p>The sign in that exponent fixes the library’s phasor convention:
+frequency-domain fields are those of the <span class="math notranslate nohighlight">\(e^{+j\omega t}\)</span> convention —
+the convention of the S-parameters, of the port signals’ own transform
+and of the textbook far-field formulas — so the instant of a pattern
+at time <span class="math notranslate nohighlight">\(t\)</span> is <span class="math notranslate nohighlight">\(\mathrm{Re}\left(F\,e^{+j\omega t}\right)\)</span>.  That is
+what the <code class="docutils literal notranslate"><span class="pre">phase</span></code> argument of every picture means — degrees of <span class="math notranslate nohighlight">\(\omega
+t\)</span>, advancing with time — and what the viewer’s phase play animates,
+so a travelling wave moves the way it ran in the simulation.  One
+convention runs through the library: the phase of a monitor and the
+phase of a port voltage at the same frequency may be compared
+directly, and the far-field transform applies its textbook formulas
+verbatim.  Runs written before 0.8 stored the conjugate of these
+phasors; they are converted as they are read, so a stored run needs no
+re-run.
 For a TE/TM feed the waveform launches a frequency-dependent power —
 the mode’s wave impedance varies across the band — and the run divides
 additionally by the ratio <span class="math notranslate nohighlight">\(|a(f)|/|W(f)|\)</span> of the incident wave it
@@ -976,30 +1004,97 @@ not a research method; the formats are community standards.</p>
 </section>
 <section id="paraview-export">
 <span id="id6"></span><h2>ParaView export<a class="headerlink" href="#paraview-export" title="Link to this heading">#</a></h2>
-<p>A field monitor’s frames leave the store as VTK files when a project
-run closes: under <code class="docutils literal notranslate"><span class="pre">runs/&lt;run&gt;/paraview/</span></code>, one rectilinear <code class="docutils literal notranslate"><span class="pre">.vtr</span></code> per
-frame of a time monitor (<code class="docutils literal notranslate"><span class="pre">&lt;monitor&gt;/t_0000.vtr</span></code>, …) or per frequency
-of a frequency monitor (<code class="docutils literal notranslate"><span class="pre">f_0000.vtr</span></code>, …), collected by a
-<code class="docutils literal notranslate"><span class="pre">&lt;monitor&gt;.pvd</span></code> whose axis is the frame’s electric instant, or its
-frequency.  The files hold <em>cell data</em>: the recorded components
-averaged onto the cell centres at export time — the numbers
-<code class="docutils literal notranslate"><span class="pre">recording.cell_centred()</span></code> returns — and the vectors <code class="docutils literal notranslate"><span class="pre">E</span></code> and <code class="docutils literal notranslate"><span class="pre">H</span></code>
-where a group was recorded whole.  ParaView reads plain VTK and never
-touches the staggered frames in <code class="docutils literal notranslate"><span class="pre">results.h5</span></code> or <code class="docutils literal notranslate"><span class="pre">fields_freq.h5</span></code>.
-Beside the data, <code class="docutils literal notranslate"><span class="pre">paraview_open.py</span></code> builds a <code class="docutils literal notranslate"><span class="pre">paraview.simple</span></code>
-pipeline (translucent geometry, a slice through each monitor, glyphs
-scaled to the field, the model’s symmetry planes mirrored in the
-pipeline rather than in the files) and, when <code class="docutils literal notranslate"><span class="pre">pvpython</span></code> is on the
-path, <code class="docutils literal notranslate"><span class="pre">paraview.pvsm</span></code> is baked from it as a double-clickable state.
-<code class="docutils literal notranslate"><span class="pre">Project.export_paraview()</span></code> regenerates the set with other options or
-after a skipped export; eigenmodes take the same shape one directory
-up, one <code class="docutils literal notranslate"><span class="pre">.vtr</span></code> per mode (<code class="docutils literal notranslate"><span class="pre">export_paraview_eigenmodes</span></code>).  Tutorial 07
-opens such a session.</p>
-<p>The export is a step <em>after</em> the run, not a live view: the files are
-written when the run closes, and a resumed run rewrites them.
-Watching a run while it marches is what <code class="docutils literal notranslate"><span class="pre">watch</span></code>, <code class="docutils literal notranslate"><span class="pre">follow</span></code> and the
-notebook viewer are for (<a class="reference internal" href="projects-and-runs.html"><span class="std std-doc">Projects and runs</span></a>,
-the how-to <em>Watching a simulation that is still running</em>).</p>
+<p>A field monitor’s frames leave the store as VTK files when you ask
+for them: <code class="docutils literal notranslate"><span class="pre">project.export_paraview()</span></code> writes one run’s set,
+<code class="docutils literal notranslate"><span class="pre">project.export_paraview_eigenmodes()</span></code> the eigenmodes’, and both
+tessellate the solids into <code class="docutils literal notranslate"><span class="pre">geometry.vtm</span></code> on their first call.  Under
+<code class="docutils literal notranslate"><span class="pre">runs/&lt;run&gt;/paraview/</span></code> there is one rectilinear <code class="docutils literal notranslate"><span class="pre">.vtr</span></code> per frame of a
+time monitor (<code class="docutils literal notranslate"><span class="pre">&lt;monitor&gt;/t_0000.vtr</span></code>, …) or per frequency of a
+frequency monitor (<code class="docutils literal notranslate"><span class="pre">f_0000.vtr</span></code>, …), collected by a <code class="docutils literal notranslate"><span class="pre">&lt;monitor&gt;.pvd</span></code>
+whose axis is the frame’s electric instant, or its frequency.  The
+files hold <em>cell data</em>: the recorded components averaged onto the
+cell centres at export time — the numbers <code class="docutils literal notranslate"><span class="pre">recording.cell_centred()</span></code>
+returns — and the vectors <code class="docutils literal notranslate"><span class="pre">E</span></code> and <code class="docutils literal notranslate"><span class="pre">H</span></code> where a group was recorded
+whole.  ParaView reads plain VTK and never touches the staggered
+frames in <code class="docutils literal notranslate"><span class="pre">results.h5</span></code> or <code class="docutils literal notranslate"><span class="pre">fields_freq.h5</span></code>.  The copy takes about as
+much disk as the monitor’s own data, which is why it is a call and
+not a side effect of the run.</p>
+<p>Beside the data, <code class="docutils literal notranslate"><span class="pre">paraview_open.py</span></code> builds a <code class="docutils literal notranslate"><span class="pre">paraview.simple</span></code>
+pipeline and, when <code class="docutils literal notranslate"><span class="pre">pvpython</span></code> is on the path, <code class="docutils literal notranslate"><span class="pre">paraview.pvsm</span></code> is
+baked from it as a double-clickable state.  What the pipeline browser
+shows per monitor — the count below is <em>per monitor</em>, so a run with
+five of them carries five such groups — is the reader, <code class="docutils literal notranslate"><span class="pre">&lt;monitor&gt;_field</span></code>
+— a Python filter
+that mirrors the recorded half across the model’s symmetry planes
+with the continuation rules of the monitor plots (<code class="docutils literal notranslate"><span class="pre">E</span></code> and <code class="docutils literal notranslate"><span class="pre">H</span></code> each
+with their own parity), averages the cells onto the points and
+resamples them onto an even lattice, handing out <code class="docutils literal notranslate"><span class="pre">&lt;field&gt;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&lt;field&gt;_mag</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;field&gt;_len</span></code> (the arrow length, saturating at a
+high percentile of the magnitude so edge singularities keep their
+direction without dictating the scale) — then <code class="docutils literal notranslate"><span class="pre">&lt;monitor&gt;_slice</span></code>, one
+cut normal to the region’s shortest extent whose plane widget turns
+it to any other, and <code class="docutils literal notranslate"><span class="pre">&lt;monitor&gt;_arrows</span></code> on the cut, centred on their
+sample points.  <code class="docutils literal notranslate"><span class="pre">&lt;monitor&gt;_volume</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;monitor&gt;_volume_arrows</span></code> wait
+hidden for the whole volume, thresholded to the cells carrying field;
+a frequency monitor’s <code class="docutils literal notranslate"><span class="pre">&lt;monitor&gt;_arrows_im</span></code> holds the field a quarter
+period later.</p>
+<p>Beside the monitors there is exactly <strong>one</strong> <code class="docutils literal notranslate"><span class="pre">geometry_cut</span></code>: the
+solids clipped by the session’s cutting plane.  That plane is shared —
+<code class="docutils literal notranslate"><span class="pre">geometry_cut</span></code> and every monitor’s slice are linked, so dragging any
+one of them drags them all and the solids are always opened where the
+field is shown.</p>
+<p>Every set of arrows is coloured by its field’s magnitude when the
+session is built, whether it is shown at once or waits hidden, so a
+set switched on later comes up on the same scale rather than in a flat
+colour.  The colour carries the true magnitude while the arrow length
+is compressed, and each monitor gets its own transfer function,
+because the cap it is scaled to is its own.  Eigenmodes take the same shape one directory up, one <code class="docutils literal notranslate"><span class="pre">.vtr</span></code>
+per mode.  Tutorial 07 opens such a session.</p>
+<p><code class="docutils literal notranslate"><span class="pre">geometry.vtm</span></code> holds the <strong>whole</strong> model: a geometry declared behind
+symmetry planes is clipped to the simulated half and mirrored across
+each plane while the file is written, not by a filter in the session.
+The planes it was built for are recorded in <code class="docutils literal notranslate"><span class="pre">geometry.vtm.json</span></code>, so a
+file written for other planes is made again rather than shown as a
+half model.</p>
+<p>The export is a step <em>after</em> the run, not a live view; after a
+resume, call it again and the set is regenerated.  Watching a run
+while it marches is what <code class="docutils literal notranslate"><span class="pre">watch</span></code>, <code class="docutils literal notranslate"><span class="pre">follow</span></code> and the notebook viewer
+are for (<a class="reference internal" href="projects-and-runs.html"><span class="std std-doc">Projects and runs</span></a>, the how-to
+<em>Watching a simulation that is still running</em>).</p>
+<section id="which-of-the-two-files-to-open">
+<h3>Which of the two files to open<a class="headerlink" href="#which-of-the-two-files-to-open" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">paraview_open.py</span></code> is the robust one.  It builds the session live, so
+it works on whatever ParaView runs it:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>paraview<span class="w"> </span>--script<span class="o">=</span>paraview_open.py
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">paraview.pvsm</span></code> is the convenience — a double-click, no command line —
+and it is <strong>bound to the ParaView that baked it</strong>.  A state file names
+its proxies the way that release spelled them, and a renamed proxy is
+dropped on load together with everything downstream of it, which reads
+as missing solids and errors about filters without input rather than
+as a version mismatch.  The version that baked it is written into the
+header of <code class="docutils literal notranslate"><span class="pre">paraview_open.py</span></code> beside it.  On a machine carrying more
+than one ParaView, name the one that will open the session:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">project</span><span class="o">.</span><span class="n">export_paraview</span><span class="p">(</span><span class="n">pvpython</span><span class="o">=</span><span class="s2">"/opt/ParaView-6.1/bin/pvpython"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>or set <code class="docutils literal notranslate"><span class="pre">MAGNELIO_PVPYTHON</span></code> once.  It takes a path or the command that
+launches an interpreter, which is how a sandboxed ParaView is reached:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">MAGNELIO_PVPYTHON</span><span class="o">=</span><span class="s2">"flatpak run --command=pvpython org.paraview.ParaView"</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">bake_state=False</span></code> skips the state file altogether.  When a state file
+was asked for and none could be baked, the export says why — no
+ParaView found, or a setting that names nothing.  In a notebook, set
+the variable with <code class="docutils literal notranslate"><span class="pre">os.environ[...]</span> <span class="pre">=</span> <span class="pre">...</span></code>: IPython’s <code class="docutils literal notranslate"><span class="pre">%set_env</span></code> keeps
+the quotes you type inside the value.  Two build notes: ParaView 6.0 bundles a
+<code class="docutils literal notranslate"><span class="pre">numpy_interface</span></code> older than numpy 2.4, which stops every Python
+filter — the generated script shims that for <code class="docutils literal notranslate"><span class="pre">paraview</span> <span class="pre">--script</span></code> and
+for the bake, but a state file opened on such a build cannot be
+helped, since ParaView’s own filter preamble runs before any script of
+ours.  Use <code class="docutils literal notranslate"><span class="pre">paraview</span> <span class="pre">--script=</span></code> there, or a newer ParaView.</p>
+</section>
 </section>
 </section>
 
@@ -1063,7 +1158,10 @@ the how-to <em>Watching a simulation that is still running</em>).</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#field-flux-and-frequency-monitors">Field, flux and frequency monitors</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#signal-processing">Signal processing</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#project-store-checkpointing-resume">Project store, checkpointing, resume</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#paraview-export">ParaView export</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#paraview-export">ParaView export</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#which-of-the-two-files-to-open">Which of the two files to open</a></li>
+</ul>
+</li>
 </ul>
   </nav></div>
 

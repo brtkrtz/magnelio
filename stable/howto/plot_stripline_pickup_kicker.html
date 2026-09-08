@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=fe7df9b0"></script>
+    <script src="../_static/documentation_options.js?v=486e5634"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -177,8 +177,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.7.html">
-    Upgrading from 0.6.x
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -190,6 +190,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
     Upgrading from 0.5.x
@@ -363,6 +370,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -730,7 +744,7 @@ below):</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">GeometryModel</span><span class="p">(</span><span class="n">background</span><span class="o">=</span><span class="s2">"pec"</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">body</span> <span class="ow">in</span> <span class="n">build_coupler</span><span class="p">(</span><span class="mf">7.5e-3</span><span class="p">):</span>
     <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">body</span><span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
 <div class="sd-tab-set docutils">
@@ -815,7 +829,7 @@ once more without changing the mode.</p>
 </div>
 <img src="../_images/sphx_glr_plot_stripline_pickup_kicker_002.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_002.png" alt="Strip impedance from the port solver" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
 UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0239035 m, would create a 0.0011 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=6.9) keeps it, or refine the mesh.
-  mesh | feature planes | done (0.5 s)
+  mesh | feature planes | done (0.6 s)
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
@@ -868,7 +882,7 @@ UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.0018
   mesh | PEC masks
   mesh | 27 x 39 x 10 cells (0.8 s total)
   mesh | feature planes
-  mesh | feature planes | done (0.5 s)
+  mesh | feature planes | done (0.6 s)
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
@@ -998,9 +1012,9 @@ UserWarning: 10 geometry-edge planes (3 on x, 3 on y, 4 on z) below the edge flo
   mesh | materials
   mesh | materials | done (1.6 s)
   mesh | conformal cells
-  mesh | conformal cells | done (17.7 s)
+  mesh | conformal cells | done (17.8 s)
   mesh | PEC masks
-  mesh | 46 x 56 x 209 cells (20.7 s total)
+  mesh | 46 x 56 x 209 cells (20.9 s total)
 grid: 46 x 56 x 209 cells
 coax port impedance on the grid: 52.3 ohm
 field line recorded at y = 0.90 mm, 209 points
@@ -1036,12 +1050,14 @@ field is transverse — a TEM line has no <span class="math notranslate nohighli
 the device on a line parallel to the axis gains the energy
 <span class="math notranslate nohighlight">\(eV\)</span>, with the <strong>beam voltage</strong></p>
 <div class="math notranslate nohighlight">
-\[V = \int E_z(z)\, e^{-\mathrm{j} k_B z}\, \mathrm{d}z, \qquad
+\[V = \int E_z(z)\, e^{+\mathrm{j} k_B z}\, \mathrm{d}z, \qquad
 k_B = \frac{\omega}{\beta c}.\]</div>
 <p>The phase factor is the field’s own oscillation sampled along the
-particle’s path; its sign follows the phasor convention of the
-frequency monitors (tutorial 06) for a particle travelling toward
-<span class="math notranslate nohighlight">\(+z\)</span>, and reverses for the opposite direction.  The monitor
+particle’s path; its sign follows the <span class="math notranslate nohighlight">\(e^{+\mathrm j \omega t}\)</span>
+phasor convention of the frequency monitors (see <em>Signal processing</em>
+in the chapter <a class="reference internal" href="../methods/sources-monitors.html"><span class="doc">Sources, monitors and post-processing</span></a>) for a particle
+travelling toward <span class="math notranslate nohighlight">\(+z\)</span>, and reverses for the opposite
+direction.  The monitor
 data are fields per 1 W incident at the excited port, so <span class="math notranslate nohighlight">\(V\)</span>
 comes out per watt too.  The <strong>kicker constant</strong> normalises it to the
 voltage at the kicker’s input terminal, <span class="math notranslate nohighlight">\(V_K = \sqrt{2 Z_c P}\)</span>,
@@ -1050,7 +1066,7 @@ strip — and <span class="math notranslate nohighlight">\(Z_c\)</span> the feed
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">beam_voltage</span><span class="p">(</span><span class="n">ez</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">direction</span><span class="o">=+</span><span class="mi">1</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Complex beam voltage V(f) for a particle moving along ±z at velocity beta·c."""</span>
     <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_b</span></a> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/constants.html#numpy.pi" title="numpy.pi" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-data"><span class="n">np</span><span class="o">.</span><span class="n">pi</span></a> <span class="o">*</span> <span class="n">f</span> <span class="o">/</span> <span class="p">(</span><span class="n">beta</span> <span class="o">*</span> <span class="n">C0</span><span class="p">)</span>
-    <span class="k">return</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.trapezoid.html#numpy.trapezoid" title="numpy.trapezoid" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">trapezoid</span></a><span class="p">(</span><span class="n">ez</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">exp</span></a><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">direction</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_b</span></a><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">z</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]),</span> <span class="n">z</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.trapezoid.html#numpy.trapezoid" title="numpy.trapezoid" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-function"><span class="n">np</span><span class="o">.</span><span class="n">trapezoid</span></a><span class="p">(</span><span class="n">ez</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">exp</span></a><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">direction</span> <span class="o">*</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">k_b</span></a><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">z</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]),</span> <span class="n">z</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
 
 <span class="n">P_IN</span> <span class="o">=</span> <span class="mf">2.0</span>
@@ -1142,9 +1158,9 @@ mesh | grid lines
 mesh | materials
 mesh | materials | done (1.6 s)
 mesh | conformal cells
-mesh | conformal cells | done (17.6 s)
+mesh | conformal cells | done (17.8 s)
 mesh | PEC masks
-mesh | 46 x 56 x 209 cells (20.7 s total)
+mesh | 46 x 56 x 209 cells (20.8 s total)
 </pre></div>
 </div>
 </section>
@@ -1291,7 +1307,7 @@ particle velocity enters only through <span class="math notranslate nohighlight"
 one and watch the lobes shift down in frequency and the transverse
 response change), and the pit depth and feed offsets are the knobs
 that move the real device toward, or away from, the ideal stripline.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (6 minutes 4.207 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (6 minutes 14.539 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-stripline-pickup-kicker-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/4f45f16660f9674c2e4e6eb9a377a83f/plot_stripline_pickup_kicker.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_stripline_pickup_kicker.ipynb</span></code></a></p>

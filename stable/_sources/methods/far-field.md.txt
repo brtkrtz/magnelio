@@ -43,7 +43,12 @@ After the run, `monitor.result(f)` performs the transform and returns
 a `FarFieldResult` with the complex patterns $E_\theta$, $E_\varphi$
 on a spherical grid (ISO convention: $\theta$ from the $+z$ axis,
 $\varphi$ from $+x$ in the $xy$-plane), evaluated at any angular
-resolution without re-running the solver.
+resolution without re-running the solver.  They are phasors of the
+$e^{+j\omega t}$ convention like every other frequency-domain field of
+the library — the one the formulas above are written in — so the field
+at distance $r$ is $\mathbf E(r) = (E_\theta\hat\theta +
+E_\varphi\hat\varphi)\,e^{-jkr}/r$ and the handedness of a circular
+polarisation reads off them the textbook way.
 
 ## Ground planes, walls and symmetry planes
 

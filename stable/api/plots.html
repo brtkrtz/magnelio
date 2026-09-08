@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=fe7df9b0"></script>
+    <script src="../_static/documentation_options.js?v=486e5634"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -175,8 +175,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.7.html">
-    Upgrading from 0.6.x
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -188,6 +188,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
     Upgrading from 0.5.x
@@ -361,6 +368,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -889,7 +903,7 @@ directivity).</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="magnelio.plots.show_field">
-<span class="sig-prename descclassname"><span class="pre">magnelio.plots.</span></span><span class="sig-name descname"><span class="pre">show_field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opacity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arrow_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">volume</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iso_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_ports</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_wires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'iso'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.plots.show_field" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">magnelio.plots.</span></span><span class="sig-name descname"><span class="pre">show_field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">normal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vector'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opacity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arrow_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">volume</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iso_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">glyph</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'arrow'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">glyph_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mirror</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_ports</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_wires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_grid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'iso'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.plots.show_field" title="Link to this definition">#</a></dt>
 <dd><p>Interactive 3D view of a field, or a field monitor, on a cutting plane.</p>
 <p>The view is the geometry viewer’s (<a class="reference internal" href="#magnelio.plots.show_geometry" title="magnelio.plots.show_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code></a>)
 with the field laid on the cutting plane: the cell layer the cut
@@ -901,16 +915,19 @@ isosurfaces of the magnitude (the ±level of a signed component),
 both clipped to the kept half like the solids; the <em>Show</em> menu turns
 either on and off.  Moving the position slider walks the cut through
 the recorded volume; a time or frequency monitor adds a frame slider,
-complex data a phase slider, a selector switches the field, and
-sliders set the isosurface level and the arrow density.  The values
-are the cell-centred physical fields of the exposed layer, computed
-for that layer when the cut moves — and of the whole region when a
-volume representation is shown.</p>
+an eigenmode result a mode slider, complex data a phase slider, a
+selector switches the field, and sliders set the isosurface level
+and the arrow density.  The values are the cell-centred physical
+fields of the exposed layer, computed for that layer when the cut
+moves — and of the whole region when a volume representation is
+shown.  With a mesh that declares symmetry planes the field is
+continued across them, so the picture is the whole model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>source</strong> (<a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><em>FieldState</em></a><em>, </em><a class="reference internal" href="monitors.html#magnelio.monitors.MonitorFieldTime" title="magnelio.monitors.MonitorFieldTime"><em>MonitorFieldTime</em></a><em>, </em><a class="reference internal" href="monitors.html#magnelio.monitors.MonitorFieldFrequency" title="magnelio.monitors.MonitorFieldFrequency"><em>MonitorFieldFrequency</em></a><em>, or </em><em>a project's monitor reader</em>) – What to show.  A monitor must have recorded (or be read from a
-project); a <a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><code class="xref py py-class docutils literal notranslate"><span class="pre">FieldState</span></code></a> is one frame.</p></li>
+<li><p><strong>source</strong> (<a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><em>FieldState</em></a><em>, </em><em>monitor</em><em>, </em><a class="reference internal" href="solver.html#magnelio.solver.EigenmodeResult" title="magnelio.solver.EigenmodeResult"><em>EigenmodeResult</em></a><em>, or </em><em>a project's monitor reader</em>) – What to show.  A monitor must have recorded (or be read from a
+project); a <a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><code class="xref py py-class docutils literal notranslate"><span class="pre">FieldState</span></code></a> is one frame; an
+eigenmode result’s modes are its frames.</p></li>
 <li><p><strong>component</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;E&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code> for the magnitude sheet (with arrows when
 <em>plot_type</em> is <code class="docutils literal notranslate"><span class="pre">&quot;vector&quot;</span></code>); <code class="docutils literal notranslate"><span class="pre">&quot;Ex&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Hy&quot;</span></code>, … for one
 signed component on a diverging colour scale.</p></li>
@@ -927,8 +944,11 @@ component is always drawn as a sheet.</p></li>
 (frequency monitors); the nearest recorded one is used.</p></li>
 <li><p><strong>f</strong> (<em>float</em><em>, </em><em>optional</em>) – Initial frame by time [s] (time monitors) or frequency [Hz]
 (frequency monitors); the nearest recorded one is used.</p></li>
-<li><p><strong>phase</strong> (<em>float</em><em>, </em><em>default 0.0</em>) – Phase [degrees] at which a complex field is shown:
-<code class="docutils literal notranslate"><span class="pre">Re(F</span> <span class="pre">·</span> <span class="pre">exp(j·phase))</span></code>.</p></li>
+<li><p><strong>phase</strong> (<em>float</em><em>, </em><em>default 0.0</em>) – Instant [degrees] at which a complex field is shown:
+<code class="docutils literal notranslate"><span class="pre">Re(F</span> <span class="pre">·</span> <span class="pre">exp(+j·phase))</span></code>, the pattern at <code class="docutils literal notranslate"><span class="pre">w</span> <span class="pre">t</span> <span class="pre">=</span> <span class="pre">phase</span></code>.  The
+phase advances with time, so the play button walks a travelling
+wave the way it ran in the simulation — away from the port that
+launched it.</p></li>
 <li><p><strong>vmax</strong> (<em>float</em><em>, </em><em>optional</em>) – Ceiling of the colour scale and of the arrow length.  Default:
 the peak over every frame and layer of the region, so that the
 colours stay comparable while sliding through time.</p></li>
@@ -959,20 +979,39 @@ toolbar’s level slider; given levels are fixed.  A signed
 component gets each level with both signs.</p></li>
 <li><p><strong>iso_level</strong> (<em>float</em><em>, </em><em>default 0.5</em>) – The isosurface level as a fraction of <em>vmax</em> when <em>levels</em> is
 not given.</p></li>
+<li><p><strong>glyph</strong> (<em>{&quot;arrow&quot;</em><em>, </em><em>&quot;cone&quot;}</em>) – The shape of the field vectors, centred on their sample points.</p></li>
+<li><p><strong>glyph_width</strong> (<em>float</em><em>, </em><em>default 1.0</em>) – Thickness of the vectors relative to the default.</p></li>
+<li><p><strong>mirror</strong> (<em>bool</em><em>, </em><em>default True</em>) – Continue the field across the model’s symmetry planes, so the
+view shows the whole model (as every other field picture does).
+Needs <em>mesh</em> (an eigenmode result brings its own), whose
+boundary declaration names the planes; a region that stops
+short of a plane is not mirrored across it.  <code class="docutils literal notranslate"><span class="pre">False</span></code> shows the
+modelled part only.</p></li>
 <li><p><strong>geometry</strong> (<a class="reference internal" href="core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><em>GeometryModel</em></a><em>, </em><em>optional</em>) – Draw the model’s solids and features with the field.</p></li>
 <li><p><strong>mesh</strong> (<a class="reference internal" href="core.html#magnelio.Mesh" title="magnelio.Mesh"><em>Mesh</em></a><em>, </em><em>optional</em>) – The mesh the field was computed on.  Cells buried in a perfect
 conductor are cut out of the sheet, so the solids’ cut faces
 show through where the field is not defined; with <code class="docutils literal notranslate"><span class="pre">show_grid</span></code>
-the grid cells are drawn on the cut as well.</p></li>
+the grid cells are drawn on the cut as well; and the symmetry
+planes are read from it (<em>mirror</em>).</p></li>
 <li><p><strong>show_ports</strong> (<em>bool</em><em>, </em><em>default True</em>) – As in the geometry viewer.</p></li>
 <li><p><strong>show_wires</strong> (<em>bool</em><em>, </em><em>default True</em>) – As in the geometry viewer.</p></li>
 <li><p><strong>show_labels</strong> (<em>bool</em><em>, </em><em>default True</em>) – As in the geometry viewer.</p></li>
 <li><p><strong>show_grid</strong> (<em>bool</em><em>, </em><em>default False</em>) – With <em>mesh</em>: draw the grid cells on the cut under the field.</p></li>
-<li><p><strong>mode</strong> (<em>str</em><em> | </em><em>None</em>) – As in <a class="reference internal" href="#magnelio.plots.show_geometry" title="magnelio.plots.show_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code></a>.</p></li>
-<li><p><strong>size</strong> (<em>tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>] </em><em>| </em><em>None</em>) – As in <a class="reference internal" href="#magnelio.plots.show_geometry" title="magnelio.plots.show_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code></a>.</p></li>
-<li><p><strong>quality</strong> (<em>float</em>) – As in <a class="reference internal" href="#magnelio.plots.show_geometry" title="magnelio.plots.show_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code></a>.</p></li>
-<li><p><strong>scale_mm</strong> (<em>bool</em>) – As in <a class="reference internal" href="#magnelio.plots.show_geometry" title="magnelio.plots.show_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code></a>.</p></li>
-<li><p><strong>camera</strong> (<em>Any</em>) – As in <a class="reference internal" href="#magnelio.plots.show_geometry" title="magnelio.plots.show_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code></a>.</p></li>
+<li><p><strong>mode</strong> (<em>str</em><em> | </em><em>None</em>) – As in <a class="reference internal" href="#magnelio.plots.show_geometry" title="magnelio.plots.show_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code></a>; <em>size</em> sets the
+widget’s height in the notebook, the toolbar’s pop-out button
+opens the same view in a browser tab of its own.</p></li>
+<li><p><strong>size</strong> (<em>tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>] </em><em>| </em><em>None</em>) – As in <a class="reference internal" href="#magnelio.plots.show_geometry" title="magnelio.plots.show_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code></a>; <em>size</em> sets the
+widget’s height in the notebook, the toolbar’s pop-out button
+opens the same view in a browser tab of its own.</p></li>
+<li><p><strong>quality</strong> (<em>float</em>) – As in <a class="reference internal" href="#magnelio.plots.show_geometry" title="magnelio.plots.show_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code></a>; <em>size</em> sets the
+widget’s height in the notebook, the toolbar’s pop-out button
+opens the same view in a browser tab of its own.</p></li>
+<li><p><strong>scale_mm</strong> (<em>bool</em>) – As in <a class="reference internal" href="#magnelio.plots.show_geometry" title="magnelio.plots.show_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code></a>; <em>size</em> sets the
+widget’s height in the notebook, the toolbar’s pop-out button
+opens the same view in a browser tab of its own.</p></li>
+<li><p><strong>camera</strong> (<em>Any</em>) – As in <a class="reference internal" href="#magnelio.plots.show_geometry" title="magnelio.plots.show_geometry"><code class="xref py py-func docutils literal notranslate"><span class="pre">show_geometry()</span></code></a>; <em>size</em> sets the
+widget’s height in the notebook, the toolbar’s pop-out button
+opens the same view in a browser tab of its own.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -984,12 +1023,23 @@ as a side effect.</p>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
-<p>Symmetry planes are not mirrored in the 3D view; it shows the
-modelled half of the model, as the geometry view does.  Every
-sample is a cell-centre average of the staggered components — the
-picture stands for a layer of cells, not for a plane — and the
-isosurfaces interpolate those cell values to the nodes before they
-are contoured.</p>
+<p><strong>Controls</strong> (notebook widget).  The first toolbar row is the
+geometry viewer’s — camera buttons (reset, isometric, along x/y/z,
+parallel or perspective projection, ruler, screenshot, HTML
+export, pop-out, help),
+<em>Cut</em> / position / <em>Flip</em> / undo / reset, and the <em>Show</em> menu with
+<em>Field on cut</em>, <em>Vectors on cut</em>, <em>Field vectors</em> (in the volume)
+and <em>Isosurfaces</em> beside the geometry’s groups.  The second row
+holds the field: play and frame slider with the frame’s time,
+frequency or mode; play and phase slider for complex data; the
+<em>Field</em> selector; the isosurface level and the arrow density.  The
+mouse in the browser: left drag orbits, middle drag (or shift +
+left) pans, right drag or the wheel zooms, ctrl + left rolls; the
+help button lists the same.</p>
+<p>Every sample is a cell-centre average of the staggered components
+— the picture stands for a layer of cells, not for a plane — and
+the isosurfaces interpolate those cell values to the nodes before
+they are contoured.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -1048,6 +1098,14 @@ as a side effect and <code class="docutils literal notranslate"><span class="pre
 </dd>
 </dl>
 <p class="rubric">Notes</p>
+<p><strong>Controls</strong> (notebook widget).  The toolbar: camera buttons (reset,
+isometric, along x/y/z, parallel or perspective projection), a
+ruler, a screenshot, an HTML export, a pop-out into a browser tab
+of its own and help, then
+<em>Cut</em> / position / <em>Flip</em> / undo / reset and the <em>Show</em> menu of the
+object groups.  The mouse: left drag orbits, middle drag (or alt +
+left) pans, right drag or the wheel zooms, alt + shift + left
+rolls.  The help button lists the same.</p>
 <p>The widget needs the <code class="docutils literal notranslate"><span class="pre">trame</span></code> stack (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">magnelio[jupyter]</span></code>
 or the conda-forge packages <code class="docutils literal notranslate"><span class="pre">trame</span></code>, <code class="docutils literal notranslate"><span class="pre">trame-vtk</span></code>,
 <code class="docutils literal notranslate"><span class="pre">trame-vuetify</span></code>).  Without it the view falls back to a static

@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=fe7df9b0"></script>
+    <script src="../_static/documentation_options.js?v=486e5634"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -177,8 +177,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.7.html">
-    Upgrading from 0.6.x
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -190,6 +190,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
     Upgrading from 0.5.x
@@ -363,6 +370,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -695,21 +709,21 @@ cap the cell size at 1/16 of the plate spacing.</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (19.7 s)
+  mesh | materials | done (20.1 s)
   mesh | conformal cells
-  mesh | conformal cells | done (7.5 s)
+  mesh | conformal cells | done (7.6 s)
   mesh | PEC masks
-  mesh | 32 x 16 x 64 cells (27.4 s total)
+  mesh | 32 x 16 x 64 cells (27.9 s total)
 grid: 32 x 16 x 64 cells
 </pre></div>
 </div>
 <p>Looking at geometry and mesh before spending any solver time is one
-call each.  <code class="docutils literal notranslate"><span class="pre">model.plot()</span></code> is the 3D view: the model opened along a
+call each.  <code class="docutils literal notranslate"><span class="pre">model.show()</span></code> is the 3D view: the model opened along a
 cutting plane, with the grid cells the cut exposes coloured by the
 material the mesher assigned.  In the notebook version of this
 tutorial it is an interactive widget (orbit, pan, zoom, and the
 cutting plane in its toolbar); here it is rendered as a picture.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">cut</span><span class="o">=</span><span class="p">(</span><span class="s2">"y"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">cut</span><span class="o">=</span><span class="p">(</span><span class="s2">"y"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
 </pre></div>
 </div>
 <div class="sd-tab-set docutils">
@@ -832,7 +846,7 @@ before the run, and validate against known results where they
 exist.  The next tutorial builds a real three-dimensional structure
 (a coaxial line) from solids and boolean operations, with a port
 spec matched to its cross-section.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 39.790 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 43.159 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-01-parallel-plate-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/669effd58f485a0c27678f09024dad99/plot_01_parallel_plate.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_01_parallel_plate.ipynb</span></code></a></p>

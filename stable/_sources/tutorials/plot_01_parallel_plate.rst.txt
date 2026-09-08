@@ -228,11 +228,11 @@ cap the cell size at 1/16 of the plate spacing.
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (19.7 s)
+      mesh | materials | done (20.1 s)
       mesh | conformal cells
-      mesh | conformal cells | done (7.5 s)
+      mesh | conformal cells | done (7.6 s)
       mesh | PEC masks
-      mesh | 32 x 16 x 64 cells (27.4 s total)
+      mesh | 32 x 16 x 64 cells (27.9 s total)
     grid: 32 x 16 x 64 cells
 
 
@@ -241,7 +241,7 @@ cap the cell size at 1/16 of the plate spacing.
 .. GENERATED FROM PYTHON SOURCE LINES 134-140
 
 Looking at geometry and mesh before spending any solver time is one
-call each.  ``model.plot()`` is the 3D view: the model opened along a
+call each.  ``model.show()`` is the 3D view: the model opened along a
 cutting plane, with the grid cells the cut exposes coloured by the
 material the mesher assigned.  In the notebook version of this
 tutorial it is an interactive widget (orbit, pan, zoom, and the
@@ -252,7 +252,7 @@ cutting plane in its toolbar); here it is rendered as a picture.
 .. code-block:: Python
 
 
-    model.plot(mesh=mesh, cut=("y", 0.0))
+    model.show(mesh=mesh, cut=("y", 0.0))
 
 
 
@@ -505,7 +505,7 @@ spec matched to its cross-section.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 39.790 seconds)
+   **Total running time of the script:** (0 minutes 43.159 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_01_parallel_plate.py:

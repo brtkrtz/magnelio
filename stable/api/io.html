@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=fe7df9b0"></script>
+    <script src="../_static/documentation_options.js?v=486e5634"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -175,8 +175,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.7.html">
-    Upgrading from 0.6.x
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -188,6 +188,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
     Upgrading from 0.5.x
@@ -361,6 +368,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -781,16 +795,17 @@ one-run project.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.io.Project.export_paraview">
-<span class="sig-name descname"><span class="pre">export_paraview</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">excited</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">glyph_percentile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">98.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bake_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.export_paraview" title="Link to this definition">#</a></dt>
-<dd><p>(Re-)generate the ready-to-open ParaView session for one run.</p>
-<p>The run close already generates this automatically;
-call this to regenerate with different options, or after the
-automatic export was skipped (<code class="docutils literal notranslate"><span class="pre">paraview=False</span></code>, missing
-<code class="docutils literal notranslate"><span class="pre">pvpython</span></code>).  Writes <code class="docutils literal notranslate"><span class="pre">paraview_open.py</span></code> (open with
-<code class="docutils literal notranslate"><span class="pre">paraview</span> <span class="pre">--script=…</span></code>), per-monitor data descriptors under
-<code class="docutils literal notranslate"><span class="pre">paraview/</span></code>, and — when <code class="docutils literal notranslate"><span class="pre">pvpython</span></code> is available and
-<em>bake_state</em> — the double-clickable <code class="docutils literal notranslate"><span class="pre">paraview.pvsm</span></code>, all in
-the run directory.</p>
+<span class="sig-name descname"><span class="pre">export_paraview</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">excited</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">glyph_percentile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">98.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bake_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pvpython</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.export_paraview" title="Link to this definition">#</a></dt>
+<dd><p>Write the ready-to-open ParaView session for one run.</p>
+<p>The only place the ParaView artefacts are written: a run’s
+close, a resume and the eigenmode solver write none of them.
+Writes the tessellated <code class="docutils literal notranslate"><span class="pre">geometry.vtm</span></code> in the project directory
+if it is missing, one <code class="docutils literal notranslate"><span class="pre">.vtr</span></code> per frame of every field monitor
+under <code class="docutils literal notranslate"><span class="pre">paraview/</span></code> (collected by a <code class="docutils literal notranslate"><span class="pre">.pvd</span></code> per monitor),
+<code class="docutils literal notranslate"><span class="pre">paraview_open.py</span></code> (open with <code class="docutils literal notranslate"><span class="pre">paraview</span> <span class="pre">--script=…</span></code>), and —
+when <code class="docutils literal notranslate"><span class="pre">pvpython</span></code> is available and <em>bake_state</em> — the
+double-clickable <code class="docutils literal notranslate"><span class="pre">paraview.pvsm</span></code>, all in the run directory.
+Call it again after a resume; the set is regenerated.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -800,6 +815,15 @@ May be omitted when the project holds one run.</p></li>
 clip cap (edge singularities would otherwise dictate the
 arrow scaling).</p></li>
 <li><p><strong>bake_state</strong> (<em>bool</em><em>, </em><em>default True</em>) – Bake <code class="docutils literal notranslate"><span class="pre">paraview.pvsm</span></code> via <code class="docutils literal notranslate"><span class="pre">pvpython</span></code> when available.</p></li>
+<li><p><strong>pvpython</strong> (<em>str</em><em> or </em><a class="reference internal" href="geo.html#magnelio.geo.Path" title="magnelio.geo.Path"><em>Path</em></a><em> or </em><em>sequence</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Which <code class="docutils literal notranslate"><span class="pre">pvpython</span></code> bakes the state, when the machine carries
+more than one ParaView (default: <code class="docutils literal notranslate"><span class="pre">MAGNELIO_PVPYTHON</span></code>, else
+the first on <code class="docutils literal notranslate"><span class="pre">PATH</span></code>).  A path, or the command that
+launches one — a sandboxed ParaView is reached through its
+runner, e.g. <code class="docutils literal notranslate"><span class="pre">&quot;flatpak</span> <span class="pre">run</span> <span class="pre">--command=pvpython</span> <span class="pre">org.paraview.ParaView&quot;</span></code>.
+A state file names its proxies the way the release that
+wrote it spells them, so bake it with the ParaView that
+will open it; <code class="docutils literal notranslate"><span class="pre">paraview_open.py</span></code> builds the session live
+and needs no such care.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -814,10 +838,10 @@ arrow scaling).</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.io.Project.export_paraview_eigenmodes">
-<span class="sig-name descname"><span class="pre">export_paraview_eigenmodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">glyph_percentile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">98.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bake_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.export_paraview_eigenmodes" title="Link to this definition">#</a></dt>
-<dd><p>(Re-)generate the ParaView session for the stored eigenmodes.</p>
-<p>The eigenmode counterpart of <a class="reference internal" href="#magnelio.io.Project.export_paraview" title="magnelio.io.Project.export_paraview"><code class="xref py py-meth docutils literal notranslate"><span class="pre">export_paraview()</span></code></a>; writing
-the eigenmode result already generates this automatically.
+<span class="sig-name descname"><span class="pre">export_paraview_eigenmodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">glyph_percentile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">98.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bake_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pvpython</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.export_paraview_eigenmodes" title="Link to this definition">#</a></dt>
+<dd><p>Write the ParaView session for the stored eigenmodes.</p>
+<p>The eigenmode counterpart of <a class="reference internal" href="#magnelio.io.Project.export_paraview" title="magnelio.io.Project.export_paraview"><code class="xref py py-meth docutils literal notranslate"><span class="pre">export_paraview()</span></code></a>, and like
+it the only place these files are written.
 Eigenmodes have no excitation and no time axis, so they belong
 to the project rather than to a run: the artefacts land in the
 project directory itself (<code class="docutils literal notranslate"><span class="pre">paraview_open.py</span></code>,
@@ -836,6 +860,15 @@ written alongside so the scaling stays reversible.</p>
 (a field peak on a conductor edge would otherwise dictate
 the arrow scaling).</p></li>
 <li><p><strong>bake_state</strong> (<em>bool</em><em>, </em><em>default True</em>) – Bake <code class="docutils literal notranslate"><span class="pre">paraview.pvsm</span></code> via <code class="docutils literal notranslate"><span class="pre">pvpython</span></code> when available.</p></li>
+<li><p><strong>pvpython</strong> (<em>str</em><em> or </em><a class="reference internal" href="geo.html#magnelio.geo.Path" title="magnelio.geo.Path"><em>Path</em></a><em> or </em><em>sequence</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Which <code class="docutils literal notranslate"><span class="pre">pvpython</span></code> bakes the state, when the machine carries
+more than one ParaView (default: <code class="docutils literal notranslate"><span class="pre">MAGNELIO_PVPYTHON</span></code>, else
+the first on <code class="docutils literal notranslate"><span class="pre">PATH</span></code>).  A path, or the command that
+launches one — a sandboxed ParaView is reached through its
+runner, e.g. <code class="docutils literal notranslate"><span class="pre">&quot;flatpak</span> <span class="pre">run</span> <span class="pre">--command=pvpython</span> <span class="pre">org.paraview.ParaView&quot;</span></code>.
+A state file names its proxies the way the release that
+wrote it spells them, so bake it with the ParaView that
+will open it; <code class="docutils literal notranslate"><span class="pre">paraview_open.py</span></code> builds the session live
+and needs no such care.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1413,7 +1446,7 @@ holds the directory handle they will attach to.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="magnelio.io.ProjectStore.create">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">setup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">paraview</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exist_ok</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.ProjectStore.create" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">setup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">paraview</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exist_ok</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.ProjectStore.create" title="Link to this definition">#</a></dt>
 <dd><p>Create a project directory and write the static model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1421,15 +1454,16 @@ holds the directory handle they will attach to.</p>
 <li><p><strong>path</strong> (<em>str</em><em> or </em><a class="reference internal" href="geo.html#magnelio.geo.Path" title="magnelio.geo.Path"><em>Path</em></a>) – Project directory (created if absent).</p></li>
 <li><p><strong>mesh</strong> (<a class="reference internal" href="core.html#magnelio.Mesh" title="magnelio.Mesh"><em>Mesh</em></a>) – The simulation mesh (grid, materials, conformal sub-cell
 data) — written to <code class="docutils literal notranslate"><span class="pre">mesh.h5</span></code>.</p></li>
-<li><p><strong>geometry</strong> (<a class="reference internal" href="core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><em>GeometryModel</em></a><em> or </em><em>list</em><em>, </em><em>optional</em>) – Source geometry.  When given, an exact <code class="docutils literal notranslate"><span class="pre">geometry.brep</span></code> and
-(if <em>paraview</em>) a per-solid <code class="docutils literal notranslate"><span class="pre">geometry.vtm</span></code> are written,
-plus a <code class="docutils literal notranslate"><span class="pre">geometry.json</span></code> carrying per-shape names and
-materials in compound order.</p></li>
+<li><p><strong>geometry</strong> (<a class="reference internal" href="core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><em>GeometryModel</em></a><em> or </em><em>list</em><em>, </em><em>optional</em>) – Source geometry.  When given, an exact <code class="docutils literal notranslate"><span class="pre">geometry.brep</span></code> is
+written, plus a <code class="docutils literal notranslate"><span class="pre">geometry.json</span></code> carrying per-shape names
+and materials in compound order.  The tessellated
+<code class="docutils literal notranslate"><span class="pre">geometry.vtm</span></code> for ParaView is written by
+<a class="reference internal" href="#magnelio.io.Project.export_paraview" title="magnelio.io.Project.export_paraview"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Project.export_paraview()</span></code></a>.</p></li>
 <li><p><strong>setup</strong> (<em>dict</em><em>, </em><em>optional</em>) – JSON-serialisable analysis metadata (dt, frequency plan,
 port/BC/excitation descriptions).  Stored under <code class="docutils literal notranslate"><span class="pre">setup</span></code> in
 <code class="docutils literal notranslate"><span class="pre">project.json</span></code>; consumed by later work packages.</p></li>
-<li><p><strong>paraview</strong> (<em>bool</em><em>, </em><em>default True</em>) – Also write the tessellated <code class="docutils literal notranslate"><span class="pre">geometry.vtm</span></code> for ParaView,
-and generate the per-run ParaView session at run close.</p></li>
+<li><p><strong>paraview</strong> (<em>bool</em><em>, </em><em>optional</em>) – Deprecated and without effect: ParaView files are written
+on request by <a class="reference internal" href="#magnelio.io.Project.export_paraview" title="magnelio.io.Project.export_paraview"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Project.export_paraview()</span></code></a>.</p></li>
 <li><p><strong>exist_ok</strong> (<em>bool</em><em>, </em><em>default True</em>) – Reuse an existing directory (raise if False and it exists).</p></li>
 </ul>
 </dd>
@@ -1575,7 +1609,9 @@ run appends onward consistently.</p>
 <span class="sig-name descname"><span class="pre">write_eigenmodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.ProjectStore.write_eigenmodes" title="Link to this definition">#</a></dt>
 <dd><p>Persist an <code class="xref py py-class docutils literal notranslate"><span class="pre">EigenmodeResult</span></code> to <code class="docutils literal notranslate"><span class="pre">eigenmodes.h5</span></code>.</p>
 <p>Eigenmode analysis has no time-marching state, so it produces a
-one-shot result rather than a streamable/resumable run.</p>
+one-shot result rather than a streamable/resumable run.  The
+ParaView session is written on request by
+<a class="reference internal" href="#magnelio.io.Project.export_paraview_eigenmodes" title="magnelio.io.Project.export_paraview_eigenmodes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Project.export_paraview_eigenmodes()</span></code></a> (DD-262).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>

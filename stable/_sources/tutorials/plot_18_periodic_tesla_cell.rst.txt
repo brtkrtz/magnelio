@@ -284,9 +284,9 @@ is the magnetic one (tutorial 09).
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (2.9 s)
+      mesh | conformal cells | done (3.0 s)
       mesh | PEC masks
-      mesh | 26 x 26 x 30 cells (3.2 s total)
+      mesh | 26 x 26 x 30 cells (3.3 s total)
     grid: 26 x 26 x 30 cells
 
 
@@ -339,15 +339,15 @@ nothing periodic about them:
       mesh | conformal cells
       mesh | conformal cells | done (2.5 s)
       mesh | PEC masks
-      mesh | 26 x 26 x 30 cells (2.7 s total)
+      mesh | 26 x 26 x 30 cells (2.8 s total)
       mesh | feature planes
       mesh | grid lines
       mesh | materials
       mesh | materials | done (0.6 s)
       mesh | conformal cells
-      mesh | conformal cells | done (2.8 s)
+      mesh | conformal cells | done (2.9 s)
       mesh | PEC masks
-      mesh | 26 x 26 x 30 cells (3.5 s total)
+      mesh | 26 x 26 x 30 cells (3.6 s total)
     electric walls on the iris planes (0-mode):  1.2774 GHz
     magnetic walls on the iris planes (pi-mode): 1.3016 GHz
 
@@ -539,7 +539,57 @@ travelling wave is not, and no combination of walls would produce it.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 345-357
+.. GENERATED FROM PYTHON SOURCE LINES 345-351
+
+The same mode in three dimensions: ``show()`` on the result opens the
+cell along a cutting plane with the field laid on it.  The quarter
+model was solved, but the picture is the whole cell — the result
+carries its mesh, whose declaration names the two symmetry planes,
+and the field is continued across them with the parity of each
+component.
+
+.. GENERATED FROM PYTHON SOURCE LINES 351-354
+
+.. code-block:: Python
+
+
+    pi_mode.show(geometry=model, normal="y", position=0.0, glyph="cone", density=14)
+
+
+
+
+
+
+
+
+.. tab-set::
+
+
+
+   .. tab-item:: Static Scene
+
+
+
+            
+     .. image-sg:: /tutorials/images/sphx_glr_plot_18_periodic_tesla_cell_004.png
+        :alt: plot 18 periodic tesla cell
+        :srcset: /tutorials/images/sphx_glr_plot_18_periodic_tesla_cell_004.png
+        :class: sphx-glr-single-img
+     
+
+
+   .. tab-item:: Interactive Scene
+
+
+
+       .. offlineviewer:: /home/runner/work/magnelio/magnelio/docs/tutorials/images/sphx_glr_plot_18_periodic_tesla_cell_004.vtksz
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 355-367
 
 Where to go next
 ----------------
@@ -557,7 +607,7 @@ surfaces at normal incidence.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (3 minutes 57.507 seconds)
+   **Total running time of the script:** (4 minutes 4.567 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_18_periodic_tesla_cell.py:

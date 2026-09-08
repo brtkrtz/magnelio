@@ -123,9 +123,8 @@ for root, _dirs, files in sorted(os.walk(proj_dir)):
 # ``project.json`` carries the run registry and the reconstruction
 # recipe, ``mesh.h5`` and ``geometry.brep`` the exact model, and each
 # run directory holds its streamed port signals (``results.h5``), the
-# monitor's frequency-domain volume (``fields_freq.h5``), a resumable
-# ``checkpoint.h5`` — and a ready-made ParaView session, more on that
-# below.
+# monitor's frequency-domain volume (``fields_freq.h5``) and a
+# resumable ``checkpoint.h5``.
 #
 # Evaluating from disk — in a different session
 # ---------------------------------------------
@@ -137,10 +136,13 @@ for root, _dirs, files in sorted(os.walk(proj_dir)):
 # laptop evaluates.  S-parameters are derived on read from the stored
 # signals, with the accessors you already know:
 
-proj = mio.open_project(proj_dir)
-print(proj)
+# ``open_project`` hands back the very same kind of object ``run()``
+# returned above — a reader over the directory — only initialised from
+# the path instead of by the run that wrote it.
+result_loaded = mio.open_project(proj_dir)
+print(type(result_loaded).__name__, "->", result_loaded.status)
 
-fig, ax = proj.plot_s(("port1", "port3"), ("port1", "port4"), ("port4", "port3"))
+fig, ax = result_loaded.plot_s(("port1", "port3"), ("port1", "port4"), ("port4", "port3"))
 ax.set_title("Read back from the project store")
 
 # %%
@@ -164,10 +166,10 @@ ax.set_title("Read back from the project store")
 # how-to *Watching a simulation that is still running* shows the
 # loop, and the live panel for a notebook.
 
-fig, ax = proj.plot_energy()
+fig, ax = result_loaded.plot_energy()
 ax.set_title("Energy in the grid during the two runs")
 
-trace = proj.runs["port3_mode0"].energy_trace
+trace = result_loaded.runs["port3_mode0"].energy_trace
 print(f"energy samples stored for the H-arm run: {len(trace)}")
 
 # %%
@@ -180,8 +182,8 @@ print(f"energy samples stored for the H-arm run: {len(trace)}")
 # mid-height cut, the E-arm drive on the vertical cut, both from data
 # recorded in the same simulation:
 
-mon_h = proj.monitors_for(("port3", 0))["volume_pattern"]
-mon_e = proj.monitors_for(("port4", 0))["volume_pattern"]
+mon_h = result_loaded.monitors_for(("port3", 0))["volume_pattern"]
+mon_e = result_loaded.monitors_for(("port4", 0))["volume_pattern"]
 
 fig, axes = plt.subplots(1, 2, figsize=(11, 4.2))
 mon_h.plot(
@@ -228,12 +230,14 @@ mon_e.show(
 # convergence question "would more ring-down change my S-parameters?".
 # Here we ask the third one, extending the H-arm run by 2000 steps:
 
-s13_before = proj.S("port1", "port3")
-n_before = proj.runs["port3_mode0"].n_steps
+s13_before = result_loaded.S("port1", "port3")
+n_before = result_loaded.runs["port3_mode0"].n_steps
 
-proj = mio.resume(proj_dir, excited="port3", total_time_steps=n_before + 2000, verbose=False)
+result_resumed = mio.resume(
+    proj_dir, excited="port3", total_time_steps=n_before + 2000, verbose=False
+)
 
-s13_after = proj.S("port1", "port3")
+s13_after = result_resumed.S("port1", "port3")
 print(f"steps: {n_before} -> {n_before + 2000}")
 print(f"max |dS13| from 2000 extra steps: {np.abs(s13_after - s13_before).max():.1e}")
 
@@ -241,40 +245,48 @@ print(f"max |dS13| from 2000 extra steps: {np.abs(s13_after - s13_before).max():
 # The change is far below any engineering tolerance — the original
 # stop criterion was deep enough, and finding that out cost two
 # thousand time steps instead of a rerun.  (A resumed run appends to
-# the same streams; the monitor volume and the ParaView session are
-# updated along with it.)
+# the same streams, the monitor volume along with them.)
 #
 # Into ParaView
 # -------------
 #
 # Slice plots answer questions you already know how to ask; a 3D
-# volume invites the ones you don't.  Every project run ships with a
-# generated ParaView session for its monitors — the files appeared in
-# the listing above:
+# volume invites the ones you don't.  A project run can be handed to
+# ParaView as a ready-made session — an export you ask for, since the
+# VTK copy of a monitor takes about as much disk as the monitor itself:
 
+result_resumed.export_paraview(excited="port3")
 run_dir = os.path.join(proj_dir, "runs", "port3_mode0")
 for name in sorted(os.listdir(run_dir)):
     if "paraview" in name and os.path.isfile(os.path.join(run_dir, name)):
         print(name)
 
 # %%
-# The data went to ``paraview/`` when the run closed: one ``.vtr``
-# file per monitor frequency, collected by a ``.pvd`` whose axis is
-# the frequency (for a time monitor, the instant).  They hold cell
-# data — the staggered frames of ``fields_freq.h5`` averaged onto the
-# cell centres at export time, the same numbers
-# ``spectrum.cell_centred()`` returns — so ParaView reads plain VTK
-# files and never opens the store itself.
-# ``paraview.pvsm`` is a double-clickable state file: geometry as
-# translucent solids, slice and clip widgets through the field
-# volume, arrow glyphs on an even lattice with sensible lengths, and
-# a threshold-gated volume glyph set — assembled and scaled to the
-# data, so the first thing you see is the field, not a grey box.
+# The data went to ``paraview/``: one ``.vtr`` file per monitor
+# frequency, collected by a ``.pvd`` whose axis is the frequency (for
+# a time monitor, the instant).  They hold cell data — the staggered
+# frames of ``fields_freq.h5`` averaged onto the cell centres at export
+# time, the same numbers ``spectrum.cell_centred()`` returns — so
+# ParaView reads plain VTK files and never opens the store itself.
+# ``paraview.pvsm`` is a double-clickable state file (baked when
+# ``pvpython`` is on the path): geometry as translucent solids, and per
+# monitor a short pipeline — ``volume_pattern_field`` prepares the
+# field (cell averages onto an even lattice, arrow lengths from the
+# magnitude), ``volume_pattern_slice`` cuts it, ``volume_pattern_arrows``
+# draws the arrows on the cut, the geometry clip follows the cut plane
+# when you drag it, and ``volume_pattern_volume_arrows`` waits hidden
+# for the whole volume — assembled and scaled to the data, so the
+# first thing you see is the field, not a grey box.
 # ``paraview_open.py`` builds the same session from scratch
-# (``paraview --script=paraview_open.py``) if you prefer a live
-# pipeline over a state file.  A view of this very project, after
-# dragging the slice plane to the tee's mid-height and switching the
-# volume glyph set on:
+# (``paraview --script=paraview_open.py``).  Prefer it whenever the
+# state file misbehaves: it works on any ParaView, while a ``.pvsm`` is
+# bound to the release that baked it — the header of the script says
+# which one that was, and ``export_paraview(pvpython=…)`` (or
+# ``MAGNELIO_PVPYTHON``) picks the ParaView to bake for when a machine
+# carries several.  After a resume, call ``export_paraview``
+# again and the set is regenerated.  A view of this very project,
+# after dragging the slice plane to the tee's mid-height and switching
+# the volume arrows on:
 #
 # .. image:: /_static/tutorial_07_paraview.png
 #    :width: 90 %
@@ -287,7 +299,7 @@ for name in sorted(os.listdir(run_dir)):
 # directory on disk — S-parameters and every run's monitor volumes
 # read back with :func:`magnelio.open_project`, evaluation decoupled
 # from computation, ``resume`` continuing a checkpointed run without a
-# seam, and a generated ParaView session per run.  What we did *not*
+# seam, and a ParaView session on request.  What we did *not*
 # need: keeping the Python session alive, or re-running anything.
 # A second process can even open the project *while* the solver
 # marches and watch the energy and S-parameters converge live — the

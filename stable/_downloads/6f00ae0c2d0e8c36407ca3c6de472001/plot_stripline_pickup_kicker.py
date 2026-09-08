@@ -151,7 +151,7 @@ def build_coupler(h):
 model = mio.GeometryModel(background="pec")
 for body in build_coupler(7.5e-3):
     model.add(body)
-model.plot()
+model.show()
 
 # %%
 # Dimensioning the strip with the port solver
@@ -342,13 +342,15 @@ fig.tight_layout()
 #
 # .. math::
 #
-#     V = \int E_z(z)\, e^{-\mathrm{j} k_B z}\, \mathrm{d}z, \qquad
+#     V = \int E_z(z)\, e^{+\mathrm{j} k_B z}\, \mathrm{d}z, \qquad
 #     k_B = \frac{\omega}{\beta c}.
 #
 # The phase factor is the field's own oscillation sampled along the
-# particle's path; its sign follows the phasor convention of the
-# frequency monitors (tutorial 06) for a particle travelling toward
-# :math:`+z`, and reverses for the opposite direction.  The monitor
+# particle's path; its sign follows the :math:`e^{+\mathrm j \omega t}`
+# phasor convention of the frequency monitors (see *Signal processing*
+# in the chapter :doc:`/methods/sources-monitors`) for a particle
+# travelling toward :math:`+z`, and reverses for the opposite
+# direction.  The monitor
 # data are fields per 1 W incident at the excited port, so :math:`V`
 # comes out per watt too.  The **kicker constant** normalises it to the
 # voltage at the kicker's input terminal, :math:`V_K = \sqrt{2 Z_c P}`,
@@ -359,7 +361,7 @@ fig.tight_layout()
 def beam_voltage(ez, z, f, beta=1.0, direction=+1):
     """Complex beam voltage V(f) for a particle moving along ±z at velocity beta·c."""
     k_b = 2 * np.pi * f / (beta * C0)
-    return np.trapezoid(ez * np.exp(-1j * direction * k_b[:, None] * z[None, :]), z, axis=1)
+    return np.trapezoid(ez * np.exp(1j * direction * k_b[:, None] * z[None, :]), z, axis=1)
 
 
 P_IN = 2.0

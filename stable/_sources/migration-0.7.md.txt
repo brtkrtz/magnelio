@@ -22,7 +22,8 @@ written by 0.6.x cannot be read by 0.7 and are refused with a message.
 | `mon.t` | unchanged — but see below | — |
 | `project.monitors[...]` readers: `.data`, `.component(...)` | `.recording` / `.spectrum` as above; `.frame(i)` reads one frame | `AttributeError` |
 | `mon.plot(...)`, `mon.interact(...)`, `mon.show(...)` | unchanged | — |
-| `runs/<name>/fields.xdmf` | `runs/<name>/paraview/<monitor>.pvd` with one `.vtr` per frame | the XDMF file is not written |
+| `model.plot(...)` | `model.show(...)` (0.8; `plot` draws into matplotlib everywhere else) | a `DeprecationWarning`, the view opens as before |
+| `runs/<name>/fields.xdmf` | `runs/<name>/paraview/<monitor>.pvd` with one `.vtr` per frame, written by `project.export_paraview()` (0.8: no longer at the run's close) | the XDMF file is not written |
 | a project written by 0.6.x | re-run it | `ProjectSchemaError: schema version '2.0' is not supported` |
 
 `squeeze=True` drops the spatial axes of length one, which is what the
@@ -68,9 +69,9 @@ nodes of a region cut out of the grid carry the dual lengths of the
 cell-centred averages are what they were.  You will not see a change
 here; it is what made the first point possible without one.
 
-The frequency monitor's phase convention is unchanged: its transform
-uses the same time stamps as the port recorder, so a renormalised
-pattern is phase-consistent with the run's S-parameters, as before.
+The frequency monitor's time stamps are unchanged: its transform
+samples the same instants as the port recorder, as before.  The *sign*
+of its exponent changed one release later — see {doc}`migration-0.8`.
 
 ## Why
 

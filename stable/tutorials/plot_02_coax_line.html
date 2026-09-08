@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=fe7df9b0"></script>
+    <script src="../_static/documentation_options.js?v=486e5634"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -177,8 +177,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.7.html">
-    Upgrading from 0.6.x
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -190,6 +190,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
     Upgrading from 0.5.x
@@ -363,6 +370,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -653,7 +667,7 @@ surface is exactly the dielectric boundary at <code class="docutils literal notr
 </section>
 <section id="looking-at-the-model-in-three-dimensions">
 <h2>Looking at the model in three dimensions<a class="headerlink" href="#looking-at-the-model-in-three-dimensions" title="Link to this heading">#</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">model.plot()</span></code> shows the model in three dimensions.  On this page
+<p><code class="docutils literal notranslate"><span class="pre">model.show()</span></code> shows the model in three dimensions.  On this page
 it is a picture; in a Jupyter notebook the same call opens a
 rotatable, zoomable view with a cutting plane driven from its
 toolbar — the fastest way to check that a boolean did what you
@@ -661,7 +675,7 @@ meant.  Every tutorial can be downloaded as a notebook (the link at
 the bottom of the page), so this is one call away at any point.
 Here the model is opened along its axis to show the annulus around
 the inner conductor.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cut</span><span class="o">=</span><span class="p">(</span><span class="s2">"y"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">cut</span><span class="o">=</span><span class="p">(</span><span class="s2">"y"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
 </pre></div>
 </div>
 <div class="sd-tab-set docutils">
@@ -723,9 +737,9 @@ dielectric gap.</p>
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
-  mesh | conformal cells | done (5.3 s)
+  mesh | conformal cells | done (5.5 s)
   mesh | PEC masks
-  mesh | 25 x 25 x 67 cells (5.4 s total)
+  mesh | 25 x 25 x 67 cells (5.5 s total)
 grid: 25 x 25 x 67 cells
 </pre></div>
 </div>
@@ -757,7 +771,7 @@ z: 2 planes  (h_bulk 1.666 mm, h_fine 1.666 mm)
 <p>The 3D view shows the line opened along its axis, the grid cells on
 the cut coloured by material, and the two port windows on the domain
 faces.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">cut</span><span class="o">=</span><span class="p">(</span><span class="s2">"y"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">cut</span><span class="o">=</span><span class="p">(</span><span class="s2">"y"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
 
 <span class="c1"># Two cuts: across the cable, and along it.  The longitudinal cut</span>
 <span class="c1"># shows that the grid is uniform along the line — nothing varies in</span>
@@ -944,7 +958,7 @@ numerical-vs-reference reading of a port report.  The next tutorial
 excites <em>both</em> ports of this line and assembles the full S-matrix —
 including what to check when a device has more ports than modes of
 interest.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 10.492 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 10.752 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-02-coax-line-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/ce2371532972a7a4335b8427c05db663/plot_02_coax_line.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_02_coax_line.ipynb</span></code></a></p>

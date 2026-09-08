@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="_static/documentation_options.js?v=fe7df9b0"></script>
+    <script src="_static/documentation_options.js?v=486e5634"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/sg-tags.js?v=d80f6fa4"></script>
@@ -61,7 +61,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Upgrading from 0.5.x" href="migration-0.6.html" />
-    <link rel="prev" title="Implementation engineering (non-method)" href="methods/implementation.html" />
+    <link rel="prev" title="Upgrading from 0.7.x" href="migration-0.8.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -174,9 +174,9 @@
 </li>
 
 
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="#">
-    Upgrading from 0.6.x
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -188,6 +188,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Upgrading from 0.6.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="migration-0.6.html">
     Upgrading from 0.5.x
@@ -361,6 +368,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -592,11 +606,15 @@ written by 0.6.x cannot be read by 0.7 and are refused with a message.</p>
 <td><p>unchanged</p></td>
 <td><p>—</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">runs/&lt;name&gt;/fields.xdmf</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">runs/&lt;name&gt;/paraview/&lt;monitor&gt;.pvd</span></code> with one <code class="docutils literal notranslate"><span class="pre">.vtr</span></code> per frame</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">model.plot(...)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">model.show(...)</span></code> (0.8; <code class="docutils literal notranslate"><span class="pre">plot</span></code> draws into matplotlib everywhere else)</p></td>
+<td><p>a <code class="docutils literal notranslate"><span class="pre">DeprecationWarning</span></code>, the view opens as before</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">runs/&lt;name&gt;/fields.xdmf</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">runs/&lt;name&gt;/paraview/&lt;monitor&gt;.pvd</span></code> with one <code class="docutils literal notranslate"><span class="pre">.vtr</span></code> per frame, written by <code class="docutils literal notranslate"><span class="pre">project.export_paraview()</span></code> (0.8: no longer at the run’s close)</p></td>
 <td><p>the XDMF file is not written</p></td>
 </tr>
-<tr class="row-even"><td><p>a project written by 0.6.x</p></td>
+<tr class="row-odd"><td><p>a project written by 0.6.x</p></td>
 <td><p>re-run it</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">ProjectSchemaError:</span> <span class="pre">schema</span> <span class="pre">version</span> <span class="pre">'2.0'</span> <span class="pre">is</span> <span class="pre">not</span> <span class="pre">supported</span></code></p></td>
 </tr>
@@ -645,9 +663,9 @@ nodes of a region cut out of the grid carry the dual lengths of the
 <em>full</em> grid; a container built from such a region keeps them, so the
 cell-centred averages are what they were.  You will not see a change
 here; it is what made the first point possible without one.</p>
-<p>The frequency monitor’s phase convention is unchanged: its transform
-uses the same time stamps as the port recorder, so a renormalised
-pattern is phase-consistent with the run’s S-parameters, as before.</p>
+<p>The frequency monitor’s time stamps are unchanged: its transform
+samples the same instants as the port recorder, as before.  The <em>sign</em>
+of its exponent changed one release later — see <a class="reference internal" href="migration-0.8.html"><span class="doc">Upgrading from 0.7.x</span></a>.</p>
 </section>
 <section id="why">
 <h2>Why<a class="headerlink" href="#why" title="Link to this heading">#</a></h2>
@@ -675,12 +693,12 @@ was; it moved from the recording to the reading.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="methods/implementation.html"
+       href="migration-0.8.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Implementation engineering (non-method)</p>
+        <p class="prev-next-title">Upgrading from 0.7.x</p>
       </div>
     </a>
     <a class="right-next"

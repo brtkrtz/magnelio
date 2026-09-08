@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Magnelio &#8212; Magnelio Documentation</title>
+    <title>Upgrading from 0.7.x &#8212; Magnelio Documentation</title>
   
   
   
@@ -48,7 +48,9 @@
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/sg-tags.js?v=d80f6fa4"></script>
     <script src="_static/design-tabs.js?v=f930bc37"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'migration-0.8';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
@@ -57,10 +59,11 @@
             false;
         </script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
-    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/stable/index.html" />
+    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/stable/migration-0.8.html" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Tutorials" href="tutorials/index.html" />
+    <link rel="next" title="Upgrading from 0.6.x" href="migration-0.7.html" />
+    <link rel="prev" title="Implementation engineering (non-method)" href="methods/implementation.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -124,7 +127,7 @@
     
   
 
-<a class="navbar-brand logo" href="#">
+<a class="navbar-brand logo" href="index.html">
   
   
   
@@ -173,8 +176,8 @@
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="migration-0.8.html">
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
     Upgrading from 0.7.x
   </a>
 </li>
@@ -327,10 +330,8 @@
       
       
       
-        
-      
       <dialog id="pst-primary-sidebar-modal"></dialog>
-      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -373,8 +374,8 @@
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="migration-0.8.html">
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
     Upgrading from 0.7.x
   </a>
 </li>
@@ -482,6 +483,23 @@
     
   </div>
   
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
       <div class="sidebar-primary-item">
@@ -502,7 +520,31 @@
           <div class="bd-content">
             <div class="bd-article-container">
               
-              <div class="bd-header-article d-print-none"></div>
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Upgrading from 0.7.x</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
               
               
               
@@ -510,131 +552,106 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section class="tex2jax_ignore mathjax_ignore" id="magnelio">
-<h1>Magnelio<a class="headerlink" href="#magnelio" title="Link to this heading">#</a></h1>
-<p>Magnelio is a Python library for full-wave 3D electromagnetic field
-simulation. Its standard workflow is broadband S-parameter extraction
-over waveguide ports on arbitrary 3D geometry; the workhorse solver is
-a time-domain Finite Integration Technique (FIT-TD) engine.</p>
-<img alt="Electric field vectors in a two-pole dielectric resonator filter, where two ceramic pucks stand in a metal housing, separated by a wall with a coupling window, with a probe pin at each end." src="_images/hero_dielectric_filter.png" />
-<p>This documentation has five pillars:</p>
-<ol class="arabic simple">
-<li><p><strong>Tutorials.</strong> Executable walkthroughs of the public API, ordered
-from the first simulation to advanced workflows. Every page is
-generated from a runnable script and can be downloaded as a Python
-script or a Jupyter notebook.</p></li>
-<li><p><strong>How-to guides.</strong> Task-oriented recipes: each page solves one
-concrete engineering problem end to end and is meant to be
-downloaded and adapted to your own device.</p></li>
-<li><p><strong>API reference.</strong> The public surface — the core namespace and
-the domain namespaces — generated from the docstrings.</p></li>
-<li><p><strong>Technical description.</strong> Background information, mostly as a developer reference.
-Every numerical method used in Magnelio is described together with
-the published scientific work it is based on. Each chapter also explains how the method is
-realised in the code base (module paths, discrete formulas,
-conventions), at the level of detail needed to audit the
-implementation or to adapt a new method into the same framework.</p></li>
-<li><p><strong>Bibliography.</strong> The works cited throughout the documentation.</p></li>
-</ol>
-<p>Questions, ideas and feedback of any size go to
-<a class="reference external" href="https://github.com/brtkrtz/magnelio/discussions">GitHub Discussions</a>; wrong results, crashes and refused valid
-input to the <a class="reference external" href="https://github.com/brtkrtz/magnelio/issues">issue tracker</a>.</p>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a></li>
-</ul>
+  <section class="tex2jax_ignore mathjax_ignore" id="upgrading-from-0-7-x">
+<h1>Upgrading from 0.7.x<a class="headerlink" href="#upgrading-from-0-7-x" title="Link to this heading">#</a></h1>
+<p>Release 0.8 changes the sign of one exponent.  The running transform
+behind every frequency monitor summed <span class="math notranslate nohighlight">\(F(t)\,e^{+j\omega t}\)</span>, which
+made the complex fields it handed out the <em>conjugates</em> of the phasors
+everything else in the library speaks — the S-parameters, the port
+signals, the waveform spectra, the textbook far-field formulas.  It now
+sums <span class="math notranslate nohighlight">\(F(t)\,e^{-j\omega t}\)</span>, so there is one convention throughout:
+frequency-domain fields are <span class="math notranslate nohighlight">\(e^{+j\omega t}\)</span> phasors, and the real
+field at time <span class="math notranslate nohighlight">\(t\)</span> is <span class="math notranslate nohighlight">\(\mathrm{Re}\left(F\,e^{+j\omega t}\right)\)</span>.</p>
+<p>Every complex field the library hands out is therefore the complex
+conjugate of what 0.7 returned.  Magnitudes, power, energy, gain,
+directivity and S-parameters are unchanged — none of them can tell the
+two signs apart.  What changes is anything that reads a <em>phase</em>.</p>
+<p>Stored runs need no attention: a project written by an earlier release
+is converted as it is read, and a partial run resumes exactly.</p>
+<section id="quick-reference">
+<h2>Quick reference<a class="headerlink" href="#quick-reference" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>0.7.x</p></th>
+<th class="head"><p>0.8</p></th>
+<th class="head"><p>If you leave it alone</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">mon.spectrum.cell_centred([&quot;Ez&quot;])[&quot;Ez&quot;]</span></code></p></td>
+<td><p>the conjugate of those values</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">abs(...)</span></code> unchanged; <code class="docutils literal notranslate"><span class="pre">np.angle(...)</span></code> changes sign</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pattern.E_theta</span></code>, <code class="docutils literal notranslate"><span class="pre">pattern.E_phi</span></code></p></td>
+<td><p>the conjugate of those values</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">directivity</span></code>, <code class="docutils literal notranslate"><span class="pre">realized_gain</span></code>, <code class="docutils literal notranslate"><span class="pre">P_rad</span></code> unchanged; a polarisation handedness computed by hand comes out the other way</p></td>
+</tr>
+<tr class="row-even"><td><p>a transit phase <span class="math notranslate nohighlight">\(\int E_z\,e^{-jk z}\,dz\)</span> for a particle toward <span class="math notranslate nohighlight">\(+z\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(\int E_z\,e^{+jk z}\,dz\)</span></p></td>
+<td><p>the two directions swap: what was the forward wave reads as the backward one</p></td>
+</tr>
+<tr class="row-odd"><td><p>the <code class="docutils literal notranslate"><span class="pre">&lt;field&gt;_im</span></code> arrays of <code class="docutils literal notranslate"><span class="pre">export_paraview()</span></code></p></td>
+<td><p>sign-flipped: the imaginary part is the field at <span class="math notranslate nohighlight">\(\omega t = -90°\)</span></p></td>
+<td><p>the arrows of the imaginary part point the other way</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">snapshot(phase=φ)</span></code>, <code class="docutils literal notranslate"><span class="pre">show(phase=φ)</span></code>, <code class="docutils literal notranslate"><span class="pre">plot(phase=φ)</span></code></p></td>
+<td><p>unchanged in meaning: <code class="docutils literal notranslate"><span class="pre">φ</span></code> is <span class="math notranslate nohighlight">\(\omega t\)</span></p></td>
+<td><p>a picture at a phase other than 0° or 180° is the mirror in time of what 0.7.0 drew (fixed in this release)</p></td>
+</tr>
+<tr class="row-odd"><td><p>a project written by 0.7.x</p></td>
+<td><p>read it as it is</p></td>
+<td><p>nothing; the conversion is automatic and exact</p></td>
+</tr>
+</tbody>
+</table>
 </div>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">How-to guides</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="howto/index.html">How-to guides</a></li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">API reference</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="api/index.html">API reference</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="api/core.html">Core (<code class="docutils literal notranslate"><span class="pre">magnelio</span></code>)</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="api/core.html#magnelio.AnalysisEigenmode"><code class="docutils literal notranslate"><span class="pre">AnalysisEigenmode</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/core.html#magnelio.AnalysisScatteringTD"><code class="docutils literal notranslate"><span class="pre">AnalysisScatteringTD</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/core.html#magnelio.AnalysisTD"><code class="docutils literal notranslate"><span class="pre">AnalysisTD</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/core.html#magnelio.BoundaryConditions"><code class="docutils literal notranslate"><span class="pre">BoundaryConditions</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/core.html#magnelio.Excitation"><code class="docutils literal notranslate"><span class="pre">Excitation</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/core.html#magnelio.GeometryModel"><code class="docutils literal notranslate"><span class="pre">GeometryModel</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/core.html#magnelio.Material"><code class="docutils literal notranslate"><span class="pre">Material</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/core.html#magnelio.Mesh"><code class="docutils literal notranslate"><span class="pre">Mesh</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/core.html#magnelio.MeshControl"><code class="docutils literal notranslate"><span class="pre">MeshControl</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/core.html#magnelio.get_verbosity"><code class="docutils literal notranslate"><span class="pre">get_verbosity()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/core.html#magnelio.open_project"><code class="docutils literal notranslate"><span class="pre">open_project()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/core.html#magnelio.resume"><code class="docutils literal notranslate"><span class="pre">resume()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/core.html#magnelio.set_verbosity"><code class="docutils literal notranslate"><span class="pre">set_verbosity()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="api/index.html#domain-namespaces">Domain namespaces</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="api/geo.html"><code class="docutils literal notranslate"><span class="pre">magnelio.geo</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/materials.html"><code class="docutils literal notranslate"><span class="pre">magnelio.materials</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/mesh.html"><code class="docutils literal notranslate"><span class="pre">magnelio.mesh</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/boundaries.html"><code class="docutils literal notranslate"><span class="pre">magnelio.boundaries</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/ports.html"><code class="docutils literal notranslate"><span class="pre">magnelio.ports</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/sources.html"><code class="docutils literal notranslate"><span class="pre">magnelio.sources</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/fields.html"><code class="docutils literal notranslate"><span class="pre">magnelio.fields</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/monitors.html"><code class="docutils literal notranslate"><span class="pre">magnelio.monitors</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/circuit.html"><code class="docutils literal notranslate"><span class="pre">magnelio.circuit</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/signals.html"><code class="docutils literal notranslate"><span class="pre">magnelio.signals</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/solver.html"><code class="docutils literal notranslate"><span class="pre">magnelio.solver</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/analysis.html"><code class="docutils literal notranslate"><span class="pre">magnelio.analysis</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/post.html"><code class="docutils literal notranslate"><span class="pre">magnelio.post</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/plots.html"><code class="docutils literal notranslate"><span class="pre">magnelio.plots</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/io.html"><code class="docutils literal notranslate"><span class="pre">magnelio.io</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/constants.html"><code class="docutils literal notranslate"><span class="pre">magnelio.constants</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Technical description</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="methods/index.html">Numerical methods</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="methods/fit-discretization.html">Spatial discretisation and time integration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="methods/geometry.html">Geometry construction</a></li>
-<li class="toctree-l2"><a class="reference internal" href="methods/cad-import.html">CAD import</a></li>
-<li class="toctree-l2"><a class="reference internal" href="methods/pcb-import.html">Board import</a></li>
-<li class="toctree-l2"><a class="reference internal" href="methods/meshing-conformal.html">Mesh generation and conformal geometry</a></li>
-<li class="toctree-l2"><a class="reference internal" href="methods/boundaries.html">Boundary conditions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="methods/ports.html">Waveguide ports and S-parameter extraction</a></li>
-<li class="toctree-l2"><a class="reference internal" href="methods/lumped-elements.html">Discrete ports and lumped circuit elements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="methods/dispersive-materials.html">Dispersive and lossy materials</a></li>
-<li class="toctree-l2"><a class="reference internal" href="methods/conductor-losses.html">Conductor losses</a></li>
-<li class="toctree-l2"><a class="reference internal" href="methods/sources-monitors.html">Sources, monitors and post-processing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="methods/projects-and-runs.html">Projects and runs</a></li>
-<li class="toctree-l2"><a class="reference internal" href="methods/far-field.html">Far-field computation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="methods/eigenmode-analysis.html">Eigenmode analysis</a></li>
-<li class="toctree-l2"><a class="reference internal" href="methods/precision.html">Numerical precision</a></li>
-<li class="toctree-l2"><a class="reference internal" href="methods/progress-output.html">Progress output</a></li>
-<li class="toctree-l2"><a class="reference internal" href="methods/viewer.html">3D viewer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="methods/implementation.html">Implementation engineering (non-method)</a></li>
-</ul>
-</li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Upgrading</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="migration-0.8.html">Upgrading from 0.7.x</a></li>
-<li class="toctree-l1"><a class="reference internal" href="migration-0.7.html">Upgrading from 0.6.x</a></li>
-<li class="toctree-l1"><a class="reference internal" href="migration-0.6.html">Upgrading from 0.5.x</a></li>
-<li class="toctree-l1"><a class="reference internal" href="migration-0.5.html">Upgrading from 0.4.x</a></li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Bibliography</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="bibliography.html">Bibliography</a></li>
-</ul>
-</div>
+<p>If your post-processing only takes magnitudes — a pattern, a field
+plot, an S-parameter, a loss figure — nothing in your scripts needs to
+change.</p>
+</section>
+<section id="what-to-look-for-in-your-own-code">
+<h2>What to look for in your own code<a class="headerlink" href="#what-to-look-for-in-your-own-code" title="Link to this heading">#</a></h2>
+<p>Anything that multiplies a monitor’s complex field by a phase factor of
+its own.  The two cases that occur in practice:</p>
+<p><strong>A transit phase.</strong>  A beam voltage, a coupling integral along a path,
+a pickup summed along a line — the factor that follows the particle or
+the wave.  For motion toward <span class="math notranslate nohighlight">\(+z\)</span> it is now <span class="math notranslate nohighlight">\(e^{+jk z}\)</span>.  The how-to
+<a class="reference internal" href="howto/plot_stripline_pickup_kicker.html"><span class="doc">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</span></a> carries the corrected form.</p>
+<p><strong>A polarisation decomposition.</strong>  Left- and right-hand circular
+components of a far-field pattern, or an axial ratio computed from
+<span class="math notranslate nohighlight">\(E_\theta\)</span> and <span class="math notranslate nohighlight">\(E_\varphi\)</span>.  The textbook expressions apply directly
+now; in 0.7 they had to be conjugated first.</p>
+<p>A quick way to check an existing script: compute the quantity both
+ways.  If the two results differ only in the sign of a phase or in
+which of two directions comes out larger, the script had the 0.7
+convention baked in.</p>
+</section>
+<section id="the-project-store">
+<h2>The project store<a class="headerlink" href="#the-project-store" title="Link to this heading">#</a></h2>
+<p>Result files carry a <code class="docutils literal notranslate"><span class="pre">phasor_convention</span></code> attribute naming the
+convention their bins are in.  A file without it was written by an
+earlier release, and its complex data is conjugated as it is read — a
+finished transform as much as a partial sum a resume continues.  The
+conversion is exact, so a resumed run is bit-identical to an
+uninterrupted one, and the store’s schema version is unchanged: 0.7
+projects stay readable.</p>
+<p>A file naming a convention this release does not know is refused with a
+<code class="docutils literal notranslate"><span class="pre">ProjectSchemaError</span></code> rather than read as if the stamp were absent.</p>
+</section>
+<section id="why">
+<h2>Why<a class="headerlink" href="#why" title="Link to this heading">#</a></h2>
+<p>The library grew two conventions and kept them apart by hand.  The
+S-parameter path, the port signals’ transform, the waveform spectra and
+the CW lock-in were all <span class="math notranslate nohighlight">\(e^{+j\omega t}\)</span>; only the field monitors’ own
+running sum ran the other way, and the near-to-far-field transform
+bridged the gap by conjugating its inputs at the entrance and its
+result at the exit.  It worked, but it left the phase of a field
+monitor and the phase of a port voltage at the same frequency as
+conjugates of each other, which is a trap for anyone who compares
+them — and it made the standard textbook formulas wrong as written for
+anyone post-processing a pattern.  One sign in the accumulator removes
+the split, the conjugations in the far-field transform, and the trap.</p>
+</section>
 </section>
 
 
@@ -647,12 +664,21 @@ input to the <a class="reference external" href="https://github.com/brtkrtz/magn
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
+    <a class="left-prev"
+       href="methods/implementation.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Implementation engineering (non-method)</p>
+      </div>
+    </a>
     <a class="right-next"
-       href="tutorials/index.html"
+       href="migration-0.7.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Tutorials</p>
+        <p class="prev-next-title">Upgrading from 0.6.x</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -668,9 +694,24 @@ input to the <a class="reference external" href="https://github.com/brtkrtz/magn
 
 
   <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quick-reference">Quick reference</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-to-look-for-in-your-own-code">What to look for in your own code</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-project-store">The project store</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#why">Why</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
 
   <div class="tocsection sourcelink">
-    <a href="_sources/index.md.txt">
+    <a href="_sources/migration-0.8.md.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>

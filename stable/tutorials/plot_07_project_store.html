@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=fe7df9b0"></script>
+    <script src="../_static/documentation_options.js?v=486e5634"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -175,8 +175,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.7.html">
-    Upgrading from 0.6.x
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -188,6 +188,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
     Upgrading from 0.5.x
@@ -361,6 +368,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -690,30 +704,21 @@ everything went (sizes in kB):</p>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>geometry.brep                                                    9.9
 geometry.json                                                    0.8
-geometry.vtm                                                     0.3
 mesh.h5                                                      11880.4
 project.json                                                     3.8
-geometry/geometry_0.vtp                                          3.5
 runs/port3_mode0/checkpoint.h5                                1523.7
 runs/port3_mode0/fields_freq.h5                               5579.0
-runs/port3_mode0/paraview_open.py                               18.9
 runs/port3_mode0/results.h5                                    699.6
-runs/port3_mode0/paraview/volume_pattern.pvd                     0.2
-runs/port3_mode0/paraview/volume_pattern/f_0000.vtr           1314.0
 runs/port4_mode0/checkpoint.h5                                1523.7
 runs/port4_mode0/fields_freq.h5                               5579.0
-runs/port4_mode0/paraview_open.py                               18.9
 runs/port4_mode0/results.h5                                    699.6
-runs/port4_mode0/paraview/volume_pattern.pvd                     0.2
-runs/port4_mode0/paraview/volume_pattern/f_0000.vtr           1309.7
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">project.json</span></code> carries the run registry and the reconstruction
 recipe, <code class="docutils literal notranslate"><span class="pre">mesh.h5</span></code> and <code class="docutils literal notranslate"><span class="pre">geometry.brep</span></code> the exact model, and each
 run directory holds its streamed port signals (<code class="docutils literal notranslate"><span class="pre">results.h5</span></code>), the
-monitor’s frequency-domain volume (<code class="docutils literal notranslate"><span class="pre">fields_freq.h5</span></code>), a resumable
-<code class="docutils literal notranslate"><span class="pre">checkpoint.h5</span></code> — and a ready-made ParaView session, more on that
-below.</p>
+monitor’s frequency-domain volume (<code class="docutils literal notranslate"><span class="pre">fields_freq.h5</span></code>) and a
+resumable <code class="docutils literal notranslate"><span class="pre">checkpoint.h5</span></code>.</p>
 </section>
 <section id="evaluating-from-disk-in-a-different-session">
 <h2>Evaluating from disk — in a different session<a class="headerlink" href="#evaluating-from-disk-in-a-different-session" title="Link to this heading">#</a></h2>
@@ -723,23 +728,17 @@ needs the analysis, the mesh, or the solver.  This is the
 separation the store exists for: a cluster job computes, your
 laptop evaluates.  S-parameters are derived on read from the stored
 signals, with the accessors you already know:</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">proj</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">open_project</span><span class="p">(</span><span class="n">proj_dir</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">proj</span><span class="p">)</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ``open_project`` hands back the very same kind of object ``run()``</span>
+<span class="c1"># returned above — a reader over the directory — only initialised from</span>
+<span class="c1"># the path instead of by the run that wrote it.</span>
+<span class="n">result_loaded</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">open_project</span><span class="p">(</span><span class="n">proj_dir</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">result_loaded</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s2">"-&gt;"</span><span class="p">,</span> <span class="n">result_loaded</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
 
-<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">plot_s</span><span class="p">((</span><span class="s2">"port1"</span><span class="p">,</span> <span class="s2">"port3"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"port1"</span><span class="p">,</span> <span class="s2">"port4"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"port4"</span><span class="p">,</span> <span class="s2">"port3"</span><span class="p">))</span>
+<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">result_loaded</span><span class="o">.</span><span class="n">plot_s</span><span class="p">((</span><span class="s2">"port1"</span><span class="p">,</span> <span class="s2">"port3"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"port1"</span><span class="p">,</span> <span class="s2">"port4"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"port4"</span><span class="p">,</span> <span class="s2">"port3"</span><span class="p">))</span>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">"Read back from the project store"</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_07_project_store_001.png" srcset="../_images/sphx_glr_plot_07_project_store_001.png" alt="Read back from the project store" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Project /tmp/tmpegq9_2vb/magic_tee
-  analysis   AnalysisScatteringTD
-  status     done
-  last call  finished 2026-09-06 17:25:51 in 13.7 s
-  created    2026-09-06 17:25:38
-  runs       2
-run          excited  state  steps    energy  elapsed  stop reason
-───────────  ───────  ─────  ─────  ────────  ───────  ───────────
-port3_mode0  port3:0  done    6401  -45.3 dB    5.4 s  port_signal
-port4_mode0  port4:0  done    6401  -49.0 dB    5.4 s  port_signal
+<img src="../_images/sphx_glr_plot_07_project_store_001.png" srcset="../_images/sphx_glr_plot_07_project_store_001.png" alt="Read back from the project store" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Project -&gt; done
 
 Text(0.5, 1.0, 'Read back from the project store')
 </pre></div>
@@ -762,10 +761,10 @@ process — another shell, a notebook on your laptop — can
 the run live, without touching the job that is computing; the
 how-to <em>Watching a simulation that is still running</em> shows the
 loop, and the live panel for a notebook.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">plot_energy</span><span class="p">()</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ax</span></a> <span class="o">=</span> <span class="n">result_loaded</span><span class="o">.</span><span class="n">plot_energy</span><span class="p">()</span>
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title" class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">"Energy in the grid during the two runs"</span><span class="p">)</span>
 
-<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">runs</span><span class="p">[</span><span class="s2">"port3_mode0"</span><span class="p">]</span><span class="o">.</span><span class="n">energy_trace</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a> <span class="o">=</span> <span class="n">result_loaded</span><span class="o">.</span><span class="n">runs</span><span class="p">[</span><span class="s2">"port3_mode0"</span><span class="p">]</span><span class="o">.</span><span class="n">energy_trace</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"energy samples stored for the H-arm run: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trace</span></a><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -780,8 +779,8 @@ stored pattern is a full 3D volume, the slice plane is chosen at
 <em>plot</em> time, not at declaration time — the H-arm drive on the
 mid-height cut, the E-arm drive on the vertical cut, both from data
 recorded in the same simulation:</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">mon_h</span> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">monitors_for</span><span class="p">((</span><span class="s2">"port3"</span><span class="p">,</span> <span class="mi">0</span><span class="p">))[</span><span class="s2">"volume_pattern"</span><span class="p">]</span>
-<span class="n">mon_e</span> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">monitors_for</span><span class="p">((</span><span class="s2">"port4"</span><span class="p">,</span> <span class="mi">0</span><span class="p">))[</span><span class="s2">"volume_pattern"</span><span class="p">]</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">mon_h</span> <span class="o">=</span> <span class="n">result_loaded</span><span class="o">.</span><span class="n">monitors_for</span><span class="p">((</span><span class="s2">"port3"</span><span class="p">,</span> <span class="mi">0</span><span class="p">))[</span><span class="s2">"volume_pattern"</span><span class="p">]</span>
+<span class="n">mon_e</span> <span class="o">=</span> <span class="n">result_loaded</span><span class="o">.</span><span class="n">monitors_for</span><span class="p">((</span><span class="s2">"port4"</span><span class="p">,</span> <span class="mi">0</span><span class="p">))[</span><span class="s2">"volume_pattern"</span><span class="p">]</span>
 
 <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure" class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">fig</span></a><span class="p">,</span> <a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">axes</span></a> <span class="o">=</span> <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html#matplotlib.pyplot.subplots" title="matplotlib.pyplot.subplots" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span></a><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">))</span>
 <span class="n">mon_h</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
@@ -836,12 +835,14 @@ no restart.  That is the answer to three situations: a crashed or
 interrupted job, a stop criterion chosen too shallow, and the
 convergence question “would more ring-down change my S-parameters?”.
 Here we ask the third one, extending the H-arm run by 2000 steps:</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s13_before</span></a> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s2">"port1"</span><span class="p">,</span> <span class="s2">"port3"</span><span class="p">)</span>
-<span class="n">n_before</span> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">runs</span><span class="p">[</span><span class="s2">"port3_mode0"</span><span class="p">]</span><span class="o">.</span><span class="n">n_steps</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s13_before</span></a> <span class="o">=</span> <span class="n">result_loaded</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s2">"port1"</span><span class="p">,</span> <span class="s2">"port3"</span><span class="p">)</span>
+<span class="n">n_before</span> <span class="o">=</span> <span class="n">result_loaded</span><span class="o">.</span><span class="n">runs</span><span class="p">[</span><span class="s2">"port3_mode0"</span><span class="p">]</span><span class="o">.</span><span class="n">n_steps</span>
 
-<span class="n">proj</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">resume</span><span class="p">(</span><span class="n">proj_dir</span><span class="p">,</span> <span class="n">excited</span><span class="o">=</span><span class="s2">"port3"</span><span class="p">,</span> <span class="n">total_time_steps</span><span class="o">=</span><span class="n">n_before</span> <span class="o">+</span> <span class="mi">2000</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">result_resumed</span> <span class="o">=</span> <span class="n">mio</span><span class="o">.</span><span class="n">resume</span><span class="p">(</span>
+    <span class="n">proj_dir</span><span class="p">,</span> <span class="n">excited</span><span class="o">=</span><span class="s2">"port3"</span><span class="p">,</span> <span class="n">total_time_steps</span><span class="o">=</span><span class="n">n_before</span> <span class="o">+</span> <span class="mi">2000</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
 
-<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s13_after</span></a> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s2">"port1"</span><span class="p">,</span> <span class="s2">"port3"</span><span class="p">)</span>
+<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s13_after</span></a> <span class="o">=</span> <span class="n">result_resumed</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s2">"port1"</span><span class="p">,</span> <span class="s2">"port3"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"steps: </span><span class="si">{</span><span class="n">n_before</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">n_before</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2000</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"max |dS13| from 2000 extra steps: </span><span class="si">{</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ufunc.html#numpy.ufunc" title="numpy.ufunc" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">np</span><span class="o">.</span><span class="n">abs</span></a><span class="p">(</span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s13_after</span></a><span class="w"> </span><span class="o">-</span><span class="w"> </span><a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray" class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">s13_before</span></a><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.1e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
@@ -853,41 +854,50 @@ max |dS13| from 2000 extra steps: 3.7e-04
 <p>The change is far below any engineering tolerance — the original
 stop criterion was deep enough, and finding that out cost two
 thousand time steps instead of a rerun.  (A resumed run appends to
-the same streams; the monitor volume and the ParaView session are
-updated along with it.)</p>
+the same streams, the monitor volume along with them.)</p>
 </section>
 <section id="into-paraview">
 <h2>Into ParaView<a class="headerlink" href="#into-paraview" title="Link to this heading">#</a></h2>
 <p>Slice plots answer questions you already know how to ask; a 3D
-volume invites the ones you don’t.  Every project run ships with a
-generated ParaView session for its monitors — the files appeared in
-the listing above:</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">run_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">proj_dir</span><span class="p">,</span> <span class="s2">"runs"</span><span class="p">,</span> <span class="s2">"port3_mode0"</span><span class="p">)</span>
+volume invites the ones you don’t.  A project run can be handed to
+ParaView as a ready-made session — an export you ask for, since the
+VTK copy of a monitor takes about as much disk as the monitor itself:</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">result_resumed</span><span class="o">.</span><span class="n">export_paraview</span><span class="p">(</span><span class="n">excited</span><span class="o">=</span><span class="s2">"port3"</span><span class="p">)</span>
+<span class="n">run_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">proj_dir</span><span class="p">,</span> <span class="s2">"runs"</span><span class="p">,</span> <span class="s2">"port3_mode0"</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">run_dir</span><span class="p">)):</span>
     <span class="k">if</span> <span class="s2">"paraview"</span> <span class="ow">in</span> <span class="n">name</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">run_dir</span><span class="p">,</span> <span class="n">name</span><span class="p">)):</span>
         <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>paraview_open.py
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>UserWarning: no ParaView state file was baked: no 'pvpython' on PATH.  Name one in MAGNELIO_PVPYTHON or in export_paraview(pvpython=...) — a path, or the command that launches one, e.g. flatpak run --command=pvpython org.paraview.ParaView.  The session opens without a state file: paraview --script=paraview_open.py
+paraview_open.py
 </pre></div>
 </div>
-<p>The data went to <code class="docutils literal notranslate"><span class="pre">paraview/</span></code> when the run closed: one <code class="docutils literal notranslate"><span class="pre">.vtr</span></code>
-file per monitor frequency, collected by a <code class="docutils literal notranslate"><span class="pre">.pvd</span></code> whose axis is
-the frequency (for a time monitor, the instant).  They hold cell
-data — the staggered frames of <code class="docutils literal notranslate"><span class="pre">fields_freq.h5</span></code> averaged onto the
-cell centres at export time, the same numbers
-<code class="docutils literal notranslate"><span class="pre">spectrum.cell_centred()</span></code> returns — so ParaView reads plain VTK
-files and never opens the store itself.
-<code class="docutils literal notranslate"><span class="pre">paraview.pvsm</span></code> is a double-clickable state file: geometry as
-translucent solids, slice and clip widgets through the field
-volume, arrow glyphs on an even lattice with sensible lengths, and
-a threshold-gated volume glyph set — assembled and scaled to the
-data, so the first thing you see is the field, not a grey box.
+<p>The data went to <code class="docutils literal notranslate"><span class="pre">paraview/</span></code>: one <code class="docutils literal notranslate"><span class="pre">.vtr</span></code> file per monitor
+frequency, collected by a <code class="docutils literal notranslate"><span class="pre">.pvd</span></code> whose axis is the frequency (for
+a time monitor, the instant).  They hold cell data — the staggered
+frames of <code class="docutils literal notranslate"><span class="pre">fields_freq.h5</span></code> averaged onto the cell centres at export
+time, the same numbers <code class="docutils literal notranslate"><span class="pre">spectrum.cell_centred()</span></code> returns — so
+ParaView reads plain VTK files and never opens the store itself.
+<code class="docutils literal notranslate"><span class="pre">paraview.pvsm</span></code> is a double-clickable state file (baked when
+<code class="docutils literal notranslate"><span class="pre">pvpython</span></code> is on the path): geometry as translucent solids, and per
+monitor a short pipeline — <code class="docutils literal notranslate"><span class="pre">volume_pattern_field</span></code> prepares the
+field (cell averages onto an even lattice, arrow lengths from the
+magnitude), <code class="docutils literal notranslate"><span class="pre">volume_pattern_slice</span></code> cuts it, <code class="docutils literal notranslate"><span class="pre">volume_pattern_arrows</span></code>
+draws the arrows on the cut, the geometry clip follows the cut plane
+when you drag it, and <code class="docutils literal notranslate"><span class="pre">volume_pattern_volume_arrows</span></code> waits hidden
+for the whole volume — assembled and scaled to the data, so the
+first thing you see is the field, not a grey box.
 <code class="docutils literal notranslate"><span class="pre">paraview_open.py</span></code> builds the same session from scratch
-(<code class="docutils literal notranslate"><span class="pre">paraview</span> <span class="pre">--script=paraview_open.py</span></code>) if you prefer a live
-pipeline over a state file.  A view of this very project, after
-dragging the slice plane to the tee’s mid-height and switching the
-volume glyph set on:</p>
+(<code class="docutils literal notranslate"><span class="pre">paraview</span> <span class="pre">--script=paraview_open.py</span></code>).  Prefer it whenever the
+state file misbehaves: it works on any ParaView, while a <code class="docutils literal notranslate"><span class="pre">.pvsm</span></code> is
+bound to the release that baked it — the header of the script says
+which one that was, and <code class="docutils literal notranslate"><span class="pre">export_paraview(pvpython=…)</span></code> (or
+<code class="docutils literal notranslate"><span class="pre">MAGNELIO_PVPYTHON</span></code>) picks the ParaView to bake for when a machine
+carries several.  After a resume, call <code class="docutils literal notranslate"><span class="pre">export_paraview</span></code>
+again and the set is regenerated.  A view of this very project,
+after dragging the slice plane to the tee’s mid-height and switching
+the volume arrows on:</p>
 <a class="reference internal image-reference" href="../_images/tutorial_07_paraview.png"><img alt="ParaView session of the magic tee volume monitor" src="../_images/tutorial_07_paraview.png" style="width: 90%;" />
 </a>
 </section>
@@ -897,7 +907,7 @@ volume glyph set on:</p>
 directory on disk — S-parameters and every run’s monitor volumes
 read back with <a class="reference internal" href="../api/core.html#magnelio.open_project" title="magnelio.open_project"><code class="xref py py-func docutils literal notranslate"><span class="pre">magnelio.open_project()</span></code></a>, evaluation decoupled
 from computation, <code class="docutils literal notranslate"><span class="pre">resume</span></code> continuing a checkpointed run without a
-seam, and a generated ParaView session per run.  What we did <em>not</em>
+seam, and a ParaView session on request.  What we did <em>not</em>
 need: keeping the Python session alive, or re-running anything.
 A second process can even open the project <em>while</em> the solver
 marches and watch the energy and S-parameters converge live — the
@@ -905,7 +915,7 @@ how-to <em>Watching a simulation that is still running</em> is that recipe.</p>
 <p>The tee is now exhausted as a teaching device for closed structures.
 The next tutorial opens the domain: absorbing boundaries, and with
 them the first antenna.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 20.321 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 20.488 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-07-project-store-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/8ffbd898ad191daf250f8485ee8f3138/plot_07_project_store.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_07_project_store.ipynb</span></code></a></p>

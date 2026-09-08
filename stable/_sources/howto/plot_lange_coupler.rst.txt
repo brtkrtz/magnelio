@@ -536,7 +536,7 @@ the coupled port at the near end of line 2, port 4 isolated.
     model.add_port(ports.PortWaveguide(name="p2", plane="ymin", corners=window(x_far)))  # through
     model.add_port(ports.PortWaveguide(name="p3", plane="ymax", corners=window(x_near)))  # coupled
     model.add_port(ports.PortWaveguide(name="p4", plane="ymax", corners=window(x_far)))  # isolated
-    model.plot()
+    model.show()
 
 
 
@@ -764,7 +764,7 @@ the lead-to-finger joint is not one.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (2 minutes 25.230 seconds)
+   **Total running time of the script:** (2 minutes 28.058 seconds)
 
 
 .. _sphx_glr_download_howto_plot_lange_coupler.py:

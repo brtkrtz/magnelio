@@ -342,6 +342,16 @@ for ax, res, label in (
 fig.tight_layout()
 
 # %%
+# The same mode in three dimensions: ``show()`` on the result opens the
+# cell along a cutting plane with the field laid on it.  The quarter
+# model was solved, but the picture is the whole cell — the result
+# carries its mesh, whose declaration names the two symmetry planes,
+# and the field is continued across them with the parity of each
+# component.
+
+pi_mode.show(geometry=model, normal="y", position=0.0, glyph="cone", density=14)
+
+# %%
 # Where to go next
 # ----------------
 #
