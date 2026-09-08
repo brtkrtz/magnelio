@@ -136,12 +136,21 @@ model = build_divider()
 #
 # **The resistor is not a port.**  ``circuit.LumpedElement`` places a
 # passive two-terminal component — here a plain 100 Ω = 2·Z₀ resistor,
-# but any series or parallel RLC — on a straight path between two
-# points in the volume.  It is registered with ``add_element``, not
-# ``add_port``: it cannot be excited, it records nothing, and it never
-# appears in the S-matrix.  It simply loads the fields, like a real
-# soldered component.  (Keep the element path short against the
-# wavelength, exactly as you would keep an SMD's leads short.)
+# but any series or parallel RLC — on a path between two points in the
+# volume.  It is registered with ``add_element``, not ``add_port``: it
+# cannot be excited, it records nothing, and it never appears in the
+# S-matrix.  It simply loads the fields, like a real soldered
+# component.  (Keep the element path short against the wavelength,
+# exactly as you would keep an SMD's leads short.)
+#
+# The two points here happen to sit on one grid axis, which is the
+# tidy case.  They need not: ``start``/``end`` may run in any
+# direction, and ``path=`` takes a whole polyline or a curve, so a
+# component can be routed diagonally or around a bend.  An oblique
+# path rides on a staircase of grid edges and pays a small parasitic
+# series inductance for it — a few tens of picohenries per millimetre,
+# which the *Discrete ports and lumped elements* method page quantifies
+# and which is worth a thought for a long slanted component.
 #
 # **The copper is thinner than any cell.**  17 µm is far below a
 # reasonable cell size for this model.  Declaring a hard cell floor

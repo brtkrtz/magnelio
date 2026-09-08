@@ -158,10 +158,12 @@ stop criterion watches.
  .. code-block:: none
 
     running   planned
-    running   step    201     0.0 dB below peak
-    running   step   1501   -47.7 dB below peak
-    running   step   2801   -60.6 dB below peak
-    running   step   3901   -65.8 dB below peak
+    running   step    401     0.0 dB below peak
+    running   step   1301   -43.8 dB below peak
+    running   step   2201   -56.2 dB below peak
+    running   step   3201   -62.7 dB below peak
+    running   step   4001   -66.2 dB below peak
+    running   step   4901   -69.5 dB below peak
     done      step   5101   -70.1 dB below peak
 
 
@@ -200,22 +202,22 @@ own axis limits.
 
  .. code-block:: none
 
-    Project /tmp/tmp2tq6_3q6/wr90
+    Project /tmp/tmpjlh40pjb/wr90
       analysis   AnalysisScatteringTD
       status     done
-      last call  finished 2026-09-08 08:00:23 in 1.9 s
-      created    2026-09-08 08:00:22
+      last call  finished 2026-09-08 21:00:51 in 2.5 s
+      created    2026-09-08 21:00:49
       runs       1
     run       excited  state  steps    energy  elapsed  stop reason
     ────────  ───────  ─────  ─────  ────────  ───────  ───────────
-    p1_mode0  p1:0     done    5101  -70.1 dB    1.1 s  energy
+    p1_mode0  p1:0     done    5101  -70.1 dB    1.5 s  energy
 
 
 
 .. raw:: html
 
     <div class="output_subarea output_html rendered_html output_result">
-    <table style='border-collapse:collapse;font-family:monospace;font-size:90%'><caption style='text-align:left;font-weight:bold;padding:2px 0'>Project /tmp/tmp2tq6_3q6/wr90</caption><tr><th style='text-align:left;padding:2px 10px 2px 0;'>analysis</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>AnalysisScatteringTD</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>status</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>done</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>last call</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>finished 2026-09-08 08:00:23 in 1.9 s</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>created</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>2026-09-08 08:00:22</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>runs</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>1</td></tr></table><table style='border-collapse:collapse;font-family:monospace;font-size:90%'><tr><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>run</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>excited</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>state</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>steps</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>energy</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>elapsed</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>stop reason</th></tr><tr><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>p1_mode0</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>p1:0</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>done</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>5101</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>-70.1 dB</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>1.1 s</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>energy</td></tr></table>
+    <table style='border-collapse:collapse;font-family:monospace;font-size:90%'><caption style='text-align:left;font-weight:bold;padding:2px 0'>Project /tmp/tmpjlh40pjb/wr90</caption><tr><th style='text-align:left;padding:2px 10px 2px 0;'>analysis</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>AnalysisScatteringTD</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>status</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>done</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>last call</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>finished 2026-09-08 21:00:51 in 2.5 s</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>created</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>2026-09-08 21:00:49</td></tr><tr><th style='text-align:left;padding:2px 10px 2px 0;'>runs</th><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>1</td></tr></table><table style='border-collapse:collapse;font-family:monospace;font-size:90%'><tr><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>run</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>excited</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>state</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>steps</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>energy</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColortext-align:right;'>elapsed</th><th style='text-align:left;padding:2px 10px 2px 0;border-bottom:1px solid currentColor'>stop reason</th></tr><tr><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>p1_mode0</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>p1:0</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>done</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>5101</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>-70.1 dB</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowraptext-align:right;'>1.5 s</td><td style='text-align:left;padding:2px 10px 2px 0;white-space:nowrap'>energy</td></tr></table>
     </div>
     <br />
     <br />
@@ -348,7 +350,7 @@ What to remember
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 2.041 seconds)
+   **Total running time of the script:** (0 minutes 2.954 seconds)
 
 
 .. _sphx_glr_download_howto_plot_watch_running_simulation.py:

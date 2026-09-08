@@ -101,3 +101,57 @@ that converts an arbitrary polyline/curve into an ordered, directed
 staircase of grid edges with per-edge orientation signs
 (`circuit/rasterize.py`, DD-076), plus the line integral
 `integrate_E` along the path.  This is in-house infrastructure.
+
+## Paths: any direction, at a measured price
+
+A discrete port or lumped element is declared either by its two
+terminals (`start` / `end`) or by a `path` — a sequence of points, or a
+`Curve`.  Both forms go through the same canonical rasteriser as thin
+wires and voltage probes, so the path is free to run obliquely, to
+bend, or to follow a curve; the grid carries it as a staircase of
+edges.  The chain must traverse each edge once: a two-terminal element
+is a series chain, so a self-crossing or doubled-back path is rejected.
+
+The port's polarity follows `start` → `end` (or the path's own
+direction), and the recorded V and I change sign with it.
+
+**What a staircase costs.**  The terminal relation is exact on any
+path: the states are edge voltages, so KVL along the chain is KVL, and
+the gap voltage is the plain signed sum whatever route the chain takes.
+What an oblique path does change is the near field — the flux linked
+within a few cells of the conductor, i.e. the element's parasitic
+series inductance.  In-house measurement gives the excess as a local
+quantity, set by the local staircase direction alone:
+
+$$\Delta L' \approx 58\ \mathrm{nH/m} \cdot x^{0.61},
+\qquad x = \frac{\text{staircase length}}{\text{chord length}} - 1$$
+
+per unit **chord** length, where `x` runs from 0 for an axis-parallel
+path to 0.41 for a 45° one.  For a strongly oblique path that is about
+**32 pH per millimetre of element**: negligible for a short feed gap at
+low frequency, worth knowing for a long slanted element or at the top
+of a wide band.
+
+Two properties of this excess are worth stating plainly, because both
+are counter-intuitive:
+
+* **It does not refine away.**  It falls only as `Δ^0.19` with the cell
+  size — quadrupling the resolution buys about a fifth of it.  It is a
+  floor for any usable mesh, not a discretisation error to be meshed
+  out.
+* **It is not proportional to the extra path length.**  A 45° staircase
+  is 41 % longer than its chord but costs only a few percent of the
+  inductance, because the zigzag excursions cancel pairwise beyond a
+  cell or two.  Estimating the penalty from the length ratio
+  overestimates it by an order of magnitude.
+
+If an oblique path's parasitic inductance matters for your model, the
+remedy available today is to align the element with the grid where you
+can, and to keep obliquely-routed elements short.
+
+**Conductor edges are not available.**  An edge held at zero by a
+perfect conductor — inside a PEC body, or tangential to a PEC wall —
+cannot carry the element's injection, so the element is shorted along
+it.  The builder counts such edges and warns rather than silently
+modelling something else; a delta-gap feed therefore needs a real gap
+in the conductor, not a path laid on top of it.

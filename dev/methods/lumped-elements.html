@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=12d57f4c"></script>
+    <script src="../_static/documentation_options.js?v=efa5400a"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -674,6 +674,55 @@ staircase of grid edges with per-edge orientation signs
 (<code class="docutils literal notranslate"><span class="pre">circuit/rasterize.py</span></code>, DD-076), plus the line integral
 <code class="docutils literal notranslate"><span class="pre">integrate_E</span></code> along the path.  This is in-house infrastructure.</p>
 </section>
+<section id="paths-any-direction-at-a-measured-price">
+<h2>Paths: any direction, at a measured price<a class="headerlink" href="#paths-any-direction-at-a-measured-price" title="Link to this heading">#</a></h2>
+<p>A discrete port or lumped element is declared either by its two
+terminals (<code class="docutils literal notranslate"><span class="pre">start</span></code> / <code class="docutils literal notranslate"><span class="pre">end</span></code>) or by a <code class="docutils literal notranslate"><span class="pre">path</span></code> — a sequence of points, or a
+<code class="docutils literal notranslate"><span class="pre">Curve</span></code>.  Both forms go through the same canonical rasteriser as thin
+wires and voltage probes, so the path is free to run obliquely, to
+bend, or to follow a curve; the grid carries it as a staircase of
+edges.  The chain must traverse each edge once: a two-terminal element
+is a series chain, so a self-crossing or doubled-back path is rejected.</p>
+<p>The port’s polarity follows <code class="docutils literal notranslate"><span class="pre">start</span></code> → <code class="docutils literal notranslate"><span class="pre">end</span></code> (or the path’s own
+direction), and the recorded V and I change sign with it.</p>
+<p><strong>What a staircase costs.</strong>  The terminal relation is exact on any
+path: the states are edge voltages, so KVL along the chain is KVL, and
+the gap voltage is the plain signed sum whatever route the chain takes.
+What an oblique path does change is the near field — the flux linked
+within a few cells of the conductor, i.e. the element’s parasitic
+series inductance.  In-house measurement gives the excess as a local
+quantity, set by the local staircase direction alone:</p>
+<div class="math notranslate nohighlight">
+\[\Delta L' \approx 58\ \mathrm{nH/m} \cdot x^{0.61},
+\qquad x = \frac{\text{staircase length}}{\text{chord length}} - 1\]</div>
+<p>per unit <strong>chord</strong> length, where <code class="docutils literal notranslate"><span class="pre">x</span></code> runs from 0 for an axis-parallel
+path to 0.41 for a 45° one.  For a strongly oblique path that is about
+<strong>32 pH per millimetre of element</strong>: negligible for a short feed gap at
+low frequency, worth knowing for a long slanted element or at the top
+of a wide band.</p>
+<p>Two properties of this excess are worth stating plainly, because both
+are counter-intuitive:</p>
+<ul class="simple">
+<li><p><strong>It does not refine away.</strong>  It falls only as <code class="docutils literal notranslate"><span class="pre">Δ^0.19</span></code> with the cell
+size — quadrupling the resolution buys about a fifth of it.  It is a
+floor for any usable mesh, not a discretisation error to be meshed
+out.</p></li>
+<li><p><strong>It is not proportional to the extra path length.</strong>  A 45° staircase
+is 41 % longer than its chord but costs only a few percent of the
+inductance, because the zigzag excursions cancel pairwise beyond a
+cell or two.  Estimating the penalty from the length ratio
+overestimates it by an order of magnitude.</p></li>
+</ul>
+<p>If an oblique path’s parasitic inductance matters for your model, the
+remedy available today is to align the element with the grid where you
+can, and to keep obliquely-routed elements short.</p>
+<p><strong>Conductor edges are not available.</strong>  An edge held at zero by a
+perfect conductor — inside a PEC body, or tangential to a PEC wall —
+cannot carry the element’s injection, so the element is shorted along
+it.  The builder counts such edges and warns rather than silently
+modelling something else; a delta-gap feed therefore needs a real gap
+in the conductor, not a path laid on top of it.</p>
+</section>
 </section>
 
 
@@ -727,6 +776,7 @@ staircase of grid edges with per-edge orientation signs
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trapezoidal-rlc-companion-models">Trapezoidal RLC companion models</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#lumped-devices-on-symmetry-planes">Lumped devices on symmetry planes</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#edge-path-rasterisation">Edge-path rasterisation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#paths-any-direction-at-a-measured-price">Paths: any direction, at a measured price</a></li>
 </ul>
   </nav></div>
 

@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=12d57f4c"></script>
+    <script src="../_static/documentation_options.js?v=efa5400a"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -614,23 +614,28 @@ consumers.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.circuit.LumpedElement">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.circuit.</span></span><span class="sig-name descname"><span class="pre">LumpedElement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.circuit.LumpedElement" title="Link to this definition">#</a></dt>
-<dd><p>Passive lumped RLC element on a straight interior edge path.</p>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.circuit.</span></span><span class="sig-name descname"><span class="pre">LumpedElement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples_per_cell</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.circuit.LumpedElement" title="Link to this definition">#</a></dt>
+<dd><p>Passive lumped RLC element on an interior edge path.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Unique identifier; shares one namespace with the port names
 of the model it is added to.</p></li>
-<li><p><strong>start</strong> (<em>tuple</em><em> of </em><em>float</em>) – Endpoints in metres; must differ along exactly one Cartesian
-axis after grid snapping.  Under a clipping symmetry
-declaration the endpoints stay in full-model coordinates — an
-element whose chain crosses an electric symmetry plane is
-clipped to the meshed half automatically.</p></li>
-<li><p><strong>end</strong> (<em>tuple</em><em> of </em><em>float</em>) – Endpoints in metres; must differ along exactly one Cartesian
-axis after grid snapping.  Under a clipping symmetry
-declaration the endpoints stay in full-model coordinates — an
-element whose chain crosses an electric symmetry plane is
-clipped to the meshed half automatically.</p></li>
+<li><p><strong>start</strong> (<em>tuple</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – Endpoints in metres — the two-point short form of <em>path</em>, and
+exclusive with it.  Under a clipping symmetry declaration they
+stay in full-model coordinates: an element crossing an electric
+symmetry plane is clipped to the meshed half automatically.</p></li>
+<li><p><strong>end</strong> (<em>tuple</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – Endpoints in metres — the two-point short form of <em>path</em>, and
+exclusive with it.  Under a clipping symmetry declaration they
+stay in full-model coordinates: an element crossing an electric
+symmetry plane is clipped to the meshed half automatically.</p></li>
+<li><p><strong>path</strong> (<a class="reference internal" href="geo.html#magnelio.geo.Curve" title="magnelio.geo.Curve"><em>Curve</em></a><em> or </em><em>sequence</em><em> of </em><em>points</em><em>, </em><em>optional</em>) – The element’s path: a <a class="reference internal" href="geo.html#magnelio.geo.Curve" title="magnelio.geo.Curve"><code class="xref py py-class docutils literal notranslate"><span class="pre">Curve</span></code></a>, or a
+sequence of at least two <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y,</span> <span class="pre">z)</span></code> points [m] read as
+polyline vertices.  Any direction is allowed — an oblique path
+is carried by a staircase of grid edges.  The path must not
+visit a grid edge twice: a two-terminal element is a series
+chain.</p></li>
+<li><p><strong>samples_per_cell</strong> (<em>int</em><em>, </em><em>default 4</em>) – Path samples per smallest cell while rasterising.</p></li>
 <li><p><strong>element</strong> (<a class="reference internal" href="#magnelio.circuit.SeriesRLC" title="magnelio.circuit.SeriesRLC"><em>SeriesRLC</em></a><em> or </em><a class="reference internal" href="#magnelio.circuit.ParallelRLC" title="magnelio.circuit.ParallelRLC"><em>ParallelRLC</em></a>) – Trapezoidal companion model providing the terminal relation,
 e.g. <code class="docutils literal notranslate"><span class="pre">SeriesRLC(R=100.0)</span></code> for an ideal 100 Ω resistor.
 Always the full-model values: under symmetry the solver
@@ -818,7 +823,12 @@ it validates the rasteriser before any physics is built on it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>field</strong> (<em>FieldArrays</em>) – The E field to integrate (<code class="docutils literal notranslate"><span class="pre">field.Ex/Ey/Ez</span></code>).</p></li>
+<li><p><strong>field</strong> (<a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><em>FieldState</em></a>) – The E field to integrate (<code class="docutils literal notranslate"><span class="pre">field.Ex/Ey/Ez</span></code>), in <strong>physical
+units</strong> [V/m] — a <a class="reference internal" href="fields.html#magnelio.fields.FieldState" title="magnelio.fields.FieldState"><code class="xref py py-class docutils literal notranslate"><span class="pre">FieldState</span></code></a>, e.g. a
+frame of a monitor’s recording or spectrum.  The solver’s own
+states are FIT grid quantities (<code class="docutils literal notranslate"><span class="pre">e</span> <span class="pre">=</span> <span class="pre">E·l</span></code>, in volts) and are
+<em>not</em> what this function expects: multiplying those by <code class="docutils literal notranslate"><span class="pre">dl</span></code>
+again is wrong by a cell length.</p></li>
 <li><p><strong>curve</strong> (<a class="reference internal" href="geo.html#magnelio.geo.Curve" title="magnelio.geo.Curve"><em>Curve</em></a>) – The path of integration.</p></li>
 <li><p><strong>grid</strong> (<a class="reference internal" href="mesh.html#magnelio.mesh.GridLines" title="magnelio.mesh.GridLines"><em>GridLines</em></a>) – The simulation grid the field lives on.</p></li>
 <li><p><strong>samples_per_cell</strong> (<em>int</em><em>, </em><em>default 4</em>) – Forwarded to <a class="reference internal" href="#magnelio.circuit.rasterize_curve" title="magnelio.circuit.rasterize_curve"><code class="xref py py-func docutils literal notranslate"><span class="pre">rasterize_curve()</span></code></a>.</p></li>
@@ -831,6 +841,9 @@ it validates the rasteriser before any physics is built on it.</p>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Real-valued fields only: a complex frame currently loses its
+imaginary part here (known limitation).</p>
 </dd></dl>
 
 <dl class="py function">

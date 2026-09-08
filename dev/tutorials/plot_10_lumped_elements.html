@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=12d57f4c"></script>
+    <script src="../_static/documentation_options.js?v=efa5400a"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -707,12 +707,20 @@ stretched to 3.2 mm to compensate.</p>
 <p>Two things in that construction deserve a closer look.</p>
 <p><strong>The resistor is not a port.</strong>  <code class="docutils literal notranslate"><span class="pre">circuit.LumpedElement</span></code> places a
 passive two-terminal component — here a plain 100 Ω = 2·Z₀ resistor,
-but any series or parallel RLC — on a straight path between two
-points in the volume.  It is registered with <code class="docutils literal notranslate"><span class="pre">add_element</span></code>, not
-<code class="docutils literal notranslate"><span class="pre">add_port</span></code>: it cannot be excited, it records nothing, and it never
-appears in the S-matrix.  It simply loads the fields, like a real
-soldered component.  (Keep the element path short against the
-wavelength, exactly as you would keep an SMD’s leads short.)</p>
+but any series or parallel RLC — on a path between two points in the
+volume.  It is registered with <code class="docutils literal notranslate"><span class="pre">add_element</span></code>, not <code class="docutils literal notranslate"><span class="pre">add_port</span></code>: it
+cannot be excited, it records nothing, and it never appears in the
+S-matrix.  It simply loads the fields, like a real soldered
+component.  (Keep the element path short against the wavelength,
+exactly as you would keep an SMD’s leads short.)</p>
+<p>The two points here happen to sit on one grid axis, which is the
+tidy case.  They need not: <code class="docutils literal notranslate"><span class="pre">start</span></code>/<code class="docutils literal notranslate"><span class="pre">end</span></code> may run in any
+direction, and <code class="docutils literal notranslate"><span class="pre">path=</span></code> takes a whole polyline or a curve, so a
+component can be routed diagonally or around a bend.  An oblique
+path rides on a staircase of grid edges and pays a small parasitic
+series inductance for it — a few tens of picohenries per millimetre,
+which the <em>Discrete ports and lumped elements</em> method page quantifies
+and which is worth a thought for a long slanted component.</p>
 <p><strong>The copper is thinner than any cell.</strong>  17 µm is far below a
 reasonable cell size for this model.  Declaring a hard cell floor
 with <code class="docutils literal notranslate"><span class="pre">min_cell_size</span></code> tells the mesher to treat any conductor
@@ -747,7 +755,7 @@ lossless PEC anyway.</p>
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
-  mesh | 95 x 17 x 58 cells (0.6 s total)
+  mesh | 95 x 17 x 58 cells (0.9 s total)
 grid: 95 x 17 x 58 cells
 </pre></div>
 </div>
@@ -887,7 +895,7 @@ package-mode band ceiling, and the passive <code class="docutils literal notrans
 doing what only a resistor can do for a divider.  The copper is
 still perfect and the substrate loss-free — making them real is the
 next tutorial’s subject.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 3.511 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 15.189 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-10-lumped-elements-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/83a73d9af24641f40003456f8a59fbb5/plot_10_lumped_elements.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_10_lumped_elements.ipynb</span></code></a></p>
