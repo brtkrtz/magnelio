@@ -16,8 +16,49 @@ Resolved bugs are kept as short entries pointing at the design decision
 that fixed them; the full record lives there.  Entries fixed without a
 dedicated DD keep their record here.
 
-**Four entries are open as of 2026-09-07: KB-023, KB-038, KB-043 and
-KB-046.**  Everything else is struck through and resolved.
+**Five entries are open as of 2026-09-08: KB-023, KB-038, KB-043,
+KB-046 and KB-047.**  Everything else is struck through and resolved.
+
+## KB-047: `integrate_E` silently returns the real part of a complex field — Open (2026-09-08)
+
+**What was measured.**  `circuit.integrate_E` accumulates each sample as
+`v += sign * float(comp[axis][i, j, k]) * dl` (`circuit/rasterize.py`).
+`float()` on a complex value raises no error: it emits a `ComplexWarning`
+and drops the imaginary part.  Minimal case — a uniform
+`Ex = 3 + 4j` V/m integrated over 7 mm of x:
+
+    exact    2.100000e-02 + 2.800000e-02j
+    returned 0.021
+
+The real part is exact, the imaginary part is gone, and the returned
+value is an ordinary float that looks like a valid answer.  On a
+monitor phasor the symptom is that every integral comes back at a
+phase of exactly 0 or 180 degrees.
+
+**Why it matters now.**  The function was written for real time-domain
+frames (DD-076, when that was the only kind).  A complex `FieldState`
+from a frequency monitor is the normal user object since DD-259, and
+`FieldSpectrum.at_frequency(f)` hands one over directly — so the
+natural call today is the one that fails.  Found while building the
+oblique-path probes, where the path integral of a monitor phasor is the
+measurement; record:
+`investigations/oblique-lumped-path/DERIVATION.md` (internal dossier).
+
+**Why it is open rather than fixed.**  The arithmetic fix is one line
+(drop the `float()` cast), but it changes the declared return type from
+`float` to "float or complex, following the input", which is a
+user-visible contract change and wants a changelog entry.  The
+alternatives — rejecting complex input outright, or splitting off a
+second entry point — are the same size of decision.  Nothing is
+silently wrong for a real field, so there is no urgency to pick one
+badly.
+
+**Not the same defect, fixed in passing:** the `field` parameter was
+documented as a `FieldArrays`, whose entries have been FIT grid
+quantities in volts since DD-085; multiplying those by `dl` again is
+wrong by a cell length.  The function is correct for the `FieldState`
+(V/m) a user actually holds, and duck-typing has been carrying it.
+The docstring now says so.
 
 ## KB-046: `volume()` is quadrature-limited on rational B-spline faces — Open (2026-09-04)
 
