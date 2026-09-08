@@ -1,8 +1,15 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-09-08.*  **Released v0.8.0** (2026-09-08; a minor
-under the Cargo reading — every complex frequency-domain field is the
-conjugate of what 0.7 returned, `docs/migration-0.8.md`): **DD-268** —
+*Last updated: 2026-09-08.*  **Released v0.8.1** (2026-09-08):
+**DD-269** — a discrete port or lumped element follows an arbitrary path
+(oblique, bent, or a curve) instead of an axis-parallel pair of
+terminals, through the same canonical rasteriser thin wires already use;
+its polarity now follows the declared direction (a behaviour change
+judged to reach no user, hence a patch).  **KB-047** opened:
+`integrate_E` drops the imaginary part of a complex frame.
+**Released v0.8.0** (2026-09-08; a minor under the Cargo reading — every
+complex frequency-domain field is the conjugate of what 0.7 returned,
+`docs/migration-0.8.md`): **DD-268** —
 one phasor convention for the library (the running DFT sums
 `e^{-jωt}`, the far-field transform stops conjugating, result files
 name their convention and older ones convert on read); **DD-267** — the
@@ -11,28 +18,19 @@ request (one Python filter per monitor, a state file that names its
 interpreter) and the 3D viewer after the review (own toolbar, whole
 model across symmetry planes, eigenmodes as frames).
 **Released v0.7.0** (2026-09-06; the field monitors' dictionary API is
-gone, `docs/migration-0.7.md`):
-**DD-261** — fields in the volume of the 3D viewer (lattice arrows,
-isosurfaces, coloured arrows, a second toolbar row; browser review
-open); **DD-260** — energy and flux from a recording (`recording.energy()`,
-`.flux()`; a monitor carries its region's operators, in the store too);
-**DD-259** complete — field monitors keep the grid quantities
-(`monitor.recording`/`.spectrum`, store schema 3.0, the dictionary API
-gone, `docs/migration-0.7.md`), fields in the 3D viewer, a recorded
-frame as the start of a run (`SourceFieldInitial.from_recording`);
-**DD-257** (CPU kernels 1.2× faster, bit-identical); **DD-256** (a thin
-wire on a thin sheet).  **Released v0.6.0** (2026-09-05; `Project.runs`
-hands out `Run` objects, `docs/migration-0.6.md`): the usability series
-**DD-253/254/255** (timed marches with clock, rate and ETA; live `Run`
-objects, `aborted`/`stale`, reprs without arrays; `plot_energy`,
-`watch`, `follow`, `monitor`), **DD-249/250** (`lofted(blend="tangent")`),
-**DD-251** (in-place notebook progress), **DD-252** (`refine_port_modes`).
-Before it: v0.5.0–v0.5.2 (2026-09-02…04) DD-224…DD-248 — the API
-grammar and its phases, the content gate, `docs/migration-0.5.md`.
+gone, `docs/migration-0.7.md`): **DD-259/260/261** — monitors keep the
+grid quantities and derive every view at access time (store schema 3.0),
+energy and flux are identities on a recording, fields in the volume of
+the 3D viewer; **DD-257** (CPU kernels 1.2× faster, bit-identical);
+**DD-256** (a thin wire on a thin sheet).  Before it: **v0.6.0**
+(2026-09-05, `Project.runs` hands out `Run` objects, DD-249…255) and **v0.5.0–v0.5.2**
+(2026-09-02…04, the API grammar, DD-224…248) — migration guides
+`docs/migration-0.5.md` … `docs/migration-0.8.md`.
 
-Open: KB-023, KB-038, KB-043 and KB-046.  Unit and integration: 3581 passed / 13 skipped
-(2026-09-08 on merged `main`, NumPy backend; the four GPU tests need
-`CUPY_ACCELERATORS=""` outside the sandbox).
+Open: KB-023, KB-038, KB-043, KB-046 and KB-047.  Unit and integration:
+3583 passed / 13 skipped (2026-09-08 on merged `main`, NumPy backend; the
+four GPU / single-precision tests need a working CUDA toolchain — they
+fail in this sandbox on the release tag and on `main` alike).
 Channels: GitHub, PyPI, conda-forge and the two docs channels below.
 
 This file states what *is*.  Chronology: `git log --first-parent main`;
@@ -43,6 +41,7 @@ floors regenerate from the `validation/` certificates their DDs name.
 
 Newest first, one line each; the full record is the DD entry.
 
+* **DD-269** (2026-09-08, branch `feat/oblique-lumped-paths`, released as v0.8.1) — a lumped port or element is a **path**.  `PortLumped` and `circuit.LumpedElement` take `path=` (points or a `Curve`); `start`/`end` stay as the two-point short form.  The restriction lived in one place, the degenerate two-point rasteriser [[DD-075]] and [[DD-079]] had both marked for subsumption; it is gone, so DD-076's "one canonical rasteriser" is finally true, and the runtime operator needed no change (DD-079 built it EdgePath-shaped for this).  A point path is densified here rather than routed through `Curve.polyline` — OCC-free, and a bare polyline would otherwise rasterise an oblique segment into an **L**, not a staircase.  Three deliberate behaviours: polarity follows `start` → `end` (the old resolution sorted the terminals, so a port declared backwards silently had its twin's polarity — single-port Z and S11 unaffected, a multi-port S-matrix picks up 180°); an edge may be traversed once (a two-terminal element is a series chain); PEC-shorted chain edges warn instead of silently shorting the device.  DD-172 symmetry lifted from a two-point chain to a polyline; a `Curve` reaching a plane is refused with the point form as the way out.  **Measured**, on area-matched congruent lattice loops so both orientations share one asserted-identical grid: the staircase adds `dL' = 58.17 nH/m · x^0.614` per unit chord (`x` = staircase/chord − 1), ten points over three families, ~32 pH/mm for a strongly oblique element.  It **does not refine away** (`∝ Δ^0.19`) and is **not proportional to the extra path length**.  Correction deferred, with reason: the coefficient differs 21 % between plain edges (~32 nH/m) and a PEC thin wire (~38 nH/m), and without it oblique lumped elements sit at exactly the accuracy `ThinWire` already ships at.  Certificate `validation/oblique_lumped_staircase_certificate.py` (3.893 %); record `investigations/oblique-lumped-path/` (internal dossier).
 * **DD-268** (2026-09-07, branch `feat/phasor-convention-0.8`, for v0.8.0) — one phasor convention for the whole library.  Follows the developer's question after DD-267: *which* convention do the fields use?  The answer was "two".  The S-parameter path, `Signal1D.at_frequencies`, `Waveform.spectrum`, `cw_lockin_phasors` and the modal half-step `e^{+jω dt/2}` are all `e^{+jωt}`; only the monitors' running DFT summed `Σ F(t) e^{+jωt} dt` and handed out the conjugates, which is why DD-173's far-field transform had to conjugate in and out and why DD-183's transit phase for a beam toward `+z` read `e^{-jk_B z}`.  The accumulator (`monitors/_dft.py`, and the private copy in `wall_loss.py`) now sums `e^{-jωt}`; the three phasor evaluators go back to `Re(F e^{+jφ})` (DD-267's *meaning* — phase is ωt — is untouched); `post/far_field.py` drops its four conjugations and applies Balanis verbatim.  **Store:** schema stays 3.0 — a bump would refuse 0.7 stores whose data converts exactly.  `fields_freq.h5`, `wall_loss.h5` and `far_field.h5` carry `phasor_convention = "exp(+jwt)"`; absent means the older era and the bins (and the far field's stored divisor) are conjugated at the single read site of each file, an unknown value raises.  Exact in both directions, so a 0.7 run resumes bit-identically — verified by removing the hook, which fails all five legacy gates.  Invariant and unchanged: magnitudes, `Re Σ e·h*`, `|·|²`, gain, directivity, S-parameters.  Re-signed with the convention: the stripline how-to's `beam_voltage` and the Hertzian validation script (`arg(E_θ/j)` 180° → 0°).  Eight new gates (two on the kernel, one on the NTFF phase, five on legacy stores).
 * **DD-267** (2026-09-07, patch after v0.7.0; **sign amended by DD-268**) — the phase of a picture is ωt.  Three findings of the developer's third viewer pass.  (1) "With the phase animated the wave runs backwards, toward the exciting port": the running DFT sums `Σ F(t) e^{+jωt} dt`, so a bin of `A·cos(ωt+φ)` is `(T/2)·A·e^{-jφ}` — a phasor of the **`e^{-jωt}` convention**, whose instant is `Re(F e^{-jωt})`.  Every picture applied `Re(F e^{+jφ})`, the same pattern run backwards.  Fixed in the three places that evaluate a phasor (`_frame_plots.at_phase`, `_FieldView._instant`, `_FieldSeries._snapshot`); measured on `cos(ωt-kx)` accumulated over 2000 steps — the old sign walked the crest toward `-x`, the new one tracks the analytic wave to a grid step — and seen in Chrome on an analytic `Ez = e^{+jkx}`, whose crests move a quarter wavelength *away from the port* at `phase = 90°`.  The convention itself was never in doubt (DD-173's far-field transform conjugates in and out for it, DD-183's transit phase reads it), only the reconstruction; magnitudes, S-parameters and far fields do not go through these three functions.  A picture at a phase other than 0/180° is now the mirror in time of what the same call gave before — changelog *Fixed*.  (2) PyVista's menu card is `height: 36px` with `flex-wrap: nowrap`, so *Cut* and *Show* were clipped along the top: DD-261's `:has()` rule keyed on the **field** row, which a geometry viewer has none of.  It now keys on `.mio-menu-row`, the cut row every viewer carries.  (3) `mesh=` **is** used for a monitor (PEC cut-out, symmetry planes, grid on the cut) but was dropped whole once the frames were mirrored, taking `show_grid` with it in silence — measured on the half-box: 99 grid cells at `mirror=False`, no actor at `mirror=True`; it now warns and names `mirror=False`.  `show()` on a monitor read back from a project describes `geometry=` and `mesh=` instead of pointing at `show_field`.  Gate `test_a_rising_phase_runs_the_wave_forward`; record `investigations/viewer-review-followup/MEASUREMENTS.md` (internal record).
 * **DD-266** (2026-09-07, patch after v0.7.0) — one cutting plane for the ParaView session, and every set of arrows coloured when it is made.  Three findings from the developer's first 6.1 session: a `geometry_cut_<monitor>` plus a plane link per monitor; "most arrows have coloring = Solid Color" because only the first shown pair ever got a representation (ParaView auto-colours only what is shown, so every hidden set came up flat); and a `vtkContext2DScalarBarActor` printf-format warning.  Now: one `geometry_cut` and one `cut_plane` link over it and every `<monitor>_slice` (`vtkSMProxyLink` takes any number of proxies — measured: moving one slice drags the other and the clip); `coloured(proxy, array, visible, bar)` replaces `show_coloured` and builds the representation through `GetDisplayProperties`, scales the transfer function to the monitor's cap *before* attaching the array (so no unbuilt data is asked for its range) and then sets visibility — applied to the cut arrows, the imaginary part, the volume arrows and the field sheet, one scalar bar on the visible pair, `UseSeparateColorMap` because monitors share an array name but not a cap.  The scalar-bar warning is not ours: 6.1's defaults are already `std::format`, the printf spelling comes from a state baked by 6.0 (DD-265); a fresh 6.1 export raises none.  Cost: one pipeline update per glyph set at export (4.2 s for a three-monitor run incl. bake).  Gate `test_every_glyph_comes_up_coloured_by_its_field`.
@@ -60,8 +59,6 @@ Newest first, one line each; the full record is the DD entry.
 * **DD-254** (2026-09-05) — a run is an object, a project knows whether anyone is still writing it, and nothing prints its arrays.  **The 0.6.0 break:** `Project.runs` is a mapping of live `Run` views (`.state .n_steps .energy_db .energy_trace .elapsed .result() .monitors`; channel keys tuples; `docs/migration-0.6.md`).  `meta` follows `project.json` by `(mtime, inode, size)` until the stored status is terminal, so a live watcher needs no `refresh()`; `_load_run` keys its cache on `(n_steps, finished)`.  Status rule fixed (any aborted → **aborted**, was `running` forever); **`stale`** derived from the writer's pid on the same host (POSIX; elsewhere unknown → `running`).  Repr principle in `_repr.py` (what, how big, what state — never arrays): `Project` prints a summary plus run table and **cannot raise**, `CheckpointState` is a `Mapping` that prints sizes, `TDResult`/`ScatteringTDResult`/`SParameterResult`/`RunSettings` summarise, HTML tables in notebooks.  `check_api_surface.py` pin now lists DD-246's verbosity switch (had drifted).  Gates `TestRunObjects`, `TestProjectStatus`, `TestCheckpointState`, `test_repr.py`.
 * **DD-253** (2026-09-05) — every march is timed, and the time loop says what runs and how long it has run.  The clock lives in `FITTimeDomainSolver.run()` (a wrapper around the loop with a `finally`, so all five exits and exceptions are covered) and reaches the result objects (`started`/`finished`/`elapsed`, marching only, in the result contract) and the store (`_RunSink.close(elapsed=)`, `_finalize_run` **accumulates** over resumes, `reopen_run` stamps `resumed`; `pid`/`host` on every run entry and as `meta["writer"]`; `meta["analysis"]` for the whole call).  The line: `step 2900/∞ | 0.7 s | energy -58.4/-70 dB | 3.9k steps/s`, closing line in the same slots; **ETA only on a fixed step count** — the run-length estimate is a 25-transit scale, an ETA on it would overstate a TEM run several-fold, so the header states the *rule* (`stops at energy -70 dB or port signal -60 dB, cap 388480 steps`) instead of a number.  `run | finished in 2.6 s (2 runs)` per `run()`/`resume()`; seven bare prints now go through `Reporter.note` (multi-line aware).  Gates `TestDurations`, `TestMarchLines`, `TestRunTiming`.
 * **DD-252** (2026-09-04) — `refine_port_modes` converges what the mode family defines.  The DD-244 ladder defaulted to `z_line`, and the round port of a rectangular-to-circular taper — whose cut-off the grid reads **0.33 % low**, amplified by β to 2 % at 11.9 GHz — answered `has no line impedance`.  `target="auto"` (default) resolves from the level-0 report: line impedance for TEM/quasi-TEM, cut-off otherwise.
-* **DD-251** (2026-09-04) — a notebook is an in-place stream, and the viewer starts its trame server on the running loop.  *Run All* aborted at the first `plot()` (`RuntimeError: cannot enter context … is already entered`): PyVista's `elegantly_launch` nests a loop into the kernel's via `nest_asyncio2`, and under ipykernel 7 that nested loop picks up the *next queued cell* — reproduced without a browser by queueing four requests through `jupyter_client`.  The server is now a task on the loop that already runs, with an empty widget in the cell until `server.ready`.  DD-246 had filed the notebook with the logs (`isatty()` is false), so a one-minute GPU run printed its first line at **86 %** of the march; an `ipykernel` stream is an in-place stream at **0.5 s**.  Gates `TestNotebookStream`; record `investigations/viewer3d/runall_repro.py`.
-* **DD-250** (2026-09-04) — `blend="tangent"` between facing profiles is a loft with Hermite end rows, not a sweep.  DD-249 had made the coaxial taper *build* (the straight spine's ulp-noise snapped away) but left it the creased plain loft with a warning pointing at hand-made intermediate sections.  The eased taper is not new geometry: it is the plain loft **re-parametrised** — the same family of cross-sections redistributed along the axis under a law whose derivative vanishes at both ends — so OCC's own outline matching is reused: `ThruSections(ruled)` hands back lateral B-spline faces of v-degree 1 with one pole row on each wire (the circle arrives as a **degree-7 polynomial**, a cone as a rational periodic surface via `NurbsConvert`), and each face is rebuilt as a v-cubic with rows `A, A + τd·n_a, B + τd·n_b, B`, weights riding along.  End tangent exact (**0.0e+00** lateral component, all faces), 4 ms build, the notebook's mesh **2.2 s against 6.7 s** for 13 sampled sections; between two circles the volume is the closed-form smoothstep cone to 1e-8.  The regime is the **normals** (`|n_a + n_b| ≤ 1e-6`), not the spine's straightness: a laterally offset pair has a bent spine and still wants parallel sections — a smooth dog-leg — and the sweep survives tilts down to 1e-7 rad, so DD-249's snap and warning are gone; faces that look *away* from each other are refused.  Bent pairs keep DD-144's `MakePipeShell` sweep untouched.  Side finding, **KB-046**: OCC's fixed Gauss volume rule reads the rational Hermite face 0.9 % too large, and the adaptive rule is no fix (it drifts with its tolerance on the polar-parametrised dish), so `volume()` stays quadrature-limited there and the gate integrates adaptively itself.  Measured on the WR-75 → Ø 15.9 mm taper (GPU): worst in-band |S11| **−18.47 dB** eased against **−13.92 dB** straight.  Gates `TestTangentBlend` (facing pair, zero-slope ratio 4, smoothstep cone volume, dog-leg, looking-away); chapter `docs/methods/geometry.md` section *Lofts*; record `investigations/taper-tangency/MEASUREMENTS.md`.
 
 ## Working practices earned the hard way
 
@@ -335,12 +332,17 @@ flickers to ``"done"`` between sequential runs; the reader skips
   priced.  The law is **not band-specific** (the modal port erodes at
   the same rate but saturates at the float32 floor, −112.6 dB) — users:
   `docs/methods/precision.md`; dossier `investigations/kb038-wordlength/`.
+* **Staircase correction for oblique paths (DD-269)** — measured, not
+  unknown: a per-edge correction in `_collect_requests` (a 10–12 % bump
+  of the equivalent radius) would take 1.6–3.9 % down to under 0.16 %.
+  Open before it can be *one* coefficient: plain edges want ~32 nH/m and
+  a PEC thin wire ~38 nH/m (feed gap explains a third, conductor model
+  the rest); untested below `x` = 0.141.
 * **Ports on the GPU** — only `TestBandDTBCOnGPU` (KB-045) exercises a
   port on a device; `tests/conftest.py` pins the suite to NumPy.
-* **The launch pair (DD-239 → DD-244 → DD-248) — closed.**  Left
-  behind it: the decomposition **overshoots unity transmission**
-  (|S21| 1.0030 frozen, 1.0078 dispersive, rank-independent, growing
-  with f) — DD-244's to own.
+* **Modal decomposition overshoots unity transmission** (|S21| 1.0030
+  frozen, 1.0078 dispersive, rank-independent, growing with f) — left by
+  the closed launch pair DD-239 → DD-244 → DD-248, DD-244's to own.
 * **Facet section engine (KB-043)** — the reach campaign is closed
   (DD-240/242/243 close KB-039, KB-041, KB-042 and KB-044).  Open:
   **KB-043**, pre-existing and two-sided — within ~1e-7 m of a
@@ -392,8 +394,7 @@ are not repeated here.
   STREAM triad (DD-257); incompatible with the per-step hooks (ports,
   CPML, sources, recorder).  Not pursued.  A float32 curl accumulator
   on the E side would buy 3 % on Apple Silicon and is a numerics change.
-* **Residual GPU small-grid floor** (~0.41 ms/step at 10k cells, port
-  round trips — DD-092); **tensor (gyrotropic) μ** (DD-089's ADE is
-  scalar per axis); **off-Yee field-monitor interpolation** (must
-  preserve the DD-085 units); **far-field accepted power on the streamed
-  path** (``gain`` raises until it wires ``1 − Σ|S|²``, DD-070).
+* **Residual GPU small-grid floor** (~0.41 ms/step at 10k cells, port round
+  trips — DD-092); **tensor (gyrotropic) μ** (DD-089's ADE is scalar per
+  axis); **off-Yee field-monitor interpolation** (must preserve the DD-085
+  units); **far-field accepted power on the streamed path** (``gain`` raises until it wires ``1 − Σ|S|²``, DD-070).
