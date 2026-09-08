@@ -128,9 +128,8 @@ this modest resolution.
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (0.6 s)
       mesh | PEC masks
-      mesh | 30 x 30 x 30 cells (0.6 s total)
+      mesh | 30 x 30 x 30 cells (0.5 s total)
     grid: 30 x 30 x 30 cells
 
 
@@ -321,7 +320,7 @@ the solvers — starting with field monitors, which record fields
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 30.438 seconds)
+   **Total running time of the script:** (0 minutes 33.378 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_05_eigenmode_sphere.py:

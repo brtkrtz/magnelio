@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=486e5634"></script>
+    <script src="../_static/documentation_options.js?v=ec16d22d"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -1114,26 +1114,39 @@ dispersion divided out — comparable with the closed-form
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.ports.PortLumped">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">PortLumped</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortLumped" title="Link to this definition">#</a></dt>
-<dd><p>Declarative lumped port on a straight interior edge path.</p>
-<p>The high-level spelling of the lumped Thévenin port: two endpoints
-and a reference impedance, optionally backed by an RLC companion
-element.  Resolved into a
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">PortLumped</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples_per_cell</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortLumped" title="Link to this definition">#</a></dt>
+<dd><p>Declarative lumped port on an interior path.</p>
+<p>The high-level spelling of the lumped Thévenin port: a path through
+the model and a reference impedance, optionally backed by an RLC
+companion element.  Resolved into a
 <code class="xref py py-class docutils literal notranslate"><span class="pre">PortSpecLumped</span></code> by the analysis.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Unique port name.</p></li>
-<li><p><strong>start</strong> (<em>tuple</em><em> of </em><em>float</em>) – Endpoints in metres; must differ along exactly one Cartesian
-axis after grid snapping.  Under a clipping symmetry
-declaration the endpoints stay in full-model coordinates — a
-port whose chain crosses an electric symmetry plane is clipped
-to the meshed half automatically.</p></li>
-<li><p><strong>end</strong> (<em>tuple</em><em> of </em><em>float</em>) – Endpoints in metres; must differ along exactly one Cartesian
-axis after grid snapping.  Under a clipping symmetry
-declaration the endpoints stay in full-model coordinates — a
-port whose chain crosses an electric symmetry plane is clipped
-to the meshed half automatically.</p></li>
+<li><p><strong>start</strong> (<em>tuple</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – <p>Endpoints in metres — the two-point short form of <em>path</em>, and
+exclusive with it.  Under a clipping symmetry declaration they
+stay in full-model coordinates: a port crossing an electric
+symmetry plane is clipped to the meshed half automatically.</p>
+<p>The port’s polarity follows <em>start</em> → <em>end</em>; the recorded V and
+I change sign with it.</p>
+</p></li>
+<li><p><strong>end</strong> (<em>tuple</em><em> of </em><em>float</em><em>, </em><em>optional</em>) – <p>Endpoints in metres — the two-point short form of <em>path</em>, and
+exclusive with it.  Under a clipping symmetry declaration they
+stay in full-model coordinates: a port crossing an electric
+symmetry plane is clipped to the meshed half automatically.</p>
+<p>The port’s polarity follows <em>start</em> → <em>end</em>; the recorded V and
+I change sign with it.</p>
+</p></li>
+<li><p><strong>path</strong> (<a class="reference internal" href="geo.html#magnelio.geo.Curve" title="magnelio.geo.Curve"><em>Curve</em></a><em> or </em><em>sequence</em><em> of </em><em>points</em><em>, </em><em>optional</em>) – The port’s path: a <a class="reference internal" href="geo.html#magnelio.geo.Curve" title="magnelio.geo.Curve"><code class="xref py py-class docutils literal notranslate"><span class="pre">Curve</span></code></a>, or a sequence
+of at least two <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y,</span> <span class="pre">z)</span></code> points [m] read as polyline
+vertices.  Any direction is allowed — an oblique path is
+carried by a staircase of grid edges, which costs a little
+excess series inductance (see the lumped-elements guide).  The
+path must not visit a grid edge twice: a two-terminal element
+is a series chain, so a self-crossing or doubled-back path is
+rejected.</p></li>
+<li><p><strong>samples_per_cell</strong> (<em>int</em><em>, </em><em>default 4</em>) – Path samples per smallest cell while rasterising.</p></li>
 <li><p><strong>Z0</strong> (<em>float</em><em>, </em><em>default 50.0</em>) – Power-wave reference impedance [Ω]; without <em>element</em> also the
 internal Thévenin impedance.  Always the full-model value:
 under symmetry the solver internally halves or doubles it, and
@@ -1463,22 +1476,33 @@ first).  See module docstring for the convention.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="magnelio.ports.PortSpecLumped">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">PortSpecLumped</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortSpecLumped" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">magnelio.ports.</span></span><span class="sig-name descname"><span class="pre">PortSpecLumped</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples_per_cell</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.ports.PortSpecLumped" title="Link to this definition">#</a></dt>
 <dd><p>Declarative description of a lumped discrete port / RLC element.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Unique port identifier (used as recorder channel key).</p></li>
-<li><p><strong>start</strong> (<em>tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>]</em>) – Endpoints in metres.  The two points must differ along exactly
-one Cartesian axis after grid snapping.  Under a clipping
-symmetry declaration they stay in full-model coordinates;
-<code class="docutils literal notranslate"><span class="pre">Z0</span></code> / <code class="docutils literal notranslate"><span class="pre">element</span></code> are full-model values throughout, and the
-builder derives the internally scaled half-model device.</p></li>
-<li><p><strong>end</strong> (<em>tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>]</em>) – Endpoints in metres.  The two points must differ along exactly
-one Cartesian axis after grid snapping.  Under a clipping
-symmetry declaration they stay in full-model coordinates;
-<code class="docutils literal notranslate"><span class="pre">Z0</span></code> / <code class="docutils literal notranslate"><span class="pre">element</span></code> are full-model values throughout, and the
-builder derives the internally scaled half-model device.</p></li>
+<li><p><strong>start</strong> (<em>tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>]</em><em>, </em><em>optional</em>) – Endpoints in metres — the two-point short form of <em>path</em>.
+Exclusive with it; exactly one of the two forms is required.
+Under a clipping symmetry declaration they stay in full-model
+coordinates; <code class="docutils literal notranslate"><span class="pre">Z0</span></code> / <code class="docutils literal notranslate"><span class="pre">element</span></code> are full-model values
+throughout, and the builder derives the internally scaled
+half-model device.</p></li>
+<li><p><strong>end</strong> (<em>tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>]</em><em>, </em><em>optional</em>) – Endpoints in metres — the two-point short form of <em>path</em>.
+Exclusive with it; exactly one of the two forms is required.
+Under a clipping symmetry declaration they stay in full-model
+coordinates; <code class="docutils literal notranslate"><span class="pre">Z0</span></code> / <code class="docutils literal notranslate"><span class="pre">element</span></code> are full-model values
+throughout, and the builder derives the internally scaled
+half-model device.</p></li>
+<li><p><strong>path</strong> (<a class="reference internal" href="geo.html#magnelio.geo.Curve" title="magnelio.geo.Curve"><em>Curve</em></a><em> or </em><em>sequence</em><em> of </em><em>points</em><em>, </em><em>optional</em>) – The port’s path through the model: a
+<a class="reference internal" href="geo.html#magnelio.geo.Curve" title="magnelio.geo.Curve"><code class="xref py py-class docutils literal notranslate"><span class="pre">Curve</span></code></a> or a sequence of at least two
+<code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y,</span> <span class="pre">z)</span></code> points [m] taken as polyline vertices.  It may
+run in any direction; the rasterised staircase carries an
+oblique path.  The chain must not visit an edge twice, so a
+self-crossing or doubled-back path is rejected — a two-terminal
+element is a series chain.</p></li>
+<li><p><strong>samples_per_cell</strong> (<em>int</em><em>, </em><em>default 4</em>) – Path samples per smallest cell while rasterising.  Higher
+values only refine which edges a strongly curved path picks up.</p></li>
 <li><p><strong>Z0</strong> (<em>float</em>) – Power-wave reference impedance [Ω] (default 50 Ω).  Without an
 <code class="docutils literal notranslate"><span class="pre">element</span></code> it is also the internal Thévenin impedance — the
 classic discrete port.</p></li>
