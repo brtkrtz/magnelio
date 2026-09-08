@@ -127,6 +127,62 @@ def warn_unexported_modes(
         )
 
 
+_SMITH_R = (0.2, 0.5, 1.0, 2.0, 5.0)
+_SMITH_X = (0.2, 0.5, 1.0, 2.0, 5.0)
+
+
+def _mark_indices(f_axis: np.ndarray, mark) -> list[int]:
+    """Indices of the frequencies nearest to *mark* (empty for ``None``)."""
+    if mark is None:
+        return []
+    return [int(np.argmin(np.abs(f_axis - float(v)))) for v in np.atleast_1d(mark)]
+
+
+def _draw_smith_grid(ax, *, labels: bool = True, color: str = "0.78", lw: float = 0.6) -> None:
+    """The circles of constant normalised resistance and reactance.
+
+    Constant ``r`` maps to the circle centred at ``r/(1+r)`` of radius
+    ``1/(1+r)``; constant ``x`` to the circle centred at ``(1, 1/x)`` of
+    radius ``1/|x|``, of which only the part inside the unit disc is a
+    reflection coefficient.
+    """
+    th = np.linspace(0.0, 2.0 * np.pi, 721)
+    ax.plot(np.cos(th), np.sin(th), color="0.35", lw=1.0, zorder=1)
+    ax.plot([-1.0, 1.0], [0.0, 0.0], color="0.35", lw=0.8, zorder=1)
+    for r in _SMITH_R:
+        centre, radius = r / (1.0 + r), 1.0 / (1.0 + r)
+        ax.plot(centre + radius * np.cos(th), radius * np.sin(th), color=color, lw=lw, zorder=0)
+        if labels:
+            ax.text(
+                centre - radius,
+                0.015,
+                f"{r:g}",
+                color="0.45",
+                fontsize=6.5,
+                ha="center",
+                va="bottom",
+                zorder=2,
+            )
+    a = np.linspace(0.0, 2.0 * np.pi, 2001)
+    for x in _SMITH_X:
+        radius = 1.0 / x
+        for sign in (1.0, -1.0):
+            cx = 1.0 + radius * np.cos(a)
+            cy = sign * (radius + radius * np.sin(a))
+            inside = cx * cx + cy * cy <= 1.0
+            ax.plot(
+                np.where(inside, cx, np.nan),
+                np.where(inside, cy, np.nan),
+                color=color,
+                lw=lw,
+                zorder=0,
+            )
+    ax.set_aspect("equal")
+    ax.set_xlim(-1.1, 1.1)
+    ax.set_ylim(-1.1, 1.1)
+    ax.axis("off")
+
+
 class SDerivedAccessors:
     """Accessors derived purely from ``S(...)``/``db(...)``.
 
@@ -234,6 +290,222 @@ class SDerivedAccessors:
         ax.grid(True, alpha=0.3)
         ax.legend()
         return fig, ax
+
+    def plot_balance(self, *excitations, deficit=False, ax=None):
+        """Plot the power balance of every excitation.
+
+        For each excited channel *j* the sum of the squared magnitudes
+        over the observed channels, ``Σ_i |S_ij|²`` — the share of the
+        incident power that comes back out of the ports.  On a
+        lossless, fully exported network it is one; what is missing is
+        what left the ports: ohmic and dielectric loss, and radiation.
+
+        The reading depends on two things the plot cannot check.  Only
+        channels present in the result are summed, so a network whose
+        higher modes or whose ports were not all exported reads short
+        and the deficit looks like loss (:attr:`is_complete` says
+        whether every observed channel was also excited).  And a
+        channel that carries no propagating mode at a frequency is
+        ``NaN`` there; an evanescent channel transports no active
+        power, so it counts as zero rather than poisoning the sum.
+
+        Parameters
+        ----------
+        *excitations : str or tuple
+            Excited channels to plot, each ``port`` or ``(port,
+            mode)``.  Without arguments every excitation is plotted.
+        deficit : bool, default False
+            Plot ``10·log10(1 − Σ)`` — the power that left the ports,
+            in dB — instead of the sum itself.  The useful form when
+            the balance is close to one, where the interesting number
+            is how far from it.
+        ax : matplotlib.axes.Axes, optional
+
+        Returns
+        -------
+        fig : matplotlib.figure.Figure
+        ax : matplotlib.axes.Axes
+        """
+        import matplotlib.pyplot as plt  # noqa: PLC0415
+
+        if not excitations:
+            excitations = tuple(self.excitations)
+        exc = [(e, 0) if isinstance(e, str) else (e[0], int(e[1])) for e in excitations]
+        if ax is None:
+            fig, ax = plt.subplots()
+        else:
+            fig = ax.figure
+        f_ghz = np.asarray(self.f_axis) / 1e9
+        multi_mode = any(m for _, m in self.channels)
+        for port_in, mode_in in exc:
+            total = np.zeros(len(self.f_axis))
+            for port_out, mode_out in self.channels:
+                mag = np.abs(self.S(port_out, port_in, mode_out=mode_out, mode_in=mode_in))
+                total = total + np.where(np.isnan(mag), 0.0, mag) ** 2
+            name = f"{port_in}:{mode_in}" if multi_mode else port_in
+            if deficit:
+                ax.plot(
+                    f_ghz,
+                    10.0 * np.log10(np.maximum(1.0 - total, 1e-12)),
+                    label=f"1 − Σ|S(· ← {name})|²",
+                )
+            else:
+                ax.plot(f_ghz, total, label=f"Σ|S(· ← {name})|²")
+        if deficit:
+            ax.set_ylabel("power leaving the ports / dB")
+        else:
+            ax.axhline(1.0, color="0.6", lw=0.8, ls=":")
+            ax.set_ylabel("power out / power in")
+        ax.set_xlabel("f / GHz")
+        ax.grid(True, alpha=0.3)
+        ax.legend()
+        return fig, ax
+
+    def plot_smith(self, *pairs, mark=None, labels=True, ax=None):
+        """Plot reflection channels on a Smith chart.
+
+        The complex reflection coefficient traced over frequency on the
+        unit disc, with the circles of constant normalised resistance
+        and reactance behind it.  The chart is only readable against
+        **one** normalisation: a channel whose reference impedance
+        varies with frequency (a dispersive waveguide mode, DD-244) has
+        no single set of circles, and its trace here is the power-wave
+        coefficient against a moving reference.  Call
+        :meth:`renormalize` first — ``renormalize(50)`` — when that
+        matters; a warning names the case.
+
+        Parameters
+        ----------
+        *pairs : tuple
+            Channels to draw, each ``(out_port, in_port)`` or
+            ``(out_port, in_port, mode_out, mode_in)``.  Without
+            arguments the reflection channel of every excitation.
+        mark : array_like, optional
+            Frequencies [Hz] to mark and label on every trace.
+        labels : bool, default True
+            Draw the resistance labels of the chart's grid.
+        ax : matplotlib.axes.Axes, optional
+            Axes to draw into; a square figure is created otherwise.
+
+        Returns
+        -------
+        fig : matplotlib.figure.Figure
+        ax : matplotlib.axes.Axes
+        """
+        import matplotlib.pyplot as plt  # noqa: PLC0415
+
+        if not pairs:
+            pairs = tuple((p, p, m, m) for (p, m) in self.excitations)
+        chans = []
+        for p in pairs:
+            chans.append((p[0], p[2] if len(p) > 2 else 0))
+            chans.append((p[1], p[3] if len(p) > 3 else 0))
+        self._warn_moving_reference(sorted(set(chans)))
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(5.0, 5.0))
+        else:
+            fig = ax.figure
+        _draw_smith_grid(ax, labels=labels)
+        f = np.asarray(self.f_axis, dtype=float)
+        for p in pairs:
+            out_port, in_port = p[0], p[1]
+            mode_out = p[2] if len(p) > 2 else 0
+            mode_in = p[3] if len(p) > 3 else 0
+            g = self.S(out_port, in_port, mode_out=mode_out, mode_in=mode_in)
+            (line,) = ax.plot(
+                np.real(g), np.imag(g), lw=1.5, label=f"S({out_port} ← {in_port})", zorder=3
+            )
+            for i in _mark_indices(f, mark):
+                ax.plot(np.real(g[i]), np.imag(g[i]), "o", ms=4, color=line.get_color(), zorder=4)
+                ax.annotate(
+                    f"{f[i] / 1e9:.4g} GHz",
+                    (np.real(g[i]), np.imag(g[i])),
+                    textcoords="offset points",
+                    xytext=(5, 4),
+                    fontsize=7,
+                    color=line.get_color(),
+                )
+        ax.legend(loc="upper right", fontsize=8, framealpha=0.85)
+        return fig, ax
+
+    def plot_polar(self, *pairs, mark=None, r_max=None, ax=None):
+        """Plot channels in the complex plane, magnitude over phase.
+
+        The polar counterpart of :meth:`plot_smith` for channels the
+        Smith chart does not describe — transmission above all, whose
+        magnitude is not bounded by one in a network with gain and
+        which has no impedance reading.
+
+        Parameters
+        ----------
+        *pairs : tuple
+            As :meth:`plot_smith`; without arguments every recorded
+            channel of every excitation.
+        mark : array_like, optional
+            Frequencies [Hz] to mark on every trace.
+        r_max : float, optional
+            Radial limit; default the peak magnitude, at least one.
+        ax : matplotlib.axes.Axes, optional
+            Must be a polar axes; one is created otherwise.
+
+        Returns
+        -------
+        fig : matplotlib.figure.Figure
+        ax : matplotlib.axes.Axes
+        """
+        import matplotlib.pyplot as plt  # noqa: PLC0415
+
+        if not pairs:
+            pairs = tuple(
+                (out_port, in_port, mode_out, mode_in)
+                for (in_port, mode_in) in self.excitations
+                for (out_port, mode_out) in self.channels
+            )
+        if ax is None:
+            fig = plt.figure(figsize=(5.0, 5.0))
+            ax = fig.add_subplot(projection="polar")
+        else:
+            fig = ax.figure
+            if ax.name != "polar":
+                raise ValueError("plot_polar needs a polar axes: add_subplot(projection='polar')")
+        f = np.asarray(self.f_axis, dtype=float)
+        peak = 0.0
+        for p in pairs:
+            out_port, in_port = p[0], p[1]
+            mode_out = p[2] if len(p) > 2 else 0
+            mode_in = p[3] if len(p) > 3 else 0
+            s = self.S(out_port, in_port, mode_out=mode_out, mode_in=mode_in)
+            mag = np.abs(s)
+            finite = mag[np.isfinite(mag)]
+            peak = max(peak, float(finite.max()) if finite.size else 0.0)
+            (line,) = ax.plot(np.angle(s), mag, lw=1.5, label=f"S({out_port} ← {in_port})")
+            for i in _mark_indices(f, mark):
+                ax.plot(np.angle(s[i]), mag[i], "o", ms=4, color=line.get_color())
+        ax.set_rmax(float(r_max) if r_max is not None else max(1.0, 1.05 * peak))
+        ax.set_rlabel_position(135.0)
+        ax.grid(True, alpha=0.4)
+        ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1.0), fontsize=8)
+        return fig, ax
+
+    def _warn_moving_reference(self, chans) -> None:
+        """Warn when the chart's one normalisation does not exist.
+
+        A run's result carries its matrix in ``s_params`` and delegates
+        to it (the pattern :meth:`deembed` uses); a plain matrix is its
+        own source.
+        """
+        src = getattr(self, "s_params", self)
+        if getattr(src, "reference_impedances", None) is None:
+            return
+        if src._uniform_reference(tuple(chans)) is None:
+            warnings.warn(
+                "the reference impedance of at least one channel varies with "
+                "frequency, so the Smith chart's circles hold at no single "
+                "normalisation; renormalize(50) first for a chart to read "
+                "impedances off",
+                UserWarning,
+                stacklevel=3,
+            )
 
 
 @dataclass(frozen=True)

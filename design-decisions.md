@@ -22150,3 +22150,48 @@ carries a builder the store cannot rebuild, the same rule
 `SourceCurrentPath` uses), old files load unchanged.  Both plots draw the
 path rather than the chord.  `PortOperatorLumped.direction` reports
 `"path"` for a chain that is not axis-parallel.
+
+---
+
+## DD-271 — Three more readings of an S-matrix: balance, Smith, polar
+
+**Date:** 2026-09-09.
+**Status:** Accepted — implemented + gated (`tests/unit/test_sparameter_plots.py`).
+
+**Problem.**  A result could draw `|S|` over frequency and nothing else.
+Two questions a user asks of every S-matrix had no answer in the library:
+*where did the power go that did not come back out of the ports* — the
+question behind both a convergence check and an antenna's radiated
+power — and *what does the complex trajectory look like*, which is what
+an impedance is read off in practice.
+
+**Decision.**  Three methods on `SDerivedAccessors`, so every result that
+answers `plot_s` answers these: `plot_balance`, `plot_smith`,
+`plot_polar`.  The Smith chart is drawn in-house (constant-`r` and
+constant-`x` circles) rather than delegated to scikit-rf, which is an
+optional `[interop]` extra and must not become a hard dependency for a
+standard picture; `to_skrf` remains the door to that ecosystem.
+
+Three judgements are worth recording:
+
+- **The balance plot's default is the sum, its dB form is the deficit.**
+  `10·log10(1 − Σ)` is the useful curve wherever the balance is close to
+  one, because the interesting number is then how far from it — and it
+  is simultaneously the physical answer on a radiator.  Plotting Σ in dB
+  instead would put every interesting case at `0.000 dB`.
+- **An evanescent channel counts as zero, not as NaN.**  A channel below
+  its cut-on carries no active power ([[DD-235]]), so poisoning the
+  balance with its NaN would hide the answer.  What the sum genuinely
+  cannot see is a channel that is *not in the result at all* — an
+  unexported higher mode reads as loss — so the docs point at
+  `is_complete` and say it plainly.
+- **A Smith chart needs one normalisation.**  A dispersive waveguide
+  channel's reference impedance moves with frequency ([[DD-244]]), and
+  its circles then hold nowhere; the call warns and names
+  `renormalize(50)` rather than silently drawing a chart that cannot be
+  read.  The warning reaches a run's result too, which keeps its matrix
+  in `s_params` and delegates there, as `deembed` does.
+
+**Consequences.**  No data changes and no new dependency; matplotlib was
+already required for `plot_s`.  `plot_polar` refuses a Cartesian axes
+rather than drawing a wrong picture into it.
