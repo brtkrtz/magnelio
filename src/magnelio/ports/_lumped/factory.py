@@ -16,7 +16,7 @@ from typing import Optional, Union
 import numpy as np
 
 from magnelio.circuit.companion import ParallelRLC, SeriesRLC
-from magnelio.mesh.indexing import edge_index_Ex, edge_index_Ey, edge_index_Ez
+from magnelio.circuit.rasterize import rasterize_curve, rasterize_points
 from magnelio.ports._lumped.operator import LumpedElementOperator, PortOperatorLumped
 from magnelio.ports._lumped.port_report import LumpedPortReport
 
@@ -38,12 +38,24 @@ class PortSpecLumped:
     ----------
     name : str
         Unique port identifier (used as recorder channel key).
-    start, end : tuple[float, float, float]
-        Endpoints in metres.  The two points must differ along exactly
-        one Cartesian axis after grid snapping.  Under a clipping
-        symmetry declaration they stay in full-model coordinates;
-        ``Z0`` / ``element`` are full-model values throughout, and the
-        builder derives the internally scaled half-model device.
+    start, end : tuple[float, float, float], optional
+        Endpoints in metres — the two-point short form of *path*.
+        Exclusive with it; exactly one of the two forms is required.
+        Under a clipping symmetry declaration they stay in full-model
+        coordinates; ``Z0`` / ``element`` are full-model values
+        throughout, and the builder derives the internally scaled
+        half-model device.
+    path : Curve or sequence of points, optional
+        The port's path through the model: a
+        :class:`~magnelio.geo.Curve` or a sequence of at least two
+        ``(x, y, z)`` points [m] taken as polyline vertices.  It may
+        run in any direction; the rasterised staircase carries an
+        oblique path.  The chain must not visit an edge twice, so a
+        self-crossing or doubled-back path is rejected — a two-terminal
+        element is a series chain.
+    samples_per_cell : int, default 4
+        Path samples per smallest cell while rasterising.  Higher
+        values only refine which edges a strongly curved path picks up.
     Z0 : float
         Power-wave reference impedance [Ω] (default 50 Ω).  Without an
         ``element`` it is also the internal Thévenin impedance — the
@@ -59,10 +71,12 @@ class PortSpecLumped:
     """
 
     name: str
-    start: tuple[float, float, float]
-    end: tuple[float, float, float]
+    start: Optional[tuple[float, float, float]] = None
+    end: Optional[tuple[float, float, float]] = None
     Z0: float = 50.0
     element: Optional[Union[SeriesRLC, ParallelRLC]] = None
+    path: object = None
+    samples_per_cell: int = 4
 
 
 def build_lumped_port(
@@ -104,13 +118,15 @@ def build_lumped_port(
     del m_mu  # unused — kept in signature to mirror build_modal_port
 
     what = f"PortSpecLumped {spec.name!r}"
-    start, end, report = _resolve_symmetry(what, spec.start, spec.end, mesh)
-    direction, flat_indices, ijk_list, dl_list = _snap_edge_chain(
+    path = normalize_path(what, spec.start, spec.end, spec.path)
+    path, report = _resolve_symmetry(what, path, mesh)
+    flat_indices, ijk_list, dl_list, components, signs = _resolve_chain(
         what,
-        start,
-        end,
+        path,
         mesh,
+        spec.samples_per_cell,
     )
+    _warn_dead_edges(what, mesh, flat_indices, components)
 
     m_eps_port = np.asarray(m_eps[flat_indices], dtype=float)
     beta_E = dt / m_eps_port
@@ -125,11 +141,12 @@ def build_lumped_port(
     return PortOperatorLumped(
         name=spec.name,
         Z0=spec.Z0 * z_int,
-        direction=direction,
         flat_edge_indices=list(flat_indices),
         ijk_list=ijk_list,
         dl_list=dl_list,
         beta_E=beta_E,
+        edge_components=components,
+        edge_signs=signs,
         # Fresh companion state per built operator (operators are built
         # per excitation; the user's spec instance must stay pristine).
         element=_scaled_element(spec.element, z_int),
@@ -167,21 +184,21 @@ def build_lumped_element(
     del m_mu
 
     what = f"LumpedElement {spec.name!r}"
-    start, end, report = _resolve_symmetry(what, spec.start, spec.end, mesh)
-    direction, flat_indices, ijk_list, dl_list = _snap_edge_chain(
+    path = normalize_path(what, spec.start, spec.end, getattr(spec, "path", None))
+    path, report = _resolve_symmetry(what, path, mesh)
+    flat_indices, ijk_list, dl_list, components, signs = _resolve_chain(
         what,
-        start,
-        end,
+        path,
         mesh,
+        getattr(spec, "samples_per_cell", 4),
     )
+    _warn_dead_edges(what, mesh, flat_indices, components)
 
     m_eps_elem = np.asarray(m_eps[flat_indices], dtype=float)
     beta_E = dt / m_eps_elem
 
     z_int = report.z_internal_scale if report is not None else 1.0
 
-    component = {"x": 0, "y": 1, "z": 2}[direction]
-    n = len(flat_indices)
     return LumpedElementOperator(
         name=spec.name,
         Z0=0.0,
@@ -189,99 +206,184 @@ def build_lumped_element(
         flat_edge_indices=list(flat_indices),
         ijk_list=ijk_list,
         dl_list=dl_list,
-        edge_components=[component] * n,
-        edge_signs=[1.0] * n,
+        edge_components=components,
+        edge_signs=signs,
         beta_E=beta_E,
         port_report=report,
     )
 
 
-def _snap_edge_chain(
-    what: str,
-    start: tuple[float, float, float],
-    end: tuple[float, float, float],
-    mesh,
-) -> tuple[str, list[int], list[tuple[int, int, int]], list[float]]:
-    """Snap two endpoints to the grid and resolve the E-edge chain.
+def normalize_path(what: str, start, end, path):
+    """Bring the two declaration forms onto one representation.
 
-    Shared by :func:`build_lumped_port` and
-    :func:`build_lumped_element`; *what* prefixes the error messages
-    (e.g. ``"PortSpecLumped 'p1'"``).
+    Returns a :class:`~magnelio.geo.Curve` unchanged, or a tuple of
+    ``(x, y, z)`` points.  Exactly one of ``start``/``end`` and *path*
+    may be given; the two-point form becomes a two-vertex polyline.
+    """
+    has_ends = start is not None or end is not None
+    if has_ends and path is not None:
+        raise ValueError(
+            f"{what}: give either start/end or path=, not both.",
+        )
+    if has_ends:
+        if start is None or end is None:
+            raise ValueError(
+                f"{what}: start and end must be given together "
+                f"(or use path= for a multi-point path).",
+            )
+        return (_point(what, start), _point(what, end))
+    if path is None:
+        raise ValueError(
+            f"{what}: a path is required — start/end, or path= with a "
+            f"magnelio.geo.Curve or a sequence of (x, y, z) points [m].",
+        )
+    if hasattr(path, "_occ_shape"):  # a Curve, without importing geo here
+        return path
+    try:
+        pts = tuple(_point(what, p) for p in path)
+    except TypeError:
+        raise TypeError(
+            f"{what}: path= must be a magnelio.geo.Curve or a sequence of "
+            f"(x, y, z) points [m]; got {type(path).__name__}.",
+        ) from None
+    if len(pts) < 2:
+        raise ValueError(
+            f"{what}: a point path needs at least two (x, y, z) triples [m]; "
+            f"got {len(pts)} point(s).",
+        )
+    return pts
+
+
+def declared_path(obj):
+    """The declared path of a lumped port or element.
+
+    Returns a :class:`~magnelio.geo.Curve` or a tuple of points,
+    whichever form was declared, with the two-point short form folded
+    into a two-vertex polyline.  Shared by the plots so a picture can
+    never disagree with the builder about what was declared.
+    """
+    what = f"{type(obj).__name__} {getattr(obj, 'name', '?')!r}"
+    return normalize_path(
+        what,
+        getattr(obj, "start", None),
+        getattr(obj, "end", None),
+        getattr(obj, "path", None),
+    )
+
+
+def _point(what: str, p) -> tuple[float, float, float]:
+    try:
+        q = tuple(float(c) for c in p)
+    except (TypeError, ValueError):
+        raise TypeError(
+            f"{what}: expected an (x, y, z) point [m]; got {p!r}.",
+        ) from None
+    if len(q) != 3:
+        raise ValueError(f"{what}: expected an (x, y, z) point [m]; got {p!r}.")
+    return q
+
+
+def _densify(points, grid, samples_per_cell: int) -> np.ndarray:
+    """Resample a polyline so consecutive samples never skip a node.
+
+    :func:`~magnelio.circuit.rasterize_points` requires that; bare
+    polyline vertices do not satisfy it, and an oblique segment given
+    by its two ends alone would rasterise to an L, not a staircase.
+    Doing it here keeps a point path free of OCC — the reason DD-079
+    deferred subsuming the old two-point rasteriser.
+    """
+    step = min(grid.dx_min, grid.dy_min, grid.dz_min) / float(samples_per_cell)
+    pts = np.asarray(points, dtype=float)
+    out = [pts[0]]
+    for a, b in zip(pts[:-1], pts[1:]):
+        seg = float(np.linalg.norm(b - a))
+        n = max(1, int(np.ceil(seg / step)))
+        for k in range(1, n + 1):
+            out.append(a + (b - a) * (k / n))
+    return np.asarray(out)
+
+
+def _resolve_chain(what: str, path, mesh, samples_per_cell: int):
+    """Rasterise *path* onto the primary E-edges through the DD-076 kernel.
+
+    Replaces the degenerate two-point rasteriser this module used to
+    carry — the one DD-075 and DD-079 both marked for subsumption — so
+    a lumped element and a voltage probe can no longer disagree about
+    which edges a path occupies.
 
     Returns
     -------
     tuple
-        ``(direction, flat_indices, ijk_list, dl_list)`` with
-        ``direction`` in ``{"x", "y", "z"}`` and ``flat_indices`` on
-        the flat ``Ex|Ey|Ez`` layout.
+        ``(flat_indices, ijk_list, dl_list, components, signs)``.
     """
     grid = mesh.grid
-    Nx, Ny, Nz = grid.Nx, grid.Ny, grid.Nz
-
-    ix_s = int(np.argmin(np.abs(grid.x - start[0])))
-    iy_s = int(np.argmin(np.abs(grid.y - start[1])))
-    iz_s = int(np.argmin(np.abs(grid.z - start[2])))
-    ix_e = int(np.argmin(np.abs(grid.x - end[0])))
-    iy_e = int(np.argmin(np.abs(grid.y - end[1])))
-    iz_e = int(np.argmin(np.abs(grid.z - end[2])))
-
-    diff = ((ix_s != ix_e), (iy_s != iy_e), (iz_s != iz_e))
-    if sum(diff) != 1:
+    if int(samples_per_cell) < 2:
         raise ValueError(
-            f"{what}: start and end must differ "
-            f"along exactly one Cartesian axis after grid snapping. "
-            f"Got start node ({ix_s},{iy_s},{iz_s}), "
-            f"end node ({ix_e},{iy_e},{iz_e})."
+            f"{what}: samples_per_cell must be >= 2 so the rasteriser cannot "
+            f"skip a grid node; got {samples_per_cell!r}.",
         )
-
-    n_Ex = Nx * (Ny + 1) * (Nz + 1)
-    n_Ey = (Nx + 1) * Ny * (Nz + 1)
-
-    flat_indices: list[int] = []
-    ijk_list: list[tuple[int, int, int]] = []
-    dl_list: list[float] = []
-
-    if diff[0]:
-        direction = "x"
-        lo, hi = sorted((ix_s, ix_e))
-        for ix in range(lo, hi):
-            ix_c = max(0, min(ix, Nx - 1))
-            iy_c = max(0, min(iy_s, Ny))
-            iz_c = max(0, min(iz_s, Nz))
-            flat_indices.append(edge_index_Ex(ix_c, iy_c, iz_c, Nx, Ny, Nz))
-            ijk_list.append((ix_c, iy_c, iz_c))
-            dl_list.append(float(grid.dx[ix_c]))
-    elif diff[1]:
-        direction = "y"
-        lo, hi = sorted((iy_s, iy_e))
-        for iy in range(lo, hi):
-            ix_c = max(0, min(ix_s, Nx))
-            iy_c = max(0, min(iy, Ny - 1))
-            iz_c = max(0, min(iz_s, Nz))
-            flat_indices.append(
-                n_Ex + edge_index_Ey(ix_c, iy_c, iz_c, Nx, Ny, Nz),
-            )
-            ijk_list.append((ix_c, iy_c, iz_c))
-            dl_list.append(float(grid.dy[iy_c]))
+    if hasattr(path, "_occ_shape"):
+        ep = rasterize_curve(path, grid, samples_per_cell=int(samples_per_cell))
     else:
-        direction = "z"
-        lo, hi = sorted((iz_s, iz_e))
-        for iz in range(lo, hi):
-            ix_c = max(0, min(ix_s, Nx))
-            iy_c = max(0, min(iy_s, Ny))
-            iz_c = max(0, min(iz, Nz - 1))
-            flat_indices.append(
-                n_Ex + n_Ey + edge_index_Ez(ix_c, iy_c, iz_c, Nx, Ny, Nz),
-            )
-            ijk_list.append((ix_c, iy_c, iz_c))
-            dl_list.append(float(grid.dz[iz_c]))
+        ep = rasterize_points(_densify(path, grid, int(samples_per_cell)), grid)
 
-    if sum(dl_list) == 0.0:
+    if len(ep) == 0 or sum(ep.dls) == 0.0:
         raise ValueError(
-            f"{what}: zero-length edge chain — start and end coincide on the snapped grid.",
+            f"{what}: zero-length edge chain — the path collapses to a single "
+            f"grid node.  Refine the mesh, or move the terminals apart.",
         )
 
-    return direction, flat_indices, ijk_list, dl_list
+    # A two-terminal element is a *series* chain: one current flows
+    # through every edge once.  An edge visited twice would receive the
+    # injection twice and its voltage would be counted twice, so a
+    # self-crossing or doubled-back path is not an element.  (An
+    # impressed current may do both — DD-227 folds them — which is why
+    # the rasteriser itself allows it.)
+    flat = np.asarray(ep.flat_indices, dtype=np.int64)
+    uniq, counts = np.unique(flat, return_counts=True)
+    if uniq.size != flat.size:
+        n_rep = int((counts > 1).sum())
+        raise ValueError(
+            f"{what}: the path visits {n_rep} grid edge(s) more than once "
+            f"(it crosses itself or doubles back).  A two-terminal element "
+            f"is a series chain, so every edge may be traversed once.",
+        )
+
+    components = [{"x": 0, "y": 1, "z": 2}[a] for a in ep.axes]
+    signs = [float(s) for s in ep.signs]
+    return list(ep.flat_indices), list(ep.ijk), list(ep.dls), components, signs
+
+
+def _warn_dead_edges(what: str, mesh, flat_indices, components) -> None:
+    """Warn about chain edges the solver holds at zero.
+
+    An edge inside a perfect conductor or tangential to a PEC wall is
+    reset every step, so the element's injection there is discarded and
+    the device is silently shorted along that edge.  ``SourceCurrentPath``
+    reports the same condition rather than radiating less than asked.
+    """
+    mask = getattr(mesh, "pec_mask_edges", None)
+    if mask is None:
+        return
+    grid = mesh.grid
+    n_Ex = grid.Nx * (grid.Ny + 1) * (grid.Nz + 1)
+    n_Ey = (grid.Nx + 1) * grid.Ny * (grid.Nz + 1)
+    offset = (0, n_Ex, n_Ex + n_Ey)
+    dead = 0
+    for flat, comp in zip(flat_indices, components):
+        local = flat - offset[comp]
+        if 0 <= local < mask.shape[1] and bool(mask[comp, local]):
+            dead += 1
+    if dead:
+        warnings.warn(
+            f"{what}: {dead} of {len(flat_indices)} chain edge(s) are held at "
+            f"zero by a perfect conductor (inside a PEC body, or tangential to "
+            f"a PEC wall).  The element is shorted along them and does not act "
+            f"as declared — move the path off the conductor, or leave a gap "
+            f"for it.",
+            UserWarning,
+            stacklevel=3,
+        )
 
 
 def _scaled_element(
@@ -306,20 +408,27 @@ def _scaled_element(
     )
 
 
-def _resolve_symmetry(
-    what: str,
-    start: tuple[float, float, float],
-    end: tuple[float, float, float],
-    mesh,
-) -> tuple[tuple[float, float, float], tuple[float, float, float], Optional[LumpedPortReport]]:
-    """Relate a declared edge chain to the declared symmetry planes.
+def _resolve_symmetry(what: str, path, mesh):
+    """Relate a declared path to the declared symmetry planes.
 
-    Validates the chain against every symmetry plane of the mesh's
-    boundary conditions, clips a plane-crossing chain to the meshed
-    half, and returns ``(start, end, report)`` with a
-    :class:`LumpedPortReport` when at least one plane cuts the chain
-    (``None`` otherwise).  See the case table in the raising docs
-    below; meshes without symmetry declarations pass through untouched.
+    Validates the path against every symmetry plane of the mesh's
+    boundary conditions, clips a plane-crossing path to the meshed
+    half, and returns ``(path, report)`` with a
+    :class:`LumpedPortReport` when at least one plane cuts it (``None``
+    otherwise).  Meshes without symmetry declarations pass through
+    untouched.
+
+    The case table is DD-172's, lifted from a two-point chain to a
+    polyline: a path lying *in* the plane, one *crossing* it (which
+    must be mirror-symmetric about it, and needs an electric plane
+    because a current normal to a magnetic plane mirrors anti-parallel),
+    and one that merely ends on it under an as-built declaration.
+
+    A ``Curve`` path cannot be clipped here — splitting it would need
+    the OCC kernel and would not survive back into a ``Curve`` the
+    rasteriser can sample the same way.  A curve that reaches a
+    symmetry plane is therefore rejected with the point-path form as
+    the way out; one that stays clear is passed through.
     """
     # Detection + validation matrix: DD-172.  The mirror-twin warning
     # follows the modal wording (ports/_modal/factory.py,
@@ -332,16 +441,14 @@ def _resolve_symmetry(
     bc = getattr(mesh, "boundary_conditions", None)
     sym = symmetry_entries(bc)
     if not sym:
-        return start, end, None
+        return path, None
 
     types = bc_type_entries(bc)
     grid = mesh.grid
     axis_coords = (grid.x, grid.y, grid.z)
     axis_widths = (grid.dx, grid.dy, grid.dz)
-
-    start = list(start)
-    end = list(end)
-    chain_axis = int(np.argmax([abs(end[i] - start[i]) for i in range(3)]))
+    is_curve = hasattr(path, "_occ_shape")
+    pts = None if is_curve else [list(p) for p in path]
 
     faces: list[tuple[str, str, str]] = []
     for face in sorted(sym):
@@ -349,121 +456,96 @@ def _resolve_symmetry(
         position = sym[face]
         as_built = position is None
         coords = axis_coords[axis]
-        if as_built:
-            wall = float(coords[0] if side == "min" else coords[-1])
-        else:
-            wall = float(position)
+        wall = float(coords[0] if side == "min" else coords[-1]) if as_built else float(position)
         widths = axis_widths[axis]
-        cell = float(widths[0] if side == "min" else widths[-1])
-        tol = 0.5 * cell
+        tol = 0.5 * float(widths[0] if side == "min" else widths[-1])
         kind = types[face]
 
-        def _inward(c: float) -> float:
+        def _inward(c: float, _w=wall, _s=side) -> float:
             # Signed distance into the meshed half (positive = kept side).
-            return (c - wall) if side == "min" else (wall - c)
+            return (c - _w) if _s == "min" else (_w - c)
 
-        s_in = _inward(start[axis])
-        e_in = _inward(end[axis])
-
-        if chain_axis == axis:
-            lo_in, hi_in = sorted((s_in, e_in))
-            if hi_in <= tol:
+        if is_curve:
+            lo, hi = path._analytic_bbox()[axis * 2 : axis * 2 + 2]
+            near = min(_inward(float(lo)), _inward(float(hi)))
+            if near <= tol:
                 raise ValueError(
-                    f"{what}: the chain lies in the half-space removed by the "
-                    f"symmetry declaration on face {face!r} (plane at "
-                    f"{wall:.6g} m along {'xyz'[axis]}).  Declare the element "
-                    f"in the kept half, or drop the symmetry declaration.",
+                    f"{what}: a Curve path reaches the symmetry plane on face "
+                    f"{face!r} (plane at {wall:.6g} m along {'xyz'[axis]}).  "
+                    f"Clipping a curve to the meshed half is not supported — "
+                    f"declare the path as a sequence of points, which can be "
+                    f"clipped, or keep the curve clear of the plane.",
                 )
-            if lo_in < -tol:
-                # The plane bisects the chain.
+            continue
+
+        d = [_inward(p[axis]) for p in pts]
+        d_min, d_max = min(d), max(d)
+
+        if d_max < -tol:
+            raise ValueError(
+                f"{what}: the path lies in the half-space removed by the "
+                f"symmetry declaration on face {face!r} (plane at "
+                f"{wall:.6g} m along {'xyz'[axis]}).  Declare the element "
+                f"in the kept half, or drop the symmetry declaration.",
+            )
+
+        if all(abs(v) <= tol for v in d):
+            # The whole path lies in the plane.
+            if kind == "PEC":
+                raise ValueError(
+                    f"{what}: the path lies in the electric symmetry plane on "
+                    f"face {face!r}; tangential edges inside an electric wall "
+                    f"are shorted.  Move the element off the plane, or declare "
+                    f"a magnetic symmetry plane if the fields support it.",
+                )
+            faces.append((face, kind, "containment"))
+            continue
+
+        if d_min < -tol:
+            # The plane bisects the path.
+            if kind == "PMC":
+                raise ValueError(
+                    f"{what}: the path crosses the magnetic symmetry plane on "
+                    f"face {face!r}.  A current normal to a magnetic plane "
+                    f"mirrors anti-parallel, so no full-model element "
+                    f"corresponds to this declaration; a plane-crossing "
+                    f"element needs an electric symmetry plane.",
+                )
+            _require_mirror_symmetric(what, face, pts, axis, wall, tol)
+            pts = _clip_to_wall(pts, d, axis, wall, tol)
+            faces.append((face, kind, "crossing"))
+            continue
+
+        if d_min <= tol:
+            # A vertex sits on the plane and the body stays inside.
+            on_terminal = abs(d[0]) <= tol or abs(d[-1]) <= tol
+            if as_built and on_terminal:
+                # ForceSymmetry*: the model is declared as built
+                # (halved), so the half element ending on the plane IS
+                # the crossing declaration.
                 if kind == "PMC":
                     raise ValueError(
-                        f"{what}: the chain crosses the magnetic symmetry "
-                        f"plane on face {face!r}.  A current normal to a "
-                        f"magnetic plane mirrors anti-parallel, so no "
-                        f"full-model element corresponds to this "
-                        f"declaration; a plane-crossing element needs an "
-                        f"electric symmetry plane.",
+                        f"{what}: the path ends on the magnetic symmetry plane "
+                        f"on face {face!r} along the plane normal.  Its mirror "
+                        f"continuation crosses the plane, which a magnetic "
+                        f"plane does not support (the mirrored current is "
+                        f"anti-parallel).",
                     )
-                if abs(s_in + e_in) > tol:
-                    raise ValueError(
-                        f"{what}: the chain crosses the symmetry plane on "
-                        f"face {face!r} asymmetrically (endpoint distances "
-                        f"{abs(min(s_in, e_in)):.6g} m / "
-                        f"{abs(max(s_in, e_in)):.6g} m).  An element crossing "
-                        f"a symmetry plane must be mirror-symmetric about it.",
-                    )
-                # Clip to the meshed half: the outside terminal moves
-                # onto the wall (an electric plane carries an exact
-                # grid node there).
-                if s_in < e_in:
-                    start[axis] = wall
-                else:
-                    end[axis] = wall
                 faces.append((face, kind, "crossing"))
-            elif lo_in <= tol:
-                # One terminal on the plane, chain body inside.
-                if as_built:
-                    # ForceSymmetry*: the model is declared as built
-                    # (halved), so the half element ending on the plane
-                    # IS the crossing declaration.
-                    if kind == "PMC":
-                        raise ValueError(
-                            f"{what}: the chain ends on the magnetic "
-                            f"symmetry plane on face {face!r} along the "
-                            f"plane normal.  Its mirror continuation "
-                            f"crosses the plane, which a magnetic plane "
-                            f"does not support (the mirrored current is "
-                            f"anti-parallel).",
-                        )
-                    if s_in < e_in:
-                        start[axis] = wall
-                    else:
-                        end[axis] = wall
-                    faces.append((face, kind, "crossing"))
-                else:
-                    raise ValueError(
-                        f"{what}: a chain terminal lies on the symmetry "
-                        f"plane on face {face!r}.  Endpoints are declared "
-                        f"in full-model coordinates here — declare the "
-                        f"full element crossing the plane, or declare the "
-                        f"boundary as as-built symmetry if the geometry "
-                        f"is meant to be halved.",
-                    )
-            # else: chain entirely inside, away from this plane.
-        else:
-            lo_in = min(s_in, e_in)
-            hi_in = max(s_in, e_in)
-            if hi_in < -tol:
-                raise ValueError(
-                    f"{what}: the chain lies in the half-space removed by the "
-                    f"symmetry declaration on face {face!r} (plane at "
-                    f"{wall:.6g} m along {'xyz'[axis]}).  Declare the element "
-                    f"in the kept half, or drop the symmetry declaration.",
-                )
-            if abs(s_in) <= tol and abs(e_in) <= tol:
-                # The chain lies in the plane.
-                if kind == "PEC":
-                    raise ValueError(
-                        f"{what}: the chain lies in the electric symmetry "
-                        f"plane on face {face!r}; tangential edges inside "
-                        f"an electric wall are shorted.  Move the element "
-                        f"off the plane, or declare a magnetic symmetry "
-                        f"plane if the fields support it.",
-                    )
-                faces.append((face, kind, "containment"))
-            elif lo_in < -tol:
-                raise ValueError(
-                    f"{what}: a chain terminal lies beyond the symmetry "
-                    f"plane on face {face!r} (plane at {wall:.6g} m along "
-                    f"{'xyz'[axis]}).  Declare the element in the kept "
-                    f"half, or drop the symmetry declaration.",
-                )
-            # else: chain inside, away from this plane.
+                continue
+            raise ValueError(
+                f"{what}: a path vertex lies on the symmetry plane on face "
+                f"{face!r}.  Endpoints are declared in full-model coordinates "
+                f"here — declare the full element crossing the plane, or "
+                f"declare the boundary as as-built symmetry if the geometry "
+                f"is meant to be halved.",
+            )
+        # else: the path is inside, away from this plane.
 
+    out = path if is_curve else tuple(tuple(p) for p in pts)
     if not faces:
         warnings.warn(
-            f"{what}: the chain does not touch the declared symmetry "
+            f"{what}: the path does not touch the declared symmetry "
             f"plane(s) {sorted(sym)} — in the full model this element "
             f"has a mirror twin, and the half-model run can only "
             f"realise the symmetric (in-phase) response of the twin "
@@ -472,6 +554,51 @@ def _resolve_symmetry(
             UserWarning,
             stacklevel=3,
         )
-        return tuple(start), tuple(end), None
+        return out, None
 
-    return tuple(start), tuple(end), LumpedPortReport(symmetry_faces=tuple(faces))
+    return out, LumpedPortReport(symmetry_faces=tuple(faces))
+
+
+def _require_mirror_symmetric(what, face, pts, axis, wall, tol) -> None:
+    """A plane-crossing element must be its own mirror image.
+
+    Reflecting the path about the plane and reversing it must reproduce
+    it; otherwise the meshed half does not stand for a full-model
+    device.  For a two-point chain this reduces to the DD-172 endpoint
+    test.
+    """
+    mirrored = []
+    for p in reversed(pts):
+        q = list(p)
+        q[axis] = 2.0 * wall - q[axis]
+        mirrored.append(q)
+    worst = max(
+        (abs(a[k] - b[k]) for a, b in zip(pts, mirrored) for k in range(3)),
+        default=0.0,
+    )
+    if len(mirrored) != len(pts) or worst > tol:
+        raise ValueError(
+            f"{what}: the path crosses the symmetry plane on face {face!r} "
+            f"asymmetrically (largest mismatch {worst:.6g} m against its own "
+            f"mirror image).  An element crossing a symmetry plane must be "
+            f"mirror-symmetric about it.",
+        )
+
+
+def _clip_to_wall(pts, d, axis, wall, tol):
+    """Keep the meshed half, with the crossing vertex exactly on the wall."""
+    kept: list[list[float]] = []
+
+    def _push(q):
+        if not kept or max(abs(q[k] - kept[-1][k]) for k in range(3)) > 1e-15:
+            kept.append(q)
+
+    for i, p in enumerate(pts):
+        if d[i] >= -tol:
+            _push(list(p))
+        if i + 1 < len(pts) and (d[i] < 0.0) != (d[i + 1] < 0.0):
+            t = d[i] / (d[i] - d[i + 1])
+            q = [p[k] + t * (pts[i + 1][k] - p[k]) for k in range(3)]
+            q[axis] = wall
+            _push(q)
+    return kept

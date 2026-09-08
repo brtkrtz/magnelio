@@ -156,7 +156,7 @@ def test_discrete_port_energy_bounded():
     assert late_rms < peak_abs, "Late-time signal exceeds peak — energy not bounded"
 
 
-def _run_lumped_source(Z0=50.0, n_steps=400):
+def _run_lumped_source(Z0=50.0, n_steps=400, path=None):
     """High-level run of a single excited lumped port in a PEC/CPML box.
 
     Returns the ``ScatteringTDResult`` (carries ``signals``,
@@ -176,11 +176,15 @@ def _run_lumped_source(Z0=50.0, n_steps=400):
         z=np.linspace(0, 30e-3, 31),
     )
     mesh = Mesh.from_grid(grid)
-    spec = PortSpecLumped(
-        name="p1",
-        start=(1.5e-3, 1.5e-3, 0.0),
-        end=(1.5e-3, 1.5e-3, 1e-3),
-        Z0=Z0,
+    spec = (
+        PortSpecLumped(name="p1", path=path, Z0=Z0)
+        if path is not None
+        else PortSpecLumped(
+            name="p1",
+            start=(1.5e-3, 1.5e-3, 0.0),
+            end=(1.5e-3, 1.5e-3, 1e-3),
+            Z0=Z0,
+        )
     )
     bcs = {f: PECBoundary(f) for f in ("xmin", "xmax", "ymin", "ymax", "zmin")}
     bcs["zmax"] = CPMLBoundary("zmax", grid, thickness_cells=8)
@@ -276,3 +280,42 @@ def test_discrete_port_cotemporal_decomposition():
     # the 1e-9 equality gate by orders of magnitude, not sit on the
     # measured value.
     assert np.max(np.abs(S_cotemporal[finite] - S_temporal[finite])) > 1e-4
+
+
+def test_thevenin_invariant_holds_on_an_oblique_path():
+    """DD-269: the Thévenin identity is a property of the chain, not its shape.
+
+    ``V + Z0·I = s`` follows from the semi-implicit update alone — the
+    injected current is the same through every edge of a series chain and
+    ``project_V`` re-reads exactly those edges, whatever route they take.
+    A staircase must therefore satisfy it to the same machine precision
+    as the axis-parallel chain, which makes it the sharpest end-to-end
+    gate on the oblique path: it exercises the rasteriser, the per-edge
+    components and signs, the solver hook and the recorder together, with
+    no wave fixture to confound it.
+    """
+    # Two cells along z and one along x: a genuine staircase, mixing Ex
+    # and Ez edges with the same current through each.  Held clear of
+    # the zmin PEC wall — an edge tangential to it is reset every step,
+    # which the builder warns about and which would make the fixture
+    # unrepresentative even though the identity survives it.
+    result, _f_axis, Z0 = _run_lumped_source(
+        path=[(1.5e-3, 1.5e-3, 1e-3), (2.5e-3, 1.5e-3, 3e-3)],
+    )
+
+    V, I = result.signals[("p1", 0)][("p1", 0)]
+    s = result.reference_signal
+    lhs = V.values + Z0 * I.values
+    rhs = 2.0 * math.sqrt(Z0) * s.values
+    peak = float(np.max(np.abs(rhs)))
+    assert peak > 0.0
+
+    n = len(lhs)
+    best = min(
+        float(np.max(np.abs(lhs[max(0, sh) : n + min(0, sh)] - rhs[max(0, -sh) : n + min(0, -sh)])))
+        for sh in (-1, 0, 1)
+    )
+    assert best / peak < 1e-12, (
+        f"Thévenin invariant violated on a staircase chain: max residual "
+        f"{best:.3e} (rel {best / peak:.2e})."
+    )

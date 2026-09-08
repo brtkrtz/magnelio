@@ -22049,3 +22049,104 @@ Files: `src/magnelio/monitors/_dft.py`,
 `docs/methods/far-field.md`, `docs/methods/viewer.md`,
 `examples/howto/plot_stripline_pickup_kicker.py`,
 `validation/current_path_hertzian_dipole.py`.
+
+---
+
+## DD-269 — A lumped element is a path, and the staircase it costs is measured
+
+**Date:** 2026-09-08.
+**Status:** Accepted — implemented + gated (`tests/unit/test_lumped_element.py`,
+`tests/integration/test_lumped_element.py`); measurement record
+`investigations/oblique-lumped-path/` (internal dossier), reproduced by
+`validation/oblique_lumped_staircase_certificate.py`.
+
+**Problem.**  `PortLumped` / `circuit.LumpedElement` required their two
+terminals to differ along exactly one Cartesian axis — a restriction that
+lived in one place, the degenerate two-point rasteriser `_snap_edge_chain`
+in `ports/_lumped/factory.py`.  [[DD-075]] and [[DD-079]] had both already
+marked it for subsumption by the canonical [[DD-076]] rasteriser; DD-079's
+follow-up (i) deferred it for wanting OCC-free handling of a point path.
+The user-visible cost: a slanted feed gap, a diagonal resistor, or a
+delta-gap feed on anything but an axis-parallel wire could not be declared,
+although `ThinWire` and `SourceCurrentPath` have carried oblique paths for
+some time.
+
+**Decision.**  Both declarations take `path=` — a point sequence or a
+`Curve` — with `start`/`end` kept as the two-point short form, and the
+chain is resolved through the canonical rasteriser.  A point path is
+densified here (`_densify`) rather than routed through `Curve.polyline`,
+which keeps it OCC-free and closes DD-079's deferral; a bare polyline
+would otherwise rasterise an oblique segment into an L instead of a
+staircase, because `rasterize_points` assumes samples that never skip a
+node.  The runtime operator needed no change at all: DD-079 built
+`LumpedElementOperator` EdgePath-shaped (per-edge components and signs)
+for exactly this, and `PortOperatorLumped` merely stopped filling those
+lists with constants.
+
+Three behaviours follow and are deliberate:
+
+- **Polarity follows the declaration.**  The old resolution sorted the
+  terminals and always oriented the chain along the positive axis, so a
+  port declared with `end` before `start` silently had its twin's
+  polarity.  A path has a direction, so it is now honoured.  Breaking for
+  a multi-port S-matrix (180° on the affected entries); a single port's
+  Z and S11 are unchanged.
+- **An edge may be traversed once.**  A two-terminal element is a series
+  chain; a self-crossing or doubled-back path would take the injection
+  twice and count its voltage twice.  (An impressed current may do both —
+  [[DD-227]] folds them — which is why the rasteriser itself allows it.)
+- **PEC-shorted chain edges warn.**  An edge held at zero cannot carry the
+  injection, so the device is shorted along it.  `SourceCurrentPath`
+  already reports the same condition.
+
+Symmetry ([[DD-172]]) is lifted from a two-point chain to a polyline: the
+same case table (in-plane containment, mirror-symmetric crossing with
+clipping, as-built terminal), with the crossing vertex interpolated exactly
+onto the wall and the mirror test applied to the whole path.  A `Curve`
+that reaches a symmetry plane is rejected with the point form as the way
+out — clipping a curve would need the kernel and would not survive back
+into something the rasteriser samples identically.
+
+**Measured: what the staircase costs.**  The terminal relation is exact on
+any path ([[DD-085]] grid quantities: KVL is KVL, and DD-079's
+`−Z_trap(ω)` identity holds unchanged), and the line integral is exact
+between the snapped endpoints.  What an oblique path changes is the near
+field — the element's parasitic series inductance.  Measured with an
+impressed current and the induced EMF on area-matched congruent lattice
+loops (Pythagorean side vectors, so both orientations sit on one grid that
+is asserted identical — rotating a loop otherwise rotates the grid with it,
+which shifts the reading by the same order as the effect):
+
+    dL' = 58.17 nH/m · x^0.614,   x = staircase/chord − 1
+
+per unit chord, from ten points over three families (loops 5–42.5 mm,
+cells 200–500 µm, bands 50 MHz–3 GHz), max residual 4 %.  About 32 pH per
+millimetre for a strongly oblique element.  Two properties decided the
+scope:
+
+- It **does not refine away**: `∝ Δ^0.19`, so quadrupling the resolution
+  buys a fifth of it; a resolution rule cannot dispose of it.
+- It is **not proportional to the extra path length** (`x^0.61`, not
+  `x^1`): the zigzag cancels pairwise beyond a cell or two.  A correction
+  scaling with chord/staircase — the obvious candidate — leaves 20 % of
+  the effect at shallow angles.
+
+**A correction is deferred, deliberately.**  It would belong in
+`_collect_requests` (`mesh/_thin_wire.py`), keyed on the local staircase
+direction and needing no radius argument (`dL'` is radius-independent to
+3.6 % over a 5× range), as roughly a 10–12 % bump of the equivalent radius.
+It is not part of this DD because the coefficient differs by 21 % between a
+chain of plain edges (~32 nH/m — what a lumped element is) and a
+PEC-masked thin wire (~38 nH/m), and that difference is neither fixture nor
+scatter.  Shipping without it puts oblique lumped elements at exactly the
+accuracy `ThinWire` already ships at, since the same excess rides on every
+oblique wire today and the DD-080 correction sets the equivalent radius,
+not the path length.
+
+**Consequences.**  `ports/_lumped/factory.py` loses its second rasteriser,
+so the DD-076 "one canonical rasteriser" guardrail is now true.  Recipes
+and mesh files round-trip the path (a point path verbatim; a `Curve`
+carries a builder the store cannot rebuild, the same rule
+`SourceCurrentPath` uses), old files load unchanged.  Both plots draw the
+path rather than the chord.  `PortOperatorLumped.direction` reports
+`"path"` for a chain that is not axis-parallel.

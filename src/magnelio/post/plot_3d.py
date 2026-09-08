@@ -1071,6 +1071,7 @@ def _add_overlays(
     import pyvista as pv  # noqa: PLC0415
 
     from magnelio.geo.wire import ThinWire  # noqa: PLC0415
+    from magnelio.post.plot_geometry import _lumped_points  # noqa: PLC0415
 
     bounds = scene.bounds
     diag = _diag(bounds)
@@ -1078,29 +1079,33 @@ def _add_overlays(
     label_height = 0.035 * diag
     shapes = list(geometry) if geometry is not None else []
     wires = [s for s in shapes if isinstance(s, ThinWire)]
-    if show_wires and wires:
-        geo_scale = 1.0
-        if all(hasattr(s, "_analytic_bbox") for s in shapes):
-            from magnelio.geo._scaling import model_scale  # noqa: PLC0415
+    geo_scale = 1.0
+    if shapes and all(hasattr(s, "_analytic_bbox") for s in shapes):
+        from magnelio.geo._scaling import model_scale  # noqa: PLC0415
 
-            geo_scale = model_scale(shapes)
+        geo_scale = model_scale(shapes)
+    if show_wires and wires:
         _add_wires(pl, scene, wires, unit_scale=unit_scale, radius=radius, geo_scale=geo_scale)
 
-    def line_feature(index, group, name, start, end, color):
-        p0 = np.asarray(start, dtype=float) * unit_scale
-        p1 = np.asarray(end, dtype=float) * unit_scale
-        actor_name = f"{'port' if group == 'ports' else 'element'}_{index}"
-        _add_tube(pl, scene, actor_name, group, p0, p1, color=color, radius=radius)
+    def line_feature(index, group, name, obj, color):
+        # DD-269: a lumped port/element is a path, not necessarily a
+        # single segment, so it is drawn as one tube per leg.
+        pts = np.asarray(_lumped_points(obj, geo_scale), dtype=float) * unit_scale
+        kind = "port" if group == "ports" else "element"
+        for leg, (p0, p1) in enumerate(zip(pts[:-1], pts[1:])):
+            actor_name = f"{kind}_{index}" + (f"_{leg}" if leg else "")
+            _add_tube(pl, scene, actor_name, group, p0, p1, color=color, radius=radius)
         if labels:
             # Beside the tube, offset along the camera's right axis.
-            center = 0.5 * (p0 + p1) + _label_frame(pl)[:, 0] * (3.0 * radius)
+            mid = pts[len(pts) // 2]
+            center = mid + _label_frame(pl)[:, 0] * (3.0 * radius)
             _add_label(pl, scene, name, center=center, height=label_height, color=color)
 
     if show_ports:
         for i, port in enumerate(getattr(geometry, "ports", ())):
             name = str(getattr(port, "name", None) or f"port{i + 1}")
             if hasattr(port, "start") and hasattr(port, "end"):
-                line_feature(i, "ports", name, port.start, port.end, _PORT_COLOR)
+                line_feature(i, "ports", name, port, _PORT_COLOR)
             elif hasattr(port, "plane"):
                 _add_face_port(
                     pl,
@@ -1114,7 +1119,7 @@ def _add_overlays(
                 )
         for i, element in enumerate(getattr(geometry, "elements", ())):
             name = str(getattr(element, "name", None) or f"element{i + 1}")
-            line_feature(i, "elements", name, element.start, element.end, _ELEMENT_COLOR)
+            line_feature(i, "elements", name, element, _ELEMENT_COLOR)
 
     _add_symmetry_planes(
         pl,

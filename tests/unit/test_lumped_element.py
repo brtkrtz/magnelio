@@ -25,7 +25,10 @@ from magnelio.ports._lumped import LumpedElementOperator, build_lumped_element
 FACES = ("xmin", "xmax", "ymin", "ymax", "zmin", "zmax")
 
 
-def _element(label="iso", start=(0.0, 0.0, 0.0), end=(0.0, 4e-3, 0.0)):
+# Interior by one cell in x and z: on the domain edge every chain edge
+# is tangential to the default PEC wall and the builder rightly warns
+# that the element is shorted along it.
+def _element(label="iso", start=(1e-3, 0.0, 1e-3), end=(1e-3, 4e-3, 1e-3)):
     return LumpedElement(name=label, start=start, end=end, element=SeriesRLC(R=100.0))
 
 
@@ -154,19 +157,108 @@ class TestBuilder:
         op = build_lumped_element(spec, mesh, m_eps, None, dt=1e-12)
         assert op.element is not spec.element
 
-    def test_diagonal_path_rejected(self):
+    def test_oblique_path_is_a_staircase(self):
+        """DD-269: a diagonal element is carried by a staircase chain.
+
+        It used to be rejected outright ("exactly one Cartesian axis").
+        The chain now mixes Ex and Ey edges, and its length is the
+        staircase's, not the chord's.
+        """
+        # A larger grid so the diagonal stays clear of the PEC walls.
+        mesh = Mesh.from_grid(_grid(n=9, span=8e-3))
+        from magnelio._operators.material_matrices import build_M_eps
+
+        m_eps = build_M_eps(mesh)
+        diag = LumpedElement(
+            name="diag",
+            start=(1e-3, 1e-3, 1e-3),
+            end=(5e-3, 5e-3, 1e-3),
+            element=SeriesRLC(R=100.0),
+        )
+        op = build_lumped_element(diag, mesh, m_eps, None, dt=1e-12)
+        assert set(op.edge_components) == {0, 1}  # Ex and Ey
+        assert len(op.flat_edge_indices) == 8  # 4 + 4 steps, not 4
+        assert all(s == 1.0 for s in op.edge_signs)
+
+    def test_direction_is_honoured(self):
+        """Reversing the terminals reverses the chain's polarity.
+
+        The old two-point rasteriser sorted the endpoints and always
+        produced ``+1`` signs, so a port declared "backwards" silently
+        had the polarity of its forward twin.
+        """
         mesh = self._mesh()
         from magnelio._operators.material_matrices import build_M_eps
 
         m_eps = build_M_eps(mesh)
-        bad = LumpedElement(
-            name="diag",
-            start=(0.0, 0.0, 0.0),
-            end=(4e-3, 4e-3, 0.0),
+        fwd = build_lumped_element(_element(), mesh, m_eps, None, dt=1e-12)
+        rev = build_lumped_element(
+            _element(start=(1e-3, 4e-3, 1e-3), end=(1e-3, 0.0, 1e-3)),
+            mesh,
+            m_eps,
+            None,
+            dt=1e-12,
+        )
+        assert sorted(fwd.flat_edge_indices) == sorted(rev.flat_edge_indices)
+        assert all(s == 1.0 for s in fwd.edge_signs)
+        assert all(s == -1.0 for s in rev.edge_signs)
+
+    def test_self_crossing_path_rejected(self):
+        """A two-terminal element is a series chain: one pass per edge."""
+        mesh = self._mesh()
+        from magnelio._operators.material_matrices import build_M_eps
+
+        m_eps = build_M_eps(mesh)
+        doubled = LumpedElement(
+            name="back",
+            path=[(1e-3, 0.0, 1e-3), (1e-3, 4e-3, 1e-3), (1e-3, 2e-3, 1e-3)],
             element=SeriesRLC(R=100.0),
         )
-        with pytest.raises(ValueError, match="exactly one Cartesian axis"):
-            build_lumped_element(bad, mesh, m_eps, None, dt=1e-12)
+        with pytest.raises(ValueError, match="more than once"):
+            build_lumped_element(doubled, mesh, m_eps, None, dt=1e-12)
+
+    def test_multi_point_path(self):
+        """A polyline element bends inside the model."""
+        mesh = self._mesh()
+        from magnelio._operators.material_matrices import build_M_eps
+
+        m_eps = build_M_eps(mesh)
+        bent = LumpedElement(
+            name="bend",
+            path=[(1e-3, 1e-3, 1e-3), (1e-3, 3e-3, 1e-3), (3e-3, 3e-3, 1e-3)],
+            element=SeriesRLC(R=100.0),
+        )
+        op = build_lumped_element(bent, mesh, m_eps, None, dt=1e-12)
+        assert len(op.flat_edge_indices) == 4
+        assert set(op.edge_components) == {0, 1}
+
+    def test_path_and_endpoints_are_exclusive(self):
+        with pytest.raises(ValueError, match="not both"):
+            build_lumped_element(
+                LumpedElement(
+                    name="both",
+                    start=(0.0, 0.0, 0.0),
+                    end=(0.0, 4e-3, 0.0),
+                    path=[(0.0, 0.0, 0.0), (0.0, 4e-3, 0.0)],
+                    element=SeriesRLC(R=100.0),
+                ),
+                self._mesh(),
+                __import__(
+                    "magnelio._operators.material_matrices", fromlist=["build_M_eps"]
+                ).build_M_eps(self._mesh()),
+                None,
+                dt=1e-12,
+            )
+
+    def test_pec_shorted_chain_warns(self):
+        """An edge held at zero cannot carry the element's injection."""
+        mesh = self._mesh()
+        from magnelio._operators.material_matrices import build_M_eps
+
+        m_eps = build_M_eps(mesh)
+        on_wall = _element(start=(0.0, 0.0, 0.0), end=(0.0, 4e-3, 0.0))
+        with pytest.warns(UserWarning, match="held at zero"):
+            build_lumped_element(on_wall, mesh, m_eps, None, dt=1e-12)
 
 
 class TestAnalysisWiring:

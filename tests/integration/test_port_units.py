@@ -193,11 +193,12 @@ def test_source_scale_thevenin_sqrtw():
     op = PortOperatorLumped(
         name="p",
         Z0=50.0,
-        direction="y",
         flat_edge_indices=[0],
         ijk_list=[(0, 0, 0)],
         dl_list=[1e-3],
         beta_E=np.array([0.0]),
+        edge_components=[1],
+        edge_signs=[1.0],
     )
     op.set_excitation(0, lambda t: 1.0)
     assert abs(op._waveform_fn(0.0) - 2.0 * np.sqrt(50.0)) < 1e-12

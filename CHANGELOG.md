@@ -7,6 +7,50 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
+## [Unreleased]
+
+### Added
+
+- Discrete ports and lumped elements follow any path.  `PortLumped` and
+  `circuit.LumpedElement` take a `path=` — a sequence of points, or a
+  `Curve` — in place of the two terminals, and the path may run
+  obliquely, bend, or curve.  Both forms go through the same canonical
+  rasteriser that thin wires and voltage probes already use, so a
+  slanted feed gap, a diagonal resistor or a probe along a bent route
+  are declarable for the first time.  `start`/`end` keep working as the
+  two-point short form.  An oblique path is carried by a staircase of
+  grid edges, which adds a small parasitic series inductance — about
+  32 pH per millimetre for a strongly oblique element, and not removable
+  by refining the mesh; see the lumped-elements guide for the measured
+  law and when it matters.
+- A lumped element whose chain lands on edges held at zero by a perfect
+  conductor now says so.  Such an edge cannot carry the element's
+  injection, so the device is shorted along it; previously this passed
+  silently and the model quietly represented something else.
+
+### Changed
+
+- **A lumped port's polarity now follows `start` → `end`.**  The old
+  two-point resolution sorted the terminals and always oriented the
+  chain along the positive axis, so a port declared "backwards" silently
+  had the polarity of its forward twin.  Recorded V and I now change
+  sign with the declared direction.  A single port's impedance and
+  reflection are unaffected; a multi-port S-matrix picks up a 180° phase
+  on entries involving a port that was declared with `end` before
+  `start`.
+- A path that visits the same grid edge twice is rejected.  A
+  two-terminal element is a series chain, so a self-crossing or
+  doubled-back declaration has no consistent current; it used to be
+  unreachable and is now diagnosed.
+
+### Fixed
+
+- `circuit.integrate_E` documented its `field` argument as `FieldArrays`,
+  whose entries have been FIT grid quantities in volts since the
+  physical-state change; the function is correct for the `FieldState` a
+  user actually holds.  The docstring says so, and records that a
+  complex frame currently loses its imaginary part there.
+
 ## [0.8.0] - 2026-09-08
 
 ### Changed

@@ -33,6 +33,26 @@ _WIRE_COLOR = "#c8963c"  # thin-wire conductor
 _PORT_COLOR = "#d62728"  # ports (excitation / measurement)
 _ELEMENT_COLOR = "#2ca02c"  # passive lumped elements
 
+
+def _lumped_points(obj, geo_scale):
+    """Vertices of a lumped port/element for drawing (DD-269).
+
+    A Curve path is sampled through the same OCC helper the thin wires
+    use, so an oblique element is drawn as the path it is rather than
+    as the chord between its terminals.
+    """
+    from magnelio.ports._lumped.factory import declared_path  # noqa: PLC0415
+
+    path = declared_path(obj)
+    if hasattr(path, "_occ_shape"):
+        from magnelio.geo._occ_backend import sample_wire  # noqa: PLC0415
+
+        lo = path._analytic_bbox()
+        span = max(lo[1] - lo[0], lo[3] - lo[2], lo[5] - lo[4], 1e-12)
+        return sample_wire(path._occ_shape(geo_scale), span / 64.0, geo_scale)
+    return list(path)
+
+
 # A thin wire is a sub-cell model: its radius is far below a cell, so
 # drawing it to scale would make it invisible.  It is drawn as a line of
 # fixed width instead, and a cut counts as "through the wire" when it
@@ -513,14 +533,15 @@ def plot_cross_section(
         bbox = None
         for port in getattr(geometry, "ports", ()):
             if hasattr(port, "start") and hasattr(port, "end"):
+                pts = _lumped_points(port, geo_scale)
                 _draw_path(
                     ax,
-                    [port.start, port.end],
+                    pts,
                     # A discrete port bridges one edge; it is a line in
                     # the cut only when the cut contains it, so the
                     # tolerance is numerical — unless the caller states
                     # the layer thickness the picture stands for.
-                    tol=max(_edge_tol(port.start, port.end), slab),
+                    tol=max(_edge_tol(pts[0], pts[-1]), slab),
                     color=_PORT_COLOR,
                     label=getattr(port, "name", None),
                     **common,
@@ -535,10 +556,11 @@ def plot_cross_section(
                 _draw_face_port(ax, port, bbox, color=_PORT_COLOR, **common)
 
         for element in getattr(geometry, "elements", ()):
+            pts = _lumped_points(element, geo_scale)
             _draw_path(
                 ax,
-                [element.start, element.end],
-                tol=max(_edge_tol(element.start, element.end), slab),
+                pts,
+                tol=max(_edge_tol(pts[0], pts[-1]), slab),
                 color=_ELEMENT_COLOR,
                 label=getattr(element, "name", None),
                 **common,
