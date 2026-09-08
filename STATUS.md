@@ -1,11 +1,17 @@
 # Magnelio — Project Status
 
-*Last updated: 2026-09-08.*  **Released v0.7.0** (2026-09-06; a minor
-under the Cargo reading — the field monitors' dictionary API is gone,
-`docs/migration-0.7.md`).  Unreleased on `main`: **v0.8.0** — the
-phasor convention of the frequency-domain fields (DD-268,
-`docs/migration-0.8.md`), the ParaView export on request (DD-262) and
-the viewer review (DD-263…267).  In v0.7.0:
+*Last updated: 2026-09-08.*  **Released v0.8.0** (2026-09-08; a minor
+under the Cargo reading — every complex frequency-domain field is the
+conjugate of what 0.7 returned, `docs/migration-0.8.md`): **DD-268** —
+one phasor convention for the library (the running DFT sums
+`e^{-jωt}`, the far-field transform stops conjugating, result files
+name their convention and older ones convert on read); **DD-267** — the
+phase of a picture is ωt; **DD-262…266** — the ParaView export on
+request (one Python filter per monitor, a state file that names its
+interpreter) and the 3D viewer after the review (own toolbar, whole
+model across symmetry planes, eigenmodes as frames).
+**Released v0.7.0** (2026-09-06; the field monitors' dictionary API is
+gone, `docs/migration-0.7.md`):
 **DD-261** — fields in the volume of the 3D viewer (lattice arrows,
 isosurfaces, coloured arrows, a second toolbar row; browser review
 open); **DD-260** — energy and flux from a recording (`recording.energy()`,
