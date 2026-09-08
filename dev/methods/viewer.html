@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=e1271356"></script>
+    <script src="../_static/documentation_options.js?v=12d57f4c"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -175,8 +175,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.7.html">
-    Upgrading from 0.6.x
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -188,6 +188,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
     Upgrading from 0.5.x
@@ -361,6 +368,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -561,7 +575,7 @@
                   
   <section class="tex2jax_ignore mathjax_ignore" id="d-viewer">
 <h1>3D viewer<a class="headerlink" href="#d-viewer" title="Link to this heading">#</a></h1>
-<p><code class="docutils literal notranslate"><span class="pre">model.plot()</span></code> opens an interactive 3D view of a
+<p><code class="docutils literal notranslate"><span class="pre">model.show()</span></code> opens an interactive 3D view of a
 <a class="reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeometryModel</span></code></a>: the solids coloured by material, the
 declared features, and — with a mesh — the FIT grid.  The same call
 serves three situations:</p>
@@ -573,8 +587,8 @@ screenshot, and the same scene as a rotatable view in the browser
 (this is how the 3D figures in the tutorials are made).  The browser
 tab has no toolbar — the cutting plane stays where the script put it.</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>                                  <span class="c1"># geometry only</span>
-<span class="n">model</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">cut</span><span class="o">=</span><span class="p">(</span><span class="s2">"y"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>         <span class="c1"># opened along y = 0, grid cells on the cut</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>                                  <span class="c1"># geometry only</span>
+<span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">cut</span><span class="o">=</span><span class="p">(</span><span class="s2">"y"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>         <span class="c1"># opened along y = 0, grid cells on the cut</span>
 </pre></div>
 </div>
 <section id="what-is-drawn">
@@ -602,10 +616,10 @@ tab has no toolbar — the cutting plane stays where the script put it.</p></li>
 <td><p>A translucent red window on the domain face they occupy — the declared sub-window, or the whole face — with the port name written in the window’s plane.</p></td>
 </tr>
 <tr class="row-odd"><td><p>Symmetry planes</p></td>
-<td><p>Tinted sheets on the domain faces declared <code class="docutils literal notranslate"><span class="pre">SymmetryPEC</span></code> / <code class="docutils literal notranslate"><span class="pre">SymmetryPMC</span></code> (blue / green).</p></td>
+<td><p>Tinted sheets on the declared symmetry planes (<code class="docutils literal notranslate"><span class="pre">SymmetryPEC</span></code> blue, <code class="docutils literal notranslate"><span class="pre">SymmetryPMC</span></code> green) — where the solver cut the model, which for a fully modelled geometry is inside the picture, not on its edge.</p></td>
 </tr>
-<tr class="row-even"><td><p>Domain</p></td>
-<td><p>Outline of the bounding box; the grid extent when a mesh is given.</p></td>
+<tr class="row-even"><td><p>Domain box</p></td>
+<td><p>Outline of the computational domain — the grid extent when a mesh is given, including the absorbing buffer at open faces; the bounds of the solids and the field otherwise.</p></td>
 </tr>
 </tbody>
 </table>
@@ -627,6 +641,15 @@ toolbar:</p>
 lumped elements, wires, labels, symmetry planes, domain box); untick
 a group to hide it.</p></li>
 </ul>
+<p>Before the cut controls sit the camera buttons: reset, isometric view,
+a view along x, y or z, and the projection toggle (parallel, as the
+scene opens, or perspective).  Then a <strong>ruler</strong> (a measured box around
+the scene, its axes titled in the display unit), a <strong>screenshot</strong> of
+the view as it stands, an <strong>HTML export</strong> — the scene as a standalone
+page that opens without a kernel — a <strong>pop-out</strong> button that opens the
+same view in a browser tab of its own (<code class="docutils literal notranslate"><span class="pre">size=</span></code> sets the height of the
+widget in the notebook), and <strong>help</strong>, a dialog listing every control
+and the mouse bindings.</p>
 <p>A single plane cuts every solid; the openings are capped, so a cut
 metal body reads as solid metal, not as a hollow shell.  With a mesh,
 the cells the cut exposes are laid over the cut faces as a translucent
@@ -652,7 +675,8 @@ position slider walks that layer through the recorded volume.</p>
 <span class="n">monitor</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="s2">"Ez"</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>     <span class="c1"># one signed component, diverging colours</span>
 <span class="n">monitor</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">)</span>          <span class="c1"># with the solids; metal cut out of the sheet</span>
 <span class="n">pattern</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="mf">10e9</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="mf">90.0</span><span class="p">)</span>                 <span class="c1"># a frequency monitor at a phase</span>
-<span class="n">eigen</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="s2">"H"</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>         <span class="c1"># an eigenmode</span>
+<span class="n">eigen</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="s2">"H"</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>                  <span class="c1"># an eigenmode result: a slider over the modes</span>
+<span class="n">eigen</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">frame</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">glyph</span><span class="o">=</span><span class="s2">"cone"</span><span class="p">)</span>                <span class="c1"># starting at mode 2, cones instead of arrows</span>
 </pre></div>
 </div>
 <div class="pst-scrollable-table-container"><table class="table">
@@ -665,25 +689,43 @@ position slider walks that layer through the recorded volume.</p>
 <tr class="row-even"><td><p>Field sheet</p></td>
 <td><p>The exposed layer of cells, each coloured by the magnitude of <code class="docutils literal notranslate"><span class="pre">E</span></code> or <code class="docutils literal notranslate"><span class="pre">H</span></code> (dark to bright) or by one signed component (<code class="docutils literal notranslate"><span class="pre">Ex</span></code>, <code class="docutils literal notranslate"><span class="pre">Hz</span></code>, …; blue–white–red about zero).  The colour ceiling is the peak over every frame and layer of the recording, so a wave keeps its colour while the frame slider runs; <code class="docutils literal notranslate"><span class="pre">vmax=</span></code> fixes it.</p></td>
 </tr>
-<tr class="row-odd"><td><p>Arrows</p></td>
-<td><p>For <code class="docutils literal notranslate"><span class="pre">E</span></code> or <code class="docutils literal notranslate"><span class="pre">H</span></code>: arrows on an even lattice over the layer, all three components, coloured by their magnitude on the sheet’s scale; the length grows with the magnitude from three tenths of the lattice spacing to one spacing, so a decaying field keeps readable arrows.  Arrows below 2 % of the ceiling are left out; <code class="docutils literal notranslate"><span class="pre">plot_type=&quot;color&quot;</span></code> drops them, <code class="docutils literal notranslate"><span class="pre">arrow_color=</span></code> paints them one colour.</p></td>
+<tr class="row-odd"><td><p>Vectors</p></td>
+<td><p>For <code class="docutils literal notranslate"><span class="pre">E</span></code> or <code class="docutils literal notranslate"><span class="pre">H</span></code>: arrows on an even lattice over the layer, centred on their sample points, all three components, coloured by their magnitude on the sheet’s scale; the length grows with the magnitude from three tenths of the lattice spacing to one spacing, so a decaying field keeps readable arrows.  Arrows below 2 % of the ceiling are left out; <code class="docutils literal notranslate"><span class="pre">plot_type=&quot;color&quot;</span></code> drops them, <code class="docutils literal notranslate"><span class="pre">arrow_color=</span></code> paints them one colour, <code class="docutils literal notranslate"><span class="pre">glyph=&quot;cone&quot;</span></code> draws cones and <code class="docutils literal notranslate"><span class="pre">glyph_width=</span></code> sets the thickness.</p></td>
 </tr>
 <tr class="row-even"><td><p>Metal</p></td>
 <td><p>With <code class="docutils literal notranslate"><span class="pre">mesh=</span></code>, cells buried in a perfect conductor are cut out of the sheet, so the solids’ cut faces show through where no field is defined.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Grid</p></td>
+<td><p>With <code class="docutils literal notranslate"><span class="pre">mesh=</span></code> and <code class="docutils literal notranslate"><span class="pre">show_grid=True</span></code>, the grid cells are drawn on the cut under the field.  A mirrored field has no grid — the mesh covers the modelled part only — and says so; <code class="docutils literal notranslate"><span class="pre">mirror=False</span></code> brings it back.</p></td>
+</tr>
+<tr class="row-even"><td><p>Symmetry</p></td>
+<td><p>With <code class="docutils literal notranslate"><span class="pre">mesh=</span></code> (an eigenmode result brings its own), a field recorded behind the model’s symmetry planes is continued across them with the parity of each component, so the picture is the whole model like every other field plot; <code class="docutils literal notranslate"><span class="pre">mirror=False</span></code> shows the modelled part.  A region that stops short of a plane is not mirrored across it.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Lines and points</p></td>
+<td><p>A monitor of one cell along two or three axes shows its row of cells, or its one cell, with the arrows on it.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 <p>The field controls sit in a <strong>second toolbar row</strong>: a <strong>play button</strong>
-and a <strong>frame slider</strong> (time or frequency, with the value beside it),
-a <strong>phase slider</strong> for complex data (a frequency monitor’s pattern at
-<code class="docutils literal notranslate"><span class="pre">Re(F·e^{jφ})</span></code>), a <strong>Field</strong> selector that switches between the
-recorded components, and the level and density sliders of the volume
-representations below; <em>Field on cut</em> and <em>Field arrows</em> join the
-<em>Show</em> menu.  Play runs the frames in a loop at <code class="docutils literal notranslate"><span class="pre">fps=</span></code> (default 4) —
-each frame is one layer computed and sent to the browser, so the rate
-is bounded by the size of the layer.  In a script or a documentation
-build the initial frame is chosen with <code class="docutils literal notranslate"><span class="pre">t=</span></code>, <code class="docutils literal notranslate"><span class="pre">f=</span></code> or <code class="docutils literal notranslate"><span class="pre">frame=</span></code>.</p>
+and a <strong>frame slider</strong> (time, frequency or mode, the value beside it
+in a readout of fixed width), a <strong>play button</strong> and a <strong>phase slider</strong>
+for complex data (a frequency monitor’s pattern at <code class="docutils literal notranslate"><span class="pre">Re(F·e^{+jφ})</span></code> —
+the instant at <code class="docutils literal notranslate"><span class="pre">ωt</span> <span class="pre">=</span> <span class="pre">φ</span></code>, so the phase advances with time and a
+travelling wave runs the way it ran in the simulation; the play turns
+the phase in steps of ten degrees), a <strong>Field</strong> selector
+that switches between the recorded components, and the level and
+density sliders of the volume representations below; <em>Field on cut</em>
+and <em>Vectors on cut</em> join the <em>Show</em> menu.  Play runs the frames in a
+loop at <code class="docutils literal notranslate"><span class="pre">fps=</span></code> (default 4) — each frame is one layer computed and sent
+to the browser, so the rate is bounded by the size of the layer.  In a
+script or a documentation build the initial frame is chosen with <code class="docutils literal notranslate"><span class="pre">t=</span></code>,
+<code class="docutils literal notranslate"><span class="pre">f=</span></code> or <code class="docutils literal notranslate"><span class="pre">frame=</span></code>.</p>
+<p>An eigenmode result shows the same way, <code class="docutils literal notranslate"><span class="pre">result.show()</span></code>: its modes are
+the frames, labelled with index and eigenfrequency (degenerate pairs
+share the frequency, so the index leads), the amplitudes in arbitrary
+units; a complex Bloch mode is turned to the instant of its maximum
+energy first, the phase slider turns it from there.</p>
 </section>
 <section id="fields-in-the-volume">
 <h2>Fields in the volume<a class="headerlink" href="#fields-in-the-volume" title="Link to this heading">#</a></h2>
@@ -701,8 +743,8 @@ too, in the two forms every 3D field plot offers.</p>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Arrows in volume</p></td>
-<td><p>The same arrows as on the cut, on an even 3D lattice over the region (<code class="docutils literal notranslate"><span class="pre">density=</span></code> counts them along its longest axis), clipped to the kept half like the solids; they replace the arrows on the cut.  A slider sets the density.</p></td>
+<tr class="row-even"><td><p>Field vectors</p></td>
+<td><p>The same arrows as on the cut, on an even 3D lattice over the region (<code class="docutils literal notranslate"><span class="pre">density=</span></code> counts them along its longest axis), clipped to the kept half like the solids; they replace the vectors on the cut.  A slider sets the density.</p></td>
 </tr>
 <tr class="row-odd"><td><p>Isosurfaces</p></td>
 <td><p>Translucent surfaces where the magnitude equals a level — by default one at <code class="docutils literal notranslate"><span class="pre">iso_level</span></code> (half the colour ceiling), which a slider moves between 5 and 95 %; <code class="docutils literal notranslate"><span class="pre">levels=</span></code> fixes surfaces at values in V/m or A/m.  A signed component gets each level with both signs, blue and red.  The surfaces are clipped at the cut, so the cut shows their inside.</p></td>
@@ -720,11 +762,9 @@ are interpolated to the grid nodes before the surfaces are contoured,
 so a surface is as fine as the grid.  Volume rendering with an opacity
 ramp is not offered: the browser renderer takes only uniform image
 data, and a graded grid resampled onto one would lose its resolution.</p>
-<p>Two things the picture is not.  It is not a plane: every value is the
-cell-centre average of the staggered components in one layer of cells,
-the same convention as the 2D slice plots.  And it is not mirrored:
-a model with symmetry planes shows its modelled half here, as the
-geometry view does.</p>
+<p>One thing the picture is not: a plane.  Every value is the cell-centre
+average of the staggered components in one layer of cells, the same
+convention as the 2D slice plots.</p>
 <p>A monitor read back from a project store (<code class="docutils literal notranslate"><span class="pre">project.monitors[...]</span></code>)
 shows the same way; its frames are read from disk one at a time as the
 slider moves, so a volume monitor of any size opens at once.</p>
@@ -764,9 +804,12 @@ OpenGL in the kernel.</p></td>
 </tbody>
 </table>
 </div>
-<p>The camera: left-drag orbits, right-drag (or shift + left-drag) pans,
-the wheel zooms.  The toolbar’s own buttons reset the camera to the
-axis views.</p>
+<p>The mouse in the notebook widget: left drag orbits, middle drag (or
+alt + left drag) pans, right drag, the wheel or ctrl + left drag zoom,
+alt + shift + left drag rolls.  The rotatable views in these
+documentation pages use vtk.js’s own bindings instead: shift + left
+drag pans there, alt + left drag zooms.  The toolbar’s help button
+lists the bindings of the widget.</p>
 </section>
 <section id="requirements">
 <h2>Requirements<a class="headerlink" href="#requirements" title="Link to this heading">#</a></h2>
@@ -801,6 +844,8 @@ names face the initial camera; both scale with the model.</p></li>
 <li><p>Fields are drawn on the cut and, as arrows and isosurfaces, in the
 volume — not as a volume rendering; the
 <a class="reference internal" href="sources-monitors.html#paraview-export"><span class="std std-ref">ParaView export</span></a> covers that.</p></li>
+<li><p>The camera presets do not turn the flat labels: they face the
+camera the view opened with.</p></li>
 </ul>
 </section>
 </section>

@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=e1271356"></script>
+    <script src="../_static/documentation_options.js?v=12d57f4c"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -175,8 +175,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.7.html">
-    Upgrading from 0.6.x
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -188,6 +188,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
     Upgrading from 0.5.x
@@ -361,6 +368,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -958,7 +972,8 @@ magnitude, <code class="docutils literal notranslate"><span class="pre">&quot;Ex
 nearest cell-centre plane.</p></li>
 <li><p><strong>plot_type</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;vector&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;color&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;contour&quot;</span></code>.</p></li>
 <li><p><strong>phase</strong> (<em>float</em>) – Instant of the complex pattern in degrees,
-<code class="docutils literal notranslate"><span class="pre">Re(F</span> <span class="pre">·</span> <span class="pre">exp(j·phase))</span></code>; a group magnitude is the envelope
+<code class="docutils literal notranslate"><span class="pre">Re(F</span> <span class="pre">·</span> <span class="pre">exp(+j·phase))</span></code>, the pattern at <code class="docutils literal notranslate"><span class="pre">w</span> <span class="pre">t</span> <span class="pre">=</span> <span class="pre">phase</span></code>,
+so it advances with time; a group magnitude is the envelope
 and ignores it.</p></li>
 <li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.1)"><em>matplotlib.axes.Axes</em></a><em>, </em><em>optional</em>)</p></li>
 <li><p><strong>scale_mm</strong> (<em>bool</em>)</p></li>
@@ -995,9 +1010,9 @@ staggering is handled automatically.</p>
 <p>The bins accumulate the grid quantities on the region’s Yee
 positions; nothing is averaged until the spectrum is read.  The
 time stamps are the ones the port recorder uses for the same
-step (<code class="docutils literal notranslate"><span class="pre">t</span></code> for the sample of <code class="docutils literal notranslate"><span class="pre">e</span></code> taken after step <em>n</em>), so a
-renormalised pattern is phase-consistent with the run’s
-S-parameters.</p>
+step (<code class="docutils literal notranslate"><span class="pre">t</span></code> for the sample of <code class="docutils literal notranslate"><span class="pre">e</span></code> taken after step <em>n</em>) and
+the transform carries the same sign, so a renormalised pattern
+is phase-consistent with the run’s S-parameters.</p>
 <p>With an <code class="docutils literal notranslate"><span class="pre">interval</span></code>, steps off the stride return before the
 copy — which is where a whole-volume monitor spends its time, so
 the saving is proportional.  The stride is keyed on the absolute
@@ -1036,8 +1051,10 @@ waveform (its wave impedance varies across the band); the
 analysis wires that ratio into the monitor after the run so the
 same statement holds there.</p>
 <p>The source spectrum is computed in the same Fourier convention
-as the internal DFT accumulator (<code class="docutils literal notranslate"><span class="pre">exp(+jωt)</span></code> with <code class="docutils literal notranslate"><span class="pre">dt</span></code>
-integration weight), so the division is consistent.</p>
+as the internal DFT accumulator (<code class="docutils literal notranslate"><span class="pre">exp(-jωt)</span></code> with <code class="docutils literal notranslate"><span class="pre">dt</span></code>
+integration weight — the sign of the S-parameters and of
+<a class="reference internal" href="signals.html#magnelio.signals.Signal1D.at_frequencies" title="magnelio.signals.Signal1D.at_frequencies"><code class="xref py py-meth docutils literal notranslate"><span class="pre">at_frequencies()</span></code></a>), so the
+division is consistent.</p>
 <p>Repeating the call is harmless: the accumulated bins are never
 modified, so this only replaces the divisor.</p>
 <dl class="field-list simple">
@@ -1078,8 +1095,12 @@ slider for the complex pattern, a frequency slider when several
 bins were recorded, and the position slider walking through the
 region.  See <a class="reference internal" href="plots.html#magnelio.plots.show_field" title="magnelio.plots.show_field"><code class="xref py py-func docutils literal notranslate"><span class="pre">magnelio.plots.show_field()</span></code></a> for the arguments
 — the bin (<code class="docutils literal notranslate"><span class="pre">f=</span></code> or <code class="docutils literal notranslate"><span class="pre">frame=</span></code>), <code class="docutils literal notranslate"><span class="pre">phase</span></code>, the plane
-(<code class="docutils literal notranslate"><span class="pre">normal</span></code>, <code class="docutils literal notranslate"><span class="pre">position</span></code>), <code class="docutils literal notranslate"><span class="pre">geometry</span></code> and <code class="docutils literal notranslate"><span class="pre">mesh</span></code> overlays,
-and the rendering <code class="docutils literal notranslate"><span class="pre">mode</span></code>.</p>
+(<code class="docutils literal notranslate"><span class="pre">normal</span></code>, <code class="docutils literal notranslate"><span class="pre">position</span></code>), <code class="docutils literal notranslate"><span class="pre">volume</span></code> for the region behind the
+cut, and the rendering <code class="docutils literal notranslate"><span class="pre">mode</span></code>.</p>
+<p>The monitor carries the field alone: pass <code class="docutils literal notranslate"><span class="pre">geometry=</span></code> to draw
+the model with it, and <code class="docutils literal notranslate"><span class="pre">mesh=</span></code> to cut the metal cells out of
+the sheet, to name the symmetry planes the field is continued
+across, and (with <code class="docutils literal notranslate"><span class="pre">show_grid=True</span></code>) to draw the grid cells.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>component</strong> (<em>str</em>)</p>
@@ -1503,8 +1524,12 @@ electric instant; the recording states the magnetic one as
 over the recorded frames, and the position slider walking through
 the region.  See <a class="reference internal" href="plots.html#magnelio.plots.show_field" title="magnelio.plots.show_field"><code class="xref py py-func docutils literal notranslate"><span class="pre">magnelio.plots.show_field()</span></code></a> for the
 arguments — the frame (<code class="docutils literal notranslate"><span class="pre">t=</span></code> or <code class="docutils literal notranslate"><span class="pre">frame=</span></code>), the plane
-(<code class="docutils literal notranslate"><span class="pre">normal</span></code>, <code class="docutils literal notranslate"><span class="pre">position</span></code>), <code class="docutils literal notranslate"><span class="pre">geometry</span></code> and <code class="docutils literal notranslate"><span class="pre">mesh</span></code> overlays,
-and the rendering <code class="docutils literal notranslate"><span class="pre">mode</span></code>.</p>
+(<code class="docutils literal notranslate"><span class="pre">normal</span></code>, <code class="docutils literal notranslate"><span class="pre">position</span></code>), <code class="docutils literal notranslate"><span class="pre">volume</span></code> for the region behind the
+cut, and the rendering <code class="docutils literal notranslate"><span class="pre">mode</span></code>.</p>
+<p>The monitor carries the field alone: pass <code class="docutils literal notranslate"><span class="pre">geometry=</span></code> to draw
+the model with it, and <code class="docutils literal notranslate"><span class="pre">mesh=</span></code> to cut the metal cells out of
+the sheet, to name the symmetry planes the field is continued
+across, and (with <code class="docutils literal notranslate"><span class="pre">show_grid=True</span></code>) to draw the grid cells.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>component</strong> (<em>str</em>)</p>

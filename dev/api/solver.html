@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=e1271356"></script>
+    <script src="../_static/documentation_options.js?v=12d57f4c"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -175,8 +175,8 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.7.html">
-    Upgrading from 0.6.x
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -188,6 +188,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
+    Upgrading from 0.6.x
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
     Upgrading from 0.5.x
@@ -361,6 +368,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../methods/index.html">
     Numerical methods
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../migration-0.8.html">
+    Upgrading from 0.7.x
   </a>
 </li>
 
@@ -640,6 +654,28 @@ nearest cell-centre plane.</p></li>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.solver.EigenmodeResult.show">
+<span class="sig-name descname"><span class="pre">show</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.solver.EigenmodeResult.show" title="Link to this definition">#</a></dt>
+<dd><p>Interactive 3D view of the modes on a cutting plane.</p>
+<p>The geometry viewer with a mode’s field laid on its cut and a
+slider over the modes (each labelled with its index and
+eigenfrequency), the position slider walking the layer through
+the cavity; a complex Bloch mode is shown at the instant of its
+maximum energy, with a phase slider to turn it.  The result’s
+own mesh cuts the metal out of the sheet and names the symmetry
+planes the field is continued across, so the view shows the
+whole cavity.  See <a class="reference internal" href="plots.html#magnelio.plots.show_field" title="magnelio.plots.show_field"><code class="xref py py-func docutils literal notranslate"><span class="pre">magnelio.plots.show_field()</span></code></a> for the
+arguments — <code class="docutils literal notranslate"><span class="pre">frame=</span></code> picks the mode shown first, the plane
+(<cite>normal</cite>, <cite>position</cite>), <cite>geometry</cite>, the rendering <cite>mode</cite> and
+the rest.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>component</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;E&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code>, or one component such as <code class="docutils literal notranslate"><span class="pre">&quot;Ez&quot;</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="magnelio.solver.EigenmodeResult.n_modes">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">n_modes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#magnelio.solver.EigenmodeResult.n_modes" title="Link to this definition">#</a></dt>
@@ -903,6 +939,7 @@ Built from the mesh when omitted.</p></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.solver.EigenmodeResult"><code class="docutils literal notranslate"><span class="pre">EigenmodeResult</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.solver.EigenmodeResult.field"><code class="docutils literal notranslate"><span class="pre">EigenmodeResult.field()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.solver.EigenmodeResult.plot"><code class="docutils literal notranslate"><span class="pre">EigenmodeResult.plot()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.solver.EigenmodeResult.show"><code class="docutils literal notranslate"><span class="pre">EigenmodeResult.show()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.solver.EigenmodeResult.n_modes"><code class="docutils literal notranslate"><span class="pre">EigenmodeResult.n_modes</span></code></a></li>
 </ul>
 </li>

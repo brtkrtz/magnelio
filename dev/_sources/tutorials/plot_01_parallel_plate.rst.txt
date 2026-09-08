@@ -228,11 +228,11 @@ cap the cell size at 1/16 of the plate spacing.
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (21.3 s)
+      mesh | materials | done (13.6 s)
       mesh | conformal cells
-      mesh | conformal cells | done (7.8 s)
+      mesh | conformal cells | done (4.9 s)
       mesh | PEC masks
-      mesh | 32 x 16 x 64 cells (29.3 s total)
+      mesh | 32 x 16 x 64 cells (18.7 s total)
     grid: 32 x 16 x 64 cells
 
 
@@ -241,7 +241,7 @@ cap the cell size at 1/16 of the plate spacing.
 .. GENERATED FROM PYTHON SOURCE LINES 134-140
 
 Looking at geometry and mesh before spending any solver time is one
-call each.  ``model.plot()`` is the 3D view: the model opened along a
+call each.  ``model.show()`` is the 3D view: the model opened along a
 cutting plane, with the grid cells the cut exposes coloured by the
 material the mesher assigned.  In the notebook version of this
 tutorial it is an interactive widget (orbit, pan, zoom, and the
@@ -252,7 +252,7 @@ cutting plane in its toolbar); here it is rendered as a picture.
 .. code-block:: Python
 
 
-    model.plot(mesh=mesh, cut=("y", 0.0))
+    model.show(mesh=mesh, cut=("y", 0.0))
 
 
 
@@ -354,7 +354,7 @@ textbook formula.
       [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 188.37 Ω  ε_eff = 1.000  termination = dtbc (chain floor <= -329 dB)
     Z_L (port solver):  188.3652 Ohm
     Z_L (eta0 * b/a) :  188.3652 Ohm
-    relative deviation: 1.11e-16
+    relative deviation: 2.22e-16
 
 
 
@@ -435,7 +435,7 @@ run stops on its own once the port signals have decayed.
 
  .. code-block:: none
 
-    max |S11| in band: -125.3 dB
+    max |S11| in band: -124.8 dB
 
 
 
@@ -505,7 +505,7 @@ spec matched to its cross-section.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 46.223 seconds)
+   **Total running time of the script:** (0 minutes 27.020 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_01_parallel_plate.py:

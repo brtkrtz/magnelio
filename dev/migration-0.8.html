@@ -2,13 +2,13 @@
 <!DOCTYPE html>
 
 
-<html lang="en" data-content_root="../" >
+<html lang="en" data-content_root="./" >
 
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Conductor losses &#8212; Magnelio Documentation</title>
+    <title>Upgrading from 0.7.x &#8212; Magnelio Documentation</title>
   
   
   
@@ -27,30 +27,30 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+  <link href="_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
-    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
-    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
-    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-binder.css?v=f4aeca0c" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-dataframe.css?v=2082cf3c" />
+    <link rel="stylesheet" type="text/css" href="_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=12d57f4c"></script>
-    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
-    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
-    <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
-    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/documentation_options.js?v=12d57f4c"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/sg-tags.js?v=d80f6fa4"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'methods/conductor-losses';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'migration-0.8';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://brtkrtz.github.io/magnelio/switcher.json';
@@ -59,19 +59,19 @@
             true;
         </script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
-    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/dev/methods/conductor-losses.html" />
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Sources, monitors and post-processing" href="sources-monitors.html" />
-    <link rel="prev" title="Dispersive and lossy materials" href="dispersive-materials.html" />
+    <link rel="canonical" href="https://brtkrtz.github.io/magnelio/dev/migration-0.8.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Upgrading from 0.6.x" href="migration-0.7.html" />
+    <link rel="prev" title="Implementation engineering (non-method)" href="methods/implementation.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
   
     
-    <script src="../_static/searchtools.js"></script>
-    <script src="../_static/language_data.js"></script>
-    <script src="../searchindex.js"></script>
+    <script src="_static/searchtools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script src="searchindex.js"></script>
   
   </head>
   <body data-default-mode="">
@@ -91,7 +91,7 @@
   <dialog id="pst-search-dialog">
     
 <form class="bd-search d-flex align-items-center"
-      action="../search.html"
+      action="search.html"
       method="get">
   <i class="fa-solid fa-magnifying-glass"></i>
   <input type="search"
@@ -127,7 +127,7 @@
     
   
 
-<a class="navbar-brand logo" href="../index.html">
+<a class="navbar-brand logo" href="index.html">
   
   
   
@@ -149,35 +149,35 @@
   <ul class="bd-navbar-elements navbar-nav">
     
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../tutorials/index.html">
+  <a class="nav-link nav-internal" href="tutorials/index.html">
     Tutorials
   </a>
 </li>
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../howto/index.html">
+  <a class="nav-link nav-internal" href="howto/index.html">
     How-to guides
   </a>
 </li>
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../api/index.html">
+  <a class="nav-link nav-internal" href="api/index.html">
     API reference
   </a>
 </li>
 
 
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="index.html">
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="methods/index.html">
     Numerical methods
   </a>
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.8.html">
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
     Upgrading from 0.7.x
   </a>
 </li>
@@ -191,28 +191,28 @@
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
 <li class=" ">
-  <a class="nav-link dropdown-item nav-internal" href="../migration-0.7.html">
+  <a class="nav-link dropdown-item nav-internal" href="migration-0.7.html">
     Upgrading from 0.6.x
   </a>
 </li>
 
 
 <li class=" ">
-  <a class="nav-link dropdown-item nav-internal" href="../migration-0.6.html">
+  <a class="nav-link dropdown-item nav-internal" href="migration-0.6.html">
     Upgrading from 0.5.x
   </a>
 </li>
 
 
 <li class=" ">
-  <a class="nav-link dropdown-item nav-internal" href="../migration-0.5.html">
+  <a class="nav-link dropdown-item nav-internal" href="migration-0.5.html">
     Upgrading from 0.4.x
   </a>
 </li>
 
 
 <li class=" ">
-  <a class="nav-link dropdown-item nav-internal" href="../bibliography.html">
+  <a class="nav-link dropdown-item nav-internal" href="bibliography.html">
     Bibliography
   </a>
 </li>
@@ -347,63 +347,63 @@
   <ul class="bd-navbar-elements navbar-nav">
     
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../tutorials/index.html">
+  <a class="nav-link nav-internal" href="tutorials/index.html">
     Tutorials
   </a>
 </li>
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../howto/index.html">
+  <a class="nav-link nav-internal" href="howto/index.html">
     How-to guides
   </a>
 </li>
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../api/index.html">
+  <a class="nav-link nav-internal" href="api/index.html">
     API reference
   </a>
 </li>
 
 
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="index.html">
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="methods/index.html">
     Numerical methods
   </a>
 </li>
 
 
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.8.html">
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
     Upgrading from 0.7.x
   </a>
 </li>
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.7.html">
+  <a class="nav-link nav-internal" href="migration-0.7.html">
     Upgrading from 0.6.x
   </a>
 </li>
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.6.html">
+  <a class="nav-link nav-internal" href="migration-0.6.html">
     Upgrading from 0.5.x
   </a>
 </li>
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../migration-0.5.html">
+  <a class="nav-link nav-internal" href="migration-0.5.html">
     Upgrading from 0.4.x
   </a>
 </li>
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../bibliography.html">
+  <a class="nav-link nav-internal" href="bibliography.html">
     Bibliography
   </a>
 </li>
@@ -496,27 +496,7 @@
 <nav class="bd-docs-nav bd-links"
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="fit-discretization.html">Spatial discretisation and time integration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="geometry.html">Geometry construction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cad-import.html">CAD import</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pcb-import.html">Board import</a></li>
-<li class="toctree-l1"><a class="reference internal" href="meshing-conformal.html">Mesh generation and conformal geometry</a></li>
-<li class="toctree-l1"><a class="reference internal" href="boundaries.html">Boundary conditions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ports.html">Waveguide ports and S-parameter extraction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="lumped-elements.html">Discrete ports and lumped circuit elements</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dispersive-materials.html">Dispersive and lossy materials</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Conductor losses</a></li>
-<li class="toctree-l1"><a class="reference internal" href="sources-monitors.html">Sources, monitors and post-processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="projects-and-runs.html">Projects and runs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="far-field.html">Far-field computation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="eigenmode-analysis.html">Eigenmode analysis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="precision.html">Numerical precision</a></li>
-<li class="toctree-l1"><a class="reference internal" href="progress-output.html">Progress output</a></li>
-<li class="toctree-l1"><a class="reference internal" href="viewer.html">3D viewer</a></li>
-<li class="toctree-l1"><a class="reference internal" href="implementation.html">Implementation engineering (non-method)</a></li>
-</ul>
-</div>
+  <div class="bd-toc-item navbar-nav"></div>
 </nav></div>
     </div>
   
@@ -551,14 +531,11 @@
   <ul class="bd-breadcrumbs">
     
     <li class="breadcrumb-item breadcrumb-home">
-      <a href="../index.html" class="nav-link" aria-label="Home">
+      <a href="index.html" class="nav-link" aria-label="Home">
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    
-    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Numerical methods</a></li>
-    
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Conductor losses</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Upgrading from 0.7.x</span></li>
   </ul>
 </nav>
 </div>
@@ -575,89 +552,105 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section class="tex2jax_ignore mathjax_ignore" id="conductor-losses">
-<h1>Conductor losses<a class="headerlink" href="#conductor-losses" title="Link to this heading">#</a></h1>
-<p>Magnelio offers two routes for wall losses on good conductors: a
-perturbative post-processing route (default) and a broadband
-time-domain surface-impedance boundary (opt-in).</p>
-<section id="perturbative-wall-losses-post-processing">
-<h2>Perturbative wall losses (post-processing)<a class="headerlink" href="#perturbative-wall-losses-post-processing" title="Link to this heading">#</a></h2>
-<p>With lossless PEC walls in the field solve, the dissipated power is
-evaluated perturbatively from the tangential magnetic field,</p>
-<div class="math notranslate nohighlight">
-\[
-P_{\text{loss}}(f) = \tfrac12\, R_s(f) \sum_{\text{wall}}
- w\,|H_{\tan}|^2, \qquad R_s = \sqrt{\pi f \mu / \sigma},
-\]</div>
-<p>(<code class="docutils literal notranslate"><span class="pre">monitors/wall_loss.py</span></code>, <code class="docutils literal notranslate"><span class="pre">postprocessing/wall_loss.py</span></code>, DD-082).
-This is the classical power-loss perturbation method of microwave
-engineering <span class="bibtex-citation" id="id1">[<a class="reference internal" href="../bibliography.html#id28" title="David M. Pozar. Microwave Engineering. Wiley, 4th edition, 2012.">16</a>, <a class="reference internal" href="../bibliography.html#id55" title="John David Jackson. Classical Electrodynamics. Wiley, 3rd edition, 1999.">39</a>]</span>.  Two
-accuracy refinements are in-house (DD-087): exact conformal
-wall areas on curved conductors (removing the <span class="math notranslate nohighlight">\(4/\pi\)</span> staircase
-over-count) and a conformal tangential-H sampling rule
-(uncut-face booking with a normal-direction walk).</p>
+  <section class="tex2jax_ignore mathjax_ignore" id="upgrading-from-0-7-x">
+<h1>Upgrading from 0.7.x<a class="headerlink" href="#upgrading-from-0-7-x" title="Link to this heading">#</a></h1>
+<p>Release 0.8 changes the sign of one exponent.  The running transform
+behind every frequency monitor summed <span class="math notranslate nohighlight">\(F(t)\,e^{+j\omega t}\)</span>, which
+made the complex fields it handed out the <em>conjugates</em> of the phasors
+everything else in the library speaks — the S-parameters, the port
+signals, the waveform spectra, the textbook far-field formulas.  It now
+sums <span class="math notranslate nohighlight">\(F(t)\,e^{-j\omega t}\)</span>, so there is one convention throughout:
+frequency-domain fields are <span class="math notranslate nohighlight">\(e^{+j\omega t}\)</span> phasors, and the real
+field at time <span class="math notranslate nohighlight">\(t\)</span> is <span class="math notranslate nohighlight">\(\mathrm{Re}\left(F\,e^{+j\omega t}\right)\)</span>.</p>
+<p>Every complex field the library hands out is therefore the complex
+conjugate of what 0.7 returned.  Magnitudes, power, energy, gain,
+directivity and S-parameters are unchanged — none of them can tell the
+two signs apart.  What changes is anything that reads a <em>phase</em>.</p>
+<p>Stored runs need no attention: a project written by an earlier release
+is converted as it is read, and a partial run resumes exactly.</p>
+<section id="quick-reference">
+<h2>Quick reference<a class="headerlink" href="#quick-reference" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>0.7.x</p></th>
+<th class="head"><p>0.8</p></th>
+<th class="head"><p>If you leave it alone</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">mon.spectrum.cell_centred([&quot;Ez&quot;])[&quot;Ez&quot;]</span></code></p></td>
+<td><p>the conjugate of those values</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">abs(...)</span></code> unchanged; <code class="docutils literal notranslate"><span class="pre">np.angle(...)</span></code> changes sign</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pattern.E_theta</span></code>, <code class="docutils literal notranslate"><span class="pre">pattern.E_phi</span></code></p></td>
+<td><p>the conjugate of those values</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">directivity</span></code>, <code class="docutils literal notranslate"><span class="pre">realized_gain</span></code>, <code class="docutils literal notranslate"><span class="pre">P_rad</span></code> unchanged; a polarisation handedness computed by hand comes out the other way</p></td>
+</tr>
+<tr class="row-even"><td><p>a transit phase <span class="math notranslate nohighlight">\(\int E_z\,e^{-jk z}\,dz\)</span> for a particle toward <span class="math notranslate nohighlight">\(+z\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(\int E_z\,e^{+jk z}\,dz\)</span></p></td>
+<td><p>the two directions swap: what was the forward wave reads as the backward one</p></td>
+</tr>
+<tr class="row-odd"><td><p>the <code class="docutils literal notranslate"><span class="pre">&lt;field&gt;_im</span></code> arrays of <code class="docutils literal notranslate"><span class="pre">export_paraview()</span></code></p></td>
+<td><p>sign-flipped: the imaginary part is the field at <span class="math notranslate nohighlight">\(\omega t = -90°\)</span></p></td>
+<td><p>the arrows of the imaginary part point the other way</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">snapshot(phase=φ)</span></code>, <code class="docutils literal notranslate"><span class="pre">show(phase=φ)</span></code>, <code class="docutils literal notranslate"><span class="pre">plot(phase=φ)</span></code></p></td>
+<td><p>unchanged in meaning: <code class="docutils literal notranslate"><span class="pre">φ</span></code> is <span class="math notranslate nohighlight">\(\omega t\)</span></p></td>
+<td><p>a picture at a phase other than 0° or 180° is the mirror in time of what 0.7.0 drew (fixed in this release)</p></td>
+</tr>
+<tr class="row-odd"><td><p>a project written by 0.7.x</p></td>
+<td><p>read it as it is</p></td>
+<td><p>nothing; the conversion is automatic and exact</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>If your post-processing only takes magnitudes — a pattern, a field
+plot, an S-parameter, a loss figure — nothing in your scripts needs to
+change.</p>
 </section>
-<section id="surface-roughness">
-<h2>Surface roughness<a class="headerlink" href="#surface-roughness" title="Link to this heading">#</a></h2>
-<p>Roughness enters the perturbative chain as one real,
-frequency-dependent multiplier <span class="math notranslate nohighlight">\(K(f)\)</span> on the surface resistance,
-<span class="math notranslate nohighlight">\(R_{s,\text{rough}} = K(f)\,R_{s,\text{smooth}}\)</span>
-(<code class="docutils literal notranslate"><span class="pre">materials/roughness.py</span></code>, DD-088).  Implemented models:</p>
-<ul class="simple">
-<li><p><strong>Hammerstad</strong> — the classical RMS-height curve fit of Hammerstad
-and Jensen <span class="bibtex-citation" id="id2">[<a class="reference internal" href="../bibliography.html#id51" title="Erik Hammerstad and Øyvind Jensen. Accurate models for microstrip computer-aided design. In IEEE MTT-S International Microwave Symposium Digest, 407–409. 1980. doi:10.1109/MWSYM.1980.1124303.">40</a>]</span>.</p></li>
-<li><p><strong>Huray “snowball”</strong> — the physics-based sphere-cluster model of
-Huray et al. <span class="bibtex-citation" id="id3">[<a class="reference internal" href="../bibliography.html#id52" title="Paul G. Huray, Stephen Hall, Steven Pytel, Femi Oluwafemi, Richard Mellitz, Daniel Hua, and Peng Ye. Fundamentals of a 3-D “snowball” model for surface roughness power losses. In IEEE Workshop on Signal Propagation on Interconnects (SPI). 2007. doi:10.1109/SPI.2007.4512227.">41</a>]</span>; the
-loss-factor form implemented is Bracken’s eq. (5)
-<span class="bibtex-citation" id="id4">[<a class="reference internal" href="../bibliography.html#id53" title="J. Eric Bracken. A causal Huray model for surface roughness. In DesignCon 2012. 2012.">42</a>]</span>.</p></li>
-<li><p><strong>Cannonball-Huray parameterisation</strong> — sphere radius and coverage
-from a single <span class="math notranslate nohighlight">\(R_z\)</span> datasheet number via close packing,
-after Simonovich <span class="bibtex-citation" id="id5">[<a class="reference internal" href="../bibliography.html#id54" title="Lambert (Bert) Simonovich. Practical method for modeling conductor surface roughness using close packing of equal spheres. In DesignCon. 2015.">43</a>]</span>.</p></li>
-</ul>
-<p>A real <span class="math notranslate nohighlight">\(K(f)\)</span> is non-causal as a time-domain impedance (noted by
-Bracken <span class="bibtex-citation" id="id6">[<a class="reference internal" href="../bibliography.html#id53" title="J. Eric Bracken. A causal Huray model for surface roughness. In DesignCon 2012. 2012.">42</a>]</span>); this is admissible here
-because the perturbative chain evaluates power per frequency bin and
-never forms a time-domain impedance.</p>
+<section id="what-to-look-for-in-your-own-code">
+<h2>What to look for in your own code<a class="headerlink" href="#what-to-look-for-in-your-own-code" title="Link to this heading">#</a></h2>
+<p>Anything that multiplies a monitor’s complex field by a phase factor of
+its own.  The two cases that occur in practice:</p>
+<p><strong>A transit phase.</strong>  A beam voltage, a coupling integral along a path,
+a pickup summed along a line — the factor that follows the particle or
+the wave.  For motion toward <span class="math notranslate nohighlight">\(+z\)</span> it is now <span class="math notranslate nohighlight">\(e^{+jk z}\)</span>.  The how-to
+<a class="reference internal" href="howto/plot_stripline_pickup_kicker.html"><span class="doc">Striplines as pickups and kickers: beam-coupling figures from S-parameter runs</span></a> carries the corrected form.</p>
+<p><strong>A polarisation decomposition.</strong>  Left- and right-hand circular
+components of a far-field pattern, or an axial ratio computed from
+<span class="math notranslate nohighlight">\(E_\theta\)</span> and <span class="math notranslate nohighlight">\(E_\varphi\)</span>.  The textbook expressions apply directly
+now; in 0.7 they had to be conjugated first.</p>
+<p>A quick way to check an existing script: compute the quantity both
+ways.  If the two results differ only in the sign of a phase or in
+which of two directions comes out larger, the script had the 0.7
+convention baked in.</p>
 </section>
-<section id="broadband-time-domain-sibc">
-<h2>Broadband time-domain SIBC<a class="headerlink" href="#broadband-time-domain-sibc" title="Link to this heading">#</a></h2>
-<p>SIBC is currently an opt-in: <code class="docutils literal notranslate"><span class="pre">wall_model=&quot;sibc&quot;</span></code>.
-The surface-impedance boundary condition realises the <strong>Leontovich
-condition</strong> <span class="math notranslate nohighlight">\(E_{\tan} = Z_s(\omega)\,(\hat n \times \mathbf H)\)</span>
-<span class="bibtex-citation" id="id7">[<a class="reference internal" href="../bibliography.html#id42" title="Mikhail A. Leontovich. Approximate boundary conditions for the electromagnetic field on the surface of a good conductor. In Investigations on Radiowave Propagation, Part II. Academy of Sciences USSR, Moscow, 1948.">44</a>, <a class="reference internal" href="../bibliography.html#id43" title="Thomas B. A. Senior. Impedance boundary conditions for imperfectly conducting surfaces. Applied Scientific Research, Section B, 8:418–436, 1960. doi:10.1007/BF02920074.">45</a>]</span> directly in the
-leapfrog update (<code class="docutils literal notranslate"><span class="pre">solver/sibc.py</span></code>, DD-091):</p>
-<ul class="simple">
-<li><p><span class="math notranslate nohighlight">\(Z_s(\omega)\)</span> — smooth-metal <span class="math notranslate nohighlight">\(\sqrt{j\omega\mu/\sigma}\)</span> or the
-causally completed rough impedance — is fitted as a
-<strong>Foster/Stieltjes ladder</strong> <span class="math notranslate nohighlight">\(c_0 + \sum_p c_p s/(s+b_p)\)</span> with
-non-negative coefficients by <strong>NNLS</strong> on fixed log-spaced poles
-(<code class="docutils literal notranslate"><span class="pre">materials/surface_impedance.py</span></code>).  Foster’s canonical positive-
-real ladder form is classical network synthesis
-<span class="bibtex-citation" id="id8">[<a class="reference internal" href="../bibliography.html#id44" title="Ronald M. Foster. A reactance theorem. Bell System Technical Journal, 3(2):259–267, 1924. doi:10.1002/j.1538-7305.1924.tb01358.x.">46</a>]</span>; NNLS is Lawson and
-Hanson <span class="bibtex-citation" id="id9">[<a class="reference internal" href="../bibliography.html#id45" title="Charles L. Lawson and Richard J. Hanson. Solving Least Squares Problems. Prentice-Hall, 1974. NNLS algorithm (ch. 23); reprinted as SIAM Classics in Applied Mathematics 15, 1995.">47</a>]</span>.  Because
-every branch is
-elementarily passive, the time-domain recursion is dissipative by
-construction — stability is unconditional at the unchanged lossless
-CFL, independent of fit accuracy — an in-house result (internal derivation
-dossier <code class="docutils literal notranslate"><span class="pre">investigations/sibc/DERIVATION.md</span></code>, kept outside the public
-repository).</p></li>
-<li><p>The causal reactance of a rough surface is completed from the real
-roughness excess <span class="math notranslate nohighlight">\((K-1)R_s\)</span> by a subtracted <strong>Kramers–Kronig</strong>
-quadrature <span class="bibtex-citation" id="id10">[<a class="reference internal" href="../bibliography.html#id46" title="Ralph de Laer Kronig. On the theory of dispersion of X-rays. Journal of the Optical Society of America, 12(6):547–557, 1926. doi:10.1364/JOSA.12.000547.">48</a>, <a class="reference internal" href="../bibliography.html#id47" title="Hendrik A. Kramers. La diffusion de la lumière par les atomes. In Atti del Congresso Internazionale dei Fisici, Como, volume 2, 545–557. 1927.">49</a>]</span>.</p></li>
-<li><p>The per-branch states are advanced with the trapezoidal rule and
-folded into the H update like a magnetic surface conductivity.</p></li>
-</ul>
-<p>Approximating a surface impedance by a low-order rational function
-and convolving it recursively in FDTD is an established technique:
-Maloney and Smith <span class="bibtex-citation" id="id11">[<a class="reference internal" href="../bibliography.html#id48" title="James G. Maloney and Glenn S. Smith. The use of surface impedance concepts in the finite-difference time-domain method. IEEE Transactions on Antennas and Propagation, 40(1):38–48, 1992. doi:10.1109/8.123351.">50</a>]</span>, Beggs,
-Luebbers, Yee and Kunz <span class="bibtex-citation" id="id12">[<a class="reference internal" href="../bibliography.html#id49" title="John H. Beggs, Raymond J. Luebbers, Kane S. Yee, and Karl S. Kunz. Finite-difference time-domain implementation of surface impedance boundary conditions. IEEE Transactions on Antennas and Propagation, 40(1):49–56, 1992. doi:10.1109/8.123352.">51</a>]</span>, and the
-first-order-section approach of Oh and Schutt-Ainé
-<span class="bibtex-citation" id="id13">[<a class="reference internal" href="../bibliography.html#id50" title="Kyung Suk Oh and José E. Schutt-Ainé. An efficient implementation of surface impedance boundary conditions for the finite-difference time-domain method. IEEE Transactions on Antennas and Propagation, 43(7):660–666, 1995. doi:10.1109/8.391136.">52</a>]</span> are the closest published
-antecedents; Magnelio’s specific NNLS-Foster construction with its
-unconditional dissipation identity is in-house.</p>
-<p>The conformal booking of SIBC faces (which faces carry the damping
-term and with which geometric weight <span class="math notranslate nohighlight">\(G_f = A_f/l^2_{\text{dual}}\)</span>)
-reuses the DD-087 conformal wall-area machinery.</p>
+<section id="the-project-store">
+<h2>The project store<a class="headerlink" href="#the-project-store" title="Link to this heading">#</a></h2>
+<p>Result files carry a <code class="docutils literal notranslate"><span class="pre">phasor_convention</span></code> attribute naming the
+convention their bins are in.  A file without it was written by an
+earlier release, and its complex data is conjugated as it is read — a
+finished transform as much as a partial sum a resume continues.  The
+conversion is exact, so a resumed run is bit-identical to an
+uninterrupted one, and the store’s schema version is unchanged: 0.7
+projects stay readable.</p>
+<p>A file naming a convention this release does not know is refused with a
+<code class="docutils literal notranslate"><span class="pre">ProjectSchemaError</span></code> rather than read as if the stamp were absent.</p>
+</section>
+<section id="why">
+<h2>Why<a class="headerlink" href="#why" title="Link to this heading">#</a></h2>
+<p>The library grew two conventions and kept them apart by hand.  The
+S-parameter path, the port signals’ transform, the waveform spectra and
+the CW lock-in were all <span class="math notranslate nohighlight">\(e^{+j\omega t}\)</span>; only the field monitors’ own
+running sum ran the other way, and the near-to-far-field transform
+bridged the gap by conjugating its inputs at the entrance and its
+result at the exit.  It worked, but it left the phase of a field
+monitor and the phase of a port voltage at the same frequency as
+conjugates of each other, which is a trap for anyone who compares
+them — and it made the standard textbook formulas wrong as written for
+anyone post-processing a pattern.  One sign in the accumulator removes
+the split, the conjugations in the far-field transform, and the trap.</p>
 </section>
 </section>
 
@@ -672,20 +665,20 @@ reuses the DD-087 conformal wall-area machinery.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="dispersive-materials.html"
+       href="methods/implementation.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Dispersive and lossy materials</p>
+        <p class="prev-next-title">Implementation engineering (non-method)</p>
       </div>
     </a>
     <a class="right-next"
-       href="sources-monitors.html"
+       href="migration-0.7.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Sources, monitors and post-processing</p>
+        <p class="prev-next-title">Upgrading from 0.6.x</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -708,16 +701,17 @@ reuses the DD-087 conformal wall-area machinery.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#perturbative-wall-losses-post-processing">Perturbative wall losses (post-processing)</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#surface-roughness">Surface roughness</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#broadband-time-domain-sibc">Broadband time-domain SIBC</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quick-reference">Quick reference</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-to-look-for-in-your-own-code">What to look for in your own code</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-project-store">The project store</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#why">Why</a></li>
 </ul>
   </nav></div>
 
   <div class="sidebar-secondary-item">
 
   <div class="tocsection sourcelink">
-    <a href="../_sources/methods/conductor-losses.md.txt">
+    <a href="_sources/migration-0.8.md.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>
@@ -736,8 +730,8 @@ reuses the DD-087 conformal wall-area machinery.</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+  <script defer src="_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
