@@ -342,6 +342,18 @@ def _load_dataclass_arrays(grp, cls):
 # ═════════════════════════════════════════════════════════════════════
 
 
+def _path_to_json(obj):
+    """Serialise a declarative path field.
+
+    A point path round-trips verbatim; a ``Curve`` carries an OCC
+    builder the store cannot rebuild, so it is dropped — the same
+    convention ``_source_to_dict`` uses for ``SourceCurrentPath``.
+    """
+    if obj is None or hasattr(obj, "_occ_shape"):
+        return None
+    return [[float(c) for c in p] for p in obj]
+
+
 def _companion_to_dict(element) -> dict:
     """Serialise a SeriesRLC/ParallelRLC as its constructor fields.
 
@@ -376,10 +388,12 @@ def _declarative_port_to_dict(port) -> dict:
         # init-fields-only treatment (see _companion_to_dict).
         d = {
             "name": port.name,
-            "start": list(port.start),
-            "end": list(port.end),
+            "start": None if port.start is None else list(port.start),
+            "end": None if port.end is None else list(port.end),
             "Z0": port.Z0,
             "kind": "lumped",
+            "path": _path_to_json(port.path),
+            "samples_per_cell": int(port.samples_per_cell),
         }
         if port.element is not None:
             assert isinstance(port.element, (SeriesRLC, ParallelRLC))
@@ -410,12 +424,15 @@ def _declarative_port_from_dict(d: dict):
             elem = dict(elem)
             elem_cls = SeriesRLC if elem.pop("kind") == "series" else ParallelRLC
             elem = elem_cls(**elem)
+        path = d.get("path")
         return PortLumped(
             name=d["name"],
-            start=tuple(d["start"]),
-            end=tuple(d["end"]),
+            start=None if d.get("start") is None else tuple(d["start"]),
+            end=None if d.get("end") is None else tuple(d["end"]),
             Z0=float(d["Z0"]),
             element=elem,
+            path=None if path is None else tuple(tuple(p) for p in path),
+            samples_per_cell=int(d.get("samples_per_cell", 4)),
         )
     if d.get("corners") is not None:
         d["corners"] = tuple(tuple(c) for c in d["corners"])
@@ -512,9 +529,11 @@ def _lumped_element_to_dict(element) -> dict:
     """Serialise a declarative LumpedElement (DD-123) for the mesh round-trip."""
     return {
         "name": element.name,
-        "start": list(element.start),
-        "end": list(element.end),
+        "start": None if element.start is None else list(element.start),
+        "end": None if element.end is None else list(element.end),
         "element": _companion_to_dict(element.element),
+        "path": _path_to_json(element.path),
+        "samples_per_cell": int(element.samples_per_cell),
     }
 
 
@@ -525,11 +544,14 @@ def _lumped_element_from_dict(d: dict):
 
     elem = dict(d["element"])
     elem_cls = SeriesRLC if elem.pop("kind") == "series" else ParallelRLC
+    path = d.get("path")
     return LumpedElement(
         name=d["name"],
-        start=tuple(d["start"]),
-        end=tuple(d["end"]),
+        start=None if d.get("start") is None else tuple(d["start"]),
+        end=None if d.get("end") is None else tuple(d["end"]),
         element=elem_cls(**elem),
+        path=None if path is None else tuple(tuple(p) for p in path),
+        samples_per_cell=int(d.get("samples_per_cell", 4)),
     )
 
 

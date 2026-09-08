@@ -260,9 +260,17 @@ def _spec_to_dict(spec) -> dict:
         d = {
             "type": "PortSpecLumped",
             "name": spec.name,
-            "start": _to_json(spec.start),
-            "end": _to_json(spec.end),
+            "start": None if spec.start is None else _to_json(spec.start),
+            "end": None if spec.end is None else _to_json(spec.end),
             "Z0": float(spec.Z0),
+            "samples_per_cell": int(spec.samples_per_cell),
+            # A point path round-trips; a Curve carries an OCC builder
+            # the recipe cannot rebuild (same rule as SourceCurrentPath).
+            "path": (
+                None
+                if spec.path is None or hasattr(spec.path, "_occ_shape")
+                else [_to_json(p) for p in spec.path]
+            ),
         }
         if spec.element is not None:
             d["element"] = {
@@ -335,12 +343,15 @@ def _spec_from_dict(d: dict):
 
             cls = {"SeriesRLC": SeriesRLC, "ParallelRLC": ParallelRLC}[el["kind"]]
             element = cls(R=el["R"], L=el["L"], C=el["C"])
+        path = d.get("path")
         return PortSpecLumped(
             name=d["name"],
-            start=_to_tuple(d["start"]),
-            end=_to_tuple(d["end"]),
+            start=None if d.get("start") is None else _to_tuple(d["start"]),
+            end=None if d.get("end") is None else _to_tuple(d["end"]),
             Z0=float(d["Z0"]),
             element=element,
+            path=None if path is None else tuple(_to_tuple(p) for p in path),
+            samples_per_cell=int(d.get("samples_per_cell", 4)),
         )
     plane = BoxFace(d["plane"])
     if t == "PortSpecCoax":

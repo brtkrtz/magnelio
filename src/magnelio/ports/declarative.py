@@ -280,23 +280,36 @@ class PortAnalytical:
 
 @dataclass(frozen=True)
 class PortLumped:
-    """Declarative lumped port on a straight interior edge path.
+    """Declarative lumped port on an interior path.
 
-    The high-level spelling of the lumped Thévenin port: two endpoints
-    and a reference impedance, optionally backed by an RLC companion
-    element.  Resolved into a
+    The high-level spelling of the lumped Thévenin port: a path through
+    the model and a reference impedance, optionally backed by an RLC
+    companion element.  Resolved into a
     :class:`~magnelio.ports._lumped.PortSpecLumped` by the analysis.
 
     Parameters
     ----------
     name : str
         Unique port name.
-    start, end : tuple of float
-        Endpoints in metres; must differ along exactly one Cartesian
-        axis after grid snapping.  Under a clipping symmetry
-        declaration the endpoints stay in full-model coordinates — a
-        port whose chain crosses an electric symmetry plane is clipped
-        to the meshed half automatically.
+    start, end : tuple of float, optional
+        Endpoints in metres — the two-point short form of *path*, and
+        exclusive with it.  Under a clipping symmetry declaration they
+        stay in full-model coordinates: a port crossing an electric
+        symmetry plane is clipped to the meshed half automatically.
+
+        The port's polarity follows *start* → *end*; the recorded V and
+        I change sign with it.
+    path : Curve or sequence of points, optional
+        The port's path: a :class:`~magnelio.geo.Curve`, or a sequence
+        of at least two ``(x, y, z)`` points [m] read as polyline
+        vertices.  Any direction is allowed — an oblique path is
+        carried by a staircase of grid edges, which costs a little
+        excess series inductance (see the lumped-elements guide).  The
+        path must not visit a grid edge twice: a two-terminal element
+        is a series chain, so a self-crossing or doubled-back path is
+        rejected.
+    samples_per_cell : int, default 4
+        Path samples per smallest cell while rasterising.
     Z0 : float, default 50.0
         Power-wave reference impedance [Ω]; without *element* also the
         internal Thévenin impedance.  Always the full-model value:
@@ -308,10 +321,12 @@ class PortLumped:
     """
 
     name: str
-    start: tuple[float, float, float]
-    end: tuple[float, float, float]
+    start: tuple[float, float, float] | None = None
+    end: tuple[float, float, float] | None = None
     Z0: float = 50.0
     element: object | None = None
+    path: object = None
+    samples_per_cell: int = 4
 
 
 DeclarativePort = Union[PortWaveguide, PortAnalytical, PortLumped]
@@ -338,6 +353,8 @@ def resolve_declarative_port(
             end=port.end,
             Z0=port.Z0,
             element=port.element,
+            path=port.path,
+            samples_per_cell=port.samples_per_cell,
         )
 
     face = normalize_box_face(port.plane)

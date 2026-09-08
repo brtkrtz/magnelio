@@ -135,11 +135,12 @@ def test_state_dict_roundtrip_and_legacy_checkpoint():
     op = PortOperatorLumped(
         name="p",
         Z0=50.0,
-        direction="y",
         flat_edge_indices=[0, 1],
         ijk_list=[(0, 0, 0), (0, 1, 0)],
         dl_list=[1e-3, 1e-3],
         beta_E=np.array([0.0, 0.0]),
+        edge_components=[1, 1],
+        edge_signs=[1.0, 1.0],
         element=SeriesRLC(R=50.0, L=1e-9),
     )
     op.element._i, op.element._vL = 0.25, -3.5
@@ -150,11 +151,12 @@ def test_state_dict_roundtrip_and_legacy_checkpoint():
     op2 = PortOperatorLumped(
         name="p",
         Z0=50.0,
-        direction="y",
         flat_edge_indices=[0, 1],
         ijk_list=[(0, 0, 0), (0, 1, 0)],
         dl_list=[1e-3, 1e-3],
         beta_E=np.array([0.0, 0.0]),
+        edge_components=[1, 1],
+        edge_signs=[1.0, 1.0],
         element=SeriesRLC(R=50.0, L=1e-9),
     )
     op2.load_state_dict(sd)

@@ -12,7 +12,7 @@ rasteriser (DD-076) can drive it as well as the axis-aligned two-point
 chain of the classic discrete port.
 
 ``PortOperatorLumped`` is the thin special case ``SeriesRLC(R=Z0)``
-(DD-077's unification): same constructor surface as before; with a pure
+(DD-077's unification); with a pure
 resistance the companion contributes ``r_eq = Z0`` and ``v_hist = 0``
 exactly, so the update is arithmetically identical to the historic
 implementation (bit-identity gated).
@@ -51,7 +51,7 @@ import numpy as np
 from magnelio._fields.field_arrays import FieldArrays
 from magnelio.circuit.companion import ParallelRLC, SeriesRLC
 
-_COMPONENT_OF_DIRECTION = {"x": 0, "y": 1, "z": 2}
+_DIRECTION_OF_COMPONENT = {0: "x", 1: "y", 2: "z"}
 
 
 @dataclass
@@ -221,7 +221,7 @@ class LumpedElementOperator:
 
 
 class PortOperatorLumped(LumpedElementOperator):
-    """Lumped port on an axis-aligned two-point edge chain.
+    """Lumped port on a chain of grid edges.
 
     The thin ``SeriesRLC(R=Z0)`` special case of
     :class:`LumpedElementOperator` (DD-077 unification): with a pure
@@ -229,6 +229,10 @@ class PortOperatorLumped(LumpedElementOperator):
     update is arithmetically identical to the historic discrete port.
     A non-trivial ``element`` turns the same port into a lumped RLC
     (source or passive load); ``Z0`` stays the power-wave reference.
+
+    The chain may be an arbitrary rasterised path; ``direction``
+    reports the single axis when the chain happens to run along one
+    (the classic two-point port) and ``"path"`` otherwise.
 
     Construction parameters are filled by :func:`build_lumped_port`;
     do not instantiate this class directly.
@@ -238,16 +242,15 @@ class PortOperatorLumped(LumpedElementOperator):
         self,
         name: str,
         Z0: float,
-        direction: str,
         flat_edge_indices: list[int],
         ijk_list: list[tuple[int, int, int]],
         dl_list: list[float],
         beta_E: np.ndarray,
+        edge_components: list[int],
+        edge_signs: list[float],
         element: SeriesRLC | ParallelRLC | None = None,
         port_report=None,
     ) -> None:
-        component = _COMPONENT_OF_DIRECTION[direction]
-        n = len(flat_edge_indices)
         super().__init__(
             name=name,
             Z0=Z0,
@@ -255,12 +258,15 @@ class PortOperatorLumped(LumpedElementOperator):
             flat_edge_indices=flat_edge_indices,
             ijk_list=ijk_list,
             dl_list=dl_list,
-            edge_components=[component] * n,
-            edge_signs=[1.0] * n,
+            edge_components=list(edge_components),
+            edge_signs=list(edge_signs),
             beta_E=beta_E,
             port_report=port_report,
         )
-        self.direction = direction
+        uniform = set(edge_components)
+        self.direction = (
+            _DIRECTION_OF_COMPONENT[next(iter(uniform))] if len(uniform) == 1 else "path"
+        )
 
     def __repr__(self) -> str:
         return (
