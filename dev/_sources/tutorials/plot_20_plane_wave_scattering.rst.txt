@@ -517,7 +517,7 @@ scattered power as its reflection.
  .. code-block:: none
 
 
-    <matplotlib.legend.Legend object at 0x7faef871a8d0>
+    <matplotlib.legend.Legend object at 0x7fccd8566810>
 
 
 
@@ -537,7 +537,7 @@ only requires that its direction follows a grid axis.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 28.693 seconds)
+   **Total running time of the script:** (1 minutes 28.654 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_20_plane_wave_scattering.py:
