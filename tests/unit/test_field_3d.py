@@ -249,9 +249,12 @@ class TestFrequencyMonitor:
         pl = mon.show("Ez", mode="none", f=2e9)  # purely imaginary at phase 0
         np.testing.assert_allclose(_sheet(pl).cell_data["field"], 0.0, atol=1e-12)
         pl.close()
-        # Re(j·e^{-jπ/2}) = 1: the phasors are those of the e^{-jwt}
+        # Re(j·e^{+jπ/2}) = -1: the phasors are those of the e^{+jwt}
         # convention, so the phase advances with time.
         pl = mon.show("Ez", mode="none", f=2e9, phase=90.0)
+        np.testing.assert_allclose(_sheet(pl).cell_data["field"], -0.4)
+        pl.close()
+        pl = mon.show("Ez", mode="none", f=2e9, phase=270.0)
         np.testing.assert_allclose(_sheet(pl).cell_data["field"], 0.4)
         pl.close()
 

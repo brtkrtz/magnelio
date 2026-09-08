@@ -248,7 +248,7 @@ _HELP_ROWS = (
     ),
     ("Field", ""),
     ("play, slider, readout", "the frame: time, frequency or mode"),
-    ("play, phase", "a complex field at Re(F·e^{-jφ}); play runs time forward"),
+    ("play, phase", "a complex field at Re(F·e^{+jφ}); play runs time forward"),
     ("Field", "|E|, |H|, or one signed component"),
     ("iso %, arrows", "the isosurface level; the number of arrows along the longest axis"),
 )

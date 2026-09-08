@@ -3,12 +3,22 @@ Running Discrete Fourier Transform accumulator for frequency-domain monitors.
 
 At each time step *n* the DFT bins are updated:
 
-    F_k[x,y,z] += field[n][x,y,z] * exp(+j * 2π * f_k * t_n) * dt
+    F_k[x,y,z] += field[n][x,y,z] * exp(-j * 2π * f_k * t_n) * dt
 
 where *t_n* is the physical time of the field value (E at n·dt, H at
 (n+0.5)·dt).  The half-step stagger is automatically handled by passing
 the correct *t* for each field type.
+
+That sign makes the bins phasors of the engineering ``e^{+jωt}``
+convention — the one the S-parameter path speaks, since the sum here
+is :meth:`magnelio.signals.Signal1D.at_frequencies` times ``dt``.  A
+field ``A·cos(ωt+φ)`` accumulates to ``(T/2)·A·e^{+jφ}``, and the
+instant of a bin at time *t* is ``Re(F e^{+jωt})``.
 """
+
+# Design: DD-268 (the sign of the exponent; the accumulator summed
+# e^{+jωt} before, which made its bins the conjugates of every other
+# phasor of the library).
 
 from __future__ import annotations
 
@@ -47,7 +57,7 @@ class DFTAccumulator:
             Simulation time step [s] (used as integration weight).
         """
         # Phase factors for all frequencies: shape (Nf,)
-        phase = np.exp(1j * self._omega * t) * dt
+        phase = np.exp(-1j * self._omega * t) * dt
         # Outer product: (Nf, *shape) += (Nf, 1, 1, ...) * (*shape,)
         self._bins += phase.reshape(-1, *([1] * len(self._shape))) * data
 
@@ -64,14 +74,14 @@ class DFTAccumulator:
 def source_spectrum(values, dt: float, freqs) -> np.ndarray:
     """Transform a source waveform in the accumulator's own convention.
 
-    ``Σ v[n] exp(+jω t_n) dt`` — the same sum :meth:`DFTAccumulator.
+    ``Σ v[n] exp(-jω t_n) dt`` — the same sum :meth:`DFTAccumulator.
     accumulate` forms, so dividing recorded bins by this cancels the
     excitation exactly rather than approximately.
     """
     values = np.asarray(values, dtype=float)
     t = np.arange(len(values)) * dt
     omega = 2.0 * np.pi * np.asarray(freqs, dtype=float)
-    return (np.exp(1j * omega[:, np.newaxis] * t[np.newaxis, :]) * dt) @ values
+    return (np.exp(-1j * omega[:, np.newaxis] * t[np.newaxis, :]) * dt) @ values
 
 
 def divide_by_spectrum(arr: np.ndarray, spectrum: np.ndarray) -> np.ndarray:

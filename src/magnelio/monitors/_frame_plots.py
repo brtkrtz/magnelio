@@ -48,22 +48,25 @@ def region_of_grid(grid) -> MonitorRegion:
 
 
 def at_phase(values: np.ndarray, phase: float | None) -> np.ndarray:
-    """``Re(F · exp(-j·phase))`` of a complex array (degrees); real data passes.
+    """``Re(F · exp(+j·phase))`` of a complex array (degrees); real data passes.
 
-    The library's phasors follow the ``e^{-j w t}`` convention — the
-    running DFT accumulates ``sum F(t) e^{+j w t} dt``, so the instant
-    of a pattern at time *t* is ``Re(F e^{-j w t})``.  *phase* is that
+    The library's phasors follow the ``e^{+j w t}`` convention — the
+    running DFT accumulates ``sum F(t) e^{-j w t} dt``, so the instant
+    of a pattern at time *t* is ``Re(F e^{+j w t})``.  *phase* is that
     ``w t`` in degrees: it advances with time, and a travelling wave
     moves the way it ran in the simulation.
     """
-    # Design: DD-267 (the sign; it was +j, which ran every animation
-    # backwards).  The same rule in post.field_3d._FieldView._instant
-    # and fields.series._FieldSeries._snapshot.
+    # Design: DD-267 (phase is wt: the reconstruction must read the
+    # bins with the sign the accumulator gave them — it did not, and
+    # every animation ran backwards) and DD-268 (the accumulator now
+    # sums e^{-jwt}, so that sign is +j).  The same rule in
+    # post.field_3d._FieldView._instant and
+    # fields.series._FieldSeries._snapshot.
     if not np.iscomplexobj(values):
         return np.asarray(values, dtype=float)
     if phase is None or phase == 0.0:
         return np.real(values)
-    return np.real(values * np.exp(-1j * np.deg2rad(float(phase))))
+    return np.real(values * np.exp(1j * np.deg2rad(float(phase))))
 
 
 @dataclass
@@ -224,7 +227,7 @@ def plot_frame(
     a plane region draws the frame on its own plane and a volume on the
     plane selected with *normal* and *position*.  Complex series (a
     spectrum) are drawn at *phase* — component plots as
-    ``Re(F·exp(-j·phase))``, group magnitudes as the envelope.
+    ``Re(F·exp(+j·phase))``, group magnitudes as the envelope.
     """
     s = view.series
     region = view.region

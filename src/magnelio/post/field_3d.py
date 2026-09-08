@@ -691,13 +691,13 @@ class _FieldView:
     def _instant(self, data: dict) -> dict[str, np.ndarray]:
         """Real values of *data* at the view's phase (complex sources).
 
-        ``Re(F e^{-j phi})``: the library's phasors are those of the
-        ``e^{-j w t}`` convention (the running DFT sums ``e^{+j w t}``),
+        ``Re(F e^{+j phi})``: the library's phasors are those of the
+        ``e^{+j w t}`` convention (the running DFT sums ``e^{-j w t}``),
         so ``phi`` is ``w t`` and advancing it runs time forward — the
         phase play walks a wave away from the port that launched it.
         """
         if self.frames.is_complex:
-            phasor = np.exp(-1j * np.deg2rad(self.phase))
+            phasor = np.exp(1j * np.deg2rad(self.phase))
             return {c: np.real(np.asarray(a) * phasor) for c, a in data.items()}
         return {c: np.real(np.asarray(a, dtype=float)) for c, a in data.items()}
 
@@ -1400,7 +1400,7 @@ def show_field(
         (frequency monitors); the nearest recorded one is used.
     phase : float, default 0.0
         Instant [degrees] at which a complex field is shown:
-        ``Re(F · exp(-j·phase))``, the pattern at ``w t = phase``.  The
+        ``Re(F · exp(+j·phase))``, the pattern at ``w t = phase``.  The
         phase advances with time, so the play button walks a travelling
         wave the way it ran in the simulation — away from the port that
         launched it.

@@ -850,7 +850,8 @@ def _export_freq_monitor(run_dir: Path, pv_dir: Path, name: str, grid, percentil
         cap, exponent = _magnitude_stats(steps(), percentile)
         if cap > 0.0:
             # Real and imaginary part each get their own glyph set: they
-            # are the field at phase 0 and at phase −90°, and together
+            # are the field at phase 0 and at phase −90° (e^{+jwt}
+            # phasors: Im F = Re(F e^{-jπ/2})), and together
             # they span the full ellipse — where one nearly vanishes the
             # other carries the field, so offering only the real part
             # hides half the picture.  Both share the cap and reference
@@ -1384,7 +1385,7 @@ def build():
             coloured(arrows, arrays[0], visible=is_first, bar=is_first)
             if len(arrays) > 1:
                 # The imaginary part of a frequency monitor: the field a
-                # quarter period later, ready one click from visible.
+                # quarter period earlier, ready one click from visible.
                 coloured(make_glyph(sl, name + "_arrows_im", arrays[1]), arrays[1])
             if geom is not None and geom_clip is None:
                 geom_clip = clip_geometry(mon["center"], normals[mon["default_axis"]])

@@ -230,8 +230,10 @@ class MonitorWallLoss:
     def record(self, fields, n: int, t: float, dt: float) -> None:
         if self._mesh is None:
             raise RuntimeError("Monitor not attached. Call attach() first.")
-        phase_e = np.exp(1j * self._omega * t) * dt
-        phase_h = np.exp(1j * self._omega * (t + 0.5 * dt)) * dt
+        # The sign of monitors._dft.DFTAccumulator (DD-268): the bins
+        # are e^{+jwt} phasors, like every other spectrum of the library.
+        phase_e = np.exp(-1j * self._omega * t) * dt
+        phase_h = np.exp(-1j * self._omega * (t + 0.5 * dt)) * dt
 
         h_arrays = (fields.Hx, fields.Hy, fields.Hz)
         # GPU backend: device field arrays refuse implicit mixing with
