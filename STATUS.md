@@ -24,8 +24,8 @@ objects, `aborted`/`stale`, reprs without arrays; `plot_energy`,
 Before it: v0.5.0–v0.5.2 (2026-09-02…04) DD-224…DD-248 — the API
 grammar and its phases, the content gate, `docs/migration-0.5.md`.
 
-Open: KB-023, KB-038, KB-043 and KB-046.  Unit and integration: 3570 passed / 13 skipped
-(2026-09-07, NumPy backend; the four GPU tests need
+Open: KB-023, KB-038, KB-043 and KB-046.  Unit and integration: 3581 passed / 13 skipped
+(2026-09-08 on merged `main`, NumPy backend; the four GPU tests need
 `CUPY_ACCELERATORS=""` outside the sandbox).
 Channels: GitHub, PyPI, conda-forge and the two docs channels below.
 
