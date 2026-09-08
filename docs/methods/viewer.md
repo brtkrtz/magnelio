@@ -94,14 +94,17 @@ eigen.show(frame=2, glyph="cone")                # starting at mode 2, cones ins
 | Field sheet | The exposed layer of cells, each coloured by the magnitude of `E` or `H` (dark to bright) or by one signed component (`Ex`, `Hz`, …; blue–white–red about zero).  The colour ceiling is the peak over every frame and layer of the recording, so a wave keeps its colour while the frame slider runs; `vmax=` fixes it. |
 | Vectors | For `E` or `H`: arrows on an even lattice over the layer, centred on their sample points, all three components, coloured by their magnitude on the sheet's scale; the length grows with the magnitude from three tenths of the lattice spacing to one spacing, so a decaying field keeps readable arrows.  Arrows below 2 % of the ceiling are left out; `plot_type="color"` drops them, `arrow_color=` paints them one colour, `glyph="cone"` draws cones and `glyph_width=` sets the thickness. |
 | Metal | With `mesh=`, cells buried in a perfect conductor are cut out of the sheet, so the solids' cut faces show through where no field is defined. |
+| Grid | With `mesh=` and `show_grid=True`, the grid cells are drawn on the cut under the field.  A mirrored field has no grid — the mesh covers the modelled part only — and says so; `mirror=False` brings it back. |
 | Symmetry | With `mesh=` (an eigenmode result brings its own), a field recorded behind the model's symmetry planes is continued across them with the parity of each component, so the picture is the whole model like every other field plot; `mirror=False` shows the modelled part.  A region that stops short of a plane is not mirrored across it. |
 | Lines and points | A monitor of one cell along two or three axes shows its row of cells, or its one cell, with the arrows on it. |
 
 The field controls sit in a **second toolbar row**: a **play button**
 and a **frame slider** (time, frequency or mode, the value beside it
 in a readout of fixed width), a **play button** and a **phase slider**
-for complex data (a frequency monitor's pattern at `Re(F·e^{jφ})`; the
-play turns the phase in steps of ten degrees), a **Field** selector
+for complex data (a frequency monitor's pattern at `Re(F·e^{-jφ})` —
+the instant at `ωt = φ`, so the phase advances with time and a
+travelling wave runs the way it ran in the simulation; the play turns
+the phase in steps of ten degrees), a **Field** selector
 that switches between the recorded components, and the level and
 density sliders of the volume representations below; *Field on cut*
 and *Vectors on cut* join the *Show* menu.  Play runs the frames in a

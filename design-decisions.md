@@ -21818,3 +21818,92 @@ Gates: `tests/integration/test_paraview_session.py::test_every_glyph_comes_up_co
 (one `geometry_cut`, one `cut_plane` link, no glyph on `Solid Color`),
 `::test_pvsm_bake` (the per-monitor clips and links are gone).
 Files: `src/magnelio/io/paraview.py`, `docs/methods/sources-monitors.md`.
+
+## DD-267 — The phase of a picture is ωt: e^{-jωt} phasors read forward in time
+
+**Date:** 2026-09-07
+**Status:** Accepted (developer findings on the v0.7.0 viewer,
+2026-09-07; patch after v0.7.0).
+
+**Problem.**  Three findings from the developer's session with the new
+viewer.  (1) "With the phase animated the wave seems to run backwards,
+toward the exciting port instead of away from it."  (2) The toolbar of
+`model.show()` is clipped along the top — the floating labels *Cut* and
+*Show* are cut in half.  (3) `monitor.show()` read back from a project
+has no real docstring: `geometry=` is what draws the model and is
+undocumented, and `mesh=` "is accepted without error but not used".
+
+**Findings.**
+
+(a) The running DFT accumulates `Σ F(t) e^{+jωt} dt`
+(`monitors/_dft.py`), so a bin of `A·cos(ωt+φ)` is `(T/2)·A·e^{-jφ}`:
+the stored phasors are the *conjugates* of the engineering `e^{+jωt}`
+phasor, i.e. phasors of the `e^{-jωt}` convention.  The instant of such
+a pattern is `Re(F e^{-jωt})`.  Every picture applied `Re(F e^{+jφ})`
+instead, which is that instant at `-ωt`: the animation ran time
+backwards, exactly as reported.  Measured on a wave whose direction is
+known — `cos(ωt-kx)` accumulated over 2000 steps, then reconstructed:
+the crest walked toward `-x` at `+jφ` and to `phase/360` of a
+wavelength per step at `-jφ`, matching the analytic wave to 1 % of a
+wavelength.  The convention itself was never in doubt: [[DD-173]]'s
+far-field transform conjugates in and out for exactly this reason, and
+[[DD-183]] fixed the transit phase `e^{-jk_B z}` for a beam toward `+z`
+from the same sum.  Only the reconstruction was reading it the wrong
+way round.
+
+(b) PyVista lays its menu out as a `VCard` of fixed `height: 36px`
+holding rows with `flex-wrap: nowrap`.  A Vuetify select's floating
+label needs more than 36 px, so it is clipped, and controls that do not
+fit are unreachable.  The field view already worked around it
+([[DD-261]]) with a `:has(.mio-field-row)` rule — a card carrying a
+*field* row grew, a card carrying only the cut row did not.
+
+(c) `mesh=` *is* used for a monitor: it cuts the PEC cells out of the
+sheet, it names the symmetry planes the field is continued across, and
+with `show_grid=True` it draws the grid cells.  But `show_field` drops
+the mesh once the frames are mirrored ("the frames span the whole model
+now; the mesh does not"), and dropped `show_grid` with it in silence.
+Measured on the half-box fixture: `show_grid=True` yields a `grid_cut`
+actor of 99 cells at `mirror=False` and no actor at all at
+`mirror=True`.
+
+**Decision.**
+
+1. **`phase` is ωt.**  `Re(F · exp(-j·phase))` in all three places that
+   evaluate a phasor — `monitors/_frame_plots.at_phase` (2D plots and
+   `interact`), `post/field_3d._FieldView._instant` (the viewer and its
+   phase play), `fields/series._FieldSeries._snapshot`
+   (`FieldSpectrum.snapshot`).  A rising phase is time running forward,
+   so the play button walks a wave away from the port that launched it.
+   The convention is stated once for users in
+   `docs/methods/sources-monitors.md`, beside the sum that fixes it.
+2. **Room for the toolbar.**  The cut row — which every viewer of the
+   module carries — is wrapped in `div.mio-menu-row`, and
+   `_viewer._MENU_CSS` lets the card grow (`height: auto`,
+   `overflow: visible`) and its rows wrap.  The field row keeps
+   `flex-basis: 100%` to claim a line of its own and no longer injects
+   a stylesheet of its own.
+3. **Say what is dropped.**  `show_grid=True` on a mirrored field warns
+   that the mesh covers the modelled part only and names `mirror=False`
+   as the way to see the grid.
+4. **Document the two overlays where they are read.**  The `show`
+   methods of `_LoadedFieldMonitor` and `_LoadedFreqMonitor` (and, more
+   briefly, the in-RAM monitors and `_FieldSeries`) say that a monitor
+   carries the field alone, that `geometry=` draws the model, and what
+   `mesh=` brings.
+
+**Consequences.**  A picture at a phase other than 0 or 180 degrees is
+the mirror in time of what the same call gave before — a behaviour
+change, called out in the changelog under *Fixed*.  Magnitudes,
+S-parameters and far fields are untouched: none of them goes through
+these three functions, and the far-field transform's own conjugation
+([[DD-173]]) is unchanged.  Gates:
+`tests/unit/test_monitors.py::TestDFTAccumulator::test_a_rising_phase_runs_the_wave_forward`
+(the travelling-wave measurement above),
+`tests/unit/test_field_3d.py::TestFrequencyMonitor::test_phase_turns_the_pattern`
+and `tests/unit/test_field_series.py` (both re-signed).
+Files: `src/magnelio/monitors/_frame_plots.py`,
+`src/magnelio/post/field_3d.py`, `src/magnelio/post/plot_3d.py`,
+`src/magnelio/fields/series.py`, `src/magnelio/monitors/field_frequency.py`,
+`src/magnelio/monitors/field_time.py`, `src/magnelio/io/project.py`,
+`docs/methods/viewer.md`, `docs/methods/sources-monitors.md`.

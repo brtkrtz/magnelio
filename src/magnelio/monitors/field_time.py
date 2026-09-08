@@ -506,8 +506,13 @@ class MonitorFieldTime:
         over the recorded frames, and the position slider walking through
         the region.  See :func:`magnelio.plots.show_field` for the
         arguments — the frame (``t=`` or ``frame=``), the plane
-        (``normal``, ``position``), ``geometry`` and ``mesh`` overlays,
-        and the rendering ``mode``.
+        (``normal``, ``position``), ``volume`` for the region behind the
+        cut, and the rendering ``mode``.
+
+        The monitor carries the field alone: pass ``geometry=`` to draw
+        the model with it, and ``mesh=`` to cut the metal cells out of
+        the sheet, to name the symmetry planes the field is continued
+        across, and (with ``show_grid=True``) to draw the grid cells.
         """
         from magnelio.post.field_3d import show_field  # noqa: PLC0415
 

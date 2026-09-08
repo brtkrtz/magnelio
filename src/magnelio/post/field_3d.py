@@ -689,9 +689,15 @@ class _FieldView:
         return held
 
     def _instant(self, data: dict) -> dict[str, np.ndarray]:
-        """Real values of *data* at the view's phase (complex sources)."""
+        """Real values of *data* at the view's phase (complex sources).
+
+        ``Re(F e^{-j phi})``: the library's phasors are those of the
+        ``e^{-j w t}`` convention (the running DFT sums ``e^{+j w t}``),
+        so ``phi`` is ``w t`` and advancing it runs time forward — the
+        phase play walks a wave away from the port that launched it.
+        """
         if self.frames.is_complex:
-            phasor = np.exp(1j * np.deg2rad(self.phase))
+            phasor = np.exp(-1j * np.deg2rad(self.phase))
             return {c: np.real(np.asarray(a) * phasor) for c, a in data.items()}
         return {c: np.real(np.asarray(a, dtype=float)) for c, a in data.items()}
 
@@ -1070,7 +1076,7 @@ class _FieldView:
         """
         import asyncio  # noqa: PLC0415
 
-        from trame.widgets import client, html  # noqa: PLC0415
+        from trame.widgets import html  # noqa: PLC0415
         from trame.widgets import vuetify3 as vuetify  # noqa: PLC0415
 
         state = server.state
@@ -1207,15 +1213,9 @@ class _FieldView:
             )
 
         def items() -> None:
-            # A second row under the viewer's toolbar.  PyVista's menu is
-            # a card of fixed height whose rows do not wrap; the card is
-            # told to grow and its row to wrap where this row is present.
-            client.Style(
-                ".v-card:has(.mio-field-row) { height: auto !important; "
-                "overflow: visible !important; }\n"
-                ".v-card:has(.mio-field-row) > .v-row { align-items: flex-start !important; }\n"
-                ".v-card:has(.mio-field-row) > .v-row > .v-row { flex-wrap: wrap !important; }\n"
-            )
+            # A second row under the viewer's toolbar; ``flex-basis``
+            # claims a line of its own.  The card is already told to
+            # grow by the cut row's rules (``_viewer._MENU_CSS``).
             with html.Div(
                 classes="mio-field-row",
                 style="flex-basis: 100%; display: flex; align-items: center; "
@@ -1399,8 +1399,11 @@ def show_field(
         Initial frame by time [s] (time monitors) or frequency [Hz]
         (frequency monitors); the nearest recorded one is used.
     phase : float, default 0.0
-        Phase [degrees] at which a complex field is shown:
-        ``Re(F · exp(j·phase))``.
+        Instant [degrees] at which a complex field is shown:
+        ``Re(F · exp(-j·phase))``, the pattern at ``w t = phase``.  The
+        phase advances with time, so the play button walks a travelling
+        wave the way it ran in the simulation — away from the port that
+        launched it.
     vmax : float, optional
         Ceiling of the colour scale and of the arrow length.  Default:
         the peak over every frame and layer of the region, so that the
@@ -1567,8 +1570,18 @@ def show_field(
     if mesh is None and frames.kind == "mode":
         mesh = source.mesh
     if frames.mirrored:
-        # The frames span the whole model now; the mesh does not.
+        # The frames span the whole model now; the mesh does not, so its
+        # grid would cover half the picture.  Dropping it silently left
+        # ``show_grid=True`` looking ignored.
+        if show_grid:
+            warnings.warn(
+                f"the field of {frames.name!r} is continued across the model's symmetry "
+                "planes, but the mesh covers the modelled part only, so no grid is drawn; "
+                "pass mirror=False to see the grid on the modelled part",
+                stacklevel=2,
+            )
         mesh = None
+        show_grid = False
     scene = _viewer._build_scene(
         geometry,
         mesh=mesh,

@@ -307,7 +307,9 @@ class _FieldSeries:
     def _snapshot(self, i: int, phase: float | None) -> FieldState:
         fs = self.frame(i)
         if phase is not None and fs.is_complex:
-            fs = fs.scaled(np.exp(1j * np.deg2rad(float(phase)))).real()
+            # e^{-jwt} phasors (see monitors._frame_plots.at_phase):
+            # a rising phase is time running forward.
+            fs = fs.scaled(np.exp(-1j * np.deg2rad(float(phase)))).real()
         return fs
 
     def _plot(self, i: int, phase: float | None, component: str, kwargs: dict):
@@ -321,8 +323,11 @@ class _FieldSeries:
         """Interactive 3D view of the series on a cutting plane.
 
         The geometry viewer with the field laid on its cut and a frame
-        slider over the series; see :func:`magnelio.plots.show_field`
-        for the arguments.
+        slider over the series (a phase slider too, for a complex one);
+        see :func:`magnelio.plots.show_field` for the arguments.  The
+        series carries the field alone: pass ``geometry=`` to draw the
+        model with it and ``mesh=`` for the metal cut-out, the symmetry
+        planes and the grid.
         """
         from magnelio.post.field_3d import show_field  # noqa: PLC0415
 
@@ -463,7 +468,7 @@ class FieldSpectrum(_FieldSeries):
         return self.frame(self._nearest(f))
 
     def snapshot(self, f: float | None = None, *, frame: int | None = None, phase: float = 0.0):
-        """The real field ``Re(F · exp(j·phase))`` of one frame, *phase* in degrees."""
+        """The real field ``Re(F · exp(-j·phase))`` of one frame, *phase* in degrees."""
         i = self._nearest(f) if f is not None else (0 if frame is None else frame)
         return self._snapshot(self._check_index(i), phase)
 
@@ -492,7 +497,7 @@ class FieldSpectrum(_FieldSeries):
             Frame index (default 0; exclusive with *f*).
         phase : float, optional
             Instant of the complex pattern in degrees,
-            ``Re(F · exp(j·phase))``.  Default: the instant of maximum
+            ``Re(F · exp(-j·phase))``.  Default: the instant of maximum
             energy on the slice (see :meth:`FieldState.plot`).
         **kwargs
             Passed to :meth:`magnelio.fields.FieldState.plot`.

@@ -249,7 +249,9 @@ class TestFrequencyMonitor:
         pl = mon.show("Ez", mode="none", f=2e9)  # purely imaginary at phase 0
         np.testing.assert_allclose(_sheet(pl).cell_data["field"], 0.0, atol=1e-12)
         pl.close()
-        pl = mon.show("Ez", mode="none", f=2e9, phase=-90.0)  # Re(j·e^{-jπ/2}) = 1
+        # Re(j·e^{-jπ/2}) = 1: the phasors are those of the e^{-jwt}
+        # convention, so the phase advances with time.
+        pl = mon.show("Ez", mode="none", f=2e9, phase=90.0)
         np.testing.assert_allclose(_sheet(pl).cell_data["field"], 0.4)
         pl.close()
 
@@ -1150,6 +1152,31 @@ class TestMirror:
         pl.close()
         pl = fs.show(mesh=mesh, mirror=False, normal="z", mode="none", size=(300, 200))
         assert _sheet(pl).bounds[0] >= -1e-9
+        pl.close()
+
+    def test_a_grid_asked_for_on_a_mirrored_field_says_it_is_not_drawn(self, half_box):
+        """The mesh covers the modelled part only, so a mirrored field has no grid."""
+        model, mesh = half_box
+        fs = FieldState.from_function(mesh.grid, E=lambda x, y, z: (0 * x, 0 * y + 1.0, 0 * z))
+        with pytest.warns(UserWarning, match="mirror=False"):
+            pl = fs.show(
+                geometry=model, mesh=mesh, normal="z", show_grid=True, mode="none", size=(300, 200)
+            )
+        assert "grid_cut" not in pl.renderer.actors
+        pl.close()
+        # Without the mirroring the grid is there, and nothing is said.
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            pl = fs.show(
+                geometry=model,
+                mesh=mesh,
+                normal="z",
+                show_grid=True,
+                mirror=False,
+                mode="none",
+                size=(300, 200),
+            )
+        assert pl.renderer.actors["grid_cut"].GetVisibility()
         pl.close()
 
     def test_a_region_short_of_the_plane_is_not_mirrored(self, half_box):

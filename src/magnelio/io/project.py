@@ -2307,10 +2307,36 @@ class _LoadedFieldMonitor:
         return _interact(self._view(), component, **kwargs)
 
     def show(self, component: str = "E", **kwargs):
-        """Interactive 3D view of the stored field (see :func:`magnelio.plots.show_field`).
+        """Interactive 3D view of the recorded field on a cutting plane.
 
-        Frames are read from the store one at a time as the time slider
-        moves, so a large volume monitor is never loaded whole.
+        The geometry viewer with the field laid on its cut, a time
+        slider over the recorded frames, and the position slider walking
+        the exposed cell layer through the region.  Frames are read from
+        the store one at a time as the slider moves, so a large volume
+        monitor is never loaded whole.
+
+        A stored monitor carries the field and nothing else: the model
+        and the mesh are not in the store, so pass them to see them.
+
+        Parameters
+        ----------
+        component : str
+            ``"E"``/``"H"`` for the magnitude sheet with arrows, or one
+            signed component such as ``"Ez"``.
+        **kwargs
+            Passed to :func:`magnelio.plots.show_field`.  The ones that
+            matter most here:
+
+            ``geometry`` — the :class:`~magnelio.geo.GeometryModel`
+            whose solids, ports and wires are drawn with the field;
+            **without it the view shows the field alone**.
+            ``mesh`` — the mesh the run was made on: it cuts the metal
+            cells out of the sheet, names the symmetry planes the field
+            is continued across, and with ``show_grid=True`` draws the
+            grid cells on the cut.
+            ``t=`` / ``frame=`` the frame shown first, ``normal`` and
+            ``position`` the cutting plane, ``volume`` the arrows or
+            isosurfaces behind it, and ``mode`` the renderer.
         """
         from magnelio.post.field_3d import show_field  # noqa: PLC0415
 
@@ -2597,7 +2623,38 @@ class _LoadedFreqMonitor:
         return self._hydrate().plot(*args, **kwargs)
 
     def show(self, component: str = "E", **kwargs):
-        """Interactive 3D view of the stored DFT field (see :func:`magnelio.plots.show_field`)."""
+        """Interactive 3D view of the stored DFT field on a cutting plane.
+
+        The geometry viewer with the field laid on its cut, a phase
+        slider turning the complex pattern (``Re(F · exp(-j·phase))``,
+        so the phase advances with time), a frequency slider when
+        several bins were recorded, and the position slider walking the
+        exposed cell layer through the region.
+
+        A stored monitor carries the field and nothing else: the model
+        and the mesh are not in the store, so pass them to see them.
+
+        Parameters
+        ----------
+        component : str
+            ``"E"``/``"H"`` for the magnitude sheet with arrows, or one
+            signed component such as ``"Ez"``.
+        **kwargs
+            Passed to :func:`magnelio.plots.show_field`.  The ones that
+            matter most here:
+
+            ``geometry`` — the :class:`~magnelio.geo.GeometryModel`
+            whose solids, ports and wires are drawn with the field;
+            **without it the view shows the field alone**.
+            ``mesh`` — the mesh the run was made on: it cuts the metal
+            cells out of the sheet, names the symmetry planes the field
+            is continued across, and with ``show_grid=True`` draws the
+            grid cells on the cut.
+            ``f=`` / ``frame=`` the bin shown first, ``phase`` the
+            instant, ``normal`` and ``position`` the cutting plane,
+            ``volume`` the arrows or isosurfaces behind it, and ``mode``
+            the renderer.
+        """
         from magnelio.post.field_3d import show_field  # noqa: PLC0415
 
         return show_field(self, component, **kwargs)

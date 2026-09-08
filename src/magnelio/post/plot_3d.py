@@ -248,9 +248,22 @@ _HELP_ROWS = (
     ),
     ("Field", ""),
     ("play, slider, readout", "the frame: time, frequency or mode"),
-    ("play, phase", "a complex field at Re(F·e^{jφ}); play turns the phase"),
+    ("play, phase", "a complex field at Re(F·e^{-jφ}); play runs time forward"),
     ("Field", "|E|, |H|, or one signed component"),
     ("iso %, arrows", "the isosurface level; the number of arrows along the longest axis"),
+)
+
+
+# Room for the toolbar.  PyVista lays its menu out as a card of fixed
+# height (36 px) holding rows that do not wrap: a select's floating
+# label is cut off at the top, and controls that do not fit are simply
+# out of reach.  Every viewer of this module carries the cut row, which
+# marks the card for these rules; a field view adds a second row.
+# Design: DD-267 (the cut row was clipped; DD-261 fixed the field row).
+_MENU_CSS = (
+    ".v-card:has(.mio-menu-row) { height: auto !important; overflow: visible !important; }\n"
+    ".v-card:has(.mio-menu-row) > .v-row { align-items: flex-start !important; }\n"
+    ".v-card:has(.mio-menu-row) > .v-row > .v-row { flex-wrap: wrap !important; }\n"
 )
 
 
@@ -1122,7 +1135,7 @@ def _add_overlays(
 
 def _attach_controls(scene: _Scene, server) -> Any:
     """Register state handlers and return the toolbar builder."""
-    from trame.widgets import html  # noqa: PLC0415
+    from trame.widgets import client, html  # noqa: PLC0415
     from trame.widgets import vuetify3 as vuetify  # noqa: PLC0415
 
     key = f"mio3d_{id(scene)}"
@@ -1251,54 +1264,64 @@ def _attach_controls(scene: _Scene, server) -> Any:
             set_cut(scene.history.pop())
 
     def menu_items() -> None:
-        vuetify.VSelect(
-            v_model=(k_axis, state[k_axis]),
-            items=("items", ["off", "x", "y", "z"]),
-            label="Cut",
-            density="compact",
-            hide_details=True,
-            variant="plain",
-            style="width: 90px; margin-left: 8px;",
-        )
-        vuetify.VSlider(
-            v_model=(k_pos, state[k_pos]),
-            min=(k_min, lo),
-            max=(k_max, hi),
-            step=(k_step, step),
-            hide_details=True,
-            density="compact",
-            style="width: 220px; margin-left: 8px;",
-            disabled=(f"{k_axis} === 'off'",),
-        )
-        html.Span(
-            f"{{{{ Number({k_pos}).toFixed({k_dec}) }}}} {scene.unit}",
-            style=f"margin-left: 6px; white-space: nowrap; min-width: {pos_chars}ch; "
-            "font-variant-numeric: tabular-nums;",
-        )
-        vuetify.VSwitch(
-            v_model=(k_flip, state[k_flip]),
-            label="Flip",
-            density="compact",
-            hide_details=True,
-            style="margin-left: 8px;",
-            disabled=(f"{k_axis} === 'off'",),
-        )
-        with vuetify.VBtn(icon=True, size="small", variant="text", click=ctrl[k_undo]):
-            vuetify.VIcon("mdi-undo")
-            vuetify.VTooltip("Undo cut change", activator="parent", location="bottom")
-        with vuetify.VBtn(icon=True, size="small", variant="text", click=ctrl[k_reset]):
-            vuetify.VIcon("mdi-backup-restore")
-            vuetify.VTooltip("Reset cut", activator="parent", location="bottom")
-        vuetify.VSelect(
-            v_model=(k_show, state[k_show]),
-            items=(f"{key}_groups", state[f"{key}_groups"]),
-            label="Show",
-            multiple=True,
-            density="compact",
-            hide_details=True,
-            variant="plain",
-            style="width: 150px; margin-left: 8px;",
-        )
+        # PyVista's menu is a card of fixed height whose rows do not
+        # wrap, so a select's floating label ("Cut", "Show") is clipped
+        # at the top and a narrow window hides the controls on the
+        # right.  The card is told to grow instead, and its rows to
+        # wrap; the field row below adds itself as a row of its own.
+        client.Style(_MENU_CSS)
+        with html.Div(
+            classes="mio-menu-row",
+            style="display: flex; align-items: center; flex-wrap: wrap; padding: 2px 4px 2px 0;",
+        ):
+            vuetify.VSelect(
+                v_model=(k_axis, state[k_axis]),
+                items=("items", ["off", "x", "y", "z"]),
+                label="Cut",
+                density="compact",
+                hide_details=True,
+                variant="plain",
+                style="width: 90px; margin-left: 8px;",
+            )
+            vuetify.VSlider(
+                v_model=(k_pos, state[k_pos]),
+                min=(k_min, lo),
+                max=(k_max, hi),
+                step=(k_step, step),
+                hide_details=True,
+                density="compact",
+                style="width: 220px; margin-left: 8px;",
+                disabled=(f"{k_axis} === 'off'",),
+            )
+            html.Span(
+                f"{{{{ Number({k_pos}).toFixed({k_dec}) }}}} {scene.unit}",
+                style=f"margin-left: 6px; white-space: nowrap; min-width: {pos_chars}ch; "
+                "font-variant-numeric: tabular-nums;",
+            )
+            vuetify.VSwitch(
+                v_model=(k_flip, state[k_flip]),
+                label="Flip",
+                density="compact",
+                hide_details=True,
+                style="margin-left: 8px;",
+                disabled=(f"{k_axis} === 'off'",),
+            )
+            with vuetify.VBtn(icon=True, size="small", variant="text", click=ctrl[k_undo]):
+                vuetify.VIcon("mdi-undo")
+                vuetify.VTooltip("Undo cut change", activator="parent", location="bottom")
+            with vuetify.VBtn(icon=True, size="small", variant="text", click=ctrl[k_reset]):
+                vuetify.VIcon("mdi-backup-restore")
+                vuetify.VTooltip("Reset cut", activator="parent", location="bottom")
+            vuetify.VSelect(
+                v_model=(k_show, state[k_show]),
+                items=(f"{key}_groups", state[f"{key}_groups"]),
+                label="Show",
+                multiple=True,
+                density="compact",
+                hide_details=True,
+                variant="plain",
+                style="width: 150px; margin-left: 8px;",
+            )
         if field_items is not None:
             field_items()
 
