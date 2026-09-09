@@ -1009,6 +1009,45 @@ rejects it.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="magnelio.io.Project.plot_balance">
+<span class="sig-name descname"><span class="pre">plot_balance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">excitations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deficit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.plot_balance" title="Link to this definition">#</a></dt>
+<dd><p>Plot the power balance of every excitation.</p>
+<p>For each excited channel <em>j</em> the sum of the squared magnitudes
+over the observed channels, <code class="docutils literal notranslate"><span class="pre">Σ_i</span> <span class="pre">|S_ij|²</span></code> — the share of the
+incident power that comes back out of the ports.  On a
+lossless, fully exported network it is one; what is missing is
+what left the ports: ohmic and dielectric loss, and radiation.</p>
+<p>The reading depends on two things the plot cannot check.  Only
+channels present in the result are summed, so a network whose
+higher modes or whose ports were not all exported reads short
+and the deficit looks like loss (<code class="xref py py-attr docutils literal notranslate"><span class="pre">is_complete</span></code> says
+whether every observed channel was also excited).  And a
+channel that carries no propagating mode at a frequency is
+<code class="docutils literal notranslate"><span class="pre">NaN</span></code> there; an evanescent channel transports no active
+power, so it counts as zero rather than poisoning the sum.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*excitations</strong> (<em>str</em><em> or </em><em>tuple</em>) – Excited channels to plot, each <code class="docutils literal notranslate"><span class="pre">port</span></code> or <code class="docutils literal notranslate"><span class="pre">(port,</span>
+<span class="pre">mode)</span></code>.  Without arguments every excitation is plotted.</p></li>
+<li><p><strong>deficit</strong> (<em>bool</em><em>, </em><em>default False</em>) – Plot <code class="docutils literal notranslate"><span class="pre">10·log10(1</span> <span class="pre">−</span> <span class="pre">Σ)</span></code> — the power that left the ports,
+in dB — instead of the sum itself.  The useful form when
+the balance is close to one, where the interesting number
+is how far from it.</p></li>
+<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.1)"><em>matplotlib.axes.Axes</em></a><em>, </em><em>optional</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>fig</strong> (<em>matplotlib.figure.Figure</em>)</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib.axes.Axes</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="magnelio.io.Project.plot_energy">
 <span class="sig-name descname"><span class="pre">plot_energy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'time'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">floor_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.plot_energy" title="Link to this definition">#</a></dt>
 <dd><p>Plot every run’s stored energy in dB below its peak, one curve per run.</p>
@@ -1029,6 +1068,34 @@ into existing axes.  Returns <code class="docutils literal notranslate"><span cl
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="magnelio.io.Project.plot_polar">
+<span class="sig-name descname"><span class="pre">plot_polar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">pairs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mark</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.plot_polar" title="Link to this definition">#</a></dt>
+<dd><p>Plot channels in the complex plane, magnitude over phase.</p>
+<p>The polar counterpart of <a class="reference internal" href="#magnelio.io.Project.plot_smith" title="magnelio.io.Project.plot_smith"><code class="xref py py-meth docutils literal notranslate"><span class="pre">plot_smith()</span></code></a> for channels the
+Smith chart does not describe — transmission above all, whose
+magnitude is not bounded by one in a network with gain and
+which has no impedance reading.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*pairs</strong> (<em>tuple</em>) – As <a class="reference internal" href="#magnelio.io.Project.plot_smith" title="magnelio.io.Project.plot_smith"><code class="xref py py-meth docutils literal notranslate"><span class="pre">plot_smith()</span></code></a>; without arguments every recorded
+channel of every excitation.</p></li>
+<li><p><strong>mark</strong> (<em>array_like</em><em>, </em><em>optional</em>) – Frequencies [Hz] to mark on every trace.</p></li>
+<li><p><strong>r_max</strong> (<em>float</em><em>, </em><em>optional</em>) – Radial limit; default the peak magnitude, at least one.</p></li>
+<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.1)"><em>matplotlib.axes.Axes</em></a><em>, </em><em>optional</em>) – Must be a polar axes; one is created otherwise.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>fig</strong> (<em>matplotlib.figure.Figure</em>)</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib.axes.Axes</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="magnelio.io.Project.plot_s">
 <span class="sig-name descname"><span class="pre">plot_s</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">pairs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">floor_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-200.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.plot_s" title="Link to this definition">#</a></dt>
 <dd><p>Plot S-parameter magnitudes over frequency.</p>
@@ -1042,6 +1109,40 @@ plotted.</p></li>
 <li><p><strong>db</strong> (<em>bool</em><em>, </em><em>default True</em>) – Magnitude in dB (with <em>floor_db</em>) instead of linear.</p></li>
 <li><p><strong>floor_db</strong> (<em>float</em><em>, </em><em>default -200.0</em>) – Clip floor for the dB display.</p></li>
 <li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.1)"><em>matplotlib.axes.Axes</em></a><em>, </em><em>optional</em>) – Axes to draw into; a new figure is created otherwise.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>fig</strong> (<em>matplotlib.figure.Figure</em>)</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib.axes.Axes</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.io.Project.plot_smith">
+<span class="sig-name descname"><span class="pre">plot_smith</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">pairs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mark</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.io.Project.plot_smith" title="Link to this definition">#</a></dt>
+<dd><p>Plot reflection channels on a Smith chart.</p>
+<p>The complex reflection coefficient traced over frequency on the
+unit disc, with the circles of constant normalised resistance
+and reactance behind it.  The chart is only readable against
+<strong>one</strong> normalisation: a channel whose reference impedance
+varies with frequency (a dispersive waveguide mode, DD-244) has
+no single set of circles, and its trace here is the power-wave
+coefficient against a moving reference.  Call
+<a class="reference internal" href="#magnelio.io.Project.renormalize" title="magnelio.io.Project.renormalize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">renormalize()</span></code></a> first — <code class="docutils literal notranslate"><span class="pre">renormalize(50)</span></code> — when that
+matters; a warning names the case.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*pairs</strong> (<em>tuple</em>) – Channels to draw, each <code class="docutils literal notranslate"><span class="pre">(out_port,</span> <span class="pre">in_port)</span></code> or
+<code class="docutils literal notranslate"><span class="pre">(out_port,</span> <span class="pre">in_port,</span> <span class="pre">mode_out,</span> <span class="pre">mode_in)</span></code>.  Without
+arguments the reflection channel of every excitation.</p></li>
+<li><p><strong>mark</strong> (<em>array_like</em><em>, </em><em>optional</em>) – Frequencies [Hz] to mark and label on every trace.</p></li>
+<li><p><strong>labels</strong> (<em>bool</em><em>, </em><em>default True</em>) – Draw the resistance labels of the chart’s grid.</p></li>
+<li><p><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="(in Matplotlib v3.11.1)"><em>matplotlib.axes.Axes</em></a><em>, </em><em>optional</em>) – Axes to draw into; a square figure is created otherwise.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2141,8 +2242,11 @@ recovered verbatim by <a class="reference internal" href="#magnelio.io.read_brep
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.monitor"><code class="docutils literal notranslate"><span class="pre">Project.monitor()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.monitors_for"><code class="docutils literal notranslate"><span class="pre">Project.monitors_for()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.phase"><code class="docutils literal notranslate"><span class="pre">Project.phase()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.plot_balance"><code class="docutils literal notranslate"><span class="pre">Project.plot_balance()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.plot_energy"><code class="docutils literal notranslate"><span class="pre">Project.plot_energy()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.plot_polar"><code class="docutils literal notranslate"><span class="pre">Project.plot_polar()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.plot_s"><code class="docutils literal notranslate"><span class="pre">Project.plot_s()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.plot_smith"><code class="docutils literal notranslate"><span class="pre">Project.plot_smith()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.reference_impedance"><code class="docutils literal notranslate"><span class="pre">Project.reference_impedance()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.refresh"><code class="docutils literal notranslate"><span class="pre">Project.refresh()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.io.Project.renormalize"><code class="docutils literal notranslate"><span class="pre">Project.renormalize()</span></code></a></li>
