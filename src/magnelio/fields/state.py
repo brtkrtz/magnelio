@@ -569,6 +569,46 @@ class FieldState:
         centred = self.cell_centred(corners=corners)
         return cross(centred, complex_product=complex_product)
 
+    # ── the surface current (DD-273) ─────────────────────────────────────
+
+    def surface_current(self, mesh, *, tag=None, exclude_faces=None, **kwargs):
+        """The conductor's surface current ``J_s = n × H`` [A/m].
+
+        One value per wall patch of *mesh*: the magnitude from the
+        booking the wall loss uses — so ``power_loss()`` reproduces
+        :class:`~magnelio.monitors.MonitorWallLoss` — and the direction
+        from ``n × H`` with the patch's own outward normal, which on a
+        curved conductor is the true surface normal and not a staircase
+        axis.
+
+        The field must carry all three magnetic components over the
+        **whole** grid of *mesh*; a monitor cut to a box cannot state a
+        current on patches it does not cover, and says so.
+
+        Parameters
+        ----------
+        mesh : Mesh
+        tag : optional
+            Restrict to one conductor (material id, or a boundary face
+            name such as ``"zmin"``).
+        exclude_faces : tuple of str, optional
+            Domain boundary faces whose conductor coverage is not a
+            wall — a port plane, where the feed's cross-section shows
+            and the structure continues through the face.  Left unset
+            on a model whose conductor reaches a boundary, the call
+            asks once which faces those are; ``()`` answers "none".
+        **kwargs
+            Passed to the wall enumeration — ``bc_pec_faces=("zmin",)``
+            to include a PEC boundary wall.
+
+        Returns
+        -------
+        SurfaceCurrent
+        """
+        from magnelio.post._surface_current import from_series  # noqa: PLC0415
+
+        return from_series(self, mesh, tag=tag, exclude_faces=exclude_faces, **kwargs)
+
     # ── symmetry ─────────────────────────────────────────────────────────
 
     def mirrored(self, *mirrors) -> FieldState:

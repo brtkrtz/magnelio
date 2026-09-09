@@ -72,6 +72,7 @@ _GROUPS = (
     ("arrows", "Vectors on cut"),
     ("volume arrows", "Field vectors"),
     ("isosurface", "Isosurfaces"),
+    ("surface current", "Surface current"),
     ("ports", "Ports"),
     ("elements", "Lumped elements"),
     ("wires", "Wires"),
@@ -1058,6 +1059,58 @@ def _add_symmetry_planes(
         )
 
 
+def _add_surface_current(pl, scene, current, *, unit_scale, frame: int, density: int = 1):
+    """Draw a surface current over the solids: arrows coloured by |J_s|.
+
+    The patches are a cloud of points on the conductor, each with an
+    area, a normal and a vector; the arrows are glyphs on that cloud,
+    scaled to a fraction of the local patch size so a fine mesh does not
+    turn into a mat of overlapping cones (DD-273).
+    """
+    import pyvista as pv  # noqa: PLC0415
+
+    vec = np.asarray(current.vector(frame))
+    if np.iscomplexobj(vec):
+        vec = np.real(vec)
+    mag = np.asarray(current.magnitude(frame))
+    keep = slice(None) if density <= 1 else slice(None, None, int(density))
+    areas = np.asarray(current.areas)[keep]
+    normals = np.asarray(current.normals)[keep]
+    vec, mag = vec[keep], mag[keep]
+    scale = float(np.sqrt(areas.mean())) * unit_scale
+    # Lift the arrows clear of the metal they sit on: a patch centre is
+    # ON the surface, and a glyph drawn there is half inside the solid.
+    points = np.asarray(current.positions)[keep] * unit_scale + normals * (0.35 * scale)
+    cloud = pv.PolyData(points)
+    cloud["|J_s| (A/m)"] = mag
+    peak = float(mag.max()) if mag.size else 0.0
+    # A length floor, as the volume field arrows have (DD-261): without
+    # it everything below the peak vanishes and the picture shows one
+    # bright spot.
+    length = np.where(peak > 0.0, 0.35 + 0.65 * mag / max(peak, 1e-300), 1.0)
+    unit = np.zeros_like(vec)
+    norm = np.linalg.norm(vec, axis=1)
+    live = norm > 0.0
+    unit[live] = vec[live] / norm[live, None]
+    cloud["J"] = unit * (length * 2.0 * scale)[:, None]
+    arrows = cloud.glyph(orient="J", scale="J", factor=1.0, geom=pv.Arrow())
+    # The glyph filter leaves its own "GlyphScale" active; a clip later
+    # rebuilds the mapper input, and it colours by whatever is active.
+    if "|J_s| (A/m)" in arrows.point_data:
+        arrows.set_active_scalars("|J_s| (A/m)")
+    over = _Overlay(name="surface_current", group="surface current", polydata=arrows)
+    _add_overlay(
+        pl,
+        scene,
+        over,
+        scalars="|J_s| (A/m)",
+        cmap="inferno",
+        show_scalar_bar=True,
+        scalar_bar_args={"title": "|J_s| (A/m)", "n_labels": 4},
+    )
+    return over
+
+
 def _add_overlays(
     pl,
     scene: _Scene,
@@ -1358,6 +1411,9 @@ def _build_scene(
     field_view=None,
     extent=None,
     title=None,
+    surface_current=None,
+    current_frame: int = 0,
+    current_density: int = 1,
 ) -> _Scene:
     import pyvista as pv  # noqa: PLC0415
 
@@ -1439,6 +1495,15 @@ def _build_scene(
         show_ports=show_ports,
         labels=show_labels,
     )
+    if surface_current is not None:
+        _add_surface_current(
+            pl,
+            scene,
+            surface_current,
+            unit_scale=unit_scale,
+            frame=current_frame,
+            density=current_density,
+        )
     if field_view is not None:
         scene.hidden_groups |= set(field_view.hidden_at_start())
 
@@ -1524,6 +1589,9 @@ def show_geometry(
     quality: float = 1.0,
     scale_mm: bool = True,
     camera: Any = "iso",
+    surface_current=None,
+    current_frame: int = 0,
+    current_density: int = 1,
 ):
     """Interactive 3D view of a :class:`~magnelio.geo.GeometryModel`.
 
@@ -1623,5 +1691,8 @@ def show_geometry(
         scale_mm=scale_mm,
         camera=camera,
         off_screen=off_screen or (notebook and mode not in (None, "none")),
+        surface_current=surface_current,
+        current_frame=current_frame,
+        current_density=current_density,
     )
     return _display(scene, mode, notebook)

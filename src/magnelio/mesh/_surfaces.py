@@ -135,6 +135,273 @@ class WallSurface:
         return total
 
 
+@dataclass(frozen=True)
+class WallPatches:
+    """The conducting surface as one patch per wall cell, with normals.
+
+    Where :class:`WallSurface` books the *samples* a loss integral sums,
+    this books the *surface*: where it is, which way it faces, how much
+    of it a cell holds — and which sample contributions belong to it.
+    That last part is what a surface current needs and a loss does not:
+    the loss only ever asks for the total over all samples, while
+    ``J_s = n x H`` is a vector at a place (DD-273).
+
+    Attributes
+    ----------
+    cells : np.ndarray
+        Cell indices of the wall cells, shape ``(n, 3)``.
+    centres : np.ndarray
+        Cell-centre positions [m], shape ``(n, 3)``.
+    normals : np.ndarray
+        Unit normals pointing **out of** the conductor, shape ``(n, 3)``.
+        On a mesh carrying sub-cell coverage these are the directions of
+        the DD-087 wall vectors — the true surface normal of a curved or
+        oblique wall, not a staircase axis.
+    areas : np.ndarray
+        Conducting surface area held by each cell [m2], shape ``(n,)``.
+    tags : np.ndarray
+        Material id of the conductor each patch belongs to.
+    conformal : bool
+        Whether the normals came from the sub-cell wall vectors.
+    sample_patch, sample_comp, sample_flat, sample_weight, sample_inv_l : np.ndarray
+        The booked contributions, one row each: the patch it belongs to,
+        the H component (0/1/2), the flat index into that component's
+        array, the booking weight [m2] and ``1 / l_dual`` [1/m].
+
+    Notes
+    -----
+    A cell holding two wall families at once (a corner: a flat lid and a
+    curved mantle) is one patch with one normal, the direction of its
+    total wall vector.  Its *area* is booked correctly there (the
+    families are summed as magnitudes, DD-087); only the direction is a
+    compromise, and the mesh resolution decides how few such cells there
+    are.
+    """
+
+    cells: np.ndarray
+    centres: np.ndarray
+    normals: np.ndarray
+    areas: np.ndarray
+    tags: np.ndarray
+    conformal: bool
+    sample_patch: np.ndarray
+    sample_comp: np.ndarray
+    sample_flat: np.ndarray
+    sample_weight: np.ndarray
+    sample_inv_l: np.ndarray
+
+    def __len__(self) -> int:
+        return int(self.areas.size)
+
+    @property
+    def area(self) -> float:
+        """Total conducting surface area [m2]."""
+        return float(self.areas.sum())
+
+    def _phys(self, arrays):
+        """Physical H at every booked sample, in the sample's own component."""
+        flat = [np.asarray(a).reshape(-1) for a in arrays]
+        out = np.zeros(self.sample_flat.size, dtype=np.result_type(*[a.dtype for a in flat]))
+        for c in range(3):
+            sel = self.sample_comp == c
+            if sel.any():
+                out[sel] = flat[c][self.sample_flat[sel]]
+        return out * self.sample_inv_l
+
+    def h_tan_sq(self, Hx, Hy, Hz) -> np.ndarray:
+        """``sum(weight * |H|^2)`` per patch — the loss integrand, split by patch.
+
+        Summed over the patches this is exactly
+        :meth:`WallSurface.h_tan_sq_sum` of the same wall, so a current
+        formed with this magnitude reproduces the wall loss identically.
+        """
+        h = self._phys((Hx, Hy, Hz))
+        contrib = self.sample_weight * (h.real**2 + h.imag**2)
+        return np.bincount(self.sample_patch, weights=contrib, minlength=len(self))
+
+    def h_vectors(self, Hx, Hy, Hz) -> np.ndarray:
+        """Weight-averaged H per patch, shape ``(n, 3)``.
+
+        The direction the samples of a patch agree on; its magnitude is
+        not the current's (use :meth:`h_tan_sq` for that), because a
+        mean of samples is not the square root of their weighted mean
+        square.
+        """
+        h = self._phys((Hx, Hy, Hz))
+        n = len(self)
+        out = np.zeros((n, 3), dtype=h.dtype)
+        for c in range(3):
+            sel = self.sample_comp == c
+            if not sel.any():
+                continue
+            w = self.sample_weight[sel]
+            idx = self.sample_patch[sel]
+            num = np.bincount(idx, weights=w * h[sel].real, minlength=n)
+            if np.iscomplexobj(h):
+                num = num + 1j * np.bincount(idx, weights=w * h[sel].imag, minlength=n)
+            den = np.bincount(idx, weights=w, minlength=n)
+            out[:, c] = np.where(den > 0.0, num / np.where(den > 0.0, den, 1.0), 0.0)
+        return out
+
+    def select(self, mask) -> "WallPatches":
+        """The subset of patches where *mask* is true, samples following."""
+        mask = np.asarray(mask, dtype=bool)
+        renumber = np.full(len(self), -1, dtype=np.int64)
+        renumber[mask] = np.arange(int(mask.sum()))
+        keep = renumber[self.sample_patch] >= 0
+        return WallPatches(
+            cells=self.cells[mask],
+            centres=self.centres[mask],
+            normals=self.normals[mask],
+            areas=self.areas[mask],
+            tags=self.tags[mask],
+            conformal=self.conformal,
+            sample_patch=renumber[self.sample_patch[keep]],
+            sample_comp=self.sample_comp[keep],
+            sample_flat=self.sample_flat[keep],
+            sample_weight=self.sample_weight[keep],
+            sample_inv_l=self.sample_inv_l[keep],
+        )
+
+
+def _cell_centres(grid, cells: np.ndarray) -> np.ndarray:
+    """Centre positions [m] of the given cell indices."""
+    out = np.empty((cells.shape[0], 3), dtype=float)
+    for a, (nodes, widths) in enumerate(((grid.x, grid.dx), (grid.y, grid.dy), (grid.z, grid.dz))):
+        nodes = np.asarray(nodes, dtype=float)
+        widths = np.asarray(widths, dtype=float)
+        idx = cells[:, a]
+        out[:, a] = nodes[idx] + 0.5 * widths[idx]
+    return out
+
+
+def _patch_block(mesh, acc, inv_dual, sel, w, aw, tag, *, conformal: bool) -> WallPatches:
+    """One tag's wall cells as patches, with the contributions they booked."""
+    grid = mesh.grid
+    ii, jj, kk = np.nonzero(sel)
+    cells = np.stack([ii, jj, kk], axis=1)
+    vec = np.stack([np.asarray(wc)[sel] for wc in w], axis=1)
+    norm = np.linalg.norm(vec, axis=1)
+    normals = np.zeros_like(vec)
+    good = norm > 0.0
+    # w points at the conductor; the outward normal points away from it.
+    normals[good] = -vec[good] / norm[good, None]
+    patch, comp, flat, weight, inv = acc.patch_samples(inv_dual)
+    return WallPatches(
+        cells=cells,
+        centres=_cell_centres(grid, cells),
+        normals=normals,
+        areas=np.asarray(aw, dtype=float),
+        tags=np.full(cells.shape[0], tag),
+        conformal=bool(conformal),
+        sample_patch=patch,
+        sample_comp=comp,
+        sample_flat=flat,
+        sample_weight=weight,
+        sample_inv_l=inv,
+    )
+
+
+def _staircase_patch_block(mesh, acc, inv_dual, faces, tag) -> WallPatches:
+    """Wall FACES as patches, for a mesh without sub-cell coverage.
+
+    A staircase wall is axis-aligned by construction, so a patch's
+    normal is the axis of the face it sits on and its area is that
+    face's area.  One cell may carry several faces — a corner of a
+    rasterised conductor does — and each is its own patch, which is the
+    finer and the honest reading here.
+    """
+    grid = mesh.grid
+    nodes = (np.asarray(grid.x, float), np.asarray(grid.y, float), np.asarray(grid.z, float))
+    widths = (np.asarray(grid.dx, float), np.asarray(grid.dy, float), np.asarray(grid.dz, float))
+    cells = np.concatenate([f[2] for f in faces], axis=0)
+    areas = np.concatenate([np.asarray(f[3], dtype=float) for f in faces])
+    normals = np.zeros((cells.shape[0], 3))
+    centres = np.empty((cells.shape[0], 3))
+    at = 0
+    for axis, sign, idx, _area in faces:
+        n = idx.shape[0]
+        normals[at : at + n, axis] = sign
+        for a in range(3):
+            k = idx[:, a]
+            centres[at : at + n, a] = nodes[a][k] + 0.5 * widths[a][k]
+        # The patch sits on the face of the air cell, half a cell back
+        # along the outward normal from that cell's centre.
+        k = idx[:, axis]
+        centres[at : at + n, axis] -= sign * 0.5 * widths[axis][k]
+        at += n
+    patch, comp, flat, weight, inv = acc.patch_samples(inv_dual)
+    return WallPatches(
+        cells=cells,
+        centres=centres,
+        normals=normals,
+        areas=areas,
+        tags=np.full(cells.shape[0], tag),
+        conformal=False,
+        sample_patch=patch,
+        sample_comp=comp,
+        sample_flat=flat,
+        sample_weight=weight,
+        sample_inv_l=inv,
+    )
+
+
+def enumerate_wall_patches(mesh, **kwargs) -> WallPatches:
+    """The conductor surface of *mesh* as patches with outward normals.
+
+    The same enumeration :func:`enumerate_pec_surfaces` books a wall
+    loss from, read the other way round: per wall patch its conformal
+    area, its outward normal and the sample contributions it booked, so
+    a surface current can be a vector at a place (DD-273).  Arguments
+    are those of :func:`enumerate_pec_surfaces`.
+
+    Returns
+    -------
+    WallPatches
+        Every conductor of the mesh, concatenated; ``len() == 0`` when
+        the mesh holds no conductor surface in the field region.
+    """
+    _surfaces, blocks = enumerate_pec_surfaces(mesh, with_patches=True, **kwargs)
+    blocks = [b for b in blocks if len(b)]
+    if not blocks:
+        empty_i = np.empty((0, 3), dtype=int)
+        return WallPatches(
+            cells=empty_i,
+            centres=np.empty((0, 3)),
+            normals=np.empty((0, 3)),
+            areas=np.empty(0),
+            tags=np.empty(0, dtype=object),
+            conformal=False,
+            sample_patch=np.empty(0, dtype=np.int64),
+            sample_comp=np.empty(0, dtype=np.uint8),
+            sample_flat=np.empty(0, dtype=np.int64),
+            sample_weight=np.empty(0),
+            sample_inv_l=np.empty(0),
+        )
+    offset = 0
+    patch, comp, flat, weight, inv = [], [], [], [], []
+    for b in blocks:
+        patch.append(b.sample_patch + offset)
+        comp.append(b.sample_comp)
+        flat.append(b.sample_flat)
+        weight.append(b.sample_weight)
+        inv.append(b.sample_inv_l)
+        offset += len(b)
+    return WallPatches(
+        cells=np.concatenate([b.cells for b in blocks]),
+        centres=np.concatenate([b.centres for b in blocks]),
+        normals=np.concatenate([b.normals for b in blocks]),
+        areas=np.concatenate([b.areas for b in blocks]),
+        tags=np.concatenate([b.tags for b in blocks]),
+        conformal=all(b.conformal for b in blocks),
+        sample_patch=np.concatenate(patch),
+        sample_comp=np.concatenate(comp),
+        sample_flat=np.concatenate(flat),
+        sample_weight=np.concatenate(weight),
+        sample_inv_l=np.concatenate(inv),
+    )
+
+
 def _state_dual_lengths(d: np.ndarray) -> np.ndarray:
     """Dual lengths in the SOLVER STATE convention (length N -> N+1).
 
@@ -154,17 +421,69 @@ def _state_dual_lengths(d: np.ndarray) -> np.ndarray:
 
 
 class _SampleAccumulator:
-    """Accumulates footprint weights per H sample for one tag."""
+    """Accumulates footprint weights per H sample for one tag.
 
-    def __init__(self, Nx: int, Ny: int, Nz: int) -> None:
+    With *track_patches* the individual contributions are kept as well,
+    each tagged with the wall cell that booked it (DD-273).  The sums
+    are what a loss integral needs — several wall cells may book onto
+    one sample, and the loss only ever asks for the total — while a
+    surface *current* is a vector at a place and needs to know which
+    cell's surface a contribution belongs to.  Off by default, so the
+    loss path allocates nothing extra and stays bit-identical.
+    """
+
+    def __init__(self, Nx: int, Ny: int, Nz: int, *, track_patches: bool = False) -> None:
         self._w = [
             np.zeros((Nx + 1, Ny, Nz)),  # Hx
             np.zeros((Nx, Ny + 1, Nz)),  # Hy
             np.zeros((Nx, Ny, Nz + 1)),  # Hz
         ]
+        self._parts: list | None = [] if track_patches else None
 
-    def add(self, comp: int, idx_tuple, w) -> None:
+    def add(self, comp: int, idx_tuple, w, patch=None) -> None:
         np.add.at(self._w[comp], idx_tuple, w)
+        if self._parts is None or patch is None:
+            return
+        w = np.asarray(w)
+        keep = w > 0.0
+        if not keep.any():
+            return
+        flat = np.ravel_multi_index(tuple(np.asarray(i) for i in idx_tuple), self._w[comp].shape)
+        self._parts.append(
+            (
+                np.asarray(patch)[keep],
+                np.full(int(keep.sum()), comp, dtype=np.uint8),
+                np.asarray(flat)[keep],
+                w[keep],
+            )
+        )
+
+    def patch_samples(self, inv_dual: tuple):
+        """The kept contributions as ``(patch, comp, flat_idx, weight, inv_l_dual)``.
+
+        Empty arrays when nothing was tracked.
+        """
+        if not self._parts:
+            empty_i = np.empty(0, dtype=np.int64)
+            return (
+                empty_i,
+                np.empty(0, dtype=np.uint8),
+                empty_i,
+                np.empty(0),
+                np.empty(0),
+            )
+        patch = np.concatenate([p[0] for p in self._parts])
+        comp = np.concatenate([p[1] for p in self._parts])
+        flat = np.concatenate([p[2] for p in self._parts])
+        weight = np.concatenate([p[3] for p in self._parts])
+        inv = np.empty(flat.size)
+        for c in range(3):
+            sel = comp == c
+            if not sel.any():
+                continue
+            multi = np.unravel_index(flat[sel], self._w[c].shape)
+            inv[sel] = inv_dual[c][multi[c]]
+        return patch, comp, flat, weight, inv
 
     def to_surface(
         self,
@@ -201,31 +520,33 @@ class _SampleAccumulator:
         )
 
 
-def _add_wall_faces(acc, axis: int, ii, jj, kk, cc, dx, dy, dz) -> None:
+def _add_wall_faces(acc, axis: int, ii, jj, kk, cc, dx, dy, dz, patch=None) -> None:
     """Register the 4 tangential H samples of wall faces with normal *axis*.
 
     ``ii, jj, kk`` are the face's cell-footprint indices, ``cc`` the
-    air-side cell index along the normal axis.
+    air-side cell index along the normal axis.  *patch* tags every
+    booked contribution with the wall face it belongs to (DD-273);
+    ``None`` books the weights alone, as the loss path does.
     """
     if axis == 2:  # z-wall, footprint dx[i]*dy[j], tangential Hx & Hy
         wx = 0.5 * dx[ii] * dy[jj]  # per Hx sample (2 per face)
         wy = 0.5 * dx[ii] * dy[jj]  # per Hy sample (2 per face)
-        acc.add(0, (ii, jj, cc), wx)
-        acc.add(0, (ii + 1, jj, cc), wx)
-        acc.add(1, (ii, jj, cc), wy)
-        acc.add(1, (ii, jj + 1, cc), wy)
+        acc.add(0, (ii, jj, cc), wx, patch)
+        acc.add(0, (ii + 1, jj, cc), wx, patch)
+        acc.add(1, (ii, jj, cc), wy, patch)
+        acc.add(1, (ii, jj + 1, cc), wy, patch)
     elif axis == 1:  # y-wall, footprint dx[i]*dz[k], tangential Hx & Hz
         w = 0.5 * dx[ii] * dz[kk]
-        acc.add(0, (ii, cc, kk), w)
-        acc.add(0, (ii + 1, cc, kk), w)
-        acc.add(2, (ii, cc, kk), w)
-        acc.add(2, (ii, cc, kk + 1), w)
+        acc.add(0, (ii, cc, kk), w, patch)
+        acc.add(0, (ii + 1, cc, kk), w, patch)
+        acc.add(2, (ii, cc, kk), w, patch)
+        acc.add(2, (ii, cc, kk + 1), w, patch)
     else:  # x-wall, footprint dy[j]*dz[k], tangential Hy & Hz
         w = 0.5 * dy[jj] * dz[kk]
-        acc.add(1, (cc, jj, kk), w)
-        acc.add(1, (cc, jj + 1, kk), w)
-        acc.add(2, (cc, jj, kk), w)
-        acc.add(2, (cc, jj, kk + 1), w)
+        acc.add(1, (cc, jj, kk), w, patch)
+        acc.add(1, (cc, jj + 1, kk), w, patch)
+        acc.add(2, (cc, jj, kk), w, patch)
+        acc.add(2, (cc, jj, kk + 1), w, patch)
 
 
 def _face_pec_views(mesh) -> tuple[list, list, list]:
@@ -438,7 +759,8 @@ def _conformal_solid_surfaces(
     inv_dual: tuple,
     curvature: bool = True,
     views: tuple | None = None,
-) -> list[WallSurface]:
+    with_patches: bool = False,
+):
     """Divergence-theorem cell path for material-PEC solids (DD-087).
 
     Per cell the wall vector ``w = Σ_faces A_face_pec·n_out`` obeys
@@ -503,7 +825,8 @@ def _conformal_solid_surfaces(
     live = a_wall > 1e-9 * scale
 
     if not live.any():
-        return []
+        return ([], []) if with_patches else []
+    patch_blocks: list = []
 
     # DD-098: curvature pullback — every booked weight is scaled by
     # c_b² = max(1 + κ·d1, 0)² (exact for 1/r line fields, flat walls
@@ -571,7 +894,7 @@ def _conformal_solid_surfaces(
         ii, jj, kk = np.nonzero(sel)
         aw = a_wall[sel]
         pos3 = [ii, jj, kk]
-        acc = _SampleAccumulator(Nx, Ny, Nz)
+        acc = _SampleAccumulator(Nx, Ny, Nz, track_patches=with_patches)
         # Inward walk direction per cell from the wall vector itself:
         # w points towards the PEC, so −sign(w) steps into the air.
         # The walk displaces the CANDIDATE CELL diagonally along that
@@ -585,6 +908,9 @@ def _conformal_solid_surfaces(
         # the offset is O(h) and converges by measurement.
         d_in = [np.sign(-wc[sel]).astype(np.int64) for wc in w]
         n_cells = (Nx, Ny, Nz)
+        # Row i of every weight array below is wall cell i of this tag
+        # (DD-273): that index IS the patch a contribution belongs to.
+        patch_id = np.arange(aw.size, dtype=np.int64) if with_patches else None
         for ax in range(3):
             fl_eff = np.zeros(aw.shape, dtype=float)
             fh_eff = np.zeros(aw.shape, dtype=float)
@@ -616,12 +942,14 @@ def _conformal_solid_surfaces(
             if curv is not None:
                 wl = wl * curv.scale(pos3, ax, idx_lo)
                 wh = wh * curv.scale(pos3, ax, idx_hi)
-            acc.add(ax, tuple(idx_lo), wl)
-            acc.add(ax, tuple(idx_hi), wh)
+            acc.add(ax, tuple(idx_lo), wl, patch_id)
+            acc.add(ax, tuple(idx_hi), wh, patch_id)
         surf = acc.to_surface(mid, inv_dual, area_total=float(aw.sum()))
         if surf is not None:
             surfaces.append(surf)
-    return surfaces
+        if with_patches:
+            patch_blocks.append(_patch_block(mesh, acc, inv_dual, sel, w, aw, mid, conformal=True))
+    return (surfaces, patch_blocks) if with_patches else surfaces
 
 
 def enumerate_pec_surfaces(
@@ -629,7 +957,8 @@ def enumerate_pec_surfaces(
     bc_pec_faces: tuple[str, ...] = (),
     curvature_correction: bool = True,
     masked_boundary_faces: tuple[str, ...] = (),
-) -> list[WallSurface]:
+    with_patches: bool = False,
+):
     """Enumerate PEC wall surfaces with their tangential-H samples.
 
     Parameters
@@ -674,6 +1003,7 @@ def enumerate_pec_surfaces(
     pec = pec_table[mat_id]  # (Nx, Ny, Nz) bool
 
     surfaces: list[WallSurface] = []
+    patch_blocks: list = []
 
     # ── DD-087: conformal cell path when the geometry cuts faces ────────
     fm = getattr(mesh, "face_material", None)
@@ -689,18 +1019,32 @@ def enumerate_pec_surfaces(
                 use_conformal = True
                 break
     if use_conformal:
-        surfaces.extend(
-            _conformal_solid_surfaces(
-                mesh, pec, inv_dual, curvature=curvature_correction, views=views
-            )
+        got = _conformal_solid_surfaces(
+            mesh,
+            pec,
+            inv_dual,
+            curvature=curvature_correction,
+            views=views,
+            with_patches=with_patches,
         )
+        if with_patches:
+            got, blocks = got
+            patch_blocks.extend(blocks)
+        surfaces.extend(got)
 
     # ── Material-PEC solid walls (interior faces only) ──────────────────
     pec_ids = [] if use_conformal else [mid for mid, mat in lib.items() if mat.is_pec]
+    face_area = (
+        lambda a, i, j, k: (dy[j] * dz[k], dx[i] * dz[k], dx[i] * dy[j])[a]  # noqa: E731
+    )
     for mid in pec_ids:
         this = mat_id == mid
-        acc = _SampleAccumulator(Nx, Ny, Nz)
+        acc = _SampleAccumulator(Nx, Ny, Nz, track_patches=with_patches)
         found = False
+        # On a staircase wall a patch is a wall FACE, not a cell: one
+        # cell can carry several faces, each with its own normal.
+        faces: list = []
+        n_patch = 0
         for axis in range(3):
             sl_lo = [slice(None)] * 3
             sl_hi = [slice(None)] * 3
@@ -718,11 +1062,21 @@ def enumerate_pec_surfaces(
                 cc = base + air_off
                 idx = [ii, jj, kk]
                 idx[axis] = cc
-                _add_wall_faces(acc, axis, idx[0], idx[1], idx[2], cc, dx, dy, dz)
+                patch = None
+                if with_patches:
+                    patch = n_patch + np.arange(ii.size, dtype=np.int64)
+                    n_patch += ii.size
+                    # air_off 1: the air cell is above, so the outward
+                    # normal points along +axis, and the other way round.
+                    sign = 1.0 if air_off == 1 else -1.0
+                    faces.append((axis, sign, np.stack(idx, axis=1), face_area(axis, ii, jj, kk)))
+                _add_wall_faces(acc, axis, idx[0], idx[1], idx[2], cc, dx, dy, dz, patch)
         if found:
             surf = acc.to_surface(mid, inv_dual)
             if surf is not None:
                 surfaces.append(surf)
+            if with_patches:
+                patch_blocks.append(_staircase_patch_block(mesh, acc, inv_dual, faces, mid))
 
     # ── PEC domain-boundary walls ────────────────────────────────────────
     for face in bc_pec_faces:
@@ -735,19 +1089,37 @@ def enumerate_pec_surfaces(
         sl = [slice(None)] * 3
         sl[axis] = cell
         open_cells = ~pec[tuple(sl)]  # 2-D mask over the face
-        acc = _SampleAccumulator(Nx, Ny, Nz)
+        acc = _SampleAccumulator(Nx, Ny, Nz, track_patches=with_patches)
+        faces: list = []
         if open_cells.any():
             a, b = np.nonzero(open_cells)
             idx = [None, None, None]
             tang = [ax for ax in range(3) if ax != axis]
             idx[tang[0]], idx[tang[1]] = a, b
             idx[axis] = np.full(a.shape, cell)
-            _add_wall_faces(acc, axis, idx[0], idx[1], idx[2], idx[axis], dx, dy, dz)
+            patch = None
+            if with_patches:
+                patch = np.arange(a.size, dtype=np.int64)
+                # The wall is the domain face; the field region is inside,
+                # so the outward normal points into the domain.
+                faces.append(
+                    (
+                        axis,
+                        1.0 if lo else -1.0,
+                        np.stack(idx, axis=1),
+                        (dy[idx[1]] * dz[idx[2]], dx[idx[0]] * dz[idx[2]], dx[idx[0]] * dy[idx[1]])[
+                            axis
+                        ],
+                    )
+                )
+            _add_wall_faces(acc, axis, idx[0], idx[1], idx[2], idx[axis], dx, dy, dz, patch)
         surf = acc.to_surface(face, inv_dual)
         if surf is not None:
             surfaces.append(surf)
+        if with_patches and faces:
+            patch_blocks.append(_staircase_patch_block(mesh, acc, inv_dual, faces, face))
 
-    return surfaces
+    return (surfaces, patch_blocks) if with_patches else surfaces
 
 
 # ══════════════════════════════════════════════════════════════════════

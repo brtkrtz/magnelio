@@ -5,7 +5,11 @@ auto-detection helpers.
 The per-edge sub-cell material data structures (``EdgeMaterialData``,
 ``FaceMaterialData``) live in :mod:`magnelio.geo._subcell` since
 DD-051; this module no longer carries the legacy ``ConformalData`` and
-``DeyMittraData`` classes.
+``DeyMittraData`` classes, nor ``PECSurfaceData`` (DD-273: it was
+built for every conformal mesh, saved into every project and read by
+nothing — and for the surface current its docstring advertised it
+booked the H component *normal* to a wall face, where ``J_s = n x H``
+needs the two tangential ones).
 """
 
 from __future__ import annotations
@@ -13,33 +17,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
-
-from magnelio.mesh.grid import GridLines
-
-
-@dataclass
-class PECSurfaceData:
-    """Pre-computed PEC surface info for J_s = n x H post-processing.
-
-    Used for surface current computation and quality-factor estimation:
-    ``P_loss = (R_s / 2) * sum(|n x H|^2 * A_surface)``.
-
-    Attributes
-    ----------
-    face_indices : np.ndarray
-        Flat H-face indices on PEC surface, shape ``(n_surf,)``, dtype int.
-    face_components : np.ndarray
-        0 = Hx, 1 = Hy, 2 = Hz per face, shape ``(n_surf,)``, dtype int.
-    outward_normals : np.ndarray
-        Unit normal pointing away from PEC body, shape ``(n_surf, 3)``.
-    surface_areas : np.ndarray
-        Effective PEC surface area per face [m^2], shape ``(n_surf,)``.
-    """
-
-    face_indices: np.ndarray
-    face_components: np.ndarray
-    outward_normals: np.ndarray
-    surface_areas: np.ndarray
 
 
 def detect_boundary_cells(material_id: np.ndarray) -> np.ndarray:
@@ -72,117 +49,6 @@ def detect_boundary_cells(material_id: np.ndarray) -> np.ndarray:
     boundary[:, :, :-1] |= diff_z
     boundary[:, :, 1:] |= diff_z
     return boundary
-
-
-def extract_pec_surface(
-    grid: GridLines,
-    material_id: np.ndarray,
-    material_library: dict,
-) -> PECSurfaceData:
-    """Extract H-faces on PEC/non-PEC boundaries (staircase approximation).
-
-    For each face between a PEC cell and a non-PEC cell, records the face
-    index, component, outward normal (pointing away from PEC into the
-    non-PEC region), and the staircase face area.
-
-    Parameters
-    ----------
-    grid : GridLines
-        Mesh grid.
-    material_id : np.ndarray
-        Shape ``(Nx, Ny, Nz)``.
-    material_library : dict
-        ``{int: Material}`` mapping.
-
-    Returns
-    -------
-    PECSurfaceData
-    """
-    Nx, Ny, Nz = grid.Nx, grid.Ny, grid.Nz
-    dx, dy, dz = grid.dx, grid.dy, grid.dz
-
-    pec_cells = np.zeros((Nx, Ny, Nz), dtype=bool)
-    for mid, mat in material_library.items():
-        if mat.is_pec:
-            pec_cells |= material_id == mid
-
-    indices: list[int] = []
-    components: list[int] = []
-    normals: list[tuple[float, float, float]] = []
-    areas: list[float] = []
-
-    # --- Hx faces at x-boundaries: shape (Nx+1, Ny, Nz) ---
-    # Interior face at x[i] (i = 1..Nx-1): between cells (i-1,j,k) and (i,j,k)
-    for i in range(1, Nx):
-        diff = pec_cells[i - 1] != pec_cells[i]  # (Ny, Nz)
-        if not diff.any():
-            continue
-        js, ks = np.nonzero(diff)
-        for j, k in zip(js, ks):
-            flat = i * Ny * Nz + j * Nz + k
-            indices.append(flat)
-            components.append(0)  # Hx
-            area = dy[j] * dz[k]
-            areas.append(area)
-            # Normal points from PEC toward non-PEC
-            if pec_cells[i - 1, j, k]:
-                normals.append((1.0, 0.0, 0.0))  # PEC on left → normal +x
-            else:
-                normals.append((-1.0, 0.0, 0.0))  # PEC on right → normal -x
-
-    # --- Hy faces at y-boundaries: shape (Nx, Ny+1, Nz) ---
-    for j in range(1, Ny):
-        diff = pec_cells[:, j - 1, :] != pec_cells[:, j, :]  # (Nx, Nz)
-        if not diff.any():
-            continue
-        i_s, ks = np.nonzero(diff)
-        for i, k in zip(i_s, ks):
-            flat = i * (Ny + 1) * Nz + j * Nz + k
-            indices.append(flat)
-            components.append(1)  # Hy
-            area = dx[i] * dz[k]
-            areas.append(area)
-            if pec_cells[i, j - 1, k]:
-                normals.append((0.0, 1.0, 0.0))
-            else:
-                normals.append((0.0, -1.0, 0.0))
-
-    # --- Hz faces at z-boundaries: shape (Nx, Ny, Nz+1) ---
-    for k in range(1, Nz):
-        diff = pec_cells[:, :, k - 1] != pec_cells[:, :, k]  # (Nx, Ny)
-        if not diff.any():
-            continue
-        i_s, js = np.nonzero(diff)
-        for i, j in zip(i_s, js):
-            flat = i * Ny * (Nz + 1) + j * (Nz + 1) + k
-            indices.append(flat)
-            components.append(2)  # Hz
-            area = dx[i] * dy[j]
-            areas.append(area)
-            if pec_cells[i, j, k - 1]:
-                normals.append((0.0, 0.0, 1.0))
-            else:
-                normals.append((0.0, 0.0, -1.0))
-
-    if not indices:
-        return PECSurfaceData(
-            face_indices=np.empty(0, dtype=int),
-            face_components=np.empty(0, dtype=int),
-            outward_normals=np.empty((0, 3), dtype=float),
-            surface_areas=np.empty(0, dtype=float),
-        )
-
-    return PECSurfaceData(
-        face_indices=np.array(indices, dtype=int),
-        face_components=np.array(components, dtype=int),
-        outward_normals=np.array(normals, dtype=float),
-        surface_areas=np.array(areas, dtype=float),
-    )
-
-
-# ---------------------------------------------------------------------------
-# Thin metallization auto-detection
-# ---------------------------------------------------------------------------
 
 
 @dataclass

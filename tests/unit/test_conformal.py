@@ -9,13 +9,9 @@ unchanged by DD-051.
 
 import numpy as np
 
-from magnelio.materials.material import Material
 from magnelio.mesh._conformal import (
-    PECSurfaceData,
     detect_boundary_cells,
-    extract_pec_surface,
 )
-from magnelio.mesh.grid import GridLines
 
 # ---------------------------------------------------------------------------
 # detect_boundary_cells
@@ -79,93 +75,3 @@ class TestDetectBoundaryCells:
                     mat_id[i, j, k] = (i + j + k) % 2
         boundary = detect_boundary_cells(mat_id)
         assert boundary.all()
-
-
-# ---------------------------------------------------------------------------
-# extract_pec_surface
-# ---------------------------------------------------------------------------
-
-
-class TestExtractPecSurface:
-    @staticmethod
-    def _make_grid(nx, ny, nz, step=1e-3):
-        return GridLines(
-            x=np.linspace(0, nx * step, nx + 1),
-            y=np.linspace(0, ny * step, ny + 1),
-            z=np.linspace(0, nz * step, nz + 1),
-        )
-
-    def test_no_pec_empty_surface(self):
-        grid = self._make_grid(4, 4, 4)
-        mat_id = np.zeros((4, 4, 4), dtype=np.int32)
-        mat_lib = {0: Material.air()}
-        surf = extract_pec_surface(grid, mat_id, mat_lib)
-        assert len(surf.face_indices) == 0
-
-    def test_all_pec_no_boundary(self):
-        grid = self._make_grid(3, 3, 3)
-        pec = Material(name="pec", is_pec=True)
-        mat_id = np.ones((3, 3, 3), dtype=np.int32)
-        mat_lib = {0: Material.air(), 1: pec}
-        surf = extract_pec_surface(grid, mat_id, mat_lib)
-        assert len(surf.face_indices) == 0
-
-    def test_pec_slab_x(self):
-        grid = self._make_grid(4, 2, 2)
-        pec = Material(name="pec", is_pec=True)
-        mat_id = np.zeros((4, 2, 2), dtype=np.int32)
-        mat_id[:2, :, :] = 1
-        mat_lib = {0: Material.air(), 1: pec}
-
-        surf = extract_pec_surface(grid, mat_id, mat_lib)
-        assert len(surf.face_indices) > 0
-        assert np.all(surf.face_components == 0)
-        assert np.all(surf.outward_normals[:, 0] == 1.0)
-        assert np.all(surf.outward_normals[:, 1] == 0.0)
-        assert np.all(surf.outward_normals[:, 2] == 0.0)
-        assert len(surf.face_indices) == 4
-
-    def test_surface_areas_correct(self):
-        grid = GridLines(
-            x=np.array([0.0, 1e-3, 3e-3, 6e-3]),
-            y=np.array([0.0, 2e-3, 5e-3]),
-            z=np.array([0.0, 4e-3]),
-        )
-        pec = Material(name="pec", is_pec=True)
-        mat_id = np.zeros((3, 2, 1), dtype=np.int32)
-        mat_id[0, :, :] = 1
-        mat_lib = {0: Material.air(), 1: pec}
-
-        surf = extract_pec_surface(grid, mat_id, mat_lib)
-        expected_areas = {8e-6, 12e-6}
-        actual_areas = set(np.round(surf.surface_areas, 10))
-        assert actual_areas == expected_areas
-
-    def test_pec_cube_in_center_six_faces(self):
-        grid = self._make_grid(3, 3, 3)
-        pec = Material(name="pec", is_pec=True)
-        mat_id = np.zeros((3, 3, 3), dtype=np.int32)
-        mat_id[1, 1, 1] = 1
-        mat_lib = {0: Material.air(), 1: pec}
-
-        surf = extract_pec_surface(grid, mat_id, mat_lib)
-        assert len(surf.face_indices) == 6
-        unique, counts = np.unique(surf.face_components, return_counts=True)
-        assert set(unique) == {0, 1, 2}
-        assert all(c == 2 for c in counts)
-
-
-# ---------------------------------------------------------------------------
-# PECSurfaceData smoke
-# ---------------------------------------------------------------------------
-
-
-class TestPECSurfaceData:
-    def test_pec_surface_data_empty(self):
-        ps = PECSurfaceData(
-            face_indices=np.empty(0, dtype=int),
-            face_components=np.empty(0, dtype=int),
-            outward_normals=np.empty((0, 3)),
-            surface_areas=np.empty(0),
-        )
-        assert len(ps.face_indices) == 0

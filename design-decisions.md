@@ -22334,3 +22334,82 @@ a run) and is otherwise unchanged, so stores, recipes and the Touchstone
 export are untouched.  The default cap on the continuation is 100× the
 recorded length — generous on purpose, since the case this exists for is
 a run cut short — and the report says when the cap bit.
+
+---
+
+## DD-273 — The surface current is the wall-loss booking, read as a vector
+
+**Date:** 2026-09-09.
+**Status:** Accepted — implemented + gated (`tests/unit/test_surface_current.py`,
+`tests/integration/test_surface_current.py`); measurement record
+`investigations/surface-current/` (internal dossier).
+
+**Problem.**  On a conductor the tangential H at the wall *is* the surface
+current density, `J_s = n × H` — the quantity an antenna's radiator, a
+PCB trace or a filter wall is judged by — and the library could not state
+it.  What existed was `mesh/_conformal.py::PECSurfaceData`, built for
+every conformal mesh and written into every project, **read by nothing**,
+and wrong for the purpose its own docstring advertised: it booked the H
+component *normal* to each wall face, where the formula needs the two
+tangential ones, on an explicit staircase approximation with per-cell
+Python loops.
+
+**Decision.**  A derived view in the spirit of [[DD-259]], on the wall
+enumeration [[DD-087]] already books losses from — no new monitor, no new
+store format.  `enumerate_wall_patches` reads that same enumeration the
+other way round: per wall patch its conformal area, its outward normal,
+and **which sample contributions it booked**.  That last part is the only
+new information: a loss integral asks for the total over all samples and
+does not care which cell a contribution came from, while a current is a
+vector at a place.
+
+Magnitude and direction come from different places, and that is the whole
+design:
+
+- **The magnitude is the loss booking.**  `|J_s|²·A_patch = Σ weight·|H|²`
+  over that patch's samples — the DD-087 integrand, split by patch.  Those
+  weights compensate the deliberate displacement of the sampling faces
+  away from the wall, so the number is the one the loss integral trusts,
+  and `(R_s/2)∮|J_s|²dA` reproduces `MonitorWallLoss` **exactly** rather
+  than approximately (measured on a coax: 0.02 %).
+- **The direction is `n × H`** with the weight-averaged H of the same
+  samples and the patch's own outward normal `−w/‖w‖`, which on a curved
+  conductor is the direction of the sub-cell wall vector and not a
+  staircase axis (measured: radial to 0.99 on a resolved cylinder, where
+  a staircase reads 0.92 at 45°).
+
+Taking the magnitude from a *mean* of samples would be wrong by Jensen
+alone; taking it from a cell-centre average of the neighbouring cell —
+the first thing one writes, and what the spike did — puts the sample half
+a cell off the wall and lost **53 %** of a coax inner conductor's current.
+
+**Accuracy, and where it comes from.**  The current inherits the wall
+sampling: on a coax the inner conductor's total current lands within
+**1.3 %** of `√(P/Z₀)` and the shield within **5.0 %**, and neither is a
+discretisation error that refines away — the DD-098 curvature pullback is
+calibrated on the *quadratic* loss, while the current is linear in H, and
+the residual displacement has opposite sign on a convex and a concave
+wall.  Booked areas are not the cause (0.2 % and 0.8 %).  Shipping at
+that accuracy is deliberate: the distribution — which is what a current
+picture is read for — is far better than its absolute integral, and the
+loss identity, which is what a number is taken from, is exact.
+
+**A port plane is not a wall.**  Where a conductor leaves the model
+through a boundary, that face holds its *cross-section*, and the wall
+booking counts it as surface: +9.5 % on the dissipated power of the coax
+fixture.  It cannot be detected — a port sits on a PEC face and is
+substituted at run time, so it looks exactly like "the domain ends in
+metal" — so the call asks once and `exclude_faces=(...)` or an explicit
+`()` answers.  `MonitorWallLoss` has the same problem and gets the answer
+from the analysis ([[DD-099]]'s `masked_faces`); a container has no
+analysis to ask.
+
+**Consequences.**  `PECSurfaceData` and `extract_pec_surface` are removed
+with their mesh attribute and their store round-trip; a project written
+before this reads unchanged, its `pec_surface` group ignored.  The viewer
+grows a *Surface current* display group — a display group must be
+registered in `_GROUPS` or its actor is built, filled and never shown,
+which is how it failed first.  The field handed to the booking must be
+the solver's grid quantities (`h = H·l_dual`, [[DD-085]]), not the
+physical field: passing the latter multiplies by `1/l_dual` twice and was
+worth a factor 1500 before it was caught.
