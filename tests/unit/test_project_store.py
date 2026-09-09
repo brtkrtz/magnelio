@@ -129,7 +129,6 @@ class TestFullModelRoundTrip:
         # conformal sub-cell data (the interesting part)
         _assert_conformal_equal(mesh.edge_material, p.mesh.edge_material)
         _assert_conformal_equal(mesh.face_material, p.mesh.face_material)
-        _assert_conformal_equal(mesh.pec_surface, p.mesh.pec_surface)
 
         # geometry: shape count, materials, and per-shape bbox
         g = p.geometry

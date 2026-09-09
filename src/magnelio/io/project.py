@@ -29,7 +29,7 @@ Directory layout (the write-once model, plus the ``runs/`` and
   re-meshing, and resume never needs geometry).
 * The mesh HDF5 mirrors the (retired) ``save_project`` mesh schema plus
   the material library and the conformal sub-cell material data
-  (``EdgeMaterialData`` / ``FaceMaterialData`` / ``PECSurfaceData``),
+  (``EdgeMaterialData`` / ``FaceMaterialData``),
   so a loaded mesh is bit-identical to the one that produced it.
 
 See ``PROJECT_STORE_PLAN.md`` for the full plan.
@@ -636,8 +636,6 @@ def _save_mesh(f, mesh) -> None:
         _save_dataclass_arrays(mg.create_group("edge_material"), mesh.edge_material)
     if mesh.face_material is not None:
         _save_dataclass_arrays(mg.create_group("face_material"), mesh.face_material)
-    if mesh.pec_surface is not None:
-        _save_dataclass_arrays(mg.create_group("pec_surface"), mesh.pec_surface)
 
 
 def _load_mesh(f):
@@ -646,7 +644,6 @@ def _load_mesh(f):
         BoundaryConditions,
     )
     from magnelio.geo._subcell import EdgeMaterialData, FaceMaterialData  # noqa: PLC0415
-    from magnelio.mesh._conformal import PECSurfaceData  # noqa: PLC0415
     from magnelio.mesh._planes import GridPlanes  # noqa: PLC0415
     from magnelio.mesh.grid import GridLines  # noqa: PLC0415
     from magnelio.mesh.mesher import Mesh  # noqa: PLC0415
@@ -676,9 +673,8 @@ def _load_mesh(f):
         if "face_material" in mg
         else None
     )
-    pec_surface = (
-        _load_dataclass_arrays(mg["pec_surface"], PECSurfaceData) if "pec_surface" in mg else None
-    )
+    # A store written before DD-273 carries a "pec_surface" group; it
+    # was never read by anything and is ignored here.
     bc_attr = mg.attrs.get("boundary_conditions")
     boundary_conditions = None
     if bc_attr is not None:
@@ -726,7 +722,6 @@ def _load_mesh(f):
         pec_mask_edges=mg["pec_mask_edges"][()],
         edge_material=edge_material,
         face_material=face_material,
-        pec_surface=pec_surface,
         boundary_conditions=boundary_conditions,
         f_max=float(mg.attrs["f_max"]) if "f_max" in mg.attrs else None,
     )

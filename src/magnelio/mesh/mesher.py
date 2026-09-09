@@ -27,7 +27,6 @@ if TYPE_CHECKING:
 
     from magnelio.geo._subcell import EdgeMaterialData, FaceMaterialData
     from magnelio.materials.material import Material
-    from magnelio.mesh._conformal import PECSurfaceData
     from magnelio.mesh._planes import GridPlanes
     from magnelio.mesh.faces import BoxFace
 
@@ -309,7 +308,6 @@ class Mesh:
     pec_mask_edges: np.ndarray  # bool, shape (3, total_edges)
     edge_material: "EdgeMaterialData | None" = None
     face_material: "FaceMaterialData | None" = None
-    pec_surface: "PECSurfaceData | None" = None
     # Design frequency (DD-186): the f_max ``from_geometry`` generated
     # this mesh for; ``None`` on the OCC-free ``from_grid`` path.  The
     # scattering analysis defaults its band to it and warns when asked
@@ -1410,14 +1408,12 @@ class Mesh:
         # Step 3c: Sub-cell classification + conformal mu (DD-051)
         edge_material_data = None
         face_material_data = None
-        pec_surface_data = None
         pec_mask = None
         if control.conformal and _cross_section_cache is not None:
             from magnelio.geo._subcell import (  # noqa: PLC0415
                 compute_subcell_data,
                 compute_subcell_data_mu,
             )
-            from magnelio.mesh._conformal import extract_pec_surface  # noqa: PLC0415
 
             # DD-049 fix: when the geometry's implicit background is PEC,
             # synthesize an explicit bbox-sized PEC brick at the lowest
@@ -1519,12 +1515,6 @@ class Mesh:
                 scale=geo_scale,
             )
 
-            pec_surface_data = extract_pec_surface(
-                grid,
-                material_id,
-                material_library,
-            )
-
             # PEC mask from the sub-cell classifier (no post-hoc correction)
             pec_mask = edge_material_data.pec_mask
 
@@ -1583,7 +1573,6 @@ class Mesh:
             pec_mask_edges=pec_mask,
             edge_material=edge_material_data,
             face_material=face_material_data,
-            pec_surface=pec_surface_data,
             boundary_conditions=boundary_conditions,
             f_max=f_max,
             ports=tuple(getattr(geometry, "ports", ()) or ()),
@@ -1757,7 +1746,6 @@ class Mesh:
             pec_mask_edges=new_mask,
             edge_material=self.edge_material,
             face_material=self.face_material,
-            pec_surface=self.pec_surface,
             f_max=self.f_max,
             boundary_conditions=self.boundary_conditions,
             ports=self.ports,
@@ -1913,7 +1901,6 @@ class Mesh:
             pec_mask_edges=new_mask,
             edge_material=self.edge_material,
             face_material=self.face_material,
-            pec_surface=self.pec_surface,
             f_max=self.f_max,
             boundary_conditions=resolved,
             ports=self.ports,

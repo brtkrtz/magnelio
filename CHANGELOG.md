@@ -51,6 +51,17 @@ major version is 0, minor releases may change the public API.
   decay of a few resonances — a delay line, say — the call says so and
   changes nothing.
 
+- The surface current on a conductor.  `surface_current(mesh)` on a
+  field monitor's recording or spectrum returns `J_s = n × H` [A/m] per
+  wall patch — position, outward normal, conducting area and the vector
+  — and `js.show(geometry)` draws it as arrows over the model, coloured
+  by magnitude.  The magnitude comes from the same booking the wall loss
+  uses, so `power_loss(R_s)` reproduces `MonitorWallLoss` exactly; the
+  direction uses each patch's own normal, which on a curved conductor is
+  the true surface normal rather than a staircase axis.  Where a port
+  sits on a domain face, name it with `exclude_faces=(...)`: that face
+  holds the feed's cross-section, not a wall.
+
 ## [0.8.1] - 2026-09-08
 
 ### Added
