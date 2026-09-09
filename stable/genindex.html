@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="_static/documentation_options.js?v=ec16d22d"></script>
+    <script src="_static/documentation_options.js?v=dbee5847"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/sg-tags.js?v=d80f6fa4"></script>
@@ -928,14 +928,14 @@
 </li>
       <li><a href="api/core.html#magnelio.Material.epsilon">epsilon (magnelio.Material attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/ports.html#magnelio.ports.ModeReport.epsilon_eff">epsilon_eff (magnelio.ports.ModeReport attribute)</a>
 
       <ul>
         <li><a href="api/ports.html#magnelio.ports.PortDispersionReport.epsilon_eff">(magnelio.ports.PortDispersionReport attribute)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/ports.html#magnelio.ports.PortRefinementReport.estimated_error">estimated_error (magnelio.ports.PortRefinementReport property)</a>
 </li>
       <li><a href="api/materials.html#magnelio.materials.DispersionModel.evaluate">evaluate() (magnelio.materials.DispersionModel method)</a>
@@ -971,6 +971,8 @@
       <li><a href="api/io.html#magnelio.io.Project.export_paraview">export_paraview() (magnelio.io.Project method)</a>
 </li>
       <li><a href="api/io.html#magnelio.io.Project.export_paraview_eigenmodes">export_paraview_eigenmodes() (magnelio.io.Project method)</a>
+</li>
+      <li><a href="api/analysis.html#magnelio.analysis.ScatteringTDResult.extrapolate">extrapolate() (magnelio.analysis.ScatteringTDResult method)</a>
 </li>
       <li><a href="api/ports.html#magnelio.ports.PortRefinementReport.extrapolated">extrapolated (magnelio.ports.PortRefinementReport attribute)</a>
 </li>
@@ -1754,8 +1756,6 @@
 </li>
       <li><a href="api/core.html#magnelio.Mesh.pec_mask_edges">pec_mask_edges (magnelio.Mesh attribute)</a>
 </li>
-      <li><a href="api/core.html#magnelio.Mesh.pec_surface">pec_surface (magnelio.Mesh attribute)</a>
-</li>
       <li><a href="api/boundaries.html#magnelio.boundaries.PECBoundary">PECBoundary (class in magnelio.boundaries)</a>
 </li>
       <li><a href="api/boundaries.html#magnelio.boundaries.PeriodicBoundary">PeriodicBoundary (class in magnelio.boundaries)</a>
@@ -1818,6 +1818,12 @@
         <li><a href="api/post.html#magnelio.post.FarFieldResult.plot_3d">(magnelio.post.FarFieldResult method)</a>
 </li>
       </ul></li>
+      <li><a href="api/analysis.html#magnelio.analysis.ScatteringTDResult.plot_balance">plot_balance() (magnelio.analysis.ScatteringTDResult method)</a>
+
+      <ul>
+        <li><a href="api/io.html#magnelio.io.Project.plot_balance">(magnelio.io.Project method)</a>
+</li>
+      </ul></li>
       <li><a href="api/plots.html#magnelio.plots.plot_cross_section">plot_cross_section() (in module magnelio.plots)</a>
 
       <ul>
@@ -1846,14 +1852,20 @@
 </li>
       <li><a href="api/plots.html#magnelio.plots.plot_field_vector">plot_field_vector() (in module magnelio.plots)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/plots.html#magnelio.plots.plot_mesh_section">plot_mesh_section() (in module magnelio.plots)</a>
 </li>
       <li><a href="api/plots.html#magnelio.plots.plot_pattern_3d">plot_pattern_3d() (in module magnelio.plots)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/plots.html#magnelio.plots.plot_pattern_cut">plot_pattern_cut() (in module magnelio.plots)</a>
 </li>
+      <li><a href="api/analysis.html#magnelio.analysis.ScatteringTDResult.plot_polar">plot_polar() (magnelio.analysis.ScatteringTDResult method)</a>
+
+      <ul>
+        <li><a href="api/io.html#magnelio.io.Project.plot_polar">(magnelio.io.Project method)</a>
+</li>
+      </ul></li>
       <li><a href="api/analysis.html#magnelio.analysis.ScatteringTDResult.plot_s">plot_s() (magnelio.analysis.ScatteringTDResult method)</a>
 
       <ul>
@@ -1864,6 +1876,12 @@
 </li>
       <li><a href="api/analysis.html#magnelio.analysis.TDResult.plot_signals">plot_signals() (magnelio.analysis.TDResult method)</a>
 </li>
+      <li><a href="api/analysis.html#magnelio.analysis.ScatteringTDResult.plot_smith">plot_smith() (magnelio.analysis.ScatteringTDResult method)</a>
+
+      <ul>
+        <li><a href="api/io.html#magnelio.io.Project.plot_smith">(magnelio.io.Project method)</a>
+</li>
+      </ul></li>
       <li><a href="api/boundaries.html#magnelio.boundaries.PMCBoundary">PMCBoundary (class in magnelio.boundaries)</a>
 </li>
       <li><a href="api/boundaries.html#magnelio.boundaries.CPMLBoundary.pml_axis_indices">pml_axis_indices (magnelio.boundaries.CPMLBoundary property)</a>
@@ -1953,6 +1971,8 @@
       <li><a href="api/monitors.html#magnelio.monitors.MonitorWallLoss.power_loss">power_loss() (magnelio.monitors.MonitorWallLoss method)</a>
 </li>
       <li><a href="api/ports.html#magnelio.ports.PortOperatorReport.power_wave_full_scale">power_wave_full_scale (magnelio.ports.PortOperatorReport property)</a>
+</li>
+      <li><a href="api/fields.html#magnelio.fields.FieldState.poynting">poynting() (magnelio.fields.FieldState method)</a>
 </li>
       <li><a href="api/io.html#magnelio.io.Project">Project (class in magnelio.io)</a>
 </li>
@@ -2313,6 +2333,8 @@
 </li>
       </ul></li>
       <li><a href="api/geo.html#magnelio.geo.Surface">Surface (class in magnelio.geo)</a>
+</li>
+      <li><a href="api/fields.html#magnelio.fields.FieldState.surface_current">surface_current() (magnelio.fields.FieldState method)</a>
 </li>
       <li><a href="api/post.html#magnelio.post.FarFieldResult.surface_power">surface_power (magnelio.post.FarFieldResult attribute)</a>
 </li>

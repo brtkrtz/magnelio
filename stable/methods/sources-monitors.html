@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=ec16d22d"></script>
+    <script src="../_static/documentation_options.js?v=dbee5847"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -914,6 +914,45 @@ A field assembled by hand or an eigenmode carries no operators and
 says so.  A project store keeps the operators with the monitor, so a
 recording read back in another session states its energy too.</p>
 </section>
+<section id="the-poynting-vector">
+<h3>The Poynting vector<a class="headerlink" href="#the-poynting-vector" title="Link to this heading">#</a></h3>
+<p>Where the flux is a number through a surface, the Poynting vector
+<span class="math notranslate nohighlight">\(\mathbf S = \mathbf E \times \mathbf H\)</span> is the distribution behind
+it: where the power flows, and in which direction.  It needs no
+material operators, only both fields at one and the same point — so
+record <code class="docutils literal notranslate"><span class="pre">fields=[&quot;E&quot;,</span> <span class="pre">&quot;H&quot;]</span></code> and <code class="docutils literal notranslate"><span class="pre">recording.poynting()</span></code> hands out the
+vector on the cell centres, shaped <code class="docutils literal notranslate"><span class="pre">(frames,</span> <span class="pre">nx,</span> <span class="pre">ny,</span> <span class="pre">nz,</span> <span class="pre">3)</span></code>.  The six
+components live on six different Yee positions; the product is formed
+on the cell centres both fields interpolate to, never on the raw
+samples.</p>
+<p>The dtype of the frame decides the reading, as it does for the energy:
+a real frame is an instant of a march and gives the instantaneous power
+density <span class="math notranslate nohighlight">\(\mathbf E(t) \times \mathbf H(t)\)</span>; a complex frame is an RMS
+phasor — what a frequency monitor holds, per 1 W CW — and gives the
+time-averaged density <span class="math notranslate nohighlight">\(\operatorname{Re}(\mathbf E \times \mathbf
+H^*)\)</span>, with no further factor of a half.  Ask for
+<code class="docutils literal notranslate"><span class="pre">poynting(complex_product=True)</span></code> and the full complex product comes
+back instead, its imaginary part the reactive power density of the
+stored near field.  Because the average is the physical quantity, the
+phase of a picture does not act on it: a power density has no instant
+to rotate to.</p>
+<p><code class="docutils literal notranslate"><span class="pre">&quot;S&quot;</span></code> is a component name like <code class="docutils literal notranslate"><span class="pre">&quot;E&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code> — <code class="docutils literal notranslate"><span class="pre">recording.plot(&quot;S&quot;)</span></code>
+draws the flow on a cut, <code class="docutils literal notranslate"><span class="pre">&quot;Sz&quot;</span></code> one signed component, <code class="docutils literal notranslate"><span class="pre">show(&quot;S&quot;)</span></code> puts
+it in the 3D view, and both fields must have been recorded or the call
+says so rather than reading the unrecorded half as zeros.  On a model
+solved behind symmetry planes the vector is a density at a place and
+carries no full-model factor; its normal component is odd across a
+symmetry plane of either kind, which is the statement that no power
+crosses one.</p>
+<p>For the watts through a surface, keep to <code class="docutils literal notranslate"><span class="pre">flux()</span></code>.  It is the exact
+identity on the samples, while summing the vector field over a
+cross-section needs the <em>physical</em> patch of every cell — and that is
+not <span class="math notranslate nohighlight">\(dx\,dy\)</span> at a boundary: at a magnetic wall, a PMC face or a
+magnetic symmetry plane, the wall lies half an outer cell beyond the
+outermost grid line, so a hand-rolled sum is short by that half cell on
+every such face, with nothing to warn you.  With the patches booked the
+two agree to eight digits.</p>
+</section>
 </section>
 <section id="field-flux-and-frequency-monitors">
 <h2>Field, flux and frequency monitors<a class="headerlink" href="#field-flux-and-frequency-monitors" title="Link to this heading">#</a></h2>
@@ -1153,6 +1192,7 @@ ours.  Use <code class="docutils literal notranslate"><span class="pre">paraview
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#impressed-currents-on-a-path">Impressed currents on a path</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#field-containers">Field containers</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#energy-and-flux">Energy and flux</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-poynting-vector">The Poynting vector</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#field-flux-and-frequency-monitors">Field, flux and frequency monitors</a></li>

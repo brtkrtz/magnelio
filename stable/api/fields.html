@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=ec16d22d"></script>
+    <script src="../_static/documentation_options.js?v=dbee5847"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -912,7 +912,9 @@ for one component.</p></li>
 <li><p><strong>frame</strong> (<em>int</em><em>, </em><em>optional</em>) – Frame index (default 0; exclusive with <em>f</em>).</p></li>
 <li><p><strong>phase</strong> (<em>float</em><em>, </em><em>optional</em>) – Instant of the complex pattern in degrees,
 <code class="docutils literal notranslate"><span class="pre">Re(F</span> <span class="pre">·</span> <span class="pre">exp(+j·phase))</span></code>.  Default: the instant of maximum
-energy on the slice (see <a class="reference internal" href="#magnelio.fields.FieldState.plot" title="magnelio.fields.FieldState.plot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">FieldState.plot()</span></code></a>).</p></li>
+energy on the slice (see <a class="reference internal" href="#magnelio.fields.FieldState.plot" title="magnelio.fields.FieldState.plot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">FieldState.plot()</span></code></a>).  It does
+not act on <code class="docutils literal notranslate"><span class="pre">&quot;S&quot;</span></code>: a time-averaged power density has no
+instant.</p></li>
 <li><p><strong>**kwargs</strong> – Passed to <a class="reference internal" href="#magnelio.fields.FieldState.plot" title="magnelio.fields.FieldState.plot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">magnelio.fields.FieldState.plot()</span></code></a>.</p></li>
 </ul>
 </dd>
@@ -1051,7 +1053,9 @@ on one side — the interpolation is continued linearly.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>components</strong> (<em>sequence</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Subset of the six names; default all.</p></li>
+<li><p><strong>components</strong> (<em>sequence</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Subset of the six field names; default all.  <code class="docutils literal notranslate"><span class="pre">&quot;Sx&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&quot;Sy&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Sz&quot;</span></code> are the Poynting vector
+(<a class="reference internal" href="#magnelio.fields.FieldState.poynting" title="magnelio.fields.FieldState.poynting"><code class="xref py py-meth docutils literal notranslate"><span class="pre">poynting()</span></code></a>), derived here from all six.</p></li>
 <li><p><strong>corners</strong> (<em>tuple</em><em> of </em><em>tuple</em><em>, </em><em>optional</em>) – Two opposite corners [m] of a sub-box; default the whole grid.</p></li>
 </ul>
 </dd>
@@ -1174,8 +1178,12 @@ maximum energy on the slice.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>component</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;E&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code> for a vector plot / vector magnitude;
-<code class="docutils literal notranslate"><span class="pre">&quot;Ex&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Hy&quot;</span></code>, … for a single component (scalar only).</p></li>
+<li><p><strong>component</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">&quot;E&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;H&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;S&quot;</span></code> for a vector plot / vector
+magnitude; <code class="docutils literal notranslate"><span class="pre">&quot;Ex&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Hy&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Sz&quot;</span></code>, … for a single
+component (scalar only).  <code class="docutils literal notranslate"><span class="pre">&quot;S&quot;</span></code> is the Poynting vector
+(<a class="reference internal" href="#magnelio.fields.FieldState.poynting" title="magnelio.fields.FieldState.poynting"><code class="xref py py-meth docutils literal notranslate"><span class="pre">poynting()</span></code></a>) — instantaneous for a real field,
+time-averaged for a complex one — and needs all six
+components.</p></li>
 <li><p><strong>normal</strong> (<em>{&quot;x&quot;</em><em>, </em><em>&quot;y&quot;</em><em>, </em><em>&quot;z&quot;}</em><em>, </em><em>optional</em>) – Normal axis of the slice plane; default the thinnest axis.</p></li>
 <li><p><strong>position</strong> (<em>float</em>) – Plane position along <em>normal</em> [m]; snapped to the nearest
 cell-centre plane.</p></li>
@@ -1221,6 +1229,63 @@ cell-centre plane.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="magnelio.fields.FieldState.poynting">
+<span class="sig-name descname"><span class="pre">poynting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corners</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">complex_product</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldState.poynting" title="Link to this definition">#</a></dt>
+<dd><p>The Poynting vector [W/m²] on the cell centres.</p>
+<p><code class="docutils literal notranslate"><span class="pre">E</span> <span class="pre">×</span> <span class="pre">H</span></code> formed on the cell centres both fields interpolate to
+(<a class="reference internal" href="#magnelio.fields.FieldState.cell_centred" title="magnelio.fields.FieldState.cell_centred"><code class="xref py py-meth docutils literal notranslate"><span class="pre">cell_centred()</span></code></a>), so the staggering is honoured and the
+three components of the result live at one point.  Unlike
+<a class="reference internal" href="#magnelio.fields.FieldState.energy" title="magnelio.fields.FieldState.energy"><code class="xref py py-meth docutils literal notranslate"><span class="pre">energy()</span></code></a> and <a class="reference internal" href="#magnelio.fields.FieldState.flux" title="magnelio.fields.FieldState.flux"><code class="xref py py-meth docutils literal notranslate"><span class="pre">flux()</span></code></a> this needs no material
+operators — any field states it.</p>
+<p>A real frame is an instant and gives the instantaneous power
+density.  A complex frame is an RMS phasor — a spectrum’s
+frames per 1 W CW are — and gives the time-averaged density
+<code class="docutils literal notranslate"><span class="pre">Re(E</span> <span class="pre">×</span> <span class="pre">H*)</span></code>, with no further factor of a half, so its
+integral over a cross-section is the transmitted watts.</p>
+<p>For the power through a plane, prefer <a class="reference internal" href="#magnelio.fields.FieldState.flux" title="magnelio.fields.FieldState.flux"><code class="xref py py-meth docutils literal notranslate"><span class="pre">flux()</span></code></a>: that one is
+the exact FIT identity on the samples themselves.  Summing this
+field over a cross-section instead needs the <em>physical</em> patch
+of every cell, which is not <code class="docutils literal notranslate"><span class="pre">dx·dy</span></code> at a boundary: at a
+magnetic wall — a PMC face or a magnetic symmetry plane — the
+wall lies half an outer cell beyond the outermost grid line, so
+a naive sum is short by that half cell on every such face and
+no warning fires.  This method is the spatial distribution —
+where the power flows, not how much crosses a surface.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>corners</strong> (<em>tuple</em><em> of </em><em>tuple</em><em>, </em><em>optional</em>) – Two opposite corners [m] of a sub-box; default the whole
+grid.</p></li>
+<li><p><strong>complex_product</strong> (<em>bool</em><em>, </em><em>default False</em>) – For a complex frame return <code class="docutils literal notranslate"><span class="pre">E</span> <span class="pre">×</span> <span class="pre">H*</span></code> itself instead of its
+real part: the real part is the time-averaged power density
+as before, the imaginary part the reactive power density of
+the stored near field.  Ignored for a real frame.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Shape <code class="docutils literal notranslate"><span class="pre">(nx,</span> <span class="pre">ny,</span> <span class="pre">nz,</span> <span class="pre">3)</span></code> over the box, the trailing axis
+the vector components.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>KeyError</strong> – If the frame comes from a monitor that recorded only some
+    of the six components — a magnetic field of zeros would
+    otherwise read as a vanishing power density.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>In a frame of a march the magnetic samples lead the electric
+ones by half a step, so the instantaneous product carries that
+half step; the time-averaged reading of a spectrum does not.</p>
+<p>This is a density at a place, not a total, so unlike
+<a class="reference internal" href="#magnelio.fields.FieldState.energy" title="magnelio.fields.FieldState.energy"><code class="xref py py-meth docutils literal notranslate"><span class="pre">energy()</span></code></a> and <a class="reference internal" href="#magnelio.fields.FieldState.flux" title="magnelio.fields.FieldState.flux"><code class="xref py py-meth docutils literal notranslate"><span class="pre">flux()</span></code></a> it carries no full-model factor
+on a symmetry-reduced model: the values are the model’s own,
+and the pictures continue them across the planes.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="magnelio.fields.FieldState.real">
 <span class="sig-name descname"><span class="pre">real</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldState.real" title="Link to this definition">#</a></dt>
 <dd><p>The real part (the field of a complex mode at its zero-phase instant).</p>
@@ -1256,6 +1321,40 @@ group, walked through the volume by the position slider.  See
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>component</strong> (<em>str</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.fields.FieldState.surface_current">
+<span class="sig-name descname"><span class="pre">surface_current</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_faces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldState.surface_current" title="Link to this definition">#</a></dt>
+<dd><p>The conductor’s surface current <code class="docutils literal notranslate"><span class="pre">J_s</span> <span class="pre">=</span> <span class="pre">n</span> <span class="pre">×</span> <span class="pre">H</span></code> [A/m].</p>
+<p>One value per wall patch of <em>mesh</em>: the magnitude from the
+booking the wall loss uses — so <code class="docutils literal notranslate"><span class="pre">power_loss()</span></code> reproduces
+<a class="reference internal" href="monitors.html#magnelio.monitors.MonitorWallLoss" title="magnelio.monitors.MonitorWallLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonitorWallLoss</span></code></a> — and the direction
+from <code class="docutils literal notranslate"><span class="pre">n</span> <span class="pre">×</span> <span class="pre">H</span></code> with the patch’s own outward normal, which on a
+curved conductor is the true surface normal and not a staircase
+axis.</p>
+<p>The field must carry all three magnetic components over the
+<strong>whole</strong> grid of <em>mesh</em>; a monitor cut to a box cannot state a
+current on patches it does not cover, and says so.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> (<a class="reference internal" href="core.html#magnelio.Mesh" title="magnelio.Mesh"><em>Mesh</em></a>)</p></li>
+<li><p><strong>tag</strong> (<em>optional</em>) – Restrict to one conductor (material id, or a boundary face
+name such as <code class="docutils literal notranslate"><span class="pre">&quot;zmin&quot;</span></code>).</p></li>
+<li><p><strong>exclude_faces</strong> (<em>tuple</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Domain boundary faces whose conductor coverage is not a
+wall — a port plane, where the feed’s cross-section shows
+and the structure continues through the face.  Left unset
+on a model whose conductor reaches a boundary, the call
+asks once which faces those are; <code class="docutils literal notranslate"><span class="pre">()</span></code> answers “none”.</p></li>
+<li><p><strong>**kwargs</strong> – Passed to the wall enumeration — <code class="docutils literal notranslate"><span class="pre">bc_pec_faces=(&quot;zmin&quot;,)</span></code>
+to include a PEC boundary wall.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SurfaceCurrent</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1596,9 +1695,11 @@ component is read on the time base it was sampled on.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.mirrored"><code class="docutils literal notranslate"><span class="pre">FieldState.mirrored()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.plot"><code class="docutils literal notranslate"><span class="pre">FieldState.plot()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.positions"><code class="docutils literal notranslate"><span class="pre">FieldState.positions()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.poynting"><code class="docutils literal notranslate"><span class="pre">FieldState.poynting()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.real"><code class="docutils literal notranslate"><span class="pre">FieldState.real()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.scaled"><code class="docutils literal notranslate"><span class="pre">FieldState.scaled()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.show"><code class="docutils literal notranslate"><span class="pre">FieldState.show()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.surface_current"><code class="docutils literal notranslate"><span class="pre">FieldState.surface_current()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.Ex"><code class="docutils literal notranslate"><span class="pre">FieldState.Ex</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.Ey"><code class="docutils literal notranslate"><span class="pre">FieldState.Ey</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.Ez"><code class="docutils literal notranslate"><span class="pre">FieldState.Ez</span></code></a></li>
