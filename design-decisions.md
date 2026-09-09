@@ -22150,3 +22150,76 @@ carries a builder the store cannot rebuild, the same rule
 `SourceCurrentPath` uses), old files load unchanged.  Both plots draw the
 path rather than the chord.  `PortOperatorLumped.direction` reports
 `"path"` for a chain that is not axis-parallel.
+
+---
+
+## DD-270 — The Poynting vector is a derived view, and its integral is not a naive sum
+
+**Date:** 2026-09-08.
+**Status:** Accepted — implemented + gated (`tests/unit/test_field_poynting.py`,
+`tests/integration/test_recording_poynting.py`); probe record
+`investigations/poynting-vector/` (internal dossier).
+
+**Problem.**  The library could state the Poynting *flux* twice — as
+`MonitorFluxTime` during a march and as `flux()` on any recorded frame
+([[DD-260]]) — but both are a single number through a cross-section.  The
+distribution behind that number, where the power actually flows through a
+coupler, out of an antenna, or into a lossy wall, had no name at all.
+
+**Decision.**  `S = E × H` joins the containers as a derived view, in the
+spirit of [[DD-259]]: monitors keep storing the grid quantities and nothing
+is added to a store.  `poynting()` on `FieldState`, `FieldRecording` and
+`FieldSpectrum` returns the vector on the cell centres, trailing axis the
+three components; `"S"`, `"Sx"`, `"Sy"`, `"Sz"` join the component
+vocabulary, so `plot("S")`, `show("S")` and the 3D viewer's component menu
+carry it without a new monitor type, a new format or a schema bump.  A
+`MonitorPoynting` that accumulates `E × H` in the solver was considered and
+rejected: everything it could offer except a broadband DC average follows
+from `fields=["E", "H"]` at access time, and that average has no user yet.
+
+Four properties fix the semantics:
+
+- **The dtype decides the reading.**  A real frame gives the instantaneous
+  density; a complex frame is an RMS phasor (a spectrum per 1 W CW) and
+  gives the time average `Re(E × H*)`, with no further half —
+  the same convention `energy()` and `flux()` already read.
+  `complex_product=True` returns `E × H*` itself, its imaginary part the
+  reactive density.
+- **The average has no instant.**  A power density is real already, so the
+  phase of a picture must not act on it.  Two paths had to be corrected for
+  this: the series plot rotated the phasors *before* deriving (it now takes
+  the frame itself for an `S` component), and the viewer's `_instant`
+  multiplied by `Re(e^{jφ})` on the strength of the *series'* complex flag,
+  which would have scaled a real density by `cos φ`; it now decides per
+  array.
+- **Half a field is an error, not a zero.**  A frame of a monitor that
+  recorded only `E` carries zeros for `H` ([[DD-259]]), which would read as
+  a vanishing power density.  `FieldState` therefore carries the recorded
+  names (`_recorded`) and the derivation refuses; a field assembled by hand
+  or an eigenmode records nothing and answers for all six.
+- **Its parity across a symmetry plane is the product of the two field
+  parities**, which comes out the same on an electric and on a magnetic
+  wall: normal component odd, tangential even.  That is the statement that
+  no power crosses a symmetry plane, and it is gated against the `E`/`H`
+  rules rather than restated.  The 3D viewer never needs it — it mirrors
+  the fields first and derives afterwards.
+
+**The measurement.**  On a matched parallel-plate TEM line the integral of
+the derived vector over a cross-section agrees with the `flux()` identity to
+**1·10⁻⁸** — but only once the boundary cells are booked.  Taken naively as
+`Σ S·dx·dy` it comes out **13.3 % low**, the same factor at 6 and at 9 GHz:
+the PMC walls sit half an outer cell beyond the outermost grid line
+([[DD-085]]'s flux booking), so the cell-centre areas span 8.667 mm of a
+10 mm section.  A frequency-independent deficit is bookkeeping, never
+numerics.  The docstring and `docs/methods/sources-monitors.md` therefore
+send anyone who wants watts to `flux()` and name the trap; the integration
+test pins both the agreement and the naive shortfall.
+
+**Consequences.**  `cell_centred`, `cell_centred_layer` and
+`FieldState.plot` resolve the new names centrally, so the 2D pictures, the
+3D viewer, and anything that asks a container for components speak `S`
+without further wiring.  A unit is attached where the viewer shows one
+(`W/m²`, and `W/m² per W` for a frequency frame — a power density is
+quadratic in the fields, so a per-1-W-CW pattern is not "per √W").  No
+public data changes: an old store, an old recipe and an old result read
+exactly as before.

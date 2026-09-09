@@ -29,7 +29,7 @@ from magnelio.monitors.base import (
     resolve_plane_view,
 )
 
-_GROUPS = ("E", "H")
+_GROUPS = ("E", "H", "S")
 
 
 def region_of_grid(grid) -> MonitorRegion:
@@ -154,16 +154,24 @@ class SeriesView:
         return {c: at_phase(a, phase) for c, a in raw.items()}
 
     def _comps(self, component: str) -> list[str]:
+        from magnelio.fields._poynting import (  # noqa: PLC0415
+            COMPONENTS as _S_COMPONENTS,
+        )
+        from magnelio.fields._poynting import check_available  # noqa: PLC0415
+
+        recorded = list(self.series.components)
+        if component == "S" or component in _S_COMPONENTS:
+            # Derived from all six, so the request stands or falls with
+            # both fields having been recorded.
+            check_available(recorded)
+            return list(_S_COMPONENTS) if component == "S" else [component]
         if component in _GROUPS:
-            recorded = list(self.series.components)
             comps = [f"{component}{a}" for a in _AXES if f"{component}{a}" in recorded]
             if not comps:
                 raise KeyError(f"no {component} component recorded; recorded: {recorded}")
             return comps
-        if component not in self.series.components:
-            raise KeyError(
-                f"component {component!r} not recorded; recorded: {list(self.series.components)}"
-            )
+        if component not in recorded:
+            raise KeyError(f"component {component!r} not recorded; recorded: {recorded}")
         return [component]
 
     def overlay(self, geometry, pv: PlaneView):
@@ -228,6 +236,10 @@ def plot_frame(
     plane selected with *normal* and *position*.  Complex series (a
     spectrum) are drawn at *phase* — component plots as
     ``Re(F·exp(+j·phase))``, group magnitudes as the envelope.
+
+    ``"S"`` and ``"Sx"``/``"Sy"``/``"Sz"`` are the Poynting vector,
+    derived from the six recorded components; being a power density it
+    is real already, so *phase* does not act on it (DD-270).
     """
     s = view.series
     region = view.region
@@ -283,7 +295,8 @@ def plot_frame(
             c1,
             [(u_arr, group, i0), (v_arr, group, i1), (w_arr, group, pv.normal_idx)],
         )
-        title = f"{view.name} — {group}-field, {view.label(index)}"
+        what = "Poynting vector" if group == "S" else f"{group}-field"
+        title = f"{view.name} — {what}, {view.label(index)}"
         if kind == "frequency" and phase:
             title += f", phase={phase:.0f}°"
         return plot_field_vector(

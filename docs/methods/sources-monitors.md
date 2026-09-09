@@ -364,6 +364,48 @@ A field assembled by hand or an eigenmode carries no operators and
 says so.  A project store keeps the operators with the monitor, so a
 recording read back in another session states its energy too.
 
+### The Poynting vector
+
+Where the flux is a number through a surface, the Poynting vector
+$\mathbf S = \mathbf E \times \mathbf H$ is the distribution behind
+it: where the power flows, and in which direction.  It needs no
+material operators, only both fields at one and the same point — so
+record `fields=["E", "H"]` and `recording.poynting()` hands out the
+vector on the cell centres, shaped `(frames, nx, ny, nz, 3)`.  The six
+components live on six different Yee positions; the product is formed
+on the cell centres both fields interpolate to, never on the raw
+samples.
+
+The dtype of the frame decides the reading, as it does for the energy:
+a real frame is an instant of a march and gives the instantaneous power
+density $\mathbf E(t) \times \mathbf H(t)$; a complex frame is an RMS
+phasor — what a frequency monitor holds, per 1 W CW — and gives the
+time-averaged density $\operatorname{Re}(\mathbf E \times \mathbf
+H^*)$, with no further factor of a half.  Ask for
+`poynting(complex_product=True)` and the full complex product comes
+back instead, its imaginary part the reactive power density of the
+stored near field.  Because the average is the physical quantity, the
+phase of a picture does not act on it: a power density has no instant
+to rotate to.
+
+`"S"` is a component name like `"E"` and `"H"` — `recording.plot("S")`
+draws the flow on a cut, `"Sz"` one signed component, `show("S")` puts
+it in the 3D view, and both fields must have been recorded or the call
+says so rather than reading the unrecorded half as zeros.  On a model
+solved behind symmetry planes the vector is a density at a place and
+carries no full-model factor; its normal component is odd across a
+symmetry plane of either kind, which is the statement that no power
+crosses one.
+
+For the watts through a surface, keep to `flux()`.  It is the exact
+identity on the samples, while summing the vector field over a
+cross-section needs the *physical* patch of every cell — and that is
+not $dx\,dy$ at a boundary: at a magnetic wall, a PMC face or a
+magnetic symmetry plane, the wall lies half an outer cell beyond the
+outermost grid line, so a hand-rolled sum is short by that half cell on
+every such face, with nothing to warn you.  With the patches booked the
+two agree to eight digits.
+
 ## Field, flux and frequency monitors
 
 - **MonitorFieldTime** — time snapshots of E/H in a region, streamed

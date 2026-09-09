@@ -97,5 +97,5 @@ class TestEigenmodePlot:
             uniform_result.plot(mode=0, component="Q", normal="y")
 
     def test_vector_rejects_single_component(self, uniform_result):
-        with pytest.raises(ValueError, match="component='E' or 'H'"):
+        with pytest.raises(ValueError, match="component='E', 'H' or 'S'"):
             uniform_result.plot(mode=0, component="Ex", normal="y", plot_type="vector")

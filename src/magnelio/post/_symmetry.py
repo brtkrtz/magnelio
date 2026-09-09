@@ -76,10 +76,17 @@ def mirror_sign(field: str, comp_axis: int | None, mirror_axis: int, kind: str) 
     pseudovector (normal even, tangential odd); across an electric
     (PEC) plane the roles swap.  Magnitudes (``comp_axis=None``) are
     always even.
+
+    The Poynting vector ``S = E × H`` inherits the product of the two
+    signs, which comes out the same on either kind of plane: its normal
+    component is odd — no power crosses a symmetry plane — and its
+    tangential components are even (DD-270).
     """
     if comp_axis is None:
         return 1.0
     is_normal = comp_axis == mirror_axis
+    if field == "S":
+        return -1.0 if is_normal else 1.0
     flips_normal = (kind == "PMC") if field == "E" else (kind == "PEC")
     return -1.0 if is_normal == flips_normal else 1.0
 
