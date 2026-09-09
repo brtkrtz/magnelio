@@ -22,6 +22,56 @@ wall areas on curved conductors (removing the $4/\pi$ staircase
 over-count) and a conformal tangential-H sampling rule
 (uncut-face booking with a normal-direction walk).
 
+## The surface current
+
+On a conductor the tangential magnetic field at the wall *is* the
+surface current density, $\mathbf J_s = \mathbf n \times \mathbf H$
+[A/m], with $\mathbf n$ the outward normal.  The normal component of H
+vanishes there, so the cross product with the full vector is the same
+thing as with its tangential part, and $|\mathbf J_s| = |H_\text{tan}|$.
+
+`recording.surface_current(mesh)` — on a field monitor's recording or
+spectrum, or on a single `FieldState` — returns one value per wall patch
+of the mesh: its position, its outward normal, its conducting area and
+the current on it.  The field must carry all three magnetic components
+over the whole grid (`fields=["H"]`, no `corners`), because a patch the
+monitor does not cover has no current to state.
+
+The patches are the same enumeration the wall loss is booked from, which
+is what makes the two consistent.  The **magnitude** is that booking
+split by patch — $|\mathbf J_s|^2 A = \sum w |H|^2$ over the samples the
+patch booked — so `power_loss(R_s)` reproduces `MonitorWallLoss`
+exactly, not approximately.  The **direction** is $\mathbf n \times
+\mathbf H$ with the weight-averaged H of those samples and the patch's
+own normal, which on a curved conductor is the direction of the sub-cell
+wall vector rather than a staircase axis.
+
+Two things to know before reading numbers off it.
+
+**The absolute current is as accurate as the wall sampling**, which is
+calibrated on the loss.  The wall samples sit a small step off the
+surface and their weights (with the curvature pullback) compensate that
+for $|H|^2$; the current is linear in H, and the residual displacement
+has opposite sign on a convex and a concave wall.  Measured on an air
+coax: the inner conductor's total current lands within 1.3 % of
+$\sqrt{P/Z_0}$ and the shield within 5.0 %, and neither refines away.
+The *distribution* — where the current runs, and how it crowds at an
+edge — is far better resolved than that integral, and it is what a
+current picture is read for.
+
+**A port plane is not a wall.**  Where a conductor leaves the model
+through a boundary, that face holds the feed's cross-section: the
+structure continues through it, and counting it as surface overstates
+both current and loss (9.5 % on the coax above).  The mesh cannot tell
+that face from one where the domain simply ends inside metal — a port
+sits on a PEC face and is substituted at run time — so the call asks
+once, and `exclude_faces=("zmin", "zmax")` names the port planes while
+`exclude_faces=()` says there are none.
+
+`js.show(geometry)` draws it: one arrow per patch over the model,
+coloured by $|\mathbf J_s|$, with `density=` thinning a fine mesh out so
+the arrows stay readable.
+
 ## Surface roughness
 
 Roughness enters the perturbative chain as one real,

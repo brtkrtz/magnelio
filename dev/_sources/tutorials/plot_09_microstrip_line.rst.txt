@@ -707,7 +707,7 @@ resistor.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 6.834 seconds)
+   **Total running time of the script:** (0 minutes 5.663 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_09_microstrip_line.py:

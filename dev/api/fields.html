@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=efa5400a"></script>
+    <script src="../_static/documentation_options.js?v=33440781"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/sg-tags.js?v=d80f6fa4"></script>
@@ -1325,6 +1325,40 @@ group, walked through the volume by the position slider.  See
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="magnelio.fields.FieldState.surface_current">
+<span class="sig-name descname"><span class="pre">surface_current</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_faces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#magnelio.fields.FieldState.surface_current" title="Link to this definition">#</a></dt>
+<dd><p>The conductor’s surface current <code class="docutils literal notranslate"><span class="pre">J_s</span> <span class="pre">=</span> <span class="pre">n</span> <span class="pre">×</span> <span class="pre">H</span></code> [A/m].</p>
+<p>One value per wall patch of <em>mesh</em>: the magnitude from the
+booking the wall loss uses — so <code class="docutils literal notranslate"><span class="pre">power_loss()</span></code> reproduces
+<a class="reference internal" href="monitors.html#magnelio.monitors.MonitorWallLoss" title="magnelio.monitors.MonitorWallLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonitorWallLoss</span></code></a> — and the direction
+from <code class="docutils literal notranslate"><span class="pre">n</span> <span class="pre">×</span> <span class="pre">H</span></code> with the patch’s own outward normal, which on a
+curved conductor is the true surface normal and not a staircase
+axis.</p>
+<p>The field must carry all three magnetic components over the
+<strong>whole</strong> grid of <em>mesh</em>; a monitor cut to a box cannot state a
+current on patches it does not cover, and says so.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> (<a class="reference internal" href="core.html#magnelio.Mesh" title="magnelio.Mesh"><em>Mesh</em></a>)</p></li>
+<li><p><strong>tag</strong> (<em>optional</em>) – Restrict to one conductor (material id, or a boundary face
+name such as <code class="docutils literal notranslate"><span class="pre">&quot;zmin&quot;</span></code>).</p></li>
+<li><p><strong>exclude_faces</strong> (<em>tuple</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Domain boundary faces whose conductor coverage is not a
+wall — a port plane, where the feed’s cross-section shows
+and the structure continues through the face.  Left unset
+on a model whose conductor reaches a boundary, the call
+asks once which faces those are; <code class="docutils literal notranslate"><span class="pre">()</span></code> answers “none”.</p></li>
+<li><p><strong>**kwargs</strong> – Passed to the wall enumeration — <code class="docutils literal notranslate"><span class="pre">bc_pec_faces=(&quot;zmin&quot;,)</span></code>
+to include a PEC boundary wall.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SurfaceCurrent</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="magnelio.fields.FieldState.Ex">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">Ex</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><span class="pre">ndarray</span></a></span><a class="headerlink" href="#magnelio.fields.FieldState.Ex" title="Link to this definition">#</a></dt>
@@ -1665,6 +1699,7 @@ component is read on the time base it was sampled on.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.real"><code class="docutils literal notranslate"><span class="pre">FieldState.real()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.scaled"><code class="docutils literal notranslate"><span class="pre">FieldState.scaled()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.show"><code class="docutils literal notranslate"><span class="pre">FieldState.show()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.surface_current"><code class="docutils literal notranslate"><span class="pre">FieldState.surface_current()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.Ex"><code class="docutils literal notranslate"><span class="pre">FieldState.Ex</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.Ey"><code class="docutils literal notranslate"><span class="pre">FieldState.Ey</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#magnelio.fields.FieldState.Ez"><code class="docutils literal notranslate"><span class="pre">FieldState.Ez</span></code></a></li>
