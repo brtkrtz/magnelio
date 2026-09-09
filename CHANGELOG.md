@@ -27,7 +27,19 @@ major version is 0, minor releases may change the public API.
   recorded.  For the watts through a surface keep to `flux()`, which is
   exact on the samples; the guide explains why a hand-rolled sum over
   the vector field is short by half a boundary cell at a magnetic wall.
+- Three more pictures of an S-matrix, on every result that answers
+  `plot_s`.  `plot_balance()` sums |S|² over the observed channels for
+  each excitation — one on a lossless network, and what is missing is
+  what left the ports; `deficit=True` plots exactly that in dB, which
+  is an antenna's radiated power and a closed structure's convergence
+  check.  `plot_smith()` traces the reflection channels on a Smith
+  chart (and says so when a channel's reference impedance moves with
+  frequency, where the chart's circles hold at no one normalisation),
+  `plot_polar()` the same trajectory without the impedance grid, for
+  transmission.  All three take `mark=[f, …]` to label frequencies on a
+  trace.
 
+## [0.8.1] - 2026-09-08
 ## [0.8.1] - 2026-09-08
 
 ### Added

@@ -416,6 +416,45 @@ Excitation amplitudes are pinned to physical units at the source
 (C = 1 convention, DD-085), so recorded V/I and monitor fields are in
 SI units — an in-house calibration convention.
 
+### Reading an S-matrix
+
+Three pictures beyond the magnitude over frequency, each answering a
+different question about the same matrix.
+
+`plot_balance()` sums $\sum_i |S_{ij}|^2$ over the observed channels
+for every excitation $j$: the share of the incident power that comes
+back out of the ports.  On a lossless, fully exported network it is
+one, and what is missing left the ports — as ohmic and dielectric
+loss, or as radiation.  It is therefore two instruments at once.  On a
+closed structure it is a **convergence check**: a balance that misses
+one by a part in a thousand is telling you about the mesh, the port
+floor, or a run cut short, not about physics.  On an antenna it is the
+**radiated power**, and `deficit=True` plots exactly that, in dB.
+
+Two things it cannot check for you.  Only channels present in the
+result are summed, so a network whose higher modes were not all
+exported reads short and its deficit looks like loss; `is_complete`
+says whether every observed channel was also excited.  And a channel
+below its cut-on is `NaN` — an evanescent channel carries no active
+power, so it counts as zero rather than poisoning the sum.
+
+`plot_smith()` traces the reflection channels on a Smith chart, where
+the impedance is readable off the circles of constant normalised
+resistance and reactance and a matched frequency sits at the centre.
+The chart holds against **one** normalisation.  A dispersive
+waveguide mode's reference impedance moves with frequency, so its
+circles hold nowhere in particular; call `renormalize(50)` first, and
+a warning says so when you have not.
+
+`plot_polar()` is the same trajectory without the impedance grid, for
+the channels a Smith chart does not describe — transmission above all,
+whose magnitude is not bounded by one.
+
+All three take the same channel arguments as `plot_s` and accept
+`ax=` to compose a figure; `mark=[f1, f2, …]` puts labelled dots on the
+named frequencies of a trace, which is how a resonance or a band edge
+gets pointed at.
+
 ### Band ports: one decomposition per frequency (DD-235)
 
 A band-subspace port does not record modal amplitudes whose
