@@ -22265,3 +22265,72 @@ Three judgements are worth recording:
 **Consequences.**  No data changes and no new dependency; matplotlib was
 already required for `plot_s`.  `plot_polar` refuses a Cartesian axes
 rather than drawing a wrong picture into it.
+## DD-272 — A truncated record is continued by its own poles, never automatically
+
+**Date:** 2026-09-09.
+**Status:** Accepted — implemented + gated (`tests/unit/test_extrapolate_decay.py`,
+`tests/integration/test_extrapolate_decay.py`); measurement record
+`investigations/extrapolate-decay/` (internal dossier).
+
+**Problem.**  A march has to stop somewhere.  On a high-Q structure what
+it leaves behind is a record still ringing at the last step, and the DFT
+reads that edge as content: truncation ripple over every S-parameter.
+The library could *warn* about this ([[DD-233]]'s
+`_warn_on_truncated_band_record`) and could spend more steps on it
+(`energy_stop_db`, `port_signal_stop_db`), but a cavity whose decay time
+is thirty times the affordable march cannot be waited out at any price.
+
+**Decision.**  `ScatteringTDResult.extrapolate()` fits the free decay
+with a matrix pencil and continues the *records*, then recomputes the
+S-matrix through the unchanged pipeline.  Four choices carry the design:
+
+- **Continue the records, not the spectrum.**  Extending V(t) and I(t)
+  and handing them back to `_s_params_on` keeps every downstream
+  subtlety — the discrete de-stagger ([[DD-063]]), the per-frequency
+  band decomposition ([[DD-235]]), the reference impedances
+  ([[DD-244]]) — instead of duplicating the DFT convention next to it.
+  A(f) is unaffected: past the excitation the record is all outgoing.
+- **One pole set per excitation, fitted jointly.**  Every channel sees
+  the same structure's resonances through a different port, so the
+  Hankel blocks of all its records are stacked and the pencil solved
+  once.  Fitting V and I of one channel separately would let the
+  power-wave split be formed from two different structures.
+- **The quality number is out-of-sample.**  A Prony model reproduces
+  the samples it was fitted to almost by construction.  The report
+  therefore fits on the first half of the fit window and measures
+  against the recorded second half; above `0.3` the call warns that it
+  is describing noise or a delay line rather than resonances.
+- **Nothing is automatic.**  An extrapolated resonance mistaken for a
+  measured one is precisely what the truncation warning exists to
+  prevent, so the warning now names the method and the method stays a
+  deliberate call.
+
+**The measurement.**  An iris-coupled WR-90 cavity fed through a slot
+far below cut-off is lossless with one port, so `|S11| = 1` exactly — an
+exact reference needing no reference run.  Against it:
+
+| march | raw max ‖S11|−1| | extrapolated | residual |
+| --- | --- | --- | --- |
+| 3.05 ns | 0.1453 | 0.0102 | 3.2e-2 |
+| 9.14 ns | 0.4864 | 0.0073 | 9.8e-3 |
+| 30.5 ns | 0.6929 | 0.0048 | 4.2e-3 |
+
+**144× at the longest march**, and the fit names the trapped mode
+(8.887 GHz, τ = 29.7 ns) that a 9 ns march could not wait out.  Note the
+raw column: the defect *grows* with the length of the march, because a
+short run has barely filled the cavity yet.  Truncation error is not
+monotone in run length, which is why "run longer and see if it moves"
+is a poor convergence test on a high-Q structure.
+
+**Where it fails, it fails loudly.**  On a shorted TEM line — a delay
+system, whose `e^{-2jβL}` has infinitely many poles and whose record is
+a train of echoes — the residual comes out at 1.00, the continuation
+decays inside 0.05 ns, and the S-parameters do not move.  A failed fit
+leaves the result alone rather than corrupting it.
+
+**Consequences.**  A new private module `post/_extrapolate.py`; the
+result grows an `extrapolation` field (`None` on a result straight from
+a run) and is otherwise unchanged, so stores, recipes and the Touchstone
+export are untouched.  The default cap on the continuation is 100× the
+recorded length — generous on purpose, since the case this exists for is
+a run cut short — and the report says when the cap bit.
