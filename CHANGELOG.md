@@ -7,7 +7,7 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  While the
 major version is 0, minor releases may change the public API.
 
-## [Unreleased]
+## [0.8.2] - 2026-09-09
 
 ### Added
 
@@ -61,6 +61,16 @@ major version is 0, minor releases may change the public API.
   the true surface normal rather than a staircase axis.  Where a port
   sits on a domain face, name it with `exclude_faces=(...)`: that face
   holds the feed's cross-section, not a wall.
+
+### Removed
+
+- `Mesh.pec_surface` and the `PECSurfaceData` structure behind it.  It
+  was built for every conformal mesh and written into every project
+  store, and nothing ever read it; for the one purpose its own
+  documentation named — surface currents — it booked the magnetic
+  component *normal* to a wall face, where `J_s = n × H` needs the two
+  tangential ones.  The surface current above replaces it.  Projects
+  written earlier load unchanged.
 
 ## [0.8.1] - 2026-09-08
 
