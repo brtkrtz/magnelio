@@ -122,30 +122,11 @@ standing up from the broad wall of the collinear guide.
 
 
 
+.. image-sg:: /tutorials/images/sphx_glr_plot_06_field_monitors_001.png
+   :alt: plot 06 field monitors
+   :srcset: /tutorials/images/sphx_glr_plot_06_field_monitors_001.png
+   :class: sphx-glr-single-img
 
-
-
-.. tab-set::
-
-
-
-   .. tab-item:: Static Scene
-
-
-
-            
-     .. image-sg:: /tutorials/images/sphx_glr_plot_06_field_monitors_001.png
-        :alt: plot 06 field monitors
-        :srcset: /tutorials/images/sphx_glr_plot_06_field_monitors_001.png
-        :class: sphx-glr-single-img
-     
-
-
-   .. tab-item:: Interactive Scene
-
-
-
-       .. offlineviewer:: /home/runner/work/magnelio/magnelio/docs/tutorials/images/sphx_glr_plot_06_field_monitors_001.vtksz
 
 
 
@@ -493,8 +474,8 @@ the two curves that carry the actual splitting into one line.
 
  .. code-block:: none
 
-    max |S13 - S23| (equal split):   1.0e-08
-    max |S43| (E-arm isolation):    -158.6 dB
+    max |S13 - S23| (equal split):   9.5e-09
+    max |S43| (E-arm isolation):    -165.3 dB
 
 
 
@@ -569,8 +550,8 @@ counterpart of the H-arm's symmetric one:
 
  .. code-block:: none
 
-    max |S14 + S24| (anti-phase split): 1.4e-08
-    max |S34| (H-arm isolation):       -161.1 dB
+    max |S14 + S24| (anti-phase split): 7.4e-09
+    max |S34| (H-arm isolation):       -162.0 dB
 
 
 
@@ -604,7 +585,7 @@ results reopen after a restart, and the fields go to ParaView.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 11.538 seconds)
+   **Total running time of the script:** (0 minutes 12.805 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_06_field_monitors.py:

@@ -31,7 +31,7 @@
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=fd6457a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=c83e6b79" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
     <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
@@ -581,7 +581,7 @@ declared features, and — with a mesh — the FIT grid.  The same call
 serves three situations:</p>
 <ul class="simple">
 <li><p>in a <strong>Jupyter notebook</strong> it is a widget, rendered in the browser;</p></li>
-<li><p>in a <strong>script</strong> it opens a window;</p></li>
+<li><p>in a <strong>script</strong> it opens the full viewer in the system browser;</p></li>
 <li><p>in a <strong>documentation build</strong> it becomes a figure with two tabs: a
 screenshot, and the same scene as a rotatable view in the browser
 (this is how the 3D figures in the tutorials are made).  The browser
@@ -591,6 +591,22 @@ tab has no toolbar — the cutting plane stays where the script put it.</p></li>
 <span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">cut</span><span class="o">=</span><span class="p">(</span><span class="s2">"y"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>         <span class="c1"># opened along y = 0, grid cells on the cut</span>
 </pre></div>
 </div>
+<p>An editor REPL can run an IPython kernel without implementing Jupyter’s
+widget display.  Magnelio recognises Zed’s REPL and opens the browser
+automatically.  For another editor that only prints <code class="docutils literal notranslate"><span class="pre">VBox()</span></code>, select the
+browser once for that Python process; every later <code class="docutils literal notranslate"><span class="pre">show()</span></code> uses it:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">magnelio</span><span class="w"> </span><span class="kn">import</span> <span class="n">plots</span>
+
+<span class="n">plots</span><span class="o">.</span><span class="n">configure_viewer</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="s2">"browser"</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The destination can also be selected for one call with
+<code class="docutils literal notranslate"><span class="pre">model.show(target=&quot;browser&quot;)</span></code>.  Use <code class="docutils literal notranslate"><span class="pre">target=&quot;inline&quot;</span></code> for the Jupyter
+widget and <code class="docutils literal notranslate"><span class="pre">target=&quot;native&quot;</span></code> for PyVista’s native VTK window.  The default
+<code class="docutils literal notranslate"><span class="pre">target=&quot;auto&quot;</span></code> means inline in JupyterLab/JupyterHub, browser in Zed and
+browser outside a kernel.  The process setting is the deliberate switch for
+other editor REPLs whose kernels cannot identify their frontend.</p>
 <section id="what-is-drawn">
 <h2>What is drawn<a class="headerlink" href="#what-is-drawn" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="table">
@@ -771,6 +787,9 @@ slider moves, so a volume monitor of any size opens at once.</p>
 </section>
 <section id="rendering-modes">
 <h2>Rendering modes<a class="headerlink" href="#rendering-modes" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">target</span></code> chooses where the viewer appears; <code class="docutils literal notranslate"><span class="pre">mode</span></code> chooses where its
+picture is rendered.  The browser and inline targets offer the same Magnelio
+toolbar.</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">mode</span></code></p></th>
@@ -825,7 +844,7 @@ conda<span class="w"> </span>install<span class="w"> </span>trame<span class="w"
 widget talks to the kernel over its own websocket on <code class="docutils literal notranslate"><span class="pre">localhost</span></code>; on a
 remote JupyterHub set <code class="docutils literal notranslate"><span class="pre">PYVISTA_TRAME_JUPYTER_MODE</span></code> as described in the
 PyVista documentation.</p>
-<p>The first <code class="docutils literal notranslate"><span class="pre">plot()</span></code> in a kernel starts that websocket server on the
+<p>The first inline <code class="docutils literal notranslate"><span class="pre">show()</span></code> in a kernel starts that websocket server on the
 kernel’s own event loop and fills the cell’s output the moment the
 server is up — a fraction of a second after the cell returns when you
 run cells by hand.  Under <em>Run All</em> the cells queued behind it hold the

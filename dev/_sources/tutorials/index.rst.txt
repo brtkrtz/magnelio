@@ -39,7 +39,7 @@ as a ``.py`` script or a ``.ipynb`` notebook.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="The first tutorial &lt;plot_01_parallel_plate&gt; needed no geometry at all — one air brick, and every conductor was a boundary face.  This one builds a real three-dimensional structure: a short piece of RG-58 class coaxial cable, modelled from solid primitives and a boolean operation.  Along the way it introduces the second way of declaring a port — by naming the analytical family of its cross-section — and the habit of reading a port report that carries both a numerical and a reference impedance.">
+    <div class="sphx-glr-thumbcontainer" tooltip="The first tutorial needed no geometry at all — one air brick, and every conductor was a boundary face.  This one builds a real three-dimensional structure: a short piece of RG-58 class coaxial cable, modelled from solid primitives and a boolean operation.  Along the way it introduces the second way of declaring a port — by naming the analytical family of its cross-section — and the habit of reading a port report that carries both a numerical and a reference impedance.">
 
 .. only:: html
 
@@ -56,7 +56,7 @@ as a ``.py`` script or a ``.ipynb`` notebook.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="The lines simulated so far were uniform and matched, so a single excitation told the whole story.  This tutorial puts a real discontinuity into the coaxial line of the previous tutorial &lt;plot_02_coax_line&gt; — a short air gap in the dielectric — and asks the questions that need the complete scattering matrix: how much reflects from each side, and is the device symmetric and reciprocal?  One run call with both ports excited delivers the full matrix; a three-section transmission-line cascade provides the closed-form reference.">
+    <div class="sphx-glr-thumbcontainer" tooltip="The lines simulated so far were uniform and matched, so a single excitation told the whole story.  This tutorial puts a real discontinuity into the coaxial line of the previous tutorial — a short air gap in the dielectric — and asks the questions that need the complete scattering matrix: how much reflects from each side, and is the device symmetric and reciprocal?  One run call with both ports excited delivers the full matrix; a three-section transmission-line cascade provides the closed-form reference.">
 
 .. only:: html
 

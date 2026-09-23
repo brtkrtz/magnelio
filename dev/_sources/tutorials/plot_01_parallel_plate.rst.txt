@@ -228,9 +228,9 @@ cap the cell size at 1/16 of the plate spacing.
       mesh | feature planes
       mesh | grid lines
       mesh | materials
-      mesh | materials | done (13.6 s)
+      mesh | materials | done (13.4 s)
       mesh | conformal cells
-      mesh | conformal cells | done (5.0 s)
+      mesh | conformal cells | done (5.1 s)
       mesh | PEC masks
       mesh | 32 x 16 x 64 cells (18.7 s total)
     grid: 32 x 16 x 64 cells
@@ -258,30 +258,11 @@ cutting plane in its toolbar); here it is rendered as a picture.
 
 
 
+.. image-sg:: /tutorials/images/sphx_glr_plot_01_parallel_plate_001.png
+   :alt: plot 01 parallel plate
+   :srcset: /tutorials/images/sphx_glr_plot_01_parallel_plate_001.png
+   :class: sphx-glr-single-img
 
-
-
-.. tab-set::
-
-
-
-   .. tab-item:: Static Scene
-
-
-
-            
-     .. image-sg:: /tutorials/images/sphx_glr_plot_01_parallel_plate_001.png
-        :alt: plot 01 parallel plate
-        :srcset: /tutorials/images/sphx_glr_plot_01_parallel_plate_001.png
-        :class: sphx-glr-single-img
-     
-
-
-   .. tab-item:: Interactive Scene
-
-
-
-       .. offlineviewer:: /home/runner/work/magnelio/magnelio/docs/tutorials/images/sphx_glr_plot_01_parallel_plate_001.vtksz
 
 
 
@@ -505,7 +486,7 @@ spec matched to its cross-section.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 40.467 seconds)
+   **Total running time of the script:** (0 minutes 25.900 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_01_parallel_plate.py:

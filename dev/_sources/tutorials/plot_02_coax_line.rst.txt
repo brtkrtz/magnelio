@@ -176,30 +176,11 @@ the inner conductor.
 
 
 
+.. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_001.png
+   :alt: plot 02 coax line
+   :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_001.png
+   :class: sphx-glr-single-img
 
-
-
-.. tab-set::
-
-
-
-   .. tab-item:: Static Scene
-
-
-
-            
-     .. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_001.png
-        :alt: plot 02 coax line
-        :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_001.png
-        :class: sphx-glr-single-img
-     
-
-
-   .. tab-item:: Interactive Scene
-
-
-
-       .. offlineviewer:: /home/runner/work/magnelio/magnelio/docs/tutorials/images/sphx_glr_plot_02_coax_line_001.vtksz
 
 
 
@@ -287,9 +268,9 @@ dielectric gap.
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (3.8 s)
+      mesh | conformal cells | done (4.2 s)
       mesh | PEC masks
-      mesh | 25 x 25 x 67 cells (3.8 s total)
+      mesh | 25 x 25 x 67 cells (4.2 s total)
     grid: 25 x 25 x 67 cells
 
 
@@ -371,30 +352,11 @@ faces.
    :class: sphx-glr-single-img
 
 
+.. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_003.png
+   :alt: plot 02 coax line
+   :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_003.png
+   :class: sphx-glr-single-img
 
-
-
-.. tab-set::
-
-
-
-   .. tab-item:: Static Scene
-
-
-
-            
-     .. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_003.png
-        :alt: plot 02 coax line
-        :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_003.png
-        :class: sphx-glr-single-img
-     
-
-
-   .. tab-item:: Interactive Scene
-
-
-
-       .. offlineviewer:: /home/runner/work/magnelio/magnelio/docs/tutorials/images/sphx_glr_plot_02_coax_line_003.vtksz
 
 
 
@@ -668,7 +630,7 @@ interest.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 7.871 seconds)
+   **Total running time of the script:** (0 minutes 8.543 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_02_coax_line.py:

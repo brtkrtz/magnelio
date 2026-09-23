@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**26:31.550** total execution time for 13 files **from howto**:
+**27:04.972** total execution time for 13 files **from howto**:
 
 .. container::
 
@@ -33,41 +33,41 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_howto_plot_patch_array.py` (``plot_patch_array.py``)
-     - 11:46.566
+     - 12:01.418
      - 0.0
    * - :ref:`sphx_glr_howto_plot_stripline_pickup_kicker.py` (``plot_stripline_pickup_kicker.py``)
-     - 05:53.681
+     - 05:49.711
      - 0.0
    * - :ref:`sphx_glr_howto_plot_current_path_source.py` (``plot_current_path_source.py``)
-     - 02:41.855
+     - 02:48.628
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lange_coupler.py` (``plot_lange_coupler.py``)
-     - 02:08.084
+     - 02:10.338
      - 0.0
    * - :ref:`sphx_glr_howto_plot_mesh_convergence.py` (``plot_mesh_convergence.py``)
-     - 01:20.522
+     - 01:21.295
      - 0.0
    * - :ref:`sphx_glr_howto_plot_coupled_line_coupler.py` (``plot_coupled_line_coupler.py``)
-     - 01:11.020
+     - 01:13.250
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_investigations.py` (``plot_lumped_port_investigations.py``)
-     - 00:45.744
+     - 00:51.764
      - 0.0
    * - :ref:`sphx_glr_howto_plot_cavity_ringdown_q.py` (``plot_cavity_ringdown_q.py``)
-     - 00:16.223
+     - 00:20.254
      - 0.0
    * - :ref:`sphx_glr_howto_plot_field_source_reuse.py` (``plot_field_source_reuse.py``)
-     - 00:15.818
+     - 00:14.694
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_tuning_cpw.py` (``plot_lumped_port_tuning_cpw.py``)
-     - 00:06.450
+     - 00:07.417
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_tuning_microstrip.py` (``plot_lumped_port_tuning_microstrip.py``)
-     - 00:02.286
+     - 00:02.633
      - 0.0
    * - :ref:`sphx_glr_howto_plot_watch_running_simulation.py` (``plot_watch_running_simulation.py``)
-     - 00:02.231
+     - 00:02.329
      - 0.0
    * - :ref:`sphx_glr_howto_plot_lumped_port_tuning_coax.py` (``plot_lumped_port_tuning_coax.py``)
-     - 00:01.070
+     - 00:01.239
      - 0.0
