@@ -22413,3 +22413,40 @@ which is how it failed first.  The field handed to the booking must be
 the solver's grid quantities (`h = H·l_dual`, [[DD-085]]), not the
 physical field: passing the latter multiplies by `1/l_dual` twice and was
 worth a factor 1500 before it was caught.
+
+## DD-274 — Display destination and rendering backend are separate; scripts open the complete viewer in a browser
+
+**Date:** 2026-09-23.
+**Status:** Implemented.
+**Files:** `src/magnelio/post/plot_3d.py`,
+`src/magnelio/post/field_3d.py`, `src/magnelio/plots/__init__.py`,
+`docs/methods/viewer.md`.
+**Amends:** [[DD-190]] (a script no longer defaults to the native VTK
+window).
+
+**Problem.**  The view had only two destinations: a trame widget when
+`IPKernelApp` identified a Jupyter kernel, and PyVista's native VTK window
+otherwise.  An editor REPL can itself use ipykernel without implementing an
+ipywidgets frontend.  Zed therefore received Magnelio's asynchronously
+filled `VBox`, rendered only its representation (`VBox()`), and never showed
+the view.  The native window remained usable from a script, but it did not
+carry Magnelio's cut, object-group, field and export controls.
+
+**Decision.**  Destination is now `target` (`"auto"`, `"inline"`,
+`"browser"`, `"native"`), independent of the existing rendering `mode`
+(`"client"`, `"server"`, `"trame"`, `"static"`, `"none"`).  A browser target
+builds the same named trame layout and toolbar as the notebook, starts its
+aiohttp server on a daemon thread bound to loopback, and opens that layout's
+URL in the system browser.  The shared server is reused by later views.
+Scripts and Zed kernels choose the browser under `auto` (Zed's connection
+file is named `kernel-zed-*.json`); other Jupyter kernels remain inline.
+`plots.configure_viewer(target=...)` sets the process default for editors
+whose kernels carry no such identity.  `target="native"` retains the VTK window,
+and a missing trame stack warns and falls back to it.  `mode="none"` remains
+the test/screenshot escape hatch and always returns the plotter.
+
+**Consequences.**  The standard script view and the notebook view now have
+the same controls and client/server rendering choices.  Zed needs no switch;
+users of an unidentified editor select the browser once per kernel instead of
+adding a destination to every `show()`.  Documentation builds remain on PyVista's gallery path; no browser
+or server is started for them.

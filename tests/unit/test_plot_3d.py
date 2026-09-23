@@ -68,6 +68,31 @@ def _dataset(pl, name):
 
 
 class TestScene:
+    def test_display_target_can_be_configured_for_editor_repls(self, monkeypatch):
+        monkeypatch.setattr(plot_3d, "_DEFAULT_TARGET", "auto")
+        monkeypatch.setattr(plot_3d, "_in_notebook", lambda: True)
+        monkeypatch.setattr(plot_3d, "_in_zed_repl", lambda: False)
+        assert plot_3d._resolve_mode(None)[3] == "inline"
+        plots.configure_viewer(target="browser")
+        assert plot_3d._resolve_mode(None)[1:] == ("client", True, "browser")
+
+    def test_zed_repl_uses_the_browser_automatically(self, monkeypatch):
+        monkeypatch.setattr(plot_3d, "_DEFAULT_TARGET", "auto")
+        monkeypatch.setattr(plot_3d, "_in_notebook", lambda: True)
+        monkeypatch.setattr(plot_3d, "_in_zed_repl", lambda: True)
+        assert plot_3d._resolve_mode(None)[3] == "browser"
+
+    def test_display_target_validation(self):
+        with pytest.raises(ValueError, match="target must be one of"):
+            plots.configure_viewer(target="hologram")
+        with pytest.raises(ValueError, match="target must be one of"):
+            plot_3d._resolve_mode(None, "hologram")
+
+    def test_gallery_keeps_the_screenshot_path(self, monkeypatch):
+        monkeypatch.setattr(plot_3d, "_DEFAULT_TARGET", "auto")
+        monkeypatch.setattr(pv, "BUILDING_GALLERY", True)
+        assert plot_3d._resolve_mode(None)[3] == "native"
+
     def test_returns_plotter_and_draws_bodies_in_mm(self, coax):
         model, _ = coax
         pl = model.show(mode="none")

@@ -412,7 +412,7 @@ class GeometryModel:
         Thin wrapper around
         :func:`~magnelio.post.plot_3d.show_geometry`.  In a notebook the
         view is a widget with an axis-aligned cutting plane driven from
-        its toolbar; in a script it opens a window.  It is the viewer
+        its toolbar; in a script it opens in the browser.  It is the viewer
         every ``show()`` in magnelio opens — a field view
         (:meth:`magnelio.fields.FieldState.show`, a monitor's, an
         eigenmode result's) is this view with the field laid on its cut
@@ -425,7 +425,7 @@ class GeometryModel:
             coloured by assigned material — on the cutting plane.
         **kwargs
             Forwarded (``cut``, ``flip``, ``show_ports``, ``show_wires``,
-            ``show_grid``, ``mode``, ``size``, ``render_edges``,
+            ``show_grid``, ``mode``, ``target``, ``size``, ``render_edges``,
             ``edge_color``, ``quality``, ``scale_mm``, ``camera``).
 
         Returns

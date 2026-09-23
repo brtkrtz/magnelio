@@ -1384,6 +1384,7 @@ def show_field(
     show_grid: bool = False,
     show_labels: bool = True,
     mode: str | None = None,
+    target: str | None = None,
     size: tuple[int, int] | None = None,
     quality: float = 1.0,
     scale_mm: bool = True,
@@ -1505,7 +1506,7 @@ def show_field(
         As in the geometry viewer.
     show_grid : bool, default False
         With *mesh*: draw the grid cells on the cut under the field.
-    mode, size, quality, scale_mm, camera
+    mode, target, size, quality, scale_mm, camera
         As in :func:`~magnelio.plots.show_geometry`; *size* sets the
         widget's height in the notebook, the toolbar's pop-out button
         opens the same view in a browser tab of its own.
@@ -1604,7 +1605,7 @@ def show_field(
     for nodes in view.nodes_display:
         extent += [float(nodes[0]), float(nodes[-1])]
 
-    notebook, mode, off_screen = _viewer._resolve_mode(mode)
+    notebook, mode, off_screen, target = _viewer._resolve_mode(mode, target)
     if mesh is None and frames.kind == "mode":
         mesh = source.mesh
     if frames.mirrored:
@@ -1640,4 +1641,4 @@ def show_field(
         extent=tuple(extent),
         title=frames.name,
     )
-    return _viewer._display(scene, mode, notebook)
+    return _viewer._display(scene, mode, target)

@@ -11,7 +11,7 @@ Where the view ends up depends on where it is called from:
 * in a Jupyter notebook it is an interactive widget (rendered in the
   browser by default, see ``mode``),
 * in a Sphinx-Gallery build it is a screenshot,
-* in a plain script it opens an interactive window.
+* in a plain script it opens the same interactive viewer in the browser.
 
 The cutting plane is deliberately axis-aligned and slider-driven —
 the way cutting planes work in the EM suites users come from — rather
@@ -28,7 +28,9 @@ from __future__ import annotations
 
 import math
 import os
+import threading
 import warnings
+import webbrowser
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
@@ -37,7 +39,7 @@ import numpy as np
 if TYPE_CHECKING:
     from magnelio.mesh.mesher import Mesh
 
-__all__ = ["show_geometry"]
+__all__ = ["configure_viewer", "show_geometry"]
 
 _AXIS_INDEX = {"x": 0, "y": 1, "z": 2}
 
@@ -56,6 +58,29 @@ _AIR_CELL_COLOR = (0.96, 0.96, 0.96)
 # with a toggle.  ``"static"`` embeds a screenshot; ``"none"`` builds
 # the scene without showing it (scripts, tests).
 _MODES = ("client", "server", "trame", "static", "none")
+_TARGETS = ("auto", "inline", "browser", "native")
+_DEFAULT_TARGET = "auto"
+_BROWSER_SERVER_THREAD: threading.Thread | None = None
+
+
+def configure_viewer(*, target: str = "auto") -> None:
+    """Choose where subsequent 3D views open in this Python process.
+
+    Parameters
+    ----------
+    target : {"auto", "inline", "browser", "native"}, default "auto"
+        ``"auto"`` embeds the viewer in JupyterLab/JupyterHub and opens it
+        in the browser in scripts and Zed.  ``"browser"`` is also useful
+        for other editor REPLs which run an IPython kernel but do not render
+        ipywidgets.  The other choices force a notebook widget or the native
+        VTK window.
+    """
+    global _DEFAULT_TARGET
+
+    if target not in _TARGETS:
+        raise ValueError(f"target must be one of {_TARGETS}; got {target!r}")
+    _DEFAULT_TARGET = target
+
 
 # Tessellation: fraction of the model's bounding-box diagonal used as
 # the linear deflection, and the angular deflection [rad].  The export
@@ -90,6 +115,19 @@ def _in_notebook() -> bool:
         return False
     ip = get_ipython()
     return ip is not None and "IPKernelApp" in getattr(ip, "config", {})
+
+
+def _in_zed_repl() -> bool:
+    """True for the ipykernel launched by Zed's editor REPL."""
+    try:
+        from ipykernel.connect import get_connection_file  # noqa: PLC0415
+    except ImportError:
+        return False
+    try:
+        name = os.path.basename(get_connection_file())
+    except (AttributeError, RuntimeError):
+        return False
+    return name.startswith("kernel-zed-")
 
 
 def _loop_is_running() -> bool:
@@ -1514,23 +1552,100 @@ def _build_scene(
     return scene
 
 
-def _resolve_mode(mode: str | None) -> tuple[bool, str | None, bool]:
-    """Validate *mode*; return ``(notebook, mode, off_screen)`` for the scene build."""
+def _resolve_mode(
+    mode: str | None, target: str | None = None
+) -> tuple[bool, str | None, bool, str]:
+    """Validate display options and resolve the destination of the view."""
     import pyvista as pv  # noqa: PLC0415
 
     _configure_pyvista()
     if mode is not None and mode not in _MODES:
         raise ValueError(f"mode must be one of {_MODES}; got {mode!r}")
+    if target is not None and target not in _TARGETS:
+        raise ValueError(f"target must be one of {_TARGETS}; got {target!r}")
 
     notebook = _in_notebook()
     gallery = bool(getattr(pv, "BUILDING_GALLERY", False))
     off_screen = mode == "none" or gallery or bool(getattr(pv, "OFF_SCREEN", False))
-    if notebook and mode is None:
+    resolved_target = _DEFAULT_TARGET if target is None else target
+    if resolved_target == "auto":
+        if gallery:
+            resolved_target = "native"
+        else:
+            resolved_target = "inline" if notebook and not _in_zed_repl() else "browser"
+    if mode == "none":
+        resolved_target = "native"
+    if resolved_target in ("inline", "browser") and mode is None:
         mode = "client"
-    return notebook, mode, off_screen
+    return notebook, mode, off_screen, resolved_target
 
 
-def _display(scene: _Scene, mode: str | None, notebook: bool):
+def _browser_url(server, plotter) -> str:
+    """Return the URL of *plotter* on a running trame *server*."""
+    from pyvista.trame.jupyter import build_url  # noqa: PLC0415
+
+    return build_url(server, ui=plotter._id_name, host="localhost", protocol="http")
+
+
+def _display_in_browser(scene: _Scene, mode: str) -> bool:
+    """Serve *scene* through trame and open it in the system browser."""
+    import pyvista as pv  # noqa: PLC0415
+
+    global _BROWSER_SERVER_THREAD
+
+    try:
+        from pyvista.trame.jupyter import initialize  # noqa: PLC0415
+        from trame.app import get_server  # noqa: PLC0415
+    except ImportError:
+        warnings.warn(
+            "the browser viewer needs the jupyter extra; opening the native VTK viewer instead",
+            stacklevel=3,
+        )
+        return False
+
+    server = get_server(pv.global_theme.trame.jupyter_server_name, client_type="vue3")
+    menu_items = _attach_controls(scene, server)
+    _install_viewer(scene.plotter, server, mode)
+    initialize(
+        server,
+        scene.plotter,
+        mode=mode,
+        add_menu_items=menu_items,
+        default_server_rendering=mode != "client",
+    )
+
+    def open_page(**_):
+        if not webbrowser.open(_browser_url(server, scene.plotter)):
+            warnings.warn(
+                "the browser could not be opened; use target='native' for the VTK viewer",
+                stacklevel=3,
+            )
+
+    if server.running:
+        open_page()
+    else:
+        server.controller.on_server_ready.add(open_page)
+        if _BROWSER_SERVER_THREAD is None or not _BROWSER_SERVER_THREAD.is_alive():
+            _BROWSER_SERVER_THREAD = threading.Thread(
+                target=server.start,
+                kwargs={
+                    "thread": True,
+                    "host": "127.0.0.1",
+                    "port": 0,
+                    "open_browser": False,
+                    "show_connection_info": False,
+                    "disable_logging": True,
+                    "backend": "aiohttp",
+                    "timeout": 0,
+                },
+                name="magnelio-viewer",
+                daemon=True,
+            )
+            _BROWSER_SERVER_THREAD.start()
+    return True
+
+
+def _display(scene: _Scene, mode: str | None, target: str):
     """Show a built scene the way *mode* and the environment ask for."""
     import pyvista as pv  # noqa: PLC0415
 
@@ -1542,7 +1657,12 @@ def _display(scene: _Scene, mode: str | None, notebook: bool):
     if mode == "none":
         return pl
 
-    if notebook and mode in ("client", "server", "trame"):
+    if target == "browser" and mode in ("client", "server", "trame"):
+        if _display_in_browser(scene, mode):
+            return None
+        target = "native"
+
+    if target == "inline" and mode in ("client", "server", "trame"):
         server = None
         try:
             from trame.app import get_server  # noqa: PLC0415
@@ -1562,12 +1682,11 @@ def _display(scene: _Scene, mode: str | None, notebook: bool):
             pl.show(jupyter_backend=mode, jupyter_kwargs=jupyter_kwargs)
         return None
 
-    if notebook:  # static
+    if target == "inline":  # static
         pl.show(jupyter_backend="static")
         return None
 
-    # Script or documentation build: interactive window, or a screenshot
-    # collected by the gallery scraper.
+    # Native VTK window, or a screenshot collected by the gallery scraper.
     pl.show()
     return None
 
@@ -1583,6 +1702,7 @@ def show_geometry(
     show_grid: bool = True,
     show_labels: bool = True,
     mode: str | None = None,
+    target: str | None = None,
     size: tuple[int, int] | None = None,
     render_edges: bool = False,
     edge_color: str = "#202020",
@@ -1634,9 +1754,13 @@ def show_geometry(
         renders in the kernel and streams images; ``"trame"`` offers
         both with a toggle; ``"static"`` embeds a screenshot;
         ``"none"`` builds the scene without showing it and returns the
-        plotter.  Outside a notebook the value is ignored: a script
-        opens an interactive window, a documentation build takes a
-        screenshot.
+        plotter.
+    target : {"auto", "inline", "browser", "native"}, optional
+        Where the view is displayed.  The configured default is inline
+        in JupyterLab/JupyterHub and an external browser in scripts and
+        Zed.  ``"browser"``
+        opens the complete toolbar in editor REPLs that cannot render
+        widgets; ``"native"`` opens the PyVista/VTK window.
     size : (int, int), optional
         Widget or window size in pixels.  Default: full cell width.
     render_edges : bool, default False
@@ -1670,10 +1794,11 @@ def show_geometry(
 
     The widget needs the ``trame`` stack (``pip install magnelio[jupyter]``
     or the conda-forge packages ``trame``, ``trame-vtk``,
-    ``trame-vuetify``).  Without it the view falls back to a static
-    image with a warning.
+    ``trame-vuetify``).  Without it a browser target falls back to the
+    native VTK window with a warning; an inline target falls back to a
+    static image.
     """
-    notebook, mode, off_screen = _resolve_mode(mode)
+    notebook, mode, off_screen, target = _resolve_mode(mode, target)
 
     scene = _build_scene(
         geometry,
@@ -1695,4 +1820,4 @@ def show_geometry(
         current_frame=current_frame,
         current_density=current_density,
     )
-    return _display(scene, mode, notebook)
+    return _display(scene, mode, target)

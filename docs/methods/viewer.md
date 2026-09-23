@@ -6,7 +6,7 @@ declared features, and — with a mesh — the FIT grid.  The same call
 serves three situations:
 
 - in a **Jupyter notebook** it is a widget, rendered in the browser;
-- in a **script** it opens a window;
+- in a **script** it opens the full viewer in the system browser;
 - in a **documentation build** it becomes a figure with two tabs: a
   screenshot, and the same scene as a rotatable view in the browser
   (this is how the 3D figures in the tutorials are made).  The browser
@@ -16,6 +16,25 @@ serves three situations:
 model.show()                                  # geometry only
 model.show(mesh=mesh, cut=("y", 0.0))         # opened along y = 0, grid cells on the cut
 ```
+
+An editor REPL can run an IPython kernel without implementing Jupyter's
+widget display.  Magnelio recognises Zed's REPL and opens the browser
+automatically.  For another editor that only prints ``VBox()``, select the
+browser once for that Python process; every later ``show()`` uses it:
+
+```python
+from magnelio import plots
+
+plots.configure_viewer(target="browser")
+model.show()
+```
+
+The destination can also be selected for one call with
+``model.show(target="browser")``.  Use ``target="inline"`` for the Jupyter
+widget and ``target="native"`` for PyVista's native VTK window.  The default
+``target="auto"`` means inline in JupyterLab/JupyterHub, browser in Zed and
+browser outside a kernel.  The process setting is the deliberate switch for
+other editor REPLs whose kernels cannot identify their frontend.
 
 ## What is drawn
 
@@ -156,6 +175,10 @@ slider moves, so a volume monitor of any size opens at once.
 
 ## Rendering modes
 
+``target`` chooses where the viewer appears; ``mode`` chooses where its
+picture is rendered.  The browser and inline targets offer the same Magnelio
+toolbar.
+
 ```{list-table}
 :header-rows: 1
 
@@ -205,7 +228,7 @@ widget talks to the kernel over its own websocket on `localhost`; on a
 remote JupyterHub set `PYVISTA_TRAME_JUPYTER_MODE` as described in the
 PyVista documentation.
 
-The first `plot()` in a kernel starts that websocket server on the
+The first inline `show()` in a kernel starts that websocket server on the
 kernel's own event loop and fills the cell's output the moment the
 server is up — a fraction of a second after the cell returns when you
 run cells by hand.  Under *Run All* the cells queued behind it hold the
