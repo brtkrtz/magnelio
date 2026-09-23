@@ -9311,6 +9311,37 @@ def _offset_outline(spine_face, half_width, wire=None):
     return contours[0]
 
 
+def _check_trace_clearance(wire, width: float, is_closed: bool) -> None:
+    """Reject centreline runs whose non-neighbouring edges are too close."""
+    from OCC.Core.BRepExtrema import BRepExtrema_DistShapeShape  # noqa: PLC0415
+
+    edges = _wire_edges(wire)
+    occ = _require_occ()
+    boxes = []
+    for edge in edges:
+        box = occ["Bnd_Box"]()
+        occ["brepbndlib"].Add(edge, box, False)
+        boxes.append(box)
+    for i, first in enumerate(edges):
+        near_box = occ["Bnd_Box"]()
+        near_box.Add(boxes[i])
+        near_box.Enlarge(width)
+        for j in range(i + 2, len(edges)):
+            if (is_closed and i == 0 and j == len(edges) - 1) or near_box.IsOut(boxes[j]):
+                continue
+            distance = BRepExtrema_DistShapeShape(first, edges[j])
+            if (
+                distance.IsDone()
+                and distance.NbSolution()
+                and distance.Value() < width * (1 - 1e-8)
+            ):
+                raise ValueError(
+                    "The trace outline could not be built: widening this curve "
+                    "makes its own sides run into each other. Reduce width or "
+                    "increase the clearance between runs."
+                )
+
+
 def _end_halfspace(comp_curve, parameter, outward: float, size: float):
     """A large box covering everything beyond one end of a spine."""
     from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeBox  # noqa: PLC0415
@@ -9363,6 +9394,7 @@ def make_trace(wire, width: float, thickness: float, caps="round", normal=None, 
     _check_dimensions("Trace", scale, width=width, thickness=abs(thickness))
     half_width = 0.5 * width * scale
     is_closed = wire.Closed()
+    _check_trace_clearance(wire, width * scale, is_closed)
 
     if normal is None:
         normal = wire_plane_normal(wire)

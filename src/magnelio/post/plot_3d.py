@@ -486,6 +486,11 @@ def _install_viewer(pl, server, mode: str | None) -> None:
         from pyvista.trame import ui as pv_ui  # noqa: PLC0415
     except ImportError:  # pragma: no cover - the [jupyter] extra is absent
         return
+    if not hasattr(pv_ui, "_VIEWERS"):
+        # PyVista 0.49's compatibility module exports get_viewer, but the
+        # cache it reads lives in the extracted trame-pyvista package.
+        from trame_pyvista import ui as pv_ui  # noqa: PLC0415
+
     existing = pv_ui._VIEWERS.get(pl._id_name)
     if existing is not None and getattr(existing, "plotter", None) is pl:
         return

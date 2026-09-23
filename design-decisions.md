@@ -8884,6 +8884,9 @@ track is an ordinary solid.)
 - **A self-intersecting offset is an error, not a repair.**  More than
   one contour means the widened sides ran into each other; the message
   names width, bend radius and clearance rather than guessing.
+  An explicit clearance check between non-neighbouring centreline edges
+  also rejects overlapping runs: OCC 8 can return one contour even when
+  the widened sides collide, so contour count alone is insufficient.
 
 Outside corners of a polyline centreline come out rounded — a property
 of offsetting, and closer to a fabricated track than a mitred corner.
@@ -22450,7 +22453,9 @@ integration out of `pyvista.trame` into the separately distributed
 `trame-pyvista`.  It is part of Magnelio's `jupyter` extra and the development
 environment now; without it PyVista's compatibility import fails before the
 viewer can apply its native fallback.  PyVista 0.48 keeps working because the
-integration remains built in there.
+integration remains built in there.  The 0.49 compatibility module does not
+expose the viewer registry; installing the custom toolbar therefore targets
+the extracted package's registry when present.
 
 **Consequences.**  The standard script view and the notebook view now have
 the same controls and client/server rendering choices.  Zed needs no switch;

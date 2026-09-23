@@ -461,6 +461,8 @@ class TestToolbar:
         its toolbar renders and no button does anything.
         """
         pv_ui = pytest.importorskip("pyvista.trame.ui")
+        if not hasattr(pv_ui, "_VIEWERS"):
+            pv_ui = pytest.importorskip("trame_pyvista.ui")
         pytest.importorskip("trame.app")
         from trame.app import get_server  # noqa: PLC0415
 
@@ -513,6 +515,9 @@ class TestToolbar:
         pytest.importorskip("trame.app")
         from pyvista.trame import ui as pv_ui  # noqa: PLC0415
         from trame.app import get_server  # noqa: PLC0415
+
+        if not hasattr(pv_ui, "_VIEWERS"):
+            pv_ui = pytest.importorskip("trame_pyvista.ui")
 
         model, _mesh = coax
         pl = model.show(mode="none")
