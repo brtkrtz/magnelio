@@ -744,7 +744,17 @@ below):</p>
 </span>    <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-method reference internal" href="../api/core.html#magnelio.GeometryModel.add" title="magnelio.GeometryModel.add"><span class="n">model</span><span class="o">.</span><span class="n">add</span></a><span class="p">(</span><a class="sphx-glr-backref-module-magnelio-geo sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/geo.html#magnelio.geo.Union" title="magnelio.geo.Union"><span class="n">body</span></a><span class="p">)</span><span class="w">
 </span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-method reference internal" href="../api/core.html#magnelio.GeometryModel.show" title="magnelio.GeometryModel.show"><span class="n">model</span><span class="o">.</span><span class="n">show</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_001.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_001.png" alt="plot stripline pickup kicker" class = "sphx-glr-single-img"/></section>
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-0">
+Static Scene</label><div class="sd-tab-content docutils">
+<img src="../_images/sphx_glr_plot_stripline_pickup_kicker_001.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_001.png" alt="plot stripline pickup kicker" class = "sphx-glr-single-img"/></div>
+<input id="sd-tab-item-1" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-1">
+Interactive Scene</label><div class="sd-tab-content docutils">
+<iframe src='../_static/static_viewer.html?fileURL=../_images/howto/images/sphx_glr_plot_stripline_pickup_kicker_001.vtksz' width='100%%' height='400px' frameborder='0'></iframe></div>
+</div>
+</section>
 <section id="dimensioning-the-strip-with-the-port-solver">
 <h2>Dimensioning the strip with the port solver<a class="headerlink" href="#dimensioning-the-strip-with-the-port-solver" title="Link to this heading">#</a></h2>
 <p>The strip and its pit form a TEM line, and the port solver computes
@@ -815,6 +825,7 @@ once more without changing the mode.</p>
 </span></pre></div></div>
 <img src="../_images/sphx_glr_plot_stripline_pickup_kicker_002.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_002.png" alt="Strip impedance from the port solver" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
 UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0239035 m, would create a 0.0011 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=6.9) keeps it, or refine the mesh.
+  mesh | feature planes | done (0.5 s)
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
@@ -836,6 +847,7 @@ UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.0018
   mesh | 28 x 40 x 10 cells (0.7 s total)
   mesh | feature planes
 UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at y = 0.0225167 m, would create a 0.000866 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=8.7) keeps it, or refine the mesh.
+  mesh | feature planes | done (0.5 s)
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
@@ -868,6 +880,7 @@ UserWarning: 6 geometry-edge planes (3 on x, 3 on y) below the edge floor 0.0018
   mesh | PEC masks
   mesh | 28 x 40 x 10 cells (0.7 s total)
   mesh | feature planes
+  mesh | feature planes | done (0.5 s)
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
@@ -898,12 +911,14 @@ impedances for the design follow, together with the mode itself:</p>
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">design: Z_strip = </span><span class="si">{</span><span class="n">Z_SUM</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> ohm (sum), </span><span class="si">{</span><span class="n">Z_DIFF</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> ohm (difference)</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
+  mesh | feature planes | done (0.5 s)
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
   mesh | PEC masks
   mesh | 29 x 41 x 10 cells (0.7 s total)
   mesh | feature planes
+  mesh | feature planes | done (0.5 s)
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
@@ -981,14 +996,14 @@ actually landed on.</p>
 </span></pre></div></div>
 <img src="../_images/sphx_glr_plot_stripline_pickup_kicker_003.png" srcset="../_images/sphx_glr_plot_stripline_pickup_kicker_003.png" alt="Mid-plane of the half model (x = 0)" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
 UserWarning: 10 geometry-edge planes (3 on x, 3 on y, 4 on z) below the edge floor 0.00187 m (h_max / max_edge_refinement = 0.00749 m / 4) dropped.  The coarsest, at z = 0.149896 m, would create a 0.00175 m cell: the feature there — a chamfer, fillet or section curve — is below the grid and has no effect on the result until it spans half a cell; MeshControl(max_edge_refinement=4.3) keeps it, or refine the mesh.
-  mesh | feature planes | done (1.0 s)
+  mesh | feature planes | done (0.9 s)
   mesh | grid lines
   mesh | materials
   mesh | materials | done (1.2 s)
   mesh | conformal cells
-  mesh | conformal cells | done (13.4 s)
+  mesh | conformal cells | done (15.0 s)
   mesh | PEC masks
-  mesh | 46 x 56 x 209 cells (15.8 s total)
+  mesh | 46 x 56 x 209 cells (17.3 s total)
 grid: 46 x 56 x 209 cells
 coax port impedance on the grid: 52.3 ohm
 field line recorded at y = 0.90 mm, 209 points
@@ -1122,14 +1137,14 @@ R_\parallel T^2 = Z_c\, |K_\parallel|^2 .\]</div>
 </span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">r_par</span></a> <span class="o">=</span> <span class="n">Z_PORT</span> <span class="o">*</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">k_par</span></a><span class="o">*</span><span class="o">*</span><span class="mi">2</span><span class="w">
 </span></pre></div></div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>mesh | feature planes
-mesh | feature planes | done (1.0 s)
+mesh | feature planes | done (0.9 s)
 mesh | grid lines
 mesh | materials
 mesh | materials | done (1.2 s)
 mesh | conformal cells
-mesh | conformal cells | done (13.4 s)
+mesh | conformal cells | done (15.0 s)
 mesh | PEC masks
-mesh | 46 x 56 x 209 cells (15.8 s total)
+mesh | 46 x 56 x 209 cells (17.3 s total)
 </pre></div>
 </div>
 </section>
@@ -1274,7 +1289,7 @@ particle velocity enters only through <span class="math notranslate nohighlight"
 one and watch the lobes shift down in frequency and the transverse
 response change), and the pit depth and feed offsets are the knobs
 that move the real device toward, or away from, the ideal stripline.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (5 minutes 49.711 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (6 minutes 5.781 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-stripline-pickup-kicker-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/4f45f16660f9674c2e4e6eb9a377a83f/plot_stripline_pickup_kicker.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_stripline_pickup_kicker.ipynb</span></code></a></p>

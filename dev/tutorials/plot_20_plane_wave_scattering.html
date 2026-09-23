@@ -665,9 +665,9 @@ all of it, and the mesh is sized for the top of the band.</p>
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
-  mesh | conformal cells | done (1.1 s)
+  mesh | conformal cells | done (1.0 s)
   mesh | PEC masks
-  mesh | 94 x 94 x 94 cells (1.5 s total)
+  mesh | 94 x 94 x 94 cells (1.4 s total)
 grid: 94 x 94 x 94 cells
 </pre></div>
 </div>
@@ -728,7 +728,17 @@ laid on the cut, the cells inside the metal cut out of the sheet.
 In a notebook a frame slider runs through the three instants.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-method reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldTime.show" title="magnelio.monitors.MonitorFieldTime.show"><span class="n">movie</span><span class="o">.</span><span class="n">show</span></a><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">E</span><span class="s2">&quot;</span><span class="p">,</span> <a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute reference external" href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64"><span class="n">t</span></a><span class="o">=</span><a class="sphx-glr-backref-module-magnelio-monitors sphx-glr-backref-type-py-property reference internal" href="../api/monitors.html#magnelio.monitors.MonitorFieldTime.t" title="magnelio.monitors.MonitorFieldTime.t"><span class="n">movie</span><span class="o">.</span><span class="n">t</span></a><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="p">,</span> <span class="n">flip</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_20_plane_wave_scattering_002.png" srcset="../_images/sphx_glr_plot_20_plane_wave_scattering_002.png" alt="plot 20 plane wave scattering" class = "sphx-glr-single-img"/></section>
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-0">
+Static Scene</label><div class="sd-tab-content docutils">
+<img src="../_images/sphx_glr_plot_20_plane_wave_scattering_002.png" srcset="../_images/sphx_glr_plot_20_plane_wave_scattering_002.png" alt="plot 20 plane wave scattering" class = "sphx-glr-single-img"/></div>
+<input id="sd-tab-item-1" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-1">
+Interactive Scene</label><div class="sd-tab-content docutils">
+<iframe src='../_static/static_viewer.html?fileURL=../_images/tutorials/images/sphx_glr_plot_20_plane_wave_scattering_002.vtksz' width='100%%' height='400px' frameborder='0'></iframe></div>
+</div>
+</section>
 <section id="from-the-far-field-to-the-radar-cross-section">
 <h2>From the far field to the radar cross section<a class="headerlink" href="#from-the-far-field-to-the-radar-cross-section" title="Link to this heading">#</a></h2>
 <p>The far-field monitor accumulated a running Fourier transform of the
@@ -854,7 +864,7 @@ scattered power as its reflection.</p>
 </span><a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_title.html#matplotlib.axes.Axes.set_title" title="matplotlib.axes.Axes.set_title"><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span></a><span class="p">(</span><span class="s2">&quot;</span><span class="s2">bistatic scattering, E-plane (dB rel. to peak)</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span><a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html#matplotlib.axes.Axes.legend" title="matplotlib.axes.Axes.legend"><span class="n">ax</span><span class="o">.</span><span class="n">legend</span></a><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">lower right</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_20_plane_wave_scattering_004.png" srcset="../_images/sphx_glr_plot_20_plane_wave_scattering_004.png" alt="bistatic scattering, E-plane (dB rel. to peak)" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f823b463bd0&gt;
+<img src="../_images/sphx_glr_plot_20_plane_wave_scattering_004.png" srcset="../_images/sphx_glr_plot_20_plane_wave_scattering_004.png" alt="bistatic scattering, E-plane (dB rel. to peak)" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend object at 0x7f8e070b7710&gt;
 </pre></div>
 </div>
 </section>
@@ -867,7 +877,7 @@ the illumination — is applied <em>simultaneously</em>, which is what
 <code class="docutils literal notranslate"><span class="pre">AnalysisTD</span></code> is for.  Dielectric spheres, several scatterers and
 an antenna under illumination need no new machinery; the plane wave
 only requires that its direction follows a grid axis.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 17.257 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (1 minutes 25.774 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-20-plane-wave-scattering-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/efc3df15c2af3e3892436b6ab72e2f69/plot_20_plane_wave_scattering.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_20_plane_wave_scattering.ipynb</span></code></a></p>

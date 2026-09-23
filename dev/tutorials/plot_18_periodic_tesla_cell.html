@@ -795,9 +795,9 @@ is the magnetic one (tutorial 09).</p>
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
-  mesh | conformal cells | done (2.2 s)
+  mesh | conformal cells | done (2.6 s)
   mesh | PEC masks
-  mesh | 26 x 26 x 30 cells (2.4 s total)
+  mesh | 26 x 26 x 30 cells (2.8 s total)
 grid: 26 x 26 x 30 cells
 </pre></div>
 </div>
@@ -829,16 +829,17 @@ nothing periodic about them:</p>
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
-  mesh | conformal cells | done (1.8 s)
+  mesh | conformal cells | done (2.2 s)
   mesh | PEC masks
-  mesh | 26 x 26 x 30 cells (2.0 s total)
+  mesh | 26 x 26 x 30 cells (2.3 s total)
   mesh | feature planes
   mesh | grid lines
   mesh | materials
+  mesh | materials | done (0.5 s)
   mesh | conformal cells
-  mesh | conformal cells | done (2.1 s)
+  mesh | conformal cells | done (2.5 s)
   mesh | PEC masks
-  mesh | 26 x 26 x 30 cells (2.6 s total)
+  mesh | 26 x 26 x 30 cells (3.1 s total)
 electric walls on the iris planes (0-mode):  1.2774 GHz
 magnetic walls on the iris planes (pi-mode): 1.3016 GHz
 </pre></div>
@@ -971,7 +972,17 @@ and the field is continued across them with the parity of each
 component.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-magnelio-solver sphx-glr-backref-type-py-method reference internal" href="../api/solver.html#magnelio.solver.EigenmodeResult.show" title="magnelio.solver.EigenmodeResult.show"><span class="n">pi_mode</span><span class="o">.</span><span class="n">show</span></a><span class="p">(</span><span class="n">geometry</span><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model</span></a><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">y</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">glyph</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">cone</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_18_periodic_tesla_cell_004.png" srcset="../_images/sphx_glr_plot_18_periodic_tesla_cell_004.png" alt="plot 18 periodic tesla cell" class = "sphx-glr-single-img"/></section>
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-0">
+Static Scene</label><div class="sd-tab-content docutils">
+<img src="../_images/sphx_glr_plot_18_periodic_tesla_cell_004.png" srcset="../_images/sphx_glr_plot_18_periodic_tesla_cell_004.png" alt="plot 18 periodic tesla cell" class = "sphx-glr-single-img"/></div>
+<input id="sd-tab-item-1" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-1">
+Interactive Scene</label><div class="sd-tab-content docutils">
+<iframe src='../_static/static_viewer.html?fileURL=../_images/tutorials/images/sphx_glr_plot_18_periodic_tesla_cell_004.vtksz' width='100%%' height='400px' frameborder='0'></iframe></div>
+</div>
+</section>
 <section id="where-to-go-next">
 <h2>Where to go next<a class="headerlink" href="#where-to-go-next" title="Link to this heading">#</a></h2>
 <p>New in this tutorial: a <code class="docutils literal notranslate"><span class="pre">&quot;Periodic&quot;</span></code> face pair and
@@ -983,7 +994,7 @@ parameter table leaves implicit.  The same pair of declarations
 serves any periodic structure whose unit cell fits in a box —
 disk-loaded waveguides, photonic-crystal slabs, frequency-selective
 surfaces at normal incidence.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (3 minutes 34.462 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (3 minutes 56.859 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-18-periodic-tesla-cell-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/784a329cd82bda387fe74c6dd69b284a/plot_18_periodic_tesla_cell.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_18_periodic_tesla_cell.ipynb</span></code></a></p>

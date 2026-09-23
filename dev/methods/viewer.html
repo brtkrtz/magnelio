@@ -838,10 +838,12 @@ stack:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"magnelio[jupyter]"</span>
 <span class="c1"># or, with conda-forge:</span>
 conda<span class="w"> </span>install<span class="w"> </span>trame<span class="w"> </span>trame-vtk<span class="w"> </span>trame-vuetify<span class="w"> </span>nest-asyncio2
+pip<span class="w"> </span>install<span class="w"> </span>trame-pyvista
 </pre></div>
 </div>
-<p>Without it the view falls back to a static image and says so.  The
-widget talks to the kernel over its own websocket on <code class="docutils literal notranslate"><span class="pre">localhost</span></code>; on a
+<p>Without it an inline view falls back to a static image; a browser target
+falls back to the native VTK window.  The viewer says so in either case.
+The widget talks to the kernel over its own websocket on <code class="docutils literal notranslate"><span class="pre">localhost</span></code>; on a
 remote JupyterHub set <code class="docutils literal notranslate"><span class="pre">PYVISTA_TRAME_JUPYTER_MODE</span></code> as described in the
 PyVista documentation.</p>
 <p>The first inline <code class="docutils literal notranslate"><span class="pre">show()</span></code> in a kernel starts that websocket server on the

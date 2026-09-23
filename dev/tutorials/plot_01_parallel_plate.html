@@ -704,11 +704,11 @@ cap the cell size at 1/16 of the plate spacing.</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  mesh | feature planes
   mesh | grid lines
   mesh | materials
-  mesh | materials | done (13.4 s)
+  mesh | materials | done (17.4 s)
   mesh | conformal cells
-  mesh | conformal cells | done (5.1 s)
+  mesh | conformal cells | done (7.4 s)
   mesh | PEC masks
-  mesh | 32 x 16 x 64 cells (18.7 s total)
+  mesh | 32 x 16 x 64 cells (25.1 s total)
 grid: 32 x 16 x 64 cells
 </pre></div>
 </div>
@@ -720,7 +720,17 @@ tutorial it is an interactive widget (orbit, pan, zoom, and the
 cutting plane in its toolbar); here it is rendered as a picture.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-method reference internal" href="../api/core.html#magnelio.GeometryModel.show" title="magnelio.GeometryModel.show"><span class="n">model</span><span class="o">.</span><span class="n">show</span></a><span class="p">(</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="p">,</span> <span class="n">cut</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;</span><span class="s2">y</span><span class="s2">&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_01_parallel_plate_001.png" srcset="../_images/sphx_glr_plot_01_parallel_plate_001.png" alt="plot 01 parallel plate" class = "sphx-glr-single-img"/><p>The 2D cross-section is the exact companion — a section through the
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-0">
+Static Scene</label><div class="sd-tab-content docutils">
+<img src="../_images/sphx_glr_plot_01_parallel_plate_001.png" srcset="../_images/sphx_glr_plot_01_parallel_plate_001.png" alt="plot 01 parallel plate" class = "sphx-glr-single-img"/></div>
+<input id="sd-tab-item-1" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-1">
+Interactive Scene</label><div class="sd-tab-content docutils">
+<iframe src='../_static/static_viewer.html?fileURL=../_images/tutorials/images/sphx_glr_plot_01_parallel_plate_001.vtksz' width='100%%' height='400px' frameborder='0'></iframe></div>
+</div>
+<p>The 2D cross-section is the exact companion — a section through the
 CAD model with the grid lines overlaid.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="matplotlib.figure.Figure"><span class="n">fig</span></a><span class="p">,</span> <a class="sphx-glr-backref-module-matplotlib-axes sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes" title="matplotlib.axes.Axes"><span class="n">ax</span></a> <span class="o">=</span> <a class="sphx-glr-backref-module-magnelio-plots sphx-glr-backref-type-py-function reference internal" href="../api/plots.html#magnelio.plots.plot_cross_section" title="magnelio.plots.plot_cross_section"><span class="n">plots</span><span class="o">.</span><span class="n">plot_cross_section</span></a><span class="p">(</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.GeometryModel" title="magnelio.GeometryModel"><span class="n">model</span></a><span class="p">,</span> <span class="s2">&quot;</span><span class="s2">z</span><span class="s2">&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="o">=</span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-class sphx-glr-backref-instance reference internal" href="../api/core.html#magnelio.Mesh" title="magnelio.Mesh"><span class="n">mesh</span></a><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">Port cross-section (z = 0)</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
@@ -750,7 +760,7 @@ textbook formula.</p>
   [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 188.37 Ω  ε_eff = 1.000  termination = dtbc (chain floor &lt;= -329 dB)
 Z_L (port solver):  188.3652 Ohm
 Z_L (eta0 * b/a) :  188.3652 Ohm
-relative deviation: 2.22e-16
+relative deviation: 1.11e-16
 </pre></div>
 </div>
 <p>The two agree to machine precision: the uniform TEM field of this
@@ -787,7 +797,7 @@ run stops on its own once the port signals have decayed.</p>
 </span><span class="w">
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">max |S11| in band: </span><span class="si">{</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">s11_db</span></a><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="p">)</span><span class="si">:</span><span class="s2">6.1f</span><span class="si">}</span><span class="s2"> dB</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_01_parallel_plate_004.png" srcset="../_images/sphx_glr_plot_01_parallel_plate_004.png" alt="Parallel-plate line, 20 mm" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S11| in band: -124.8 dB
+<img src="../_images/sphx_glr_plot_01_parallel_plate_004.png" srcset="../_images/sphx_glr_plot_01_parallel_plate_004.png" alt="Parallel-plate line, 20 mm" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S11| in band: -125.3 dB
 </pre></div>
 </div>
 <p>A matched, lossless, uniform line transmits everything: <code class="docutils literal notranslate"><span class="pre">|S21|</span></code>
@@ -825,7 +835,7 @@ before the run, and validate against known results where they
 exist.  The next tutorial builds a real three-dimensional structure
 (a coaxial line) from solids and boolean operations, with a port
 spec matched to its cross-section.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 25.900 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 34.776 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-01-parallel-plate-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/669effd58f485a0c27678f09024dad99/plot_01_parallel_plate.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_01_parallel_plate.ipynb</span></code></a></p>

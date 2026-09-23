@@ -395,11 +395,30 @@ build shows the frame the call asks for.
 
 
 
-.. image-sg:: /tutorials/images/sphx_glr_plot_07_project_store_004.png
-   :alt: plot 07 project store
-   :srcset: /tutorials/images/sphx_glr_plot_07_project_store_004.png
-   :class: sphx-glr-single-img
 
+
+
+.. tab-set::
+
+
+
+   .. tab-item:: Static Scene
+
+
+
+            
+     .. image-sg:: /tutorials/images/sphx_glr_plot_07_project_store_004.png
+        :alt: plot 07 project store
+        :srcset: /tutorials/images/sphx_glr_plot_07_project_store_004.png
+        :class: sphx-glr-single-img
+     
+
+
+   .. tab-item:: Interactive Scene
+
+
+
+       .. offlineviewer:: /home/runner/work/magnelio/magnelio/docs/tutorials/images/sphx_glr_plot_07_project_store_004.vtksz
 
 
 
@@ -542,7 +561,7 @@ them the first antenna.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 17.174 seconds)
+   **Total running time of the script:** (0 minutes 20.253 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_07_project_store.py:

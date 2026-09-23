@@ -176,11 +176,30 @@ the inner conductor.
 
 
 
-.. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_001.png
-   :alt: plot 02 coax line
-   :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_001.png
-   :class: sphx-glr-single-img
 
+
+
+.. tab-set::
+
+
+
+   .. tab-item:: Static Scene
+
+
+
+            
+     .. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_001.png
+        :alt: plot 02 coax line
+        :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_001.png
+        :class: sphx-glr-single-img
+     
+
+
+   .. tab-item:: Interactive Scene
+
+
+
+       .. offlineviewer:: /home/runner/work/magnelio/magnelio/docs/tutorials/images/sphx_glr_plot_02_coax_line_001.vtksz
 
 
 
@@ -268,9 +287,9 @@ dielectric gap.
       mesh | grid lines
       mesh | materials
       mesh | conformal cells
-      mesh | conformal cells | done (4.2 s)
+      mesh | conformal cells | done (5.6 s)
       mesh | PEC masks
-      mesh | 25 x 25 x 67 cells (4.2 s total)
+      mesh | 25 x 25 x 67 cells (5.6 s total)
     grid: 25 x 25 x 67 cells
 
 
@@ -352,11 +371,30 @@ faces.
    :class: sphx-glr-single-img
 
 
-.. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_003.png
-   :alt: plot 02 coax line
-   :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_003.png
-   :class: sphx-glr-single-img
 
+
+
+.. tab-set::
+
+
+
+   .. tab-item:: Static Scene
+
+
+
+            
+     .. image-sg:: /tutorials/images/sphx_glr_plot_02_coax_line_003.png
+        :alt: plot 02 coax line
+        :srcset: /tutorials/images/sphx_glr_plot_02_coax_line_003.png
+        :class: sphx-glr-single-img
+     
+
+
+   .. tab-item:: Interactive Scene
+
+
+
+       .. offlineviewer:: /home/runner/work/magnelio/magnelio/docs/tutorials/images/sphx_glr_plot_02_coax_line_003.vtksz
 
 
 
@@ -473,7 +511,7 @@ Numerical mode vs. analytical reference
 
     Port 'port1' — 1 mode(s)
       z_line = 49.67 Ω (on this grid), 51.67 Ω (analytical reference, Δ -3.87 %)
-      [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 49.67 Ω  ε_eff = 2.250  termination = dtbc (chain floor <= -321 dB)
+      [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 49.67 Ω  ε_eff = 2.250  termination = dtbc (chain floor <= -320 dB)
     z_line numerical :   49.67 Ohm  (-3.9 %)
     z_line reference :   51.67 Ohm
 
@@ -555,7 +593,7 @@ Run and S-parameters
 
  .. code-block:: none
 
-    max |S11| in band: -114.5 dB
+    max |S11| in band: -114.4 dB
 
 
 
@@ -630,7 +668,7 @@ interest.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 8.543 seconds)
+   **Total running time of the script:** (0 minutes 10.790 seconds)
 
 
 .. _sphx_glr_download_tutorials_plot_02_coax_line.py:

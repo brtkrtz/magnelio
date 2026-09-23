@@ -674,7 +674,17 @@ Here the model is opened along its axis to show the annulus around
 the inner conductor.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-method reference internal" href="../api/core.html#magnelio.GeometryModel.show" title="magnelio.GeometryModel.show"><span class="n">model</span><span class="o">.</span><span class="n">show</span></a><span class="p">(</span><span class="n">cut</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;</span><span class="s2">y</span><span class="s2">&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_02_coax_line_001.png" srcset="../_images/sphx_glr_plot_02_coax_line_001.png" alt="plot 02 coax line" class = "sphx-glr-single-img"/></section>
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-0">
+Static Scene</label><div class="sd-tab-content docutils">
+<img src="../_images/sphx_glr_plot_02_coax_line_001.png" srcset="../_images/sphx_glr_plot_02_coax_line_001.png" alt="plot 02 coax line" class = "sphx-glr-single-img"/></div>
+<input id="sd-tab-item-1" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-1">
+Interactive Scene</label><div class="sd-tab-content docutils">
+<iframe src='../_static/static_viewer.html?fileURL=../_images/tutorials/images/sphx_glr_plot_02_coax_line_001.vtksz' width='100%%' height='400px' frameborder='0'></iframe></div>
+</div>
+</section>
 <section id="the-coax-port">
 <h2>The coax port<a class="headerlink" href="#the-coax-port" title="Link to this heading">#</a></h2>
 <p>In the first tutorial, <a class="reference internal" href="../api/ports.html#magnelio.ports.PortWaveguide" title="magnelio.ports.PortWaveguide"><code class="xref py py-class docutils literal notranslate"><span class="pre">PortWaveguide</span></code></a> simply
@@ -721,9 +731,9 @@ dielectric gap.</p>
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
-  mesh | conformal cells | done (4.2 s)
+  mesh | conformal cells | done (5.6 s)
   mesh | PEC masks
-  mesh | 25 x 25 x 67 cells (4.2 s total)
+  mesh | 25 x 25 x 67 cells (5.6 s total)
 grid: 25 x 25 x 67 cells
 </pre></div>
 </div>
@@ -768,7 +778,17 @@ faces.</p>
 </span><span class="p">)</span><span class="w">
 </span><a class="sphx-glr-backref-module-matplotlib-figure sphx-glr-backref-type-py-method reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.tight_layout.html#matplotlib.figure.Figure.tight_layout" title="matplotlib.figure.Figure.tight_layout"><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_02_coax_line_002.png" srcset="../_images/sphx_glr_plot_02_coax_line_002.png" alt="Coax cross-section with mesh, Longitudinal cut (x = 0)" class = "sphx-glr-single-img"/><img src="../_images/sphx_glr_plot_02_coax_line_003.png" srcset="../_images/sphx_glr_plot_02_coax_line_003.png" alt="plot 02 coax line" class = "sphx-glr-single-img"/><p>The same section seen from the mesh’s side, three times.  Every grid
+<img src="../_images/sphx_glr_plot_02_coax_line_002.png" srcset="../_images/sphx_glr_plot_02_coax_line_002.png" alt="Coax cross-section with mesh, Longitudinal cut (x = 0)" class = "sphx-glr-single-img"/><div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-2" name="sd-tab-set-1" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-2">
+Static Scene</label><div class="sd-tab-content docutils">
+<img src="../_images/sphx_glr_plot_02_coax_line_003.png" srcset="../_images/sphx_glr_plot_02_coax_line_003.png" alt="plot 02 coax line" class = "sphx-glr-single-img"/></div>
+<input id="sd-tab-item-3" name="sd-tab-set-1" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-3">
+Interactive Scene</label><div class="sd-tab-content docutils">
+<iframe src='../_static/static_viewer.html?fileURL=../_images/tutorials/images/sphx_glr_plot_02_coax_line_003.vtksz' width='100%%' height='400px' frameborder='0'></iframe></div>
+</div>
+<p>The same section seen from the mesh’s side, three times.  Every grid
 line is drawn in the style of the rule that placed it — material
 faces solid, the graded fill between them as hairlines — and the
 exact contour on top.  What differs is the cell shading.</p>
@@ -843,7 +863,7 @@ their exact area and length shares, not as the staircase on the left.</p>
 </span></pre></div></div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Port 'port1' — 1 mode(s)
   z_line = 49.67 Ω (on this grid), 51.67 Ω (analytical reference, Δ -3.87 %)
-  [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 49.67 Ω  ε_eff = 2.250  termination = dtbc (chain floor &lt;= -321 dB)
+  [0] TEM_lap00    TEM f_c = 0.0000 GHz  z_line = 49.67 Ω  ε_eff = 2.250  termination = dtbc (chain floor &lt;= -320 dB)
 z_line numerical :   49.67 Ohm  (-3.9 %)
 z_line reference :   51.67 Ohm
 </pre></div>
@@ -882,7 +902,7 @@ conductor, the tinted annulus the dielectric:</p>
 </span><span class="w">
 </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="s2">max |S11| in band: </span><span class="si">{</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-class sphx-glr-backref-instance reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><span class="n">s11_db</span></a><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="p">)</span><span class="si">:</span><span class="s2">6.1f</span><span class="si">}</span><span class="s2"> dB</span><span class="s2">&quot;</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_02_coax_line_006.png" srcset="../_images/sphx_glr_plot_02_coax_line_006.png" alt="RG-58 class coax, 8 mm" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S11| in band: -114.5 dB
+<img src="../_images/sphx_glr_plot_02_coax_line_006.png" srcset="../_images/sphx_glr_plot_02_coax_line_006.png" alt="RG-58 class coax, 8 mm" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>max |S11| in band: -114.4 dB
 </pre></div>
 </div>
 <p>As for every uniform matched line, <code class="docutils literal notranslate"><span class="pre">|S21|</span></code> sits at 0 dB and
@@ -925,7 +945,7 @@ numerical-vs-reference reading of a port report.  The next tutorial
 excites <em>both</em> ports of this line and assembles the full S-matrix —
 including what to check when a device has more ports than modes of
 interest.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 8.543 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 10.790 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-tutorials-plot-02-coax-line-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/ce2371532972a7a4335b8427c05db663/plot_02_coax_line.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_02_coax_line.ipynb</span></code></a></p>

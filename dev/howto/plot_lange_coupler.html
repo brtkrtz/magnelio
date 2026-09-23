@@ -978,7 +978,17 @@ the coupled port at the near end of line 2, port 4 isolated.</p>
 </span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-method reference internal" href="../api/core.html#magnelio.GeometryModel.add_port" title="magnelio.GeometryModel.add_port"><span class="n">model</span><span class="o">.</span><span class="n">add_port</span></a><span class="p">(</span><a class="sphx-glr-backref-module-magnelio-ports sphx-glr-backref-type-py-class reference internal" href="../api/ports.html#magnelio.ports.PortWaveguide" title="magnelio.ports.PortWaveguide"><span class="n">ports</span><span class="o">.</span><span class="n">PortWaveguide</span></a><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">p4</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">plane</span><span class="o">=</span><span class="s2">&quot;</span><span class="s2">ymax</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">corners</span><span class="o">=</span><span class="n">window</span><span class="p">(</span><a class="sphx-glr-backref-module-numpy sphx-glr-backref-type-py-attribute reference external" href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.float64" title="numpy.float64"><span class="n">x_far</span></a><span class="p">)</span><span class="p">)</span><span class="p">)</span>  <span class="c1"># isolated</span><span class="w">
 </span><a class="sphx-glr-backref-module-magnelio sphx-glr-backref-type-py-method reference internal" href="../api/core.html#magnelio.GeometryModel.show" title="magnelio.GeometryModel.show"><span class="n">model</span><span class="o">.</span><span class="n">show</span></a><span class="p">(</span><span class="p">)</span><span class="w">
 </span></pre></div></div>
-<img src="../_images/sphx_glr_plot_lange_coupler_002.png" srcset="../_images/sphx_glr_plot_lange_coupler_002.png" alt="plot lange coupler" class = "sphx-glr-single-img"/><p>Mesh — the same control as the design step — and a look at the
+<div class="sd-tab-set docutils">
+<input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-0">
+Static Scene</label><div class="sd-tab-content docutils">
+<img src="../_images/sphx_glr_plot_lange_coupler_002.png" srcset="../_images/sphx_glr_plot_lange_coupler_002.png" alt="plot lange coupler" class = "sphx-glr-single-img"/></div>
+<input id="sd-tab-item-1" name="sd-tab-set-0" type="radio">
+<label class="sd-tab-label" for="sd-tab-item-1">
+Interactive Scene</label><div class="sd-tab-content docutils">
+<iframe src='../_static/static_viewer.html?fileURL=../_images/howto/images/sphx_glr_plot_lange_coupler_002.vtksz' width='100%%' height='400px' frameborder='0'></iframe></div>
+</div>
+<p>Mesh — the same control as the design step — and a look at the
 fingers on their grid: the cells shaded by the conductor share the
 sub-cell classifier measured, the metal-masked and partly free edges
 on top.</p>
@@ -1002,8 +1012,9 @@ on top.</p>
   mesh | grid lines
   mesh | materials
   mesh | conformal cells
+  mesh | conformal cells | done (0.5 s)
   mesh | PEC masks
-  mesh | 119 x 57 x 33 cells (0.7 s total)
+  mesh | 119 x 57 x 33 cells (0.8 s total)
 grid: 119 x 57 x 33 = 0.22 M cells
 
 (-0.25, 0.25)
@@ -1088,7 +1099,7 @@ theirs, and the knob for both is the finger length.  The leads are
 short and not de-embedded: the result’s de-embedding removes the
 propagation of a <em>uniform</em> quasi-TEM feed, dispersion included, and
 the lead-to-finger joint is not one.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (2 minutes 10.338 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (2 minutes 28.796 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-howto-plot-lange-coupler-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/7db2fa7e7353b00f45bd8d35788a71db/plot_lange_coupler.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_lange_coupler.ipynb</span></code></a></p>
