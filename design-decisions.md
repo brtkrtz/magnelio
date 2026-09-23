@@ -22445,6 +22445,13 @@ whose kernels carry no such identity.  `target="native"` retains the VTK window,
 and a missing trame stack warns and falls back to it.  `mode="none"` remains
 the test/screenshot escape hatch and always returns the plotter.
 
+**Compatibility amendment (same day).**  PyVista 0.49 moved its trame
+integration out of `pyvista.trame` into the separately distributed
+`trame-pyvista`.  It is part of Magnelio's `jupyter` extra and the development
+environment now; without it PyVista's compatibility import fails before the
+viewer can apply its native fallback.  PyVista 0.48 keeps working because the
+integration remains built in there.
+
 **Consequences.**  The standard script view and the notebook view now have
 the same controls and client/server rendering choices.  Zed needs no switch;
 users of an unidentified editor select the browser once per kernel instead of

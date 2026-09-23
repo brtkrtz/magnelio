@@ -55,6 +55,7 @@ interop = [
     "scikit-rf",
 ]
 jupyter = [
+    "trame-pyvista>=0.1.5",
     "trame>=3.5",
     "trame-vtk>=2.8",
     "trame-vuetify>=2.4",

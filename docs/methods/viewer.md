@@ -221,10 +221,12 @@ stack:
 pip install "magnelio[jupyter]"
 # or, with conda-forge:
 conda install trame trame-vtk trame-vuetify nest-asyncio2
+pip install trame-pyvista
 ```
 
-Without it the view falls back to a static image and says so.  The
-widget talks to the kernel over its own websocket on `localhost`; on a
+Without it an inline view falls back to a static image; a browser target
+falls back to the native VTK window.  The viewer says so in either case.
+The widget talks to the kernel over its own websocket on `localhost`; on a
 remote JupyterHub set `PYVISTA_TRAME_JUPYTER_MODE` as described in the
 PyVista documentation.
 
