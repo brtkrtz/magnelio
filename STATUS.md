@@ -332,12 +332,12 @@ flickers to ``"done"`` between sequential runs; the reader skips
   priced.  The law is **not band-specific** (the modal port erodes at
   the same rate but saturates at the float32 floor, −112.6 dB) — users:
   `docs/methods/precision.md`; dossier `investigations/kb038-wordlength/`.
-* **Staircase correction for oblique paths (DD-269)** — measured, not
-  unknown: a per-edge correction in `_collect_requests` (a 10–12 % bump
-  of the equivalent radius) would take 1.6–3.9 % down to under 0.16 %.
-  Open before it can be *one* coefficient: plain edges want ~32 nH/m and
-  a PEC thin wire ~38 nH/m (feed gap explains a third, conductor model
-  the rest); untested below `x` = 0.141.
+* **Staircase correction for oblique paths (DD-269)** — excess 1.6–3.9 %; <0.16 % is a fit residual.
+  NEC-2: 3.53094 GHz/72.02 Ω; staircase errors reach 21.1 %/36.0 %.
+  The Guiffaut exact-edge reactance defect is mesh-persistent.  A reciprocal
+  energy blend derives alpha = 0.97693 from translation invariance, unchanged
+  at 2 mm; six 1 mm placements/orientations are within 0.44 %/1.65 % of NEC.
+  A cycle-free shared-node lift reaches 0.17 % loop spread.  A planar NEC junction improves from 1.34 % to 0.68 % rotated-curve spread; a nonplanar four-way node gives 1.01 % curve/0.46 % current spread.  Absolute errors remain ~5 %.  Coupled CFL is exactly 0.972 of field-only here (0.98/0.99 unstable); a sparse row-sum rule certifies 0.697 with ~10 nonzeros/segment.  Homogeneous epsilon/mu scaling and static-conductivity passivity pass (lossy axis/diagonal curve spread 1.30 %).  A grounded wire normal to PEC passes an independent NEC monopole gate (~1 % resonance error; contact excess only 0.14 curve-percentage-points).  Tilted infinite-plane contact lifts preserve charge but miss NEC curves by 22--70 %; this is an auxiliary-model gate, not a defect in the shipped PEC staircase.  A finite-pad bond arch confines mask overlap to 1.07--2.38 mm per endpoint and touches no free-span segment.  Production `ThinWire` stays connected in finite-metal bond loops.  A controlled thin-sheet foot comparison shifts the parallel zero 1.23 % at 0.5 mm and 0.46 % at 0.25 mm; the earlier 6.5 % came from different whole-arm slopes and is not a contact error.  Two-pad loops also expose return-path dependence (6.1 % zero shift with conductor thickness).  A NEC2++ 31-patch finite-pad candidate fails its own foot-segmentation gate (2 GHz reactance -702/-8,629/-2,352 ohm for 1/2/3 segments), so it is not an accuracy reference.  Absolute bond accuracy still needs a resolved finite-pad reference; interfaces and further refinement remain open; dossier: `investigations/oblique-lumped-path/`.
 * **Ports on the GPU** — only `TestBandDTBCOnGPU` (KB-045) exercises a
   port on a device; `tests/conftest.py` pins the suite to NumPy.
 * **Modal decomposition overshoots unity transmission** (|S21| 1.0030
